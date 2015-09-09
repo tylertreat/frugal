@@ -1,4 +1,4 @@
-package generator
+package parser
 
 import (
 	"fmt"
@@ -53,6 +53,7 @@ func Parse(filePath string) ([]*Namespace, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 
 	var s scanner.Scanner
 	s.Init(file)

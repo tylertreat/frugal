@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Workiva/frugal/generator"
+	"github.com/Workiva/frugal/parser"
 )
 
 func main() {
@@ -13,7 +13,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	namespaces, err := generator.Parse(os.Args[1])
+	namespaces, err := parser.Parse(os.Args[1])
 	if err != nil {
 		panic(err)
 	}

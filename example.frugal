@@ -14,3 +14,15 @@ namespace          bar      {
 
    }
 
+
+
+
+package example
+
+type LinkingClient interface {
+    AtomUpdate(*Atom) error
+}
+
+type LinkingServer interface {
+    AtomUpdate(*Atom)
+}
