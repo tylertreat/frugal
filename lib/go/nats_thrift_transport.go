@@ -8,6 +8,8 @@ import (
 	"github.com/nats-io/nats"
 )
 
+// natsThriftTransport is an implementation of thrift.TTransport exclusively
+// used for pub/sub via NATS.
 type natsThriftTransport struct {
 	conn    *nats.Conn
 	subject string
@@ -53,8 +55,7 @@ func (n *natsThriftTransport) Close() error {
 }
 
 func (n *natsThriftTransport) Read(p []byte) (int, error) {
-	num, err := n.reader.Read(p)
-	return num, err
+	return n.reader.Read(p)
 }
 
 func (n *natsThriftTransport) Write(p []byte) (int, error) {

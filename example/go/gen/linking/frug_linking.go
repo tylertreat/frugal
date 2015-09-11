@@ -19,7 +19,7 @@ type LinkingPubSub interface {
 }
 
 type LinkingPublisher struct {
-	ClientProvider frugal.ClientProvider
+	ClientProvider map[string]*frugal.Client
 	SeqId          int32
 }
 
@@ -81,9 +81,9 @@ func (l *LinkingPublisher) GetCurrentAtoms(req *GetCurrentAtomsRequest) error {
 }
 
 func newLinkingClientProvider(t frugal.TransportFactory, f thrift.TTransportFactory,
-	p thrift.TProtocolFactory) frugal.ClientProvider {
+	p thrift.TProtocolFactory) map[string]*frugal.Client {
 
-	provider := make(frugal.ClientProvider)
+	provider := make(map[string]*frugal.Client)
 
 	topic := getLinkingPubSubTopic("updateAtoms")
 	transport := t.GetTransport(topic)
@@ -114,7 +114,7 @@ func getLinkingPubSubTopic(op string) string {
 
 type LinkingSubscriber struct {
 	Handler        LinkingPubSub
-	ClientProvider frugal.ClientProvider
+	ClientProvider map[string]*frugal.Client
 }
 
 func NewLinkingSubscriber(handler LinkingPubSub, t frugal.TransportFactory,
