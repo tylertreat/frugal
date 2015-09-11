@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/Workiva/frugal/lib"
+	"github.com/Workiva/frugal/lib/go"
 	"github.com/nats-io/nats"
 
 	"github.com/Workiva/frugal/example/go/gen/linking"

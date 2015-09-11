@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/Workiva/frugal/lib"
+	"github.com/Workiva/frugal/lib/go"
 )
 
 const (
