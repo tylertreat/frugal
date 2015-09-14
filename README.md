@@ -14,7 +14,7 @@ struct Event {
 include "event.thrift"
 
 namespace Events {
-    EventCreated(Event)
+    EventCreated: Event
 }
 ```
 
