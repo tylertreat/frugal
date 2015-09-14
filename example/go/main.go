@@ -10,7 +10,7 @@ import (
 	"github.com/Workiva/frugal/lib/go"
 	"github.com/nats-io/nats"
 
-	"github.com/Workiva/frugal/example/go/gen/linking"
+	"github.com/Workiva/frugal/example/go/gen-go/event"
 )
 
 func Usage() {
@@ -75,11 +75,8 @@ func main() {
 
 func runSubscriber(conn *nats.Conn, protocolFactory thrift.TProtocolFactory, transportFactory thrift.TTransportFactory) {
 	factory := frugal.NewNATSTransportFactory(conn)
-	subscriber := linking.NewLinkingSubscriber(NewLinkingPubSubHandler(), factory, transportFactory, protocolFactory)
-	if err := subscriber.SubscribeUpdateAtoms(); err != nil {
-		panic(err)
-	}
-	if err := subscriber.SubscribeGetCurrentAtoms(); err != nil {
+	subscriber := event.NewEventsSubscriber(NewEventPubSubHandler(), factory, transportFactory, protocolFactory)
+	if err := subscriber.SubscribeEventCreated(); err != nil {
 		panic(err)
 	}
 	ch := make(chan bool)
@@ -89,16 +86,10 @@ func runSubscriber(conn *nats.Conn, protocolFactory thrift.TProtocolFactory, tra
 
 func runPublisher(conn *nats.Conn, protocolFactory thrift.TProtocolFactory, transportFactory thrift.TTransportFactory) {
 	factory := frugal.NewNATSTransportFactory(conn)
-	publisher := linking.NewLinkingPublisher(factory, transportFactory, protocolFactory)
-	ar := &linking.AtomUpdateRequest{Base: &linking.APIMessage{MembershipID: "123"}}
-	if err := publisher.UpdateAtoms(ar); err != nil {
+	publisher := event.NewEventsPublisher(factory, transportFactory, protocolFactory)
+	event := &event.Event{ID: 42, Message: "hello, world!"}
+	if err := publisher.EventCreated(event); err != nil {
 		panic(err)
 	}
-	fmt.Println("UpdateAtoms()")
-
-	cr := &linking.GetCurrentAtomsRequest{Base: &linking.APIMessage{MembershipID: "123"}}
-	if err := publisher.GetCurrentAtoms(cr); err != nil {
-		panic(err)
-	}
-	fmt.Println("GetCurrentAtoms()")
+	fmt.Println("EventCreated()")
 }

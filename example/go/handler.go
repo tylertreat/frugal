@@ -3,22 +3,16 @@ package main
 import (
 	"fmt"
 
-	"github.com/Workiva/frugal/example/go/gen/linking"
+	"github.com/Workiva/frugal/example/go/gen-go/event"
 )
 
-type LinkingPubSubHandler struct {
+type EventPubSubHandler struct{}
+
+func NewEventPubSubHandler() *EventPubSubHandler {
+	return &EventPubSubHandler{}
 }
 
-func NewLinkingPubSubHandler() *LinkingPubSubHandler {
-	return &LinkingPubSubHandler{}
-}
-
-func (l *LinkingPubSubHandler) UpdateAtoms(a *linking.AtomUpdateRequest) error {
-	fmt.Println("received", a)
-	return nil
-}
-
-func (l *LinkingPubSubHandler) GetCurrentAtoms(a *linking.GetCurrentAtomsRequest) error {
-	fmt.Println("received", a)
+func (e *EventPubSubHandler) EventCreated(event *event.Event) error {
+	fmt.Println("received", event)
 	return nil
 }

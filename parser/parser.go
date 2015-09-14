@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 	"text/scanner"
 )
 
@@ -41,7 +42,7 @@ func (n *Namespace) addOperation(op *Operation) {
 
 func (n *Namespace) containsOperation(name string) bool {
 	for _, op := range n.Operations {
-		if op.Name == name {
+		if op.Name == strings.Title(name) {
 			return true
 		}
 	}
@@ -92,7 +93,7 @@ func Parse(filePath string) ([]*Namespace, error) {
 				return nil, fmt.Errorf("Duplicate definition for namespace '%s': %s:%s",
 					name, filePath, s.Pos())
 			}
-			currentNamespace.Name = name
+			currentNamespace.Name = strings.Title(name)
 			state = stateOpenDefinition
 			continue
 		case stateOpenDefinition:

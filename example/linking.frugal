@@ -1,4 +1,0 @@
-namespace Linking {
-    UpdateAtoms: AtomUpdateRequest
-    GetCurrentAtoms: GetCurrentAtomsRequest
-}
