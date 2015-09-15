@@ -11,8 +11,6 @@ struct Event {
 ```
 ```thrift
 // event.frugal
-include "event.thrift"
-
 namespace Events {
     EventCreated: Event
 }
