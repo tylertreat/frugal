@@ -26,6 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Ensure corresponding Thrift and Frugal files exist.
 	name := getName(*file)
 	if !exists(name + ".thrift") {
 		fmt.Printf("Thrift file not found: %s.thrift\n", name)
@@ -36,20 +37,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	program, err := parser.Parse(name + ".frugal")
-	if err != nil {
-		panic(err)
-	}
-
-	if len(program.Namespaces) == 0 {
-		fmt.Println("No namespaces to generate")
-		os.Exit(1)
-	}
-
-	if err := generateThrift(*out, *gen, name+".thrift"); err != nil {
-		os.Exit(1)
-	}
-
+	// Resolve Frugal generator.
 	var g generator.ProgramGenerator
 	switch *gen {
 	case "go":
@@ -59,8 +47,34 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Parse the Frugal file.
+	program, err := parser.Parse(name + ".frugal")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	if len(program.Namespaces) == 0 {
+		fmt.Println("No namespaces to generate")
+		os.Exit(1)
+	}
+
+	// Generate Thrift code.
+	if err := generateThrift(*out, *gen, name+".thrift"); err != nil {
+		os.Exit(1)
+	}
+
+	// Generate Frugal code.
 	if err := g.Generate(program, *out); err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// Ensure code compiles. If it doesn't, it's likely because they didn't
+	// generate the Thrift structs referenced in their Frugal file.
+	path := fmt.Sprintf(".%s%s%s%s", string(os.PathSeparator), *out, string(os.PathSeparator), program.Name)
+	if err := checkCompile(path); err != nil {
+		os.Exit(1)
 	}
 }
 
@@ -72,6 +86,14 @@ func generateThrift(out, gen, file string) error {
 	args = append(args, "-gen", gen)
 	args = append(args, file)
 	if out, err := exec.Command("thrift", args...).CombinedOutput(); err != nil {
+		fmt.Println(string(out))
+		return err
+	}
+	return nil
+}
+
+func checkCompile(path string) error {
+	if out, err := exec.Command("go", "build", path).CombinedOutput(); err != nil {
 		fmt.Println(string(out))
 		return err
 	}
