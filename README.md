@@ -16,6 +16,8 @@ namespace Events {
 }
 ```
 
+`$ frugal -gen=go -file=event`
+
 ```go
 // publisher.go
 func main() {
