@@ -6,6 +6,7 @@ package event
 import (
 	"fmt"
 	"log"
+
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"
 )
@@ -83,7 +84,7 @@ type EventsSubscriber struct {
 
 func NewEventsSubscriber(handler EventsPubSub, t frugal.TransportFactory, f thrift.TTransportFactory, p thrift.TProtocolFactory) *EventsSubscriber {
 	return &EventsSubscriber{
-		Handler: handler,
+		Handler:        handler,
 		ClientProvider: newEventsClientProvider(t, f, p),
 	}
 }

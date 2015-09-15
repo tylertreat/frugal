@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/Workiva/frugal/generator"
@@ -25,14 +26,27 @@ func main() {
 		os.Exit(1)
 	}
 
-	args := []string{}
-	if *out != "" {
-		args = append(args, "-out", *out)
+	name := getName(*file)
+	if !exists(name + ".thrift") {
+		fmt.Printf("Thrift file not found: %s.thrift\n", name)
+		os.Exit(1)
 	}
-	args = append(args, "-gen", *gen)
-	args = append(args, *file+".thrift")
-	if out, err := exec.Command("thrift", args...).CombinedOutput(); err != nil {
-		fmt.Println(string(out))
+	if !exists(name + ".frugal") {
+		fmt.Printf("Frugal file not found: %s.frugal\n", name)
+		os.Exit(1)
+	}
+
+	program, err := parser.Parse(name + ".frugal")
+	if err != nil {
+		panic(err)
+	}
+
+	if len(program.Namespaces) == 0 {
+		fmt.Println("No namespaces to generate")
+		os.Exit(1)
+	}
+
+	if err := generateThrift(*out, *gen, name+".thrift"); err != nil {
 		os.Exit(1)
 	}
 
@@ -45,29 +59,35 @@ func main() {
 		os.Exit(1)
 	}
 
-	namespaces, err := parser.Parse(*file + ".frugal")
-	if err != nil {
-		panic(err)
-	}
-
-	name, err := getName(*file + ".frugal")
-	if err != nil {
-		panic(err)
-	}
-
-	if err := g.Generate(name, *out, namespaces); err != nil {
+	if err := g.Generate(program, *out); err != nil {
 		panic(err)
 	}
 }
 
-func getName(path string) (string, error) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return "", err
+func generateThrift(out, gen, file string) error {
+	args := []string{}
+	if out != "" {
+		args = append(args, "-out", out)
 	}
-	parts := strings.Split(info.Name(), ".")
-	if len(parts) != 2 {
-		return "", fmt.Errorf("Invalid file: %s", path)
+	args = append(args, "-gen", gen)
+	args = append(args, file)
+	if out, err := exec.Command("thrift", args...).CombinedOutput(); err != nil {
+		fmt.Println(string(out))
+		return err
 	}
-	return parts[0], nil
+	return nil
+}
+
+func getName(path string) string {
+	name := path
+	extension := filepath.Ext(name)
+	if extension != "" {
+		name = name[0:strings.LastIndex(name, extension)]
+	}
+	return name
+}
+
+func exists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }

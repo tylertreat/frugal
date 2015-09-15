@@ -47,7 +47,7 @@ func (g *Generator) GeneratePackage(file *os.File, name, outputDir string) error
 func (g *Generator) GenerateImports(file *os.File) error {
 	imports := "import (\n"
 	imports += "\t\"fmt\"\n"
-	imports += "\t\"log\"\n"
+	imports += "\t\"log\"\n\n"
 	imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
 	imports += "\t\"github.com/Workiva/frugal/lib/go\"\n"
 	imports += ")"
@@ -175,7 +175,7 @@ func (g *Generator) generateSubscriber(subscribers string, namespace *parser.Nam
 	subscribers += fmt.Sprintf("func New%sSubscriber(handler %sPubSub, t frugal.TransportFactory, "+
 		"f thrift.TTransportFactory, p thrift.TProtocolFactory) *%sSubscriber {\n", namespace.Name, namespace.Name, namespace.Name)
 	subscribers += fmt.Sprintf("\treturn &%sSubscriber{\n", namespace.Name)
-	subscribers += fmt.Sprintf("\t\tHandler: handler,\n")
+	subscribers += fmt.Sprintf("\t\tHandler:        handler,\n")
 	subscribers += fmt.Sprintf("\t\tClientProvider: new%sClientProvider(t, f, p),\n", namespace.Name)
 	subscribers += "\t}\n"
 	subscribers += "}\n\n"
@@ -237,6 +237,7 @@ func (g *Generator) generateSubscriber(subscribers string, namespace *parser.Nam
 		subscribers += "\treturn client.Transport.Unsubscribe()\n"
 		subscribers += "}"
 	}
+	subscribers += "\n"
 
 	return subscribers
 }

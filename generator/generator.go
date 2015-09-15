@@ -49,7 +49,7 @@ func (b *BaseGenerator) GenerateNewline(file *os.File, count int) error {
 }
 
 type ProgramGenerator interface {
-	Generate(name, outputDir string, namespaces []*parser.Namespace) error
+	Generate(program *parser.Program, outputDir string) error
 }
 
 type OOProgramGenerator struct {
@@ -60,12 +60,12 @@ func NewOOProgramGenerator(generator OOGenerator) ProgramGenerator {
 	return &OOProgramGenerator{generator}
 }
 
-func (o *OOProgramGenerator) Generate(name, outputDir string, namespaces []*parser.Namespace) error {
+func (o *OOProgramGenerator) Generate(program *parser.Program, outputDir string) error {
 	if outputDir == "" {
 		outputDir = o.DefaultOutputDir()
 	}
 
-	file, err := o.GenerateFile(name, outputDir, namespaces)
+	file, err := o.GenerateFile(program.Name, outputDir, program.Namespaces)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (o *OOProgramGenerator) Generate(name, outputDir string, namespaces []*pars
 		return err
 	}
 
-	if err := o.GeneratePackage(file, name, outputDir); err != nil {
+	if err := o.GeneratePackage(file, program.Name, outputDir); err != nil {
 		return err
 	}
 
@@ -95,7 +95,7 @@ func (o *OOProgramGenerator) Generate(name, outputDir string, namespaces []*pars
 		return err
 	}
 
-	if err := o.GenerateConstants(file, name); err != nil {
+	if err := o.GenerateConstants(file, program.Name); err != nil {
 		return err
 	}
 
@@ -103,7 +103,7 @@ func (o *OOProgramGenerator) Generate(name, outputDir string, namespaces []*pars
 		return err
 	}
 
-	if err := o.GenerateInterfaces(file, namespaces); err != nil {
+	if err := o.GenerateInterfaces(file, program.Namespaces); err != nil {
 		return err
 	}
 
@@ -111,7 +111,7 @@ func (o *OOProgramGenerator) Generate(name, outputDir string, namespaces []*pars
 		return err
 	}
 
-	if err := o.GeneratePublishers(file, namespaces); err != nil {
+	if err := o.GeneratePublishers(file, program.Namespaces); err != nil {
 		return err
 	}
 
@@ -119,5 +119,5 @@ func (o *OOProgramGenerator) Generate(name, outputDir string, namespaces []*pars
 		return err
 	}
 
-	return o.GenerateSubscribers(file, namespaces)
+	return o.GenerateSubscribers(file, program.Namespaces)
 }

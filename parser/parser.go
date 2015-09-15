@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"text/scanner"
@@ -26,40 +27,20 @@ const (
 	stateOperationParam
 )
 
-type Operation struct {
-	Name  string
-	Param string
-}
-
-type Namespace struct {
-	Name       string
-	Operations []*Operation
-}
-
-func (n *Namespace) addOperation(op *Operation) {
-	n.Operations = append(n.Operations, op)
-}
-
-func (n *Namespace) containsOperation(name string) bool {
-	for _, op := range n.Operations {
-		if op.Name == strings.Title(name) {
-			return true
-		}
-	}
-	return false
-}
-
-func Parse(filePath string) ([]*Namespace, error) {
+func Parse(filePath string) (*Program, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	var s scanner.Scanner
-	s.Init(file)
+	name, err := getName(file)
+	if err != nil {
+		return nil, err
+	}
 
 	var (
+		program          = &Program{Name: name, Path: filepath.Dir(file.Name())}
 		namespacesMap    = make(map[string]*Namespace)
 		namespaces       = []*Namespace{}
 		state            = stateStartNamespace
@@ -69,7 +50,12 @@ func Parse(filePath string) ([]*Namespace, error) {
 
 	// TODO: Add support for comments.
 
-	var token rune
+	var (
+		s     scanner.Scanner
+		token rune
+	)
+	s.Init(file)
+
 	for token != scanner.EOF {
 		token = s.Scan()
 		tokenText := s.TokenText()
@@ -113,6 +99,7 @@ func Parse(filePath string) ([]*Namespace, error) {
 			if name == "" {
 				goto parseErr
 			}
+			name = strings.Title(name)
 			if currentNamespace.containsOperation(name) {
 				return nil, fmt.Errorf("Duplicate definition for operation '%s': %s:%s",
 					name, filePath, s.Pos())
@@ -147,9 +134,22 @@ func Parse(filePath string) ([]*Namespace, error) {
 	for _, namespace := range namespacesMap {
 		namespaces = append(namespaces, namespace)
 	}
+	program.Namespaces = namespaces
 
-	return namespaces, nil
+	return program, program.validate()
 
 parseErr:
 	return nil, fmt.Errorf("Invalid syntax: %s:%s", filePath, s.Pos())
+}
+
+func getName(f *os.File) (string, error) {
+	info, err := f.Stat()
+	if err != nil {
+		return "", err
+	}
+	parts := strings.Split(info.Name(), ".")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("Invalid file: %s", f.Name())
+	}
+	return parts[0], nil
 }
