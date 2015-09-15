@@ -50,6 +50,7 @@ func (b *BaseGenerator) GenerateNewline(file *os.File, count int) error {
 
 type ProgramGenerator interface {
 	Generate(program *parser.Program, outputDir string) error
+	DefaultOutputDir() string
 }
 
 type OOProgramGenerator struct {
@@ -120,4 +121,8 @@ func (o *OOProgramGenerator) Generate(program *parser.Program, outputDir string)
 	}
 
 	return o.GenerateSubscribers(file, program.Namespaces)
+}
+
+func (o *OOProgramGenerator) DefaultOutputDir() string {
+	return o.OOGenerator.DefaultOutputDir()
 }

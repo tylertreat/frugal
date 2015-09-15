@@ -59,20 +59,29 @@ func main() {
 		os.Exit(1)
 	}
 
+	output := *out
+	if output == "" {
+		output = g.DefaultOutputDir()
+	}
+	if err := os.MkdirAll(output, 0777); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	// Generate Thrift code.
-	if err := generateThrift(*out, *gen, name+".thrift"); err != nil {
+	if err := generateThrift(output, *gen, name+".thrift"); err != nil {
 		os.Exit(1)
 	}
 
 	// Generate Frugal code.
-	if err := g.Generate(program, *out); err != nil {
+	if err := g.Generate(program, output); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	// Ensure code compiles. If it doesn't, it's likely because they didn't
 	// generate the Thrift structs referenced in their Frugal file.
-	path := fmt.Sprintf(".%s%s%s%s", string(os.PathSeparator), *out, string(os.PathSeparator), program.Name)
+	path := fmt.Sprintf(".%s%s%s%s", string(os.PathSeparator), output, string(os.PathSeparator), program.Name)
 	if err := checkCompile(path); err != nil {
 		os.Exit(1)
 	}
