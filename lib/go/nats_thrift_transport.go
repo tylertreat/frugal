@@ -19,21 +19,21 @@ type natsThriftTransport struct {
 }
 
 func newNATSThriftTransport(conn *nats.Conn, subject string) thrift.TTransport {
-	reader, writer := io.Pipe()
 	return &natsThriftTransport{
 		conn:    conn,
 		subject: subject,
-		reader:  bufio.NewReader(reader),
-		writer:  writer,
 	}
 }
 
 func (n *natsThriftTransport) Open() error {
+	reader, writer := io.Pipe()
+	n.reader = bufio.NewReader(reader)
+	n.writer = writer
 	sub, err := n.conn.Subscribe(n.subject, func(msg *nats.Msg) {
 		n.writer.Write(msg.Data)
 	})
 	if err != nil {
-		return err
+		return thrift.NewTTransportExceptionFromError(err)
 	}
 	n.sub = sub
 	return nil
@@ -51,22 +51,23 @@ func (n *natsThriftTransport) Close() error {
 		return err
 	}
 	n.sub = nil
-	return nil
+	return thrift.NewTTransportExceptionFromError(n.writer.Close())
 }
 
 func (n *natsThriftTransport) Read(p []byte) (int, error) {
-	return n.reader.Read(p)
+	num, err := n.reader.Read(p)
+	return num, thrift.NewTTransportExceptionFromError(err)
 }
 
 func (n *natsThriftTransport) Write(p []byte) (int, error) {
 	if err := n.conn.Publish(n.subject, p); err != nil {
-		return 0, err
+		return 0, thrift.NewTTransportExceptionFromError(err)
 	}
 	return len(p), nil
 }
 
 func (n *natsThriftTransport) Flush() error {
-	return n.conn.Flush()
+	return thrift.NewTTransportExceptionFromError(n.conn.Flush())
 }
 
 func (n *natsThriftTransport) RemainingBytes() uint64 {
