@@ -105,6 +105,9 @@ func (l *EventsSubscriber) SubscribeEventCreated() error {
 		for {
 			received, err := l.recvEventCreated(op, client.Protocol)
 			if err != nil {
+				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
+					break
+				}
 				log.Println("frugal: error receiving:", err)
 			}
 			l.Handler.EventCreated(received)
@@ -117,7 +120,7 @@ func (l *EventsSubscriber) SubscribeEventCreated() error {
 func (l *EventsSubscriber) recvEventCreated(op string, iprot thrift.TProtocol) (*Event, error) {
 	name, _, _, err := iprot.ReadMessageBegin()
 	if err != nil {
-		return nil, thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		return nil, err
 	}
 	if name != op {
 		iprot.Skip(thrift.STRUCT)
@@ -127,8 +130,7 @@ func (l *EventsSubscriber) recvEventCreated(op string, iprot thrift.TProtocol) (
 	}
 	req := &Event{}
 	if err := req.Read(iprot); err != nil {
-		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
-		return nil, x
+		return nil, err
 	}
 
 	iprot.ReadMessageEnd()

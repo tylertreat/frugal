@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"
@@ -79,6 +80,8 @@ func runSubscriber(conn *nats.Conn, protocolFactory thrift.TProtocolFactory, tra
 	if err := subscriber.SubscribeEventCreated(); err != nil {
 		panic(err)
 	}
+	time.Sleep(5 * time.Second)
+	subscriber.UnsubscribeEventCreated()
 	ch := make(chan bool)
 	log.Println("Subscriber started...")
 	<-ch

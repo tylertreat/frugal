@@ -198,6 +198,9 @@ func (g *Generator) generateSubscriber(subscribers string, namespace *parser.Nam
 		subscribers += "\t\tfor {\n"
 		subscribers += fmt.Sprintf("\t\t\treceived, err := l.recv%s(op, client.Protocol)\n", op.Name)
 		subscribers += "\t\t\tif err != nil {\n"
+		subscribers += "\t\t\t\tif e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {\n"
+		subscribers += "\t\t\t\t\tbreak\n"
+		subscribers += "\t\t\t\t}\n"
 		subscribers += "\t\t\t\tlog.Println(\"frugal: error receiving:\", err)\n"
 		subscribers += "\t\t\t}\n"
 		subscribers += fmt.Sprintf("\t\t\tl.Handler.%s(received)\n", op.Name)
@@ -210,7 +213,7 @@ func (g *Generator) generateSubscriber(subscribers string, namespace *parser.Nam
 			namespace.Name, op.Name, op.Param)
 		subscribers += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
 		subscribers += "\tif err != nil {\n"
-		subscribers += "\t\treturn nil, thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())\n"
+		subscribers += "\t\treturn nil, err\n"
 		subscribers += "\t}\n"
 		subscribers += "\tif name != op {\n"
 		subscribers += "\t\tiprot.Skip(thrift.STRUCT)\n"
@@ -220,8 +223,7 @@ func (g *Generator) generateSubscriber(subscribers string, namespace *parser.Nam
 		subscribers += "\t}\n"
 		subscribers += fmt.Sprintf("\treq := &%s{}\n", op.Param)
 		subscribers += "\tif err := req.Read(iprot); err != nil {\n"
-		subscribers += "\t\tx := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())\n"
-		subscribers += "\t\treturn nil, x\n"
+		subscribers += "\t\treturn nil, err\n"
 		subscribers += "\t}\n\n"
 		subscribers += "\tiprot.ReadMessageEnd()\n"
 		subscribers += "\treturn req, nil\n"
