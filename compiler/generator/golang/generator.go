@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Workiva/frugal/generator"
-	"github.com/Workiva/frugal/parser"
+	"github.com/Workiva/frugal/compiler/generator"
+	"github.com/Workiva/frugal/compiler/parser"
 )
 
 const (

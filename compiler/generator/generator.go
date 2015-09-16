@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Workiva/frugal/parser"
+	"github.com/Workiva/frugal/compiler/parser"
 )
 
 const (
