@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"text/scanner"
 )
@@ -160,6 +161,7 @@ func Parse(filePath string) (*Program, error) {
 		}
 		namespaces = append(namespaces, namespace)
 	}
+	sort.Sort(ByName(namespaces)) // For ordering determinism.
 	program.Namespaces = namespaces
 
 	return program, program.validate()
@@ -178,4 +180,18 @@ func getName(f *os.File) (string, error) {
 		return "", fmt.Errorf("Invalid file: %s", f.Name())
 	}
 	return parts[0], nil
+}
+
+type ByName []*Namespace
+
+func (b ByName) Len() int {
+	return len(b)
+}
+
+func (b ByName) Swap(i, j int) {
+	b[i], b[j] = b[j], b[i]
+}
+
+func (b ByName) Less(i, j int) bool {
+	return strings.Compare(b[i].Name, b[j].Name) == -1
 }
