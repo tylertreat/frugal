@@ -77,13 +77,13 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 func (g *Generator) GeneratePublishers(file *os.File, namespaces []*parser.Namespace) error {
 	publishers := ""
 	for _, namespace := range namespaces {
-		publishers = g.generatePublisher(publishers, namespace)
+		publishers = generatePublisher(publishers, namespace)
 	}
 	_, err := file.WriteString(publishers)
 	return err
 }
 
-func (g *Generator) generatePublisher(publishers string, namespace *parser.Namespace) string {
+func generatePublisher(publishers string, namespace *parser.Namespace) string {
 	publishers += fmt.Sprintf("type %sPublisher struct {\n", namespace.Name)
 	publishers += "\tTransport frugal.Transport\n"
 	publishers += "\tProtocol  thrift.TProtocol\n"
@@ -99,15 +99,25 @@ func (g *Generator) generatePublisher(publishers string, namespace *parser.Names
 	publishers += "\t}\n"
 	publishers += "}\n\n"
 
+	args := ""
+	if len(namespace.Prefix.Variables) > 0 {
+		for _, variable := range namespace.Prefix.Variables {
+			args += ", " + variable
+		}
+		args += " string"
+	}
+
+	prefix := ""
 	for _, op := range namespace.Operations {
-		publishers += fmt.Sprintf("func (l *%sPublisher) %s(req *%s) error {\n", namespace.Name, op.Name, op.Param)
+		publishers += prefix
+		prefix = "\n\n"
+		publishers += fmt.Sprintf("func (l *%sPublisher) Publish%s(req *%s%s) error {\n",
+			namespace.Name, op.Name, op.Param, args)
 		publishers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
-		publishers += fmt.Sprintf("\ttopic := get%sPubSubTopic(op)\n", namespace.Name)
-		publishers += "\tclient, ok := l.ClientProvider[topic]\n"
-		publishers += "\tif !ok {\n"
-		publishers += "\t\treturn thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+op)\n"
-		publishers += "\t}\n"
-		publishers += "\toprot := client.Protocol\n"
+		publishers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(namespace))
+		publishers += "\ttopic := fmt.Sprintf(\"%s%s%s%s\", prefix, topicBase, delimiter, op)\n"
+		publishers += "\tl.Transport.PreparePublish(topic)\n"
+		publishers += "\toprot := l.Protocol\n"
 		publishers += "\tl.SeqId++\n"
 		publishers += "\tif err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {\n"
 		publishers += "\t\treturn err\n"
@@ -119,88 +129,83 @@ func (g *Generator) generatePublisher(publishers string, namespace *parser.Names
 		publishers += "\t\treturn err\n"
 		publishers += "\t}\n"
 		publishers += "\treturn oprot.Flush()\n"
-		publishers += "}\n\n"
+		publishers += "}"
 	}
-
-	publishers += fmt.Sprintf(
-		"func new%sClientProvider(t frugal.TransportFactory, f thrift.TTransportFactory, p thrift.TProtocolFactory) "+
-			"map[string]*frugal.Client {\n", namespace.Name)
-	publishers += "\tprovider := make(map[string]*frugal.Client)\n\n"
-	publishers += "\tvar (\n"
-	publishers += "\t\ttopic     string\n"
-	publishers += "\t\ttransport frugal.Transport\n"
-	publishers += "\t)\n"
-	for _, op := range namespace.Operations {
-		publishers += fmt.Sprintf("\ttopic = get%sPubSubTopic(\"%s\")\n", namespace.Name, op.Name)
-		publishers += "\ttransport = t.GetTransport(topic)\n"
-		publishers += "\tif f != nil {\n"
-		publishers += "\t\ttransport.ApplyProxy(f)\n"
-		publishers += "\t}\n"
-		publishers += "\tprovider[topic] = &frugal.Client{\n"
-		publishers += "\t\tProtocol:  p.GetProtocol(transport.ThriftTransport()),\n"
-		publishers += "\t\tTransport: transport,\n"
-		publishers += "\t}\n\n"
-	}
-	publishers += "\treturn provider\n"
-	publishers += "}\n\n"
-
-	publishers += fmt.Sprintf("func get%sPubSubTopic(op string) string {\n", namespace.Name)
-	publishers += "\treturn fmt.Sprintf(\"%s%s%s\", topicBase, delimiter, op)\n"
-	publishers += "}"
 
 	return publishers
+}
+
+func generatePrefixStringTemplate(namespace *parser.Namespace) string {
+	if len(namespace.Prefix.Variables) == 0 {
+		return `""`
+	}
+	template := "fmt.Sprintf(\""
+	template += namespace.Prefix.Template()
+	template += globals.TopicDelimiter + "\", "
+	prefix := ""
+	for _, variable := range namespace.Prefix.Variables {
+		template += prefix + variable
+		prefix = ", "
+	}
+	template += ")"
+	return template
 }
 
 func (g *Generator) GenerateSubscribers(file *os.File, namespaces []*parser.Namespace) error {
 	subscribers := ""
 	for _, namespace := range namespaces {
-		subscribers = g.generateSubscriber(subscribers, namespace)
+		subscribers = generateSubscriber(subscribers, namespace)
 	}
 	_, err := file.WriteString(subscribers)
 	return err
 }
 
-func (g *Generator) generateSubscriber(subscribers string, namespace *parser.Namespace) string {
+func generateSubscriber(subscribers string, namespace *parser.Namespace) string {
 	subscribers += fmt.Sprintf("type %sSubscriber struct {\n", namespace.Name)
-	subscribers += fmt.Sprintf("\tHandler        %sPubSub\n", namespace.Name)
-	subscribers += fmt.Sprintf("\tClientProvider map[string]*frugal.Client\n")
+	subscribers += "\tProvider *frugal.Provider\n"
 	subscribers += "}\n\n"
 
-	subscribers += fmt.Sprintf("func New%sSubscriber(handler %sPubSub, t frugal.TransportFactory, "+
-		"f thrift.TTransportFactory, p thrift.TProtocolFactory) *%sSubscriber {\n", namespace.Name, namespace.Name, namespace.Name)
-	subscribers += fmt.Sprintf("\treturn &%sSubscriber{\n", namespace.Name)
-	subscribers += fmt.Sprintf("\t\tHandler:        handler,\n")
-	subscribers += fmt.Sprintf("\t\tClientProvider: new%sClientProvider(t, f, p),\n", namespace.Name)
-	subscribers += "\t}\n"
+	subscribers += fmt.Sprintf("func New%sSubscriber(p *frugal.Provider) *%sSubscriber {\n", namespace.Name, namespace.Name)
+	subscribers += fmt.Sprintf("\treturn &%sSubscriber{Provider: p}\n", namespace.Name)
 	subscribers += "}\n\n"
 
+	args := ""
 	prefix := ""
+	if len(namespace.Prefix.Variables) > 0 {
+		for _, variable := range namespace.Prefix.Variables {
+			args += prefix + variable
+			prefix = ", "
+		}
+		args += " string, "
+	}
+
+	prefix = ""
 	for _, op := range namespace.Operations {
 		subscribers += prefix
 		prefix = "\n\n"
-		subscribers += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s() error {\n", namespace.Name, op.Name)
+		subscribers += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*%s)) (*frugal.Subscription, error) {\n",
+			namespace.Name, op.Name, args, op.Param)
 		subscribers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
-		subscribers += fmt.Sprintf("\ttopic := get%sPubSubTopic(op)\n", namespace.Name)
-		subscribers += "\tclient, ok := l.ClientProvider[topic]\n"
-		subscribers += "\tif !ok {\n"
-		subscribers += "\t\treturn thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+op)\n"
-		subscribers += "\t}\n\n"
-		subscribers += "\tif err := client.Transport.Subscribe(); err != nil {\n"
-		subscribers += "\t\treturn err\n"
+		subscribers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(namespace))
+		subscribers += "\ttopic := fmt.Sprintf(\"%s%s%s%s\", prefix, topicBase, delimiter, op)\n"
+		subscribers += "\ttransport, protocol := l.Provider.New()\n"
+		subscribers += "\tif err := transport.Subscribe(topic); err != nil {\n"
+		subscribers += "\t\treturn nil, err\n"
 		subscribers += "\t}\n\n"
 		subscribers += "\tgo func() {\n"
 		subscribers += "\t\tfor {\n"
-		subscribers += fmt.Sprintf("\t\t\treceived, err := l.recv%s(op, client.Protocol)\n", op.Name)
+		subscribers += fmt.Sprintf("\t\t\treceived, err := l.recv%s(op, protocol)\n", op.Name)
 		subscribers += "\t\t\tif err != nil {\n"
 		subscribers += "\t\t\t\tif e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {\n"
 		subscribers += "\t\t\t\t\tbreak\n"
 		subscribers += "\t\t\t\t}\n"
 		subscribers += "\t\t\t\tlog.Println(\"frugal: error receiving:\", err)\n"
+		subscribers += "\t\t\t\tcontinue\n"
 		subscribers += "\t\t\t}\n"
-		subscribers += fmt.Sprintf("\t\t\tl.Handler.%s(received)\n", op.Name)
+		subscribers += "\t\t\thandler(received)\n"
 		subscribers += "\t\t}\n"
 		subscribers += "\t}()\n\n"
-		subscribers += "\treturn nil\n"
+		subscribers += "\treturn frugal.NewSubscription(topic, transport), nil\n"
 		subscribers += "}\n\n"
 
 		subscribers += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, iprot thrift.TProtocol) (*%s, error) {\n",
@@ -221,16 +226,6 @@ func (g *Generator) generateSubscriber(subscribers string, namespace *parser.Nam
 		subscribers += "\t}\n\n"
 		subscribers += "\tiprot.ReadMessageEnd()\n"
 		subscribers += "\treturn req, nil\n"
-		subscribers += "}\n\n"
-
-		subscribers += fmt.Sprintf("func (l *%sSubscriber) Unsubscribe%s() error {\n", namespace.Name, op.Name)
-		subscribers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
-		subscribers += fmt.Sprintf("\ttopic := get%sPubSubTopic(op)\n", namespace.Name)
-		subscribers += "\tclient, ok := l.ClientProvider[topic]\n"
-		subscribers += "\tif !ok {\n"
-		subscribers += "\t\treturn thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+op)\n"
-		subscribers += "\t}\n\n"
-		subscribers += "\treturn client.Transport.Unsubscribe()\n"
 		subscribers += "}"
 	}
 	subscribers += "\n"

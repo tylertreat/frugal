@@ -22,8 +22,8 @@ type EventsPublisher struct {
 	SeqId     int32
 }
 
-func NewEventsPublisher(provider *frugal.Provider) *EventsPublisher {
-	transport, protocol := provider.New()
+func NewEventsPublisher(p *frugal.Provider) *EventsPublisher {
+	transport, protocol := p.New()
 	return &EventsPublisher{
 		Transport: transport,
 		Protocol:  protocol,
@@ -31,9 +31,9 @@ func NewEventsPublisher(provider *frugal.Provider) *EventsPublisher {
 	}
 }
 
-func (l *EventsPublisher) PublishEventCreated(req *Event, foo, bar string) error {
+func (l *EventsPublisher) PublishEventCreated(req *Event) error {
 	op := "EventCreated"
-	prefix := fmt.Sprintf("%s%s%s%s", foo, delimiter, bar, delimiter)
+	prefix := ""
 	topic := fmt.Sprintf("%s%s%s%s", prefix, topicBase, delimiter, op)
 	l.Transport.PreparePublish(topic)
 	oprot := l.Protocol
@@ -54,13 +54,13 @@ type EventsSubscriber struct {
 	Provider *frugal.Provider
 }
 
-func NewEventsSubscriber(provider *frugal.Provider) *EventsSubscriber {
-	return &EventsSubscriber{Provider: provider}
+func NewEventsSubscriber(p *frugal.Provider) *EventsSubscriber {
+	return &EventsSubscriber{Provider: p}
 }
 
-func (l *EventsSubscriber) SubscribeEventCreated(foo, bar string, handler func(*Event)) (*frugal.Subscription, error) {
+func (l *EventsSubscriber) SubscribeEventCreated(handler func(*Event)) (*frugal.Subscription, error) {
 	op := "EventCreated"
-	prefix := fmt.Sprintf("%s%s%s%s", foo, delimiter, bar, delimiter)
+	prefix := ""
 	topic := fmt.Sprintf("%s%s%s%s", prefix, topicBase, delimiter, op)
 	transport, protocol := l.Provider.New()
 	if err := transport.Subscribe(topic); err != nil {
@@ -75,6 +75,7 @@ func (l *EventsSubscriber) SubscribeEventCreated(foo, bar string, handler func(*
 					break
 				}
 				log.Println("frugal: error receiving:", err)
+				continue
 			}
 			handler(received)
 		}

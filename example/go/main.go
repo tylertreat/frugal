@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"
@@ -78,14 +77,12 @@ func runSubscriber(conn *nats.Conn, protocolFactory thrift.TProtocolFactory, tra
 	factory := frugal.NewNATSTransportFactory(conn)
 	provider := frugal.NewProvider(factory, transportFactory, protocolFactory)
 	subscriber := event.NewEventsSubscriber(provider)
-	sub, err := subscriber.SubscribeEventCreated("foo", "bar", func(e *event.Event) {
+	_, err := subscriber.SubscribeEventCreated(func(e *event.Event) {
 		fmt.Printf("received %+v\n", e)
 	})
 	if err != nil {
 		panic(err)
 	}
-	time.Sleep(5 * time.Second)
-	sub.Unsubscribe()
 	ch := make(chan bool)
 	log.Println("Subscriber started...")
 	<-ch
@@ -96,7 +93,7 @@ func runPublisher(conn *nats.Conn, protocolFactory thrift.TProtocolFactory, tran
 	provider := frugal.NewProvider(factory, transportFactory, protocolFactory)
 	publisher := event.NewEventsPublisher(provider)
 	event := &event.Event{ID: 42, Message: "hello, world!"}
-	if err := publisher.PublishEventCreated(event, "foo", "bar"); err != nil {
+	if err := publisher.PublishEventCreated(event); err != nil {
 		panic(err)
 	}
 	fmt.Println("EventCreated()")

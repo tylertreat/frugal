@@ -9,7 +9,10 @@ import (
 	"text/scanner"
 )
 
-var identifier = regexp.MustCompile("^[A-Za-z]+[A-Za-z0-9]")
+var (
+	identifier    = regexp.MustCompile("^[A-Za-z]+[A-Za-z0-9]")
+	defaultPrefix = &NamespacePrefix{String: "", Variables: make([]string, 0)}
+)
 
 const (
 	namespace          = "namespace"
@@ -153,6 +156,9 @@ func Parse(filePath string) (*Program, error) {
 	}
 
 	for _, namespace := range namespacesMap {
+		if namespace.Prefix == nil {
+			namespace.Prefix = defaultPrefix
+		}
 		namespaces = append(namespaces, namespace)
 	}
 	program.Namespaces = namespaces

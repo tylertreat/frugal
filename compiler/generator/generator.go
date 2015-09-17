@@ -108,10 +108,6 @@ func (o *OOProgramGenerator) Generate(program *parser.Program, outputDir string)
 		return err
 	}
 
-	if err := o.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-
 	if err := o.GeneratePublishers(file, program.Namespaces); err != nil {
 		return err
 	}

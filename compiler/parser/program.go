@@ -93,6 +93,10 @@ func newNamespacePrefix(prefix string) (*NamespacePrefix, error) {
 	return &NamespacePrefix{String: prefix, Variables: variables}, nil
 }
 
+func (n *NamespacePrefix) Template() string {
+	return prefixVariable.ReplaceAllString(n.String, "%s")
+}
+
 type Namespace struct {
 	Name       string
 	Prefix     *NamespacePrefix
