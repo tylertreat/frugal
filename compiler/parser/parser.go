@@ -13,6 +13,7 @@ var identifier = regexp.MustCompile("^[A-Za-z]+[A-Za-z0-9]")
 
 const (
 	namespace          = "namespace"
+	prefix             = "prefix"
 	openDefinition     = "{"
 	closeDefinition    = "}"
 	operationDelimiter = ":"
@@ -22,6 +23,7 @@ const (
 	stateStartNamespace = iota
 	stateNamespaceName
 	stateOpenDefinition
+	statePrefix
 	stateOperationName
 	stateOperationDelimiter
 	stateOperationParam
@@ -88,8 +90,27 @@ func Parse(filePath string) (*Program, error) {
 			}
 			state = stateOperationName
 			continue
+		case statePrefix:
+			if !strings.HasPrefix(tokenText, `"`) && !strings.HasSuffix(tokenText, `"`) {
+				goto parseErr
+			}
+			prefixStr := tokenText[1 : len(tokenText)-1]
+			nsPrefix, err := newNamespacePrefix(prefixStr)
+			if err != nil {
+				return nil, err
+			}
+			currentNamespace.Prefix = nsPrefix
+			state = stateOperationName
+			continue
 		case stateOperationName:
-			tokenText := tokenText
+			if tokenText == prefix {
+				if currentNamespace.Prefix != nil {
+					return nil, fmt.Errorf("Duplicate prefix definition for namespace '%s': %s:%s",
+						currentNamespace.Name, filePath, s.Pos())
+				}
+				state = statePrefix
+				continue
+			}
 			if tokenText == closeDefinition {
 				namespacesMap[currentNamespace.Name] = currentNamespace
 				state = stateStartNamespace

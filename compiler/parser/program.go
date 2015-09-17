@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
+
+var prefixVariable = regexp.MustCompile("{\\w*}")
 
 type Program struct {
 	Name       string
@@ -73,8 +76,26 @@ type Operation struct {
 	Param string
 }
 
+type NamespacePrefix struct {
+	String    string
+	Variables []string
+}
+
+func newNamespacePrefix(prefix string) (*NamespacePrefix, error) {
+	variables := []string{}
+	for _, variable := range prefixVariable.FindAllString(prefix, -1) {
+		variable = variable[1 : len(variable)-1]
+		if len(variable) == 0 || !identifier.MatchString(variable) {
+			return nil, fmt.Errorf("Invalid prefix variable '%s'", variable)
+		}
+		variables = append(variables, variable)
+	}
+	return &NamespacePrefix{String: prefix, Variables: variables}, nil
+}
+
 type Namespace struct {
 	Name       string
+	Prefix     *NamespacePrefix
 	Operations []*Operation
 }
 
