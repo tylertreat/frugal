@@ -19,11 +19,11 @@ type OOGenerator interface {
 	GeneratePackage(f *os.File, name, outputDir string) error
 	GenerateImports(*os.File) error
 	GenerateConstants(f *os.File, name string) error
-	GenerateInterfaces(*os.File, []*parser.Namespace) error
 	GeneratePublishers(*os.File, []*parser.Namespace) error
 	GenerateSubscribers(*os.File, []*parser.Namespace) error
 	GenerateNewline(*os.File, int) error
 	DefaultOutputDir() string
+	CheckCompile(path string) error
 }
 
 type BaseGenerator struct{}
@@ -49,7 +49,10 @@ func (b *BaseGenerator) GenerateNewline(file *os.File, count int) error {
 }
 
 type ProgramGenerator interface {
+	// Generate the Program in the given directory.
 	Generate(program *parser.Program, outputDir string) error
+
+	// DefaultOutputDir is the default directory to generate in.
 	DefaultOutputDir() string
 }
 
@@ -61,6 +64,7 @@ func NewOOProgramGenerator(generator OOGenerator) ProgramGenerator {
 	return &OOProgramGenerator{generator}
 }
 
+// Generate the Program in the given directory.
 func (o *OOProgramGenerator) Generate(program *parser.Program, outputDir string) error {
 	if outputDir == "" {
 		outputDir = o.DefaultOutputDir()
@@ -104,10 +108,6 @@ func (o *OOProgramGenerator) Generate(program *parser.Program, outputDir string)
 		return err
 	}
 
-	if err := o.GenerateInterfaces(file, program.Namespaces); err != nil {
-		return err
-	}
-
 	if err := o.GenerateNewline(file, 2); err != nil {
 		return err
 	}
@@ -120,9 +120,17 @@ func (o *OOProgramGenerator) Generate(program *parser.Program, outputDir string)
 		return err
 	}
 
-	return o.GenerateSubscribers(file, program.Namespaces)
+	if err := o.GenerateSubscribers(file, program.Namespaces); err != nil {
+		return err
+	}
+
+	// Ensure code compiles. If it doesn't, it's likely because they didn't
+	// generate the Thrift structs referenced in their Frugal file.
+	path := fmt.Sprintf(".%s%s%s%s", string(os.PathSeparator), outputDir, string(os.PathSeparator), program.Name)
+	return o.CheckCompile(path)
 }
 
+// DefaultOutputDir is the default directory to generate in.
 func (o *OOProgramGenerator) DefaultOutputDir() string {
 	return o.OOGenerator.DefaultOutputDir()
 }

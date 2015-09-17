@@ -58,14 +58,7 @@ func Compile(file, gen, out, delimiter string) error {
 	}
 
 	// Generate Frugal code.
-	if err := g.Generate(program, out); err != nil {
-		return err
-	}
-
-	// Ensure code compiles. If it doesn't, it's likely because they didn't
-	// generate the Thrift structs referenced in their Frugal file.
-	path := fmt.Sprintf(".%s%s%s%s", string(os.PathSeparator), out, string(os.PathSeparator), program.Name)
-	return checkCompile(path)
+	return g.Generate(program, out)
 }
 
 func generateThrift(out, gen, file string) error {
@@ -76,14 +69,6 @@ func generateThrift(out, gen, file string) error {
 	args = append(args, "-gen", gen)
 	args = append(args, file)
 	if out, err := exec.Command("thrift", args...).CombinedOutput(); err != nil {
-		fmt.Println(string(out))
-		return err
-	}
-	return nil
-}
-
-func checkCompile(path string) error {
-	if out, err := exec.Command("go", "build", path).CombinedOutput(); err != nil {
 		fmt.Println(string(out))
 		return err
 	}

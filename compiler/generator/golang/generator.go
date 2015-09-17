@@ -3,8 +3,10 @@ package golang
 import (
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/Workiva/frugal/compiler/generator"
+	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
@@ -23,6 +25,14 @@ func NewGenerator() generator.OOGenerator {
 
 func (g *Generator) DefaultOutputDir() string {
 	return defaultOutputDir
+}
+
+func (g *Generator) CheckCompile(path string) error {
+	if out, err := exec.Command("go", "build", path).CombinedOutput(); err != nil {
+		fmt.Println(string(out))
+		return err
+	}
+	return nil
 }
 
 func (g *Generator) GenerateFile(name, outputDir string, namespaces []*parser.Namespace) (*os.File, error) {
@@ -58,27 +68,9 @@ func (g *Generator) GenerateImports(file *os.File) error {
 func (g *Generator) GenerateConstants(file *os.File, name string) error {
 	constants := "const (\n"
 	constants += "\ttopicBase = \"" + name + "\"\n"
-	constants += "\tdelimiter = \".\"\n"
+	constants += fmt.Sprintf("\tdelimiter = \"%s\"\n", globals.TopicDelimiter)
 	constants += ")"
 	_, err := file.WriteString(constants)
-	return err
-}
-
-func (g *Generator) GenerateInterfaces(file *os.File, namespaces []*parser.Namespace) error {
-	var (
-		interfaces = ""
-		prefix     = ""
-	)
-	for _, namespace := range namespaces {
-		interfaces += prefix
-		prefix = "\n\n"
-		interfaces += fmt.Sprintf("type %sPubSub interface {\n", namespace.Name)
-		for _, op := range namespace.Operations {
-			interfaces += fmt.Sprintf("\t%s(*%s) error\n", op.Name, op.Param)
-		}
-		interfaces += "}"
-	}
-	_, err := file.WriteString(interfaces)
 	return err
 }
 
@@ -93,15 +85,17 @@ func (g *Generator) GeneratePublishers(file *os.File, namespaces []*parser.Names
 
 func (g *Generator) generatePublisher(publishers string, namespace *parser.Namespace) string {
 	publishers += fmt.Sprintf("type %sPublisher struct {\n", namespace.Name)
-	publishers += "\tClientProvider map[string]*frugal.Client\n"
-	publishers += "\tSeqId          int32\n"
+	publishers += "\tTransport frugal.Transport\n"
+	publishers += "\tProtocol  thrift.TProtocol\n"
+	publishers += "\tSeqId     int32\n"
 	publishers += "}\n\n"
 
-	publishers += fmt.Sprintf("func New%sPublisher(t frugal.TransportFactory, "+
-		"f thrift.TTransportFactory, p thrift.TProtocolFactory) *%sPublisher {\n", namespace.Name, namespace.Name)
+	publishers += fmt.Sprintf("func New%sPublisher(p *frugal.Provider) *%sPublisher {\n", namespace.Name, namespace.Name)
+	publishers += "\ttransport, protocol := p.New()\n"
 	publishers += fmt.Sprintf("\treturn &%sPublisher{\n", namespace.Name)
-	publishers += fmt.Sprintf("\t\tClientProvider: new%sClientProvider(t, f, p),\n", namespace.Name)
-	publishers += fmt.Sprintf("\t\tSeqId:          0,\n")
+	publishers += "\t\tTransport: transport,\n"
+	publishers += "\t\tProtocol:  protocol,\n"
+	publishers += "\t\tSeqId:     0,\n"
 	publishers += "\t}\n"
 	publishers += "}\n\n"
 
