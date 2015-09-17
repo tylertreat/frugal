@@ -1,0 +1,19 @@
+// This is a namespace.
+namespace Foo {
+    prefix "foo.bar.{baz}.qux"
+
+    Foo: Thing // This is an operation.
+    Bar: Stuff
+}
+
+// This is a weirdly formatted namespace, but it's still valid!
+namespace
+                bar
+{
+DoStuff :   Thing}
+
+
+// This namespace is commented-out.
+//namespace Baz {
+//    Blah: Stuff
+//}
