@@ -90,3 +90,49 @@ func main() {
   <-wait
 }
 ```
+
+### Prefixes
+
+By default, Frugal publishes messages on the topic `<namespace>.<operation>`. For example, the `EventCreated` operation in the following Frugal definition would be published on `Events.EventCreated`:
+
+```thrift
+namespace Events {
+    EventCreated: Event
+}
+```
+
+Custom topic prefixes can be defined on a per-namespace basis:
+
+```thrift
+namespace Events {
+    prefix "foo.bar"
+    
+    EventCreated: Event
+}
+```
+
+As a result, `EventCreated` would be published on `foo.bar.Events.EventCreated`.
+
+Prefixes can also define variables which are provided at publish and subscribe time:
+
+```thrift
+namespace Events {
+    prefix "foo.{user}"
+    
+    EventCreated: Event
+}
+```
+
+This variable is then passed to publish and subscribe calls:
+
+```go
+var (
+    event = &event.Event{ID: 42, Message: "hello, world!"}
+    user  = "bill"
+)
+publisher.PublishEventCreated(event, user)
+
+subscriber.SubscribeEventCreated(user, func(e *event.Event) {
+    fmt.Printf("Received event for %s: %s\n", user, e.Message)
+})
+```
