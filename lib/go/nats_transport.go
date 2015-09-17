@@ -19,22 +19,28 @@ func NewNATSTransportFactory(conn *nats.Conn) TransportFactory {
 
 // GetTransport creates a new NATS Transport for the given pub/sub topic.
 func (n *natsTransportFactory) GetTransport(topic string) Transport {
-	return newNATSTransport(n.conn, topic)
+	return newNATSTransport(n.conn)
 }
 
 // natsTransport is an implementation of the Transport interface backed by the
 // NATS messaging system.
 type natsTransport struct {
 	thriftTransport thrift.TTransport
+	nats            *natsThriftTransport
 }
 
 // newNATSTransport creates a new NATS Transport for the given pub/sub topic.
-func newNATSTransport(conn *nats.Conn, subject string) Transport {
-	return &natsTransport{newNATSThriftTransport(conn, subject)}
+func newNATSTransport(conn *nats.Conn) Transport {
+	tr := newNATSThriftTransport(conn)
+	return &natsTransport{
+		thriftTransport: tr,
+		nats:            tr,
+	}
 }
 
 // Subscribe opens the Transport to receive messages on the subscription.
-func (n *natsTransport) Subscribe() error {
+func (n *natsTransport) Subscribe(topic string) error {
+	n.nats.SetSubject(topic)
 	return n.thriftTransport.Open()
 }
 
@@ -42,6 +48,11 @@ func (n *natsTransport) Subscribe() error {
 // subscription.
 func (n *natsTransport) Unsubscribe() error {
 	return n.thriftTransport.Close()
+}
+
+// PreparePublish prepares the Transport for publishing to the given topic.
+func (n *natsTransport) PreparePublish(topic string) {
+	n.nats.SetSubject(topic)
 }
 
 // ThriftTransport returns the wrapped Thrift TTransport.

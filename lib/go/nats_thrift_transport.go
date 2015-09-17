@@ -18,11 +18,8 @@ type natsThriftTransport struct {
 	sub     *nats.Subscription
 }
 
-func newNATSThriftTransport(conn *nats.Conn, subject string) thrift.TTransport {
-	return &natsThriftTransport{
-		conn:    conn,
-		subject: subject,
-	}
+func newNATSThriftTransport(conn *nats.Conn) *natsThriftTransport {
+	return &natsThriftTransport{conn: conn}
 }
 
 func (n *natsThriftTransport) Open() error {
@@ -72,4 +69,8 @@ func (n *natsThriftTransport) Flush() error {
 
 func (n *natsThriftTransport) RemainingBytes() uint64 {
 	return ^uint64(0) // We just don't know unless framed
+}
+
+func (n *natsThriftTransport) SetSubject(subject string) {
+	n.subject = subject
 }
