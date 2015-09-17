@@ -11,10 +11,7 @@ import (
 	"github.com/Workiva/frugal/lib/go"
 )
 
-const (
-	topicBase = "event"
-	delimiter = "."
-)
+const delimiter = "."
 
 type EventsPublisher struct {
 	Transport frugal.Transport
@@ -34,7 +31,7 @@ func NewEventsPublisher(p *frugal.Provider) *EventsPublisher {
 func (l *EventsPublisher) PublishEventCreated(req *Event) error {
 	op := "EventCreated"
 	prefix := ""
-	topic := fmt.Sprintf("%s%s%s%s", prefix, topicBase, delimiter, op)
+	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
 	l.Transport.PreparePublish(topic)
 	oprot := l.Protocol
 	l.SeqId++
@@ -61,7 +58,7 @@ func NewEventsSubscriber(p *frugal.Provider) *EventsSubscriber {
 func (l *EventsSubscriber) SubscribeEventCreated(handler func(*Event)) (*frugal.Subscription, error) {
 	op := "EventCreated"
 	prefix := ""
-	topic := fmt.Sprintf("%s%s%s%s", prefix, topicBase, delimiter, op)
+	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
 	transport, protocol := l.Provider.New()
 	if err := transport.Subscribe(topic); err != nil {
 		return nil, err

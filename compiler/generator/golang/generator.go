@@ -66,10 +66,7 @@ func (g *Generator) GenerateImports(file *os.File) error {
 }
 
 func (g *Generator) GenerateConstants(file *os.File, name string) error {
-	constants := "const (\n"
-	constants += "\ttopicBase = \"" + name + "\"\n"
-	constants += fmt.Sprintf("\tdelimiter = \"%s\"\n", globals.TopicDelimiter)
-	constants += ")"
+	constants := fmt.Sprintf("const delimiter = \"%s\"", globals.TopicDelimiter)
 	_, err := file.WriteString(constants)
 	return err
 }
@@ -115,7 +112,7 @@ func generatePublisher(publishers string, namespace *parser.Namespace) string {
 			namespace.Name, op.Name, op.Param, args)
 		publishers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		publishers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(namespace))
-		publishers += "\ttopic := fmt.Sprintf(\"%s%s%s%s\", prefix, topicBase, delimiter, op)\n"
+		publishers += "\ttopic := fmt.Sprintf(\"%s" + namespace.Name + "%s%s\", prefix, delimiter, op)\n"
 		publishers += "\tl.Transport.PreparePublish(topic)\n"
 		publishers += "\toprot := l.Protocol\n"
 		publishers += "\tl.SeqId++\n"
@@ -187,7 +184,7 @@ func generateSubscriber(subscribers string, namespace *parser.Namespace) string 
 			namespace.Name, op.Name, args, op.Param)
 		subscribers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		subscribers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(namespace))
-		subscribers += "\ttopic := fmt.Sprintf(\"%s%s%s%s\", prefix, topicBase, delimiter, op)\n"
+		subscribers += "\ttopic := fmt.Sprintf(\"%s" + namespace.Name + "%s%s\", prefix, delimiter, op)\n"
 		subscribers += "\ttransport, protocol := l.Provider.New()\n"
 		subscribers += "\tif err := transport.Subscribe(topic); err != nil {\n"
 		subscribers += "\t\treturn nil, err\n"
