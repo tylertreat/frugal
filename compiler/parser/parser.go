@@ -32,6 +32,7 @@ const (
 	stateOperationParam
 )
 
+// Parse the Frugal file at the given path and produce a Program.
 func Parse(filePath string) (*Program, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -52,8 +53,6 @@ func Parse(filePath string) (*Program, error) {
 		currentNamespace *Namespace
 		currentOperation *Operation
 	)
-
-	// TODO: Add support for comments.
 
 	var (
 		s     scanner.Scanner
