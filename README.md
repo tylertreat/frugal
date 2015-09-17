@@ -50,11 +50,12 @@ func main() {
         protocolFactory  = thrift.NewTBinaryProtocolFactoryDefault()
         transportFactory = thrift.NewTTransportFactory()
         frugalFactory    = frugal.NewNATSTransportFactory(conn)
-        publisher        = event.NewEventsPublisher(frugalFactory, transportFactory, protocolFactory)
+        provider         = frugal.NewProvider(frugalFactory, transportFactory, protocolFactory)
+        publisher        = event.NewEventsPublisher(provider)
     )
     
     event := &event.Event{ID: 42, Message: "Hello, World!"}
-    if err := publisher.EventCreated(event); err != nil {
+    if err := publisher.PublishEventCreated(event); err != nil {
         panic(err)
     }
 }
@@ -73,22 +74,19 @@ func main() {
       protocolFactory  = thrift.NewTBinaryProtocolFactoryDefault()
       transportFactory = thrift.NewTTransportFactory()
       frugalFactory    = frugal.NewNATSTransportFactory(conn)
-      subscriber       = event.NewEventSubscriber(&eventHandler{}, frugalFactory, transportFactory, protocolFactory)
+      provider         = frugal.NewProvider(frugalFactory, transportFactory, protocolFactory)
+      subscriber       = event.NewEventSubscriber(provider)
   )
   
-  if err := subscriber.SubscribeEventCreated(); err != nil {
+  _, err := subscriber.SubscribeEventCreated(func(e *event.Event) {
+          fmt.Println("Received event:", e.Message)
+  })
+  if err != nil {
       panic(err)
   }
   
   wait := make(chan bool)
   log.Println("Subscriber started...")
   <-wait
-}
-
-type eventHandler struct {}
-
-func (e *eventHandler) EventCreated(event *event.Event) error {
-    fmt.Println("Received event:", event.Message)
-    return nil
 }
 ```
