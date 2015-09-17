@@ -73,7 +73,10 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 
 func (g *Generator) GeneratePublishers(file *os.File, namespaces []*parser.Namespace) error {
 	publishers := ""
+	newline := ""
 	for _, namespace := range namespaces {
+		publishers += newline
+		newline = "\n\n"
 		publishers = generatePublisher(publishers, namespace)
 	}
 	_, err := file.WriteString(publishers)
@@ -152,7 +155,10 @@ func generatePrefixStringTemplate(namespace *parser.Namespace) string {
 
 func (g *Generator) GenerateSubscribers(file *os.File, namespaces []*parser.Namespace) error {
 	subscribers := ""
+	newline := ""
 	for _, namespace := range namespaces {
+		subscribers += newline
+		newline = "\n\n"
 		subscribers = generateSubscriber(subscribers, namespace)
 	}
 	_, err := file.WriteString(subscribers)
@@ -229,7 +235,6 @@ func generateSubscriber(subscribers string, namespace *parser.Namespace) string 
 		subscribers += "\treturn req, nil\n"
 		subscribers += "}"
 	}
-	subscribers += "\n"
 
 	return subscribers
 }
