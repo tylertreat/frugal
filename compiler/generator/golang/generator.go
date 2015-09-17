@@ -87,8 +87,10 @@ func generatePublisher(publishers string, namespace *parser.Namespace) string {
 	publishers += "\tSeqId     int32\n"
 	publishers += "}\n\n"
 
-	publishers += fmt.Sprintf("func New%sPublisher(p *frugal.Provider) *%sPublisher {\n", namespace.Name, namespace.Name)
-	publishers += "\ttransport, protocol := p.New()\n"
+	publishers += fmt.Sprintf("func New%sPublisher(t frugal.TransportFactory, f thrift.TTransportFactory, "+
+		"p thrift.TProtocolFactory) *%sPublisher {\n", namespace.Name, namespace.Name)
+	publishers += "\tprovider := frugal.NewProvider(t, f, p)\n"
+	publishers += "\ttransport, protocol := provider.New()\n"
 	publishers += fmt.Sprintf("\treturn &%sPublisher{\n", namespace.Name)
 	publishers += "\t\tTransport: transport,\n"
 	publishers += "\t\tProtocol:  protocol,\n"
@@ -162,8 +164,10 @@ func generateSubscriber(subscribers string, namespace *parser.Namespace) string 
 	subscribers += "\tProvider *frugal.Provider\n"
 	subscribers += "}\n\n"
 
-	subscribers += fmt.Sprintf("func New%sSubscriber(p *frugal.Provider) *%sSubscriber {\n", namespace.Name, namespace.Name)
-	subscribers += fmt.Sprintf("\treturn &%sSubscriber{Provider: p}\n", namespace.Name)
+	subscribers += fmt.Sprintf("func New%sSubscriber(t frugal.TransportFactory, "+
+		"f thrift.TTransportFactory, p thrift.TProtocolFactory) *%sSubscriber {\n", namespace.Name, namespace.Name)
+	subscribers += "\tprovider := frugal.NewProvider(t, f, p)\n"
+	subscribers += fmt.Sprintf("\treturn &%sSubscriber{Provider: provider}\n", namespace.Name)
 	subscribers += "}\n\n"
 
 	args := ""

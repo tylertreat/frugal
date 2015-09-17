@@ -19,8 +19,9 @@ type EventsPublisher struct {
 	SeqId     int32
 }
 
-func NewEventsPublisher(p *frugal.Provider) *EventsPublisher {
-	transport, protocol := p.New()
+func NewEventsPublisher(t frugal.TransportFactory, f thrift.TTransportFactory, p thrift.TProtocolFactory) *EventsPublisher {
+	provider := frugal.NewProvider(t, f, p)
+	transport, protocol := provider.New()
 	return &EventsPublisher{
 		Transport: transport,
 		Protocol:  protocol,
@@ -51,8 +52,9 @@ type EventsSubscriber struct {
 	Provider *frugal.Provider
 }
 
-func NewEventsSubscriber(p *frugal.Provider) *EventsSubscriber {
-	return &EventsSubscriber{Provider: p}
+func NewEventsSubscriber(t frugal.TransportFactory, f thrift.TTransportFactory, p thrift.TProtocolFactory) *EventsSubscriber {
+	provider := frugal.NewProvider(t, f, p)
+	return &EventsSubscriber{Provider: provider}
 }
 
 func (l *EventsSubscriber) SubscribeEventCreated(handler func(*Event)) (*frugal.Subscription, error) {

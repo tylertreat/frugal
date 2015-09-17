@@ -50,8 +50,7 @@ func main() {
         protocolFactory  = thrift.NewTBinaryProtocolFactoryDefault()
         transportFactory = thrift.NewTTransportFactory()
         frugalFactory    = frugal.NewNATSTransportFactory(conn)
-        provider         = frugal.NewProvider(frugalFactory, transportFactory, protocolFactory)
-        publisher        = event.NewEventsPublisher(provider)
+        publisher        = event.NewEventsPublisher(frugalFactory, transportFactory, protocolFactory)
     )
     
     event := &event.Event{ID: 42, Message: "Hello, World!"}
@@ -74,8 +73,7 @@ func main() {
       protocolFactory  = thrift.NewTBinaryProtocolFactoryDefault()
       transportFactory = thrift.NewTTransportFactory()
       frugalFactory    = frugal.NewNATSTransportFactory(conn)
-      provider         = frugal.NewProvider(frugalFactory, transportFactory, protocolFactory)
-      subscriber       = event.NewEventSubscriber(provider)
+      subscriber       = event.NewEventSubscriber(frugalFactory, transportFactory, protocolFactory)
   )
   
   _, err := subscriber.SubscribeEventCreated(func(e *event.Event) {
