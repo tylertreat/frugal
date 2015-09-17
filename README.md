@@ -50,11 +50,12 @@ func main() {
         protocolFactory  = thrift.NewTBinaryProtocolFactoryDefault()
         transportFactory = thrift.NewTTransportFactory()
         frugalFactory    = frugal.NewNATSTransportFactory(conn)
-        publisher        = event.NewEventsPublisher(frugalFactory, transportFactory, protocolFactory)
+        provider         = frugal.NewProvider(frugalFactory, transportFactory, protocolFactory)
+        publisher        = event.NewEventsPublisher(provider)
     )
     
     event := &event.Event{ID: 42, Message: "Hello, World!"}
-    if err := publisher.EventCreated(event); err != nil {
+    if err := publisher.PublishEventCreated(event); err != nil {
         panic(err)
     }
 }
@@ -73,10 +74,14 @@ func main() {
       protocolFactory  = thrift.NewTBinaryProtocolFactoryDefault()
       transportFactory = thrift.NewTTransportFactory()
       frugalFactory    = frugal.NewNATSTransportFactory(conn)
-      subscriber       = event.NewEventSubscriber(&eventHandler{}, frugalFactory, transportFactory, protocolFactory)
+      provider         = frugal.NewProvider(frugalFactory, transportFactory, protocolFactory)
+      subscriber       = event.NewEventSubscriber(provider)
   )
   
-  if err := subscriber.SubscribeEventCreated(); err != nil {
+  _, err := subscriber.SubscribeEventCreated(func(e *event.Event) {
+          fmt.Println("Received event:", e.Message)
+  })
+  if err != nil {
       panic(err)
   }
   
@@ -84,11 +89,50 @@ func main() {
   log.Println("Subscriber started...")
   <-wait
 }
+```
 
-type eventHandler struct {}
+### Prefixes
 
-func (e *eventHandler) EventCreated(event *event.Event) error {
-    fmt.Println("Received event:", event.Message)
-    return nil
+By default, Frugal publishes messages on the topic `<namespace>.<operation>`. For example, the `EventCreated` operation in the following Frugal definition would be published on `Events.EventCreated`:
+
+```thrift
+namespace Events {
+    EventCreated: Event
 }
+```
+
+Custom topic prefixes can be defined on a per-namespace basis:
+
+```thrift
+namespace Events {
+    prefix "foo.bar"
+    
+    EventCreated: Event
+}
+```
+
+As a result, `EventCreated` would be published on `foo.bar.Events.EventCreated`.
+
+Prefixes can also define variables which are provided at publish and subscribe time:
+
+```thrift
+namespace Events {
+    prefix "foo.{user}"
+    
+    EventCreated: Event
+}
+```
+
+This variable is then passed to publish and subscribe calls:
+
+```go
+var (
+    event = &event.Event{ID: 42, Message: "hello, world!"}
+    user  = "bill"
+)
+publisher.PublishEventCreated(event, user)
+
+subscriber.SubscribeEventCreated(user, func(e *event.Event) {
+    fmt.Printf("Received event for %s: %s\n", user, e.Message)
+})
 ```

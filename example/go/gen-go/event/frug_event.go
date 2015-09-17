@@ -11,35 +11,29 @@ import (
 	"github.com/Workiva/frugal/lib/go"
 )
 
-const (
-	topicBase = "event"
-	delimiter = "."
-)
-
-type EventsPubSub interface {
-	EventCreated(*Event) error
-}
+const delimiter = "."
 
 type EventsPublisher struct {
-	ClientProvider map[string]*frugal.Client
-	SeqId          int32
+	Transport frugal.Transport
+	Protocol  thrift.TProtocol
+	SeqId     int32
 }
 
-func NewEventsPublisher(t frugal.TransportFactory, f thrift.TTransportFactory, p thrift.TProtocolFactory) *EventsPublisher {
+func NewEventsPublisher(p *frugal.Provider) *EventsPublisher {
+	transport, protocol := p.New()
 	return &EventsPublisher{
-		ClientProvider: newEventsClientProvider(t, f, p),
-		SeqId:          0,
+		Transport: transport,
+		Protocol:  protocol,
+		SeqId:     0,
 	}
 }
 
-func (l *EventsPublisher) EventCreated(req *Event) error {
+func (l *EventsPublisher) PublishEventCreated(req *Event) error {
 	op := "EventCreated"
-	topic := getEventsPubSubTopic(op)
-	client, ok := l.ClientProvider[topic]
-	if !ok {
-		return thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+op)
-	}
-	oprot := client.Protocol
+	prefix := ""
+	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
+	l.Transport.PreparePublish(topic)
+	oprot := l.Protocol
 	l.SeqId++
 	if err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {
 		return err
@@ -53,68 +47,38 @@ func (l *EventsPublisher) EventCreated(req *Event) error {
 	return oprot.Flush()
 }
 
-func newEventsClientProvider(t frugal.TransportFactory, f thrift.TTransportFactory, p thrift.TProtocolFactory) map[string]*frugal.Client {
-	provider := make(map[string]*frugal.Client)
-
-	var (
-		topic     string
-		transport frugal.Transport
-	)
-	topic = getEventsPubSubTopic("EventCreated")
-	transport = t.GetTransport(topic)
-	if f != nil {
-		transport.ApplyProxy(f)
-	}
-	provider[topic] = &frugal.Client{
-		Protocol:  p.GetProtocol(transport.ThriftTransport()),
-		Transport: transport,
-	}
-
-	return provider
-}
-
-func getEventsPubSubTopic(op string) string {
-	return fmt.Sprintf("%s%s%s", topicBase, delimiter, op)
-}
-
 type EventsSubscriber struct {
-	Handler        EventsPubSub
-	ClientProvider map[string]*frugal.Client
+	Provider *frugal.Provider
 }
 
-func NewEventsSubscriber(handler EventsPubSub, t frugal.TransportFactory, f thrift.TTransportFactory, p thrift.TProtocolFactory) *EventsSubscriber {
-	return &EventsSubscriber{
-		Handler:        handler,
-		ClientProvider: newEventsClientProvider(t, f, p),
-	}
+func NewEventsSubscriber(p *frugal.Provider) *EventsSubscriber {
+	return &EventsSubscriber{Provider: p}
 }
 
-func (l *EventsSubscriber) SubscribeEventCreated() error {
+func (l *EventsSubscriber) SubscribeEventCreated(handler func(*Event)) (*frugal.Subscription, error) {
 	op := "EventCreated"
-	topic := getEventsPubSubTopic(op)
-	client, ok := l.ClientProvider[topic]
-	if !ok {
-		return thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+op)
-	}
-
-	if err := client.Transport.Subscribe(); err != nil {
-		return err
+	prefix := ""
+	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
+	transport, protocol := l.Provider.New()
+	if err := transport.Subscribe(topic); err != nil {
+		return nil, err
 	}
 
 	go func() {
 		for {
-			received, err := l.recvEventCreated(op, client.Protocol)
+			received, err := l.recvEventCreated(op, protocol)
 			if err != nil {
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 					break
 				}
 				log.Println("frugal: error receiving:", err)
+				continue
 			}
-			l.Handler.EventCreated(received)
+			handler(received)
 		}
 	}()
 
-	return nil
+	return frugal.NewSubscription(topic, transport), nil
 }
 
 func (l *EventsSubscriber) recvEventCreated(op string, iprot thrift.TProtocol) (*Event, error) {
@@ -135,15 +99,4 @@ func (l *EventsSubscriber) recvEventCreated(op string, iprot thrift.TProtocol) (
 
 	iprot.ReadMessageEnd()
 	return req, nil
-}
-
-func (l *EventsSubscriber) UnsubscribeEventCreated() error {
-	op := "EventCreated"
-	topic := getEventsPubSubTopic(op)
-	client, ok := l.ClientProvider[topic]
-	if !ok {
-		return thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+op)
-	}
-
-	return client.Transport.Unsubscribe()
 }

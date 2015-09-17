@@ -18,11 +18,14 @@ type TransportFactory interface {
 // Transport wraps a Thrift TTransport which supports pub/sub.
 type Transport interface {
 	// Subscribe opens the Transport to receive messages on the subscription.
-	Subscribe() error
+	Subscribe(string) error
 
 	// Unsubscribe closes the Transport to stop receiving messages on the
 	// subscription.
 	Unsubscribe() error
+
+	// PreparePublish prepares the Transport for publishing to the given topic.
+	PreparePublish(string)
 
 	// ThriftTransport returns the wrapped Thrift TTransport.
 	ThriftTransport() thrift.TTransport
