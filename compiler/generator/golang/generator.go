@@ -19,7 +19,7 @@ type Generator struct {
 	*generator.BaseGenerator
 }
 
-func NewGenerator() generator.OOGenerator {
+func NewGenerator() generator.SingleFileGenerator {
 	return &Generator{&generator.BaseGenerator{}}
 }
 
@@ -35,8 +35,8 @@ func (g *Generator) CheckCompile(path string) error {
 	return nil
 }
 
-func (g *Generator) GenerateFile(name, outputDir string, namespaces []*parser.Namespace) (*os.File, error) {
-	return g.CreateFile(name, outputDir, suffix, namespaces)
+func (g *Generator) GenerateFile(name, outputDir string) (*os.File, error) {
+	return g.CreateFile(name, outputDir, suffix)
 }
 
 func (g *Generator) GenerateDocStringComment(file *os.File) error {

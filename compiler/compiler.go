@@ -30,7 +30,7 @@ func Compile(file, gen, out, delimiter string) error {
 	var g generator.ProgramGenerator
 	switch gen {
 	case "go", "":
-		g = generator.NewOOProgramGenerator(golang.NewGenerator())
+		g = generator.NewSingleFileProgramGenerator(golang.NewGenerator())
 	default:
 		return fmt.Errorf("Invalid gen value %s", gen)
 	}
