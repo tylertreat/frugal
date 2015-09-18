@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"
@@ -95,4 +96,5 @@ func runPublisher(conn *nats.Conn, protocolFactory thrift.TProtocolFactory, tran
 		panic(err)
 	}
 	fmt.Println("EventCreated()")
+	time.Sleep(time.Second)
 }

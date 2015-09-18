@@ -120,21 +120,24 @@ func (l *BarSubscriber) SubscribeDoStuff(handler func(*Thing)) (*frugal.Subscrip
 		return nil, err
 	}
 
+	sub := frugal.NewSubscription(topic, transport)
 	go func() {
 		for {
 			received, err := l.recvDoStuff(op, protocol)
 			if err != nil {
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
-					break
+					return
 				}
 				log.Println("frugal: error receiving:", err)
-				continue
+				sub.Signal(err)
+				sub.Unsubscribe()
+				return
 			}
 			handler(received)
 		}
 	}()
 
-	return frugal.NewSubscription(topic, transport), nil
+	return sub, nil
 }
 
 func (l *BarSubscriber) recvDoStuff(op string, iprot thrift.TProtocol) (*Thing, error) {
@@ -175,21 +178,24 @@ func (l *FooSubscriber) SubscribeFoo(baz string, handler func(*Thing)) (*frugal.
 		return nil, err
 	}
 
+	sub := frugal.NewSubscription(topic, transport)
 	go func() {
 		for {
 			received, err := l.recvFoo(op, protocol)
 			if err != nil {
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
-					break
+					return
 				}
 				log.Println("frugal: error receiving:", err)
-				continue
+				sub.Signal(err)
+				sub.Unsubscribe()
+				return
 			}
 			handler(received)
 		}
 	}()
 
-	return frugal.NewSubscription(topic, transport), nil
+	return sub, nil
 }
 
 func (l *FooSubscriber) recvFoo(op string, iprot thrift.TProtocol) (*Thing, error) {
@@ -221,21 +227,24 @@ func (l *FooSubscriber) SubscribeBar(baz string, handler func(*Stuff)) (*frugal.
 		return nil, err
 	}
 
+	sub := frugal.NewSubscription(topic, transport)
 	go func() {
 		for {
 			received, err := l.recvBar(op, protocol)
 			if err != nil {
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
-					break
+					return
 				}
 				log.Println("frugal: error receiving:", err)
-				continue
+				sub.Signal(err)
+				sub.Unsubscribe()
+				return
 			}
 			handler(received)
 		}
 	}()
 
-	return frugal.NewSubscription(topic, transport), nil
+	return sub, nil
 }
 
 func (l *FooSubscriber) recvBar(op string, iprot thrift.TProtocol) (*Stuff, error) {
