@@ -8,10 +8,7 @@ import (
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
-const (
-	Version    = "0.0.1"
-	filePrefix = "frug_"
-)
+const filePrefix = "frug_"
 
 type OOGenerator interface {
 	GenerateFile(name, outputDir string, namespaces []*parser.Namespace) (*os.File, error)
