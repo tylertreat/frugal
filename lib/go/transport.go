@@ -2,13 +2,6 @@ package frugal
 
 import "git.apache.org/thrift.git/lib/go/thrift"
 
-// Client contains the Thrift TProtocol and Frugal Transport used by a client
-// to publish and receive messages on a particular pub/sub topic.
-type Client struct {
-	Protocol  thrift.TProtocol
-	Transport Transport
-}
-
 // TransportFactory is responsible for creating new Frugal Transports.
 type TransportFactory interface {
 	// GetTransport creates a new Transport.
