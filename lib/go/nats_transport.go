@@ -17,8 +17,8 @@ func NewNATSTransportFactory(conn *nats.Conn) TransportFactory {
 	return &natsTransportFactory{conn: conn}
 }
 
-// GetTransport creates a new NATS Transport for the given pub/sub topic.
-func (n *natsTransportFactory) GetTransport(topic string) Transport {
+// GetTransport creates a new NATS Transport.
+func (n *natsTransportFactory) GetTransport() Transport {
 	return newNATSTransport(n.conn)
 }
 

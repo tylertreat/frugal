@@ -11,8 +11,8 @@ type Client struct {
 
 // TransportFactory is responsible for creating new Frugal Transports.
 type TransportFactory interface {
-	// GetTransport creates a new Transport for the given pub/sub topic.
-	GetTransport(topic string) Transport
+	// GetTransport creates a new Transport.
+	GetTransport() Transport
 }
 
 // Transport wraps a Thrift TTransport which supports pub/sub.
