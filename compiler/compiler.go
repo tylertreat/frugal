@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Workiva/frugal/compiler/generator"
+	"github.com/Workiva/frugal/compiler/generator/dartlang"
 	"github.com/Workiva/frugal/compiler/generator/golang"
 	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
@@ -29,7 +30,9 @@ func Compile(file, gen, out, delimiter string) error {
 	// Resolve Frugal generator.
 	var g generator.ProgramGenerator
 	switch gen {
-	case "go", "":
+	case "dart":
+		g = generator.NewOOProgramGenerator(dartlang.NewGenerator())
+	case "go":
 		g = generator.NewOOProgramGenerator(golang.NewGenerator())
 	default:
 		return fmt.Errorf("Invalid gen value %s", gen)

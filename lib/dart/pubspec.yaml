@@ -1,0 +1,13 @@
+name: frugal
+version: 0.0.1
+
+environment:
+  sdk: ^1.12.0
+
+dependencies:
+  thrift: # '>=0.1.0'
+    path: ../../../../../../../../IdeaProjects/thrift/lib/dart
+
+  messaging_sdk:
+    path: ../../../../../../../../IdeaProjects/messaging-sdk-dart
+
