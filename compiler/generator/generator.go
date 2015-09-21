@@ -27,8 +27,8 @@ type SingleFileGenerator interface {
 	GeneratePackage(f *os.File, name, outputDir string) error
 	GenerateImports(*os.File) error
 	GenerateConstants(f *os.File, name string) error
-	GeneratePublishers(*os.File, []*parser.Namespace) error
-	GenerateSubscribers(*os.File, []*parser.Namespace) error
+	GeneratePublishers(*os.File, []*parser.Scope) error
+	GenerateSubscribers(*os.File, []*parser.Scope) error
 	GenerateNewline(*os.File, int) error
 	DefaultOutputDir() string
 	CheckCompile(path string) error
@@ -88,7 +88,7 @@ func (o *SingleFileProgramGenerator) Generate(program *parser.Program, outputDir
 		return err
 	}
 
-	if err := o.GeneratePublishers(file, program.Namespaces); err != nil {
+	if err := o.GeneratePublishers(file, program.Scopes); err != nil {
 		return err
 	}
 
@@ -96,7 +96,7 @@ func (o *SingleFileProgramGenerator) Generate(program *parser.Program, outputDir
 		return err
 	}
 
-	if err := o.GenerateSubscribers(file, program.Namespaces); err != nil {
+	if err := o.GenerateSubscribers(file, program.Scopes); err != nil {
 		return err
 	}
 

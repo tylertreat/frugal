@@ -12,11 +12,11 @@ import (
 
 var (
 	identifier    = regexp.MustCompile("^[A-Za-z]+[A-Za-z0-9]")
-	defaultPrefix = &NamespacePrefix{String: "", Variables: make([]string, 0)}
+	defaultPrefix = &ScopePrefix{String: "", Variables: make([]string, 0)}
 )
 
 const (
-	namespace          = "namespace"
+	scope              = "scope"
 	prefix             = "prefix"
 	openDefinition     = "{"
 	closeDefinition    = "}"
@@ -24,8 +24,8 @@ const (
 )
 
 const (
-	stateStartNamespace = iota
-	stateNamespaceName
+	stateStartScope = iota
+	stateScopeName
 	stateOpenDefinition
 	statePrefix
 	stateOperationName
@@ -48,10 +48,10 @@ func Parse(filePath string) (*Program, error) {
 
 	var (
 		program          = &Program{Name: name, Path: filepath.Dir(file.Name())}
-		namespacesMap    = make(map[string]*Namespace)
-		namespaces       = []*Namespace{}
-		state            = stateStartNamespace
-		currentNamespace *Namespace
+		scopesMap        = make(map[string]*Scope)
+		scopes           = []*Scope{}
+		state            = stateStartScope
+		currentScope     *Scope
 		currentOperation *Operation
 	)
 
@@ -68,23 +68,23 @@ func Parse(filePath string) (*Program, error) {
 			continue
 		}
 		switch state {
-		case stateStartNamespace:
-			if tokenText != namespace {
+		case stateStartScope:
+			if tokenText != scope {
 				goto parseErr
 			}
-			currentNamespace = &Namespace{Operations: []*Operation{}}
-			state = stateNamespaceName
+			currentScope = &Scope{Operations: []*Operation{}}
+			state = stateScopeName
 			continue
-		case stateNamespaceName:
+		case stateScopeName:
 			name := identifier.FindString(tokenText)
 			if name == "" {
 				goto parseErr
 			}
-			if _, ok := namespacesMap[name]; ok {
-				return nil, fmt.Errorf("Duplicate definition for namespace '%s': %s:%s",
+			if _, ok := scopesMap[name]; ok {
+				return nil, fmt.Errorf("Duplicate definition for scope '%s': %s:%s",
 					name, filePath, s.Pos())
 			}
-			currentNamespace.Name = strings.Title(name)
+			currentScope.Name = strings.Title(name)
 			state = stateOpenDefinition
 			continue
 		case stateOpenDefinition:
@@ -98,25 +98,25 @@ func Parse(filePath string) (*Program, error) {
 				goto parseErr
 			}
 			prefixStr := tokenText[1 : len(tokenText)-1]
-			nsPrefix, err := newNamespacePrefix(prefixStr)
+			nsPrefix, err := newScopePrefix(prefixStr)
 			if err != nil {
 				return nil, err
 			}
-			currentNamespace.Prefix = nsPrefix
+			currentScope.Prefix = nsPrefix
 			state = stateOperationName
 			continue
 		case stateOperationName:
 			if tokenText == prefix {
-				if currentNamespace.Prefix != nil {
-					return nil, fmt.Errorf("Duplicate prefix definition for namespace '%s': %s:%s",
-						currentNamespace.Name, filePath, s.Pos())
+				if currentScope.Prefix != nil {
+					return nil, fmt.Errorf("Duplicate prefix definition for scope '%s': %s:%s",
+						currentScope.Name, filePath, s.Pos())
 				}
 				state = statePrefix
 				continue
 			}
 			if tokenText == closeDefinition {
-				namespacesMap[currentNamespace.Name] = currentNamespace
-				state = stateStartNamespace
+				scopesMap[currentScope.Name] = currentScope
+				state = stateStartScope
 				continue
 			}
 			name := identifier.FindString(tokenText)
@@ -124,7 +124,7 @@ func Parse(filePath string) (*Program, error) {
 				goto parseErr
 			}
 			name = strings.Title(name)
-			if currentNamespace.containsOperation(name) {
+			if currentScope.containsOperation(name) {
 				return nil, fmt.Errorf("Duplicate definition for operation '%s': %s:%s",
 					name, filePath, s.Pos())
 			}
@@ -143,7 +143,7 @@ func Parse(filePath string) (*Program, error) {
 				goto parseErr
 			}
 			currentOperation.Param = param
-			currentNamespace.addOperation(currentOperation)
+			currentScope.addOperation(currentOperation)
 			state = stateOperationName
 			continue
 		default:
@@ -151,18 +151,18 @@ func Parse(filePath string) (*Program, error) {
 		}
 	}
 
-	if state != stateStartNamespace {
+	if state != stateStartScope {
 		goto parseErr
 	}
 
-	for _, namespace := range namespacesMap {
-		if namespace.Prefix == nil {
-			namespace.Prefix = defaultPrefix
+	for _, scope := range scopesMap {
+		if scope.Prefix == nil {
+			scope.Prefix = defaultPrefix
 		}
-		namespaces = append(namespaces, namespace)
+		scopes = append(scopes, scope)
 	}
-	sort.Sort(ByName(namespaces)) // For ordering determinism.
-	program.Namespaces = namespaces
+	sort.Sort(ByName(scopes)) // For ordering determinism.
+	program.Scopes = scopes
 
 	return program, program.validate()
 
@@ -182,7 +182,7 @@ func getName(f *os.File) (string, error) {
 	return parts[0], nil
 }
 
-type ByName []*Namespace
+type ByName []*Scope
 
 func (b ByName) Len() int {
 	return len(b)

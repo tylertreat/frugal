@@ -71,30 +71,30 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 	return err
 }
 
-func (g *Generator) GeneratePublishers(file *os.File, namespaces []*parser.Namespace) error {
+func (g *Generator) GeneratePublishers(file *os.File, scopes []*parser.Scope) error {
 	publishers := ""
 	newline := ""
-	for _, namespace := range namespaces {
+	for _, scope := range scopes {
 		publishers += newline
 		newline = "\n\n"
-		publishers = generatePublisher(publishers, namespace)
+		publishers = generatePublisher(publishers, scope)
 	}
 	_, err := file.WriteString(publishers)
 	return err
 }
 
-func generatePublisher(publishers string, namespace *parser.Namespace) string {
-	publishers += fmt.Sprintf("type %sPublisher struct {\n", namespace.Name)
+func generatePublisher(publishers string, scope *parser.Scope) string {
+	publishers += fmt.Sprintf("type %sPublisher struct {\n", scope.Name)
 	publishers += "\tTransport frugal.Transport\n"
 	publishers += "\tProtocol  thrift.TProtocol\n"
 	publishers += "\tSeqId     int32\n"
 	publishers += "}\n\n"
 
 	publishers += fmt.Sprintf("func New%sPublisher(t frugal.TransportFactory, f thrift.TTransportFactory, "+
-		"p thrift.TProtocolFactory) *%sPublisher {\n", namespace.Name, namespace.Name)
+		"p thrift.TProtocolFactory) *%sPublisher {\n", scope.Name, scope.Name)
 	publishers += "\tprovider := frugal.NewProvider(t, f, p)\n"
 	publishers += "\ttransport, protocol := provider.New()\n"
-	publishers += fmt.Sprintf("\treturn &%sPublisher{\n", namespace.Name)
+	publishers += fmt.Sprintf("\treturn &%sPublisher{\n", scope.Name)
 	publishers += "\t\tTransport: transport,\n"
 	publishers += "\t\tProtocol:  protocol,\n"
 	publishers += "\t\tSeqId:     0,\n"
@@ -102,22 +102,22 @@ func generatePublisher(publishers string, namespace *parser.Namespace) string {
 	publishers += "}\n\n"
 
 	args := ""
-	if len(namespace.Prefix.Variables) > 0 {
-		for _, variable := range namespace.Prefix.Variables {
+	if len(scope.Prefix.Variables) > 0 {
+		for _, variable := range scope.Prefix.Variables {
 			args += ", " + variable
 		}
 		args += " string"
 	}
 
 	prefix := ""
-	for _, op := range namespace.Operations {
+	for _, op := range scope.Operations {
 		publishers += prefix
 		prefix = "\n\n"
 		publishers += fmt.Sprintf("func (l *%sPublisher) Publish%s(req *%s%s) error {\n",
-			namespace.Name, op.Name, op.Param, args)
+			scope.Name, op.Name, op.Param, args)
 		publishers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
-		publishers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(namespace))
-		publishers += "\ttopic := fmt.Sprintf(\"%s" + namespace.Name + "%s%s\", prefix, delimiter, op)\n"
+		publishers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
+		publishers += "\ttopic := fmt.Sprintf(\"%s" + scope.Name + "%s%s\", prefix, delimiter, op)\n"
 		publishers += "\tl.Transport.PreparePublish(topic)\n"
 		publishers += "\toprot := l.Protocol\n"
 		publishers += "\tl.SeqId++\n"
@@ -137,15 +137,15 @@ func generatePublisher(publishers string, namespace *parser.Namespace) string {
 	return publishers
 }
 
-func generatePrefixStringTemplate(namespace *parser.Namespace) string {
-	if len(namespace.Prefix.Variables) == 0 {
+func generatePrefixStringTemplate(scope *parser.Scope) string {
+	if len(scope.Prefix.Variables) == 0 {
 		return `""`
 	}
 	template := "fmt.Sprintf(\""
-	template += namespace.Prefix.Template()
+	template += scope.Prefix.Template()
 	template += globals.TopicDelimiter + "\", "
 	prefix := ""
-	for _, variable := range namespace.Prefix.Variables {
+	for _, variable := range scope.Prefix.Variables {
 		template += prefix + variable
 		prefix = ", "
 	}
@@ -153,33 +153,33 @@ func generatePrefixStringTemplate(namespace *parser.Namespace) string {
 	return template
 }
 
-func (g *Generator) GenerateSubscribers(file *os.File, namespaces []*parser.Namespace) error {
+func (g *Generator) GenerateSubscribers(file *os.File, scopes []*parser.Scope) error {
 	subscribers := ""
 	newline := ""
-	for _, namespace := range namespaces {
+	for _, scope := range scopes {
 		subscribers += newline
 		newline = "\n\n"
-		subscribers = generateSubscriber(subscribers, namespace)
+		subscribers = generateSubscriber(subscribers, scope)
 	}
 	_, err := file.WriteString(subscribers)
 	return err
 }
 
-func generateSubscriber(subscribers string, namespace *parser.Namespace) string {
-	subscribers += fmt.Sprintf("type %sSubscriber struct {\n", namespace.Name)
+func generateSubscriber(subscribers string, scope *parser.Scope) string {
+	subscribers += fmt.Sprintf("type %sSubscriber struct {\n", scope.Name)
 	subscribers += "\tProvider *frugal.Provider\n"
 	subscribers += "}\n\n"
 
 	subscribers += fmt.Sprintf("func New%sSubscriber(t frugal.TransportFactory, "+
-		"f thrift.TTransportFactory, p thrift.TProtocolFactory) *%sSubscriber {\n", namespace.Name, namespace.Name)
+		"f thrift.TTransportFactory, p thrift.TProtocolFactory) *%sSubscriber {\n", scope.Name, scope.Name)
 	subscribers += "\tprovider := frugal.NewProvider(t, f, p)\n"
-	subscribers += fmt.Sprintf("\treturn &%sSubscriber{Provider: provider}\n", namespace.Name)
+	subscribers += fmt.Sprintf("\treturn &%sSubscriber{Provider: provider}\n", scope.Name)
 	subscribers += "}\n\n"
 
 	args := ""
 	prefix := ""
-	if len(namespace.Prefix.Variables) > 0 {
-		for _, variable := range namespace.Prefix.Variables {
+	if len(scope.Prefix.Variables) > 0 {
+		for _, variable := range scope.Prefix.Variables {
 			args += prefix + variable
 			prefix = ", "
 		}
@@ -187,14 +187,14 @@ func generateSubscriber(subscribers string, namespace *parser.Namespace) string 
 	}
 
 	prefix = ""
-	for _, op := range namespace.Operations {
+	for _, op := range scope.Operations {
 		subscribers += prefix
 		prefix = "\n\n"
 		subscribers += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*%s)) (*frugal.Subscription, error) {\n",
-			namespace.Name, op.Name, args, op.Param)
+			scope.Name, op.Name, args, op.Param)
 		subscribers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
-		subscribers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(namespace))
-		subscribers += "\ttopic := fmt.Sprintf(\"%s" + namespace.Name + "%s%s\", prefix, delimiter, op)\n"
+		subscribers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
+		subscribers += "\ttopic := fmt.Sprintf(\"%s" + scope.Name + "%s%s\", prefix, delimiter, op)\n"
 		subscribers += "\ttransport, protocol := l.Provider.New()\n"
 		subscribers += "\tif err := transport.Subscribe(topic); err != nil {\n"
 		subscribers += "\t\treturn nil, err\n"
@@ -219,7 +219,7 @@ func generateSubscriber(subscribers string, namespace *parser.Namespace) string 
 		subscribers += "}\n\n"
 
 		subscribers += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, iprot thrift.TProtocol) (*%s, error) {\n",
-			namespace.Name, op.Name, op.Param)
+			scope.Name, op.Name, op.Param)
 		subscribers += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
 		subscribers += "\tif err != nil {\n"
 		subscribers += "\t\treturn nil, err\n"

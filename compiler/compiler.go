@@ -41,8 +41,8 @@ func Compile(file, gen, out, delimiter string) error {
 		return err
 	}
 
-	if len(program.Namespaces) == 0 {
-		return errors.New("No namespaces to generate")
+	if len(program.Scopes) == 0 {
+		return errors.New("No scopes to generate")
 	}
 
 	if out == "" {
