@@ -33,7 +33,7 @@ func Compile(file, gen, out, delimiter string) error {
 	case "dart":
 		g = generator.NewOOProgramGenerator(dartlang.NewGenerator())
 	case "go":
-		g = generator.NewOOProgramGenerator(golang.NewGenerator())
+		g = generator.NewSingleFileProgramGenerator(golang.NewGenerator())
 	default:
 		return fmt.Errorf("Invalid gen value %s", gen)
 	}
@@ -44,8 +44,8 @@ func Compile(file, gen, out, delimiter string) error {
 		return err
 	}
 
-	if len(program.Namespaces) == 0 {
-		return errors.New("No namespaces to generate")
+	if len(program.Scopes) == 0 {
+		return errors.New("No scopes to generate")
 	}
 
 	if out == "" {

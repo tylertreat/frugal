@@ -20,11 +20,11 @@ struct Event {
 }
 ```
 
-Define your Frugal file which contains your pub/sub interface. The structs referenced here must be defined in the corresponding Thrift file, and the two files should have the same name.
+Define your Frugal file which contains your pub/sub interface, or *scopes*. The structs referenced here must be defined in the corresponding Thrift file, and the two files should have the same name.
 
 ```thrift
 // event.frugal
-namespace Events {
+scope Events {
     EventCreated: Event
 }
 ```
@@ -91,18 +91,18 @@ func main() {
 
 ### Prefixes
 
-By default, Frugal publishes messages on the topic `<namespace>.<operation>`. For example, the `EventCreated` operation in the following Frugal definition would be published on `Events.EventCreated`:
+By default, Frugal publishes messages on the topic `<scope>.<operation>`. For example, the `EventCreated` operation in the following Frugal definition would be published on `Events.EventCreated`:
 
 ```thrift
-namespace Events {
+scope Events {
     EventCreated: Event
 }
 ```
 
-Custom topic prefixes can be defined on a per-namespace basis:
+Custom topic prefixes can be defined on a per-scope basis:
 
 ```thrift
-namespace Events {
+scope Events {
     prefix "foo.bar"
     
     EventCreated: Event
@@ -114,7 +114,7 @@ As a result, `EventCreated` would be published on `foo.bar.Events.EventCreated`.
 Prefixes can also define variables which are provided at publish and subscribe time:
 
 ```thrift
-namespace Events {
+scope Events {
     prefix "foo.{user}"
     
     EventCreated: Event

@@ -20,7 +20,7 @@ func NewProvider(t TransportFactory, f thrift.TTransportFactory, p thrift.TProto
 
 // New returns a new Transport and TProtocol used for pub/sub.
 func (p *Provider) New() (Transport, thrift.TProtocol) {
-	transport := p.TransportFactory.GetTransport("")
+	transport := p.TransportFactory.GetTransport()
 	if p.ThriftTransportFactory != nil {
 		transport.ApplyProxy(p.ThriftTransportFactory)
 	}

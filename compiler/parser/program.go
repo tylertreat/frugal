@@ -11,10 +11,10 @@ import (
 var prefixVariable = regexp.MustCompile("{\\w*}")
 
 type Program struct {
-	Name       string
-	Path       string
-	Includes   []string
-	Namespaces []*Namespace
+	Name     string
+	Path     string
+	Includes []string
+	Scopes   []*Scope
 }
 
 func (p *Program) validate() error {
@@ -39,28 +39,28 @@ func (p *Program) validate() error {
 		p.Includes[i] = include
 	}
 
-	namespacesMap := make(map[string]bool, len(p.Namespaces))
-	for _, namespace := range p.Namespaces {
-		namespaceName := strings.Title(strings.TrimSpace(namespace.Name))
-		if !identifier.MatchString(namespaceName) {
-			return fmt.Errorf("Invalid namespace name %s", namespaceName)
+	scopesMap := make(map[string]bool, len(p.Scopes))
+	for _, scope := range p.Scopes {
+		scopeName := strings.Title(strings.TrimSpace(scope.Name))
+		if !identifier.MatchString(scopeName) {
+			return fmt.Errorf("Invalid scope name %s", scopeName)
 		}
-		if _, ok := namespacesMap[namespaceName]; ok {
-			return fmt.Errorf("Duplicate namespace %s", namespaceName)
+		if _, ok := scopesMap[scopeName]; ok {
+			return fmt.Errorf("Duplicate scope %s", scopeName)
 		}
-		namespacesMap[namespaceName] = true
-		namespace.Name = namespaceName
+		scopesMap[scopeName] = true
+		scope.Name = scopeName
 
-		operationsMap := make(map[string]bool, len(namespace.Operations))
-		for _, op := range namespace.Operations {
+		operationsMap := make(map[string]bool, len(scope.Operations))
+		for _, op := range scope.Operations {
 			operationName := strings.Title(strings.TrimSpace(op.Name))
 			if !identifier.MatchString(operationName) {
-				return fmt.Errorf("Invalid operation name %s in namespace %s",
-					operationName, namespaceName)
+				return fmt.Errorf("Invalid operation name %s in scope %s",
+					operationName, scopeName)
 			}
 			if _, ok := operationsMap[operationName]; ok {
-				return fmt.Errorf("Duplicate operation %s in namespace %s",
-					operationName, namespaceName)
+				return fmt.Errorf("Duplicate operation %s in scope %s",
+					operationName, scopeName)
 			}
 			operationsMap[operationName] = true
 			op.Name = operationName
@@ -76,12 +76,12 @@ type Operation struct {
 	Param string
 }
 
-type NamespacePrefix struct {
+type ScopePrefix struct {
 	String    string
 	Variables []string
 }
 
-func newNamespacePrefix(prefix string) (*NamespacePrefix, error) {
+func newScopePrefix(prefix string) (*ScopePrefix, error) {
 	variables := []string{}
 	for _, variable := range prefixVariable.FindAllString(prefix, -1) {
 		variable = variable[1 : len(variable)-1]
@@ -90,25 +90,25 @@ func newNamespacePrefix(prefix string) (*NamespacePrefix, error) {
 		}
 		variables = append(variables, variable)
 	}
-	return &NamespacePrefix{String: prefix, Variables: variables}, nil
+	return &ScopePrefix{String: prefix, Variables: variables}, nil
 }
 
-func (n *NamespacePrefix) Template() string {
+func (n *ScopePrefix) Template() string {
 	return prefixVariable.ReplaceAllString(n.String, "%s")
 }
 
-type Namespace struct {
+type Scope struct {
 	Name       string
-	Prefix     *NamespacePrefix
+	Prefix     *ScopePrefix
 	Operations []*Operation
 }
 
-func (n *Namespace) addOperation(op *Operation) {
-	n.Operations = append(n.Operations, op)
+func (s *Scope) addOperation(op *Operation) {
+	s.Operations = append(s.Operations, op)
 }
 
-func (n *Namespace) containsOperation(name string) bool {
-	for _, op := range n.Operations {
+func (s *Scope) containsOperation(name string) bool {
+	for _, op := range s.Operations {
 		if op.Name == strings.Title(name) {
 			return true
 		}

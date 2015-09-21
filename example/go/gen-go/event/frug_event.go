@@ -66,21 +66,24 @@ func (l *EventsSubscriber) SubscribeEventCreated(handler func(*Event)) (*frugal.
 		return nil, err
 	}
 
+	sub := frugal.NewSubscription(topic, transport)
 	go func() {
 		for {
 			received, err := l.recvEventCreated(op, protocol)
 			if err != nil {
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
-					break
+					return
 				}
 				log.Println("frugal: error receiving:", err)
-				continue
+				sub.Signal(err)
+				sub.Unsubscribe()
+				return
 			}
 			handler(received)
 		}
 	}()
 
-	return frugal.NewSubscription(topic, transport), nil
+	return sub, nil
 }
 
 func (l *EventsSubscriber) recvEventCreated(op string, iprot thrift.TProtocol) (*Event, error) {

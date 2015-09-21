@@ -1,19 +1,19 @@
-// This is a namespace.
-namespace Foo {
+// This is a scope
+scope Foo {
     prefix "foo.bar.{baz}.qux"
 
     Foo: Thing // This is an operation.
     Bar: Stuff
 }
 
-// This is a weirdly formatted namespace, but it's still valid!
-namespace
+// This is a weirdly formatted scope, but it's still valid!
+scope
                 bar
 {
 DoStuff :   Thing}
 
 
-// This namespace is commented-out.
-//namespace Baz {
+// This scope is commented-out.
+//scope Baz {
 //    Blah: Stuff
 //}

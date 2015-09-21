@@ -2,24 +2,39 @@ package frugal
 
 import (
 	"bufio"
+	"bytes"
+	"errors"
 	"io"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/nats-io/nats"
 )
 
+var (
+	ErrTooLarge     = errors.New("Message is too large")
+	ErrEmptyMessage = errors.New("Message is empty")
+)
+
+// NATS limits messages to 1MB.
+const natsMaxMessageSize = 1024 * 1024
+
 // natsThriftTransport is an implementation of thrift.TTransport exclusively
 // used for pub/sub via NATS.
 type natsThriftTransport struct {
-	conn    *nats.Conn
-	subject string
-	reader  *bufio.Reader
-	writer  *io.PipeWriter
-	sub     *nats.Subscription
+	conn        *nats.Conn
+	subject     string
+	reader      *bufio.Reader
+	writer      *io.PipeWriter
+	writeBuffer *bytes.Buffer
+	sub         *nats.Subscription
 }
 
 func newNATSThriftTransport(conn *nats.Conn) *natsThriftTransport {
-	return &natsThriftTransport{conn: conn}
+	buf := make([]byte, 0, natsMaxMessageSize)
+	return &natsThriftTransport{
+		conn:        conn,
+		writeBuffer: bytes.NewBuffer(buf),
+	}
 }
 
 func (n *natsThriftTransport) Open() error {
@@ -57,18 +72,26 @@ func (n *natsThriftTransport) Read(p []byte) (int, error) {
 }
 
 func (n *natsThriftTransport) Write(p []byte) (int, error) {
-	if err := n.conn.Publish(n.subject, p); err != nil {
-		return 0, thrift.NewTTransportExceptionFromError(err)
+	if len(p)+n.writeBuffer.Len() > n.writeBuffer.Cap() {
+		n.writeBuffer.Reset() // Clear any existing bytes.
+		return 0, ErrTooLarge
 	}
-	return len(p), nil
+	num, err := n.writeBuffer.Write(p)
+	return num, thrift.NewTTransportExceptionFromError(err)
 }
 
 func (n *natsThriftTransport) Flush() error {
-	return thrift.NewTTransportExceptionFromError(n.conn.Flush())
+	data := n.writeBuffer.Bytes()
+	if len(data) == 0 {
+		return ErrEmptyMessage
+	}
+	err := n.conn.Publish(n.subject, data)
+	n.writeBuffer.Reset()
+	return thrift.NewTTransportExceptionFromError(err)
 }
 
 func (n *natsThriftTransport) RemainingBytes() uint64 {
-	return ^uint64(0) // We just don't know unless framed
+	return 0 // All bytes need to be in a single message
 }
 
 func (n *natsThriftTransport) SetSubject(subject string) {

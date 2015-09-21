@@ -1,53 +1,16 @@
 package generator
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
-const (
-	Version    = "0.0.1"
-	filePrefix = "frug_"
-)
+const filePrefix = "frug_"
 
-type OOGenerator interface {
-	GenerateFile(name, outputDir string, namespaces []*parser.Namespace) (*os.File, error)
-	GenerateDocStringComment(*os.File) error
-	GeneratePackage(f *os.File, name, outputDir string) error
-	GenerateImports(*os.File) error
-	GenerateConstants(f *os.File, name string) error
-	GeneratePublishers(*os.File, []*parser.Namespace) error
-	GenerateSubscribers(*os.File, []*parser.Namespace) error
-	GenerateNewline(*os.File, int) error
-	DefaultOutputDir() string
-	CheckCompile(path string) error
-}
-
-type BaseGenerator struct{}
-
-func (b *BaseGenerator) CreateFile(name, outputDir, suffix string, namespaces []*parser.Namespace) (*os.File, error) {
-	if len(namespaces) == 0 {
-		return nil, errors.New("No namespaces to generate")
-	}
-
-	if err := os.MkdirAll(fmt.Sprintf("%s/%s", outputDir, name), 0777); err != nil {
-		return nil, err
-	}
-	return os.Create(fmt.Sprintf("%s/%s/%s%s.%s", outputDir, name, filePrefix, name, suffix))
-}
-
-func (b *BaseGenerator) GenerateNewline(file *os.File, count int) error {
-	str := ""
-	for i := 0; i < count; i++ {
-		str += "\n"
-	}
-	_, err := file.WriteString(str)
-	return err
-}
-
+// ProgramGenerator generates source code in a specified language for a Program
+// produced by the parser.
 type ProgramGenerator interface {
 	// Generate the Program in the given directory.
 	Generate(program *parser.Program, outputDir string) error
@@ -56,21 +19,38 @@ type ProgramGenerator interface {
 	DefaultOutputDir() string
 }
 
-type OOProgramGenerator struct {
-	OOGenerator
+// SingleFileGenerator generates source code in a specified language in a
+// single source file.
+type SingleFileGenerator interface {
+	GenerateFile(name, outputDir string) (*os.File, error)
+	GenerateDocStringComment(*os.File) error
+	GeneratePackage(f *os.File, name, outputDir string) error
+	GenerateImports(*os.File) error
+	GenerateConstants(f *os.File, name string) error
+	GeneratePublishers(*os.File, []*parser.Scope) error
+	GenerateSubscribers(*os.File, []*parser.Scope) error
+	GenerateNewline(*os.File, int) error
+	DefaultOutputDir() string
+	CheckCompile(path string) error
 }
 
-func NewOOProgramGenerator(generator OOGenerator) ProgramGenerator {
-	return &OOProgramGenerator{generator}
+// SingleFileProgramGenerator is an implementation of the ProgramGenerator
+// interface which generates source code in one file.
+type SingleFileProgramGenerator struct {
+	SingleFileGenerator
+}
+
+func NewSingleFileProgramGenerator(generator SingleFileGenerator) ProgramGenerator {
+	return &SingleFileProgramGenerator{generator}
 }
 
 // Generate the Program in the given directory.
-func (o *OOProgramGenerator) Generate(program *parser.Program, outputDir string) error {
+func (o *SingleFileProgramGenerator) Generate(program *parser.Program, outputDir string) error {
 	if outputDir == "" {
 		outputDir = o.DefaultOutputDir()
 	}
 
-	file, err := o.GenerateFile(program.Name, outputDir, program.Namespaces)
+	file, err := o.GenerateFile(program.Name, outputDir)
 	if err != nil {
 		return err
 	}
@@ -108,7 +88,7 @@ func (o *OOProgramGenerator) Generate(program *parser.Program, outputDir string)
 		return err
 	}
 
-	if err := o.GeneratePublishers(file, program.Namespaces); err != nil {
+	if err := o.GeneratePublishers(file, program.Scopes); err != nil {
 		return err
 	}
 
@@ -116,7 +96,7 @@ func (o *OOProgramGenerator) Generate(program *parser.Program, outputDir string)
 		return err
 	}
 
-	if err := o.GenerateSubscribers(file, program.Namespaces); err != nil {
+	if err := o.GenerateSubscribers(file, program.Scopes); err != nil {
 		return err
 	}
 
@@ -127,6 +107,6 @@ func (o *OOProgramGenerator) Generate(program *parser.Program, outputDir string)
 }
 
 // DefaultOutputDir is the default directory to generate in.
-func (o *OOProgramGenerator) DefaultOutputDir() string {
-	return o.OOGenerator.DefaultOutputDir()
+func (o *SingleFileProgramGenerator) DefaultOutputDir() string {
+	return o.SingleFileGenerator.DefaultOutputDir()
 }
