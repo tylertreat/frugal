@@ -45,17 +45,18 @@ func Compile(file, gen, out, delimiter string) error {
 		return errors.New("No scopes to generate")
 	}
 
-	if out == "" {
-		out = g.DefaultOutputDir()
-	}
+	out = g.GetOutputDir(out, program)
 	if err := os.MkdirAll(out, 0777); err != nil {
 		return err
 	}
 
 	// Generate Thrift code.
-	if err := generateThrift(out, gen, name+".thrift"); err != nil {
+	if err := generateThrift(filepath.Dir(out), gen, name+".thrift"); err != nil {
 		return err
 	}
+
+	// TODO: Validate Frugal file against Thrift file (ensure namespaces match,
+	// structs are defined, etc.)
 
 	// Generate Frugal code.
 	return g.Generate(program, out)

@@ -16,6 +16,7 @@ var (
 )
 
 const (
+	namespace          = "namespace"
 	scope              = "scope"
 	prefix             = "prefix"
 	openDefinition     = "{"
@@ -24,7 +25,10 @@ const (
 )
 
 const (
-	stateStartScope = iota
+	stateStartNamespace = iota
+	stateNamespaceLang
+	stateNamespaceDefinition
+	stateStartScope
 	stateScopeName
 	stateOpenDefinition
 	statePrefix
@@ -47,12 +51,18 @@ func Parse(filePath string) (*Program, error) {
 	}
 
 	var (
-		program          = &Program{Name: name, Path: filepath.Dir(file.Name())}
-		scopesMap        = make(map[string]*Scope)
-		scopes           = []*Scope{}
-		state            = stateStartScope
-		currentScope     *Scope
-		currentOperation *Operation
+		program = &Program{
+			Name:       name,
+			Path:       filepath.Dir(file.Name()),
+			Namespaces: make(map[string]string),
+		}
+		scopesMap                  = make(map[string]*Scope)
+		scopes                     = []*Scope{}
+		state                      = stateStartScope
+		currentNamespace           string
+		currentNamespaceDefinition string
+		currentScope               *Scope
+		currentOperation           *Operation
 	)
 
 	var (
@@ -68,7 +78,43 @@ func Parse(filePath string) (*Program, error) {
 			continue
 		}
 		switch state {
+		case stateNamespaceLang:
+			if _, ok := program.Namespaces[tokenText]; ok {
+				return nil, fmt.Errorf("Duplicate namespace definition '%s': %s:%s",
+					tokenText, filePath, s.Pos())
+			}
+			currentNamespace = tokenText
+			state = stateNamespaceDefinition
+			continue
+		case stateNamespaceDefinition:
+			if tokenText == scope {
+				if currentNamespaceDefinition == "" {
+					return nil, fmt.Errorf("Invalid namespace definition '%s': %s:%s",
+						currentNamespace, filePath, s.Pos())
+				}
+				program.Namespaces[currentNamespace] = currentNamespaceDefinition
+				currentNamespaceDefinition = ""
+				currentScope = &Scope{Operations: []*Operation{}}
+				state = stateScopeName
+				continue
+			}
+			if tokenText == namespace {
+				if currentNamespaceDefinition == "" {
+					return nil, fmt.Errorf("Invalid namespace definition '%s': %s:%s",
+						currentNamespace, filePath, s.Pos())
+				}
+				program.Namespaces[currentNamespace] = currentNamespaceDefinition
+				currentNamespaceDefinition = ""
+				state = stateNamespaceLang
+				continue
+			}
+			currentNamespaceDefinition += tokenText
+			continue
 		case stateStartScope:
+			if tokenText == namespace {
+				state = stateNamespaceLang
+				continue
+			}
 			if tokenText != scope {
 				goto parseErr
 			}
@@ -149,6 +195,11 @@ func Parse(filePath string) (*Program, error) {
 		default:
 			goto parseErr
 		}
+	}
+
+	if state == stateNamespaceDefinition {
+		program.Namespaces[currentNamespace] = currentNamespaceDefinition
+		state = stateStartScope
 	}
 
 	if state != stateStartScope {

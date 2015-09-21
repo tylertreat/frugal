@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/globals"
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	suffix           = "go"
+	lang             = "go"
 	defaultOutputDir = "gen-go"
 )
 
@@ -23,8 +24,16 @@ func NewGenerator() generator.SingleFileGenerator {
 	return &Generator{&generator.BaseGenerator{}}
 }
 
-func (g *Generator) DefaultOutputDir() string {
-	return defaultOutputDir
+func (g *Generator) GetOutputDir(dir string, p *parser.Program) string {
+	if dir == "" {
+		dir = defaultOutputDir
+	}
+	if pkg, ok := p.Namespaces[lang]; ok {
+		dir = filepath.Join(dir, pkg)
+	} else {
+		dir = filepath.Join(dir, p.Name)
+	}
+	return dir
 }
 
 func (g *Generator) CheckCompile(path string) error {
@@ -35,8 +44,8 @@ func (g *Generator) CheckCompile(path string) error {
 	return nil
 }
 
-func (g *Generator) GenerateFile(name, outputDir string) (*os.File, error) {
-	return g.CreateFile(name, outputDir, suffix)
+func (g *Generator) GenerateFile(name string, outputDir string) (*os.File, error) {
+	return g.CreateFile(name, outputDir, lang)
 }
 
 func (g *Generator) GenerateDocStringComment(file *os.File) error {
@@ -49,8 +58,12 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 	return err
 }
 
-func (g *Generator) GeneratePackage(file *os.File, name, outputDir string) error {
-	_, err := file.WriteString(fmt.Sprintf("package %s", name))
+func (g *Generator) GeneratePackage(file *os.File, p *parser.Program) error {
+	pkg, ok := p.Namespaces[lang]
+	if !ok {
+		pkg = p.Name
+	}
+	_, err := file.WriteString(fmt.Sprintf("package %s", pkg))
 	return err
 }
 
