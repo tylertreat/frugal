@@ -57,6 +57,7 @@ class EventUI {
 
   void _onPublishClick(MouseEvent e) {
     var e = new event.Event();
+    e.iD = 123;
     e.message = "foo";
     _eventPublisher.publishEventCreated(e);
   }
@@ -75,7 +76,7 @@ class EventUI {
   }
 
   void onEvent(event.Event e) {
-    print(e);
+    window.alert(e.toString());
   }
 
 }
