@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/globals"
@@ -24,16 +25,22 @@ func NewGenerator() generator.SingleFileGenerator {
 	return &Generator{&generator.BaseGenerator{}}
 }
 
+func getPackageComponents(pkg string) []string {
+	return strings.Split(pkg, ".")
+}
+
 func (g *Generator) GetOutputDir(dir string, p *parser.Program) string {
-	if dir == "" {
-		dir = defaultOutputDir
-	}
 	if pkg, ok := p.Namespaces[lang]; ok {
-		dir = filepath.Join(dir, pkg)
+		path := getPackageComponents(pkg)
+		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
 		dir = filepath.Join(dir, p.Name)
 	}
 	return dir
+}
+
+func (g *Generator) DefaultOutputDir() string {
+	return defaultOutputDir
 }
 
 func (g *Generator) CheckCompile(path string) error {
@@ -60,7 +67,10 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 
 func (g *Generator) GeneratePackage(file *os.File, p *parser.Program) error {
 	pkg, ok := p.Namespaces[lang]
-	if !ok {
+	if ok {
+		components := getPackageComponents(pkg)
+		pkg = components[len(components)-1]
+	} else {
 		pkg = p.Name
 	}
 	_, err := file.WriteString(fmt.Sprintf("package %s", pkg))

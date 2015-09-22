@@ -17,6 +17,9 @@ type ProgramGenerator interface {
 
 	// GetOutputDir returns the full output directory for generated code.
 	GetOutputDir(dir string, p *parser.Program) string
+
+	// DefaultOutputDir returns the default directory for generated code.
+	DefaultOutputDir() string
 }
 
 // SingleFileGenerator generates source code in a specified language in a
@@ -31,6 +34,7 @@ type SingleFileGenerator interface {
 	GenerateSubscribers(*os.File, []*parser.Scope) error
 	GenerateNewline(*os.File, int) error
 	GetOutputDir(dir string, p *parser.Program) string
+	DefaultOutputDir() string
 	CheckCompile(path string) error
 }
 
@@ -104,4 +108,9 @@ func (o *SingleFileProgramGenerator) Generate(program *parser.Program, outputDir
 // GetOutputDir returns the full output directory for generated code.
 func (o *SingleFileProgramGenerator) GetOutputDir(dir string, p *parser.Program) string {
 	return o.SingleFileGenerator.GetOutputDir(dir, p)
+}
+
+// DefaultOutputDir returns the default directory for generated code.
+func (o *SingleFileProgramGenerator) DefaultOutputDir() string {
+	return o.SingleFileGenerator.DefaultOutputDir()
 }
