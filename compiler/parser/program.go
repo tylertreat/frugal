@@ -11,10 +11,11 @@ import (
 var prefixVariable = regexp.MustCompile("{\\w*}")
 
 type Program struct {
-	Name     string
-	Path     string
-	Includes []string
-	Scopes   []*Scope
+	Name       string
+	Path       string
+	Includes   []string
+	Scopes     []*Scope
+	Namespaces map[string]string
 }
 
 func (p *Program) validate() error {
@@ -65,6 +66,13 @@ func (p *Program) validate() error {
 			operationsMap[operationName] = true
 			op.Name = operationName
 			op.Param = strings.TrimSpace(op.Param)
+		}
+	}
+
+	for namespace, definition := range p.Namespaces {
+		definition = strings.TrimSpace(definition)
+		if definition == "" {
+			return fmt.Errorf("Invalid namespace definition %s", namespace)
 		}
 	}
 

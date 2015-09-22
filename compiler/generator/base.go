@@ -8,10 +8,10 @@ import (
 type BaseGenerator struct{}
 
 func (b *BaseGenerator) CreateFile(name, outputDir, suffix string) (*os.File, error) {
-	if err := os.MkdirAll(fmt.Sprintf("%s/%s", outputDir, name), 0777); err != nil {
+	if err := os.MkdirAll(outputDir, 0777); err != nil {
 		return nil, err
 	}
-	return os.Create(fmt.Sprintf("%s/%s/%s%s.%s", outputDir, name, filePrefix, name, suffix))
+	return os.Create(fmt.Sprintf("%s/%s%s.%s", outputDir, filePrefix, name, suffix))
 }
 
 func (b *BaseGenerator) GenerateNewline(file *os.File, count int) error {

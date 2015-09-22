@@ -15,7 +15,10 @@ type ProgramGenerator interface {
 	// Generate the Program in the given directory.
 	Generate(program *parser.Program, outputDir string) error
 
-	// DefaultOutputDir is the default directory to generate in.
+	// GetOutputDir returns the full output directory for generated code.
+	GetOutputDir(dir string, p *parser.Program) string
+
+	// DefaultOutputDir returns the default directory for generated code.
 	DefaultOutputDir() string
 }
 
@@ -24,12 +27,13 @@ type ProgramGenerator interface {
 type SingleFileGenerator interface {
 	GenerateFile(name, outputDir string) (*os.File, error)
 	GenerateDocStringComment(*os.File) error
-	GeneratePackage(f *os.File, name, outputDir string) error
+	GeneratePackage(f *os.File, p *parser.Program) error
 	GenerateImports(*os.File) error
 	GenerateConstants(f *os.File, name string) error
 	GeneratePublishers(*os.File, []*parser.Scope) error
 	GenerateSubscribers(*os.File, []*parser.Scope) error
 	GenerateNewline(*os.File, int) error
+	GetOutputDir(dir string, p *parser.Program) string
 	DefaultOutputDir() string
 	CheckCompile(path string) error
 }
@@ -46,10 +50,6 @@ func NewSingleFileProgramGenerator(generator SingleFileGenerator) ProgramGenerat
 
 // Generate the Program in the given directory.
 func (o *SingleFileProgramGenerator) Generate(program *parser.Program, outputDir string) error {
-	if outputDir == "" {
-		outputDir = o.DefaultOutputDir()
-	}
-
 	file, err := o.GenerateFile(program.Name, outputDir)
 	if err != nil {
 		return err
@@ -64,7 +64,7 @@ func (o *SingleFileProgramGenerator) Generate(program *parser.Program, outputDir
 		return err
 	}
 
-	if err := o.GeneratePackage(file, program.Name, outputDir); err != nil {
+	if err := o.GeneratePackage(file, program); err != nil {
 		return err
 	}
 
@@ -102,11 +102,15 @@ func (o *SingleFileProgramGenerator) Generate(program *parser.Program, outputDir
 
 	// Ensure code compiles. If it doesn't, it's likely because they didn't
 	// generate the Thrift structs referenced in their Frugal file.
-	path := fmt.Sprintf(".%s%s%s%s", string(os.PathSeparator), outputDir, string(os.PathSeparator), program.Name)
-	return o.CheckCompile(path)
+	return o.CheckCompile(fmt.Sprintf(".%s%s", string(os.PathSeparator), outputDir))
 }
 
-// DefaultOutputDir is the default directory to generate in.
+// GetOutputDir returns the full output directory for generated code.
+func (o *SingleFileProgramGenerator) GetOutputDir(dir string, p *parser.Program) string {
+	return o.SingleFileGenerator.GetOutputDir(dir, p)
+}
+
+// DefaultOutputDir returns the default directory for generated code.
 func (o *SingleFileProgramGenerator) DefaultOutputDir() string {
 	return o.SingleFileGenerator.DefaultOutputDir()
 }

@@ -51,6 +51,7 @@ func Compile(file, gen, out, delimiter string) error {
 	if out == "" {
 		out = g.DefaultOutputDir()
 	}
+	fullOut := g.GetOutputDir(out, program)
 	if err := os.MkdirAll(out, 0777); err != nil {
 		return err
 	}
@@ -60,8 +61,11 @@ func Compile(file, gen, out, delimiter string) error {
 		return err
 	}
 
+	// TODO: Validate Frugal file against Thrift file (ensure namespaces match,
+	// structs are defined, etc.)
+
 	// Generate Frugal code.
-	return g.Generate(program, out)
+	return g.Generate(program, fullOut)
 }
 
 func generateThrift(out, gen, file string) error {

@@ -89,6 +89,20 @@ func main() {
 }
 ```
 
+### Namespaces
+
+By default, Frugal uses the name of the file as the generated source code package/namespace. For example, the file `event.frugal` will generate an `event` package in Go. As in Thrift, the package/namespace of the generated code can be overridden on a per-language basis using the `namespace` directive:
+
+```thrift
+namespace go foo
+
+scope Events {
+    EventCreated: Event
+}
+```
+
+The generated Go code for the above definition would be placed in the `foo` package.
+
 ### Prefixes
 
 By default, Frugal publishes messages on the topic `<scope>.<operation>`. For example, the `EventCreated` operation in the following Frugal definition would be published on `Events.EventCreated`:
