@@ -10,6 +10,4 @@ dependencies:
     path: ../../../../../../../../../IdeaProjects/thrift/lib/dart
   frugal:
     path: ../../../lib/dart
-  messaging_sdk:
-    path: ../../../../../../../../../IdeaProjects/messaging-sdk-dart
 

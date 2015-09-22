@@ -1,17 +1,15 @@
-library frugal.subscription;
-
-import "dart:async";
-import "transport/transport.dart";
+part of frugal;
 
 class Subscription {
   String subject;
-  Transport transport;
+  Transport _transport;
   StreamController _errorControler = new StreamController.broadcast();
   Stream<Error> get error => _errorControler.stream;
 
-  Subscription(this.subject, this.transport);
+  Subscription(this.subject, this._transport);
 
-  Future unsubscribe() => transport.unsubscribe();
+  /// Unsubscribe from the subject.
+  Future unsubscribe() => _transport.unsubscribe();
 
   signal(Error err) { _errorControler.add(err); }
 }

@@ -1,7 +1,4 @@
-library frugal.provider;
-
-import "package:thrift/thrift.dart";
-import "transport/transport.dart";
+part of frugal;
 
 class Provider {
   final TransportFactory transportFactory;

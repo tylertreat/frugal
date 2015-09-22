@@ -1,13 +1,4 @@
-library frugal.transport;
-
-import "dart:async";
-import "dart:typed_data";
-
-import "package:thrift/thrift.dart";
-import "package:messaging_sdk/messaging_sdk.dart";
-
-part "nats_transport.dart";
-part "nats_thrift_transport.dart";
+part of frugal;
 
 /// Responsible for creating new Frugal Transports.
 abstract class TransportFactory {
@@ -16,6 +7,10 @@ abstract class TransportFactory {
 
 /// Wraps a Thrift TTransport which supports pub/sub.
 abstract class Transport {
+  /// Stream that signals to transport listener that data is available on
+  /// the thrift transport.
+  Stream get signalRead;
+
   /// Open the Transport to receive messages on the subscription.
   Future subscribe(String);
 

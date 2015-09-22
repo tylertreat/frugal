@@ -91,7 +91,7 @@ func runSubscriber(conn *nats.Conn, protocolFactory thrift.TProtocolFactory, tra
 func runPublisher(conn *nats.Conn, protocolFactory thrift.TProtocolFactory, transportFactory thrift.TTransportFactory) {
 	factory := frugal.NewNATSTransportFactory(conn)
 	publisher := event.NewEventsPublisher(factory, transportFactory, protocolFactory)
-	event := &event.Event{ID: 42, Message: "hello, world!"}
+	event := &event.Event{Message: "hello, world!"}
 	if err := publisher.PublishEventCreated(event); err != nil {
 		panic(err)
 	}

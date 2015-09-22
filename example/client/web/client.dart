@@ -18,6 +18,7 @@ class EventUI {
 
   Transport _transport;
   event.EventPublisher _eventPublisher;
+  event.EventSubscriber _eventSubscriber;
 
   void start() {
     _buildInterface();
@@ -31,6 +32,8 @@ class EventUI {
       _transport = new NatsTransport(nats);
       _eventPublisher = new event.EventPublisher(new NatsTransportFactory(nats),
       null, new TJsonProtocolFactory());
+      _eventSubscriber = new event.EventSubscriber(new NatsTransportFactory(nats),
+      null, new TJsonProtocolFactory());
     });
   }
 
@@ -39,21 +42,40 @@ class EventUI {
       e.remove();
     });
 
-    _buildPingComponent();
+    _buildPublishComponent();
+    _buildSubscribeComponent();
   }
 
-  void _buildPingComponent() {
+  void _buildPublishComponent() {
     output.append(new HeadingElement.h3()
       ..text = "Publish Event");
-    ButtonElement pingButton = new ButtonElement()
+    ButtonElement publishButton = new ButtonElement()
       ..text = "Publish"
-      ..onClick.listen(_onPingClick);
-    output.append(pingButton);
+      ..onClick.listen(_onPublishClick);
+    output.append(publishButton);
   }
 
-  void _onPingClick(MouseEvent e) {
+  void _onPublishClick(MouseEvent e) {
     var e = new event.Event();
     e.message = "foo";
     _eventPublisher.publishEventCreated(e);
   }
+
+  void _buildSubscribeComponent() {
+    output.append(new HeadingElement.h3()
+      ..text = "Subscribe Event");
+    ButtonElement subscribeButton = new ButtonElement()
+      ..text = "Subscribe"
+      ..onClick.listen(_onSubscribeClick);
+    output.append(subscribeButton);
+  }
+
+  void _onSubscribeClick(MouseEvent e) {
+    _eventSubscriber.subscribeEventCreated(onEvent);
+  }
+
+  void onEvent(event.Event e) {
+    print(e);
+  }
+
 }

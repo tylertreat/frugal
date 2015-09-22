@@ -1,9 +1,14 @@
-part of frugal.transport;
+part of frugal;
+
+var codec = new Utf8Codec();
 
 class NatsThriftTransport extends TTransport {
   Nats client;
   String subject;
   Stream<Message> subscription;
+
+  StreamController _signalRead = new StreamController.broadcast();
+  Stream get signalRead => _signalRead.stream;
 
   bool _isOpen;
   final List<int> _writeBuffer = [];
@@ -39,6 +44,7 @@ class NatsThriftTransport extends TTransport {
     });
     subscription.listen((Message msg) {
       _setReadBuffer(msg.payload);
+      _signalRead.add(true);
     });
   }
 

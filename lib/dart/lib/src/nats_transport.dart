@@ -1,4 +1,4 @@
-part of frugal.transport;
+part of frugal;
 
 class NatsTransportFactory implements TransportFactory {
   Nats client;
@@ -12,6 +12,8 @@ class NatsTransportFactory implements TransportFactory {
 class NatsTransport implements Transport {
   TTransport tTransport;
   NatsThriftTransport nTransport;
+
+  Stream get signalRead => nTransport.signalRead;
 
   NatsTransport(Nats client) {
     var tr = new NatsThriftTransport(client);
