@@ -12,6 +12,7 @@ var prefixVariable = regexp.MustCompile("{\\w*}")
 
 type Program struct {
 	Name       string
+	Dir        string
 	Path       string
 	Includes   []string
 	Scopes     []*Scope
