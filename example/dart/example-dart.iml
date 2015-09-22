@@ -3,10 +3,19 @@
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$">
+      <excludeFolder url="file://$MODULE_DIR$/browser/packages/event" />
+      <excludeFolder url="file://$MODULE_DIR$/browser/packages/frugal" />
+      <excludeFolder url="file://$MODULE_DIR$/browser/packages/messaging_sdk" />
+      <excludeFolder url="file://$MODULE_DIR$/browser/packages/thrift" />
+      <excludeFolder url="file://$MODULE_DIR$/browser/web/packages" />
       <excludeFolder url="file://$MODULE_DIR$/event/packages/event" />
       <excludeFolder url="file://$MODULE_DIR$/event/packages/frugal" />
       <excludeFolder url="file://$MODULE_DIR$/event/packages/messaging_sdk" />
       <excludeFolder url="file://$MODULE_DIR$/event/packages/thrift" />
+      <excludeFolder url="file://$MODULE_DIR$/gen-dart/event/packages/event" />
+      <excludeFolder url="file://$MODULE_DIR$/gen-dart/event/packages/frugal" />
+      <excludeFolder url="file://$MODULE_DIR$/gen-dart/event/packages/messaging_sdk" />
+      <excludeFolder url="file://$MODULE_DIR$/gen-dart/event/packages/thrift" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Dart SDK" level="application" />

@@ -7,7 +7,7 @@ environment:
 
 dependencies:
   thrift: # '>=0.1.0'
-    path: ../../../../../../../../../IdeaProjects/thrift/lib/dart
+    path: ../../../../../../../../../../IdeaProjects/thrift/lib/dart
   frugal:
-    path: ../../../lib/dart
+    path: ../../../../lib/dart
 
