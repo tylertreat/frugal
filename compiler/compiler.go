@@ -15,6 +15,8 @@ import (
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
+// Compile parses the respective Frugal and Thrift and generates code for them,
+// returning an error if something failed.
 func Compile(file, gen, out, delimiter string) error {
 	globals.TopicDelimiter = delimiter
 
@@ -48,6 +50,13 @@ func Compile(file, gen, out, delimiter string) error {
 		return errors.New("No scopes to generate")
 	}
 
+	// Ensure Thrift file and Frugal Program are valid (namespaces match,
+	// struct references defined, etc.).
+	thriftFile := name + ".thrift"
+	if err := validate(thriftFile, program); err != nil {
+		return err
+	}
+
 	if out == "" {
 		out = g.DefaultOutputDir()
 	}
@@ -57,12 +66,9 @@ func Compile(file, gen, out, delimiter string) error {
 	}
 
 	// Generate Thrift code.
-	if err := generateThrift(out, gen, name+".thrift"); err != nil {
+	if err := generateThrift(out, gen, thriftFile); err != nil {
 		return err
 	}
-
-	// TODO: Validate Frugal file against Thrift file (ensure namespaces match,
-	// structs are defined, etc.)
 
 	// Generate Frugal code.
 	return g.Generate(program, fullOut)

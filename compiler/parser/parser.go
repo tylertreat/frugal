@@ -53,7 +53,8 @@ func Parse(filePath string) (*Program, error) {
 	var (
 		program = &Program{
 			Name:       name,
-			Path:       filepath.Dir(file.Name()),
+			Dir:        filepath.Dir(file.Name()),
+			Path:       filePath,
 			Namespaces: make(map[string]string),
 		}
 		scopesMap                  = make(map[string]*Scope)

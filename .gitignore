@@ -1,4 +1,7 @@
 test/out
+target/
+*.iml
+.idea
 
 # Don’t commit the following directories created by pub.
 .buildlog

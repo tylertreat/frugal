@@ -65,6 +65,7 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 }
 
 func (g *Generator) GeneratePackage(file *os.File, p *parser.Program, scope *parser.Scope) error {
+	// TODO: Figure out what this does
 	pkg, ok := p.Namespaces[lang]
 	if ok {
 		components := getPackageComponents(pkg)
@@ -118,6 +119,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += "\t}\n\n"
 
 	prefix := ""
+	// TODO: Add args
 	for _, op := range scope.Operations {
 		publishers += prefix
 		prefix = "\n\n"
@@ -169,6 +171,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	subscribers += "\t}\n\n"
 
 	prefix := ""
+	// TODO: Add args
 	for _, op := range scope.Operations {
 		paramLower := strings.ToLower(op.Param)
 		subscribers += prefix
