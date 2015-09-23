@@ -77,7 +77,7 @@ func (g *Generator) GeneratePackage(file *os.File, p *parser.Program) error {
 	return err
 }
 
-func (g *Generator) GenerateImports(file *os.File) error {
+func (g *Generator) GenerateImports(file *os.File, p *parser.Program) error {
 	imports := "import (\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"

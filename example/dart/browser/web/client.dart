@@ -17,8 +17,8 @@ class EventUI {
   EventUI(this.output);
 
   Transport _transport;
-  event.EventPublisher _eventPublisher;
-  event.EventSubscriber _eventSubscriber;
+  event.EventsPublisher _eventsPublisher;
+  event.EventsSubscriber _eventsSubscriber;
 
   void start() {
     _buildInterface();
@@ -30,9 +30,9 @@ class EventUI {
     var nats = new Nats("http://localhost:8100/nats", "fooclient", client);
     nats.connect().then((_) {
       _transport = new NatsTransport(nats);
-      _eventPublisher = new event.EventPublisher(new NatsTransportFactory(nats),
+      _eventsPublisher = new event.EventsPublisher(new NatsTransportFactory(nats),
       null, new TJsonProtocolFactory());
-      _eventSubscriber = new event.EventSubscriber(new NatsTransportFactory(nats),
+      _eventsSubscriber = new event.EventsSubscriber(new NatsTransportFactory(nats),
       null, new TJsonProtocolFactory());
     });
   }
@@ -59,7 +59,7 @@ class EventUI {
     var e = new event.Event();
     e.iD = 123;
     e.message = "foo";
-    _eventPublisher.publishEventCreated(e);
+    _eventsPublisher.publishEventCreated(e);
   }
 
   void _buildSubscribeComponent() {
@@ -72,7 +72,7 @@ class EventUI {
   }
 
   void _onSubscribeClick(MouseEvent e) {
-    _eventSubscriber.subscribeEventCreated(onEvent);
+    _eventsSubscriber.subscribeEventCreated(onEvent);
   }
 
   void onEvent(event.Event e) {

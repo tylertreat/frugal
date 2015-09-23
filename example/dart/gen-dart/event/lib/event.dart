@@ -8,5 +8,3 @@
 library event;
 
 export 'src/event.dart' show Event;
-
-export 'src/frug_event.dart';
