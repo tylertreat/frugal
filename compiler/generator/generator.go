@@ -42,6 +42,7 @@ type SingleFileGenerator interface {
 // MultipleFileGenerator generates source code in a specified language in a
 // multiple source files.
 type MultipleFileGenerator interface {
+	GenerateDependencies(p *parser.Program, dir string) error
 	GenerateFile(name, outputDir string) (*os.File, error)
 	GenerateDocStringComment(*os.File) error
 	GeneratePackage(f *os.File, p *parser.Program, s *parser.Scope) error
@@ -144,6 +145,9 @@ func NewMultipleFileProgramGenerator(generator MultipleFileGenerator) ProgramGen
 
 // Generate the Program in the given directory.
 func (o *MultipleFileProgramGenerator) Generate(program *parser.Program, outputDir string) error {
+	if err := o.GenerateDependencies(program, outputDir); err != nil {
+		return err
+	}
 	for _, scope := range program.Scopes {
 		if err := o.generateFile(program, scope, outputDir); err != nil {
 			return err
