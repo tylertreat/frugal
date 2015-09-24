@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/globals"
@@ -25,13 +24,9 @@ func NewGenerator() generator.SingleFileGenerator {
 	return &Generator{&generator.BaseGenerator{}}
 }
 
-func getPackageComponents(pkg string) []string {
-	return strings.Split(pkg, ".")
-}
-
 func (g *Generator) GetOutputDir(dir string, p *parser.Program) string {
 	if pkg, ok := p.Namespaces[lang]; ok {
-		path := getPackageComponents(pkg)
+		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
 		dir = filepath.Join(dir, p.Name)

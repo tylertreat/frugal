@@ -64,6 +64,10 @@ type MultipleFileGenerator interface {
 	CheckCompile(path string) error
 }
 
+func GetPackageComponents(pkg string) []string {
+	return strings.Split(pkg, ".")
+}
+
 // SingleFileProgramGenerator is an implementation of the ProgramGenerator
 // interface which generates source code in one file.
 type SingleFileProgramGenerator struct {
