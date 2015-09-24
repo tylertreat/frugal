@@ -8,7 +8,7 @@ import (
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
-const filePrefix = "frug_"
+const FilePrefix = "frug_"
 
 // ProgramGenerator generates source code in a specified language for a Program
 // produced by the parser.
