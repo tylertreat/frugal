@@ -215,12 +215,18 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += "\t\tseqId = 0;\n"
 	publishers += "\t}\n\n"
 
+	args := ""
+	if len(scope.Prefix.Variables) > 0 {
+		for _, variable := range scope.Prefix.Variables {
+			args = fmt.Sprintf("%s, String %s", args, variable)
+		}
+	}
 	prefix := ""
-	// TODO: Add args
 	for _, op := range scope.Operations {
 		publishers += prefix
 		prefix = "\n\n"
-		publishers += fmt.Sprintf("\tpublish%s(t_%s.%s req) {\n", op.Name, strings.ToLower(op.Param), op.Param)
+		publishers += fmt.Sprintf("\tpublish%s(t_%s.%s req%s) {\n", op.Name,
+			strings.ToLower(op.Param), op.Param, args)
 		publishers += fmt.Sprintf("\t\tvar op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf("\t\tvar prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += "\t\tvar topic = \"${prefix}" + scope.Name + "${delimiter}${op}\";\n"
@@ -242,18 +248,20 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 }
 
 func generatePrefixStringTemplate(scope *parser.Scope) string {
-	if len(scope.Prefix.Variables) == 0 {
+	if scope.Prefix.String == "" {
 		return ""
 	}
-	template := "fmt.Sprintf(\""
+	template := ""
 	template += scope.Prefix.Template()
-	template += globals.TopicDelimiter + "\", "
-	prefix := ""
-	for _, variable := range scope.Prefix.Variables {
-		template += prefix + variable
-		prefix = ", "
+	template += globals.TopicDelimiter
+	if len(scope.Prefix.Variables) == 0 {
+		return template
 	}
-	template += ")"
+	vars := make([]interface{}, len(scope.Prefix.Variables))
+	for i, variable := range scope.Prefix.Variables {
+		vars[i] = fmt.Sprintf("${%s}", variable)
+	}
+	template = fmt.Sprintf(template, vars...)
 	return template
 }
 
@@ -267,14 +275,19 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	subscribers += "\t\tprovider = new frugal.Provider(t, f, p);\n"
 	subscribers += "\t}\n\n"
 
+	args := ""
+	if len(scope.Prefix.Variables) > 0 {
+		for _, variable := range scope.Prefix.Variables {
+			args = fmt.Sprintf("%s, String %s", args, variable)
+		}
+	}
 	prefix := ""
-	// TODO: Add args
 	for _, op := range scope.Operations {
 		paramLower := strings.ToLower(op.Param)
 		subscribers += prefix
 		prefix = "\n\n"
-		subscribers += fmt.Sprintf("\tsubscribe%s(dynamic on%s(t_%s.%s req)) async {\n",
-			op.Name, op.Param, paramLower, op.Param)
+		subscribers += fmt.Sprintf("\tsubscribe%s(dynamic on%s(t_%s.%s req)%s) async {\n",
+			op.Name, op.Param, paramLower, op.Param, args)
 		subscribers += fmt.Sprintf("\t\tvar op = \"%s\";\n", op.Name)
 		subscribers += fmt.Sprintf("\t\tvar prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		subscribers += "\t\tvar topic = \"${prefix}" + scope.Name + "${delimiter}${op}\";\n"

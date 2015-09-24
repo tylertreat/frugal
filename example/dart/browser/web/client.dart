@@ -59,7 +59,7 @@ class EventUI {
     var e = new event.Event();
     e.iD = 123;
     e.message = "foo";
-    _eventsPublisher.publishEventCreated(e);
+    _eventsPublisher.publishEventCreated(e, "bar");
   }
 
   void _buildSubscribeComponent() {
@@ -72,7 +72,7 @@ class EventUI {
   }
 
   void _onSubscribeClick(MouseEvent e) {
-    _eventsSubscriber.subscribeEventCreated(onEvent);
+    _eventsSubscriber.subscribeEventCreated(onEvent, "bar");
   }
 
   void onEvent(event.Event e) {

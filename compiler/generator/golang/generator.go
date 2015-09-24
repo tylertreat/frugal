@@ -157,6 +157,7 @@ func generatePublisher(publishers string, scope *parser.Scope) string {
 
 func generatePrefixStringTemplate(scope *parser.Scope) string {
 	if len(scope.Prefix.Variables) == 0 {
+		// TODO: Fix this
 		return `""`
 	}
 	template := "fmt.Sprintf(\""

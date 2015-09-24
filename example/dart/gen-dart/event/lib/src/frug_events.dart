@@ -24,9 +24,9 @@ class EventsPublisher {
 		seqId = 0;
 	}
 
-	publishEventCreated(t_event.Event req) {
+	publishEventCreated(t_event.Event req, String user) {
 		var op = "EventCreated";
-		var prefix = "";
+		var prefix = "foo.${user}.";
 		var topic = "${prefix}Events${delimiter}${op}";
 		transport.preparePublish(topic);
 		var oprot = protocol;
@@ -47,9 +47,9 @@ class EventsSubscriber {
 		provider = new frugal.Provider(t, f, p);
 	}
 
-	subscribeEventCreated(dynamic onEvent(t_event.Event req)) async {
+	subscribeEventCreated(dynamic onEvent(t_event.Event req), String user) async {
 		var op = "EventCreated";
-		var prefix = "";
+		var prefix = "foo.${user}.";
 		var topic = "${prefix}Events${delimiter}${op}";
 		var tp = provider.newTransportProtocol();
 		await tp.transport.subscribe(topic);
