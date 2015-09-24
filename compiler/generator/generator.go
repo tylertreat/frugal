@@ -10,6 +10,14 @@ import (
 
 const FilePrefix = "frug_"
 
+type FileType string
+
+const (
+	CombinedFile  FileType = "combined"
+	PublishFile   FileType = "publish"
+	SubscribeFile FileType = "subscribe"
+)
+
 // ProgramGenerator generates source code in a specified language for a Program
 // produced by the parser.
 type ProgramGenerator interface {
@@ -43,7 +51,7 @@ type SingleFileGenerator interface {
 // multiple source files.
 type MultipleFileGenerator interface {
 	GenerateDependencies(p *parser.Program, dir string) error
-	GenerateFile(name, outputDir string) (*os.File, error)
+	GenerateFile(name, outputDir string, fileType FileType) (*os.File, error)
 	GenerateDocStringComment(*os.File) error
 	GeneratePackage(f *os.File, p *parser.Program, s *parser.Scope) error
 	GenerateImports(*os.File, *parser.Scope) error
@@ -137,10 +145,12 @@ func (o *SingleFileProgramGenerator) DefaultOutputDir() string {
 // interface which generates source code in one file.
 type MultipleFileProgramGenerator struct {
 	MultipleFileGenerator
+	SplitPublisherSubscriber bool
 }
 
-func NewMultipleFileProgramGenerator(generator MultipleFileGenerator) ProgramGenerator {
-	return &MultipleFileProgramGenerator{generator}
+func NewMultipleFileProgramGenerator(generator MultipleFileGenerator,
+	splitPublisherSubscriber bool) ProgramGenerator {
+	return &MultipleFileProgramGenerator{generator, splitPublisherSubscriber}
 }
 
 // Generate the Program in the given directory.
@@ -149,8 +159,17 @@ func (o *MultipleFileProgramGenerator) Generate(program *parser.Program, outputD
 		return err
 	}
 	for _, scope := range program.Scopes {
-		if err := o.generateFile(program, scope, outputDir); err != nil {
-			return err
+		if o.SplitPublisherSubscriber {
+			if err := o.generateFile(program, scope, outputDir, PublishFile); err != nil {
+				return err
+			}
+			if err := o.generateFile(program, scope, outputDir, SubscribeFile); err != nil {
+				return err
+			}
+		} else {
+			if err := o.generateFile(program, scope, outputDir, CombinedFile); err != nil {
+				return err
+			}
 		}
 	}
 	// Ensure code compiles. If it doesn't, it's likely because they didn't
@@ -159,8 +178,8 @@ func (o *MultipleFileProgramGenerator) Generate(program *parser.Program, outputD
 }
 
 func (o MultipleFileProgramGenerator) generateFile(program *parser.Program, scope *parser.Scope,
-	outputDir string) error {
-	file, err := o.GenerateFile(strings.ToLower(scope.Name), outputDir)
+	outputDir string, fileType FileType) error {
+	file, err := o.GenerateFile(strings.ToLower(scope.Name), outputDir, fileType)
 	if err != nil {
 		return err
 	}
@@ -198,15 +217,25 @@ func (o MultipleFileProgramGenerator) generateFile(program *parser.Program, scop
 		return err
 	}
 
-	if err := o.GeneratePublisher(file, scope); err != nil {
-		return err
+	if fileType == CombinedFile || fileType == PublishFile {
+		if err := o.GeneratePublisher(file, scope); err != nil {
+			return err
+		}
 	}
 
-	if err := o.GenerateNewline(file, 2); err != nil {
-		return err
+	if fileType == CombinedFile {
+		if err := o.GenerateNewline(file, 2); err != nil {
+			return err
+		}
 	}
 
-	return o.GenerateSubscriber(file, scope)
+	if fileType == CombinedFile || fileType == SubscribeFile {
+		if err := o.GenerateSubscriber(file, scope); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // GetOutputDir returns the full output directory for generated code.

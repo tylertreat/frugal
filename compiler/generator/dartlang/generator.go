@@ -146,7 +146,10 @@ func (g *Generator) CheckCompile(path string) error {
 	return nil
 }
 
-func (g *Generator) GenerateFile(name, outputDir string) (*os.File, error) {
+func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
+	if fileType != generator.CombinedFile {
+		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator")
+	}
 	outputDir = filepath.Join(outputDir, "lib")
 	outputDir = filepath.Join(outputDir, "src")
 	return g.CreateFile(name, outputDir, lang)

@@ -33,7 +33,7 @@ func Compile(file, gen, out, delimiter string) error {
 	var g generator.ProgramGenerator
 	switch gen {
 	case "dart":
-		g = generator.NewMultipleFileProgramGenerator(dartlang.NewGenerator())
+		g = generator.NewMultipleFileProgramGenerator(dartlang.NewGenerator(), false)
 	case "go":
 		g = generator.NewSingleFileProgramGenerator(golang.NewGenerator())
 	default:
