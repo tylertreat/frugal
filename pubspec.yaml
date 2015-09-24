@@ -1,0 +1,13 @@
+name: frugal
+version: 0.0.1
+
+environment:
+  sdk: ^1.12.0
+
+dependencies:
+  messaging-sdk:
+    git:
+      url: git@github.com:Workiva/messaging-sdk-dart.git
+  thrift: # '>=0.1.0'
+    git:
+      url: git@github.com:Workiva/thrift-dart.git
