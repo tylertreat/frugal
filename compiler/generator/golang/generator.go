@@ -63,7 +63,7 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 func (g *Generator) GeneratePackage(file *os.File, p *parser.Program) error {
 	pkg, ok := p.Namespaces[lang]
 	if ok {
-		components := getPackageComponents(pkg)
+		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]
 	} else {
 		pkg = p.Name

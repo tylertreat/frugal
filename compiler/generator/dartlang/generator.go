@@ -165,7 +165,7 @@ func (g *Generator) GeneratePackage(file *os.File, p *parser.Program, scope *par
 	// TODO: Figure out what this does
 	pkg, ok := p.Namespaces[lang]
 	if ok {
-		components := getPackageComponents(pkg)
+		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]
 	} else {
 		pkg = p.Name
