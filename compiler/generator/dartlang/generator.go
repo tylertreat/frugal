@@ -17,6 +17,9 @@ import (
 const (
 	lang             = "dart"
 	defaultOutputDir = "gen-dart"
+	tab1             = "  "
+	tab2             = tab1 + tab1
+	tab3             = tab1 + tab2
 )
 
 type Generator struct {
@@ -176,9 +179,9 @@ func (g *Generator) GeneratePackage(file *os.File, p *parser.Program, scope *par
 }
 
 func (g *Generator) GenerateImports(file *os.File, scope *parser.Scope) error {
-	imports := "import 'dart:async';\n"
+	imports := "import 'dart:async';\n\n"
 	imports += "import 'package:thrift/thrift.dart' as thrift;\n"
-	imports += "import 'package:frugal/frugal.dart' as frugal;\n"
+	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
 	params := map[string]bool{}
 	for _, op := range scope.Operations {
 		if _, ok := params[op.Param]; !ok {
@@ -202,18 +205,18 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
 	publishers := ""
 	publishers += fmt.Sprintf("class %sPublisher {\n", scope.Name)
-	publishers += "\tfrugal.Transport transport;\n"
-	publishers += "\tthrift.TProtocol protocol;\n"
-	publishers += "\tint seqId;\n\n"
+	publishers += tab1 + "frugal.Transport transport;\n"
+	publishers += tab1 + "thrift.TProtocol protocol;\n"
+	publishers += tab1 + "int seqId;\n\n"
 
-	publishers += fmt.Sprintf("\t%sPublisher(frugal.TransportFactory t, thrift.TTransportFactory f, "+
+	publishers += fmt.Sprintf(tab1+"%sPublisher(frugal.TransportFactory t, thrift.TTransportFactory f, "+
 		"thrift.TProtocolFactory p) {\n", scope.Name)
-	publishers += "\t\tvar provider = new frugal.Provider(t, f, p);\n"
-	publishers += "\t\tvar tp = provider.newTransportProtocol();\n"
-	publishers += "\t\ttransport = tp.transport;\n"
-	publishers += "\t\tprotocol = tp.protocol;\n"
-	publishers += "\t\tseqId = 0;\n"
-	publishers += "\t}\n\n"
+	publishers += tab2 + "var provider = new frugal.Provider(t, f, p);\n"
+	publishers += tab2 + "var tp = provider.newTransportProtocol();\n"
+	publishers += tab2 + "transport = tp.transport;\n"
+	publishers += tab2 + "protocol = tp.protocol;\n"
+	publishers += tab2 + "seqId = 0;\n"
+	publishers += tab1 + "}\n\n"
 
 	args := ""
 	if len(scope.Prefix.Variables) > 0 {
@@ -225,20 +228,20 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	for _, op := range scope.Operations {
 		publishers += prefix
 		prefix = "\n\n"
-		publishers += fmt.Sprintf("\tpublish%s(t_%s.%s req%s) {\n", op.Name,
+		publishers += fmt.Sprintf(tab1+"publish%s(t_%s.%s req%s) {\n", op.Name,
 			strings.ToLower(op.Param), op.Param, args)
-		publishers += fmt.Sprintf("\t\tvar op = \"%s\";\n", op.Name)
-		publishers += fmt.Sprintf("\t\tvar prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
-		publishers += "\t\tvar topic = \"${prefix}" + scope.Name + "${delimiter}${op}\";\n"
-		publishers += "\t\ttransport.preparePublish(topic);\n"
-		publishers += "\t\tvar oprot = protocol;\n"
-		publishers += "\t\tseqId++;\n"
-		publishers += "\t\tvar msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);\n"
-		publishers += "\t\toprot.writeMessageBegin(msg);\n"
-		publishers += "\t\treq.write(oprot);\n"
-		publishers += "\t\toprot.writeMessageEnd();\n"
-		publishers += "\t\treturn oprot.transport.flush();\n"
-		publishers += "\t}\n"
+		publishers += fmt.Sprintf(tab2+"var op = \"%s\";\n", op.Name)
+		publishers += fmt.Sprintf(tab2+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
+		publishers += tab2 + "var topic = \"${prefix}" + scope.Name + "${delimiter}${op}\";\n"
+		publishers += tab2 + "transport.preparePublish(topic);\n"
+		publishers += tab2 + "var oprot = protocol;\n"
+		publishers += tab2 + "seqId++;\n"
+		publishers += tab2 + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);\n"
+		publishers += tab2 + "oprot.writeMessageBegin(msg);\n"
+		publishers += tab2 + "req.write(oprot);\n"
+		publishers += tab2 + "oprot.writeMessageEnd();\n"
+		publishers += tab2 + "return oprot.transport.flush();\n"
+		publishers += tab1 + "}\n"
 	}
 
 	publishers += "}\n"
@@ -268,12 +271,12 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	subscribers := ""
 	subscribers += fmt.Sprintf("class %sSubscriber {\n", scope.Name)
-	subscribers += "\tfrugal.Provider provider;\n\n"
+	subscribers += tab1 + "frugal.Provider provider;\n\n"
 
-	subscribers += fmt.Sprintf("\t%sSubscriber(frugal.TransportFactory t, thrift.TTransportFactory f, "+
+	subscribers += fmt.Sprintf(tab1+"%sSubscriber(frugal.TransportFactory t, thrift.TTransportFactory f, "+
 		"thrift.TProtocolFactory p) {\n", scope.Name)
-	subscribers += "\t\tprovider = new frugal.Provider(t, f, p);\n"
-	subscribers += "\t}\n\n"
+	subscribers += tab2 + "provider = new frugal.Provider(t, f, p);\n"
+	subscribers += tab1 + "}\n\n"
 
 	args := ""
 	if len(scope.Prefix.Variables) > 0 {
@@ -286,33 +289,37 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		paramLower := strings.ToLower(op.Param)
 		subscribers += prefix
 		prefix = "\n\n"
-		subscribers += fmt.Sprintf("\tsubscribe%s(dynamic on%s(t_%s.%s req)%s) async {\n",
+		subscribers += fmt.Sprintf(tab1+"Future<frugal.Subscription> subscribe%s(dynamic on%s(t_%s.%s req)%s) async {\n",
 			op.Name, op.Param, paramLower, op.Param, args)
-		subscribers += fmt.Sprintf("\t\tvar op = \"%s\";\n", op.Name)
-		subscribers += fmt.Sprintf("\t\tvar prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
-		subscribers += "\t\tvar topic = \"${prefix}" + scope.Name + "${delimiter}${op}\";\n"
-		subscribers += "\t\tvar tp = provider.newTransportProtocol();\n"
-		subscribers += "\t\tawait tp.transport.subscribe(topic);\n"
-		subscribers += "\t\ttp.transport.signalRead.listen((_) {\n"
-		subscribers += fmt.Sprintf("\t\t\ton%s(_recv%s(op, tp.protocol));\n", op.Param, op.Name)
-		subscribers += "\t\t});\n"
-		subscribers += "\t\treturn new frugal.Subscription(topic, tp.transport);\n"
-		subscribers += "\t}\n\n"
+		subscribers += fmt.Sprintf(tab2+"var op = \"%s\";\n", op.Name)
+		subscribers += fmt.Sprintf(tab2+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
+		subscribers += tab2 + "var topic = \"${prefix}" + scope.Name + "${delimiter}${op}\";\n"
+		subscribers += tab2 + "var tp = provider.newTransportProtocol();\n"
+		subscribers += tab2 + "await tp.transport.subscribe(topic);\n"
+		subscribers += tab2 + "tp.transport.signalRead.listen((_) {\n"
+		subscribers += fmt.Sprintf(tab3+"on%s(_recv%s(op, tp.protocol));\n", op.Param, op.Name)
+		subscribers += tab2 + "});\n"
+		subscribers += tab2 + "var sub = new frugal.Subscription(topic, tp.transport);\n"
+		subscribers += tab2 + "tp.transport.error.listen((Error e) {;\n"
+		subscribers += tab3 + "sub.signal(e);\n"
+		subscribers += tab2 + "});\n"
+		subscribers += tab2 + "return sub;\n"
+		subscribers += tab1 + "}\n\n"
 
-		subscribers += fmt.Sprintf("\tt_%s.%s _recv%s(String op, thrift.TProtocol iprot) {\n",
+		subscribers += fmt.Sprintf(tab1+"t_%s.%s _recv%s(String op, thrift.TProtocol iprot) {\n",
 			paramLower, op.Param, op.Name)
-		subscribers += "\t\tvar tMsg = iprot.readMessageBegin();\n"
-		subscribers += "\t\tif (tMsg.name != op) {\n"
-		subscribers += "\t\t\tthrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);\n"
-		subscribers += "\t\t\tiprot.readMessageEnd();\n"
-		subscribers += "\t\t\tthrow new thrift.TApplicationError(\n"
-		subscribers += "\t\t\t\tthrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);\n"
-		subscribers += "\t\t}\n"
-		subscribers += fmt.Sprintf("\t\tvar req = new t_%s.%s();\n", paramLower, op.Param)
-		subscribers += "\t\treq.read(iprot);\n"
-		subscribers += "\t\tiprot.readMessageEnd();\n"
-		subscribers += "\t\treturn req;\n"
-		subscribers += "\t}\n"
+		subscribers += tab2 + "var tMsg = iprot.readMessageBegin();\n"
+		subscribers += tab2 + "if (tMsg.name != op) {\n"
+		subscribers += tab3 + "thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);\n"
+		subscribers += tab3 + "iprot.readMessageEnd();\n"
+		subscribers += tab3 + "throw new thrift.TApplicationError(\n"
+		subscribers += tab3 + "thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);\n"
+		subscribers += tab2 + "}\n"
+		subscribers += fmt.Sprintf(tab2+"var req = new t_%s.%s();\n", paramLower, op.Param)
+		subscribers += tab2 + "req.read(iprot);\n"
+		subscribers += tab2 + "iprot.readMessageEnd();\n"
+		subscribers += tab2 + "return req;\n"
+		subscribers += tab1 + "}\n"
 	}
 
 	subscribers += "}\n"

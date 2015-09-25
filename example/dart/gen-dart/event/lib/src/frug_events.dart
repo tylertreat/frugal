@@ -4,72 +4,78 @@
 library event.src.frug_events;
 
 import 'dart:async';
+
 import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
+
 import 'event.dart' as t_event;
 
 
 const String delimiter = '.';
 
 class EventsPublisher {
-	frugal.Transport transport;
-	thrift.TProtocol protocol;
-	int seqId;
+  frugal.Transport transport;
+  thrift.TProtocol protocol;
+  int seqId;
 
-	EventsPublisher(frugal.TransportFactory t, thrift.TTransportFactory f, thrift.TProtocolFactory p) {
-		var provider = new frugal.Provider(t, f, p);
-		var tp = provider.newTransportProtocol();
-		transport = tp.transport;
-		protocol = tp.protocol;
-		seqId = 0;
-	}
+  EventsPublisher(frugal.TransportFactory t, thrift.TTransportFactory f, thrift.TProtocolFactory p) {
+    var provider = new frugal.Provider(t, f, p);
+    var tp = provider.newTransportProtocol();
+    transport = tp.transport;
+    protocol = tp.protocol;
+    seqId = 0;
+  }
 
-	publishEventCreated(t_event.Event req, String user) {
-		var op = "EventCreated";
-		var prefix = "foo.${user}.";
-		var topic = "${prefix}Events${delimiter}${op}";
-		transport.preparePublish(topic);
-		var oprot = protocol;
-		seqId++;
-		var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);
-		oprot.writeMessageBegin(msg);
-		req.write(oprot);
-		oprot.writeMessageEnd();
-		return oprot.transport.flush();
-	}
+  publishEventCreated(t_event.Event req, String user) {
+    var op = "EventCreated";
+    var prefix = "foo.${user}.";
+    var topic = "${prefix}Events${delimiter}${op}";
+    transport.preparePublish(topic);
+    var oprot = protocol;
+    seqId++;
+    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);
+    oprot.writeMessageBegin(msg);
+    req.write(oprot);
+    oprot.writeMessageEnd();
+    return oprot.transport.flush();
+  }
 }
 
 
 class EventsSubscriber {
-	frugal.Provider provider;
+  frugal.Provider provider;
 
-	EventsSubscriber(frugal.TransportFactory t, thrift.TTransportFactory f, thrift.TProtocolFactory p) {
-		provider = new frugal.Provider(t, f, p);
-	}
+  EventsSubscriber(frugal.TransportFactory t, thrift.TTransportFactory f, thrift.TProtocolFactory p) {
+    provider = new frugal.Provider(t, f, p);
+  }
 
-	subscribeEventCreated(dynamic onEvent(t_event.Event req), String user) async {
-		var op = "EventCreated";
-		var prefix = "foo.${user}.";
-		var topic = "${prefix}Events${delimiter}${op}";
-		var tp = provider.newTransportProtocol();
-		await tp.transport.subscribe(topic);
-		tp.transport.signalRead.listen((_) {
-			onEvent(_recvEventCreated(op, tp.protocol));
-		});
-		return new frugal.Subscription(topic, tp.transport);
-	}
+  Future<frugal.Subscription> subscribeEventCreated(dynamic onEvent(t_event.Event req), String user) async {
+    var op = "EventCreated";
+    var prefix = "foo.${user}.";
+    var topic = "${prefix}Events${delimiter}${op}";
+    var tp = provider.newTransportProtocol();
+    await tp.transport.subscribe(topic);
+    tp.transport.signalRead.listen((_) {
+      onEvent(_recvEventCreated(op, tp.protocol));
+    });
+    var sub = new frugal.Subscription(topic, tp.transport);
+    tp.transport.error.listen((Error e) {;
+      sub.signal(e);
+    });
+    return sub;
+  }
 
-	t_event.Event _recvEventCreated(String op, thrift.TProtocol iprot) {
-		var tMsg = iprot.readMessageBegin();
-		if (tMsg.name != op) {
-			thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
-			iprot.readMessageEnd();
-			throw new thrift.TApplicationError(
-				thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
-		}
-		var req = new t_event.Event();
-		req.read(iprot);
-		iprot.readMessageEnd();
-		return req;
-	}
+  t_event.Event _recvEventCreated(String op, thrift.TProtocol iprot) {
+    var tMsg = iprot.readMessageBegin();
+    if (tMsg.name != op) {
+      thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
+      iprot.readMessageEnd();
+      throw new thrift.TApplicationError(
+      thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+    }
+    var req = new t_event.Event();
+    req.read(iprot);
+    iprot.readMessageEnd();
+    return req;
+  }
 }

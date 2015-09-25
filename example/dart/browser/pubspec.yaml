@@ -6,6 +6,8 @@ environment:
   sdk: ^1.12.0
 
 dependencies:
+  event:
+    path: ../gen-dart/event
   http: '>= 0.11.2 < 0.12.0'
   frugal:
     git:
@@ -13,6 +15,4 @@ dependencies:
   thrift:
     git:
       url: git@github.com:Workiva/thrift-dart.git
-  event:
-    path: ../gen-dart/event
 
