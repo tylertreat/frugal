@@ -10,6 +10,9 @@ class NatsThriftTransport extends TTransport {
   StreamController _signalRead = new StreamController.broadcast();
   Stream get signalRead => _signalRead.stream;
 
+  StreamController _error = new StreamController.broadcast();
+  Stream get error => _error.stream;
+
   bool _isOpen;
   final List<int> _writeBuffer = [];
   Iterator<int> _readIterator;
@@ -45,7 +48,11 @@ class NatsThriftTransport extends TTransport {
     subscription.listen((Message msg) {
       _setReadBuffer(msg.payload);
       _signalRead.add(true);
-    });
+    }, onError: signalSubscriptionErr);
+  }
+
+  void signalSubscriptionErr(Error e) {
+    _error.addError(e);
   }
 
   Future close() async {

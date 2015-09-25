@@ -11,6 +11,9 @@ abstract class Transport {
   /// the thrift transport.
   Stream get signalRead;
 
+  /// Stream that signals to transport listener that there was an error.
+  Stream get error;
+
   /// Open the Transport to receive messages on the subscription.
   Future subscribe(String);
 

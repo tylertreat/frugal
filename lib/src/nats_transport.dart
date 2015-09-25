@@ -14,6 +14,7 @@ class NatsTransport implements Transport {
   NatsThriftTransport nTransport;
 
   Stream get signalRead => nTransport.signalRead;
+  Stream get error => nTransport.error;
 
   NatsTransport(Nats client) {
     var tr = new NatsThriftTransport(client);
