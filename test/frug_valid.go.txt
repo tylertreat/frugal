@@ -8,7 +8,7 @@ import (
 	"log"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/Workiva/frugal/lib/go"
+	"github.com/Workiva/frugal-go"
 )
 
 const delimiter = "."

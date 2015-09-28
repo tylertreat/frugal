@@ -82,7 +82,7 @@ func (g *Generator) GenerateImports(file *os.File) error {
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"
 	imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
-	imports += "\t\"github.com/Workiva/frugal/lib/go\"\n"
+	imports += "\t\"github.com/Workiva/frugal-go\"\n"
 	imports += ")"
 	_, err := file.WriteString(imports)
 	return err
