@@ -22,7 +22,7 @@ public class Subscriber {
         subscriber.subscribeEventCreated(new EventsSubscriber.EventCreatedHandler() {
             @Override
             public void onEventCreated(Event event) {
-                System.out.println("received event: " + event.getMessage());
+                System.out.println("received event: " + event.getID() + " " + event.getMessage());
             }
         });
 
