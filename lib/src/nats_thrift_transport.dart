@@ -56,7 +56,7 @@ class NatsThriftTransport extends TTransport {
   }
 
   Future close() async {
-    if (isOpen) {
+    if (!isOpen) {
       return new Future.value();
     }
     _reset(isOpen: false);
