@@ -62,7 +62,6 @@ class NatsThriftTransport extends TTransport {
     _reset(isOpen: false);
     await client.unsubscribe(subject);
     subscription = null;
-    return super.close();
   }
 
   int read(Uint8List buffer, int offset, int length) {
