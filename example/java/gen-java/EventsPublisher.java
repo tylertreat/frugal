@@ -2,10 +2,7 @@ import com.workiva.frugal.Provider;
 import com.workiva.frugal.Transport;
 import com.workiva.frugal.TransportFactory;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TMessage;
-import org.apache.thrift.protocol.TMessageType;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.protocol.TProtocolFactory;
+import org.apache.thrift.protocol.*;
 import org.apache.thrift.transport.TTransportFactory;
 
 import javax.annotation.Generated;
@@ -41,6 +38,7 @@ public class EventsPublisher {
         protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, seqId));
         req.write(protocol);
         protocol.writeMessageEnd();
+        transport.flush();
     }
 
 }

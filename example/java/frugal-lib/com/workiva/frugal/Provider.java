@@ -10,8 +10,8 @@ import org.apache.thrift.transport.TTransportFactory;
 public class Provider {
 
     public class Client {
-        Transport transport;
-        TProtocol protocol;
+        private Transport transport;
+        private TProtocol protocol;
 
         public Client(Transport t, TProtocol p) {
             transport = t;

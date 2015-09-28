@@ -46,4 +46,11 @@ public interface Transport {
      */
     void applyProxy(TTransportFactory proxy);
 
+    /**
+     * Flushes any buffered data out of the transport buffer.
+     *
+     * @throws TTransportException
+     */
+    void flush() throws TTransportException;
+
 }
