@@ -239,6 +239,10 @@ func (o MultipleFileProgramGenerator) generateFile(program *parser.Program, scop
 		}
 	}
 
+	if err := o.GenerateNewline(file, 1); err != nil {
+		return err
+	}
+
 	return nil
 }
 

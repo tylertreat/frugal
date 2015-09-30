@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:html';
 
 import 'package:http/browser_client.dart' as http;
 import 'package:thrift/thrift.dart';
 import 'package:event/event.dart' as event;
-import 'package:frugal/frugal.dart';
+import 'package:frugal/frugal.dart' as frugal;
 import 'package:messaging_sdk/messaging_sdk.dart';
+
+frugal.Subscription sub;
 
 /// Adapted from the AS3 tutorial
 void main() {
@@ -16,7 +19,7 @@ class EventUI {
 
   EventUI(this.output);
 
-  Transport _transport;
+  frugal.Transport _transport;
   event.EventsPublisher _eventsPublisher;
   event.EventsSubscriber _eventsSubscriber;
 
@@ -29,10 +32,10 @@ class EventUI {
     var client = new http.BrowserClient();
     var nats = new Nats("http://localhost:8100/nats", "fooclient", client);
     nats.connect().then((_) {
-      _transport = new NatsTransport(nats);
-      _eventsPublisher = new event.EventsPublisher(new NatsTransportFactory(nats),
+      _transport = new frugal.NatsTransport(nats);
+      _eventsPublisher = new event.EventsPublisher(new frugal.NatsTransportFactory(nats),
       null, new TJsonProtocolFactory());
-      _eventsSubscriber = new event.EventsSubscriber(new NatsTransportFactory(nats),
+      _eventsSubscriber = new event.EventsSubscriber(new frugal.NatsTransportFactory(nats),
       null, new TJsonProtocolFactory());
     });
   }
@@ -49,6 +52,14 @@ class EventUI {
   void _buildPublishComponent() {
     output.append(new HeadingElement.h3()
       ..text = "Publish Event");
+    InputElement pubId = new InputElement()
+      ..id = "pubId"
+      ..type = "number";
+    output.append(pubId);
+    InputElement pubMsg = new InputElement()
+      ..id = "pubMsg"
+      ..type = "string";
+    output.append(pubMsg);
     ButtonElement publishButton = new ButtonElement()
       ..text = "Publish"
       ..onClick.listen(_onPublishClick);
@@ -56,10 +67,12 @@ class EventUI {
   }
 
   void _onPublishClick(MouseEvent e) {
+    InputElement pubId = querySelector("#pubId");
+    InputElement pubMsg = querySelector("#pubMsg");
     var e = new event.Event();
-    e.iD = 123;
-    e.message = "foo";
-    _eventsPublisher.publishEventCreated(e, "bar");
+    e.iD = int.parse(pubId.value);
+    e.message = pubMsg.value;
+    _eventsPublisher.publishEventCreated("barUser", e);
   }
 
   void _buildSubscribeComponent() {
@@ -69,10 +82,23 @@ class EventUI {
       ..text = "Subscribe"
       ..onClick.listen(_onSubscribeClick);
     output.append(subscribeButton);
+    ButtonElement unsubscribeButton = new ButtonElement()
+      ..text = "Unsubscribe"
+      ..onClick.listen(_onUnsubscribeClick);
+    output.append(unsubscribeButton);
   }
 
-  void _onSubscribeClick(MouseEvent e) {
-    _eventsSubscriber.subscribeEventCreated(onEvent, "bar");
+  Future _onSubscribeClick(MouseEvent e) async {
+    if (sub == null ){
+      sub = await _eventsSubscriber.subscribeEventCreated("barUser", onEvent);
+    }
+  }
+
+  Future _onUnsubscribeClick(MouseEvent e) async {
+    if (sub != null ){
+      await sub.unsubscribe();
+      sub = null;
+    }
   }
 
   void onEvent(event.Event e) {

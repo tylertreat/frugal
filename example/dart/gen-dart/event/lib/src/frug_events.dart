@@ -26,7 +26,7 @@ class EventsPublisher {
     seqId = 0;
   }
 
-  publishEventCreated(t_event.Event req, String user) {
+  Future publishEventCreated(String user, t_event.Event req) {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
@@ -49,7 +49,7 @@ class EventsSubscriber {
     provider = new frugal.Provider(t, f, p);
   }
 
-  Future<frugal.Subscription> subscribeEventCreated(dynamic onEvent(t_event.Event req), String user) async {
+  Future<frugal.Subscription> subscribeEventCreated(String user, dynamic onEvent(t_event.Event req)) async {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
@@ -79,3 +79,4 @@ class EventsSubscriber {
     return req;
   }
 }
+
