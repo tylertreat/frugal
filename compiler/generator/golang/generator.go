@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/globals"
@@ -25,13 +24,9 @@ func NewGenerator() generator.SingleFileGenerator {
 	return &Generator{&generator.BaseGenerator{}}
 }
 
-func getPackageComponents(pkg string) []string {
-	return strings.Split(pkg, ".")
-}
-
 func (g *Generator) GetOutputDir(dir string, p *parser.Program) string {
 	if pkg, ok := p.Namespaces[lang]; ok {
-		path := getPackageComponents(pkg)
+		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
 		dir = filepath.Join(dir, p.Name)
@@ -68,7 +63,7 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 func (g *Generator) GeneratePackage(file *os.File, p *parser.Program) error {
 	pkg, ok := p.Namespaces[lang]
 	if ok {
-		components := getPackageComponents(pkg)
+		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]
 	} else {
 		pkg = p.Name
@@ -77,7 +72,7 @@ func (g *Generator) GeneratePackage(file *os.File, p *parser.Program) error {
 	return err
 }
 
-func (g *Generator) GenerateImports(file *os.File) error {
+func (g *Generator) GenerateImports(file *os.File, p *parser.Program) error {
 	imports := "import (\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"
@@ -162,6 +157,7 @@ func generatePublisher(publishers string, scope *parser.Scope) string {
 
 func generatePrefixStringTemplate(scope *parser.Scope) string {
 	if len(scope.Prefix.Variables) == 0 {
+		// TODO: Fix this
 		return `""`
 	}
 	template := "fmt.Sprintf(\""

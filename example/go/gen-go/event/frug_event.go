@@ -29,9 +29,9 @@ func NewEventsPublisher(t frugal.TransportFactory, f thrift.TTransportFactory, p
 	}
 }
 
-func (l *EventsPublisher) PublishEventCreated(req *Event) error {
+func (l *EventsPublisher) PublishEventCreated(req *Event, user string) error {
 	op := "EventCreated"
-	prefix := ""
+	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
 	l.Transport.PreparePublish(topic)
 	oprot := l.Protocol
@@ -57,9 +57,9 @@ func NewEventsSubscriber(t frugal.TransportFactory, f thrift.TTransportFactory, 
 	return &EventsSubscriber{Provider: provider}
 }
 
-func (l *EventsSubscriber) SubscribeEventCreated(handler func(*Event)) (*frugal.Subscription, error) {
+func (l *EventsSubscriber) SubscribeEventCreated(user string, handler func(*Event)) (*frugal.Subscription, error) {
 	op := "EventCreated"
-	prefix := ""
+	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
 	transport, protocol := l.Provider.New()
 	if err := transport.Subscribe(topic); err != nil {

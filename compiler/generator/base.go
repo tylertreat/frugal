@@ -11,7 +11,7 @@ func (b *BaseGenerator) CreateFile(name, outputDir, suffix string) (*os.File, er
 	if err := os.MkdirAll(outputDir, 0777); err != nil {
 		return nil, err
 	}
-	return os.Create(fmt.Sprintf("%s/%s%s.%s", outputDir, filePrefix, name, suffix))
+	return os.Create(fmt.Sprintf("%s/%s%s.%s", outputDir, FilePrefix, name, suffix))
 }
 
 func (b *BaseGenerator) GenerateNewline(file *os.File, count int) error {
