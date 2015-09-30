@@ -104,5 +104,4 @@ class EventUI {
   void onEvent(event.Event e) {
     window.alert(e.toString());
   }
-
 }
