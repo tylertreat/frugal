@@ -149,8 +149,11 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 }
 
 func generatePrefixStringTemplate(scope *parser.Scope) string {
-	if scope.Prefix.String == "" {
-		return `""`
+	if len(scope.Prefix.Variables) == 0 {
+		if scope.Prefix.String == "" {
+			return `""`
+		}
+		return fmt.Sprintf(`"%s."`, scope.Prefix.String)
 	}
 	template := "String.format(\""
 	template += scope.Prefix.Template()
