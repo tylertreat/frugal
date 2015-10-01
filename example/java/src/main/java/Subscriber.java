@@ -19,7 +19,7 @@ public class Subscriber {
         TTransportFactory thriftTf = new TTransportFactory();
         TProtocolFactory pf = new TBinaryProtocol.Factory();
         subscriber = new EventsSubscriber(tf, thriftTf, pf);
-        subscriber.subscribeEventCreated(new EventsSubscriber.EventCreatedHandler() {
+        subscriber.subscribeEventCreated("foo", new EventsSubscriber.EventCreatedHandler() {
             @Override
             public void onEventCreated(Event event) {
                 System.out.println("received event: " + event.getID() + " " + event.getMessage());

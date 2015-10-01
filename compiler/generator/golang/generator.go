@@ -47,7 +47,7 @@ func (g *Generator) CheckCompile(path string) error {
 }
 
 func (g *Generator) GenerateFile(name string, outputDir string) (*os.File, error) {
-	return g.CreateFile(name, outputDir, lang)
+	return g.CreateFile(name, outputDir, lang, true)
 }
 
 func (g *Generator) GenerateDocStringComment(file *os.File) error {

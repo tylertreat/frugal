@@ -20,9 +20,9 @@ public class Publisher {
         TProtocolFactory pf = new TBinaryProtocol.Factory();
         publisher = new EventsPublisher(tf, thriftTf, pf);
         for (int i = 0; i < 5; i++) {
-            publisher.publishEventCreated(new Event(i, "Hello, world!"));
+            publisher.publishEventCreated("foo", new Event(i, "Hello, world!"));
         }
-        System.out.println("Published event");
+        System.out.println("Published events");
     }
 
 }
