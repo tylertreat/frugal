@@ -29,7 +29,7 @@ func NewEventsPublisher(t frugal.TransportFactory, f thrift.TTransportFactory, p
 	}
 }
 
-func (l *EventsPublisher) PublishEventCreated(req *Event, user string) error {
+func (l *EventsPublisher) PublishEventCreated(user string, req *Event) error {
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)

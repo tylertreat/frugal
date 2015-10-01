@@ -1,5 +1,5 @@
 scope Events {
-    prefix "foo.{user}"
+    //prefix "foo.{user}"
 
     EventCreated: Event
 }

@@ -92,7 +92,7 @@ func runPublisher(conn *nats.Conn, protocolFactory thrift.TProtocolFactory, tran
 	factory := frugal.NewNATSTransportFactory(conn)
 	publisher := event.NewEventsPublisher(factory, transportFactory, protocolFactory)
 	event := &event.Event{Message: "hello, world!"}
-	if err := publisher.PublishEventCreated(event, "foouser"); err != nil {
+	if err := publisher.PublishEventCreated("foouser", event); err != nil {
 		panic(err)
 	}
 	fmt.Println("EventCreated()")

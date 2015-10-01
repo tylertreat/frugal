@@ -121,18 +121,20 @@ func generatePublisher(publishers string, scope *parser.Scope) string {
 
 	args := ""
 	if len(scope.Prefix.Variables) > 0 {
+		prefix := ""
 		for _, variable := range scope.Prefix.Variables {
-			args += ", " + variable
+			args += prefix + variable
+			prefix = ", "
 		}
-		args += " string"
+		args += " string, "
 	}
 
 	prefix := ""
 	for _, op := range scope.Operations {
 		publishers += prefix
 		prefix = "\n\n"
-		publishers += fmt.Sprintf("func (l *%sPublisher) Publish%s(req *%s%s) error {\n",
-			scope.Name, op.Name, op.Param, args)
+		publishers += fmt.Sprintf("func (l *%sPublisher) Publish%s(%sreq *%s) error {\n",
+			scope.Name, op.Name, args, op.Param)
 		publishers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		publishers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 		publishers += "\ttopic := fmt.Sprintf(\"%s" + scope.Name + "%s%s\", prefix, delimiter, op)\n"
@@ -157,8 +159,10 @@ func generatePublisher(publishers string, scope *parser.Scope) string {
 
 func generatePrefixStringTemplate(scope *parser.Scope) string {
 	if len(scope.Prefix.Variables) == 0 {
-		// TODO: Fix this
-		return `""`
+		if scope.Prefix.String == "" {
+			return `""`
+		}
+		return fmt.Sprintf(`"%s."`, scope.Prefix.String)
 	}
 	template := "fmt.Sprintf(\""
 	template += scope.Prefix.Template()

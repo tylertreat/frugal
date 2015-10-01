@@ -64,7 +64,7 @@ func NewFooPublisher(t frugal.TransportFactory, f thrift.TTransportFactory, p th
 	}
 }
 
-func (l *FooPublisher) PublishFoo(req *Thing, baz string) error {
+func (l *FooPublisher) PublishFoo(baz string, req *Thing) error {
 	op := "Foo"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
@@ -83,7 +83,7 @@ func (l *FooPublisher) PublishFoo(req *Thing, baz string) error {
 	return oprot.Flush()
 }
 
-func (l *FooPublisher) PublishBar(req *Stuff, baz string) error {
+func (l *FooPublisher) PublishBar(baz string, req *Stuff) error {
 	op := "Bar"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
