@@ -153,7 +153,7 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 		if scope.Prefix.String == "" {
 			return `""`
 		}
-		return fmt.Sprintf(`"%s."`, scope.Prefix.String)
+		return fmt.Sprintf(`"%s%s"`, scope.Prefix.String, globals.TopicDelimiter)
 	}
 	template := "String.format(\""
 	template += scope.Prefix.Template()
