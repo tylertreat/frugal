@@ -270,11 +270,9 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	subscribers := ""
 	subscribers += fmt.Sprintf("class %sSubscriber {\n", scope.Name)
-	subscribers += tab + "frugal.Provider provider;\n\n"
+	subscribers += tab + "final frugal.Provider provider;\n\n"
 
-	subscribers += fmt.Sprintf(tab+"%sSubscriber(frugal.Provider provider) {\n", scope.Name)
-	subscribers += tabtab + "this.provider = provider;\n"
-	subscribers += tab + "}\n\n"
+	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider) {}\n\n", scope.Name)
 
 	args := ""
 	if len(scope.Prefix.Variables) > 0 {

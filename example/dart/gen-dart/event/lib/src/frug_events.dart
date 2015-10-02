@@ -42,11 +42,9 @@ class EventsPublisher {
 
 
 class EventsSubscriber {
-  frugal.Provider provider;
+  final frugal.Provider provider;
 
-  EventsSubscriber(frugal.Provider provider) {
-    this.provider = provider;
-  }
+  EventsSubscriber(this.provider) {}
 
   Future<frugal.Subscription> subscribeEventCreated(String user, dynamic onEvent(t_event.Event req)) async {
     var op = "EventCreated";

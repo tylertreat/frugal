@@ -174,7 +174,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 	subscriber += fmt.Sprintf(tab+"private static final String delimiter = \"%s\";\n\n", globals.TopicDelimiter)
 
-	subscriber += tab + "private Provider provider;\n\n"
+	subscriber += tab + "private final Provider provider;\n\n"
 
 	subscriber += fmt.Sprintf(tab+"public %sSubscriber(Provider provider) {\n",
 		scope.Name)

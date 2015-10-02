@@ -26,7 +26,7 @@ public class EventsSubscriber {
 
 	private static final String delimiter = ".";
 
-	private Provider provider;
+	private final Provider provider;
 
 	public EventsSubscriber(Provider provider) {
 		this.provider = provider;
