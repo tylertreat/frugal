@@ -35,10 +35,9 @@ class EventUI {
     var nats = new Nats("http://localhost:8100", sessionHandler);
     nats.connect().then((_) {
       _transport = new frugal.NatsTransport(nats);
-      _eventsPublisher = new event.EventsPublisher(new frugal.NatsTransportFactory(nats),
-      null, new TJsonProtocolFactory());
-      _eventsSubscriber = new event.EventsSubscriber(new frugal.NatsTransportFactory(nats),
-      null, new TJsonProtocolFactory());
+      var provider = new frugal.Provider(new frugal.NatsTransportFactory(nats), null, new TJsonProtocolFactory());
+      _eventsPublisher = new event.EventsPublisher(provider);
+      _eventsSubscriber = new event.EventsSubscriber(provider);
     });
   }
 

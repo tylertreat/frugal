@@ -112,8 +112,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += tab + "private TProtocol protocol;\n"
 	publisher += tab + "private int seqId;\n\n"
 
-	publisher += fmt.Sprintf(tab+"public %sPublisher(TransportFactory t, TTransportFactory f, TProtocolFactory p) {\n", scope.Name)
-	publisher += tabtab + "Provider provider = new Provider(t, f, p);\n"
+	publisher += fmt.Sprintf(tab+"public %sPublisher(Provider provider) {\n", scope.Name)
 	publisher += tabtab + "Provider.Client client = provider.build();\n"
 	publisher += tabtab + "transport = client.getTransport();\n"
 	publisher += tabtab + "protocol = client.getProtocol();\n"
@@ -175,11 +174,11 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 	subscriber += fmt.Sprintf(tab+"private static final String delimiter = \"%s\";\n\n", globals.TopicDelimiter)
 
-	subscriber += tab + "private Provider provider;\n\n"
+	subscriber += tab + "private final Provider provider;\n\n"
 
-	subscriber += fmt.Sprintf(tab+"public %sSubscriber(TransportFactory t, TTransportFactory f, TProtocolFactory p) {\n",
+	subscriber += fmt.Sprintf(tab+"public %sSubscriber(Provider provider) {\n",
 		scope.Name)
-	subscriber += tabtab + "provider = new Provider(t, f, p);\n"
+	subscriber += tabtab + "this.provider = provider;\n"
 	subscriber += tab + "}\n\n"
 
 	args := ""

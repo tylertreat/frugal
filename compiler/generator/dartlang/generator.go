@@ -210,9 +210,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += tab + "thrift.TProtocol protocol;\n"
 	publishers += tab + "int seqId;\n\n"
 
-	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.TransportFactory t, thrift.TTransportFactory f, "+
-		"thrift.TProtocolFactory p) {\n", scope.Name)
-	publishers += tabtab + "var provider = new frugal.Provider(t, f, p);\n"
+	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.Provider provider) {\n", scope.Name)
 	publishers += tabtab + "var tp = provider.newTransportProtocol();\n"
 	publishers += tabtab + "transport = tp.transport;\n"
 	publishers += tabtab + "protocol = tp.protocol;\n"
@@ -272,12 +270,9 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	subscribers := ""
 	subscribers += fmt.Sprintf("class %sSubscriber {\n", scope.Name)
-	subscribers += tab + "frugal.Provider provider;\n\n"
+	subscribers += tab + "final frugal.Provider provider;\n\n"
 
-	subscribers += fmt.Sprintf(tab+"%sSubscriber(frugal.TransportFactory t, thrift.TTransportFactory f, "+
-		"thrift.TProtocolFactory p) {\n", scope.Name)
-	subscribers += tabtab + "provider = new frugal.Provider(t, f, p);\n"
-	subscribers += tab + "}\n\n"
+	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider) {}\n\n", scope.Name)
 
 	args := ""
 	if len(scope.Prefix.Variables) > 0 {

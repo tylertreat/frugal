@@ -19,8 +19,7 @@ type BarPublisher struct {
 	SeqId     int32
 }
 
-func NewBarPublisher(t frugal.TransportFactory, f thrift.TTransportFactory, p thrift.TProtocolFactory) *BarPublisher {
-	provider := frugal.NewProvider(t, f, p)
+func NewBarPublisher(provider *frugal.Provider) *BarPublisher {
 	transport, protocol := provider.New()
 	return &BarPublisher{
 		Transport: transport,
@@ -54,8 +53,7 @@ type FooPublisher struct {
 	SeqId     int32
 }
 
-func NewFooPublisher(t frugal.TransportFactory, f thrift.TTransportFactory, p thrift.TProtocolFactory) *FooPublisher {
-	provider := frugal.NewProvider(t, f, p)
+func NewFooPublisher(provider *frugal.Provider) *FooPublisher {
 	transport, protocol := provider.New()
 	return &FooPublisher{
 		Transport: transport,
@@ -106,8 +104,7 @@ type BarSubscriber struct {
 	Provider *frugal.Provider
 }
 
-func NewBarSubscriber(t frugal.TransportFactory, f thrift.TTransportFactory, p thrift.TProtocolFactory) *BarSubscriber {
-	provider := frugal.NewProvider(t, f, p)
+func NewBarSubscriber(provider *frugal.Provider) *BarSubscriber {
 	return &BarSubscriber{Provider: provider}
 }
 
@@ -164,8 +161,7 @@ type FooSubscriber struct {
 	Provider *frugal.Provider
 }
 
-func NewFooSubscriber(t frugal.TransportFactory, f thrift.TTransportFactory, p thrift.TProtocolFactory) *FooSubscriber {
-	provider := frugal.NewProvider(t, f, p)
+func NewFooSubscriber(provider *frugal.Provider) *FooSubscriber {
 	return &FooSubscriber{Provider: provider}
 }
 
