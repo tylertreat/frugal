@@ -108,9 +108,7 @@ func generatePublisher(publishers string, scope *parser.Scope) string {
 	publishers += "\tSeqId     int32\n"
 	publishers += "}\n\n"
 
-	publishers += fmt.Sprintf("func New%sPublisher(t frugal.TransportFactory, f thrift.TTransportFactory, "+
-		"p thrift.TProtocolFactory) *%sPublisher {\n", scope.Name, scope.Name)
-	publishers += "\tprovider := frugal.NewProvider(t, f, p)\n"
+	publishers += fmt.Sprintf("func New%sPublisher(provider *frugal.Provider) *%sPublisher {\n", scope.Name, scope.Name)
 	publishers += "\ttransport, protocol := provider.New()\n"
 	publishers += fmt.Sprintf("\treturn &%sPublisher{\n", scope.Name)
 	publishers += "\t\tTransport: transport,\n"
@@ -193,9 +191,7 @@ func generateSubscriber(subscribers string, scope *parser.Scope) string {
 	subscribers += "\tProvider *frugal.Provider\n"
 	subscribers += "}\n\n"
 
-	subscribers += fmt.Sprintf("func New%sSubscriber(t frugal.TransportFactory, "+
-		"f thrift.TTransportFactory, p thrift.TProtocolFactory) *%sSubscriber {\n", scope.Name, scope.Name)
-	subscribers += "\tprovider := frugal.NewProvider(t, f, p)\n"
+	subscribers += fmt.Sprintf("func New%sSubscriber(provider *frugal.Provider) *%sSubscriber {\n", scope.Name, scope.Name)
 	subscribers += fmt.Sprintf("\treturn &%sSubscriber{Provider: provider}\n", scope.Name)
 	subscribers += "}\n\n"
 

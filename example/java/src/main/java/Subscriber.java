@@ -1,4 +1,5 @@
 import com.workiva.frugal.NatsTransportFactory;
+import com.workiva.frugal.Provider;
 import com.workiva.frugal.TransportFactory;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -18,7 +19,8 @@ public class Subscriber {
         TransportFactory tf = new NatsTransportFactory(conn);
         TTransportFactory thriftTf = new TTransportFactory();
         TProtocolFactory pf = new TBinaryProtocol.Factory();
-        subscriber = new EventsSubscriber(tf, thriftTf, pf);
+        Provider provider = new Provider(tf, thriftTf, pf);
+        subscriber = new EventsSubscriber(provider);
         subscriber.subscribeEventCreated("foo", new EventsSubscriber.EventCreatedHandler() {
             @Override
             public void onEventCreated(Event event) {

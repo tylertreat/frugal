@@ -1,4 +1,5 @@
 import com.workiva.frugal.NatsTransportFactory;
+import com.workiva.frugal.Provider;
 import com.workiva.frugal.TransportFactory;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -18,7 +19,8 @@ public class Publisher {
         TransportFactory tf = new NatsTransportFactory(conn);
         TTransportFactory thriftTf = new TTransportFactory();
         TProtocolFactory pf = new TBinaryProtocol.Factory();
-        publisher = new EventsPublisher(tf, thriftTf, pf);
+        Provider provider = new Provider(tf, thriftTf, pf);
+        publisher = new EventsPublisher(provider);
         for (int i = 0; i < 5; i++) {
             publisher.publishEventCreated("foo", new Event(i, "Hello, world!"));
         }

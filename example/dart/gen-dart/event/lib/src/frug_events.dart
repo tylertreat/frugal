@@ -18,8 +18,7 @@ class EventsPublisher {
   thrift.TProtocol protocol;
   int seqId;
 
-  EventsPublisher(frugal.TransportFactory t, thrift.TTransportFactory f, thrift.TProtocolFactory p) {
-    var provider = new frugal.Provider(t, f, p);
+  EventsPublisher(frugal.Provider provider) {
     var tp = provider.newTransportProtocol();
     transport = tp.transport;
     protocol = tp.protocol;
@@ -45,8 +44,8 @@ class EventsPublisher {
 class EventsSubscriber {
   frugal.Provider provider;
 
-  EventsSubscriber(frugal.TransportFactory t, thrift.TTransportFactory f, thrift.TProtocolFactory p) {
-    provider = new frugal.Provider(t, f, p);
+  EventsSubscriber(frugal.Provider provider) {
+    this.provider = provider;
   }
 
   Future<frugal.Subscription> subscribeEventCreated(String user, dynamic onEvent(t_event.Event req)) async {

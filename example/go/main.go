@@ -76,7 +76,8 @@ func main() {
 
 func runSubscriber(conn *nats.Conn, protocolFactory thrift.TProtocolFactory, transportFactory thrift.TTransportFactory) {
 	factory := frugal.NewNATSTransportFactory(conn)
-	subscriber := event.NewEventsSubscriber(factory, transportFactory, protocolFactory)
+	provider := frugal.NewProvider(factory, transportFactory, protocolFactory)
+	subscriber := event.NewEventsSubscriber(provider)
 	_, err := subscriber.SubscribeEventCreated("foouser", func(e *event.Event) {
 		fmt.Printf("received %+v\n", e)
 	})
@@ -90,7 +91,8 @@ func runSubscriber(conn *nats.Conn, protocolFactory thrift.TProtocolFactory, tra
 
 func runPublisher(conn *nats.Conn, protocolFactory thrift.TProtocolFactory, transportFactory thrift.TTransportFactory) {
 	factory := frugal.NewNATSTransportFactory(conn)
-	publisher := event.NewEventsPublisher(factory, transportFactory, protocolFactory)
+	provider := frugal.NewProvider(factory, transportFactory, protocolFactory)
+	publisher := event.NewEventsPublisher(provider)
 	event := &event.Event{Message: "hello, world!"}
 	if err := publisher.PublishEventCreated("foouser", event); err != nil {
 		panic(err)
