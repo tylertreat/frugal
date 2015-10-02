@@ -30,7 +30,9 @@ class EventUI {
 
   void _initConnection() {
     var client = new http.BrowserClient();
-    var nats = new Nats("http://localhost:8100/nats", "fooclient", client);
+    var sessionHandler = new SessionHandler(
+        "http://localhost:8100", "fooclient", client);
+    var nats = new Nats("http://localhost:8100", sessionHandler);
     nats.connect().then((_) {
       _transport = new frugal.NatsTransport(nats);
       _eventsPublisher = new event.EventsPublisher(new frugal.NatsTransportFactory(nats),
