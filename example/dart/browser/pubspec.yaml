@@ -8,11 +8,14 @@ environment:
 dependencies:
   event:
     path: ../gen-dart/event
-  http: '>= 0.11.2 < 0.12.0'
   frugal:
     git:
       url: git@github.com:Workiva/frugal-dart.git
+  messaging_frontend:
+    git:
+      url: git@github.com:Workiva/messaging-frontend-dart.git
   thrift:
     git:
       url: git@github.com:Workiva/thrift-dart.git
+  w_service: "^1.0.2"
 
