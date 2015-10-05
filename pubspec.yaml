@@ -5,9 +5,9 @@ environment:
   sdk: ^1.12.0
 
 dependencies:
-  messaging_sdk:
+  messaging_frontend:
     git:
-      url: git@github.com:Workiva/messaging-sdk-dart.git
+      url: git@github.com:Workiva/messaging-frontend-dart.git
   thrift: # '>=0.1.0'
     git:
       url: git@github.com:Workiva/thrift-dart.git

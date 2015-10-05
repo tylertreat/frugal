@@ -5,7 +5,7 @@ import "dart:convert";
 import "dart:typed_data";
 
 import "package:thrift/thrift.dart";
-import "package:messaging_sdk/messaging_sdk.dart";
+import "package:messaging_frontend/messaging_frontend.dart";
 
 part 'src/provider.dart';
 part 'src/subscription.dart';
