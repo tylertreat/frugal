@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:html';
 
-import 'package:http/browser_client.dart' as http;
 import 'package:thrift/thrift.dart';
 import 'package:event/event.dart' as event;
 import 'package:frugal/frugal.dart' as frugal;
-import 'package:messaging_sdk/messaging_sdk.dart';
+import 'package:messaging_frontend/messaging_frontend.dart' show Message, MessagingFrontendClient, Nats;
+import 'package:w_service/w_service.dart';
+import 'package:w_service/w_service_client.dart' show configureWServiceForBrowser;
 
 frugal.Subscription sub;
 
@@ -19,7 +20,6 @@ class EventUI {
 
   EventUI(this.output);
 
-  frugal.Transport _transport;
   event.EventsPublisher _eventsPublisher;
   event.EventsSubscriber _eventsSubscriber;
 
@@ -29,12 +29,10 @@ class EventUI {
   }
 
   void _initConnection() {
-    var client = new http.BrowserClient();
-    var sessionHandler = new SessionHandler(
-        "http://localhost:8100", "fooclient", client);
-    var nats = new Nats("http://localhost:8100", sessionHandler);
+    configureWServiceForBrowser();
+    var client = new MessagingFrontendClient("http://localhost:8100", "some-sweet-client", new HttpProvider());
+    var nats = client.nats();
     nats.connect().then((_) {
-      _transport = new frugal.NatsTransport(nats);
       var provider = new frugal.Provider(new frugal.NatsTransportFactory(nats), null, new TJsonProtocolFactory());
       _eventsPublisher = new event.EventsPublisher(provider);
       _eventsSubscriber = new event.EventsSubscriber(provider);
