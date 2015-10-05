@@ -1,3 +1,5 @@
+namespace java foo
+
 // This is a scope
 scope Foo {
     prefix "foo.bar.{baz}.qux"

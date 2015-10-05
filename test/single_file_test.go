@@ -20,13 +20,13 @@ const (
 var (
 	languages           = []string{"go"}
 	expectedOutputPaths = map[string]string{
-		"go": "frug_valid.go.txt",
+		"go": "expected/go/frug_valid.txt",
 	}
 )
 
-func TestValid(t *testing.T) {
+func TestSingleFileValid(t *testing.T) {
 	for _, language := range languages {
-		testLanguage(t, language)
+		testSingleFileLanguage(t, language)
 	}
 }
 
@@ -36,7 +36,7 @@ func TestInvalid(t *testing.T) {
 	}
 }
 
-func testLanguage(t *testing.T, language string) {
+func testSingleFileLanguage(t *testing.T, language string) {
 	if err := compiler.Compile(validFile, language, outputDir, delim); err != nil {
 		t.Fatal("Unexpected error", err)
 	}
