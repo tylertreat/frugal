@@ -31,7 +31,7 @@ type Generator struct {
 }
 
 func NewGenerator() generator.MultipleFileGenerator {
-	return &Generator{&generator.BaseGenerator{}, time.Now()}
+	return &Generator{&generator.BaseGenerator{}, globals.Now}
 }
 
 func (g *Generator) GetOutputDir(dir string, p *parser.Program) string {
