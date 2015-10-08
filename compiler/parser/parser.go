@@ -245,5 +245,5 @@ func (b ByName) Swap(i, j int) {
 }
 
 func (b ByName) Less(i, j int) bool {
-	return strings.Compare(b[i].Name, b[j].Name) == -1
+	return b[i].Name < b[j].Name
 }
