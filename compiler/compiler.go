@@ -78,7 +78,7 @@ func Compile(file, gen, out, delimiter string) error {
 }
 
 func generateThrift(out, gen, file string) error {
-	args := []string{}
+	args := []string{"-r"}
 	if out != "" {
 		args = append(args, "-out", out)
 	}
