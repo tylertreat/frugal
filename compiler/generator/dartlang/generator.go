@@ -120,7 +120,11 @@ func (g *Generator) addToPubspec(p *parser.Program, dir string) error {
 }
 
 func (g *Generator) exportClasses(p *parser.Program, dir string) error {
-	dartFile := fmt.Sprintf("%s.%s", strings.ToLower(p.Name), lang)
+	filename := strings.ToLower(p.Name)
+	if ns, ok := p.Namespaces[lang]; ok {
+		filename = strings.ToLower(ns)
+	}
+	dartFile := fmt.Sprintf("%s.%s", filename, lang)
 	mainFilePath := filepath.Join(dir, "lib", dartFile)
 	mainFile, err := os.OpenFile(mainFilePath, syscall.O_RDWR, 0777)
 	defer mainFile.Close()
