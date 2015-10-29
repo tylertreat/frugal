@@ -17,5 +17,7 @@ echo
 
 set -e
 
+go get ./...
+
 # Run 
 go run main.go
