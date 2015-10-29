@@ -26,7 +26,6 @@ cd $GOPATH/src/github.com/Workiva/frugal
 echo "Pinning go dependencies."
 godep restore
 
-go get ./...
 go install
 
 # Run 
