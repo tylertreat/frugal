@@ -11,10 +11,9 @@ apt:
     - flex
     - git
 
-workdir: thrift
-
 after_install:
   - git clone https://git-wip-us.apache.org/repos/asf/thrift.git
+  - cd thrift
   - ./bootstrap.sh
   - ./configure
   - make
@@ -27,5 +26,7 @@ after_install:
 
 volumes:
   - 'data'
+
+workdir: /frugal/bin
 
 cmd: ["frugal"]
