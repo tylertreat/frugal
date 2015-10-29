@@ -17,7 +17,19 @@ echo
 
 set -e
 
+which godep > /dev/null || {
+    go get github.com/tools/godep
+}
+
+cd $GOPATH/src/github.com/Workiva/frugal
+
+echo "Pinning go dependencies."
+godep restore
+
 go get ./...
+go install
 
 # Run 
-go run main.go
+#go run main.go
+
+echo "Go build successful."
