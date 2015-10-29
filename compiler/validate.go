@@ -3,64 +3,52 @@ package compiler
 import (
 	"fmt"
 
-	"github.com/edmodo/frugal/parser"
+	"github.com/samuel/go-thrift/parser"
 
 	frugParser "github.com/Workiva/frugal/compiler/parser"
 )
 
-type errParse struct {
-	errors []*parser.CompileError
-}
-
-func (e *errParse) Error() string {
-	str := ""
-	for _, err := range e.errors {
-		str += fmt.Sprintf("%s (line %d, col %d): %s\n", err.File, err.Pos.Line, err.Pos.Col, err.Message)
-	}
-	return str
-}
-
 // validate ensures the Thrift file and Frugal Program are valid, meaning
 // namespaces match and struct references are defined.
 func validate(thriftFile string, program *frugParser.Program) error {
-	context := parser.NewCompileContext()
-	tree := context.ParseRecursive(thriftFile)
-	if tree == nil {
-		return &errParse{context.Errors}
+	parsed, err := parser.ParseFile(thriftFile)
+	if err != nil {
+		return err
 	}
+	thrift := parsed.(*parser.Thrift)
 
 	// Ensure namespaces match.
-	if err := validateNamespaces(tree, program); err != nil {
+	if err := validateNamespaces(thrift, program, thriftFile); err != nil {
 		return err
 	}
 
 	// Ensure struct references are defined.
-	if err := validateReferences(tree, program); err != nil {
+	if err := validateReferences(thrift, program, thriftFile); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func validateNamespaces(tree *parser.ParseTree, program *frugParser.Program) error {
+func validateNamespaces(tree *parser.Thrift, program *frugParser.Program, file string) error {
 	if len(program.Namespaces) != len(tree.Namespaces) {
-		return fmt.Errorf("Namespaces defined in %s do not match those defined in %s", program.Path, tree.Path)
+		return fmt.Errorf("Namespaces defined in %s do not match those defined in %s", program.Path, file)
 	}
 	for language, namespace := range program.Namespaces {
 		thriftNamespace, ok := tree.Namespaces[language]
 		if !ok {
 			return fmt.Errorf("%s specifies namespace '%s' for language %s, but %s does not specify namespace",
-				program.Path, namespace, language, tree.Path)
+				program.Path, namespace, language, file)
 		}
 		if namespace != thriftNamespace {
 			return fmt.Errorf("%s specifies namespace '%s' for language %s, but %s specifies %s",
-				program.Path, namespace, language, tree.Path, thriftNamespace)
+				program.Path, namespace, language, file, thriftNamespace)
 		}
 	}
 	return nil
 }
 
-func validateReferences(tree *parser.ParseTree, program *frugParser.Program) error {
+func validateReferences(tree *parser.Thrift, program *frugParser.Program, file string) error {
 	structCache := make(map[string]bool)
 	for _, scope := range program.Scopes {
 	opLoop:
@@ -68,19 +56,14 @@ func validateReferences(tree *parser.ParseTree, program *frugParser.Program) err
 			if _, ok := structCache[op.Param]; ok {
 				continue
 			}
-			for _, node := range tree.Nodes {
-				switch n := node.(type) {
-				case *parser.StructNode:
-					structCache[n.Name.Data.(string)] = true
-					if op.Param == n.Name.Data.(string) {
-						continue opLoop
-					}
-				default:
-					continue
+			for name, _ := range tree.Structs {
+				structCache[name] = true
+				if op.Param == name {
+					continue opLoop
 				}
 			}
 			return fmt.Errorf("Reference '%s' in %s not defined in %s",
-				op.Param, program.Path, tree.Path)
+				op.Param, program.Path, file)
 		}
 	}
 	return nil
