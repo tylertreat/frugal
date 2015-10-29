@@ -24,7 +24,8 @@ which godep > /dev/null || {
 cd $GOPATH/src/github.com/Workiva/frugal
 
 echo "Pinning go dependencies."
-godep restore
+#godep restore
+godep save -r
 
 go get ./...
 go install
