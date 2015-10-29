@@ -18,4 +18,4 @@ echo
 set -e
 
 # Run 
-go run
+go run main.go
