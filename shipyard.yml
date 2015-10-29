@@ -1,0 +1,31 @@
+---
+base: 'ubuntu/trusty'
+
+apt:
+  packages:
+    - automake
+    - libtool
+    - g++
+    - make
+    - pkg-config
+    - flex
+    - git
+
+workdir: thrift
+
+after_install:
+  - git clone https://git-wip-us.apache.org/repos/asf/thrift.git
+  - ./bootstrap.sh
+  - ./configure
+  - make
+  - make install
+  - cd ..
+  - rm -rf thrift
+  - mkdir -p /frugal/bin
+  - cp /build/smithy/frugal /frugal/bin
+  - chmod 755 /frugal/bin/frugal
+
+volumes:
+  - 'data'
+
+cmd: ["frugal"]
