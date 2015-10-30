@@ -1,7 +1,6 @@
 package compiler
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -44,26 +43,22 @@ func Compile(file, gen, out, delimiter string) error {
 	}
 
 	// Parse the Frugal file.
-	program, err := parser.Parse(name + ".frugal")
+	frugal, err := parser.ParseFrugal(name + ".frugal")
 	if err != nil {
 		return err
-	}
-
-	if len(program.Scopes) == 0 {
-		return errors.New("No scopes to generate")
 	}
 
 	// Ensure Thrift file and Frugal Program are valid (namespaces match,
 	// struct references defined, etc.).
 	thriftFile := name + ".thrift"
-	if err := validate(thriftFile, program); err != nil {
+	if err := validate(thriftFile, frugal); err != nil {
 		return err
 	}
 
 	if out == "" {
 		out = g.DefaultOutputDir()
 	}
-	fullOut := g.GetOutputDir(out, program)
+	fullOut := g.GetOutputDir(out, frugal)
 	if err := os.MkdirAll(out, 0777); err != nil {
 		return err
 	}
@@ -74,7 +69,7 @@ func Compile(file, gen, out, delimiter string) error {
 	}
 
 	// Generate Frugal code.
-	return g.Generate(program, fullOut)
+	return g.Generate(frugal, fullOut)
 }
 
 func generateThrift(out, gen, file string) error {

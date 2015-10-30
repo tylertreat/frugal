@@ -24,12 +24,12 @@ func NewGenerator() generator.SingleFileGenerator {
 	return &Generator{&generator.BaseGenerator{}}
 }
 
-func (g *Generator) GetOutputDir(dir string, p *parser.Program) string {
-	if pkg, ok := p.Namespaces[lang]; ok {
+func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
+	if pkg, ok := f.Namespaces[lang]; ok {
 		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
-		dir = filepath.Join(dir, p.Name)
+		dir = filepath.Join(dir, f.Name)
 	}
 	return dir
 }
@@ -60,19 +60,19 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 	return err
 }
 
-func (g *Generator) GeneratePackage(file *os.File, p *parser.Program) error {
-	pkg, ok := p.Namespaces[lang]
+func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal) error {
+	pkg, ok := f.Namespaces[lang]
 	if ok {
 		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]
 	} else {
-		pkg = p.Name
+		pkg = f.Name
 	}
 	_, err := file.WriteString(fmt.Sprintf("package %s", pkg))
 	return err
 }
 
-func (g *Generator) GenerateImports(file *os.File, p *parser.Program) error {
+func (g *Generator) GenerateImports(file *os.File, f *parser.Frugal) error {
 	imports := "import (\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"
@@ -89,7 +89,7 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 	return err
 }
 
-func (g *Generator) GeneratePublishers(file *os.File, scopes []*parser.Scope) error {
+func (g *Generator) GeneratePublishers(file *os.File, scopes map[string]*parser.Scope) error {
 	publishers := ""
 	newline := ""
 	for _, scope := range scopes {
@@ -174,7 +174,7 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 	return template
 }
 
-func (g *Generator) GenerateSubscribers(file *os.File, scopes []*parser.Scope) error {
+func (g *Generator) GenerateSubscribers(file *os.File, scopes map[string]*parser.Scope) error {
 	subscribers := ""
 	newline := ""
 	for _, scope := range scopes {

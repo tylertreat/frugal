@@ -1,0 +1,147 @@
+{
+
+package parser
+
+import (
+        "fmt"
+        "regexp"
+        "strconv"
+        "strings"
+)
+
+var (
+        identifier     = regexp.MustCompile("^[A-Za-z]+[A-Za-z0-9]")
+        prefixVariable = regexp.MustCompile("{\\w*}")
+        defaultPrefix  = &ScopePrefix{String: "", Variables: make([]string, 0)}
+)
+
+type namespace struct{
+        scope     string
+        namespace string
+}
+
+func newScopePrefix(prefix string) (*ScopePrefix, error) {
+        variables := []string{}
+        for _, variable := range prefixVariable.FindAllString(prefix, -1) {
+                variable = variable[1 : len(variable)-1]
+                if len(variable) == 0 || !identifier.MatchString(variable) {
+                        return nil, fmt.Errorf("parser: invalid prefix variable '%s'", variable)
+                }
+                variables = append(variables, variable)
+        }
+        return &ScopePrefix{String: prefix, Variables: variables}, nil
+}
+
+func toIfaceSlice(v interface{}) []interface{} {
+        if v == nil {
+            return nil
+        }
+        return v.([]interface{})
+}
+
+func ifaceSliceToString(v interface{}) string {
+        ifs := toIfaceSlice(v)
+        b := make([]byte, len(ifs))
+        for i, v := range ifs {
+                b[i] = v.([]uint8)[0]
+        }
+        return string(b)
+}
+
+}
+
+Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
+        frugal := &Frugal{
+                Namespaces: make(map[string]string),
+                Scopes:     make(map[string]*Scope),
+        }
+        stmts := toIfaceSlice(statements)
+        for _, st := range stmts {
+                switch v := st.([]interface{})[0].(type) {
+                case *namespace:
+                        frugal.Namespaces[v.scope] = v.namespace
+                case *Scope:
+                        frugal.Scopes[v.Name] = v
+                default:
+                        return nil, fmt.Errorf("parser: unknown value %#v", v)
+                }
+        }
+        return frugal, nil
+}
+
+SyntaxError ← . {
+        return nil, errors.New("parser: syntax error")
+}
+
+Statement ← Namespace / Scope
+
+Namespace ← "namespace" _ scope:[a-z.-]+ _ ns:Identifier EOS {
+        return &namespace{
+                scope:     ifaceSliceToString(scope),
+                namespace: string(ns.(Identifier)),
+        }, nil
+}
+
+Scope ← "scope" _ name:Identifier __ '{' __ prefix:Prefix? __ operations:(Operation __)* ('}' / EndOfScopeError) EOS {
+        ops := operations.([]interface{})
+        scope := &Scope{
+                Name:       string(name.(Identifier)),
+                Operations: make(map[string]*Operation, len(ops)),
+                Prefix:     defaultPrefix,
+        }
+        if prefix != nil {
+                scope.Prefix = prefix.(*ScopePrefix)
+        }
+        for _, o := range ops {
+                op :=  o.([]interface{})[0].(*Operation)
+                scope.Operations[op.Name] = op
+        }
+        return scope, nil
+}
+
+EndOfScopeError ← . {
+        return nil, errors.New("parser: expected end of scope")
+}
+
+Prefix ← "prefix" _ name:Literal EOL {
+        return newScopePrefix(name.(string)) 
+}
+
+Operation ← name:Identifier _ ':' __ param:Identifier _ EOL {
+        o := &Operation{
+                Name:  string(name.(Identifier)),
+                Param: string(param.(Identifier)),
+        }
+        return o, nil
+}
+
+Literal ← (('"' (`\"` / [^"])* '"') / ('\'' (`\'` / [^'])* '\'')) {
+        if len(c.text) != 0 && c.text[0] == '\'' {
+                return strconv.Unquote(`"` + strings.Replace(string(c.text[1:len(c.text)-1]), `\'`, `'`, -1) + `"`)
+        }
+        return strconv.Unquote(string(c.text))
+}
+
+Identifier ← (Letter / '_')+ (Letter / Digit / [._])* {
+        return Identifier(string(c.text)), nil
+}
+
+ListSeparator ← [,;]
+Letter ← [A-Za-z]
+Digit ← [0-9]
+
+SourceChar ← .
+Comment ← MultiLineComment / SingleLineComment
+MultiLineComment ← "/*" ( !"*/" SourceChar )* "*/"
+MultiLineCommentNoLineTerminator ← "/*" ( !( "*/" / EOL ) SourceChar )* "*/"
+SingleLineComment ← ("//" ( !EOL SourceChar )*) / ("#" ( !EOL SourceChar )*)
+
+__ ← ( Whitespace / EOL / Comment )*
+_ ← ( Whitespace / MultiLineCommentNoLineTerminator )*
+WS ← Whitespace*
+
+Whitespace ← [ \t\r]
+EOL ← '\n'
+EOS ← __ ';' / _ SingleLineComment? EOL / __ EOF
+
+EOF ← !.

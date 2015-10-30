@@ -34,8 +34,8 @@ func NewGenerator() generator.MultipleFileGenerator {
 	return &Generator{&generator.BaseGenerator{}, globals.Now}
 }
 
-func (g *Generator) GetOutputDir(dir string, p *parser.Program) string {
-	if pkg, ok := p.Namespaces[lang]; ok {
+func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
+	if pkg, ok := f.Namespaces[lang]; ok {
 		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	}
@@ -46,7 +46,7 @@ func (g *Generator) DefaultOutputDir() string {
 	return defaultOutputDir
 }
 
-func (g *Generator) GenerateDependencies(p *parser.Program, dir string) error {
+func (g *Generator) GenerateDependencies(f *parser.Frugal, dir string) error {
 	return nil
 }
 
@@ -77,8 +77,8 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 	return err
 }
 
-func (g *Generator) GeneratePackage(file *os.File, p *parser.Program, scope *parser.Scope) error {
-	pkg, ok := p.Namespaces[lang]
+func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *parser.Scope) error {
+	pkg, ok := f.Namespaces[lang]
 	if !ok {
 		return nil
 	}
