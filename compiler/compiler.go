@@ -48,7 +48,7 @@ func Compile(file, gen, out, delimiter string) error {
 		return err
 	}
 
-	// Ensure Thrift file and Frugal Program are valid (namespaces match,
+	// Ensure Thrift file and parsed Frugal are valid (namespaces match,
 	// struct references defined, etc.).
 	thriftFile := name + ".thrift"
 	if err := validate(thriftFile, frugal); err != nil {

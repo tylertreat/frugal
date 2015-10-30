@@ -157,7 +157,7 @@ func NewMultipleFileProgramGenerator(generator MultipleFileGenerator,
 	return &MultipleFileProgramGenerator{generator, splitPublisherSubscriber}
 }
 
-// Generate the Program in the given directory.
+// Generate the Frugal in the given directory.
 func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir string) error {
 	if err := o.GenerateDependencies(frugal, outputDir); err != nil {
 		return err
