@@ -78,7 +78,12 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 }
 
 func (g *Generator) GeneratePackage(file *os.File, p *parser.Program, scope *parser.Scope) error {
-	return nil
+	pkg, ok := p.Namespaces[lang]
+	if !ok {
+		return nil
+	}
+	_, err := file.WriteString(fmt.Sprintf("package %s;", pkg))
+	return err
 }
 
 func (g *Generator) GenerateImports(file *os.File, scope *parser.Scope) error {

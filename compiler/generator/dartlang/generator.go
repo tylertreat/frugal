@@ -156,7 +156,7 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 	}
 	outputDir = filepath.Join(outputDir, "lib")
 	outputDir = filepath.Join(outputDir, "src")
-	return g.CreateFile(name, outputDir, lang, true)
+	return g.CreateFile(strings.ToLower(name), outputDir, lang, true)
 }
 
 func (g *Generator) GenerateDocStringComment(file *os.File) error {
