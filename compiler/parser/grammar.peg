@@ -1,53 +1,51 @@
 {
+        package parser
 
-package parser
+        import (
+                "fmt"
+                "regexp"
+                "strconv"
+                "strings"
+        )
 
-import (
-        "fmt"
-        "regexp"
-        "strconv"
-        "strings"
-)
+        var (
+                identifier     = regexp.MustCompile("^[A-Za-z]+[A-Za-z0-9]")
+                prefixVariable = regexp.MustCompile("{\\w*}")
+                defaultPrefix  = &ScopePrefix{String: "", Variables: make([]string, 0)}
+        )
 
-var (
-        identifier     = regexp.MustCompile("^[A-Za-z]+[A-Za-z0-9]")
-        prefixVariable = regexp.MustCompile("{\\w*}")
-        defaultPrefix  = &ScopePrefix{String: "", Variables: make([]string, 0)}
-)
+        type namespace struct{
+                scope     string
+                namespace string
+        }
 
-type namespace struct{
-        scope     string
-        namespace string
-}
-
-func newScopePrefix(prefix string) (*ScopePrefix, error) {
-        variables := []string{}
-        for _, variable := range prefixVariable.FindAllString(prefix, -1) {
-                variable = variable[1 : len(variable)-1]
-                if len(variable) == 0 || !identifier.MatchString(variable) {
-                        return nil, fmt.Errorf("parser: invalid prefix variable '%s'", variable)
+        func newScopePrefix(prefix string) (*ScopePrefix, error) {
+                variables := []string{}
+                for _, variable := range prefixVariable.FindAllString(prefix, -1) {
+                        variable = variable[1 : len(variable)-1]
+                        if len(variable) == 0 || !identifier.MatchString(variable) {
+                                return nil, fmt.Errorf("parser: invalid prefix variable '%s'", variable)
+                        }
+                        variables = append(variables, variable)
                 }
-                variables = append(variables, variable)
+                return &ScopePrefix{String: prefix, Variables: variables}, nil
         }
-        return &ScopePrefix{String: prefix, Variables: variables}, nil
-}
 
-func toIfaceSlice(v interface{}) []interface{} {
-        if v == nil {
-            return nil
+        func toIfaceSlice(v interface{}) []interface{} {
+                if v == nil {
+                        return nil
+                }
+                return v.([]interface{})
         }
-        return v.([]interface{})
-}
 
-func ifaceSliceToString(v interface{}) string {
-        ifs := toIfaceSlice(v)
-        b := make([]byte, len(ifs))
-        for i, v := range ifs {
-                b[i] = v.([]uint8)[0]
+        func ifaceSliceToString(v interface{}) string {
+                ifs := toIfaceSlice(v)
+                b := make([]byte, len(ifs))
+                for i, v := range ifs {
+                        b[i] = v.([]uint8)[0]
+                }
+                return string(b)
         }
-        return string(b)
-}
-
 }
 
 Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
