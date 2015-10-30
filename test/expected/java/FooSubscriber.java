@@ -60,11 +60,7 @@ public class FooSubscriber {
 						}
 						e.printStackTrace();
 						sub.signal(e);
-						try {
-							sub.unsubscribe();
-						} catch (TTransportException e1) {
-							e1.printStackTrace();
-						}
+						sub.unsubscribe();
 					}
 				}
 			}
@@ -116,11 +112,7 @@ public class FooSubscriber {
 						}
 						e.printStackTrace();
 						sub.signal(e);
-						try {
-							sub.unsubscribe();
-						} catch (TTransportException e1) {
-							e1.printStackTrace();
-						}
+						sub.unsubscribe();
 					}
 				}
 			}
