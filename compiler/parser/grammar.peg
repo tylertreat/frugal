@@ -53,7 +53,7 @@ func ifaceSliceToString(v interface{}) string {
 Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
         frugal := &Frugal{
                 Namespaces: make(map[string]string),
-                Scopes:     make(map[string]*Scope),
+                Scopes:     []*Scope{},
         }
         stmts := toIfaceSlice(statements)
         for _, st := range stmts {
@@ -61,7 +61,7 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
                 case *namespace:
                         frugal.Namespaces[v.scope] = v.namespace
                 case *Scope:
-                        frugal.Scopes[v.Name] = v
+                        frugal.Scopes = append(frugal.Scopes, v)
                 default:
                         return nil, fmt.Errorf("parser: unknown value %#v", v)
                 }
@@ -82,19 +82,19 @@ Namespace ← "namespace" _ scope:[a-z.-]+ _ ns:Identifier EOS {
         }, nil
 }
 
-Scope ← "scope" _ name:Identifier __ '{' __ prefix:Prefix? __ operations:(Operation __)* ('}' / EndOfScopeError) EOS {
+Scope ← "scope" __ name:Identifier __ '{' __ prefix:Prefix? __ operations:(Operation __)* ('}' / EndOfScopeError) EOS {
         ops := operations.([]interface{})
         scope := &Scope{
                 Name:       string(name.(Identifier)),
-                Operations: make(map[string]*Operation, len(ops)),
+                Operations: make([]*Operation, len(ops)),
                 Prefix:     defaultPrefix,
         }
         if prefix != nil {
                 scope.Prefix = prefix.(*ScopePrefix)
         }
-        for _, o := range ops {
+        for i, o := range ops {
                 op :=  o.([]interface{})[0].(*Operation)
-                scope.Operations[op.Name] = op
+                scope.Operations[i] = op
         }
         return scope, nil
 }
@@ -103,11 +103,11 @@ EndOfScopeError ← . {
         return nil, errors.New("parser: expected end of scope")
 }
 
-Prefix ← "prefix" _ name:Literal EOL {
+Prefix ← "prefix" _ name:Literal __ {
         return newScopePrefix(name.(string)) 
 }
 
-Operation ← name:Identifier _ ':' __ param:Identifier _ EOL {
+Operation ← name:Identifier _ ':' __ param:Identifier __ {
         o := &Operation{
                 Name:  string(name.(Identifier)),
                 Param: string(param.(Identifier)),

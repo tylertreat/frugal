@@ -29,6 +29,7 @@ func ParseFrugal(filePath string) (*Frugal, error) {
 	frugal.Name = name
 	frugal.Dir = filepath.Dir(file.Name())
 	frugal.Path = filePath
+	frugal.sort() // For determinism in generated code
 	return frugal, nil
 }
 

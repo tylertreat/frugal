@@ -3,7 +3,7 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  */
 
-
+package foo;
 
 import com.workiva.frugal.Provider;
 import com.workiva.frugal.Transport;
@@ -36,8 +36,8 @@ public class FooPublisher {
 		protocol = client.getProtocol();
 	}
 
-	public void publishFoo(String baz, Thing req) throws TException {
-		String op = "Foo";
+	public void publishBar(String baz, Stuff req) throws TException {
+		String op = "Bar";
 		String prefix = String.format("foo.bar.%s.qux.", baz);
 		String topic = String.format("%sFoo%s%s", prefix, delimiter, op);
 		transport.preparePublish(topic);
@@ -49,8 +49,8 @@ public class FooPublisher {
 	}
 
 
-	public void publishBar(String baz, Stuff req) throws TException {
-		String op = "Bar";
+	public void publishFoo(String baz, Thing req) throws TException {
+		String op = "Foo";
 		String prefix = String.format("foo.bar.%s.qux.", baz);
 		String topic = String.format("%sFoo%s%s", prefix, delimiter, op);
 		transport.preparePublish(topic);

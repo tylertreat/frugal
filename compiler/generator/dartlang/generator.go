@@ -187,13 +187,13 @@ func (g *Generator) GenerateImports(file *os.File, scope *parser.Scope) error {
 	imports := "import 'dart:async';\n\n"
 	imports += "import 'package:thrift/thrift.dart' as thrift;\n"
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
-	params := map[string]bool{}
+	params := []string{}
 	for _, op := range scope.Operations {
-		if _, ok := params[op.Param]; !ok {
-			params[op.Param] = true
+		if !contains(params, op.Param) {
+			params = append(params, op.Param)
 		}
 	}
-	for key, _ := range params {
+	for _, key := range params {
 		lowerKey := strings.ToLower(key)
 		imports += fmt.Sprintf("import '%s.dart' as t_%s;\n", lowerKey, lowerKey)
 	}
@@ -209,12 +209,12 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
 	publishers := ""
-	publishers += fmt.Sprintf("class %sPublisher {\n", scope.Name)
+	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
 	publishers += tab + "frugal.Transport transport;\n"
 	publishers += tab + "thrift.TProtocol protocol;\n"
 	publishers += tab + "int seqId;\n\n"
 
-	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.Provider provider) {\n", scope.Name)
+	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.Provider provider) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "var tp = provider.newTransportProtocol();\n"
 	publishers += tabtab + "transport = tp.transport;\n"
 	publishers += tabtab + "protocol = tp.protocol;\n"
@@ -235,7 +235,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 			strings.ToLower(op.Param), op.Param)
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
-		publishers += tabtab + "var topic = \"${prefix}" + scope.Name + "${delimiter}${op}\";\n"
+		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
 		publishers += tabtab + "transport.preparePublish(topic);\n"
 		publishers += tabtab + "var oprot = protocol;\n"
 		publishers += tabtab + "seqId++;\n"
@@ -273,10 +273,10 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	subscribers := ""
-	subscribers += fmt.Sprintf("class %sSubscriber {\n", scope.Name)
+	subscribers += fmt.Sprintf("class %sSubscriber {\n", strings.Title(scope.Name))
 	subscribers += tab + "final frugal.Provider provider;\n\n"
 
-	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider) {}\n\n", scope.Name)
+	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider) {}\n\n", strings.Title(scope.Name))
 
 	args := ""
 	if len(scope.Prefix.Variables) > 0 {
@@ -293,7 +293,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 			op.Name, args, op.Param, paramLower, op.Param)
 		subscribers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		subscribers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
-		subscribers += tabtab + "var topic = \"${prefix}" + scope.Name + "${delimiter}${op}\";\n"
+		subscribers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
 		subscribers += tabtab + "var tp = provider.newTransportProtocol();\n"
 		subscribers += tabtab + "await tp.transport.subscribe(topic);\n"
 		subscribers += tabtab + "tp.transport.signalRead.listen((_) {\n"
@@ -326,4 +326,13 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 	_, err := file.WriteString(subscribers)
 	return err
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }

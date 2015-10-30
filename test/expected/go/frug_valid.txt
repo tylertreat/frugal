@@ -13,6 +13,59 @@ import (
 
 const delimiter = "."
 
+type FooPublisher struct {
+	Transport frugal.Transport
+	Protocol  thrift.TProtocol
+	SeqId     int32
+}
+
+func NewFooPublisher(provider *frugal.Provider) *FooPublisher {
+	transport, protocol := provider.New()
+	return &FooPublisher{
+		Transport: transport,
+		Protocol:  protocol,
+		SeqId:     0,
+	}
+}
+
+func (l *FooPublisher) PublishBar(baz string, req *Stuff) error {
+	op := "Bar"
+	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
+	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
+	l.Transport.PreparePublish(topic)
+	oprot := l.Protocol
+	l.SeqId++
+	if err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {
+		return err
+	}
+	if err := req.Write(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteMessageEnd(); err != nil {
+		return err
+	}
+	return oprot.Flush()
+}
+
+func (l *FooPublisher) PublishFoo(baz string, req *Thing) error {
+	op := "Foo"
+	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
+	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
+	l.Transport.PreparePublish(topic)
+	oprot := l.Protocol
+	l.SeqId++
+	if err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {
+		return err
+	}
+	if err := req.Write(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteMessageEnd(); err != nil {
+		return err
+	}
+	return oprot.Flush()
+}
+
 type BarPublisher struct {
 	Transport frugal.Transport
 	Protocol  thrift.TProtocol
@@ -47,71 +100,18 @@ func (l *BarPublisher) PublishDoStuff(req *Thing) error {
 	return oprot.Flush()
 }
 
-type FooPublisher struct {
-	Transport frugal.Transport
-	Protocol  thrift.TProtocol
-	SeqId     int32
-}
-
-func NewFooPublisher(provider *frugal.Provider) *FooPublisher {
-	transport, protocol := provider.New()
-	return &FooPublisher{
-		Transport: transport,
-		Protocol:  protocol,
-		SeqId:     0,
-	}
-}
-
-func (l *FooPublisher) PublishFoo(baz string, req *Thing) error {
-	op := "Foo"
-	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
-	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
-	l.Transport.PreparePublish(topic)
-	oprot := l.Protocol
-	l.SeqId++
-	if err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {
-		return err
-	}
-	if err := req.Write(oprot); err != nil {
-		return err
-	}
-	if err := oprot.WriteMessageEnd(); err != nil {
-		return err
-	}
-	return oprot.Flush()
-}
-
-func (l *FooPublisher) PublishBar(baz string, req *Stuff) error {
-	op := "Bar"
-	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
-	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
-	l.Transport.PreparePublish(topic)
-	oprot := l.Protocol
-	l.SeqId++
-	if err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {
-		return err
-	}
-	if err := req.Write(oprot); err != nil {
-		return err
-	}
-	if err := oprot.WriteMessageEnd(); err != nil {
-		return err
-	}
-	return oprot.Flush()
-}
-
-type BarSubscriber struct {
+type FooSubscriber struct {
 	Provider *frugal.Provider
 }
 
-func NewBarSubscriber(provider *frugal.Provider) *BarSubscriber {
-	return &BarSubscriber{Provider: provider}
+func NewFooSubscriber(provider *frugal.Provider) *FooSubscriber {
+	return &FooSubscriber{Provider: provider}
 }
 
-func (l *BarSubscriber) SubscribeDoStuff(handler func(*Thing)) (*frugal.Subscription, error) {
-	op := "DoStuff"
-	prefix := ""
-	topic := fmt.Sprintf("%sBar%s%s", prefix, delimiter, op)
+func (l *FooSubscriber) SubscribeBar(baz string, handler func(*Stuff)) (*frugal.Subscription, error) {
+	op := "Bar"
+	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
+	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
 	transport, protocol := l.Provider.New()
 	if err := transport.Subscribe(topic); err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func (l *BarSubscriber) SubscribeDoStuff(handler func(*Thing)) (*frugal.Subscrip
 	sub := frugal.NewSubscription(topic, transport)
 	go func() {
 		for {
-			received, err := l.recvDoStuff(op, protocol)
+			received, err := l.recvBar(op, protocol)
 			if err != nil {
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 					return
@@ -137,7 +137,7 @@ func (l *BarSubscriber) SubscribeDoStuff(handler func(*Thing)) (*frugal.Subscrip
 	return sub, nil
 }
 
-func (l *BarSubscriber) recvDoStuff(op string, iprot thrift.TProtocol) (*Thing, error) {
+func (l *FooSubscriber) recvBar(op string, iprot thrift.TProtocol) (*Stuff, error) {
 	name, _, _, err := iprot.ReadMessageBegin()
 	if err != nil {
 		return nil, err
@@ -148,21 +148,13 @@ func (l *BarSubscriber) recvDoStuff(op string, iprot thrift.TProtocol) (*Thing, 
 		x9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
 		return nil, x9
 	}
-	req := &Thing{}
+	req := &Stuff{}
 	if err := req.Read(iprot); err != nil {
 		return nil, err
 	}
 
 	iprot.ReadMessageEnd()
 	return req, nil
-}
-
-type FooSubscriber struct {
-	Provider *frugal.Provider
-}
-
-func NewFooSubscriber(provider *frugal.Provider) *FooSubscriber {
-	return &FooSubscriber{Provider: provider}
 }
 
 func (l *FooSubscriber) SubscribeFoo(baz string, handler func(*Thing)) (*frugal.Subscription, error) {
@@ -214,10 +206,18 @@ func (l *FooSubscriber) recvFoo(op string, iprot thrift.TProtocol) (*Thing, erro
 	return req, nil
 }
 
-func (l *FooSubscriber) SubscribeBar(baz string, handler func(*Stuff)) (*frugal.Subscription, error) {
-	op := "Bar"
-	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
-	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
+type BarSubscriber struct {
+	Provider *frugal.Provider
+}
+
+func NewBarSubscriber(provider *frugal.Provider) *BarSubscriber {
+	return &BarSubscriber{Provider: provider}
+}
+
+func (l *BarSubscriber) SubscribeDoStuff(handler func(*Thing)) (*frugal.Subscription, error) {
+	op := "DoStuff"
+	prefix := ""
+	topic := fmt.Sprintf("%sBar%s%s", prefix, delimiter, op)
 	transport, protocol := l.Provider.New()
 	if err := transport.Subscribe(topic); err != nil {
 		return nil, err
@@ -226,7 +226,7 @@ func (l *FooSubscriber) SubscribeBar(baz string, handler func(*Stuff)) (*frugal.
 	sub := frugal.NewSubscription(topic, transport)
 	go func() {
 		for {
-			received, err := l.recvBar(op, protocol)
+			received, err := l.recvDoStuff(op, protocol)
 			if err != nil {
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 					return
@@ -243,7 +243,7 @@ func (l *FooSubscriber) SubscribeBar(baz string, handler func(*Stuff)) (*frugal.
 	return sub, nil
 }
 
-func (l *FooSubscriber) recvBar(op string, iprot thrift.TProtocol) (*Stuff, error) {
+func (l *BarSubscriber) recvDoStuff(op string, iprot thrift.TProtocol) (*Thing, error) {
 	name, _, _, err := iprot.ReadMessageBegin()
 	if err != nil {
 		return nil, err
@@ -254,7 +254,7 @@ func (l *FooSubscriber) recvBar(op string, iprot thrift.TProtocol) (*Stuff, erro
 		x9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
 		return nil, x9
 	}
-	req := &Stuff{}
+	req := &Thing{}
 	if err := req.Read(iprot); err != nil {
 		return nil, err
 	}

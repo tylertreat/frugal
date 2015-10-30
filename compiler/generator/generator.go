@@ -39,8 +39,8 @@ type SingleFileGenerator interface {
 	GeneratePackage(f *os.File, p *parser.Frugal) error
 	GenerateImports(f *os.File, p *parser.Frugal) error
 	GenerateConstants(f *os.File, name string) error
-	GeneratePublishers(*os.File, map[string]*parser.Scope) error
-	GenerateSubscribers(*os.File, map[string]*parser.Scope) error
+	GeneratePublishers(*os.File, []*parser.Scope) error
+	GenerateSubscribers(*os.File, []*parser.Scope) error
 	GenerateNewline(*os.File, int) error
 	GetOutputDir(dir string, f *parser.Frugal) string
 	DefaultOutputDir() string
