@@ -183,7 +183,7 @@ func (o *MultipleFileProgramGenerator) Generate(program *parser.Program, outputD
 
 func (o MultipleFileProgramGenerator) generateFile(program *parser.Program, scope *parser.Scope,
 	outputDir string, fileType FileType) error {
-	file, err := o.GenerateFile(strings.ToLower(scope.Name), outputDir, fileType)
+	file, err := o.GenerateFile(scope.Name, outputDir, fileType)
 	if err != nil {
 		return err
 	}
