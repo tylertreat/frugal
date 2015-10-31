@@ -32,7 +32,7 @@ func NewGenerator() generator.MultipleFileGenerator {
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
-	if pkg, ok := f.Namespaces[lang]; ok {
+	if pkg, ok := f.Thrift.Namespaces[lang]; ok {
 		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
@@ -121,7 +121,7 @@ func (g *Generator) addToPubspec(f *parser.Frugal, dir string) error {
 
 func (g *Generator) exportClasses(f *parser.Frugal, dir string) error {
 	filename := strings.ToLower(f.Name)
-	if ns, ok := f.Namespaces[lang]; ok {
+	if ns, ok := f.Thrift.Namespaces[lang]; ok {
 		filename = strings.ToLower(ns)
 	}
 	dartFile := fmt.Sprintf("%s.%s", filename, lang)
@@ -171,7 +171,7 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 
 func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *parser.Scope) error {
 	// TODO: Figure out what this does
-	pkg, ok := f.Namespaces[lang]
+	pkg, ok := f.Thrift.Namespaces[lang]
 	if ok {
 		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]

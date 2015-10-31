@@ -35,7 +35,7 @@ func NewGenerator() generator.MultipleFileGenerator {
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
-	if pkg, ok := f.Namespaces[lang]; ok {
+	if pkg, ok := f.Thrift.Namespaces[lang]; ok {
 		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	}
@@ -78,7 +78,7 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 }
 
 func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *parser.Scope) error {
-	pkg, ok := f.Namespaces[lang]
+	pkg, ok := f.Thrift.Namespaces[lang]
 	if !ok {
 		return nil
 	}

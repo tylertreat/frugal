@@ -26,7 +26,7 @@ func NewGenerator() generator.SingleFileGenerator {
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
-	if pkg, ok := f.Namespaces[lang]; ok {
+	if pkg, ok := f.Thrift.Namespaces[lang]; ok {
 		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
@@ -62,7 +62,7 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 }
 
 func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal) error {
-	pkg, ok := f.Namespaces[lang]
+	pkg, ok := f.Thrift.Namespaces[lang]
 	if ok {
 		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]

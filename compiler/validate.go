@@ -31,10 +31,10 @@ func validate(thriftFile string, frugal *frugParser.Frugal) error {
 }
 
 func validateNamespaces(tree *parser.Thrift, frugal *frugParser.Frugal, file string) error {
-	if len(frugal.Namespaces) != len(tree.Namespaces) {
+	if len(frugal.Thrift.Namespaces) != len(tree.Namespaces) {
 		return fmt.Errorf("Namespaces defined in %s do not match those defined in %s", frugal.Path, file)
 	}
-	for language, namespace := range frugal.Namespaces {
+	for language, namespace := range frugal.Thrift.Namespaces {
 		thriftNamespace, ok := tree.Namespaces[language]
 		if !ok {
 			return fmt.Errorf("%s specifies namespace '%s' for language %s, but %s does not specify namespace",
