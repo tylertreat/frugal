@@ -3,19 +3,22 @@ package compiler
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"sort"
 
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
-func generateThriftIDL(thrift *parser.Thrift) error {
-	f, err := os.Create("tmp.thrift")
+func generateThriftIDL(frugal *parser.Frugal) (string, error) {
+	file := fmt.Sprintf("%s.thrift", frugal.Name)
+	f, err := os.Create(file)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer f.Close()
 
 	contents := ""
+	thrift := frugal.Thrift
 
 	// Generate namespaces.
 	for lang, namespace := range thrift.Namespaces {
@@ -171,7 +174,21 @@ func generateThriftIDL(thrift *parser.Thrift) error {
 	// TODO: Generate unions.
 
 	_, err = f.WriteString(contents)
-	return err
+	return file, err
+}
+
+func generateThrift(out, gen, file string) error {
+	args := []string{"-r"}
+	if out != "" {
+		args = append(args, "-out", out)
+	}
+	args = append(args, "-gen", gen)
+	args = append(args, file)
+	if out, err := exec.Command("thrift", args...).CombinedOutput(); err != nil {
+		fmt.Println(string(out))
+		return err
+	}
+	return nil
 }
 
 type enumValues []*parser.EnumValue

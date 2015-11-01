@@ -3,9 +3,6 @@ package compiler
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/generator/dartlang"
@@ -20,13 +17,9 @@ import (
 func Compile(file, gen, out, delimiter string) error {
 	globals.TopicDelimiter = delimiter
 
-	// Ensure corresponding Thrift and Frugal files exist.
-	name := getName(file)
-	if !exists(name + ".thrift") {
-		return fmt.Errorf("Thrift file not found: %s.thrift\n", name)
-	}
-	if !exists(name + ".frugal") {
-		return fmt.Errorf("Frugal file not found: %s.frugal\n", name)
+	// Ensure Frugal file exists.
+	if !exists(file) {
+		return fmt.Errorf("Frugal file not found: %s\n", file)
 	}
 
 	// Resolve Frugal generator.
@@ -43,20 +36,19 @@ func Compile(file, gen, out, delimiter string) error {
 	}
 
 	// Parse the Frugal file.
-	frugal, err := parser.ParseFrugal(name + ".frugal")
+	frugal, err := parser.ParseFrugal(file)
 	if err != nil {
 		return err
 	}
 
-	// Ensure Thrift file and parsed Frugal are valid (namespaces match,
-	// struct references defined, etc.).
-	thriftFile := name + ".thrift"
-	if err := validate(thriftFile, frugal); err != nil {
+	// Ensure parsed Frugal is valid.
+	if err := validate(frugal); err != nil {
 		return err
 	}
 
 	// Generate intermediate Thrift IDL.
-	if err := generateThriftIDL(frugal.Thrift); err != nil {
+	idlFile, err := generateThriftIDL(frugal)
+	if err != nil {
 		return err
 	}
 
@@ -69,35 +61,12 @@ func Compile(file, gen, out, delimiter string) error {
 	}
 
 	// Generate Thrift code.
-	if err := generateThrift(out, gen, thriftFile); err != nil {
+	if err := generateThrift(out, gen, idlFile); err != nil {
 		return err
 	}
 
 	// Generate Frugal code.
 	return g.Generate(frugal, fullOut)
-}
-
-func generateThrift(out, gen, file string) error {
-	args := []string{"-r"}
-	if out != "" {
-		args = append(args, "-out", out)
-	}
-	args = append(args, "-gen", gen)
-	args = append(args, file)
-	if out, err := exec.Command("thrift", args...).CombinedOutput(); err != nil {
-		fmt.Println(string(out))
-		return err
-	}
-	return nil
-}
-
-func getName(path string) string {
-	name := path
-	extension := filepath.Ext(name)
-	if extension != "" {
-		name = name[0:strings.LastIndex(name, extension)]
-	}
-	return name
 }
 
 func exists(path string) bool {
