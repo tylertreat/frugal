@@ -127,11 +127,17 @@ SyntaxError ← . {
         return nil, errors.New("parser: syntax error")
 }
 
+Statement ← ThriftStatement / FrugalStatement
+
 ///////////////////////////////////////////////////////////////////////////////
-//                                   SHARED                                  //
+//                                   THRIFT                                  //
 ///////////////////////////////////////////////////////////////////////////////
 
-Statement ← Namespace / Scope
+ThriftStatement ← Include / Namespace / Const / Enum / TypeDef / Struct / Exception / Union / Service
+
+Include ← "include" _ file:Literal EOS {
+        return include(file.(string)), nil
+}
 
 Namespace ← "namespace" _ scope:[a-z.-]+ _ ns:Identifier EOS {
         return &namespace{
@@ -139,10 +145,6 @@ Namespace ← "namespace" _ scope:[a-z.-]+ _ ns:Identifier EOS {
                 namespace: string(ns.(Identifier)),
         }, nil
 }
-
-///////////////////////////////////////////////////////////////////////////////
-//                                   THRIFT                                  //
-///////////////////////////////////////////////////////////////////////////////
 
 Const ← "const" _ typ:FieldType _ name:Identifier _ "=" _ value:ConstValue EOS {
     return &Constant{
@@ -370,6 +372,8 @@ ConstMap ← '{' __ values:(ConstValue __ ':' __ ConstValue __ (',' / &'}') __)*
 ///////////////////////////////////////////////////////////////////////////////
 //                                   FRUGAL                                  //
 ///////////////////////////////////////////////////////////////////////////////
+
+FrugalStatement ← Scope
 
 Scope ← "scope" __ name:Identifier __ '{' __ prefix:Prefix? __ operations:(Operation __)* ('}' / EndOfScopeError) EOS {
         ops := operations.([]interface{})
