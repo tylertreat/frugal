@@ -55,6 +55,11 @@ func Compile(file, gen, out, delimiter string) error {
 		return err
 	}
 
+	// Generate intermediate Thrift IDL.
+	if err := generateThriftIDL(frugal.Thrift); err != nil {
+		return err
+	}
+
 	if out == "" {
 		out = g.DefaultOutputDir()
 	}
