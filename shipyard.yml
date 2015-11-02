@@ -13,6 +13,9 @@ apt:
     - git
 
 after_install:
+  - wget https://storage.googleapis.com/golang/go1.5.1.src.tar.gz -nv
+  - tar -C /usr/local -xzf go1.5.1.src.tar.gz 
+  - export PATH=$PATH:/usr/local/go/bin
   - git clone https://git-wip-us.apache.org/repos/asf/thrift.git
   - cd thrift
   - ./bootstrap.sh
