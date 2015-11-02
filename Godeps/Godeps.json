@@ -3,8 +3,8 @@
 	"GoVersion": "go1.4",
 	"Deps": [
 		{
-			"ImportPath": "github.com/edmodo/frugal/parser",
-			"Rev": "8b738c8c3d754e5c066cff85420a1f87050ead95"
+			"ImportPath": "github.com/samuel/go-thrift/parser",
+			"Rev": "61500cadc61b71f79345a1ced94a6ff9eb60becc"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
