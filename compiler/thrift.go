@@ -188,7 +188,9 @@ func generateThrift(out, gen, file string) error {
 		fmt.Println(string(out))
 		return err
 	}
-	return nil
+
+	// Remove the intermediate Thrift file.
+	return os.Remove(file)
 }
 
 type enumValues []*parser.EnumValue
