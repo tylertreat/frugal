@@ -6,6 +6,7 @@ apt:
     - automake
     - libtool
     - g++
+    - byacc
     - make
     - pkg-config
     - flex
