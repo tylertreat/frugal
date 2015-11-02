@@ -11,6 +11,7 @@ apt:
     - pkg-config
     - flex
     - git
+    - wget
 
 after_install:
   - wget https://storage.googleapis.com/golang/go1.5.1.src.tar.gz -nv
