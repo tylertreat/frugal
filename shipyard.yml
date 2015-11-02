@@ -30,4 +30,4 @@ volumes:
 
 workdir: /frugal/bin
 
-cmd: ["frugal"]
+cmd: ["/frugal/bin/frugal"]
