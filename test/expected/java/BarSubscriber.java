@@ -3,7 +3,7 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  */
 
-
+package foo;
 
 import com.workiva.frugal.Provider;
 import com.workiva.frugal.Transport;
@@ -60,11 +60,7 @@ public class BarSubscriber {
 						}
 						e.printStackTrace();
 						sub.signal(e);
-						try {
-							sub.unsubscribe();
-						} catch (TTransportException e1) {
-							e1.printStackTrace();
-						}
+						sub.unsubscribe();
 					}
 				}
 			}
@@ -85,4 +81,6 @@ public class BarSubscriber {
 		iprot.readMessageEnd();
 		return req;
 	}
+
+
 }

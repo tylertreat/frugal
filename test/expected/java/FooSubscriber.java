@@ -3,7 +3,7 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  */
 
-
+package foo;
 
 import com.workiva.frugal.Provider;
 import com.workiva.frugal.Transport;
@@ -32,63 +32,9 @@ public class FooSubscriber {
 		this.provider = provider;
 	}
 
-	public interface FooHandler {
-		void onFoo(Thing req);
-	}
-
-	public Subscription subscribeFoo(String baz, final FooHandler handler) throws TException {
-		final String op = "Foo";
-		String prefix = String.format("foo.bar.%s.qux.", baz);
-		String topic = String.format("%sFoo%s%s", prefix, delimiter, op);
-		final Provider.Client client = provider.build();
-		Transport transport = client.getTransport();
-		transport.subscribe(topic);
-
-		final Subscription sub = new Subscription(topic, transport);
-		new Thread(new Runnable() {
-			public void run() {
-				while (true) {
-					try {
-						Thing received = recvFoo(op, client.getProtocol());
-						handler.onFoo(received);
-					} catch (TException e) {
-						if (e instanceof TTransportException) {
-							TTransportException transportException = (TTransportException) e;
-							if (transportException.getType() == TTransportException.END_OF_FILE) {
-								return;
-							}
-						}
-						e.printStackTrace();
-						sub.signal(e);
-						try {
-							sub.unsubscribe();
-						} catch (TTransportException e1) {
-							e1.printStackTrace();
-						}
-					}
-				}
-			}
-		}).start();
-
-		return sub;
-	}
-
-	private Thing recvFoo(String op, TProtocol iprot) throws TException {
-		TMessage msg = iprot.readMessageBegin();
-		if (!msg.name.equals(op)) {
-			TProtocolUtil.skip(iprot, TType.STRUCT);
-			iprot.readMessageEnd();
-			throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
-		}
-		Thing req = new Thing();
-		req.read(iprot);
-		iprot.readMessageEnd();
-		return req;
-	}	public interface BarHandler {
+	public interface BarHandler {
 		void onBar(Stuff req);
 	}
-
-
 
 	public Subscription subscribeBar(String baz, final BarHandler handler) throws TException {
 		final String op = "Bar";
@@ -114,11 +60,7 @@ public class FooSubscriber {
 						}
 						e.printStackTrace();
 						sub.signal(e);
-						try {
-							sub.unsubscribe();
-						} catch (TTransportException e1) {
-							e1.printStackTrace();
-						}
+						sub.unsubscribe();
 					}
 				}
 			}
@@ -139,4 +81,58 @@ public class FooSubscriber {
 		iprot.readMessageEnd();
 		return req;
 	}
+
+	public interface FooHandler {
+		void onFoo(Thing req);
+	}
+
+
+
+	public Subscription subscribeFoo(String baz, final FooHandler handler) throws TException {
+		final String op = "Foo";
+		String prefix = String.format("foo.bar.%s.qux.", baz);
+		String topic = String.format("%sFoo%s%s", prefix, delimiter, op);
+		final Provider.Client client = provider.build();
+		Transport transport = client.getTransport();
+		transport.subscribe(topic);
+
+		final Subscription sub = new Subscription(topic, transport);
+		new Thread(new Runnable() {
+			public void run() {
+				while (true) {
+					try {
+						Thing received = recvFoo(op, client.getProtocol());
+						handler.onFoo(received);
+					} catch (TException e) {
+						if (e instanceof TTransportException) {
+							TTransportException transportException = (TTransportException) e;
+							if (transportException.getType() == TTransportException.END_OF_FILE) {
+								return;
+							}
+						}
+						e.printStackTrace();
+						sub.signal(e);
+						sub.unsubscribe();
+					}
+				}
+			}
+		}).start();
+
+		return sub;
+	}
+
+	private Thing recvFoo(String op, TProtocol iprot) throws TException {
+		TMessage msg = iprot.readMessageBegin();
+		if (!msg.name.equals(op)) {
+			TProtocolUtil.skip(iprot, TType.STRUCT);
+			iprot.readMessageEnd();
+			throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
+		}
+		Thing req = new Thing();
+		req.read(iprot);
+		iprot.readMessageEnd();
+		return req;
+	}
+
+
 }
