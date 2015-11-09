@@ -183,7 +183,7 @@ func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *pars
 	return err
 }
 
-func (g *Generator) GenerateImports(file *os.File, scope *parser.Scope, thriftImport, frugalImport string) error {
+func (g *Generator) GenerateImports(file *os.File, scope *parser.Scope) error {
 	imports := "import 'dart:async';\n\n"
 	imports += "import 'package:thrift/thrift.dart' as thrift;\n"
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"

@@ -54,7 +54,7 @@ type MultipleFileGenerator interface {
 	GenerateFile(name, outputDir string, fileType FileType) (*os.File, error)
 	GenerateDocStringComment(*os.File) error
 	GeneratePackage(f *os.File, p *parser.Frugal, s *parser.Scope) error
-	GenerateImports(f *os.File, p *parser.Scope, frugalImport, thriftImport string) error
+	GenerateImports(f *os.File, p *parser.Scope) error
 	GenerateConstants(f *os.File, name string) error
 	GeneratePublisher(*os.File, *parser.Scope) error
 	GenerateSubscriber(*os.File, *parser.Scope) error
@@ -205,7 +205,7 @@ func (o MultipleFileProgramGenerator) generateFile(frugal *parser.Frugal, scope 
 		return err
 	}
 
-	if err := o.GenerateImports(file, scope, "", ""); err != nil {
+	if err := o.GenerateImports(file, scope); err != nil {
 		return err
 	}
 
