@@ -17,7 +17,7 @@ import (
 
 // Compile parses the respective Frugal and Thrift and generates code for them,
 // returning an error if something failed.
-func Compile(file, gen, out, delimiter, thriftImport, frugalImport, packagePrefix string) error {
+func Compile(file, gen, out, delimiter string) error {
 	globals.TopicDelimiter = delimiter
 
 	// Ensure corresponding Thrift and Frugal files exist.
@@ -29,9 +29,18 @@ func Compile(file, gen, out, delimiter, thriftImport, frugalImport, packagePrefi
 		return fmt.Errorf("Frugal file not found: %s.frugal\n", name)
 	}
 
+	lang := ""
+	options := ""
+	if strings.Contains(gen, ":") {
+		s := strings.Split(gen, ":")
+		lang, options = s[0], s[1]
+	} else {
+		lang = gen
+	}
+
 	// Resolve Frugal generator.
 	var g generator.ProgramGenerator
-	switch gen {
+	switch lang {
 	case "dart":
 		g = generator.NewMultipleFileProgramGenerator(dartlang.NewGenerator(), false)
 	case "go":
@@ -64,24 +73,18 @@ func Compile(file, gen, out, delimiter, thriftImport, frugalImport, packagePrefi
 	}
 
 	// Generate Thrift code.
-	if err := generateThrift(out, gen, thriftFile, thriftImport, packagePrefix); err != nil {
+	if err := generateThrift(out, gen, file); err != nil {
 		return err
 	}
 
 	// Generate Frugal code.
-	return g.Generate(frugal, fullOut, frugalImport, thriftImport)
+	return g.Generate(frugal, fullOut, options)
 }
 
-func generateThrift(out, gen, file, thriftImport, packagePrefix string) error {
+func generateThrift(out, gen, file string) error {
 	args := []string{"-r"}
 	if out != "" {
 		args = append(args, "-out", out)
-	}
-	if thriftImport != "" {
-		gen += ":thrift_import=" + thriftImport
-	}
-	if thriftImport != "" {
-		gen += ",package_prefix=" + packagePrefix
 	}
 	args = append(args, "-gen", gen)
 	args = append(args, file)

@@ -22,7 +22,7 @@ const (
 // produced by the parser.
 type ProgramGenerator interface {
 	// Generate the Frugal in the given directory.
-	Generate(frugal *parser.Frugal, outputDir, frugalImport, thriftImport string) error
+	Generate(frugal *parser.Frugal, outputDir, options string) error
 
 	// GetOutputDir returns the full output directory for generated code.
 	GetOutputDir(dir string, f *parser.Frugal) string
@@ -79,12 +79,34 @@ func NewSingleFileProgramGenerator(generator SingleFileGenerator) ProgramGenerat
 }
 
 // Generate the Frugal in the given directory.
-func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir, frugalImport, thriftImport string) error {
+func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir, options string) error {
 	file, err := o.GenerateFile(frugal.Name, outputDir)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
+
+	var thriftImport = ""
+	var frugalImport = ""
+	var optionArray = []string{}
+	if options != "" {
+		if strings.Contains(options, ",") {
+			optionArray = strings.Split(options, ",")
+		} else {
+			optionArray = append(optionArray, options)
+		}
+		for _, option := range optionArray {
+			fmt.Println(option)
+			s := strings.Split(option, "=")
+			name, value := s[0], s[1]
+			switch name {
+			case "thrift_import":
+				thriftImport = value
+			case "frugal_import":
+				frugalImport = value
+			}
+		}
+	}
 
 	if err := o.GenerateDocStringComment(file); err != nil {
 		return err
@@ -158,20 +180,20 @@ func NewMultipleFileProgramGenerator(generator MultipleFileGenerator,
 }
 
 // Generate the Frugal in the given directory.
-func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir, frugalImport, thriftImport string) error {
+func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir, options string) error {
 	if err := o.GenerateDependencies(frugal, outputDir); err != nil {
 		return err
 	}
 	for _, scope := range frugal.Scopes {
 		if o.SplitPublisherSubscriber {
-			if err := o.generateFile(frugal, scope, outputDir, frugalImport, thriftImport, PublishFile); err != nil {
+			if err := o.generateFile(frugal, scope, outputDir, PublishFile); err != nil {
 				return err
 			}
-			if err := o.generateFile(frugal, scope, outputDir, frugalImport, thriftImport, SubscribeFile); err != nil {
+			if err := o.generateFile(frugal, scope, outputDir, SubscribeFile); err != nil {
 				return err
 			}
 		} else {
-			if err := o.generateFile(frugal, scope, outputDir, frugalImport, thriftImport, CombinedFile); err != nil {
+			if err := o.generateFile(frugal, scope, outputDir, CombinedFile); err != nil {
 				return err
 			}
 		}
@@ -182,7 +204,7 @@ func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir
 }
 
 func (o MultipleFileProgramGenerator) generateFile(frugal *parser.Frugal, scope *parser.Scope,
-	outputDir, frugalImport, thriftImport string, fileType FileType) error {
+	outputDir string, fileType FileType) error {
 	file, err := o.GenerateFile(scope.Name, outputDir, fileType)
 	if err != nil {
 		return err
@@ -205,7 +227,7 @@ func (o MultipleFileProgramGenerator) generateFile(frugal *parser.Frugal, scope 
 		return err
 	}
 
-	if err := o.GenerateImports(file, scope, frugalImport, thriftImport); err != nil {
+	if err := o.GenerateImports(file, scope, "", ""); err != nil {
 		return err
 	}
 
