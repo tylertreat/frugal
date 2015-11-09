@@ -73,7 +73,7 @@ func Compile(file, gen, out, delimiter string) error {
 	}
 
 	// Generate Thrift code.
-	if err := generateThrift(out, gen, file); err != nil {
+	if err := generateThrift(out, gen, thriftFile); err != nil {
 		return err
 	}
 
