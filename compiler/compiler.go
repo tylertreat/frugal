@@ -31,7 +31,7 @@ func Compile(file, gen, out, delimiter string) error {
 
 	// Process options (TODO: abstract to function)
 	lang := gen
-	var options map[string]string
+	options := make(map[string]string)
 	if strings.Contains(gen, ":") {
 		s := strings.Split(gen, ":")
 		lang = s[0]
