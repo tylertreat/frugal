@@ -47,14 +47,14 @@ type SingleFileGenerator interface {
 	CheckCompile(path string) error
 }
 
-// MultipleFileGenerator generates source code in a specified language in to
+// MultipleFileGenerator generates source code in a specified language in a
 // multiple source files.
 type MultipleFileGenerator interface {
 	GenerateDependencies(f *parser.Frugal, dir string) error
 	GenerateFile(name, outputDir string, fileType FileType) (*os.File, error)
 	GenerateDocStringComment(*os.File) error
 	GeneratePackage(f *os.File, p *parser.Frugal, s *parser.Scope) error
-	GenerateImports(f *os.File, p *parser.Scope) error
+	GenerateImports(*os.File, *parser.Scope) error
 	GenerateConstants(f *os.File, name string) error
 	GeneratePublisher(*os.File, *parser.Scope) error
 	GenerateSubscriber(*os.File, *parser.Scope) error
