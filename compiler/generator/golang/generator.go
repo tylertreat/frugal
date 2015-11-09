@@ -73,12 +73,21 @@ func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal) error {
 	return err
 }
 
-func (g *Generator) GenerateImports(file *os.File, f *parser.Frugal) error {
+func (g *Generator) GenerateImports(file *os.File, f *parser.Frugal, frugalImport, thriftImport string) error {
 	imports := "import (\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"
-	imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
-	imports += "\t\"github.com/Workiva/frugal-go\"\n"
+	if thriftImport != "" {
+		imports += "\t\"" + thriftImport + "\"\n"
+	} else {
+		imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
+	}
+	if frugalImport != "" {
+		imports += "\t\"" + frugalImport + "\"\n"
+	} else {
+		imports += "\t\"github.com/Workiva/frugal-go\"\n"
+	}
+
 	imports += ")"
 	_, err := file.WriteString(imports)
 	return err

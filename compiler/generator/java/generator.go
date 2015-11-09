@@ -86,7 +86,7 @@ func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *pars
 	return err
 }
 
-func (g *Generator) GenerateImports(file *os.File, scope *parser.Scope) error {
+func (g *Generator) GenerateImports(file *os.File, scope *parser.Scope, frugalImport, thriftImport string) error {
 	imports := "import com.workiva.frugal.Provider;\n"
 	imports += "import com.workiva.frugal.Transport;\n"
 	imports += "import com.workiva.frugal.TransportFactory;\n"

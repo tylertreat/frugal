@@ -22,7 +22,7 @@ const (
 // produced by the parser.
 type ProgramGenerator interface {
 	// Generate the Frugal in the given directory.
-	Generate(frugal *parser.Frugal, outputDir string) error
+	Generate(frugal *parser.Frugal, outputDir, frugalImport, thriftImport string) error
 
 	// GetOutputDir returns the full output directory for generated code.
 	GetOutputDir(dir string, f *parser.Frugal) string
@@ -37,7 +37,7 @@ type SingleFileGenerator interface {
 	GenerateFile(name, outputDir string) (*os.File, error)
 	GenerateDocStringComment(*os.File) error
 	GeneratePackage(f *os.File, p *parser.Frugal) error
-	GenerateImports(f *os.File, p *parser.Frugal) error
+	GenerateImports(f *os.File, p *parser.Frugal, frugalImport, thriftImport string) error
 	GenerateConstants(f *os.File, name string) error
 	GeneratePublishers(*os.File, []*parser.Scope) error
 	GenerateSubscribers(*os.File, []*parser.Scope) error
@@ -47,14 +47,14 @@ type SingleFileGenerator interface {
 	CheckCompile(path string) error
 }
 
-// MultipleFileGenerator generates source code in a specified language in a
+// MultipleFileGenerator generates source code in a specified language in to
 // multiple source files.
 type MultipleFileGenerator interface {
 	GenerateDependencies(f *parser.Frugal, dir string) error
 	GenerateFile(name, outputDir string, fileType FileType) (*os.File, error)
 	GenerateDocStringComment(*os.File) error
 	GeneratePackage(f *os.File, p *parser.Frugal, s *parser.Scope) error
-	GenerateImports(*os.File, *parser.Scope) error
+	GenerateImports(f *os.File, p *parser.Scope, frugalImport, thriftImport string) error
 	GenerateConstants(f *os.File, name string) error
 	GeneratePublisher(*os.File, *parser.Scope) error
 	GenerateSubscriber(*os.File, *parser.Scope) error
@@ -79,7 +79,7 @@ func NewSingleFileProgramGenerator(generator SingleFileGenerator) ProgramGenerat
 }
 
 // Generate the Frugal in the given directory.
-func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir string) error {
+func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir, frugalImport, thriftImport string) error {
 	file, err := o.GenerateFile(frugal.Name, outputDir)
 	if err != nil {
 		return err
@@ -102,7 +102,7 @@ func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir s
 		return err
 	}
 
-	if err := o.GenerateImports(file, frugal); err != nil {
+	if err := o.GenerateImports(file, frugal, frugalImport, thriftImport); err != nil {
 		return err
 	}
 
@@ -158,20 +158,20 @@ func NewMultipleFileProgramGenerator(generator MultipleFileGenerator,
 }
 
 // Generate the Frugal in the given directory.
-func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir string) error {
+func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir, frugalImport, thriftImport string) error {
 	if err := o.GenerateDependencies(frugal, outputDir); err != nil {
 		return err
 	}
 	for _, scope := range frugal.Scopes {
 		if o.SplitPublisherSubscriber {
-			if err := o.generateFile(frugal, scope, outputDir, PublishFile); err != nil {
+			if err := o.generateFile(frugal, scope, outputDir, frugalImport, thriftImport, PublishFile); err != nil {
 				return err
 			}
-			if err := o.generateFile(frugal, scope, outputDir, SubscribeFile); err != nil {
+			if err := o.generateFile(frugal, scope, outputDir, frugalImport, thriftImport, SubscribeFile); err != nil {
 				return err
 			}
 		} else {
-			if err := o.generateFile(frugal, scope, outputDir, CombinedFile); err != nil {
+			if err := o.generateFile(frugal, scope, outputDir, frugalImport, thriftImport, CombinedFile); err != nil {
 				return err
 			}
 		}
@@ -182,7 +182,7 @@ func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir
 }
 
 func (o MultipleFileProgramGenerator) generateFile(frugal *parser.Frugal, scope *parser.Scope,
-	outputDir string, fileType FileType) error {
+	outputDir, frugalImport, thriftImport string, fileType FileType) error {
 	file, err := o.GenerateFile(scope.Name, outputDir, fileType)
 	if err != nil {
 		return err
@@ -205,7 +205,7 @@ func (o MultipleFileProgramGenerator) generateFile(frugal *parser.Frugal, scope 
 		return err
 	}
 
-	if err := o.GenerateImports(file, scope); err != nil {
+	if err := o.GenerateImports(file, scope, frugalImport, thriftImport); err != nil {
 		return err
 	}
 

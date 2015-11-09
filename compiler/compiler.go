@@ -17,7 +17,7 @@ import (
 
 // Compile parses the respective Frugal and Thrift and generates code for them,
 // returning an error if something failed.
-func Compile(file, gen, out, delimiter string) error {
+func Compile(file, gen, out, delimiter, thriftImport, frugalImport, packagePrefix string) error {
 	globals.TopicDelimiter = delimiter
 
 	// Ensure corresponding Thrift and Frugal files exist.
@@ -64,18 +64,24 @@ func Compile(file, gen, out, delimiter string) error {
 	}
 
 	// Generate Thrift code.
-	if err := generateThrift(out, gen, thriftFile); err != nil {
+	if err := generateThrift(out, gen, thriftFile, thriftImport, packagePrefix); err != nil {
 		return err
 	}
 
 	// Generate Frugal code.
-	return g.Generate(frugal, fullOut)
+	return g.Generate(frugal, fullOut, frugalImport, thriftImport)
 }
 
-func generateThrift(out, gen, file string) error {
+func generateThrift(out, gen, file, thriftImport, packagePrefix string) error {
 	args := []string{"-r"}
 	if out != "" {
 		args = append(args, "-out", out)
+	}
+	if thriftImport != "" {
+		gen += ":thrift_import=" + thriftImport
+	}
+	if thriftImport != "" {
+		gen += ",package_prefix=" + packagePrefix
 	}
 	args = append(args, "-gen", gen)
 	args = append(args, file)
