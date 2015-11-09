@@ -45,6 +45,7 @@ type SingleFileGenerator interface {
 	GetOutputDir(dir string, f *parser.Frugal) string
 	DefaultOutputDir() string
 	CheckCompile(path string) error
+	GenerateWrapper(f *os.File, p *parser.Frugal) error
 }
 
 // MultipleFileGenerator generates source code in a specified language in a
@@ -127,6 +128,10 @@ func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir s
 	}
 
 	if err := o.GenerateSubscribers(file, frugal.Scopes); err != nil {
+		return err
+	}
+
+	if err := o.GenerateWrapper(file, frugal); err != nil {
 		return err
 	}
 

@@ -3,6 +3,10 @@ struct Event {
     2: string Message
 }
 
+service Foo {
+    i64 blah(1:i32 num),
+}
+
 scope Events {
     prefix "foo.{user}"
 

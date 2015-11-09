@@ -256,8 +256,38 @@ func generateSubscriber(subscribers string, scope *parser.Scope) string {
 		subscribers += "\t}\n\n"
 		subscribers += "\tiprot.ReadMessageEnd()\n"
 		subscribers += "\treturn req, nil\n"
-		subscribers += "}"
+		subscribers += "}\n\n"
 	}
 
 	return subscribers
+}
+
+func (g *Generator) GenerateWrapper(file *os.File, p *parser.Frugal) error {
+	contents := ""
+	for _, service := range p.Thrift.Services {
+		contents += fmt.Sprintf("type Frugal%sClient struct {\n", service.Name)
+		contents += "\tinputProtocol  thrift.TProtocol\n"
+		contents += "\toutputProtocol thrift.TProtocol\n"
+		contents += fmt.Sprintf("\twrapped        %s\n", service.Name)
+		contents += "}\n\n"
+
+		contents += fmt.Sprintf(
+			"func New%sClient(t thrift.TTransport, f thrift.TProtocolFactory) *Frugal%sClient {\n",
+			service.Name, service.Name)
+		contents += fmt.Sprintf("\treturn &Frugal%sClient{\n", service.Name)
+		contents += "\t\tinputProtocol:  f.GetProtocol(t),\n"
+		contents += "\t\toutputProtocol: f.GetProtocol(t),\n"
+		contents += fmt.Sprintf("\t\twrapped:        New%sClientFactory(t, f),\n", service.Name)
+		contents += "\t}\n"
+		contents += "}\n\n"
+
+		//for _, method := range service.Methods {
+		//	args := ""
+		//	contents += fmt.Sprintf("func (f *Frugal%sClient) %s(ctx frugal.Context %s) %s {\n",
+		//		service.Name, method.Name, args, returns)
+		//}
+	}
+
+	_, err := file.WriteString(contents)
+	return err
 }
