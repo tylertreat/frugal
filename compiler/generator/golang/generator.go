@@ -77,13 +77,13 @@ func (g *Generator) GenerateImports(file *os.File, f *parser.Frugal) error {
 	imports := "import (\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"
-	if g.Options["thriftImport"] != "" {
-		imports += "\t\"" + g.Options["thriftImport"] + "\"\n"
+	if g.Options["thrift_import"] != "" {
+		imports += "\t\"" + g.Options["thrift_import"] + "\"\n"
 	} else {
 		imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
 	}
-	if g.Options["frugalImport"] != "" {
-		imports += "\t\"" + g.Options["frugalImport"] + "\"\n"
+	if g.Options["frugal_import"] != "" {
+		imports += "\t\"" + g.Options["frugal_import"] + "\"\n"
 	} else {
 		imports += "\t\"github.com/Workiva/frugal-go\"\n"
 	}
