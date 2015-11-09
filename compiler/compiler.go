@@ -29,24 +29,8 @@ func Compile(file, gen, out, delimiter string) error {
 		return fmt.Errorf("Frugal file not found: %s.frugal\n", name)
 	}
 
-	// Process options (TODO: abstract to function)
-	lang := gen
-	options := make(map[string]string)
-	if strings.Contains(gen, ":") {
-		s := strings.Split(gen, ":")
-		lang = s[0]
-		dirty := s[1]
-		var optionArray []string
-		if strings.Contains(dirty, ",") {
-			optionArray = strings.Split(dirty, ",")
-		} else {
-			optionArray = append(optionArray, dirty)
-		}
-		for _, option := range optionArray {
-			s := strings.Split(option, "=")
-			options[s[0]] = s[1]
-		}
-	}
+	// Process options for specific generators
+	lang, options := cleanGenParam(gen)
 
 	// Resolve Frugal generator.
 	var g generator.ProgramGenerator
@@ -117,4 +101,27 @@ func getName(path string) string {
 func exists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+// cleanGenParam processes a string that includes an optional trailing
+// options set.  Format: <language>:<name>=<value>,<name>=<value>,...
+func cleanGenParam(gen string) (lang string, options map[string]string) {
+	lang = gen
+	options = make(map[string]string)
+	if strings.Contains(gen, ":") {
+		s := strings.Split(gen, ":")
+		lang = s[0]
+		dirty := s[1]
+		var optionArray []string
+		if strings.Contains(dirty, ",") {
+			optionArray = strings.Split(dirty, ",")
+		} else {
+			optionArray = append(optionArray, dirty)
+		}
+		for _, option := range optionArray {
+			s := strings.Split(option, "=")
+			options[s[0]] = s[1]
+		}
+	}
+	return
 }
