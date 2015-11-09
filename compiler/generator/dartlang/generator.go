@@ -27,8 +27,8 @@ type Generator struct {
 	*generator.BaseGenerator
 }
 
-func NewGenerator() generator.MultipleFileGenerator {
-	return &Generator{&generator.BaseGenerator{}}
+func NewGenerator(options map[string]string) generator.MultipleFileGenerator {
+	return &Generator{&generator.BaseGenerator{options}}
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {

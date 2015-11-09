@@ -29,24 +29,34 @@ func Compile(file, gen, out, delimiter string) error {
 		return fmt.Errorf("Frugal file not found: %s.frugal\n", name)
 	}
 
-	lang := ""
-	options := ""
+	// Process options (TODO: abstract to function)
+	lang := gen
+	var options map[string]string
 	if strings.Contains(gen, ":") {
 		s := strings.Split(gen, ":")
-		lang, options = s[0], s[1]
-	} else {
-		lang = gen
+		lang = s[0]
+		dirty := s[1]
+		var optionArray []string
+		if strings.Contains(dirty, ",") {
+			optionArray = strings.Split(dirty, ",")
+		} else {
+			optionArray = append(optionArray, dirty)
+		}
+		for _, option := range optionArray {
+			s := strings.Split(option, "=")
+			options[s[0]] = s[1]
+		}
 	}
 
 	// Resolve Frugal generator.
 	var g generator.ProgramGenerator
 	switch lang {
 	case "dart":
-		g = generator.NewMultipleFileProgramGenerator(dartlang.NewGenerator(), false)
+		g = generator.NewMultipleFileProgramGenerator(dartlang.NewGenerator(options), false)
 	case "go":
-		g = generator.NewSingleFileProgramGenerator(golang.NewGenerator())
+		g = generator.NewSingleFileProgramGenerator(golang.NewGenerator(options))
 	case "java":
-		g = generator.NewMultipleFileProgramGenerator(java.NewGenerator(), true)
+		g = generator.NewMultipleFileProgramGenerator(java.NewGenerator(options), true)
 	default:
 		return fmt.Errorf("Invalid gen value %s", gen)
 	}
@@ -78,7 +88,7 @@ func Compile(file, gen, out, delimiter string) error {
 	}
 
 	// Generate Frugal code.
-	return g.Generate(frugal, fullOut, options)
+	return g.Generate(frugal, fullOut)
 }
 
 func generateThrift(out, gen, file string) error {

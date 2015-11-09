@@ -21,8 +21,8 @@ type Generator struct {
 	*generator.BaseGenerator
 }
 
-func NewGenerator() generator.SingleFileGenerator {
-	return &Generator{&generator.BaseGenerator{}}
+func NewGenerator(options map[string]string) generator.SingleFileGenerator {
+	return &Generator{&generator.BaseGenerator{options}}
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
@@ -73,17 +73,17 @@ func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal) error {
 	return err
 }
 
-func (g *Generator) GenerateImports(file *os.File, f *parser.Frugal, frugalImport, thriftImport string) error {
+func (g *Generator) GenerateImports(file *os.File, f *parser.Frugal) error {
 	imports := "import (\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"
-	if thriftImport != "" {
-		imports += "\t\"" + thriftImport + "\"\n"
+	if g.Options["thriftImport"] != "" {
+		imports += "\t\"" + g.Options["thriftImport"] + "\"\n"
 	} else {
 		imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
 	}
-	if frugalImport != "" {
-		imports += "\t\"" + frugalImport + "\"\n"
+	if g.Options["frugalImport"] != "" {
+		imports += "\t\"" + g.Options["frugalImport"] + "\"\n"
 	} else {
 		imports += "\t\"github.com/Workiva/frugal-go\"\n"
 	}

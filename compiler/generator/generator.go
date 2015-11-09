@@ -22,7 +22,7 @@ const (
 // produced by the parser.
 type ProgramGenerator interface {
 	// Generate the Frugal in the given directory.
-	Generate(frugal *parser.Frugal, outputDir, options string) error
+	Generate(frugal *parser.Frugal, outputDir string) error
 
 	// GetOutputDir returns the full output directory for generated code.
 	GetOutputDir(dir string, f *parser.Frugal) string
@@ -37,7 +37,7 @@ type SingleFileGenerator interface {
 	GenerateFile(name, outputDir string) (*os.File, error)
 	GenerateDocStringComment(*os.File) error
 	GeneratePackage(f *os.File, p *parser.Frugal) error
-	GenerateImports(f *os.File, p *parser.Frugal, frugalImport, thriftImport string) error
+	GenerateImports(f *os.File, p *parser.Frugal) error
 	GenerateConstants(f *os.File, name string) error
 	GeneratePublishers(*os.File, []*parser.Scope) error
 	GenerateSubscribers(*os.File, []*parser.Scope) error
@@ -79,34 +79,12 @@ func NewSingleFileProgramGenerator(generator SingleFileGenerator) ProgramGenerat
 }
 
 // Generate the Frugal in the given directory.
-func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir, options string) error {
+func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir string) error {
 	file, err := o.GenerateFile(frugal.Name, outputDir)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-
-	var thriftImport = ""
-	var frugalImport = ""
-	var optionArray = []string{}
-	if options != "" {
-		if strings.Contains(options, ",") {
-			optionArray = strings.Split(options, ",")
-		} else {
-			optionArray = append(optionArray, options)
-		}
-		for _, option := range optionArray {
-			fmt.Println(option)
-			s := strings.Split(option, "=")
-			name, value := s[0], s[1]
-			switch name {
-			case "thrift_import":
-				thriftImport = value
-			case "frugal_import":
-				frugalImport = value
-			}
-		}
-	}
 
 	if err := o.GenerateDocStringComment(file); err != nil {
 		return err
@@ -124,7 +102,7 @@ func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir, 
 		return err
 	}
 
-	if err := o.GenerateImports(file, frugal, frugalImport, thriftImport); err != nil {
+	if err := o.GenerateImports(file, frugal); err != nil {
 		return err
 	}
 
@@ -180,7 +158,7 @@ func NewMultipleFileProgramGenerator(generator MultipleFileGenerator,
 }
 
 // Generate the Frugal in the given directory.
-func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir, options string) error {
+func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir string) error {
 	if err := o.GenerateDependencies(frugal, outputDir); err != nil {
 		return err
 	}
