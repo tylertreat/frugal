@@ -265,29 +265,91 @@ func generateSubscriber(subscribers string, scope *parser.Scope) string {
 func (g *Generator) GenerateWrapper(file *os.File, p *parser.Frugal) error {
 	contents := ""
 	for _, service := range p.Thrift.Services {
-		contents += fmt.Sprintf("type Frugal%sClient struct {\n", service.Name)
-		contents += "\tinputProtocol  thrift.TProtocol\n"
-		contents += "\toutputProtocol thrift.TProtocol\n"
-		contents += fmt.Sprintf("\twrapped        %s\n", service.Name)
-		contents += "}\n\n"
-
-		contents += fmt.Sprintf(
-			"func New%sClient(t thrift.TTransport, f thrift.TProtocolFactory) *Frugal%sClient {\n",
-			service.Name, service.Name)
-		contents += fmt.Sprintf("\treturn &Frugal%sClient{\n", service.Name)
-		contents += "\t\tinputProtocol:  f.GetProtocol(t),\n"
-		contents += "\t\toutputProtocol: f.GetProtocol(t),\n"
-		contents += fmt.Sprintf("\t\twrapped:        New%sClientFactory(t, f),\n", service.Name)
-		contents += "\t}\n"
-		contents += "}\n\n"
-
-		//for _, method := range service.Methods {
-		//	args := ""
-		//	contents += fmt.Sprintf("func (f *Frugal%sClient) %s(ctx frugal.Context %s) %s {\n",
-		//		service.Name, method.Name, args, returns)
-		//}
+		contents += g.generateClient(service)
 	}
 
 	_, err := file.WriteString(contents)
 	return err
+}
+
+func (g *Generator) generateClient(service *parser.Service) string {
+	contents := fmt.Sprintf("type Frugal%sClient struct {\n", service.Name)
+	contents += "\tprotocol  frugal.FProtocol\n"
+	contents += fmt.Sprintf("\twrapped	  %s\n", service.Name)
+	contents += "}\n\n"
+
+	contents += fmt.Sprintf(
+		"func New%sClient(t thrift.TTransport, f frugal.FProtocolFactory) *Frugal%sClient {\n",
+		service.Name, service.Name)
+	contents += fmt.Sprintf("\treturn &Frugal%sClient{\n", service.Name)
+	contents += "\t\tprotocol:  f.GetProtocol(t),\n"
+	contents += fmt.Sprintf("\t\twrapped:   New%sClientProtocol(t, f.GetProtocol(t), f.GetProtocol(t)),\n", service.Name)
+	contents += "\t}\n"
+	contents += "}\n\n"
+
+	for _, method := range service.Methods {
+		exportedName := strings.Title(method.Name)
+		contents += fmt.Sprintf("func (f *Frugal%sClient) %s(ctx frugal.Context%s) (r %s, err error) {\n",
+			service.Name, exportedName, g.generateInputArgs(method.Arguments),
+			g.getGoTypeFromThriftType(method.ReturnType))
+		contents += fmt.Sprintf("\tif err = f.protocol.WriteRequestHeader(ctx); err != nil {\n")
+		contents += "\t\treturn\n"
+		contents += "\t}\n"
+		contents += fmt.Sprintf("\tr, err = f.wrapped.%s(%s)\n",
+			exportedName, g.generateOutputArgs(method.Arguments))
+		contents += "\tif e := f.protocol.ReadResponseHeader(ctx); e != nil {\n"
+		contents += "\t\terr = e\n"
+		contents += "\t}\n"
+		contents += "\treturn r, err\n"
+		contents += "}\n\n"
+	}
+	return contents
+}
+
+func (g *Generator) generateOutputArgs(args []*parser.Field) string {
+	argStr := ""
+	for i, arg := range args {
+		argStr += arg.Name
+		if i < len(args)-1 {
+			argStr += ", "
+		}
+	}
+	return argStr
+}
+
+func (g *Generator) generateInputArgs(args []*parser.Field) string {
+	argStr := ""
+	for _, arg := range args {
+		argStr += ", " + arg.Name + " " + g.getGoTypeFromThriftType(arg.Type)
+	}
+	return argStr
+}
+
+func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
+	switch t.Name {
+	case "bool":
+		return "bool"
+	case "byte":
+		return "byte"
+	case "i16":
+		return "int16"
+	case "i32":
+		return "int32"
+	case "i64":
+		return "int64"
+	case "double":
+		return "float64"
+	case "string":
+		return "string"
+	case "list":
+		return fmt.Sprintf("[]%s", g.getGoTypeFromThriftType(t.ValueType))
+	case "set":
+		return fmt.Sprintf("map[%s]bool", g.getGoTypeFromThriftType(t.ValueType))
+	case "map":
+		return fmt.Sprintf("map[%s]%s", g.getGoTypeFromThriftType(t.KeyType),
+			g.getGoTypeFromThriftType(t.ValueType))
+	default:
+		// This is a custom type
+		return t.Name
+	}
 }
