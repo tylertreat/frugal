@@ -341,6 +341,8 @@ func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
 		return "float64"
 	case "string":
 		return "string"
+	case "binary":
+		return "[]byte"
 	case "list":
 		return fmt.Sprintf("[]%s", g.getGoTypeFromThriftType(t.ValueType))
 	case "set":
