@@ -145,11 +145,6 @@ func (g *Generator) exportClasses(f *parser.Frugal, dir string) error {
 	return err
 }
 
-func (g *Generator) CheckCompile(path string) error {
-	// TODO: Add compile to js
-	return nil
-}
-
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
 	if fileType != generator.CombinedFile {
 		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
@@ -170,7 +165,6 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 }
 
 func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *parser.Scope) error {
-	// TODO: Figure out what this does
 	pkg, ok := f.Thrift.Namespaces[lang]
 	if ok {
 		components := generator.GetPackageComponents(pkg)

@@ -50,11 +50,6 @@ func (g *Generator) GenerateDependencies(f *parser.Frugal, dir string) error {
 	return nil
 }
 
-func (g *Generator) CheckCompile(path string) error {
-	// TODO
-	return nil
-}
-
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
 	if fileType == generator.CombinedFile {
 		return nil, fmt.Errorf("frugal: Bad file type for Java generator: %s", fileType)

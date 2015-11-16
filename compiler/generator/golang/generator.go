@@ -3,7 +3,6 @@ package golang
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -37,14 +36,6 @@ func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
 
 func (g *Generator) DefaultOutputDir() string {
 	return defaultOutputDir
-}
-
-func (g *Generator) CheckCompile(path string) error {
-	if out, err := exec.Command("go", "build", path).CombinedOutput(); err != nil {
-		fmt.Println(string(out))
-		return err
-	}
-	return nil
 }
 
 func (g *Generator) GenerateFile(name string, outputDir string) (*os.File, error) {
