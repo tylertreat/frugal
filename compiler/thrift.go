@@ -20,20 +20,41 @@ func generateThriftIDL(frugal *parser.Frugal) (string, error) {
 	contents := ""
 	thrift := frugal.Thrift
 
-	// Generate namespaces.
-	for lang, namespace := range thrift.Namespaces {
+	contents += generateNamespaces(thrift.Namespaces)
+	contents += generateIncludes(thrift.Includes)
+	contents += generateConstants(thrift.Constants)
+	contents += generateTypedefs(thrift.Typedefs)
+	contents += generateEnums(thrift.Enums)
+	contents += generateStructs(thrift.Structs)
+	contents += generateUnions(thrift.Unions)
+	contents += generateExceptions(thrift.Exceptions)
+	contents += generateServices(thrift.Services)
+
+	_, err = f.WriteString(contents)
+	return file, err
+}
+
+func generateNamespaces(namespaces map[string]string) string {
+	contents := ""
+	for lang, namespace := range namespaces {
 		contents += fmt.Sprintf("namespace %s %s\n", lang, namespace)
 	}
 	contents += "\n"
+	return contents
+}
 
-	// Generate includes.
-	for _, include := range thrift.Includes {
+func generateIncludes(includes map[string]string) string {
+	contents := ""
+	for _, include := range includes {
 		contents += fmt.Sprintf("include \"%s\"\n", include)
 	}
 	contents += "\n"
+	return contents
+}
 
-	// Generate constants.
-	for _, constant := range thrift.Constants {
+func generateConstants(constants map[string]*parser.Constant) string {
+	contents := ""
+	for _, constant := range constants {
 		value := constant.Value
 		if constant.Type.Name == "string" {
 			value = fmt.Sprintf(`"%s"`, value)
@@ -41,15 +62,21 @@ func generateThriftIDL(frugal *parser.Frugal) (string, error) {
 		contents += fmt.Sprintf("const %s %s = %s\n", constant.Type, constant.Name, value)
 	}
 	contents += "\n"
+	return contents
+}
 
-	// Generate typedefs.
-	for thriftType, typedef := range thrift.Typedefs {
+func generateTypedefs(typedefs map[string]*parser.Type) string {
+	contents := ""
+	for thriftType, typedef := range typedefs {
 		contents += fmt.Sprintf("typedef %s %s\n", thriftType, typedef)
 	}
 	contents += "\n"
+	return contents
+}
 
-	// Generate enums.
-	for _, enum := range thrift.Enums {
+func generateEnums(enums map[string]*parser.Enum) string {
+	contents := ""
+	for _, enum := range enums {
 		contents += fmt.Sprintf("enum %s {\n", enum.Name)
 		values := make([]*parser.EnumValue, 0, len(enum.Values))
 		for _, value := range enum.Values {
@@ -61,9 +88,12 @@ func generateThriftIDL(frugal *parser.Frugal) (string, error) {
 		}
 		contents += "}\n\n"
 	}
+	return contents
+}
 
-	// Generate structs.
-	for _, strct := range thrift.Structs {
+func generateStructs(structs map[string]*parser.Struct) string {
+	contents := ""
+	for _, strct := range structs {
 		contents += fmt.Sprintf("struct %s {\n", strct.Name)
 		for _, field := range strct.Fields {
 			contents += fmt.Sprintf("\t%d: ", field.ID)
@@ -88,9 +118,42 @@ func generateThriftIDL(frugal *parser.Frugal) (string, error) {
 		}
 		contents += "}\n\n"
 	}
+	return contents
+}
 
-	// Generate exceptions.
-	for _, exception := range thrift.Exceptions {
+func generateUnions(unions map[string]*parser.Struct) string {
+	contents := ""
+	for _, union := range unions {
+		contents += fmt.Sprintf("union %s {\n", union.Name)
+		for _, field := range union.Fields {
+			contents += fmt.Sprintf("\t%d: ", field.ID)
+			if field.Optional {
+				contents += "optional "
+			} else {
+				contents += "required "
+			}
+			contents += fmt.Sprintf("%s %s", field.Type.String(), field.Name)
+			if field.Default != nil {
+				def := field.Default
+				defStr := ""
+				switch d := def.(type) {
+				case string:
+					defStr = fmt.Sprintf(`"%s"`, d)
+				default:
+					defStr = fmt.Sprintf("%v", d)
+				}
+				contents += fmt.Sprintf(" = %s", defStr)
+			}
+			contents += ",\n"
+		}
+		contents += "}\n\n"
+	}
+	return contents
+}
+
+func generateExceptions(exceptions map[string]*parser.Struct) string {
+	contents := ""
+	for _, exception := range exceptions {
 		contents += fmt.Sprintf("exception %s {\n", exception.Name)
 		for _, field := range exception.Fields {
 			contents += fmt.Sprintf("\t%d: ", field.ID)
@@ -115,9 +178,12 @@ func generateThriftIDL(frugal *parser.Frugal) (string, error) {
 		}
 		contents += "}\n\n"
 	}
+	return contents
+}
 
-	// Generate services.
-	for _, service := range thrift.Services {
+func generateServices(services map[string]*parser.Service) string {
+	contents := ""
+	for _, service := range services {
 		contents += fmt.Sprintf("service %s ", service.Name)
 		if service.Extends != "" {
 			contents += fmt.Sprintf("%s ", service.Extends)
@@ -170,11 +236,7 @@ func generateThriftIDL(frugal *parser.Frugal) (string, error) {
 		}
 		contents += "}\n\n"
 	}
-
-	// TODO: Generate unions.
-
-	_, err = f.WriteString(contents)
-	return file, err
+	return contents
 }
 
 func generateThrift(out, gen, file string) error {
