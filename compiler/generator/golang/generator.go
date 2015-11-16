@@ -286,17 +286,30 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 }
 
 func (g *Generator) generateClient(service *parser.Service) string {
-	contents := fmt.Sprintf("type Frugal%sClient struct {\n", service.Name)
-	contents += "\tprotocol  frugal.FProtocol\n"
-	contents += fmt.Sprintf("\twrapped	  %s\n", service.Name)
+	servTitle := strings.Title(service.Name)
+
+	contents := fmt.Sprintf("type Frugal%sClient struct {\n", servTitle)
+	contents += "\tprotocol frugal.FProtocol\n"
+	contents += fmt.Sprintf("\twrapped  %s\n", servTitle)
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf(
-		"func New%sClient(t thrift.TTransport, f frugal.FProtocolFactory) *Frugal%sClient {\n",
+		"func NewFrugal%sClientFactory(t thrift.TTransport, f frugal.FProtocolFactory) *Frugal%sClient {\n",
+		servTitle, servTitle)
+	contents += fmt.Sprintf("\treturn &Frugal%sClient{\n", servTitle)
+	contents += "\t\tprotocol: f.GetProtocol(t),\n"
+	contents += fmt.Sprintf(
+		"\t\twrapped:  New%sClientProtocol(t, f.GetProtocol(t), f.GetProtocol(t)),\n",
+		servTitle)
+	contents += "\t}\n"
+	contents += "}\n\n"
+
+	contents += fmt.Sprintf(
+		"func NewFrugal%sClient(t thrift.TTransport, proto frugal.FProtocol) *Frugal%sClient {\n",
 		service.Name, service.Name)
-	contents += fmt.Sprintf("\treturn &Frugal%sClient{\n", service.Name)
-	contents += "\t\tprotocol:  f.GetProtocol(t),\n"
-	contents += fmt.Sprintf("\t\twrapped:   New%sClientProtocol(t, f.GetProtocol(t), f.GetProtocol(t)),\n", service.Name)
+	contents += fmt.Sprintf("\treturn &Frugal%sClient{\n", servTitle)
+	contents += "\t\tprotocol: proto,\n"
+	contents += fmt.Sprintf("\t\twrapped:  New%sClientProtocol(t, proto, proto),\n", servTitle)
 	contents += "\t}\n"
 	contents += "}\n\n"
 
@@ -389,7 +402,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	nameLower := strings.ToLower(method.Name)
 
 	contents := fmt.Sprintf("type %sFrugalProcessor%s struct {\n", servLower, nameTitle)
-	contents += fmt.Sprintf("\t handler Frugal%s\n", servTitle)
+	contents += fmt.Sprintf("\thandler Frugal%s\n", servTitle)
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf("func (p *%sFrugalProcessor%s) Process(ctx frugal.Context, "+

@@ -145,7 +145,7 @@ type FrugalFooProcessor struct {
 
 func (p *FrugalFooProcessor) GetProcessorFunction(key string) (processor frugal.FProcessorFunction, ok bool) {
 	processor, ok = p.processorMap[key]
-	return processor, ok
+	return
 }
 
 func NewFrugalFooProcessor(handler FrugalFoo) *FrugalFooProcessor {
@@ -177,7 +177,6 @@ func (p *FrugalFooProcessor) Process(iprot, oprot frugal.FProtocol) (success boo
 	oprot.WriteMessageEnd()
 	oprot.Flush()
 	return false, x3
-
 }
 
 type fooFrugalProcessorBlah struct {
@@ -230,3 +229,4 @@ func (p *fooFrugalProcessorBlah) Process(ctx frugal.Context, seqId int32, iprot,
 	}
 	return true, err
 }
+
