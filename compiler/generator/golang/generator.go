@@ -265,11 +265,24 @@ func generateSubscriber(subscribers string, scope *parser.Scope) string {
 func (g *Generator) GenerateWrapper(file *os.File, p *parser.Frugal) error {
 	contents := ""
 	for _, service := range p.Thrift.Services {
+		contents += g.generateInterface(service)
 		contents += g.generateClient(service)
+		contents += g.generateServer(service)
 	}
 
 	_, err := file.WriteString(contents)
 	return err
+}
+
+func (g *Generator) generateInterface(service *parser.Service) string {
+	contents := fmt.Sprintf("type Frugal%s interface {\n", strings.Title(service.Name))
+	for _, method := range service.Methods {
+		contents += fmt.Sprintf("\t%s(frugal.Context%s) (%s, error)\n",
+			strings.Title(method.Name), g.generateInterfaceArgs(method.Arguments),
+			g.getGoTypeFromThriftType(method.ReturnType))
+	}
+	contents += "}\n\n"
+	return contents
 }
 
 func (g *Generator) generateClient(service *parser.Service) string {
@@ -296,7 +309,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += "\t\treturn\n"
 		contents += "\t}\n"
 		contents += fmt.Sprintf("\tr, err = f.wrapped.%s(%s)\n",
-			exportedName, g.generateOutputArgs(method.Arguments))
+			exportedName, g.generateClientOutputArgs(method.Arguments))
 		contents += "\tif e := f.protocol.ReadResponseHeader(ctx); e != nil {\n"
 		contents += "\t\terr = e\n"
 		contents += "\t}\n"
@@ -306,7 +319,145 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	return contents
 }
 
-func (g *Generator) generateOutputArgs(args []*parser.Field) string {
+func (g *Generator) generateServer(service *parser.Service) string {
+	contents := ""
+	contents += g.generateProcessor(service)
+	for _, method := range service.Methods {
+		contents += g.generateMethodProcessor(service, method)
+	}
+	return contents
+}
+
+func (g *Generator) generateProcessor(service *parser.Service) string {
+	servTitle := strings.Title(service.Name)
+	servLower := strings.ToLower(service.Name)
+	contents := ""
+	contents += fmt.Sprintf("type Frugal%sProcessor struct {\n", servTitle)
+	contents += "\tprocessorMap map[string]frugal.FProcessorFunction\n"
+	contents += fmt.Sprintf("\thandler      Frugal%s\n", servTitle)
+	contents += "}\n\n"
+
+	contents += fmt.Sprintf("func (p *Frugal%sProcessor) GetProcessorFunction(key string) "+
+		"(processor frugal.FProcessorFunction, ok bool) {\n", servTitle)
+	contents += "\tprocessor, ok = p.processorMap[key]\n"
+	contents += "\treturn\n"
+	contents += "}\n\n"
+
+	contents += fmt.Sprintf("func NewFrugal%sProcessor(handler Frugal%s) *Frugal%sProcessor {\n",
+		servTitle, servTitle, servTitle)
+	contents += fmt.Sprintf("\tp := &Frugal%sProcessor{\n", servTitle)
+	contents += "\t\thandler:      handler,\n"
+	contents += "\t\tprocessorMap: make(map[string]frugal.FProcessorFunction),\n"
+	contents += "\t}\n"
+	for _, method := range service.Methods {
+		contents += fmt.Sprintf("\tp.processorMap[\"%s\"] = &%sFrugalProcessor%s{handler: handler}\n",
+			strings.ToLower(method.Name), servLower, strings.Title(method.Name))
+	}
+	contents += "\treturn p\n"
+	contents += "}\n\n"
+
+	contents += fmt.Sprintf("func (p *Frugal%sProcessor) Process(iprot, oprot frugal.FProtocol) "+
+		"(success bool, err thrift.TException) {\n", servTitle)
+	contents += "\tctx, err := iprot.ReadRequestHeader()\n"
+	contents += "\tif err != nil {\n"
+	contents += "\t\treturn false, err\n"
+	contents += "\t}\n"
+	contents += "\tname, _, seqId, err := iprot.ReadMessageBegin()\n"
+	contents += "\tif err != nil {\n"
+	contents += "\t\treturn false, err\n"
+	contents += "\t}\n"
+	contents += "\tif processor, ok := p.GetProcessorFunction(name); ok {\n"
+	contents += "\t\treturn processor.Process(ctx, seqId, iprot, oprot)\n"
+	contents += "\t}\n"
+	contents += "\tiprot.Skip(thrift.STRUCT)\n"
+	contents += "\tiprot.ReadMessageEnd()\n"
+	contents += "\tx3 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
+	contents += "\toprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)\n"
+	contents += "\tx3.Write(oprot)\n"
+	contents += "\toprot.WriteMessageEnd()\n"
+	contents += "\toprot.Flush()\n"
+	contents += "\treturn false, x3\n"
+	contents += "}\n\n"
+
+	return contents
+}
+
+func (g *Generator) generateMethodProcessor(service *parser.Service, method *parser.Method) string {
+	servTitle := strings.Title(service.Name)
+	servLower := strings.ToLower(service.Name)
+	nameTitle := strings.Title(method.Name)
+	nameLower := strings.ToLower(method.Name)
+
+	contents := fmt.Sprintf("type %sFrugalProcessor%s struct {\n", servLower, nameTitle)
+	contents += fmt.Sprintf("\t handler Frugal%s\n", servTitle)
+	contents += "}\n\n"
+
+	contents += fmt.Sprintf("func (p *%sFrugalProcessor%s) Process(ctx frugal.Context, "+
+		"seqId int32, iprot, oprot frugal.FProtocol) (success bool, err thrift.TException) {\n",
+		servLower, nameTitle)
+	contents += fmt.Sprintf("\targs := %s%sArgs{}\n", servTitle, nameTitle)
+	contents += "\tif err = args.Read(iprot); err != nil {\n"
+	contents += "\t\tiprot.ReadMessageEnd()\n"
+	contents += "\t\tx := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())\n"
+	contents += fmt.Sprintf("\t\toprot.WriteMessageBegin(\"%s\", thrift.EXCEPTION, seqId)\n",
+		nameLower)
+	contents += "\t\tx.Write(oprot)\n"
+	contents += "\t\toprot.WriteMessageEnd()\n"
+	contents += "\t\toprot.Flush()\n"
+	contents += "\t\treturn false, err\n"
+	contents += "\t}\n\n"
+
+	contents += "\tiprot.ReadMessageEnd()\n"
+	contents += fmt.Sprintf("\tresult := %s%sResult{}\n", servTitle, nameTitle)
+	contents += fmt.Sprintf("\tvar retval %s\n", g.getGoTypeFromThriftType(method.ReturnType))
+	contents += "\tvar err2 error\n"
+	contents += fmt.Sprintf("\tif retval, err2 = p.handler.%s(ctx, %s); err2 != nil {\n",
+		nameTitle, g.generateServerOutputArgs(method.Arguments))
+	contents += fmt.Sprintf("\t\tx := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "+
+		"\"Internal error processing %s: \"+err2.Error())\n", nameLower)
+	contents += fmt.Sprintf("\t\toprot.WriteMessageBegin(\"%s\", thrift.EXCEPTION, seqId)\n", nameLower)
+	contents += "\t\tx.Write(oprot)\n"
+	contents += "\t\toprot.WriteMessageEnd()\n"
+	contents += "\t\toprot.Flush()\n"
+	contents += "\t\treturn true, err2\n"
+	contents += "\t} else {\n"
+	contents += "\t\tresult.Success = &retval\n"
+	contents += "\t}\n"
+
+	contents += fmt.Sprintf("\tif err2 = oprot.WriteMessageBegin(\"%s\", "+
+		"thrift.REPLY, seqId); err2 != nil {\n", nameLower)
+	contents += "\t\terr = err2\n"
+	contents += "\t}\n"
+	contents += "\tif err2 = result.Write(oprot); err == nil && err2 != nil {\n"
+	contents += "\t\terr = err2\n"
+	contents += "\t}\n"
+	contents += "\tif err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {\n"
+	contents += "\t\terr = err2\n"
+	contents += "\t}\n"
+	contents += "\tif err2 = oprot.WriteResponseHeader(ctx); err2 != nil {\n"
+	contents += "\t\terr = err2\n"
+	contents += "\t}\n"
+	contents += "\tif err2 = oprot.Flush(); err == nil && err2 != nil {\n"
+	contents += "\t\terr = err2\n"
+	contents += "\t}\n"
+	contents += "\tif err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\treturn true, err\n"
+	contents += "}\n\n"
+
+	return contents
+}
+
+func (g *Generator) generateInterfaceArgs(args []*parser.Field) string {
+	argStr := ""
+	for _, arg := range args {
+		argStr += ", " + g.getGoTypeFromThriftType(arg.Type)
+	}
+	return argStr
+}
+
+func (g *Generator) generateClientOutputArgs(args []*parser.Field) string {
 	argStr := ""
 	for i, arg := range args {
 		argStr += arg.Name
@@ -321,6 +472,17 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
 		argStr += ", " + arg.Name + " " + g.getGoTypeFromThriftType(arg.Type)
+	}
+	return argStr
+}
+
+func (g *Generator) generateServerOutputArgs(args []*parser.Field) string {
+	argStr := ""
+	for i, arg := range args {
+		argStr += fmt.Sprintf("args.%s", strings.Title(arg.Name))
+		if i < len(args)-1 {
+			argStr += ", "
+		}
 	}
 	return argStr
 }
