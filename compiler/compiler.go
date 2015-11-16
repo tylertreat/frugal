@@ -41,11 +41,6 @@ func Compile(file, gen, out, delimiter string) error {
 		return err
 	}
 
-	// Ensure parsed Frugal is valid.
-	if err := validate(frugal); err != nil {
-		return err
-	}
-
 	// Generate intermediate Thrift IDL.
 	idlFile, err := generateThriftIDL(frugal)
 	if err != nil {
