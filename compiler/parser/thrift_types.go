@@ -8,23 +8,32 @@ type Type struct {
 	ValueType *Type // If map, list, or set
 }
 
+type TypeDef struct {
+	Comment []string
+	Name    string
+	Type    *Type
+}
+
 type EnumValue struct {
 	Name  string
 	Value int
 }
 
 type Enum struct {
-	Name   string
-	Values map[string]*EnumValue
+	Comment []string
+	Name    string
+	Values  map[string]*EnumValue
 }
 
 type Constant struct {
-	Name  string
-	Type  *Type
-	Value interface{}
+	Comment []string
+	Name    string
+	Type    *Type
+	Value   interface{}
 }
 
 type Field struct {
+	Comment  []string
 	ID       int
 	Name     string
 	Optional bool
@@ -33,12 +42,13 @@ type Field struct {
 }
 
 type Struct struct {
-	Name   string
-	Fields []*Field
+	Comment []string
+	Name    string
+	Fields  []*Field
 }
 
 type Method struct {
-	Comment    string
+	Comment    []string
 	Name       string
 	Oneway     bool
 	ReturnType *Type
@@ -47,6 +57,7 @@ type Method struct {
 }
 
 type Service struct {
+	Comment []string
 	Name    string
 	Extends string
 	Methods map[string]*Method
@@ -54,7 +65,7 @@ type Service struct {
 
 type Thrift struct {
 	Includes   map[string]string // name -> unique identifier (absolute path generally)
-	Typedefs   map[string]*Type
+	Typedefs   map[string]*TypeDef
 	Namespaces map[string]string
 	Constants  map[string]*Constant
 	Enums      map[string]*Enum

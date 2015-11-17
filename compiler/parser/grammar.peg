@@ -14,16 +14,17 @@
                 defaultPrefix  = &ScopePrefix{String: "", Variables: make([]string, 0)}
         )
 
-        type namespace struct{
+        type statementWrapper struct {
+                comment   []string
+                statement interface{}
+        }
+
+        type namespace struct {
                 scope     string
                 namespace string
         }
 
-        type typeDef struct {
-                name string
-                typ *Type
-        }
-
+        
         type exception *Struct
 
         type union *Struct
@@ -58,6 +59,15 @@
                 return string(b)
         }
 
+        func rawCommentToDocStr(raw string) []string {
+                rawLines := strings.Split(raw, "\n")
+                comment := make([]string, len(rawLines))
+                for i, line := range rawLines {
+                        comment[i] = strings.TrimLeft(line, "* ")
+                }
+                return comment
+        }
+
         // toStruct converts a union to a struct with all fields optional.
         func unionToStruct(u union) *Struct {
                 st := (*Struct)(u)
@@ -76,7 +86,7 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
         thrift := &Thrift{
                 Includes:   make(map[string]string),
                 Namespaces: make(map[string]string),
-                Typedefs:   make(map[string]*Type),
+                Typedefs:   make(map[string]*TypeDef),
                 Constants:  make(map[string]*Constant),
                 Enums:      make(map[string]*Enum),
                 Structs:    make(map[string]*Struct),
@@ -91,22 +101,32 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
 
         stmts := toIfaceSlice(statements)
         for _, st := range stmts {
-                switch v := st.([]interface{})[0].(type) {
+                wrapper := st.([]interface{})[0].(*statementWrapper)
+                switch v := wrapper.statement.(type) {
                 case *namespace:
                         thrift.Namespaces[v.scope] = v.namespace
                 case *Constant:
+                        v.Comment = wrapper.comment
                         thrift.Constants[v.Name] = v
                 case *Enum:
+                        v.Comment = wrapper.comment
                         thrift.Enums[v.Name] = v
-                case *typeDef:
-                        thrift.Typedefs[v.name] = v.typ
+                case *TypeDef:
+                        v.Comment = wrapper.comment
+                        thrift.Typedefs[v.Name] = v
                 case *Struct:
+                        v.Comment = wrapper.comment
                         thrift.Structs[v.Name] = v
                 case exception:
-                        thrift.Exceptions[v.Name] = (*Struct)(v)
+                        strct := (*Struct)(v)
+                        strct.Comment = wrapper.comment
+                        thrift.Exceptions[v.Name] = strct
                 case union:
-                        thrift.Unions[v.Name] = unionToStruct(v)
+                        strct := unionToStruct(v)
+                        strct.Comment = wrapper.comment
+                        thrift.Unions[v.Name] = strct
                 case *Service:
+                        v.Comment = wrapper.comment
                         thrift.Services[v.Name] = v
                 case include:
                         name := string(v)
@@ -115,6 +135,7 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
                         }
                         thrift.Includes[name] = string(v)
                 case *Scope:
+                        v.Comment = wrapper.comment
                         frugal.Scopes = append(frugal.Scopes, v)
                 default:
                         return nil, fmt.Errorf("parser: unknown value %#v", v)
@@ -127,7 +148,14 @@ SyntaxError ← . {
         return nil, errors.New("parser: syntax error")
 }
 
-Statement ← ThriftStatement / FrugalStatement
+Statement ← docstr:(DocString __)? statement:(ThriftStatement / FrugalStatement) {
+        wrapper := &statementWrapper{statement: statement}
+        if docstr != nil {
+                raw := docstr.([]interface{})[0].(string)
+                wrapper.comment = rawCommentToDocStr(raw)
+        }
+        return wrapper, nil
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                   THRIFT                                  //
@@ -189,9 +217,9 @@ EnumValue ← name:Identifier _ value:('=' _ IntConstant)? ListSeparator? {
 }
 
 TypeDef ← "typedef" _ typ:FieldType _ name:Identifier EOS {
-    return &typeDef{
-        name: string(name.(Identifier)),
-        typ: typ.(*Type),
+    return &TypeDef{
+        Name: string(name.(Identifier)),
+        Type: typ.(*Type),
     }, nil
 }
 
@@ -217,11 +245,15 @@ FieldList ← fields:(Field __)* {
     return flds, nil
 }
 
-Field ← id:IntConstant _ ':' _ req:FieldReq? _ typ:FieldType _ name:Identifier __ def:('=' _ ConstValue)? ListSeparator? {
+Field ← docstr:(DocString __)? id:IntConstant _ ':' _ req:FieldReq? _ typ:FieldType _ name:Identifier __ def:('=' _ ConstValue)? ListSeparator? {
     f := &Field{
         ID       : int(id.(int64)),
         Name     : string(name.(Identifier)),
         Type     : typ.(*Type),
+    }
+    if docstr != nil {
+        raw := docstr.([]interface{})[0].(string)
+        f.Comment = rawCommentToDocStr(raw)
     }
     if req != nil && !req.(bool) {
         f.Optional = true
@@ -255,9 +287,13 @@ EndOfServiceError ← . {
     return nil, errors.New("parser: expected end of service")
 }
 
-Function ← oneway:("oneway" __)? typ:FunctionType __ name:Identifier _ '(' __ arguments:FieldList ')' __ exceptions:Throws? ListSeparator? {
+Function ← docstr:(DocString __)? oneway:("oneway" __)? typ:FunctionType __ name:Identifier _ '(' __ arguments:FieldList ')' __ exceptions:Throws? ListSeparator? {
     m := &Method{
         Name: string(name.(Identifier)),
+    }
+    if docstr != nil {
+        raw := docstr.([]interface{})[0].(string)
+        m.Comment = rawCommentToDocStr(raw)
     }
     t := typ.(*Type)
     if t.Name != "void" {
@@ -375,12 +411,16 @@ ConstMap ← '{' __ values:(ConstValue __ ':' __ ConstValue __ (',' / &'}') __)*
 
 FrugalStatement ← Scope
 
-Scope ← "scope" __ name:Identifier __ '{' __ prefix:Prefix? __ operations:(Operation __)* ('}' / EndOfScopeError) EOS {
+Scope ← docstr:(DocString __)? "scope" __ name:Identifier __ '{' __ prefix:Prefix? __ operations:(Operation __)* ('}' / EndOfScopeError) EOS {
         ops := operations.([]interface{})
         scope := &Scope{
                 Name:       string(name.(Identifier)),
                 Operations: make([]*Operation, len(ops)),
                 Prefix:     defaultPrefix,
+        }
+        if docstr != nil {
+                raw := docstr.([]interface{})[0].(string)
+                scope.Comment = rawCommentToDocStr(raw)
         }
         if prefix != nil {
                 scope.Prefix = prefix.(*ScopePrefix)
@@ -400,10 +440,14 @@ Prefix ← "prefix" _ name:Literal __ {
         return newScopePrefix(name.(string)) 
 }
 
-Operation ← name:Identifier _ ':' __ param:Identifier __ {
+Operation ← docstr:(DocString __)? name:Identifier _ ':' __ param:Identifier __ {
         o := &Operation{
                 Name:  string(name.(Identifier)),
                 Param: string(param.(Identifier)),
+        }
+        if docstr != nil {
+                raw := docstr.([]interface{})[0].(string)
+                o.Comment = rawCommentToDocStr(raw)
         }
         return o, nil
 }
@@ -428,9 +472,16 @@ Letter ← [A-Za-z]
 Digit ← [0-9]
 
 SourceChar ← .
+DocString ← "/**" comment:( !"*/" SourceChar )* "*/" {
+        chars := make([]byte, len(comment.([]interface{})))
+        for i, arr := range comment.([]interface{}) {
+                chars[i] = arr.([]interface{})[1].([]byte)[0]
+        }
+        return strings.TrimSpace(string(chars)), nil
+}
 Comment ← MultiLineComment / SingleLineComment
-MultiLineComment ← "/*" ( !"*/" SourceChar )* "*/"
-MultiLineCommentNoLineTerminator ← "/*" ( !( "*/" / EOL ) SourceChar )* "*/"
+MultiLineComment ← !DocString "/*" ( !"*/" SourceChar )* "*/"
+MultiLineCommentNoLineTerminator ← !DocString "/*" ( !( "*/" / EOL ) SourceChar )* "*/"
 SingleLineComment ← ("//" ( !EOL SourceChar )*) / ("#" ( !EOL SourceChar )*)
 
 __ ← ( Whitespace / EOL / Comment )*

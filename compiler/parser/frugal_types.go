@@ -6,7 +6,7 @@ import "sort"
 //go:generate goimports -w ./grammar.peg.go
 
 type Operation struct {
-	Comment string
+	Comment []string
 	Name    string
 	Param   string
 }
@@ -21,6 +21,7 @@ func (n *ScopePrefix) Template() string {
 }
 
 type Scope struct {
+	Comment    []string
 	Name       string
 	Prefix     *ScopePrefix
 	Operations []*Operation
