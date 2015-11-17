@@ -1,81 +1,81 @@
 {
-        package parser
+    package parser
 
-        import (
-                "fmt"
-                "regexp"
-                "strconv"
-                "strings"
-        )
+    import (
+        "fmt"
+        "regexp"
+        "strconv"
+        "strings"
+    )
 
-        var (
-                identifier     = regexp.MustCompile("^[A-Za-z]+[A-Za-z0-9]")
-                prefixVariable = regexp.MustCompile("{\\w*}")
-                defaultPrefix  = &ScopePrefix{String: "", Variables: make([]string, 0)}
-        )
+    var (
+        identifier     = regexp.MustCompile("^[A-Za-z]+[A-Za-z0-9]")
+        prefixVariable = regexp.MustCompile("{\\w*}")
+        defaultPrefix  = &ScopePrefix{String: "", Variables: make([]string, 0)}
+    )
 
-        type statementWrapper struct {
-                comment   []string
-                statement interface{}
+    type statementWrapper struct {
+        comment   []string
+        statement interface{}
+    }
+
+    type namespace struct {
+        scope     string
+        namespace string
+    }
+
+    
+    type exception *Struct
+
+    type union *Struct
+
+    type include string
+
+    func newScopePrefix(prefix string) (*ScopePrefix, error) {
+        variables := []string{}
+        for _, variable := range prefixVariable.FindAllString(prefix, -1) {
+            variable = variable[1 : len(variable)-1]
+            if len(variable) == 0 || !identifier.MatchString(variable) {
+                return nil, fmt.Errorf("parser: invalid prefix variable '%s'", variable)
+            }
+            variables = append(variables, variable)
         }
+        return &ScopePrefix{String: prefix, Variables: variables}, nil
+    }
 
-        type namespace struct {
-                scope     string
-                namespace string
+    func toIfaceSlice(v interface{}) []interface{} {
+        if v == nil {
+            return nil
         }
+        return v.([]interface{})
+    }
 
-        
-        type exception *Struct
-
-        type union *Struct
-
-        type include string
-
-        func newScopePrefix(prefix string) (*ScopePrefix, error) {
-                variables := []string{}
-                for _, variable := range prefixVariable.FindAllString(prefix, -1) {
-                        variable = variable[1 : len(variable)-1]
-                        if len(variable) == 0 || !identifier.MatchString(variable) {
-                                return nil, fmt.Errorf("parser: invalid prefix variable '%s'", variable)
-                        }
-                        variables = append(variables, variable)
-                }
-                return &ScopePrefix{String: prefix, Variables: variables}, nil
+    func ifaceSliceToString(v interface{}) string {
+        ifs := toIfaceSlice(v)
+        b := make([]byte, len(ifs))
+        for i, v := range ifs {
+            b[i] = v.([]uint8)[0]
         }
+        return string(b)
+    }
 
-        func toIfaceSlice(v interface{}) []interface{} {
-                if v == nil {
-                        return nil
-                }
-                return v.([]interface{})
+    func rawCommentToDocStr(raw string) []string {
+        rawLines := strings.Split(raw, "\n")
+        comment := make([]string, len(rawLines))
+        for i, line := range rawLines {
+            comment[i] = strings.TrimLeft(line, "* ")
         }
+        return comment
+    }
 
-        func ifaceSliceToString(v interface{}) string {
-                ifs := toIfaceSlice(v)
-                b := make([]byte, len(ifs))
-                for i, v := range ifs {
-                        b[i] = v.([]uint8)[0]
-                }
-                return string(b)
+    // toStruct converts a union to a struct with all fields optional.
+    func unionToStruct(u union) *Struct {
+        st := (*Struct)(u)
+        for _, f := range st.Fields {
+            f.Optional = true
         }
-
-        func rawCommentToDocStr(raw string) []string {
-                rawLines := strings.Split(raw, "\n")
-                comment := make([]string, len(rawLines))
-                for i, line := range rawLines {
-                        comment[i] = strings.TrimLeft(line, "* ")
-                }
-                return comment
-        }
-
-        // toStruct converts a union to a struct with all fields optional.
-        func unionToStruct(u union) *Struct {
-                st := (*Struct)(u)
-                for _, f := range st.Fields {
-                        f.Optional = true
-                }
-                return st
-        }
+        return st
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -83,78 +83,78 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
-        thrift := &Thrift{
-                Includes:   make(map[string]string),
-                Namespaces: make(map[string]string),
-                Typedefs:   make(map[string]*TypeDef),
-                Constants:  make(map[string]*Constant),
-                Enums:      make(map[string]*Enum),
-                Structs:    make(map[string]*Struct),
-                Exceptions: make(map[string]*Struct),
-                Unions:     make(map[string]*Struct),
-                Services:   make(map[string]*Service),
-        }
-        frugal := &Frugal{
-                Thrift: thrift,
-                Scopes: []*Scope{},
-        }
+    thrift := &Thrift{
+        Includes:   make(map[string]string),
+        Namespaces: make(map[string]string),
+        Typedefs:   make(map[string]*TypeDef),
+        Constants:  make(map[string]*Constant),
+        Enums:      make(map[string]*Enum),
+        Structs:    make(map[string]*Struct),
+        Exceptions: make(map[string]*Struct),
+        Unions:     make(map[string]*Struct),
+        Services:   make(map[string]*Service),
+    }
+    frugal := &Frugal{
+        Thrift: thrift,
+        Scopes: []*Scope{},
+    }
 
-        stmts := toIfaceSlice(statements)
-        for _, st := range stmts {
-                wrapper := st.([]interface{})[0].(*statementWrapper)
-                switch v := wrapper.statement.(type) {
-                case *namespace:
-                        thrift.Namespaces[v.scope] = v.namespace
-                case *Constant:
-                        v.Comment = wrapper.comment
-                        thrift.Constants[v.Name] = v
-                case *Enum:
-                        v.Comment = wrapper.comment
-                        thrift.Enums[v.Name] = v
-                case *TypeDef:
-                        v.Comment = wrapper.comment
-                        thrift.Typedefs[v.Name] = v
-                case *Struct:
-                        v.Comment = wrapper.comment
-                        thrift.Structs[v.Name] = v
-                case exception:
-                        strct := (*Struct)(v)
-                        strct.Comment = wrapper.comment
-                        thrift.Exceptions[v.Name] = strct
-                case union:
-                        strct := unionToStruct(v)
-                        strct.Comment = wrapper.comment
-                        thrift.Unions[v.Name] = strct
-                case *Service:
-                        v.Comment = wrapper.comment
-                        thrift.Services[v.Name] = v
-                case include:
-                        name := string(v)
-                        if ix := strings.LastIndex(name, "."); ix > 0 {
-                            name = name[:ix]
-                        }
-                        thrift.Includes[name] = string(v)
-                case *Scope:
-                        v.Comment = wrapper.comment
-                        frugal.Scopes = append(frugal.Scopes, v)
-                default:
-                        return nil, fmt.Errorf("parser: unknown value %#v", v)
-                }
+    stmts := toIfaceSlice(statements)
+    for _, st := range stmts {
+        wrapper := st.([]interface{})[0].(*statementWrapper)
+        switch v := wrapper.statement.(type) {
+        case *namespace:
+            thrift.Namespaces[v.scope] = v.namespace
+        case *Constant:
+            v.Comment = wrapper.comment
+            thrift.Constants[v.Name] = v
+        case *Enum:
+            v.Comment = wrapper.comment
+            thrift.Enums[v.Name] = v
+        case *TypeDef:
+            v.Comment = wrapper.comment
+            thrift.Typedefs[v.Name] = v
+        case *Struct:
+            v.Comment = wrapper.comment
+            thrift.Structs[v.Name] = v
+        case exception:
+            strct := (*Struct)(v)
+            strct.Comment = wrapper.comment
+            thrift.Exceptions[v.Name] = strct
+        case union:
+            strct := unionToStruct(v)
+            strct.Comment = wrapper.comment
+            thrift.Unions[v.Name] = strct
+        case *Service:
+            v.Comment = wrapper.comment
+            thrift.Services[v.Name] = v
+        case include:
+            name := string(v)
+            if ix := strings.LastIndex(name, "."); ix > 0 {
+                name = name[:ix]
+            }
+            thrift.Includes[name] = string(v)
+        case *Scope:
+            v.Comment = wrapper.comment
+            frugal.Scopes = append(frugal.Scopes, v)
+        default:
+            return nil, fmt.Errorf("parser: unknown value %#v", v)
         }
-        return frugal, nil
+    }
+    return frugal, nil
 }
 
 SyntaxError ← . {
-        return nil, errors.New("parser: syntax error")
+    return nil, errors.New("parser: syntax error")
 }
 
 Statement ← docstr:(DocString __)? statement:(ThriftStatement / FrugalStatement) {
-        wrapper := &statementWrapper{statement: statement}
-        if docstr != nil {
-                raw := docstr.([]interface{})[0].(string)
-                wrapper.comment = rawCommentToDocStr(raw)
-        }
-        return wrapper, nil
+    wrapper := &statementWrapper{statement: statement}
+    if docstr != nil {
+        raw := docstr.([]interface{})[0].(string)
+        wrapper.comment = rawCommentToDocStr(raw)
+    }
+    return wrapper, nil
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -164,14 +164,14 @@ Statement ← docstr:(DocString __)? statement:(ThriftStatement / FrugalStatemen
 ThriftStatement ← Include / Namespace / Const / Enum / TypeDef / Struct / Exception / Union / Service
 
 Include ← "include" _ file:Literal EOS {
-        return include(file.(string)), nil
+    return include(file.(string)), nil
 }
 
 Namespace ← "namespace" _ scope:[a-z.-]+ _ ns:Identifier EOS {
-        return &namespace{
-                scope:     ifaceSliceToString(scope),
-                namespace: string(ns.(Identifier)),
-        }, nil
+    return &namespace{
+        scope:     ifaceSliceToString(scope),
+        namespace: string(ns.(Identifier)),
+    }, nil
 }
 
 Const ← "const" _ typ:FieldType _ name:Identifier _ "=" _ value:ConstValue EOS {
@@ -247,9 +247,9 @@ FieldList ← fields:(Field __)* {
 
 Field ← docstr:(DocString __)? id:IntConstant _ ':' _ req:FieldReq? _ typ:FieldType _ name:Identifier __ def:('=' _ ConstValue)? ListSeparator? {
     f := &Field{
-        ID       : int(id.(int64)),
-        Name     : string(name.(Identifier)),
-        Type     : typ.(*Type),
+        ID:   int(id.(int64)),
+        Name: string(name.(Identifier)),
+        Type: typ.(*Type),
     }
     if docstr != nil {
         raw := docstr.([]interface{})[0].(string)
@@ -412,44 +412,44 @@ ConstMap ← '{' __ values:(ConstValue __ ':' __ ConstValue __ (',' / &'}') __)*
 FrugalStatement ← Scope
 
 Scope ← docstr:(DocString __)? "scope" __ name:Identifier __ '{' __ prefix:Prefix? __ operations:(Operation __)* ('}' / EndOfScopeError) EOS {
-        ops := operations.([]interface{})
-        scope := &Scope{
-                Name:       string(name.(Identifier)),
-                Operations: make([]*Operation, len(ops)),
-                Prefix:     defaultPrefix,
-        }
-        if docstr != nil {
-                raw := docstr.([]interface{})[0].(string)
-                scope.Comment = rawCommentToDocStr(raw)
-        }
-        if prefix != nil {
-                scope.Prefix = prefix.(*ScopePrefix)
-        }
-        for i, o := range ops {
-                op :=  o.([]interface{})[0].(*Operation)
-                scope.Operations[i] = op
-        }
-        return scope, nil
+    ops := operations.([]interface{})
+    scope := &Scope{
+        Name:       string(name.(Identifier)),
+        Operations: make([]*Operation, len(ops)),
+        Prefix:     defaultPrefix,
+    }
+    if docstr != nil {
+        raw := docstr.([]interface{})[0].(string)
+        scope.Comment = rawCommentToDocStr(raw)
+    }
+    if prefix != nil {
+        scope.Prefix = prefix.(*ScopePrefix)
+    }
+    for i, o := range ops {
+        op :=  o.([]interface{})[0].(*Operation)
+        scope.Operations[i] = op
+    }
+    return scope, nil
 }
 
 EndOfScopeError ← . {
-        return nil, errors.New("parser: expected end of scope")
+    return nil, errors.New("parser: expected end of scope")
 }
 
 Prefix ← "prefix" _ name:Literal __ {
-        return newScopePrefix(name.(string)) 
+    return newScopePrefix(name.(string)) 
 }
 
 Operation ← docstr:(DocString __)? name:Identifier _ ':' __ param:Identifier __ {
-        o := &Operation{
-                Name:  string(name.(Identifier)),
-                Param: string(param.(Identifier)),
-        }
-        if docstr != nil {
-                raw := docstr.([]interface{})[0].(string)
-                o.Comment = rawCommentToDocStr(raw)
-        }
-        return o, nil
+    o := &Operation{
+        Name:  string(name.(Identifier)),
+        Param: string(param.(Identifier)),
+    }
+    if docstr != nil {
+        raw := docstr.([]interface{})[0].(string)
+        o.Comment = rawCommentToDocStr(raw)
+    }
+    return o, nil
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -457,14 +457,14 @@ Operation ← docstr:(DocString __)? name:Identifier _ ':' __ param:Identifier _
 ///////////////////////////////////////////////////////////////////////////////
 
 Literal ← (('"' (`\"` / [^"])* '"') / ('\'' (`\'` / [^'])* '\'')) {
-        if len(c.text) != 0 && c.text[0] == '\'' {
-                return strconv.Unquote(`"` + strings.Replace(string(c.text[1:len(c.text)-1]), `\'`, `'`, -1) + `"`)
-        }
-        return strconv.Unquote(string(c.text))
+    if len(c.text) != 0 && c.text[0] == '\'' {
+        return strconv.Unquote(`"` + strings.Replace(string(c.text[1:len(c.text)-1]), `\'`, `'`, -1) + `"`)
+    }
+    return strconv.Unquote(string(c.text))
 }
 
 Identifier ← (Letter / '_')+ (Letter / Digit / [._])* {
-        return Identifier(string(c.text)), nil
+    return Identifier(string(c.text)), nil
 }
 
 ListSeparator ← [,;]
@@ -473,11 +473,11 @@ Digit ← [0-9]
 
 SourceChar ← .
 DocString ← "/**@" comment:( !"*/" SourceChar )* "*/" {
-        chars := make([]byte, len(comment.([]interface{})))
-        for i, arr := range comment.([]interface{}) {
-                chars[i] = arr.([]interface{})[1].([]byte)[0]
-        }
-        return strings.TrimSpace(string(chars)), nil
+    chars := make([]byte, len(comment.([]interface{})))
+    for i, arr := range comment.([]interface{}) {
+        chars[i] = arr.([]interface{})[1].([]byte)[0]
+    }
+    return strings.TrimSpace(string(chars)), nil
 }
 Comment ← MultiLineComment / SingleLineComment
 MultiLineComment ← !DocString "/*" ( !"*/" SourceChar )* "*/"
