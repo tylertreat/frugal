@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+which godep > /dev/null || {
+    go get github.com/tools/godep
+}
+
+# This is so `tee` doesn't absorb a non-zero exit code
+set -o pipefail
+# Set -e so that we fail if an error is hit.
+set -e
+
+# Run tests
+godep go test -race ./test

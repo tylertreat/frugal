@@ -28,7 +28,4 @@ godep restore
 
 go install
 
-# Run 
-#go run main.go
-
 echo "Go build successful."
