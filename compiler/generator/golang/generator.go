@@ -21,8 +21,8 @@ type Generator struct {
 	*generator.BaseGenerator
 }
 
-func NewGenerator() generator.SingleFileGenerator {
-	return &Generator{&generator.BaseGenerator{}}
+func NewGenerator(options map[string]string) generator.SingleFileGenerator {
+	return &Generator{&generator.BaseGenerator{options}}
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
@@ -77,8 +77,17 @@ func (g *Generator) GenerateImports(file *os.File, f *parser.Frugal) error {
 	imports := "import (\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"
-	imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
-	imports += "\t\"github.com/Workiva/frugal-go\"\n"
+	if g.Options["thrift_import"] != "" {
+		imports += "\t\"" + g.Options["thrift_import"] + "\"\n"
+	} else {
+		imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
+	}
+	if g.Options["frugal_import"] != "" {
+		imports += "\t\"" + g.Options["frugal_import"] + "\"\n"
+	} else {
+		imports += "\t\"github.com/Workiva/frugal-go\"\n"
+	}
+
 	imports += ")"
 	_, err := file.WriteString(imports)
 	return err

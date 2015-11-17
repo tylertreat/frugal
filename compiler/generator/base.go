@@ -5,7 +5,9 @@ import (
 	"os"
 )
 
-type BaseGenerator struct{}
+type BaseGenerator struct {
+	Options map[string]string
+}
 
 func (b *BaseGenerator) CreateFile(name, outputDir, suffix string, usePrefix bool) (*os.File, error) {
 	if err := os.MkdirAll(outputDir, 0777); err != nil {
