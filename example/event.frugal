@@ -27,6 +27,6 @@ scope Events {
     /** Prefix specifies topic prefix tokens, which can be static or variable. */
     prefix "foo.{user}"
 
-    // These style comments are supported too.
-    EventCreated: Event
+    /**@ This is a docstring. */
+    EventCreated: Event // Inline comments are also supported
 }

@@ -8,5 +8,6 @@
 library event;
 
 export 'src/event.dart' show Event;
+export 'src/event_constants.dart' show EventConstants;
 
 export 'src/frug_events.dart' show EventsPublisher, EventsSubscriber;

@@ -203,6 +203,9 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
 	publishers := ""
+	if scope.Comment != nil {
+		publishers += g.GenerateInlineComment(scope.Comment, "/")
+	}
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
 	publishers += tab + "frugal.Transport transport;\n"
 	publishers += tab + "thrift.TProtocol protocol;\n"
@@ -225,6 +228,9 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	for _, op := range scope.Operations {
 		publishers += prefix
 		prefix = "\n\n"
+		if op.Comment != nil {
+			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
+		}
 		publishers += fmt.Sprintf(tab+"Future publish%s(%st_%s.%s req) {\n", op.Name, args,
 			strings.ToLower(op.Param), op.Param)
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
@@ -267,6 +273,9 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	subscribers := ""
+	if scope.Comment != nil {
+		subscribers += g.GenerateInlineComment(scope.Comment, "/")
+	}
 	subscribers += fmt.Sprintf("class %sSubscriber {\n", strings.Title(scope.Name))
 	subscribers += tab + "final frugal.Provider provider;\n\n"
 
@@ -283,6 +292,9 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		paramLower := strings.ToLower(op.Param)
 		subscribers += prefix
 		prefix = "\n\n"
+		if op.Comment != nil {
+			subscribers += g.GenerateInlineComment(op.Comment, tab+"/")
+		}
 		subscribers += fmt.Sprintf(tab+"Future<frugal.Subscription> subscribe%s(%sdynamic on%s(t_%s.%s req)) async {\n",
 			op.Name, args, op.Param, paramLower, op.Param)
 		subscribers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
