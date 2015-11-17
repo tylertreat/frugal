@@ -3,6 +3,7 @@ package compiler
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/generator/dartlang"
