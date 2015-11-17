@@ -184,6 +184,9 @@ func (f *FrugalFooClient) recvBlah(ctx frugal.Context) (value int64, err error) 
 		iprot = f.ProtocolFactory.GetProtocol(f.Transport)
 		f.InputProtocol = iprot
 	}
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
+		return
+	}
 	method, mTypeId, seqId, err := iprot.ReadMessageBegin()
 	if err != nil {
 		return
@@ -221,9 +224,6 @@ func (f *FrugalFooClient) recvBlah(ctx frugal.Context) (value int64, err error) 
 		return
 	}
 	value = result.GetSuccess()
-	if e := iprot.ReadResponseHeader(ctx); e != nil {
-		err = e
-	}
 	return
 }
 
@@ -298,6 +298,9 @@ func (p *fooFrugalProcessorBlah) Process(ctx frugal.Context, seqId int32, iprot,
 	} else {
 		result.Success = &retval
 	}
+	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
+		err = err2
+	}
 	if err2 = oprot.WriteMessageBegin("blah", thrift.REPLY, seqId); err2 != nil {
 		err = err2
 	}
@@ -305,9 +308,6 @@ func (p *fooFrugalProcessorBlah) Process(ctx frugal.Context, seqId int32, iprot,
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
-		err = err2
-	}
-	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {

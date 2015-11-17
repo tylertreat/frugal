@@ -386,6 +386,9 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += "\t\tiprot = f.ProtocolFactory.GetProtocol(f.Transport)\n"
 	contents += "\t\tf.InputProtocol = iprot\n"
 	contents += "\t}\n"
+	contents += "\tif err = iprot.ReadResponseHeader(ctx); err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
 	contents += "\tmethod, mTypeId, seqId, err := iprot.ReadMessageBegin()\n"
 	contents += "\tif err != nil {\n"
 	contents += "\t\treturn\n"
@@ -429,9 +432,6 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += "\tvalue = result.GetSuccess()\n"
-	contents += "\tif e := iprot.ReadResponseHeader(ctx); e != nil {\n"
-	contents += "\t\terr = e\n"
-	contents += "\t}\n"
 	contents += "\treturn\n"
 	contents += "}\n\n"
 
@@ -543,6 +543,9 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\t\tresult.Success = &retval\n"
 	contents += "\t}\n"
 
+	contents += "\tif err2 = oprot.WriteResponseHeader(ctx); err2 != nil {\n"
+	contents += "\t\terr = err2\n"
+	contents += "\t}\n"
 	contents += fmt.Sprintf("\tif err2 = oprot.WriteMessageBegin(\"%s\", "+
 		"thrift.REPLY, seqId); err2 != nil {\n", nameLower)
 	contents += "\t\terr = err2\n"
@@ -551,9 +554,6 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\t\terr = err2\n"
 	contents += "\t}\n"
 	contents += "\tif err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {\n"
-	contents += "\t\terr = err2\n"
-	contents += "\t}\n"
-	contents += "\tif err2 = oprot.WriteResponseHeader(ctx); err2 != nil {\n"
 	contents += "\t\terr = err2\n"
 	contents += "\t}\n"
 	contents += "\tif err2 = oprot.Flush(); err == nil && err2 != nil {\n"
