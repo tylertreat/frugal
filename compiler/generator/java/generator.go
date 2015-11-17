@@ -30,8 +30,11 @@ type Generator struct {
 	time time.Time
 }
 
-func NewGenerator() generator.MultipleFileGenerator {
-	return &Generator{&generator.BaseGenerator{}, globals.Now}
+func NewGenerator(options map[string]string) generator.MultipleFileGenerator {
+	return &Generator{
+		&generator.BaseGenerator{options},
+		globals.Now,
+	}
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
