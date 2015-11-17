@@ -4,12 +4,19 @@
 package event
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal-go"
 )
+
+// (needed to ensure safety because of naive import list construction.)
+var _ = thrift.ZERO
+var _ = fmt.Printf
+var _ = bytes.Equal
+
 
 const delimiter = "."
 
@@ -109,33 +116,115 @@ type FrugalFoo interface {
 }
 
 type FrugalFooClient struct {
-	protocol frugal.FProtocol
-	wrapped  Foo
+	Transport       thrift.TTransport
+	ProtocolFactory frugal.FProtocolFactory
+	InputProtocol   frugal.FProtocol
+	OutputProtocol  frugal.FProtocol
+	SeqId           int32
 }
 
 func NewFrugalFooClientFactory(t thrift.TTransport, f frugal.FProtocolFactory) *FrugalFooClient {
 	return &FrugalFooClient{
-		protocol: f.GetProtocol(t),
-		wrapped:  NewFooClientProtocol(t, f.GetProtocol(t), f.GetProtocol(t)),
+		Transport:       t,
+		ProtocolFactory: f,
+		InputProtocol:   f.GetProtocol(t),
+		OutputProtocol:  f.GetProtocol(t),
+		SeqId:           0,
 	}
 }
 
-func NewFrugalFooClient(t thrift.TTransport, proto frugal.FProtocol) *FrugalFooClient {
+func NewFrugalFooClientProtocol(t thrift.TTransport, iprot, oprot frugal.FProtocol) *FrugalFooClient {
 	return &FrugalFooClient{
-		protocol: proto,
-		wrapped:  NewFooClientProtocol(t, proto, proto),
+		Transport:       t,
+		ProtocolFactory: nil,
+		InputProtocol:   iprot,
+		OutputProtocol:  oprot,
+		SeqId:           0,
 	}
 }
 
 func (f *FrugalFooClient) Blah(ctx frugal.Context, num int32) (r int64, err error) {
-	if err = f.protocol.WriteRequestHeader(ctx); err != nil {
+	if err = f.sendBlah(ctx, num); err != nil {
 		return
 	}
-	r, err = f.wrapped.Blah(num)
-	if e := f.protocol.ReadResponseHeader(ctx); e != nil {
-		err = e
+	if r, err = f.recvBlah(ctx); err != nil {
+		return
 	}
 	return r, err
+}
+
+func (f *FrugalFooClient) sendBlah(ctx frugal.Context, num int32) (err error) {
+	oprot := f.OutputProtocol
+	if oprot == nil {
+		oprot = f.ProtocolFactory.GetProtocol(f.Transport)
+		f.OutputProtocol = oprot
+	}
+	if err = f.OutputProtocol.WriteRequestHeader(ctx); err != nil {
+		return
+	}
+	f.SeqId++
+	if err = oprot.WriteMessageBegin("blah", thrift.CALL, f.SeqId); err != nil {
+		return
+	}
+	args := FooBlahArgs{
+		Num: num,
+	}
+	if err = args.Write(oprot); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	return oprot.Flush()
+}
+
+func (f *FrugalFooClient) recvBlah(ctx frugal.Context) (value int64, err error) {
+	iprot := f.InputProtocol
+	if iprot == nil {
+		iprot = f.ProtocolFactory.GetProtocol(f.Transport)
+		f.InputProtocol = iprot
+	}
+	method, mTypeId, seqId, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
+	}
+	if method != "blah" {
+	err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "blah failed: wrong method name")
+		return
+	}
+	if f.SeqId != seqId {
+	err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "blah failed: out of sequence response")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 error
+		error1, err = error0.Read(iprot)
+		if err != nil {
+			return
+		}
+		if err = iprot.ReadMessageEnd(); err != nil {
+			return
+		}
+		err = error1
+		return
+	}
+	if mTypeId != thrift.REPLY {
+	err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "blah failed: invalid message type")
+		return
+	}
+	result := FooBlahResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	value = result.GetSuccess()
+	if e := iprot.ReadResponseHeader(ctx); e != nil {
+		err = e
+	}
+	return
 }
 
 type FrugalFooProcessor struct {

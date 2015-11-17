@@ -75,11 +75,18 @@ func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal) error {
 
 func (g *Generator) GenerateImports(file *os.File, f *parser.Frugal) error {
 	imports := "import (\n"
+	imports += "\t\"bytes\"\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"
 	imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
 	imports += "\t\"github.com/Workiva/frugal-go\"\n"
-	imports += ")"
+	imports += ")\n\n"
+
+	imports += "// (needed to ensure safety because of naive import list construction.)\n"
+	imports += "var _ = thrift.ZERO\n"
+	imports += "var _ = fmt.Printf\n"
+	imports += "var _ = bytes.Equal\n"
+
 	_, err := file.WriteString(imports)
 	return err
 }
@@ -289,46 +296,145 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	servTitle := strings.Title(service.Name)
 
 	contents := fmt.Sprintf("type Frugal%sClient struct {\n", servTitle)
-	contents += "\tprotocol frugal.FProtocol\n"
-	contents += fmt.Sprintf("\twrapped  %s\n", servTitle)
+	contents += "\tTransport       thrift.TTransport\n"
+	contents += "\tProtocolFactory frugal.FProtocolFactory\n"
+	contents += "\tInputProtocol   frugal.FProtocol\n"
+	contents += "\tOutputProtocol  frugal.FProtocol\n"
+	contents += "\tSeqId           int32\n"
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf(
 		"func NewFrugal%sClientFactory(t thrift.TTransport, f frugal.FProtocolFactory) *Frugal%sClient {\n",
 		servTitle, servTitle)
 	contents += fmt.Sprintf("\treturn &Frugal%sClient{\n", servTitle)
-	contents += "\t\tprotocol: f.GetProtocol(t),\n"
-	contents += fmt.Sprintf(
-		"\t\twrapped:  New%sClientProtocol(t, f.GetProtocol(t), f.GetProtocol(t)),\n",
-		servTitle)
+	contents += "\t\tTransport:       t,\n"
+	contents += "\t\tProtocolFactory: f,\n"
+	contents += "\t\tInputProtocol:   f.GetProtocol(t),\n"
+	contents += "\t\tOutputProtocol:  f.GetProtocol(t),\n"
+	contents += "\t\tSeqId:           0,\n"
 	contents += "\t}\n"
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf(
-		"func NewFrugal%sClient(t thrift.TTransport, proto frugal.FProtocol) *Frugal%sClient {\n",
+		"func NewFrugal%sClientProtocol(t thrift.TTransport, iprot, oprot frugal.FProtocol) *Frugal%sClient {\n",
 		service.Name, service.Name)
 	contents += fmt.Sprintf("\treturn &Frugal%sClient{\n", servTitle)
-	contents += "\t\tprotocol: proto,\n"
-	contents += fmt.Sprintf("\t\twrapped:  New%sClientProtocol(t, proto, proto),\n", servTitle)
+	contents += "\t\tTransport:       t,\n"
+	contents += "\t\tProtocolFactory: nil,\n"
+	contents += "\t\tInputProtocol:   iprot,\n"
+	contents += "\t\tOutputProtocol:  oprot,\n"
+	contents += "\t\tSeqId:           0,\n"
 	contents += "\t}\n"
 	contents += "}\n\n"
 
 	for _, method := range service.Methods {
-		exportedName := strings.Title(method.Name)
-		contents += fmt.Sprintf("func (f *Frugal%sClient) %s(ctx frugal.Context%s) (r %s, err error) {\n",
-			service.Name, exportedName, g.generateInputArgs(method.Arguments),
-			g.getGoTypeFromThriftType(method.ReturnType))
-		contents += fmt.Sprintf("\tif err = f.protocol.WriteRequestHeader(ctx); err != nil {\n")
-		contents += "\t\treturn\n"
-		contents += "\t}\n"
-		contents += fmt.Sprintf("\tr, err = f.wrapped.%s(%s)\n",
-			exportedName, g.generateClientOutputArgs(method.Arguments))
-		contents += "\tif e := f.protocol.ReadResponseHeader(ctx); e != nil {\n"
-		contents += "\t\terr = e\n"
-		contents += "\t}\n"
-		contents += "\treturn r, err\n"
-		contents += "}\n\n"
+		contents += g.generateClientMethod(service, method)
 	}
+	return contents
+}
+
+func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
+	servTitle := strings.Title(service.Name)
+	nameTitle := strings.Title(method.Name)
+	nameLower := strings.ToLower(method.Name)
+
+	contents := fmt.Sprintf("func (f *Frugal%sClient) %s(ctx frugal.Context%s) (r %s, err error) {\n",
+		servTitle, nameTitle, g.generateInputArgs(method.Arguments),
+		g.getGoTypeFromThriftType(method.ReturnType))
+	contents += fmt.Sprintf("\tif err = f.send%s(ctx, %s); err != nil {\n",
+		nameTitle, g.generateClientOutputArgs(method.Arguments))
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += fmt.Sprintf("\tif r, err = f.recv%s(ctx); err != nil {\n", nameTitle)
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\treturn r, err\n"
+	contents += "}\n\n"
+
+	contents += fmt.Sprintf("func (f *Frugal%sClient) send%s(ctx frugal.Context%s) (err error) {\n",
+		servTitle, nameTitle, g.generateInputArgs(method.Arguments))
+	contents += "\toprot := f.OutputProtocol\n"
+	contents += "\tif oprot == nil {\n"
+	contents += "\t\toprot = f.ProtocolFactory.GetProtocol(f.Transport)\n"
+	contents += "\t\tf.OutputProtocol = oprot\n"
+	contents += "\t}\n"
+	contents += fmt.Sprintf("\tif err = f.OutputProtocol.WriteRequestHeader(ctx); err != nil {\n")
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tf.SeqId++\n"
+	contents += fmt.Sprintf(
+		"\tif err = oprot.WriteMessageBegin(\"%s\", thrift.CALL, f.SeqId); err != nil {\n",
+		nameLower)
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += fmt.Sprintf("\targs := %s%sArgs{\n", servTitle, nameTitle)
+	contents += g.generateStructArgs(method.Arguments)
+	contents += "\t}\n"
+	contents += "\tif err = args.Write(oprot); err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tif err = oprot.WriteMessageEnd(); err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\treturn oprot.Flush()\n"
+	contents += "}\n\n"
+
+	contents += fmt.Sprintf("func (f *Frugal%sClient) recv%s(ctx frugal.Context) (value %s, err error) {\n",
+		servTitle, nameTitle, g.getGoTypeFromThriftType(method.ReturnType))
+	contents += "\tiprot := f.InputProtocol\n"
+	contents += "\tif iprot == nil {\n"
+	contents += "\t\tiprot = f.ProtocolFactory.GetProtocol(f.Transport)\n"
+	contents += "\t\tf.InputProtocol = iprot\n"
+	contents += "\t}\n"
+	contents += "\tmethod, mTypeId, seqId, err := iprot.ReadMessageBegin()\n"
+	contents += "\tif err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += fmt.Sprintf("\tif method != \"%s\" {\n", nameLower)
+	contents += fmt.Sprintf(
+		"\terr = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, \"%s failed: wrong method name\")\n",
+		nameLower)
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tif f.SeqId != seqId {\n"
+	contents += fmt.Sprintf(
+		"\terr = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, \"%s failed: out of sequence response\")\n",
+		nameLower)
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tif mTypeId == thrift.EXCEPTION {\n"
+	contents += "\t\terror0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, \"Unknown Exception\")\n"
+	contents += "\t\tvar error1 error\n"
+	contents += "\t\terror1, err = error0.Read(iprot)\n"
+	contents += "\t\tif err != nil {\n"
+	contents += "\t\t\treturn\n"
+	contents += "\t\t}\n"
+	contents += "\t\tif err = iprot.ReadMessageEnd(); err != nil {\n"
+	contents += "\t\t\treturn\n"
+	contents += "\t\t}\n"
+	contents += "\t\terr = error1\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tif mTypeId != thrift.REPLY {\n"
+	contents += fmt.Sprintf(
+		"\terr = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, \"%s failed: invalid message type\")\n",
+		nameLower)
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += fmt.Sprintf("\tresult := %s%sResult{}\n", servTitle, nameTitle)
+	contents += "\tif err = result.Read(iprot); err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tif err = iprot.ReadMessageEnd(); err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tvalue = result.GetSuccess()\n"
+	contents += "\tif e := iprot.ReadResponseHeader(ctx); e != nil {\n"
+	contents += "\t\terr = e\n"
+	contents += "\t}\n"
+	contents += "\treturn\n"
+	contents += "}\n\n"
+
 	return contents
 }
 
@@ -485,6 +591,14 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
 		argStr += ", " + arg.Name + " " + g.getGoTypeFromThriftType(arg.Type)
+	}
+	return argStr
+}
+
+func (g *Generator) generateStructArgs(args []*parser.Field) string {
+	argStr := ""
+	for _, arg := range args {
+		argStr += "\t\t" + strings.Title(arg.Name) + ": " + arg.Name + ",\n"
 	}
 	return argStr
 }
