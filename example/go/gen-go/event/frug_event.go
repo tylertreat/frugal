@@ -13,6 +13,8 @@ import (
 
 const delimiter = "."
 
+// This docstring gets added to the generated code because it has
+// the @ sign.
 type EventsPublisher struct {
 	Transport frugal.Transport
 	Protocol  thrift.TProtocol
@@ -28,6 +30,7 @@ func NewEventsPublisher(provider *frugal.Provider) *EventsPublisher {
 	}
 }
 
+// This is a docstring.
 func (l *EventsPublisher) PublishEventCreated(user string, req *Event) error {
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
@@ -47,6 +50,8 @@ func (l *EventsPublisher) PublishEventCreated(user string, req *Event) error {
 	return oprot.Flush()
 }
 
+// This docstring gets added to the generated code because it has
+// the @ sign.
 type EventsSubscriber struct {
 	Provider *frugal.Provider
 }
@@ -55,6 +60,7 @@ func NewEventsSubscriber(provider *frugal.Provider) *EventsSubscriber {
 	return &EventsSubscriber{Provider: provider}
 }
 
+// This is a docstring.
 func (l *EventsSubscriber) SubscribeEventCreated(user string, handler func(*Event)) (*frugal.Subscription, error) {
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)

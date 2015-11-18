@@ -32,7 +32,7 @@ func NewGenerator(options map[string]string) generator.MultipleFileGenerator {
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
-	if pkg, ok := f.Namespaces[lang]; ok {
+	if pkg, ok := f.Thrift.Namespaces[lang]; ok {
 		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
@@ -121,7 +121,7 @@ func (g *Generator) addToPubspec(f *parser.Frugal, dir string) error {
 
 func (g *Generator) exportClasses(f *parser.Frugal, dir string) error {
 	filename := strings.ToLower(f.Name)
-	if ns, ok := f.Namespaces[lang]; ok {
+	if ns, ok := f.Thrift.Namespaces[lang]; ok {
 		filename = strings.ToLower(ns)
 	}
 	dartFile := fmt.Sprintf("%s.%s", filename, lang)
@@ -145,11 +145,6 @@ func (g *Generator) exportClasses(f *parser.Frugal, dir string) error {
 	return err
 }
 
-func (g *Generator) CheckCompile(path string) error {
-	// TODO: Add compile to js
-	return nil
-}
-
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
 	if fileType != generator.CombinedFile {
 		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
@@ -170,8 +165,7 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 }
 
 func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *parser.Scope) error {
-	// TODO: Figure out what this does
-	pkg, ok := f.Namespaces[lang]
+	pkg, ok := f.Thrift.Namespaces[lang]
 	if ok {
 		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]
@@ -209,6 +203,9 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
 	publishers := ""
+	if scope.Comment != nil {
+		publishers += g.GenerateInlineComment(scope.Comment, "/")
+	}
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
 	publishers += tab + "frugal.Transport transport;\n"
 	publishers += tab + "thrift.TProtocol protocol;\n"
@@ -231,6 +228,9 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	for _, op := range scope.Operations {
 		publishers += prefix
 		prefix = "\n\n"
+		if op.Comment != nil {
+			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
+		}
 		publishers += fmt.Sprintf(tab+"Future publish%s(%st_%s.%s req) {\n", op.Name, args,
 			strings.ToLower(op.Param), op.Param)
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
@@ -273,6 +273,9 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	subscribers := ""
+	if scope.Comment != nil {
+		subscribers += g.GenerateInlineComment(scope.Comment, "/")
+	}
 	subscribers += fmt.Sprintf("class %sSubscriber {\n", strings.Title(scope.Name))
 	subscribers += tab + "final frugal.Provider provider;\n\n"
 
@@ -289,6 +292,9 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		paramLower := strings.ToLower(op.Param)
 		subscribers += prefix
 		prefix = "\n\n"
+		if op.Comment != nil {
+			subscribers += g.GenerateInlineComment(op.Comment, tab+"/")
+		}
 		subscribers += fmt.Sprintf(tab+"Future<frugal.Subscription> subscribe%s(%sdynamic on%s(t_%s.%s req)) async {\n",
 			op.Name, args, op.Param, paramLower, op.Param)
 		subscribers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)

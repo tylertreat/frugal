@@ -3,7 +3,6 @@ package golang
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -26,7 +25,7 @@ func NewGenerator(options map[string]string) generator.SingleFileGenerator {
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
-	if pkg, ok := f.Namespaces[lang]; ok {
+	if pkg, ok := f.Thrift.Namespaces[lang]; ok {
 		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
@@ -37,14 +36,6 @@ func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
 
 func (g *Generator) DefaultOutputDir() string {
 	return defaultOutputDir
-}
-
-func (g *Generator) CheckCompile(path string) error {
-	if out, err := exec.Command("go", "build", path).CombinedOutput(); err != nil {
-		fmt.Println(string(out))
-		return err
-	}
-	return nil
 }
 
 func (g *Generator) GenerateFile(name string, outputDir string) (*os.File, error) {
@@ -62,7 +53,7 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 }
 
 func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal) error {
-	pkg, ok := f.Namespaces[lang]
+	pkg, ok := f.Thrift.Namespaces[lang]
 	if ok {
 		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]
@@ -105,13 +96,16 @@ func (g *Generator) GeneratePublishers(file *os.File, scopes []*parser.Scope) er
 	for _, scope := range scopes {
 		publishers += newline
 		newline = "\n\n"
-		publishers = generatePublisher(publishers, scope)
+		publishers = g.generatePublisher(publishers, scope)
 	}
 	_, err := file.WriteString(publishers)
 	return err
 }
 
-func generatePublisher(publishers string, scope *parser.Scope) string {
+func (g *Generator) generatePublisher(publishers string, scope *parser.Scope) string {
+	if scope.Comment != nil {
+		publishers += g.GenerateInlineComment(scope.Comment, "")
+	}
 	publishers += fmt.Sprintf("type %sPublisher struct {\n", strings.Title(scope.Name))
 	publishers += "\tTransport frugal.Transport\n"
 	publishers += "\tProtocol  thrift.TProtocol\n"
@@ -141,6 +135,9 @@ func generatePublisher(publishers string, scope *parser.Scope) string {
 	for _, op := range scope.Operations {
 		publishers += prefix
 		prefix = "\n\n"
+		if op.Comment != nil {
+			publishers += g.GenerateInlineComment(op.Comment, "")
+		}
 		publishers += fmt.Sprintf("func (l *%sPublisher) Publish%s(%sreq *%s) error {\n",
 			strings.Title(scope.Name), op.Name, args, op.Param)
 		publishers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
@@ -190,13 +187,16 @@ func (g *Generator) GenerateSubscribers(file *os.File, scopes []*parser.Scope) e
 	for _, scope := range scopes {
 		subscribers += newline
 		newline = "\n\n"
-		subscribers = generateSubscriber(subscribers, scope)
+		subscribers = g.generateSubscriber(subscribers, scope)
 	}
 	_, err := file.WriteString(subscribers)
 	return err
 }
 
-func generateSubscriber(subscribers string, scope *parser.Scope) string {
+func (g *Generator) generateSubscriber(subscribers string, scope *parser.Scope) string {
+	if scope.Comment != nil {
+		subscribers += g.GenerateInlineComment(scope.Comment, "")
+	}
 	subscribers += fmt.Sprintf("type %sSubscriber struct {\n", strings.Title(scope.Name))
 	subscribers += "\tProvider *frugal.Provider\n"
 	subscribers += "}\n\n"
@@ -219,6 +219,9 @@ func generateSubscriber(subscribers string, scope *parser.Scope) string {
 	for _, op := range scope.Operations {
 		subscribers += prefix
 		prefix = "\n\n"
+		if op.Comment != nil {
+			subscribers += g.GenerateInlineComment(op.Comment, "")
+		}
 		subscribers += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*%s)) (*frugal.Subscription, error) {\n",
 			strings.Title(scope.Name), op.Name, args, op.Param)
 		subscribers += fmt.Sprintf("\top := \"%s\"\n", op.Name)

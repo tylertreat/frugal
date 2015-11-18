@@ -13,6 +13,7 @@ import (
 
 const delimiter = "."
 
+// And this is a scope docstring.
 type FooPublisher struct {
 	Transport frugal.Transport
 	Protocol  thrift.TProtocol
@@ -47,6 +48,7 @@ func (l *FooPublisher) PublishBar(baz string, req *Stuff) error {
 	return oprot.Flush()
 }
 
+// This is an operation docstring.
 func (l *FooPublisher) PublishFoo(baz string, req *Thing) error {
 	op := "Foo"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
@@ -100,6 +102,7 @@ func (l *BarPublisher) PublishDoStuff(req *Thing) error {
 	return oprot.Flush()
 }
 
+// And this is a scope docstring.
 type FooSubscriber struct {
 	Provider *frugal.Provider
 }
@@ -157,6 +160,7 @@ func (l *FooSubscriber) recvBar(op string, iprot thrift.TProtocol) (*Stuff, erro
 	return req, nil
 }
 
+// This is an operation docstring.
 func (l *FooSubscriber) SubscribeFoo(baz string, handler func(*Thing)) (*frugal.Subscription, error) {
 	op := "Foo"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)

@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -44,7 +43,6 @@ type SingleFileGenerator interface {
 	GenerateNewline(*os.File, int) error
 	GetOutputDir(dir string, f *parser.Frugal) string
 	DefaultOutputDir() string
-	CheckCompile(path string) error
 }
 
 // MultipleFileGenerator generates source code in a specified language in a
@@ -61,7 +59,6 @@ type MultipleFileGenerator interface {
 	GenerateNewline(*os.File, int) error
 	GetOutputDir(dir string, f *parser.Frugal) string
 	DefaultOutputDir() string
-	CheckCompile(path string) error
 }
 
 func GetPackageComponents(pkg string) []string {
@@ -126,13 +123,7 @@ func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir s
 		return err
 	}
 
-	if err := o.GenerateSubscribers(file, frugal.Scopes); err != nil {
-		return err
-	}
-
-	// Ensure code compiles. If it doesn't, it's likely because they didn't
-	// generate the Thrift structs referenced in their Frugal file.
-	return o.CheckCompile(fmt.Sprintf(".%s%s", string(os.PathSeparator), outputDir))
+	return o.GenerateSubscribers(file, frugal.Scopes)
 }
 
 // GetOutputDir returns the full output directory for generated code.
@@ -176,9 +167,7 @@ func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir
 			}
 		}
 	}
-	// Ensure code compiles. If it doesn't, it's likely because they didn't
-	// generate the Thrift structs referenced in their Frugal file.
-	return o.CheckCompile(fmt.Sprintf(".%s%s", string(os.PathSeparator), outputDir))
+	return nil
 }
 
 func (o MultipleFileProgramGenerator) generateFile(frugal *parser.Frugal, scope *parser.Scope,

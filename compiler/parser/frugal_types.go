@@ -6,7 +6,7 @@ import "sort"
 //go:generate goimports -w ./grammar.peg.go
 
 type Operation struct {
-	Comment string
+	Comment []string
 	Name    string
 	Param   string
 }
@@ -21,17 +21,18 @@ func (n *ScopePrefix) Template() string {
 }
 
 type Scope struct {
+	Comment    []string
 	Name       string
 	Prefix     *ScopePrefix
 	Operations []*Operation
 }
 
 type Frugal struct {
-	Name       string
-	Dir        string
-	Path       string
-	Namespaces map[string]string
-	Scopes     []*Scope
+	Name   string
+	Dir    string
+	Path   string
+	Scopes []*Scope
+	Thrift *Thrift
 }
 
 func (f *Frugal) sort() {
@@ -40,8 +41,6 @@ func (f *Frugal) sort() {
 		sort.Sort(OperationsByName(scope.Operations))
 	}
 }
-
-type Identifier string
 
 type ScopesByName []*Scope
 

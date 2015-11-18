@@ -13,8 +13,8 @@ import (
 const (
 	outputDir   = "out"
 	delim       = "."
-	validFile   = "valid"
-	invalidFile = "invalid"
+	validFile   = "valid.frugal"
+	invalidFile = "invalid.frugal"
 )
 
 var (
@@ -40,7 +40,7 @@ func testSingleFileLanguage(t *testing.T, language string) {
 	if err := compiler.Compile(validFile, language, outputDir, delim); err != nil {
 		t.Fatal("Unexpected error", err)
 	}
-	outputPath := filepath.Join(outputDir, validFile, fmt.Sprintf("frug_%s.%s", validFile, language))
+	outputPath := filepath.Join(outputDir, "valid", fmt.Sprintf("frug_%s.%s", "valid", language))
 	expectedPath := expectedOutputPaths[language]
 	compareFiles(t, expectedPath, outputPath)
 }
