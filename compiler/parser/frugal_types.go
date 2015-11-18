@@ -35,6 +35,10 @@ type Frugal struct {
 	Thrift *Thrift
 }
 
+func (f *Frugal) ContainsFrugalDefinitions() bool {
+	return len(f.Scopes) > 0
+}
+
 func (f *Frugal) sort() {
 	sort.Sort(ScopesByName(f.Scopes))
 	for _, scope := range f.Scopes {

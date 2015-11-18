@@ -81,7 +81,10 @@ func compile(file string) error {
 	}
 
 	// Generate Frugal code.
-	return g.Generate(frugal, fullOut)
+	if frugal.ContainsFrugalDefinitions() {
+		return g.Generate(frugal, fullOut)
+	}
+	return nil
 }
 
 func exists(path string) bool {
