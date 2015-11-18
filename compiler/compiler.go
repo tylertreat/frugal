@@ -80,7 +80,7 @@ func compile(file string) error {
 	}
 
 	// Generate Thrift code.
-	if err := generateThrift(frugal, out, gen); err != nil {
+	if err := generateThrift(frugal, dir, out, gen); err != nil {
 		return err
 	}
 

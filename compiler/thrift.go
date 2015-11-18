@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -19,8 +20,8 @@ const (
 	structLikeUnion     structLike = "union"
 )
 
-func generateThriftIDL(frugal *parser.Frugal) (string, error) {
-	file := fmt.Sprintf("%s.thrift", frugal.Name)
+func generateThriftIDL(dir string, frugal *parser.Frugal) (string, error) {
+	file := filepath.Join(dir, fmt.Sprintf("%s.thrift", frugal.Name))
 	f, err := os.Create(file)
 	if err != nil {
 		return "", err
@@ -223,9 +224,9 @@ func generateServices(services map[string]*parser.Service) string {
 	return contents
 }
 
-func generateThrift(frugal *parser.Frugal, out, gen string) error {
+func generateThrift(frugal *parser.Frugal, idlDir, out, gen string) error {
 	// Generate intermediate Thrift IDL.
-	idlFile, err := generateThriftIDL(frugal)
+	idlFile, err := generateThriftIDL(idlDir, frugal)
 	if err != nil {
 		return err
 	}
