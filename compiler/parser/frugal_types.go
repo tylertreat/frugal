@@ -1,6 +1,9 @@
 package parser
 
-import "sort"
+import (
+	"sort"
+	"strings"
+)
 
 //go:generate pigeon -o grammar.peg.go ./grammar.peg
 //go:generate goimports -w ./grammar.peg.go
@@ -37,6 +40,24 @@ type Frugal struct {
 
 func (f *Frugal) ContainsFrugalDefinitions() bool {
 	return len(f.Scopes) > 0
+}
+
+// Imports returns a slice containing the import packages required for the
+// Frugal definitions.
+func (f *Frugal) Imports() []string {
+	importsSet := make(map[string]bool)
+	for _, scope := range f.Scopes {
+		for _, op := range scope.Operations {
+			if strings.Contains(op.Param, ".") {
+				importsSet[op.Param[0:strings.Index(op.Param, ".")]] = true
+			}
+		}
+	}
+	imports := make([]string, 0, len(importsSet))
+	for imp, _ := range importsSet {
+		imports = append(imports, imp)
+	}
+	return imports
 }
 
 func (f *Frugal) sort() {

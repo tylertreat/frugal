@@ -79,6 +79,11 @@ func (g *Generator) GenerateImports(file *os.File, f *parser.Frugal) error {
 		imports += "\t\"github.com/Workiva/frugal-go\"\n"
 	}
 
+	pkgPrefix := g.Options["package_prefix"]
+	for _, pkg := range f.Imports() {
+		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, pkg)
+	}
+
 	imports += ")"
 	_, err := file.WriteString(imports)
 	return err
