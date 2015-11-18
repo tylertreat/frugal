@@ -3,6 +3,7 @@ package compiler
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/Workiva/frugal/compiler/generator"
@@ -20,7 +21,8 @@ func Compile(file, gen, out, delimiter string) error {
 	globals.Gen = gen
 	globals.Out = out
 	globals.Delimiter = delimiter
-	if err := compile(file); err != nil {
+	globals.FileDir = filepath.Dir(file)
+	if err := compile(filepath.Base(file)); err != nil {
 		return err
 	}
 
@@ -38,7 +40,9 @@ func compile(file string) error {
 	var (
 		gen = globals.Gen
 		out = globals.Out
+		dir = globals.FileDir
 	)
+	file = filepath.Join(dir, file)
 
 	// Ensure Frugal file exists.
 	if !exists(file) {
