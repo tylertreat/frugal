@@ -17,13 +17,35 @@ import (
 // returning an error if something failed.
 func Compile(file, gen, out, delimiter string) error {
 	globals.TopicDelimiter = delimiter
+	globals.Gen = gen
+	globals.Out = out
+	globals.Delimiter = delimiter
+	if err := compile(file); err != nil {
+		return err
+	}
+
+	// Clean up intermediate IDL.
+	for _, file := range globals.IntermediateIDL {
+		if err := os.Remove(file); err != nil {
+			fmt.Printf("Failed to remove intermediate IDL %s\n", file)
+		}
+	}
+
+	return nil
+}
+
+func compile(file string) error {
+	var (
+		gen = globals.Gen
+		out = globals.Out
+	)
 
 	// Ensure Frugal file exists.
 	if !exists(file) {
 		return fmt.Errorf("Frugal file not found: %s\n", file)
 	}
 
-	// Process options for specific generators
+	// Process options for specific generators.
 	lang, options := cleanGenParam(gen)
 
 	// Resolve Frugal generator.
@@ -45,12 +67,6 @@ func Compile(file, gen, out, delimiter string) error {
 		return err
 	}
 
-	// Generate intermediate Thrift IDL.
-	idlFile, err := generateThriftIDL(frugal)
-	if err != nil {
-		return err
-	}
-
 	if out == "" {
 		out = g.DefaultOutputDir()
 	}
@@ -60,7 +76,7 @@ func Compile(file, gen, out, delimiter string) error {
 	}
 
 	// Generate Thrift code.
-	if err := generateThrift(out, gen, idlFile); err != nil {
+	if err := generateThrift(frugal, out, gen); err != nil {
 		return err
 	}
 

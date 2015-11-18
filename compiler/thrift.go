@@ -5,7 +5,9 @@ import (
 	"os"
 	"os/exec"
 	"sort"
+	"strings"
 
+	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
@@ -29,7 +31,11 @@ func generateThriftIDL(frugal *parser.Frugal) (string, error) {
 	thrift := frugal.Thrift
 
 	contents += generateNamespaces(thrift.Namespaces)
-	contents += generateIncludes(thrift.Includes)
+	includes, err := generateIncludes(thrift.Includes)
+	if err != nil {
+		return "", err
+	}
+	contents += includes
 	contents += generateConstants(thrift.Constants)
 	contents += generateTypedefs(thrift.Typedefs)
 	contents += generateEnums(thrift.Enums)
@@ -51,13 +57,22 @@ func generateNamespaces(namespaces map[string]string) string {
 	return contents
 }
 
-func generateIncludes(includes map[string]string) string {
+func generateIncludes(includes map[string]string) (string, error) {
 	contents := ""
 	for _, include := range includes {
+		if strings.HasSuffix(strings.ToLower(include), ".frugal") {
+			// Recurse on frugal includes
+			if err := compile(include); err != nil {
+				return "", err
+			}
+
+			// Replace .frugal with .thrift
+			include = include[:len(include)-7] + ".thrift"
+		}
 		contents += fmt.Sprintf("include \"%s\"\n", include)
 	}
 	contents += "\n"
-	return contents
+	return contents, nil
 }
 
 func generateConstants(constants map[string]*parser.Constant) string {
@@ -152,7 +167,7 @@ func generateServices(services map[string]*parser.Service) string {
 		}
 		contents += fmt.Sprintf("service %s ", service.Name)
 		if service.Extends != "" {
-			contents += fmt.Sprintf("%s ", service.Extends)
+			contents += fmt.Sprintf("extends %s ", service.Extends)
 		}
 		contents += "{\n"
 		for _, method := range service.Methods {
@@ -208,20 +223,29 @@ func generateServices(services map[string]*parser.Service) string {
 	return contents
 }
 
-func generateThrift(out, gen, file string) error {
+func generateThrift(frugal *parser.Frugal, out, gen string) error {
+	// Generate intermediate Thrift IDL.
+	idlFile, err := generateThriftIDL(frugal)
+	if err != nil {
+		return err
+	}
+
+	// Generate Thrift code.
 	args := []string{"-r"}
 	if out != "" {
 		args = append(args, "-out", out)
 	}
 	args = append(args, "-gen", gen)
-	args = append(args, file)
+	args = append(args, idlFile)
+	// TODO: make thrift command configurable
 	if out, err := exec.Command("thrift", args...).CombinedOutput(); err != nil {
 		fmt.Println(string(out))
 		return err
 	}
 
-	// Remove the intermediate Thrift file.
-	return os.Remove(file)
+	globals.IntermediateIDL = append(globals.IntermediateIDL, idlFile)
+
+	return nil
 }
 
 func generateThriftDocString(comment []string, indent string) string {
