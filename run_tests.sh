@@ -10,4 +10,5 @@ set -o pipefail
 set -e
 
 # Run tests
-godep go test -race ./test
+cd ./test
+godep go test -race
