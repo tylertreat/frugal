@@ -10,5 +10,5 @@ set -o pipefail
 set -e
 
 # Run tests
-cd ./test
+cd $GOPATH/src/github.com/Workiva/frugal/test
 godep go test -race
