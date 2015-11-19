@@ -12,6 +12,24 @@ type Operation struct {
 	Comment []string
 	Name    string
 	Param   string
+	Scope   *Scope // Pointer back to containing Scope
+}
+
+// IncludeName returns the base include name of the parameter, if any.
+func (o *Operation) IncludeName() string {
+	if strings.Contains(o.Param, ".") {
+		return o.Param[0:strings.Index(o.Param, ".")]
+	}
+	return ""
+}
+
+// ParamName returns the base parameter name with any include prefix removed.
+func (o *Operation) ParamName() string {
+	name := o.Param
+	if strings.Contains(name, ".") {
+		name = name[strings.Index(name, ".")+1:]
+	}
+	return name
 }
 
 type ScopePrefix struct {
@@ -28,36 +46,55 @@ type Scope struct {
 	Name       string
 	Prefix     *ScopePrefix
 	Operations []*Operation
+	Frugal     *Frugal // Pointer back to containing Frugal
+}
+
+func (s *Scope) assignScope() {
+	for _, op := range s.Operations {
+		op.Scope = s
+	}
 }
 
 type Frugal struct {
-	Name   string
-	Dir    string
-	Path   string
-	Scopes []*Scope
-	Thrift *Thrift
+	Name           string
+	Dir            string
+	Path           string
+	Scopes         []*Scope
+	Thrift         *Thrift
+	ParsedIncludes map[string]*Frugal
+}
+
+func (f *Frugal) NamespaceForInclude(include, lang string) (string, bool) {
+	namespace, ok := f.ParsedIncludes[include].Thrift.Namespaces[lang]
+	return namespace, ok
 }
 
 func (f *Frugal) ContainsFrugalDefinitions() bool {
 	return len(f.Scopes) > 0
 }
 
-// Imports returns a slice containing the import packages required for the
-// Frugal definitions.
-func (f *Frugal) Imports() []string {
-	importsSet := make(map[string]bool)
+// ReferencedIncludes returns a slice containing the referenced includes which
+// will need to be imported in generated code.
+func (f *Frugal) ReferencedIncludes() []string {
+	includesSet := make(map[string]bool)
 	for _, scope := range f.Scopes {
 		for _, op := range scope.Operations {
 			if strings.Contains(op.Param, ".") {
-				importsSet[op.Param[0:strings.Index(op.Param, ".")]] = true
+				includesSet[op.Param[0:strings.Index(op.Param, ".")]] = true
 			}
 		}
 	}
-	imports := make([]string, 0, len(importsSet))
-	for imp, _ := range importsSet {
-		imports = append(imports, imp)
+	includes := make([]string, 0, len(includesSet))
+	for include, _ := range includesSet {
+		includes = append(includes, include)
 	}
-	return imports
+	return includes
+}
+
+func (f *Frugal) assignFrugal() {
+	for _, scope := range f.Scopes {
+		scope.assignScope()
+	}
 }
 
 func (f *Frugal) sort() {

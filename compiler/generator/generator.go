@@ -43,6 +43,7 @@ type SingleFileGenerator interface {
 	GenerateNewline(*os.File, int) error
 	GetOutputDir(dir string, f *parser.Frugal) string
 	DefaultOutputDir() string
+	SetFrugal(*parser.Frugal)
 }
 
 // MultipleFileGenerator generates source code in a specified language in a
@@ -59,6 +60,7 @@ type MultipleFileGenerator interface {
 	GenerateNewline(*os.File, int) error
 	GetOutputDir(dir string, f *parser.Frugal) string
 	DefaultOutputDir() string
+	SetFrugal(*parser.Frugal)
 }
 
 func GetPackageComponents(pkg string) []string {
@@ -77,6 +79,7 @@ func NewSingleFileProgramGenerator(generator SingleFileGenerator) ProgramGenerat
 
 // Generate the Frugal in the given directory.
 func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir string) error {
+	o.SetFrugal(frugal)
 	file, err := o.GenerateFile(frugal.Name, outputDir)
 	if err != nil {
 		return err
@@ -150,6 +153,7 @@ func NewMultipleFileProgramGenerator(generator MultipleFileGenerator,
 
 // Generate the Frugal in the given directory.
 func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir string) error {
+	o.SetFrugal(frugal)
 	if err := o.GenerateDependencies(frugal, outputDir); err != nil {
 		return err
 	}

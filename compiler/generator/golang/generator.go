@@ -21,7 +21,7 @@ type Generator struct {
 }
 
 func NewGenerator(options map[string]string) generator.SingleFileGenerator {
-	return &Generator{&generator.BaseGenerator{options}}
+	return &Generator{&generator.BaseGenerator{Options: options}}
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
@@ -80,8 +80,12 @@ func (g *Generator) GenerateImports(file *os.File, f *parser.Frugal) error {
 	}
 
 	pkgPrefix := g.Options["package_prefix"]
-	for _, pkg := range f.Imports() {
-		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, pkg)
+	for _, include := range f.ReferencedIncludes() {
+		namespace, ok := f.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, namespace)
 	}
 
 	imports += ")"
@@ -144,7 +148,7 @@ func (g *Generator) generatePublisher(publishers string, scope *parser.Scope) st
 			publishers += g.GenerateInlineComment(op.Comment, "")
 		}
 		publishers += fmt.Sprintf("func (l *%sPublisher) Publish%s(%sreq *%s) error {\n",
-			strings.Title(scope.Name), op.Name, args, op.Param)
+			strings.Title(scope.Name), op.Name, args, g.qualifiedParamName(op))
 		publishers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		publishers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 		publishers += "\ttopic := fmt.Sprintf(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op)\n"
@@ -228,7 +232,7 @@ func (g *Generator) generateSubscriber(subscribers string, scope *parser.Scope) 
 			subscribers += g.GenerateInlineComment(op.Comment, "")
 		}
 		subscribers += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*%s)) (*frugal.Subscription, error) {\n",
-			strings.Title(scope.Name), op.Name, args, op.Param)
+			strings.Title(scope.Name), op.Name, args, g.qualifiedParamName(op))
 		subscribers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		subscribers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 		subscribers += "\ttopic := fmt.Sprintf(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op)\n"
@@ -256,7 +260,7 @@ func (g *Generator) generateSubscriber(subscribers string, scope *parser.Scope) 
 		subscribers += "}\n\n"
 
 		subscribers += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, iprot thrift.TProtocol) (*%s, error) {\n",
-			strings.Title(scope.Name), op.Name, op.Param)
+			strings.Title(scope.Name), op.Name, g.qualifiedParamName(op))
 		subscribers += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
 		subscribers += "\tif err != nil {\n"
 		subscribers += "\t\treturn nil, err\n"
@@ -267,7 +271,7 @@ func (g *Generator) generateSubscriber(subscribers string, scope *parser.Scope) 
 		subscribers += "\t\tx9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
 		subscribers += "\t\treturn nil, x9\n"
 		subscribers += "\t}\n"
-		subscribers += fmt.Sprintf("\treq := &%s{}\n", op.Param)
+		subscribers += fmt.Sprintf("\treq := &%s{}\n", g.qualifiedParamName(op))
 		subscribers += "\tif err := req.Read(iprot); err != nil {\n"
 		subscribers += "\t\treturn nil, err\n"
 		subscribers += "\t}\n\n"
@@ -277,4 +281,17 @@ func (g *Generator) generateSubscriber(subscribers string, scope *parser.Scope) 
 	}
 
 	return subscribers
+}
+
+func (g *Generator) qualifiedParamName(op *parser.Operation) string {
+	param := op.ParamName()
+	include := op.IncludeName()
+	if include != "" {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		param = fmt.Sprintf("%s.%s", namespace, param)
+	}
+	return param
 }

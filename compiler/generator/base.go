@@ -3,10 +3,13 @@ package generator
 import (
 	"fmt"
 	"os"
+
+	"github.com/Workiva/frugal/compiler/parser"
 )
 
 type BaseGenerator struct {
 	Options map[string]string
+	Frugal  *parser.Frugal
 }
 
 func (b *BaseGenerator) CreateFile(name, outputDir, suffix string, usePrefix bool) (*os.File, error) {
@@ -44,4 +47,8 @@ func (b *BaseGenerator) GenerateBlockComment(comment []string, indent string) st
 	}
 	block += indent + " */\n"
 	return block
+}
+
+func (b *BaseGenerator) SetFrugal(f *parser.Frugal) {
+	b.Frugal = f
 }

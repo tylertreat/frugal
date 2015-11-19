@@ -32,7 +32,7 @@ type Generator struct {
 
 func NewGenerator(options map[string]string) generator.MultipleFileGenerator {
 	return &Generator{
-		&generator.BaseGenerator{options},
+		&generator.BaseGenerator{Options: options},
 		globals.Now,
 	}
 }
@@ -137,7 +137,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		if op.Comment != nil {
 			publisher += g.GenerateBlockComment(op.Comment, tab)
 		}
-		publisher += fmt.Sprintf(tab+"public void publish%s(%s%s req) throws TException {\n", op.Name, args, op.Param)
+		publisher += fmt.Sprintf(tab+"public void publish%s(%s%s req) throws TException {\n", op.Name, args, g.qualifiedParamName(op))
 		publisher += fmt.Sprintf(tabtab+"String op = \"%s\";\n", op.Name)
 		publisher += fmt.Sprintf(tabtab+"String prefix = %s;\n", generatePrefixStringTemplate(scope))
 		publisher += tabtab + "String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op);\n"
@@ -202,7 +202,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	prefix := ""
 	for _, op := range scope.Operations {
 		subscriber += fmt.Sprintf(tab+"public interface %sHandler {\n", op.Name)
-		subscriber += fmt.Sprintf(tabtab+"void on%s(%s req);\n", op.Name, op.Param)
+		subscriber += fmt.Sprintf(tabtab+"void on%s(%s req);\n", op.Name, g.qualifiedParamName(op))
 		subscriber += tab + "}\n\n"
 
 		subscriber += prefix
@@ -225,7 +225,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += tabtabtabtab + "while (true) {\n"
 		subscriber += tabtabtabtabtab + "try {\n"
 		subscriber += tabtabtabtabtabtab + fmt.Sprintf("%s received = recv%s(op, client.getProtocol());\n",
-			op.Param, op.Name)
+			g.qualifiedParamName(op), op.Name)
 		subscriber += tabtabtabtabtabtab + fmt.Sprintf("handler.on%s(received);\n", op.Name)
 		subscriber += tabtabtabtabtab + "} catch (TException e) {\n"
 		subscriber += tabtabtabtabtabtab + "if (e instanceof TTransportException) {\n"
@@ -245,14 +245,14 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += tabtab + "return sub;\n"
 		subscriber += tab + "}\n\n"
 
-		subscriber += tab + fmt.Sprintf("private %s recv%s(String op, TProtocol iprot) throws TException {\n", op.Param, op.Name)
+		subscriber += tab + fmt.Sprintf("private %s recv%s(String op, TProtocol iprot) throws TException {\n", g.qualifiedParamName(op), op.Name)
 		subscriber += tabtab + "TMessage msg = iprot.readMessageBegin();\n"
 		subscriber += tabtab + "if (!msg.name.equals(op)) {\n"
 		subscriber += tabtabtab + "TProtocolUtil.skip(iprot, TType.STRUCT);\n"
 		subscriber += tabtabtab + "iprot.readMessageEnd();\n"
 		subscriber += tabtabtab + "throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);\n"
 		subscriber += tabtab + "}\n"
-		subscriber += tabtab + fmt.Sprintf("%s req = new %s();\n", op.Param, op.Param)
+		subscriber += tabtab + fmt.Sprintf("%s req = new %s();\n", g.qualifiedParamName(op), g.qualifiedParamName(op))
 		subscriber += tabtab + "req.read(iprot);\n"
 		subscriber += tabtab + "iprot.readMessageEnd();\n"
 		subscriber += tabtab + "return req;\n"
@@ -262,4 +262,16 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 	_, err := file.WriteString(subscriber)
 	return err
+}
+
+func (g *Generator) qualifiedParamName(op *parser.Operation) string {
+	param := op.ParamName()
+	include := op.IncludeName()
+	if include != "" {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+		if ok {
+			param = fmt.Sprintf("%s.%s", namespace, param)
+		}
+	}
+	return param
 }

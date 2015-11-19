@@ -95,8 +95,9 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
         Services:   make(map[string]*Service),
     }
     frugal := &Frugal{
-        Thrift: thrift,
-        Scopes: []*Scope{},
+        Thrift:         thrift,
+        Scopes:         []*Scope{},
+        ParsedIncludes: make(map[string]*Frugal),
     }
 
     stmts := toIfaceSlice(statements)
@@ -136,6 +137,7 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
             thrift.Includes[name] = string(v)
         case *Scope:
             v.Comment = wrapper.comment
+            v.Frugal = frugal
             frugal.Scopes = append(frugal.Scopes, v)
         default:
             return nil, fmt.Errorf("parser: unknown value %#v", v)

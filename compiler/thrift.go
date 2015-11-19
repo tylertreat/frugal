@@ -32,7 +32,7 @@ func generateThriftIDL(dir string, frugal *parser.Frugal) (string, error) {
 	thrift := frugal.Thrift
 
 	contents += generateNamespaces(thrift.Namespaces)
-	includes, err := generateIncludes(thrift.Includes)
+	includes, err := generateIncludes(frugal)
 	if err != nil {
 		return "", err
 	}
@@ -58,17 +58,21 @@ func generateNamespaces(namespaces map[string]string) string {
 	return contents
 }
 
-func generateIncludes(includes map[string]string) (string, error) {
+func generateIncludes(frugal *parser.Frugal) (string, error) {
 	contents := ""
-	for _, include := range includes {
+	for _, include := range frugal.Thrift.Includes {
 		if strings.HasSuffix(strings.ToLower(include), ".frugal") {
 			// Recurse on frugal includes
-			if err := compile(include); err != nil {
+			parsed, err := compile(include)
+			if err != nil {
 				return "", err
 			}
+			// Lop off .frugal
+			includeBase := include[:len(include)-7]
+			frugal.ParsedIncludes[includeBase] = parsed
 
 			// Replace .frugal with .thrift
-			include = include[:len(include)-7] + ".thrift"
+			include = includeBase + ".thrift"
 		}
 		contents += fmt.Sprintf("include \"%s\"\n", include)
 	}

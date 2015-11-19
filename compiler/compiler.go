@@ -22,7 +22,7 @@ func Compile(file, gen, out, delimiter string) error {
 	globals.Out = out
 	globals.Delimiter = delimiter
 	globals.FileDir = filepath.Dir(file)
-	if err := compile(filepath.Base(file)); err != nil {
+	if _, err := compile(filepath.Base(file)); err != nil {
 		return err
 	}
 
@@ -36,7 +36,7 @@ func Compile(file, gen, out, delimiter string) error {
 	return nil
 }
 
-func compile(file string) error {
+func compile(file string) (*parser.Frugal, error) {
 	var (
 		gen = globals.Gen
 		out = globals.Out
@@ -46,7 +46,7 @@ func compile(file string) error {
 
 	// Ensure Frugal file exists.
 	if !exists(file) {
-		return fmt.Errorf("Frugal file not found: %s\n", file)
+		return nil, fmt.Errorf("Frugal file not found: %s\n", file)
 	}
 
 	// Process options for specific generators.
@@ -62,13 +62,13 @@ func compile(file string) error {
 	case "java":
 		g = generator.NewMultipleFileProgramGenerator(java.NewGenerator(options), true)
 	default:
-		return fmt.Errorf("Invalid gen value %s", gen)
+		return nil, fmt.Errorf("Invalid gen value %s", gen)
 	}
 
 	// Parse the Frugal file.
 	frugal, err := parser.ParseFrugal(file)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if out == "" {
@@ -76,19 +76,19 @@ func compile(file string) error {
 	}
 	fullOut := g.GetOutputDir(out, frugal)
 	if err := os.MkdirAll(out, 0777); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Generate Thrift code.
 	if err := generateThrift(frugal, dir, out, gen); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Generate Frugal code.
 	if frugal.ContainsFrugalDefinitions() {
-		return g.Generate(frugal, fullOut)
+		return frugal, g.Generate(frugal, fullOut)
 	}
-	return nil
+	return frugal, nil
 }
 
 func exists(path string) bool {
