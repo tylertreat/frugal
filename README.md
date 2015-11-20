@@ -13,7 +13,7 @@ $ go get github.com/Workiva/frugal
 Define your Frugal file which contains your pub/sub interface, or *scopes*, and Thrift definitions.
 
 ```thrift
-// event.frugal
+# event.frugal
 
 // Anything allowed in a .thrift file is allowed in a .frugal file.
 struct Event {
