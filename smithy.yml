@@ -1,7 +1,7 @@
 project: golang
 language: golang
 
-runner_image: docker.webfilings.org/wlayout/smithy-runner-thrift:1.4
+runner_image: docker.webfilings.org/wlayout/smithy-runner-thrift:1.5
 
 script:
     - ./build.sh
