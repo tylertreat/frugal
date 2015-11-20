@@ -132,3 +132,21 @@ subscriber.SubscribeEventCreated(user, func(e *event.Event) {
     fmt.Printf("Received event for %s: %s\n", user, e.Message)
 })
 ```
+
+### Generated Comments
+
+In Thrift, comments of the form `/** ... */` are included in generated code. In Frugal, to include comments in generated code, they should be of the form `/**@ ... */`.
+
+```thrift
+/**@
+ * This comment is included in the generated code because
+ * it has the @ sign.
+ */
+struct Foo {}
+
+/**@ This comment is included too. */
+service FooService {
+    /** This comment isn't included because it doesn't have the @ sign. */
+    Foo getFoo()
+}
+```
