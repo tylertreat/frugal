@@ -14,11 +14,14 @@ Define your Frugal file which contains your pub/sub interface, or *scopes*, and 
 
 ```thrift
 // event.frugal
+
+// Anything allowed in a .thrift file is allowed in a .frugal file.
 struct Event {
     1: i64 ID,
     2: string Message
 }
 
+// Scopes are a Frugal extension for pub/sub APIs.
 scope Events {
     EventCreated: Event
 }
