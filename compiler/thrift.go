@@ -240,7 +240,7 @@ func generateThrift(frugal *parser.Frugal, idlDir, out, gen string) error {
 	}
 
 	// Generate Thrift code.
-	args := []string{"-r"}
+	args := []string{}
 	if out != "" {
 		args = append(args, "-out", out)
 	}

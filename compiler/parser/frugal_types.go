@@ -49,6 +49,22 @@ type Scope struct {
 	Frugal     *Frugal // Pointer back to containing Frugal
 }
 
+// ReferencedIncludes returns a slice containing the referenced includes which
+// will need to be imported in generated code for this Scope.
+func (s *Scope) ReferencedIncludes() []string {
+	includesSet := make(map[string]bool)
+	for _, op := range s.Operations {
+		if strings.Contains(op.Param, ".") {
+			includesSet[op.Param[0:strings.Index(op.Param, ".")]] = true
+		}
+	}
+	includes := make([]string, 0, len(includesSet))
+	for include, _ := range includesSet {
+		includes = append(includes, include)
+	}
+	return includes
+}
+
 func (s *Scope) assignScope() {
 	for _, op := range s.Operations {
 		op.Scope = s
@@ -78,10 +94,8 @@ func (f *Frugal) ContainsFrugalDefinitions() bool {
 func (f *Frugal) ReferencedIncludes() []string {
 	includesSet := make(map[string]bool)
 	for _, scope := range f.Scopes {
-		for _, op := range scope.Operations {
-			if strings.Contains(op.Param, ".") {
-				includesSet[op.Param[0:strings.Index(op.Param, ".")]] = true
-			}
+		for _, include := range scope.ReferencedIncludes() {
+			includesSet[include] = true
 		}
 	}
 	includes := make([]string, 0, len(includesSet))
