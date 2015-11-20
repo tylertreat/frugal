@@ -1,6 +1,6 @@
 # Frugal
 
-Frugal is an extension of [Apache Thrift](https://thrift.apache.org/) which provides a framework and code generation for pub/sub messaging.
+Frugal is an extension of [Apache Thrift](https://thrift.apache.org/) which provides a framework and code generation for pub/sub messaging. Specifically, Frugal is a superset of Thrift, meaning it implements the same functionality as Thrift with some additional features.
 
 ## Installation
 
@@ -10,29 +10,24 @@ $ go get github.com/Workiva/frugal
 
 ## Usage
 
-Define your Thrift file which contains your structs.
+Define your Frugal file which contains your pub/sub interface, or *scopes*, and Thrift definitions.
 
 ```thrift
-// event.thrift
+// event.frugal
 struct Event {
     1: i64 ID,
     2: string Message
 }
-```
 
-Define your Frugal file which contains your pub/sub interface, or *scopes*. The structs referenced here must be defined in the corresponding Thrift file, and the two files should have the same name.
-
-```thrift
-// event.frugal
 scope Events {
     EventCreated: Event
 }
 ```
 
-Generate the code with `frugal`. Currently, only Go is supported. The `-file` flag is the base file name shared by your Thrift and Frugal files.
+Generate the code with `frugal`. Currently, only Go, Java, and Dart are supported.
 
 ```
-$ frugal -gen=go -file=event
+$ frugal -gen=go -file=event.frugal
 ```
 
 By default, generated code is placed in a `gen-*` directory. This code can then be used as such:
@@ -88,20 +83,6 @@ func main() {
   <-wait
 }
 ```
-
-### Namespaces
-
-By default, Frugal uses the name of the file as the generated source code package/namespace. For example, the file `event.frugal` will generate an `event` package in Go. As in Thrift, the package/namespace of the generated code can be overridden on a per-language basis using the `namespace` directive:
-
-```thrift
-namespace go foo
-
-scope Events {
-    EventCreated: Event
-}
-```
-
-The generated Go code for the above definition would be placed in the `foo` package.
 
 ### Prefixes
 
