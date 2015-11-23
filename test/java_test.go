@@ -14,7 +14,7 @@ func TestValidJava(t *testing.T) {
 	defer func() {
 		globals.Now = nowBefore
 	}()
-	globals.Now = time.Date(2015, 10, 5, 0, 0, 0, 0, time.UTC)
+	globals.Now = time.Date(2015, 11, 23, 0, 0, 0, 0, time.UTC)
 
 	if err := compiler.Compile(validFile, "java", outputDir, delim); err != nil {
 		t.Fatal("Unexpected error", err)

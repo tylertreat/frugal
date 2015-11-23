@@ -1,9 +1,6 @@
 package parser
 
-import (
-	"fmt"
-	"sort"
-)
+import "fmt"
 
 type Type struct {
 	Name      string
@@ -50,10 +47,9 @@ type Method struct {
 }
 
 type Service struct {
-	Name          string
-	Extends       string
-	Methods       map[string]*Method
-	SortedMethods []*Method
+	Name    string
+	Extends string
+	Methods []*Method
 }
 
 type Thrift struct {
@@ -66,18 +62,6 @@ type Thrift struct {
 	Exceptions map[string]*Struct
 	Unions     map[string]*Struct
 	Services   map[string]*Service
-}
-
-func (t *Thrift) sort() {
-	for _, service := range t.Services {
-		if service.SortedMethods == nil {
-			service.SortedMethods = make([]*Method, 0, len(service.Methods))
-		}
-		for _, method := range service.Methods {
-			service.SortedMethods = append(service.SortedMethods, method)
-		}
-		sort.Sort(MethodsByName(service.SortedMethods))
-	}
 }
 
 type Identifier string
@@ -96,18 +80,4 @@ func (t *Type) String() string {
 		return fmt.Sprintf("set<%s>", t.ValueType.String())
 	}
 	return t.Name
-}
-
-type MethodsByName []*Method
-
-func (b MethodsByName) Len() int {
-	return len(b)
-}
-
-func (b MethodsByName) Swap(i, j int) {
-	b[i], b[j] = b[j], b[i]
-}
-
-func (b MethodsByName) Less(i, j int) bool {
-	return b[i].Name < b[j].Name
 }

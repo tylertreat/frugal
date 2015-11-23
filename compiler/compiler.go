@@ -28,7 +28,7 @@ func Compile(file, gen, out, delimiter string) error {
 	case "dart":
 		g = generator.NewMultipleFileProgramGenerator(dartlang.NewGenerator(), false)
 	case "go":
-		g = generator.NewSingleFileProgramGenerator(golang.NewGenerator())
+		g = generator.NewMultipleFileProgramGenerator(golang.NewGenerator(), false)
 	case "java":
 		g = generator.NewMultipleFileProgramGenerator(java.NewGenerator(), true)
 	default:

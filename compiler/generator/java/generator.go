@@ -34,6 +34,10 @@ func NewGenerator() generator.MultipleFileGenerator {
 	return &Generator{&generator.BaseGenerator{}, globals.Now}
 }
 
+func (g *Generator) GenerateThrift() bool {
+	return false
+}
+
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
 	if pkg, ok := f.Thrift.Namespaces[lang]; ok {
 		path := generator.GetPackageComponents(pkg)
@@ -77,7 +81,11 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 	return err
 }
 
-func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *parser.Scope) error {
+func (g *Generator) GenerateServicePackage(file *os.File, f *parser.Frugal, s *parser.Service) error {
+	return nil
+}
+
+func (g *Generator) GenerateScopePackage(file *os.File, f *parser.Frugal, s *parser.Scope) error {
 	pkg, ok := f.Thrift.Namespaces[lang]
 	if !ok {
 		return nil
@@ -86,7 +94,11 @@ func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *pars
 	return err
 }
 
-func (g *Generator) GenerateImports(file *os.File, scope *parser.Scope) error {
+func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
+	return nil
+}
+
+func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "import com.workiva.frugal.Provider;\n"
 	imports += "import com.workiva.frugal.Transport;\n"
 	imports += "import com.workiva.frugal.TransportFactory;\n"
@@ -252,4 +264,8 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 	_, err := file.WriteString(subscriber)
 	return err
+}
+
+func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.Service) error {
+	return nil
 }
