@@ -39,6 +39,7 @@ func (f *Frugal) sort() {
 	for _, scope := range f.Scopes {
 		sort.Sort(OperationsByName(scope.Operations))
 	}
+	f.Thrift.sort()
 }
 
 type ScopesByName []*Scope

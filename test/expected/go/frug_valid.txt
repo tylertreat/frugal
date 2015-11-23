@@ -4,12 +4,19 @@
 package valid
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal-go"
 )
+
+// (needed to ensure safety because of naive import list construction.)
+var _ = thrift.ZERO
+var _ = fmt.Printf
+var _ = bytes.Equal
+
 
 const delimiter = "."
 
@@ -157,6 +164,8 @@ func (l *FooSubscriber) recvBar(op string, iprot thrift.TProtocol) (*Stuff, erro
 	return req, nil
 }
 
+
+
 func (l *FooSubscriber) SubscribeFoo(baz string, handler func(*Thing)) (*frugal.Subscription, error) {
 	op := "Foo"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
@@ -205,6 +214,8 @@ func (l *FooSubscriber) recvFoo(op string, iprot thrift.TProtocol) (*Thing, erro
 	iprot.ReadMessageEnd()
 	return req, nil
 }
+
+
 
 type BarSubscriber struct {
 	Provider *frugal.Provider
@@ -262,3 +273,348 @@ func (l *BarSubscriber) recvDoStuff(op string, iprot thrift.TProtocol) (*Thing, 
 	iprot.ReadMessageEnd()
 	return req, nil
 }
+
+type FrugalBlah interface {
+	Bleh(frugal.Context, *Thing, *Stuff) (r int64, err error)
+	Ping(frugal.Context) (err error)
+}
+
+type FrugalBlahClient struct {
+	Transport       thrift.TTransport
+	ProtocolFactory frugal.FProtocolFactory
+	InputProtocol   frugal.FProtocol
+	OutputProtocol  frugal.FProtocol
+	SeqId           int32
+}
+
+func NewFrugalBlahClientFactory(t thrift.TTransport, f frugal.FProtocolFactory) *FrugalBlahClient {
+	return &FrugalBlahClient{
+		Transport:       t,
+		ProtocolFactory: f,
+		InputProtocol:   f.GetProtocol(t),
+		OutputProtocol:  f.GetProtocol(t),
+		SeqId:           0,
+	}
+}
+
+func NewFrugalBlahClientProtocol(t thrift.TTransport, iprot, oprot frugal.FProtocol) *FrugalBlahClient {
+	return &FrugalBlahClient{
+		Transport:       t,
+		ProtocolFactory: nil,
+		InputProtocol:   iprot,
+		OutputProtocol:  oprot,
+		SeqId:           0,
+	}
+}
+
+func (f *FrugalBlahClient) Bleh(ctx frugal.Context, one *Thing, two *Stuff) (r int64, err error) {
+	if err = f.sendBleh(ctx, one, two); err != nil {
+		return
+	}
+	return f.recvBleh(ctx)
+}
+
+func (f *FrugalBlahClient) sendBleh(ctx frugal.Context, one *Thing, two *Stuff) (err error) {
+	oprot := f.OutputProtocol
+	if oprot == nil {
+		oprot = f.ProtocolFactory.GetProtocol(f.Transport)
+		f.OutputProtocol = oprot
+	}
+	if err = f.OutputProtocol.WriteRequestHeader(ctx); err != nil {
+		return
+	}
+	f.SeqId++
+	if err = oprot.WriteMessageBegin("bleh", thrift.CALL, f.SeqId); err != nil {
+		return
+	}
+	args := BlahBlehArgs{
+		One: one,
+		Two: two,
+	}
+	if err = args.Write(oprot); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	return oprot.Flush()
+}
+
+func (f *FrugalBlahClient) recvBleh(ctx frugal.Context) (r int64, err error) {
+	iprot := f.InputProtocol
+	if iprot == nil {
+		iprot = f.ProtocolFactory.GetProtocol(f.Transport)
+		f.InputProtocol = iprot
+	}
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
+		return
+	}
+	method, mTypeId, seqId, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
+	}
+	if method != "bleh" {
+	err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "bleh failed: wrong method name")
+		return
+	}
+	if f.SeqId != seqId {
+	err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "bleh failed: out of sequence response")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 error
+		error1, err = error0.Read(iprot)
+		if err != nil {
+			return
+		}
+		if err = iprot.ReadMessageEnd(); err != nil {
+			return
+		}
+		err = error1
+		return
+	}
+	if mTypeId != thrift.REPLY {
+	err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "bleh failed: invalid message type")
+		return
+	}
+	result := BlahBlehResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	if result.Oops != nil {
+		err = result.Oops
+		return
+	}
+	r = result.GetSuccess()
+	return
+}
+
+func (f *FrugalBlahClient) Ping(ctx frugal.Context) (err error) {
+	if err = f.sendPing(ctx, ); err != nil {
+		return
+	}
+	return f.recvPing(ctx)
+}
+
+func (f *FrugalBlahClient) sendPing(ctx frugal.Context) (err error) {
+	oprot := f.OutputProtocol
+	if oprot == nil {
+		oprot = f.ProtocolFactory.GetProtocol(f.Transport)
+		f.OutputProtocol = oprot
+	}
+	if err = f.OutputProtocol.WriteRequestHeader(ctx); err != nil {
+		return
+	}
+	f.SeqId++
+	if err = oprot.WriteMessageBegin("ping", thrift.CALL, f.SeqId); err != nil {
+		return
+	}
+	args := BlahPingArgs{
+	}
+	if err = args.Write(oprot); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	return oprot.Flush()
+}
+
+func (f *FrugalBlahClient) recvPing(ctx frugal.Context) (err error) {
+	iprot := f.InputProtocol
+	if iprot == nil {
+		iprot = f.ProtocolFactory.GetProtocol(f.Transport)
+		f.InputProtocol = iprot
+	}
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
+		return
+	}
+	method, mTypeId, seqId, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
+	}
+	if method != "ping" {
+	err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "ping failed: wrong method name")
+		return
+	}
+	if f.SeqId != seqId {
+	err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "ping failed: out of sequence response")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 error
+		error1, err = error0.Read(iprot)
+		if err != nil {
+			return
+		}
+		if err = iprot.ReadMessageEnd(); err != nil {
+			return
+		}
+		err = error1
+		return
+	}
+	if mTypeId != thrift.REPLY {
+	err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "ping failed: invalid message type")
+		return
+	}
+	result := BlahPingResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	return
+}
+
+type FrugalBlahProcessor struct {
+	processorMap map[string]frugal.FProcessorFunction
+	handler      FrugalBlah
+}
+
+func (p *FrugalBlahProcessor) GetProcessorFunction(key string) (processor frugal.FProcessorFunction, ok bool) {
+	processor, ok = p.processorMap[key]
+	return
+}
+
+func NewFrugalBlahProcessor(handler FrugalBlah) *FrugalBlahProcessor {
+	p := &FrugalBlahProcessor{
+		handler:      handler,
+		processorMap: make(map[string]frugal.FProcessorFunction),
+	}
+	p.processorMap["bleh"] = &blahFrugalProcessorBleh{handler: handler}
+	p.processorMap["ping"] = &blahFrugalProcessorPing{handler: handler}
+	return p
+}
+
+func (p *FrugalBlahProcessor) Process(iprot, oprot frugal.FProtocol) (success bool, err thrift.TException) {
+	ctx, err := iprot.ReadRequestHeader()
+	if err != nil {
+		return false, err
+	}
+	name, _, seqId, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return false, err
+	}
+	if processor, ok := p.GetProcessorFunction(name); ok {
+		return processor.Process(ctx, seqId, iprot, oprot)
+	}
+	iprot.Skip(thrift.STRUCT)
+	iprot.ReadMessageEnd()
+	x3 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
+	oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
+	x3.Write(oprot)
+	oprot.WriteMessageEnd()
+	oprot.Flush()
+	return false, x3
+}
+
+type blahFrugalProcessorBleh struct {
+	handler FrugalBlah
+}
+
+func (p *blahFrugalProcessorBleh) Process(ctx frugal.Context, seqId int32, iprot, oprot frugal.FProtocol) (success bool, err thrift.TException) {
+	args := BlahBlehArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("bleh", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush()
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	result := BlahBlehResult{}
+	var err2 error
+	var retval int64
+	if retval, err2 = p.handler.Bleh(ctx, args.One, args.Two); err2 != nil {
+		switch v := err2.(type) {
+		case *InvalidOperation:
+			result.Oops = v
+		default:
+			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing bleh: "+err2.Error())
+			oprot.WriteMessageBegin("bleh", thrift.EXCEPTION, seqId)
+			x.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
+			return true, err2
+		}
+	} else {
+		result.Success = &retval
+	}
+	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageBegin("bleh", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
+type blahFrugalProcessorPing struct {
+	handler FrugalBlah
+}
+
+func (p *blahFrugalProcessorPing) Process(ctx frugal.Context, seqId int32, iprot, oprot frugal.FProtocol) (success bool, err thrift.TException) {
+	args := BlahPingArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("ping", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush()
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	result := BlahPingResult{}
+	var err2 error
+	if err2 = p.handler.Ping(ctx, ); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing ping: "+err2.Error())
+		oprot.WriteMessageBegin("ping", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush()
+		return true, err2
+	}
+	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageBegin("ping", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+

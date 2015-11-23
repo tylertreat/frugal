@@ -283,13 +283,20 @@ func (g *Generator) GenerateWrapper(file *os.File, p *parser.Frugal) error {
 
 func (g *Generator) generateInterface(service *parser.Service) string {
 	contents := fmt.Sprintf("type Frugal%s interface {\n", strings.Title(service.Name))
-	for _, method := range service.Methods {
-		contents += fmt.Sprintf("\t%s(frugal.Context%s) (%s, error)\n",
+	for _, method := range service.SortedMethods {
+		contents += fmt.Sprintf("\t%s(frugal.Context%s) %s\n",
 			strings.Title(method.Name), g.generateInterfaceArgs(method.Arguments),
-			g.getGoTypeFromThriftType(method.ReturnType))
+			g.generateReurnArgs(method))
 	}
 	contents += "}\n\n"
 	return contents
+}
+
+func (g *Generator) generateReurnArgs(method *parser.Method) string {
+	if method.ReturnType == nil {
+		return "(err error)"
+	}
+	return fmt.Sprintf("(r %s, err error)", g.getGoTypeFromThriftType(method.ReturnType))
 }
 
 func (g *Generator) generateClient(service *parser.Service) string {
@@ -327,7 +334,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += "\t}\n"
 	contents += "}\n\n"
 
-	for _, method := range service.Methods {
+	for _, method := range service.SortedMethods {
 		contents += g.generateClientMethod(service, method)
 	}
 	return contents
@@ -338,17 +345,14 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	nameTitle := strings.Title(method.Name)
 	nameLower := strings.ToLower(method.Name)
 
-	contents := fmt.Sprintf("func (f *Frugal%sClient) %s(ctx frugal.Context%s) (r %s, err error) {\n",
+	contents := fmt.Sprintf("func (f *Frugal%sClient) %s(ctx frugal.Context%s) %s {\n",
 		servTitle, nameTitle, g.generateInputArgs(method.Arguments),
-		g.getGoTypeFromThriftType(method.ReturnType))
+		g.generateReurnArgs(method))
 	contents += fmt.Sprintf("\tif err = f.send%s(ctx, %s); err != nil {\n",
 		nameTitle, g.generateClientOutputArgs(method.Arguments))
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
-	contents += fmt.Sprintf("\tif r, err = f.recv%s(ctx); err != nil {\n", nameTitle)
-	contents += "\t\treturn\n"
-	contents += "\t}\n"
-	contents += "\treturn r, err\n"
+	contents += fmt.Sprintf("\treturn f.recv%s(ctx)\n", nameTitle)
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf("func (f *Frugal%sClient) send%s(ctx frugal.Context%s) (err error) {\n",
@@ -379,8 +383,8 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += "\treturn oprot.Flush()\n"
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func (f *Frugal%sClient) recv%s(ctx frugal.Context) (value %s, err error) {\n",
-		servTitle, nameTitle, g.getGoTypeFromThriftType(method.ReturnType))
+	contents += fmt.Sprintf("func (f *Frugal%sClient) recv%s(ctx frugal.Context) %s {\n",
+		servTitle, nameTitle, g.generateReurnArgs(method))
 	contents += "\tiprot := f.InputProtocol\n"
 	contents += "\tif iprot == nil {\n"
 	contents += "\t\tiprot = f.ProtocolFactory.GetProtocol(f.Transport)\n"
@@ -431,7 +435,16 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += "\tif err = iprot.ReadMessageEnd(); err != nil {\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
-	contents += "\tvalue = result.GetSuccess()\n"
+	for _, err := range method.Exceptions {
+		errTitle := strings.Title(err.Name)
+		contents += fmt.Sprintf("\tif result.%s != nil {\n", errTitle)
+		contents += fmt.Sprintf("\t\terr = result.%s\n", errTitle)
+		contents += "\t\treturn\n"
+		contents += "\t}\n"
+	}
+	if method.ReturnType != nil {
+		contents += "\tr = result.GetSuccess()\n"
+	}
 	contents += "\treturn\n"
 	contents += "}\n\n"
 
@@ -441,7 +454,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 func (g *Generator) generateServer(service *parser.Service) string {
 	contents := ""
 	contents += g.generateProcessor(service)
-	for _, method := range service.Methods {
+	for _, method := range service.SortedMethods {
 		contents += g.generateMethodProcessor(service, method)
 	}
 	return contents
@@ -468,7 +481,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	contents += "\t\thandler:      handler,\n"
 	contents += "\t\tprocessorMap: make(map[string]frugal.FProcessorFunction),\n"
 	contents += "\t}\n"
-	for _, method := range service.Methods {
+	for _, method := range service.SortedMethods {
 		contents += fmt.Sprintf("\tp.processorMap[\"%s\"] = &%sFrugalProcessor%s{handler: handler}\n",
 			strings.ToLower(method.Name), servLower, strings.Title(method.Name))
 	}
@@ -528,19 +541,31 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 
 	contents += "\tiprot.ReadMessageEnd()\n"
 	contents += fmt.Sprintf("\tresult := %s%sResult{}\n", servTitle, nameTitle)
-	contents += fmt.Sprintf("\tvar retval %s\n", g.getGoTypeFromThriftType(method.ReturnType))
 	contents += "\tvar err2 error\n"
-	contents += fmt.Sprintf("\tif retval, err2 = p.handler.%s(ctx, %s); err2 != nil {\n",
-		nameTitle, g.generateServerOutputArgs(method.Arguments))
-	contents += fmt.Sprintf("\t\tx := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "+
-		"\"Internal error processing %s: \"+err2.Error())\n", nameLower)
-	contents += fmt.Sprintf("\t\toprot.WriteMessageBegin(\"%s\", thrift.EXCEPTION, seqId)\n", nameLower)
-	contents += "\t\tx.Write(oprot)\n"
-	contents += "\t\toprot.WriteMessageEnd()\n"
-	contents += "\t\toprot.Flush()\n"
-	contents += "\t\treturn true, err2\n"
-	contents += "\t} else {\n"
-	contents += "\t\tresult.Success = &retval\n"
+	if method.ReturnType != nil {
+		contents += fmt.Sprintf("\tvar retval %s\n", g.getGoTypeFromThriftType(method.ReturnType))
+		contents += fmt.Sprintf("\tif retval, err2 = p.handler.%s(ctx, %s); err2 != nil {\n",
+			nameTitle, g.generateServerOutputArgs(method.Arguments))
+	} else {
+		contents += fmt.Sprintf("\tif err2 = p.handler.%s(ctx, %s); err2 != nil {\n",
+			nameTitle, g.generateServerOutputArgs(method.Arguments))
+	}
+	if len(method.Exceptions) > 0 {
+		contents += "\t\tswitch v := err2.(type) {\n"
+		for _, err := range method.Exceptions {
+			contents += fmt.Sprintf("\t\tcase %s:\n", g.getGoTypeFromThriftType(err.Type))
+			contents += fmt.Sprintf("\t\t\tresult.%s = v\n", strings.Title(err.Name))
+		}
+		contents += "\t\tdefault:\n"
+		contents += g.generateMethodException("\t\t\t", nameLower)
+		contents += "\t\t}\n"
+	} else {
+		contents += g.generateMethodException("\t\t", nameLower)
+	}
+	if method.ReturnType != nil {
+		contents += "\t} else {\n"
+		contents += "\t\tresult.Success = &retval\n"
+	}
 	contents += "\t}\n"
 
 	contents += "\tif err2 = oprot.WriteResponseHeader(ctx); err2 != nil {\n"
@@ -565,6 +590,18 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\treturn true, err\n"
 	contents += "}\n\n"
 
+	return contents
+}
+
+func (g *Generator) generateMethodException(prefix, methodName string) string {
+	contents := fmt.Sprintf(prefix+"x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "+
+		"\"Internal error processing %s: \"+err2.Error())\n", methodName)
+	contents += fmt.Sprintf(prefix+"oprot.WriteMessageBegin(\"%s\", thrift.EXCEPTION, seqId)\n",
+		methodName)
+	contents += prefix + "x.Write(oprot)\n"
+	contents += prefix + "oprot.WriteMessageEnd()\n"
+	contents += prefix + "oprot.Flush()\n"
+	contents += prefix + "return true, err2\n"
 	return contents
 }
 
@@ -640,7 +677,7 @@ func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
 		return fmt.Sprintf("map[%s]%s", g.getGoTypeFromThriftType(t.KeyType),
 			g.getGoTypeFromThriftType(t.ValueType))
 	default:
-		// This is a custom type
-		return t.Name
+		// This is a custom type, return a pointer to it
+		return "*" + t.Name
 	}
 }

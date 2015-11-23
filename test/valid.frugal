@@ -23,3 +23,15 @@ DoStuff :   Thing}
 //scope Baz {
 //    Blah: Stuff
 //}
+
+// Exception
+exception InvalidOperation {
+    1: i32 whatOp,
+    2: string why
+}
+
+// This is a service
+service Blah {
+    void ping(),
+    i64 bleh(1:Thing one, 2:Stuff two) throws (1: InvalidOperation oops),
+}
