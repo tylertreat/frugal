@@ -13,10 +13,11 @@ import (
 const defaultTopicDelim = "."
 
 var (
-	help  bool
-	gen   string
-	out   string
-	delim string
+	help               bool
+	gen                string
+	out                string
+	delim              string
+	retainIntermediate bool
 )
 
 func main() {
@@ -45,8 +46,13 @@ func main() {
 		cli.StringFlag{
 			Name:        "delim",
 			Value:       defaultTopicDelim,
-			Usage:       "set the delimiter for pub/sub topic tokens.",
+			Usage:       "set the delimiter for pub/sub topic tokens",
 			Destination: &delim,
+		},
+		cli.BoolFlag{
+			Name:        "retain-intermediate",
+			Usage:       "retain generated intermediate thrift files",
+			Destination: &retainIntermediate,
 		},
 	}
 
@@ -71,10 +77,11 @@ func main() {
 
 		file := c.Args()[0]
 		options := compiler.Options{
-			File:  file,
-			Gen:   gen,
-			Out:   out,
-			Delim: delim,
+			File:               file,
+			Gen:                gen,
+			Out:                out,
+			Delim:              delim,
+			RetainIntermediate: retainIntermediate,
 		}
 
 		if err := compiler.Compile(options); err != nil {

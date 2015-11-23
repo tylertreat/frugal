@@ -16,10 +16,11 @@ import (
 
 // Options contains compiler options for code generation.
 type Options struct {
-	File  string
-	Gen   string
-	Out   string
-	Delim string
+	File               string
+	Gen                string
+	Out                string
+	Delim              string
+	RetainIntermediate bool
 }
 
 // Compile parses the respective Frugal and Thrift and generates code for them,
@@ -29,18 +30,20 @@ func Compile(options Options) error {
 	globals.Gen = options.Gen
 	globals.Out = options.Out
 	globals.FileDir = filepath.Dir(options.File)
-	if _, err := compile(filepath.Base(options.File)); err != nil {
-		return err
-	}
 
-	// Clean up intermediate IDL.
-	for _, file := range globals.IntermediateIDL {
-		if err := os.Remove(file); err != nil {
-			fmt.Printf("Failed to remove intermediate IDL %s\n", file)
+	defer func() {
+		if !options.RetainIntermediate {
+			// Clean up intermediate IDL.
+			for _, file := range globals.IntermediateIDL {
+				if err := os.Remove(file); err != nil {
+					fmt.Printf("Failed to remove intermediate IDL %s\n", file)
+				}
+			}
 		}
-	}
+	}()
 
-	return nil
+	_, err := compile(filepath.Base(options.File))
+	return err
 }
 
 func compile(file string) (*parser.Frugal, error) {
