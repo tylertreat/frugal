@@ -15,8 +15,9 @@ type TypeDef struct {
 }
 
 type EnumValue struct {
-	Name  string
-	Value int
+	Comment []string
+	Name    string
+	Value   int
 }
 
 type Enum struct {

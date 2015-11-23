@@ -125,6 +125,9 @@ func generateEnums(enums map[string]*parser.Enum) string {
 		}
 		sort.Sort(enumValues(values))
 		for _, value := range values {
+			if value.Comment != nil {
+				contents += generateThriftDocString(value.Comment, "\t")
+			}
 			contents += fmt.Sprintf("\t%s,\n", value.Name)
 		}
 		contents += "}\n\n"

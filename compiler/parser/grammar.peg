@@ -207,10 +207,14 @@ Enum ← "enum" _ name:Identifier __ '{' __ values:(EnumValue __)* '}' EOS {
     return en, nil
 }
 
-EnumValue ← name:Identifier _ value:('=' _ IntConstant)? ListSeparator? {
+EnumValue ← docstr:(DocString __)? name:Identifier _ value:('=' _ IntConstant)? ListSeparator? {
     ev := &EnumValue{
         Name: string(name.(Identifier)),
         Value: -1,
+    }
+    if docstr != nil {
+        raw := docstr.([]interface{})[0].(string)
+        ev.Comment = rawCommentToDocStr(raw)
     }
     if value != nil {
         ev.Value = int(value.([]interface{})[2].(int64))
