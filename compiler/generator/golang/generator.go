@@ -3,7 +3,6 @@ package golang
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -22,8 +21,8 @@ type Generator struct {
 	generateConstants bool
 }
 
-func NewGenerator() generator.MultipleFileGenerator {
-	return &Generator{&generator.BaseGenerator{}, true}
+func NewGenerator(options map[string]string) generator.MultipleFileGenerator {
+	return &Generator{&generator.BaseGenerator{Options: options}, true}
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
@@ -38,14 +37,6 @@ func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
 
 func (g *Generator) DefaultOutputDir() string {
 	return defaultOutputDir
-}
-
-func (g *Generator) CheckCompile(path string) error {
-	if out, err := exec.Command("go", "build", path).CombinedOutput(); err != nil {
-		fmt.Println(string(out))
-		return err
-	}
-	return nil
 }
 
 func (g *Generator) GenerateThrift() bool {
@@ -118,8 +109,26 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "import (\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"
-	imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
-	imports += "\t\"github.com/Workiva/frugal-go\"\n"
+	if g.Options["thrift_import"] != "" {
+		imports += "\t\"" + g.Options["thrift_import"] + "\"\n"
+	} else {
+		imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
+	}
+	if g.Options["frugal_import"] != "" {
+		imports += "\t\"" + g.Options["frugal_import"] + "\"\n"
+	} else {
+		imports += "\t\"github.com/Workiva/frugal-go\"\n"
+	}
+
+	pkgPrefix := g.Options["package_prefix"]
+	for _, include := range f.ReferencedIncludes() {
+		namespace, ok := f.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, namespace)
+	}
+
 	imports += ")"
 
 	_, err := file.WriteString(imports)
@@ -140,11 +149,14 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 }
 
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
-	publisher := fmt.Sprintf("type %sPublisher struct {\n", strings.Title(scope.Name))
-	publisher += "\tTransport frugal.Transport\n"
-	publisher += "\tProtocol  thrift.TProtocol\n"
-	publisher += "\tSeqId     int32\n"
-	publisher += "}\n\n"
+	if scope.Comment != nil {
+		publishers += g.GenerateInlineComment(scope.Comment, "")
+	}
+	publishers += fmt.Sprintf("type %sPublisher struct {\n", strings.Title(scope.Name))
+	publishers += "\tTransport frugal.Transport\n"
+	publishers += "\tProtocol  thrift.TProtocol\n"
+	publishers += "\tSeqId     int32\n"
+	publishers += "}\n\n"
 
 	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.Provider) *%sPublisher {\n", strings.Title(scope.Name), strings.Title(scope.Name))
 	publisher += "\ttransport, protocol := provider.New()\n"
@@ -169,25 +181,28 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	for _, op := range scope.Operations {
 		publisher += prefix
 		prefix = "\n\n"
-		publisher += fmt.Sprintf("func (l *%sPublisher) Publish%s(%sreq *%s) error {\n",
-			strings.Title(scope.Name), op.Name, args, op.Param)
-		publisher += fmt.Sprintf("\top := \"%s\"\n", op.Name)
-		publisher += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
-		publisher += "\ttopic := fmt.Sprintf(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op)\n"
-		publisher += "\tl.Transport.PreparePublish(topic)\n"
-		publisher += "\toprot := l.Protocol\n"
-		publisher += "\tl.SeqId++\n"
-		publisher += "\tif err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {\n"
-		publisher += "\t\treturn err\n"
-		publisher += "\t}\n"
-		publisher += "\tif err := req.Write(oprot); err != nil {\n"
-		publisher += "\t\treturn err\n"
-		publisher += "\t}\n"
-		publisher += "\tif err := oprot.WriteMessageEnd(); err != nil {\n"
-		publisher += "\t\treturn err\n"
-		publisher += "\t}\n"
-		publisher += "\treturn oprot.Flush()\n"
-		publisher += "}"
+		if op.Comment != nil {
+			publishers += g.GenerateInlineComment(op.Comment, "")
+		}
+		publishers += fmt.Sprintf("func (l *%sPublisher) Publish%s(%sreq *%s) error {\n",
+			strings.Title(scope.Name), op.Name, args, g.qualifiedParamName(op))
+		publishers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
+		publishers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
+		publishers += "\ttopic := fmt.Sprintf(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op)\n"
+		publishers += "\tl.Transport.PreparePublish(topic)\n"
+		publishers += "\toprot := l.Protocol\n"
+		publishers += "\tl.SeqId++\n"
+		publishers += "\tif err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {\n"
+		publishers += "\t\treturn err\n"
+		publishers += "\t}\n"
+		publishers += "\tif err := req.Write(oprot); err != nil {\n"
+		publishers += "\t\treturn err\n"
+		publishers += "\t}\n"
+		publishers += "\tif err := oprot.WriteMessageEnd(); err != nil {\n"
+		publishers += "\t\treturn err\n"
+		publishers += "\t}\n"
+		publishers += "\treturn oprot.Flush()\n"
+		publishers += "}"
 	}
 
 	_, err := file.WriteString(publisher)
@@ -214,13 +229,16 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 }
 
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
-	subscriber := fmt.Sprintf("type %sSubscriber struct {\n", strings.Title(scope.Name))
-	subscriber += "\tProvider *frugal.Provider\n"
-	subscriber += "}\n\n"
+	if scope.Comment != nil {
+		subscribers += g.GenerateInlineComment(scope.Comment, "")
+	}
+	subscribers += fmt.Sprintf("type %sSubscriber struct {\n", strings.Title(scope.Name))
+	subscribers += "\tProvider *frugal.Provider\n"
+	subscribers += "}\n\n"
 
-	subscriber += fmt.Sprintf("func New%sSubscriber(provider *frugal.Provider) *%sSubscriber {\n", strings.Title(scope.Name), strings.Title(scope.Name))
-	subscriber += fmt.Sprintf("\treturn &%sSubscriber{Provider: provider}\n", strings.Title(scope.Name))
-	subscriber += "}\n\n"
+	subscribers += fmt.Sprintf("func New%sSubscriber(provider *frugal.Provider) *%sSubscriber {\n", strings.Title(scope.Name), strings.Title(scope.Name))
+	subscribers += fmt.Sprintf("\treturn &%sSubscriber{Provider: provider}\n", strings.Title(scope.Name))
+	subscribers += "}\n\n"
 
 	args := ""
 	prefix := ""
@@ -236,53 +254,56 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	for _, op := range scope.Operations {
 		subscriber += prefix
 		prefix = "\n\n"
-		subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*%s)) (*frugal.Subscription, error) {\n",
-			strings.Title(scope.Name), op.Name, args, op.Param)
-		subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
-		subscriber += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
-		subscriber += "\ttopic := fmt.Sprintf(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op)\n"
-		subscriber += "\ttransport, protocol := l.Provider.New()\n"
-		subscriber += "\tif err := transport.Subscribe(topic); err != nil {\n"
-		subscriber += "\t\treturn nil, err\n"
-		subscriber += "\t}\n\n"
-		subscriber += "\tsub := frugal.NewSubscription(topic, transport)\n"
-		subscriber += "\tgo func() {\n"
-		subscriber += "\t\tfor {\n"
-		subscriber += fmt.Sprintf("\t\t\treceived, err := l.recv%s(op, protocol)\n", op.Name)
-		subscriber += "\t\t\tif err != nil {\n"
-		subscriber += "\t\t\t\tif e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {\n"
-		subscriber += "\t\t\t\t\treturn\n"
-		subscriber += "\t\t\t\t}\n"
-		subscriber += "\t\t\t\tlog.Println(\"frugal: error receiving:\", err)\n"
-		subscriber += "\t\t\t\tsub.Signal(err)\n"
-		subscriber += "\t\t\t\tsub.Unsubscribe()\n"
-		subscriber += "\t\t\t\treturn\n"
-		subscriber += "\t\t\t}\n"
-		subscriber += "\t\t\thandler(received)\n"
-		subscriber += "\t\t}\n"
-		subscriber += "\t}()\n\n"
-		subscriber += "\treturn sub, nil\n"
-		subscriber += "}\n\n"
+		if op.Comment != nil {
+			subscribers += g.GenerateInlineComment(op.Comment, "")
+		}
+		subscribers += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*%s)) (*frugal.Subscription, error) {\n",
+			strings.Title(scope.Name), op.Name, args, g.qualifiedParamName(op))
+		subscribers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
+		subscribers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
+		subscribers += "\ttopic := fmt.Sprintf(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op)\n"
+		subscribers += "\ttransport, protocol := l.Provider.New()\n"
+		subscribers += "\tif err := transport.Subscribe(topic); err != nil {\n"
+		subscribers += "\t\treturn nil, err\n"
+		subscribers += "\t}\n\n"
+		subscribers += "\tsub := frugal.NewSubscription(topic, transport)\n"
+		subscribers += "\tgo func() {\n"
+		subscribers += "\t\tfor {\n"
+		subscribers += fmt.Sprintf("\t\t\treceived, err := l.recv%s(op, protocol)\n", op.Name)
+		subscribers += "\t\t\tif err != nil {\n"
+		subscribers += "\t\t\t\tif e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {\n"
+		subscribers += "\t\t\t\t\treturn\n"
+		subscribers += "\t\t\t\t}\n"
+		subscribers += "\t\t\t\tlog.Println(\"frugal: error receiving:\", err)\n"
+		subscribers += "\t\t\t\tsub.Signal(err)\n"
+		subscribers += "\t\t\t\tsub.Unsubscribe()\n"
+		subscribers += "\t\t\t\treturn\n"
+		subscribers += "\t\t\t}\n"
+		subscribers += "\t\t\thandler(received)\n"
+		subscribers += "\t\t}\n"
+		subscribers += "\t}()\n\n"
+		subscribers += "\treturn sub, nil\n"
+		subscribers += "}\n\n"
 
-		subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, iprot thrift.TProtocol) (*%s, error) {\n",
-			strings.Title(scope.Name), op.Name, op.Param)
-		subscriber += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
-		subscriber += "\tif err != nil {\n"
-		subscriber += "\t\treturn nil, err\n"
-		subscriber += "\t}\n"
-		subscriber += "\tif name != op {\n"
-		subscriber += "\t\tiprot.Skip(thrift.STRUCT)\n"
-		subscriber += "\t\tiprot.ReadMessageEnd()\n"
-		subscriber += "\t\tx9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
-		subscriber += "\t\treturn nil, x9\n"
-		subscriber += "\t}\n"
-		subscriber += fmt.Sprintf("\treq := &%s{}\n", op.Param)
-		subscriber += "\tif err := req.Read(iprot); err != nil {\n"
-		subscriber += "\t\treturn nil, err\n"
-		subscriber += "\t}\n\n"
-		subscriber += "\tiprot.ReadMessageEnd()\n"
-		subscriber += "\treturn req, nil\n"
-		subscriber += "}\n\n"
+		subscribers += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, iprot thrift.TProtocol) (*%s, error) {\n",
+			strings.Title(scope.Name), op.Name, g.qualifiedParamName(op))
+		subscribers += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
+		subscribers += "\tif err != nil {\n"
+		subscribers += "\t\treturn nil, err\n"
+		subscribers += "\t}\n"
+		subscribers += "\tif name != op {\n"
+		subscribers += "\t\tiprot.Skip(thrift.STRUCT)\n"
+		subscribers += "\t\tiprot.ReadMessageEnd()\n"
+		subscribers += "\t\tx9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
+		subscribers += "\t\treturn nil, x9\n"
+		subscribers += "\t}\n"
+		subscribers += fmt.Sprintf("\treq := &%s{}\n", g.qualifiedParamName(op))
+		subscribers += "\tif err := req.Read(iprot); err != nil {\n"
+		subscribers += "\t\treturn nil, err\n"
+		subscribers += "\t}\n\n"
+		subscribers += "\tiprot.ReadMessageEnd()\n"
+		subscribers += "\treturn req, nil\n"
+		subscribers += "}"
 	}
 
 	_, err := file.WriteString(subscriber)
@@ -698,4 +719,17 @@ func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
 		// This is a custom type, return a pointer to it
 		return "*" + t.Name
 	}
+}
+
+func (g *Generator) qualifiedParamName(op *parser.Operation) string {
+	param := op.ParamName()
+	include := op.IncludeName()
+	if include != "" {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		param = fmt.Sprintf("%s.%s", namespace, param)
+	}
+	return param
 }

@@ -10,24 +10,32 @@ import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart';
 import 'package:event/event.dart';
 
+/// This docstring gets added to the generated code because it has
+/// the @ sign.
 class Event implements TBase {
   static final TStruct _STRUCT_DESC = new TStruct("Event");
   static final TField _ID_FIELD_DESC = new TField("ID", TType.I64, 1);
   static final TField _MESSAGE_FIELD_DESC = new TField("Message", TType.STRING, 2);
 
+  /// ID is a unique identifier for an event.
   int _iD;
   static const int ID = 1;
+  /// Message contains the event payload.
   String _message;
   static const int MESSAGE = 2;
 
   bool __isset_iD = false;
 
   Event() {
+    this.ID = -1;
+
   }
 
   // iD
+  /// ID is a unique identifier for an event.
   int get iD => this._iD;
 
+  /// ID is a unique identifier for an event.
   set iD(int iD) {
     this._iD = iD;
     this.__isset_iD = true;
@@ -40,8 +48,10 @@ class Event implements TBase {
   }
 
   // message
+  /// Message contains the event payload.
   String get message => this._message;
 
+  /// Message contains the event payload.
   set message(String message) {
     this._message = message;
   }
@@ -131,6 +141,10 @@ class Event implements TBase {
     iprot.readStructEnd();
 
     // check for required fields of primitive type, which can't be checked in the validate method
+    if (!__isset_iD) {
+        throw new TProtocolError(TProtocolErrorType.UNKNOWN, "Required field 'iD' was not found in serialized data! Struct: " + toString());
+    }
+
     validate();
   }
 
@@ -171,6 +185,10 @@ class Event implements TBase {
 
   validate() {
     // check for required fields
+    // alas, we cannot check 'iD' because it's a primitive and you chose the non-beans generator.
+    if (message == null) {
+      throw new TProtocolError(TProtocolErrorType.UNKNOWN, "Required field 'message' was not present! Struct: " + toString());
+    }
     // check that fields of type enum have valid values
   }
 

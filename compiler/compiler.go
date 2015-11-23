@@ -3,6 +3,8 @@ package compiler
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/generator/dartlang"
@@ -12,44 +14,71 @@ import (
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
+// Options contains compiler options for code generation.
+type Options struct {
+	File               string
+	Gen                string
+	Out                string
+	Delim              string
+	RetainIntermediate bool
+}
+
 // Compile parses the respective Frugal and Thrift and generates code for them,
 // returning an error if something failed.
-func Compile(file, gen, out, delimiter string) error {
-	globals.TopicDelimiter = delimiter
+func Compile(options Options) error {
+	globals.TopicDelimiter = options.Delim
+	globals.Gen = options.Gen
+	globals.Out = options.Out
+	globals.FileDir = filepath.Dir(options.File)
+
+	defer func() {
+		if !options.RetainIntermediate {
+			// Clean up intermediate IDL.
+			for _, file := range globals.IntermediateIDL {
+				if err := os.Remove(file); err != nil {
+					fmt.Printf("Failed to remove intermediate IDL %s\n", file)
+				}
+			}
+		}
+	}()
+
+	_, err := compile(filepath.Base(options.File))
+	return err
+}
+
+func compile(file string) (*parser.Frugal, error) {
+	var (
+		gen = globals.Gen
+		out = globals.Out
+		dir = globals.FileDir
+	)
+	file = filepath.Join(dir, file)
 
 	// Ensure Frugal file exists.
 	if !exists(file) {
-		return fmt.Errorf("Frugal file not found: %s\n", file)
+		return nil, fmt.Errorf("Frugal file not found: %s\n", file)
 	}
+
+	// Process options for specific generators.
+	lang, options := cleanGenParam(gen)
 
 	// Resolve Frugal generator.
 	var g generator.ProgramGenerator
-	switch gen {
+	switch lang {
 	case "dart":
-		g = generator.NewMultipleFileProgramGenerator(dartlang.NewGenerator(), false)
+		g = generator.NewMultipleFileProgramGenerator(dartlang.NewGenerator(options), false)
 	case "go":
-		g = generator.NewMultipleFileProgramGenerator(golang.NewGenerator(), false)
+		g = generator.NewMultipleFileProgramGenerator(golang.NewGenerator(options), false)
 	case "java":
-		g = generator.NewMultipleFileProgramGenerator(java.NewGenerator(), true)
+		g = generator.NewMultipleFileProgramGenerator(java.NewGenerator(options), true)
 	default:
-		return fmt.Errorf("Invalid gen value %s", gen)
+		return nil, fmt.Errorf("Invalid gen value %s", gen)
 	}
 
 	// Parse the Frugal file.
 	frugal, err := parser.ParseFrugal(file)
 	if err != nil {
-		return err
-	}
-
-	// Ensure parsed Frugal is valid.
-	if err := validate(frugal); err != nil {
-		return err
-	}
-
-	// Generate intermediate Thrift IDL.
-	idlFile, err := generateThriftIDL(frugal)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if out == "" {
@@ -57,19 +86,45 @@ func Compile(file, gen, out, delimiter string) error {
 	}
 	fullOut := g.GetOutputDir(out, frugal)
 	if err := os.MkdirAll(out, 0777); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Generate Thrift code.
-	if err := generateThrift(out, gen, idlFile); err != nil {
-		return err
+	if err := generateThrift(frugal, dir, out, gen); err != nil {
+		return nil, err
 	}
 
 	// Generate Frugal code.
-	return g.Generate(frugal, fullOut)
+	if frugal.ContainsFrugalDefinitions() {
+		return frugal, g.Generate(frugal, fullOut)
+	}
+	return frugal, nil
 }
 
 func exists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+// cleanGenParam processes a string that includes an optional trailing
+// options set.  Format: <language>:<name>=<value>,<name>=<value>,...
+func cleanGenParam(gen string) (lang string, options map[string]string) {
+	lang = gen
+	options = make(map[string]string)
+	if strings.Contains(gen, ":") {
+		s := strings.Split(gen, ":")
+		lang = s[0]
+		dirty := s[1]
+		var optionArray []string
+		if strings.Contains(dirty, ",") {
+			optionArray = strings.Split(dirty, ",")
+		} else {
+			optionArray = append(optionArray, dirty)
+		}
+		for _, option := range optionArray {
+			s := strings.Split(option, "=")
+			options[s[0]] = s[1]
+		}
+	}
+	return
 }

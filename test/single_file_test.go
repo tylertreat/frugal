@@ -31,13 +31,25 @@ func TestSingleFileValid(t *testing.T) {
 }
 
 func TestInvalid(t *testing.T) {
-	if compiler.Compile(invalidFile, languages[0], outputDir, delim) == nil {
+	options := compiler.Options{
+		File:  invalidFile,
+		Gen:   languages[0],
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if compiler.Compile(options) == nil {
 		t.Fatal("Expected error")
 	}
 }
 
 func testSingleFileLanguage(t *testing.T, language string) {
-	if err := compiler.Compile(validFile, language, outputDir, delim); err != nil {
+	options := compiler.Options{
+		File:  validFile,
+		Gen:   language,
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if err := compiler.Compile(options); err != nil {
 		t.Fatal("Unexpected error", err)
 	}
 	outputPath := filepath.Join(outputDir, "valid", fmt.Sprintf("frug_%s.%s", "valid", language))

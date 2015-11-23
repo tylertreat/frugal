@@ -8,7 +8,13 @@ import (
 )
 
 func TestValidDart(t *testing.T) {
-	if err := compiler.Compile(validFile, "dart", outputDir, delim); err != nil {
+	options := compiler.Options{
+		File:  validFile,
+		Gen:   "dart",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if err := compiler.Compile(options); err != nil {
 		t.Fatal("Unexpected error", err)
 	}
 

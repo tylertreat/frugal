@@ -20,6 +20,7 @@ var _ = bytes.Equal
 
 const delimiter = "."
 
+// And this is a scope docstring.
 type FooPublisher struct {
 	Transport frugal.Transport
 	Protocol  thrift.TProtocol
@@ -54,8 +55,14 @@ func (l *FooPublisher) PublishFoo(baz string, req *Thing) error {
 	return oprot.Flush()
 }
 
+<<<<<<< HEAD
 func (l *FooPublisher) PublishBar(baz string, req *Stuff) error {
 	op := "Bar"
+=======
+// This is an operation docstring.
+func (l *FooPublisher) PublishFoo(baz string, req *Thing) error {
+	op := "Foo"
+>>>>>>> f9437bcd253b3b469f34e48af9202b19d5a276f6
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
 	l.Transport.PreparePublish(topic)
@@ -107,6 +114,7 @@ func (l *BarPublisher) PublishDoStuff(req *Thing) error {
 	return oprot.Flush()
 }
 
+// And this is a scope docstring.
 type FooSubscriber struct {
 	Provider *frugal.Provider
 }
@@ -164,10 +172,16 @@ func (l *FooSubscriber) recvFoo(op string, iprot thrift.TProtocol) (*Thing, erro
 	return req, nil
 }
 
+<<<<<<< HEAD
 
 
 func (l *FooSubscriber) SubscribeBar(baz string, handler func(*Stuff)) (*frugal.Subscription, error) {
 	op := "Bar"
+=======
+// This is an operation docstring.
+func (l *FooSubscriber) SubscribeFoo(baz string, handler func(*Thing)) (*frugal.Subscription, error) {
+	op := "Foo"
+>>>>>>> f9437bcd253b3b469f34e48af9202b19d5a276f6
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
 	transport, protocol := l.Provider.New()
@@ -272,6 +286,7 @@ func (l *BarSubscriber) recvDoStuff(op string, iprot thrift.TProtocol) (*Thing, 
 
 	iprot.ReadMessageEnd()
 	return req, nil
+<<<<<<< HEAD
 }
 
 type FrugalBlah interface {
@@ -618,3 +633,6 @@ func (p *blahFrugalProcessorBleh) Process(ctx frugal.Context, seqId int32, iprot
 	return true, err
 }
 
+=======
+}
+>>>>>>> f9437bcd253b3b469f34e48af9202b19d5a276f6

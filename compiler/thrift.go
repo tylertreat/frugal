@@ -4,13 +4,24 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
+	"strings"
 
+	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
-func generateThriftIDL(frugal *parser.Frugal) (string, error) {
-	file := fmt.Sprintf("%s.thrift", frugal.Name)
+type structLike string
+
+const (
+	structLikeStruct    structLike = "struct"
+	structLikeException structLike = "exception"
+	structLikeUnion     structLike = "union"
+)
+
+func generateThriftIDL(dir string, frugal *parser.Frugal) (string, error) {
+	file := filepath.Join(dir, fmt.Sprintf("%s.thrift", frugal.Name))
 	f, err := os.Create(file)
 	if err != nil {
 		return "", err
@@ -20,36 +31,93 @@ func generateThriftIDL(frugal *parser.Frugal) (string, error) {
 	contents := ""
 	thrift := frugal.Thrift
 
-	// Generate namespaces.
-	for lang, namespace := range thrift.Namespaces {
+	contents += generateNamespaces(thrift.Namespaces)
+	includes, err := generateIncludes(frugal)
+	if err != nil {
+		return "", err
+	}
+	contents += includes
+	contents += generateConstants(thrift.Constants, thrift.Typedefs)
+	contents += generateTypedefs(thrift.Typedefs)
+	contents += generateEnums(thrift.Enums)
+	contents += generateStructLikes(thrift.Structs, structLikeStruct)
+	contents += generateStructLikes(thrift.Unions, structLikeUnion)
+	contents += generateStructLikes(thrift.Exceptions, structLikeException)
+	contents += generateServices(thrift.Services)
+
+	_, err = f.WriteString(contents)
+	return file, err
+}
+
+func generateNamespaces(namespaces map[string]string) string {
+	contents := ""
+	for lang, namespace := range namespaces {
 		contents += fmt.Sprintf("namespace %s %s\n", lang, namespace)
 	}
 	contents += "\n"
+	return contents
+}
 
-	// Generate includes.
-	for _, include := range thrift.Includes {
+func generateIncludes(frugal *parser.Frugal) (string, error) {
+	contents := ""
+	for _, include := range frugal.Thrift.Includes {
+		if strings.HasSuffix(strings.ToLower(include), ".frugal") {
+			// Recurse on frugal includes
+			parsed, err := compile(include)
+			if err != nil {
+				return "", err
+			}
+			// Lop off .frugal
+			includeBase := include[:len(include)-7]
+			frugal.ParsedIncludes[includeBase] = parsed
+
+			// Replace .frugal with .thrift
+			include = includeBase + ".thrift"
+		}
 		contents += fmt.Sprintf("include \"%s\"\n", include)
 	}
 	contents += "\n"
+	return contents, nil
+}
 
-	// Generate constants.
-	for _, constant := range thrift.Constants {
+func generateConstants(constants map[string]*parser.Constant, typedefs map[string]*parser.TypeDef) string {
+	contents := ""
+	for _, constant := range constants {
+		if constant.Comment != nil {
+			contents += generateThriftDocString(constant.Comment, "")
+		}
 		value := constant.Value
-		if constant.Type.Name == "string" {
+		typeName := constant.Type.Name
+		if typedef, ok := typedefs[typeName]; ok {
+			typeName = typedef.Type.Name
+		}
+		if typeName == "string" {
 			value = fmt.Sprintf(`"%s"`, value)
 		}
-		contents += fmt.Sprintf("const %s %s = %s\n", constant.Type, constant.Name, value)
+		contents += fmt.Sprintf("const %s %s = %v\n", constant.Type, constant.Name, value)
 	}
 	contents += "\n"
+	return contents
+}
 
-	// Generate typedefs.
-	for thriftType, typedef := range thrift.Typedefs {
-		contents += fmt.Sprintf("typedef %s %s\n", thriftType, typedef)
+func generateTypedefs(typedefs map[string]*parser.TypeDef) string {
+	contents := ""
+	for name, typedef := range typedefs {
+		if typedef.Comment != nil {
+			contents += generateThriftDocString(typedef.Comment, "")
+		}
+		contents += fmt.Sprintf("typedef %s %s\n", typedef.Type, name)
 	}
 	contents += "\n"
+	return contents
+}
 
-	// Generate enums.
-	for _, enum := range thrift.Enums {
+func generateEnums(enums map[string]*parser.Enum) string {
+	contents := ""
+	for _, enum := range enums {
+		if enum.Comment != nil {
+			contents += generateThriftDocString(enum.Comment, "")
+		}
 		contents += fmt.Sprintf("enum %s {\n", enum.Name)
 		values := make([]*parser.EnumValue, 0, len(enum.Values))
 		for _, value := range enum.Values {
@@ -57,15 +125,27 @@ func generateThriftIDL(frugal *parser.Frugal) (string, error) {
 		}
 		sort.Sort(enumValues(values))
 		for _, value := range values {
+			if value.Comment != nil {
+				contents += generateThriftDocString(value.Comment, "\t")
+			}
 			contents += fmt.Sprintf("\t%s,\n", value.Name)
 		}
 		contents += "}\n\n"
 	}
+	return contents
+}
 
-	// Generate structs.
-	for _, strct := range thrift.Structs {
-		contents += fmt.Sprintf("struct %s {\n", strct.Name)
+func generateStructLikes(structs map[string]*parser.Struct, typ structLike) string {
+	contents := ""
+	for _, strct := range structs {
+		if strct.Comment != nil {
+			contents += generateThriftDocString(strct.Comment, "")
+		}
+		contents += fmt.Sprintf("%s %s {\n", typ, strct.Name)
 		for _, field := range strct.Fields {
+			if field.Comment != nil {
+				contents += generateThriftDocString(field.Comment, "\t")
+			}
 			contents += fmt.Sprintf("\t%d: ", field.ID)
 			if field.Optional {
 				contents += "optional "
@@ -88,42 +168,24 @@ func generateThriftIDL(frugal *parser.Frugal) (string, error) {
 		}
 		contents += "}\n\n"
 	}
+	return contents
+}
 
-	// Generate exceptions.
-	for _, exception := range thrift.Exceptions {
-		contents += fmt.Sprintf("exception %s {\n", exception.Name)
-		for _, field := range exception.Fields {
-			contents += fmt.Sprintf("\t%d: ", field.ID)
-			if field.Optional {
-				contents += "optional "
-			} else {
-				contents += "required "
-			}
-			contents += fmt.Sprintf("%s %s", field.Type.String(), field.Name)
-			if field.Default != nil {
-				def := field.Default
-				defStr := ""
-				switch d := def.(type) {
-				case string:
-					defStr = fmt.Sprintf(`"%s"`, d)
-				default:
-					defStr = fmt.Sprintf("%v", d)
-				}
-				contents += fmt.Sprintf(" = %s", defStr)
-			}
-			contents += ",\n"
+func generateServices(services map[string]*parser.Service) string {
+	contents := ""
+	for _, service := range services {
+		if service.Comment != nil {
+			contents += generateThriftDocString(service.Comment, "")
 		}
-		contents += "}\n\n"
-	}
-
-	// Generate services.
-	for _, service := range thrift.Services {
 		contents += fmt.Sprintf("service %s ", service.Name)
 		if service.Extends != "" {
-			contents += fmt.Sprintf("%s ", service.Extends)
+			contents += fmt.Sprintf("extends %s ", service.Extends)
 		}
 		contents += "{\n"
 		for _, method := range service.Methods {
+			if method.Comment != nil {
+				contents += generateThriftDocString(method.Comment, "\t")
+			}
 			contents += "\t"
 			if method.Oneway {
 				contents += "oneway "
@@ -170,27 +232,41 @@ func generateThriftIDL(frugal *parser.Frugal) (string, error) {
 		}
 		contents += "}\n\n"
 	}
-
-	// TODO: Generate unions.
-
-	_, err = f.WriteString(contents)
-	return file, err
+	return contents
 }
 
-func generateThrift(out, gen, file string) error {
-	args := []string{"-r"}
+func generateThrift(frugal *parser.Frugal, idlDir, out, gen string) error {
+	// Generate intermediate Thrift IDL.
+	idlFile, err := generateThriftIDL(idlDir, frugal)
+	if err != nil {
+		return err
+	}
+
+	// Generate Thrift code.
+	args := []string{}
 	if out != "" {
 		args = append(args, "-out", out)
 	}
 	args = append(args, "-gen", gen)
-	args = append(args, file)
+	args = append(args, idlFile)
+	// TODO: make thrift command configurable
 	if out, err := exec.Command("thrift", args...).CombinedOutput(); err != nil {
 		fmt.Println(string(out))
 		return err
 	}
 
-	// Remove the intermediate Thrift file.
-	return os.Remove(file)
+	globals.IntermediateIDL = append(globals.IntermediateIDL, idlFile)
+
+	return nil
+}
+
+func generateThriftDocString(comment []string, indent string) string {
+	docstr := indent + "/**\n"
+	for _, line := range comment {
+		docstr += indent + " * " + line + "\n"
+	}
+	docstr += indent + " */\n"
+	return docstr
 }
 
 type enumValues []*parser.EnumValue

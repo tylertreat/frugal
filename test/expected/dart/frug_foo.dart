@@ -14,6 +14,7 @@ import 'stuff.dart' as t_stuff;
 
 const String delimiter = '.';
 
+/// And this is a scope docstring.
 class FooPublisher {
   frugal.Transport transport;
   thrift.TProtocol protocol;
@@ -41,8 +42,14 @@ class FooPublisher {
   }
 
 
+<<<<<<< HEAD
   Future publishBar(String baz, t_stuff.Stuff req) {
     var op = "Bar";
+=======
+  /// This is an operation docstring.
+  Future publishFoo(String baz, t_thing.Thing req) {
+    var op = "Foo";
+>>>>>>> f9437bcd253b3b469f34e48af9202b19d5a276f6
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
     transport.preparePublish(topic);
@@ -57,6 +64,7 @@ class FooPublisher {
 }
 
 
+/// And this is a scope docstring.
 class FooSubscriber {
   final frugal.Provider provider;
 
@@ -93,8 +101,14 @@ class FooSubscriber {
   }
 
 
+<<<<<<< HEAD
   Future<frugal.Subscription> subscribeBar(String baz, dynamic onStuff(t_stuff.Stuff req)) async {
     var op = "Bar";
+=======
+  /// This is an operation docstring.
+  Future<frugal.Subscription> subscribeFoo(String baz, dynamic onThing(t_thing.Thing req)) async {
+    var op = "Foo";
+>>>>>>> f9437bcd253b3b469f34e48af9202b19d5a276f6
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
     var tp = provider.newTransportProtocol();

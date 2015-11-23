@@ -30,6 +30,8 @@ func ParseFrugal(filePath string) (*Frugal, error) {
 	frugal.Dir = filepath.Dir(file.Name())
 	frugal.Path = filePath
 	frugal.sort() // For determinism in generated code
+	frugal.assignFrugal()
+
 	return frugal, nil
 }
 

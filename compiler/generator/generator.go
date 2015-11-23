@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -17,6 +16,14 @@ const (
 	PublishFile   FileType = "publish"
 	SubscribeFile FileType = "subscribe"
 )
+
+// Languages is a map of supported language to a slice of the generator options
+// it supports.
+var Languages = map[string][]string{
+	"go":   []string{"thrift_import", "frugal_import", "package_prefix"},
+	"java": nil,
+	"dart": nil,
+}
 
 // ProgramGenerator generates source code in a specified language for a Frugal
 // produced by the parser.
@@ -44,8 +51,8 @@ type SingleFileGenerator interface {
 	GenerateNewline(*os.File, int) error
 	GetOutputDir(dir string, f *parser.Frugal) string
 	DefaultOutputDir() string
-	CheckCompile(path string) error
 	GenerateWrapper(f *os.File, p *parser.Frugal) error
+	SetFrugal(*parser.Frugal)
 }
 
 // MultipleFileGenerator generates source code in a specified language in a
@@ -59,7 +66,7 @@ type MultipleFileGenerator interface {
 	GenerateNewline(*os.File, int) error
 	GetOutputDir(dir string, f *parser.Frugal) string
 	DefaultOutputDir() string
-	CheckCompile(path string) error
+	SetFrugal(*parser.Frugal)
 
 	// Service-specific methods
 	GenerateThrift() bool // TODO: remove this once all languages impl rpc
@@ -90,6 +97,7 @@ func NewSingleFileProgramGenerator(generator SingleFileGenerator) ProgramGenerat
 
 // Generate the Frugal in the given directory.
 func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir string) error {
+	o.SetFrugal(frugal)
 	file, err := o.GenerateFile(frugal.Name, outputDir)
 	if err != nil {
 		return err
@@ -136,13 +144,7 @@ func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir s
 		return err
 	}
 
-	if err := o.GenerateSubscribers(file, frugal.Scopes); err != nil {
-		return err
-	}
-
-	// Ensure code compiles. If it doesn't, it's likely because they didn't
-	// generate the Thrift structs referenced in their Frugal file.
-	return o.CheckCompile(fmt.Sprintf(".%s%s", string(os.PathSeparator), outputDir))
+	return o.GenerateSubscribers(file, frugal.Scopes)
 }
 
 // GetOutputDir returns the full output directory for generated code.
@@ -169,6 +171,7 @@ func NewMultipleFileProgramGenerator(generator MultipleFileGenerator,
 
 // Generate the Frugal in the given directory.
 func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir string) error {
+	o.SetFrugal(frugal)
 	if err := o.GenerateDependencies(frugal, outputDir); err != nil {
 		return err
 	}
@@ -193,9 +196,7 @@ func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir
 			}
 		}
 	}
-	// Ensure code compiles. If it doesn't, it's likely because they didn't
-	// generate the Thrift structs referenced in their Frugal file.
-	return o.CheckCompile(fmt.Sprintf(".%s%s", string(os.PathSeparator), outputDir))
+	return nil
 }
 
 func (o MultipleFileProgramGenerator) generateServiceFile(frugal *parser.Frugal, service *parser.Service,
