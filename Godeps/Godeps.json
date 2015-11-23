@@ -1,0 +1,30 @@
+{
+	"ImportPath": "github.com/Workiva/frugal",
+	"GoVersion": "go1.5",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "git.apache.org/thrift.git/lib/go/thrift",
+			"Rev": "89dc20f4e05cca8f77bd9451c4091971eb6859ae"
+		},
+		{
+			"ImportPath": "github.com/Workiva/frugal-go",
+			"Rev": "12ca098ad8df2a8d1c22577820ea204cf47e7717"
+		},
+		{
+			"ImportPath": "github.com/nats-io/nats",
+			"Comment": "v1.0.9-6-ge8cd0eb",
+			"Rev": "e8cd0eb2a341438867e4d593ef45f2665ebf3e97"
+		},
+		{
+			"ImportPath": "github.com/samuel/go-thrift/parser",
+			"Rev": "713394955d265d43898cc08f6240fe0f488e8eb6"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "53feefa2559fb8dfa8d81baad31be332c97d6c77"
+		}
+	]
+}
