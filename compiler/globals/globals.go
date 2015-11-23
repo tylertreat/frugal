@@ -8,7 +8,6 @@ var (
 	TopicDelimiter  string = "."
 	Gen             string
 	Out             string
-	Delimiter       string
 	FileDir         string
 	Now             = time.Now()
 	IntermediateIDL = []string{}

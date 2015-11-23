@@ -16,7 +16,13 @@ func TestValidJava(t *testing.T) {
 	}()
 	globals.Now = time.Date(2015, 10, 5, 0, 0, 0, 0, time.UTC)
 
-	if err := compiler.Compile(validFile, "java", outputDir, delim); err != nil {
+	options := compiler.Options{
+		File:  validFile,
+		Gen:   "java",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if err := compiler.Compile(options); err != nil {
 		t.Fatal("Unexpected error", err)
 	}
 

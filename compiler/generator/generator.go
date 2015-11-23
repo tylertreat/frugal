@@ -17,6 +17,14 @@ const (
 	SubscribeFile FileType = "subscribe"
 )
 
+// Languages is a map of supported language to a slice of the generator options
+// it supports.
+var Languages = map[string][]string{
+	"go":   []string{"thrift_import", "frugal_import", "package_prefix"},
+	"java": nil,
+	"dart": nil,
+}
+
 // ProgramGenerator generates source code in a specified language for a Frugal
 // produced by the parser.
 type ProgramGenerator interface {

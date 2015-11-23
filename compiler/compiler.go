@@ -14,15 +14,22 @@ import (
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
+// Options contains compiler options for code generation.
+type Options struct {
+	File  string
+	Gen   string
+	Out   string
+	Delim string
+}
+
 // Compile parses the respective Frugal and Thrift and generates code for them,
 // returning an error if something failed.
-func Compile(file, gen, out, delimiter string) error {
-	globals.TopicDelimiter = delimiter
-	globals.Gen = gen
-	globals.Out = out
-	globals.Delimiter = delimiter
-	globals.FileDir = filepath.Dir(file)
-	if _, err := compile(filepath.Base(file)); err != nil {
+func Compile(options Options) error {
+	globals.TopicDelimiter = options.Delim
+	globals.Gen = options.Gen
+	globals.Out = options.Out
+	globals.FileDir = filepath.Dir(options.File)
+	if _, err := compile(filepath.Base(options.File)); err != nil {
 		return err
 	}
 
