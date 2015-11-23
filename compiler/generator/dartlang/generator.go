@@ -192,12 +192,12 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	return nil
 }
 
-func (g *Generator) GenerateScopeImports(file *os.File, scope *parser.Scope) error {
+func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *parser.Scope) error {
 	imports := "import 'dart:async';\n\n"
 	imports += "import 'package:thrift/thrift.dart' as thrift;\n"
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
-	for _, include := range scope.ReferencedIncludes() {
-		namespace, ok := scope.Frugal.NamespaceForInclude(include, lang)
+	for _, include := range s.ReferencedIncludes() {
+		namespace, ok := s.Frugal.NamespaceForInclude(include, lang)
 		if !ok {
 			namespace = include
 		}
@@ -207,7 +207,7 @@ func (g *Generator) GenerateScopeImports(file *os.File, scope *parser.Scope) err
 
 	// Import same-package references.
 	params := make(map[string]bool)
-	for _, op := range scope.Operations {
+	for _, op := range s.Operations {
 		if !strings.Contains(op.Param, ".") {
 			params[op.Param] = true
 		}

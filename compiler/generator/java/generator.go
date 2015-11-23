@@ -97,7 +97,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	return nil
 }
 
-func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
+func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *parser.Scope) error {
 	imports := "import com.workiva.frugal.Provider;\n"
 	imports += "import com.workiva.frugal.Transport;\n"
 	imports += "import com.workiva.frugal.TransportFactory;\n"

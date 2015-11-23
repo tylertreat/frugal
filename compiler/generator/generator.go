@@ -76,7 +76,7 @@ type MultipleFileGenerator interface {
 
 	// Scope-specific methods
 	GenerateScopePackage(f *os.File, p *parser.Frugal, s *parser.Scope) error
-	GenerateScopeImports(*os.File, *parser.Scope) error
+	GenerateScopeImports(*os.File, *parser.Frugal, *parser.Scope) error
 	GeneratePublisher(*os.File, *parser.Scope) error
 	GenerateSubscriber(*os.File, *parser.Scope) error
 }
@@ -262,7 +262,7 @@ func (o MultipleFileProgramGenerator) generateScopeFile(frugal *parser.Frugal, s
 		return err
 	}
 
-	if err := o.GenerateScopeImports(file, scope); err != nil {
+	if err := o.GenerateScopeImports(file, frugal, scope); err != nil {
 		return err
 	}
 
