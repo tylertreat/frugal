@@ -13,6 +13,8 @@ import 'event.dart' as t_event;
 
 const String delimiter = '.';
 
+/// This docstring gets added to the generated code because it has
+/// the @ sign.
 class EventsPublisher {
   frugal.Transport transport;
   thrift.TProtocol protocol;
@@ -25,6 +27,7 @@ class EventsPublisher {
     seqId = 0;
   }
 
+  /// This is a docstring.
   Future publishEventCreated(String user, t_event.Event req) {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
@@ -41,11 +44,14 @@ class EventsPublisher {
 }
 
 
+/// This docstring gets added to the generated code because it has
+/// the @ sign.
 class EventsSubscriber {
   final frugal.Provider provider;
 
   EventsSubscriber(this.provider) {}
 
+  /// This is a docstring.
   Future<frugal.Subscription> subscribeEventCreated(String user, dynamic onEvent(t_event.Event req)) async {
     var op = "EventCreated";
     var prefix = "foo.${user}.";

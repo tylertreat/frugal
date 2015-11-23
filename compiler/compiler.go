@@ -3,7 +3,6 @@ package compiler
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -15,21 +14,52 @@ import (
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
+// Options contains compiler options for code generation.
+type Options struct {
+	File               string
+	Gen                string
+	Out                string
+	Delim              string
+	RetainIntermediate bool
+}
+
 // Compile parses the respective Frugal and Thrift and generates code for them,
 // returning an error if something failed.
-func Compile(file, gen, out, delimiter string) error {
-	globals.TopicDelimiter = delimiter
+func Compile(options Options) error {
+	globals.TopicDelimiter = options.Delim
+	globals.Gen = options.Gen
+	globals.Out = options.Out
+	globals.FileDir = filepath.Dir(options.File)
 
-	// Ensure corresponding Thrift and Frugal files exist.
-	name := getName(file)
-	if !exists(name + ".thrift") {
-		return fmt.Errorf("Thrift file not found: %s.thrift\n", name)
-	}
-	if !exists(name + ".frugal") {
-		return fmt.Errorf("Frugal file not found: %s.frugal\n", name)
+	defer func() {
+		if !options.RetainIntermediate {
+			// Clean up intermediate IDL.
+			for _, file := range globals.IntermediateIDL {
+				if err := os.Remove(file); err != nil {
+					fmt.Printf("Failed to remove intermediate IDL %s\n", file)
+				}
+			}
+		}
+	}()
+
+	_, err := compile(filepath.Base(options.File))
+	return err
+}
+
+func compile(file string) (*parser.Frugal, error) {
+	var (
+		gen = globals.Gen
+		out = globals.Out
+		dir = globals.FileDir
+	)
+	file = filepath.Join(dir, file)
+
+	// Ensure Frugal file exists.
+	if !exists(file) {
+		return nil, fmt.Errorf("Frugal file not found: %s\n", file)
 	}
 
-	// Process options for specific generators
+	// Process options for specific generators.
 	lang, options := cleanGenParam(gen)
 
 	// Resolve Frugal generator.
@@ -42,20 +72,13 @@ func Compile(file, gen, out, delimiter string) error {
 	case "java":
 		g = generator.NewMultipleFileProgramGenerator(java.NewGenerator(options), true)
 	default:
-		return fmt.Errorf("Invalid gen value %s", gen)
+		return nil, fmt.Errorf("Invalid gen value %s", gen)
 	}
 
 	// Parse the Frugal file.
-	frugal, err := parser.ParseFrugal(name + ".frugal")
+	frugal, err := parser.ParseFrugal(file)
 	if err != nil {
-		return err
-	}
-
-	// Ensure Thrift file and parsed Frugal are valid (namespaces match,
-	// struct references defined, etc.).
-	thriftFile := name + ".thrift"
-	if err := validate(thriftFile, frugal); err != nil {
-		return err
+		return nil, err
 	}
 
 	if out == "" {
@@ -63,39 +86,19 @@ func Compile(file, gen, out, delimiter string) error {
 	}
 	fullOut := g.GetOutputDir(out, frugal)
 	if err := os.MkdirAll(out, 0777); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Generate Thrift code.
-	if err := generateThrift(out, gen, thriftFile); err != nil {
-		return err
+	if err := generateThrift(frugal, dir, out, gen); err != nil {
+		return nil, err
 	}
 
 	// Generate Frugal code.
-	return g.Generate(frugal, fullOut)
-}
-
-func generateThrift(out, gen, file string) error {
-	args := []string{"-r"}
-	if out != "" {
-		args = append(args, "-out", out)
+	if frugal.ContainsFrugalDefinitions() {
+		return frugal, g.Generate(frugal, fullOut)
 	}
-	args = append(args, "-gen", gen)
-	args = append(args, file)
-	if out, err := exec.Command("thrift", args...).CombinedOutput(); err != nil {
-		fmt.Println(string(out))
-		return err
-	}
-	return nil
-}
-
-func getName(path string) string {
-	name := path
-	extension := filepath.Ext(name)
-	if extension != "" {
-		name = name[0:strings.LastIndex(name, extension)]
-	}
-	return name
+	return frugal, nil
 }
 
 func exists(path string) bool {

@@ -9,6 +9,10 @@
 			"ImportPath": "git.apache.org/thrift.git/lib/go/thrift",
 			"Rev": "89dc20f4e05cca8f77bd9451c4091971eb6859ae"
 		},
+        {
+            "ImportPath": "github.com/codegangsta/cli",
+            "Rev": "0302d3914d2a6ad61404584cdae6e6dbc9c03599"
+        },
 		{
 			"ImportPath": "github.com/Workiva/frugal-go",
 			"Rev": "12ca098ad8df2a8d1c22577820ea204cf47e7717"

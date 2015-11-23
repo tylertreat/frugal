@@ -3,7 +3,6 @@ package golang
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -22,11 +21,11 @@ type Generator struct {
 }
 
 func NewGenerator(options map[string]string) generator.SingleFileGenerator {
-	return &Generator{&generator.BaseGenerator{options}}
+	return &Generator{&generator.BaseGenerator{Options: options}}
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
-	if pkg, ok := f.Namespaces[lang]; ok {
+	if pkg, ok := f.Thrift.Namespaces[lang]; ok {
 		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
@@ -37,14 +36,6 @@ func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
 
 func (g *Generator) DefaultOutputDir() string {
 	return defaultOutputDir
-}
-
-func (g *Generator) CheckCompile(path string) error {
-	if out, err := exec.Command("go", "build", path).CombinedOutput(); err != nil {
-		fmt.Println(string(out))
-		return err
-	}
-	return nil
 }
 
 func (g *Generator) GenerateFile(name string, outputDir string) (*os.File, error) {
@@ -62,7 +53,7 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 }
 
 func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal) error {
-	pkg, ok := f.Namespaces[lang]
+	pkg, ok := f.Thrift.Namespaces[lang]
 	if ok {
 		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]
@@ -88,6 +79,15 @@ func (g *Generator) GenerateImports(file *os.File, f *parser.Frugal) error {
 		imports += "\t\"github.com/Workiva/frugal-go\"\n"
 	}
 
+	pkgPrefix := g.Options["package_prefix"]
+	for _, include := range f.ReferencedIncludes() {
+		namespace, ok := f.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, namespace)
+	}
+
 	imports += ")"
 	_, err := file.WriteString(imports)
 	return err
@@ -105,13 +105,16 @@ func (g *Generator) GeneratePublishers(file *os.File, scopes []*parser.Scope) er
 	for _, scope := range scopes {
 		publishers += newline
 		newline = "\n\n"
-		publishers = generatePublisher(publishers, scope)
+		publishers = g.generatePublisher(publishers, scope)
 	}
 	_, err := file.WriteString(publishers)
 	return err
 }
 
-func generatePublisher(publishers string, scope *parser.Scope) string {
+func (g *Generator) generatePublisher(publishers string, scope *parser.Scope) string {
+	if scope.Comment != nil {
+		publishers += g.GenerateInlineComment(scope.Comment, "")
+	}
 	publishers += fmt.Sprintf("type %sPublisher struct {\n", strings.Title(scope.Name))
 	publishers += "\tTransport frugal.Transport\n"
 	publishers += "\tProtocol  thrift.TProtocol\n"
@@ -141,8 +144,11 @@ func generatePublisher(publishers string, scope *parser.Scope) string {
 	for _, op := range scope.Operations {
 		publishers += prefix
 		prefix = "\n\n"
+		if op.Comment != nil {
+			publishers += g.GenerateInlineComment(op.Comment, "")
+		}
 		publishers += fmt.Sprintf("func (l *%sPublisher) Publish%s(%sreq *%s) error {\n",
-			strings.Title(scope.Name), op.Name, args, op.Param)
+			strings.Title(scope.Name), op.Name, args, g.qualifiedParamName(op))
 		publishers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		publishers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 		publishers += "\ttopic := fmt.Sprintf(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op)\n"
@@ -190,13 +196,16 @@ func (g *Generator) GenerateSubscribers(file *os.File, scopes []*parser.Scope) e
 	for _, scope := range scopes {
 		subscribers += newline
 		newline = "\n\n"
-		subscribers = generateSubscriber(subscribers, scope)
+		subscribers = g.generateSubscriber(subscribers, scope)
 	}
 	_, err := file.WriteString(subscribers)
 	return err
 }
 
-func generateSubscriber(subscribers string, scope *parser.Scope) string {
+func (g *Generator) generateSubscriber(subscribers string, scope *parser.Scope) string {
+	if scope.Comment != nil {
+		subscribers += g.GenerateInlineComment(scope.Comment, "")
+	}
 	subscribers += fmt.Sprintf("type %sSubscriber struct {\n", strings.Title(scope.Name))
 	subscribers += "\tProvider *frugal.Provider\n"
 	subscribers += "}\n\n"
@@ -219,8 +228,11 @@ func generateSubscriber(subscribers string, scope *parser.Scope) string {
 	for _, op := range scope.Operations {
 		subscribers += prefix
 		prefix = "\n\n"
+		if op.Comment != nil {
+			subscribers += g.GenerateInlineComment(op.Comment, "")
+		}
 		subscribers += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*%s)) (*frugal.Subscription, error) {\n",
-			strings.Title(scope.Name), op.Name, args, op.Param)
+			strings.Title(scope.Name), op.Name, args, g.qualifiedParamName(op))
 		subscribers += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		subscribers += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 		subscribers += "\ttopic := fmt.Sprintf(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op)\n"
@@ -248,7 +260,7 @@ func generateSubscriber(subscribers string, scope *parser.Scope) string {
 		subscribers += "}\n\n"
 
 		subscribers += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, iprot thrift.TProtocol) (*%s, error) {\n",
-			strings.Title(scope.Name), op.Name, op.Param)
+			strings.Title(scope.Name), op.Name, g.qualifiedParamName(op))
 		subscribers += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
 		subscribers += "\tif err != nil {\n"
 		subscribers += "\t\treturn nil, err\n"
@@ -259,7 +271,7 @@ func generateSubscriber(subscribers string, scope *parser.Scope) string {
 		subscribers += "\t\tx9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
 		subscribers += "\t\treturn nil, x9\n"
 		subscribers += "\t}\n"
-		subscribers += fmt.Sprintf("\treq := &%s{}\n", op.Param)
+		subscribers += fmt.Sprintf("\treq := &%s{}\n", g.qualifiedParamName(op))
 		subscribers += "\tif err := req.Read(iprot); err != nil {\n"
 		subscribers += "\t\treturn nil, err\n"
 		subscribers += "\t}\n\n"
@@ -269,4 +281,17 @@ func generateSubscriber(subscribers string, scope *parser.Scope) string {
 	}
 
 	return subscribers
+}
+
+func (g *Generator) qualifiedParamName(op *parser.Operation) string {
+	param := op.ParamName()
+	include := op.IncludeName()
+	if include != "" {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		param = fmt.Sprintf("%s.%s", namespace, param)
+	}
+	return param
 }

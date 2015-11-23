@@ -1,9 +1,21 @@
+# This is a comment.
+
 namespace java foo
 
+/**@
+ * This is a docstring.
+ */
+struct Thing {}
+
+/** This is not a docstring. */
+struct Stuff {}
+
 // This is a scope
+/**@ And this is a scope docstring. */
 scope Foo {
     prefix "foo.bar.{baz}.qux"
 
+    /**@ This is an operation docstring. */
     Foo: Thing // This is an operation.
     Bar: Stuff
 }
