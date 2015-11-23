@@ -30,7 +30,7 @@ scope Events {
 Generate the code with `frugal`. Currently, only Go, Java, and Dart are supported.
 
 ```
-$ frugal -gen=go -file=event.frugal
+$ frugal -gen=go event.frugal
 ```
 
 By default, generated code is placed in a `gen-*` directory. This code can then be used as such:
