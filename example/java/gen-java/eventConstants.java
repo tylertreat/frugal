@@ -31,7 +31,7 @@ import javax.annotation.Generated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"cast", "rawtypes", "serial", "unchecked"})
+@SuppressWarnings({"cast", "rawtypes", "serial", "unchecked", "unused"})
 public class eventConstants {
 
   public static final long DEFAULT_ID = -1L;
