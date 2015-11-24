@@ -42,7 +42,12 @@ func Compile(options Options) error {
 		}
 	}()
 
-	_, err := compile(filepath.Base(options.File))
+	absFile, err := filepath.Abs(options.File)
+	if err != nil {
+		return err
+	}
+
+	_, err = compile(absFile)
 	return err
 }
 
@@ -50,9 +55,8 @@ func compile(file string) (*parser.Frugal, error) {
 	var (
 		gen = globals.Gen
 		out = globals.Out
-		dir = globals.FileDir
+		dir = filepath.Dir(file)
 	)
-	file = filepath.Join(dir, file)
 
 	// Ensure Frugal file exists.
 	if !exists(file) {
