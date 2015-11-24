@@ -63,7 +63,7 @@ func generateIncludes(frugal *parser.Frugal) (string, error) {
 	for _, include := range frugal.Thrift.Includes {
 		if strings.HasSuffix(strings.ToLower(include), ".frugal") {
 			// Recurse on frugal includes
-			parsed, err := compile(include)
+			parsed, err := compile(filepath.Join(frugal.Dir, include))
 			if err != nil {
 				return "", err
 			}
