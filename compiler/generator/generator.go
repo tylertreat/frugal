@@ -39,23 +39,6 @@ type ProgramGenerator interface {
 	DefaultOutputDir() string
 }
 
-// SingleFileGenerator generates source code in a specified language in a
-// single source file.
-type SingleFileGenerator interface {
-	GenerateFile(name, outputDir string) (*os.File, error)
-	GenerateDocStringComment(*os.File) error
-	GeneratePackage(f *os.File, p *parser.Frugal) error
-	GenerateImports(f *os.File, p *parser.Frugal) error
-	GenerateConstants(f *os.File, name string) error
-	GeneratePublishers(*os.File, []*parser.Scope) error
-	GenerateSubscribers(*os.File, []*parser.Scope) error
-	GenerateNewline(*os.File, int) error
-	GetOutputDir(dir string, f *parser.Frugal) string
-	DefaultOutputDir() string
-	GenerateWrapper(f *os.File, p *parser.Frugal) error
-	SetFrugal(*parser.Frugal)
-}
-
 // MultipleFileGenerator generates source code in a specified language in a
 // multiple source files.
 type MultipleFileGenerator interface {
@@ -84,78 +67,6 @@ type MultipleFileGenerator interface {
 
 func GetPackageComponents(pkg string) []string {
 	return strings.Split(pkg, ".")
-}
-
-// SingleFileProgramGenerator is an implementation of the ProgramGenerator
-// interface which generates source code in one file.
-type SingleFileProgramGenerator struct {
-	SingleFileGenerator
-}
-
-func NewSingleFileProgramGenerator(generator SingleFileGenerator) ProgramGenerator {
-	return &SingleFileProgramGenerator{generator}
-}
-
-// Generate the Frugal in the given directory.
-func (o *SingleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir string) error {
-	o.SetFrugal(frugal)
-	file, err := o.GenerateFile(frugal.Name, outputDir)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	if err := o.GenerateDocStringComment(file); err != nil {
-		return err
-	}
-
-	if err := o.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-
-	if err := o.GeneratePackage(file, frugal); err != nil {
-		return err
-	}
-
-	if err := o.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-
-	if err := o.GenerateImports(file, frugal); err != nil {
-		return err
-	}
-
-	if err := o.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-
-	if err := o.GenerateConstants(file, frugal.Name); err != nil {
-		return err
-	}
-
-	if err := o.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-
-	if err := o.GeneratePublishers(file, frugal.Scopes); err != nil {
-		return err
-	}
-
-	if err := o.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-
-	return o.GenerateSubscribers(file, frugal.Scopes)
-}
-
-// GetOutputDir returns the full output directory for generated code.
-func (o *SingleFileProgramGenerator) GetOutputDir(dir string, f *parser.Frugal) string {
-	return o.SingleFileGenerator.GetOutputDir(dir, f)
-}
-
-// DefaultOutputDir returns the default directory for generated code.
-func (o *SingleFileProgramGenerator) DefaultOutputDir() string {
-	return o.SingleFileGenerator.DefaultOutputDir()
 }
 
 // MultipleFileProgramGenerator is an implementation of the ProgramGenerator
