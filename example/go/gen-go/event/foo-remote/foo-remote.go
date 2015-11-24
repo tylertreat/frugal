@@ -20,6 +20,7 @@ func Usage() {
 	fmt.Fprintln(os.Stderr, "Usage of ", os.Args[0], " [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]:")
 	flag.PrintDefaults()
 	fmt.Fprintln(os.Stderr, "\nFunctions:")
+	fmt.Fprintln(os.Stderr, "  void ping()")
 	fmt.Fprintln(os.Stderr, "  i64 blah(i32 num)")
 	fmt.Fprintln(os.Stderr)
 	os.Exit(0)
@@ -115,13 +116,21 @@ func main() {
 	}
 
 	switch cmd {
+	case "ping":
+		if flag.NArg()-1 != 0 {
+			fmt.Fprintln(os.Stderr, "Ping requires 0 args")
+			flag.Usage()
+		}
+		fmt.Print(client.Ping())
+		fmt.Print("\n")
+		break
 	case "blah":
 		if flag.NArg()-1 != 1 {
 			fmt.Fprintln(os.Stderr, "Blah requires 1 args")
 			flag.Usage()
 		}
-		tmp0, err4 := (strconv.Atoi(flag.Arg(1)))
-		if err4 != nil {
+		tmp0, err6 := (strconv.Atoi(flag.Arg(1)))
+		if err6 != nil {
 			Usage()
 			return
 		}

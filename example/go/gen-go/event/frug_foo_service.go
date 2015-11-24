@@ -6,8 +6,6 @@ package event
 import (
 	"bytes"
 	"fmt"
-	"log"
-
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal-go"
 )
@@ -18,101 +16,11 @@ var _ = fmt.Printf
 var _ = bytes.Equal
 
 
-const delimiter = "."
-
-type EventsPublisher struct {
-	Transport frugal.Transport
-	Protocol  thrift.TProtocol
-	SeqId     int32
-}
-
-func NewEventsPublisher(provider *frugal.Provider) *EventsPublisher {
-	transport, protocol := provider.New()
-	return &EventsPublisher{
-		Transport: transport,
-		Protocol:  protocol,
-		SeqId:     0,
-	}
-}
-
-func (l *EventsPublisher) PublishEventCreated(user string, req *Event) error {
-	op := "EventCreated"
-	prefix := fmt.Sprintf("foo.%s.", user)
-	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
-	l.Transport.PreparePublish(topic)
-	oprot := l.Protocol
-	l.SeqId++
-	if err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {
-		return err
-	}
-	if err := req.Write(oprot); err != nil {
-		return err
-	}
-	if err := oprot.WriteMessageEnd(); err != nil {
-		return err
-	}
-	return oprot.Flush()
-}
-
-type EventsSubscriber struct {
-	Provider *frugal.Provider
-}
-
-func NewEventsSubscriber(provider *frugal.Provider) *EventsSubscriber {
-	return &EventsSubscriber{Provider: provider}
-}
-
-func (l *EventsSubscriber) SubscribeEventCreated(user string, handler func(*Event)) (*frugal.Subscription, error) {
-	op := "EventCreated"
-	prefix := fmt.Sprintf("foo.%s.", user)
-	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
-	transport, protocol := l.Provider.New()
-	if err := transport.Subscribe(topic); err != nil {
-		return nil, err
-	}
-
-	sub := frugal.NewSubscription(topic, transport)
-	go func() {
-		for {
-			received, err := l.recvEventCreated(op, protocol)
-			if err != nil {
-				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
-					return
-				}
-				log.Println("frugal: error receiving:", err)
-				sub.Signal(err)
-				sub.Unsubscribe()
-				return
-			}
-			handler(received)
-		}
-	}()
-
-	return sub, nil
-}
-
-func (l *EventsSubscriber) recvEventCreated(op string, iprot thrift.TProtocol) (*Event, error) {
-	name, _, _, err := iprot.ReadMessageBegin()
-	if err != nil {
-		return nil, err
-	}
-	if name != op {
-		iprot.Skip(thrift.STRUCT)
-		iprot.ReadMessageEnd()
-		x9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
-		return nil, x9
-	}
-	req := &Event{}
-	if err := req.Read(iprot); err != nil {
-		return nil, err
-	}
-
-	iprot.ReadMessageEnd()
-	return req, nil
-}
-
 type FrugalFoo interface {
-	Blah(frugal.Context, int32) (int64, error)
+	// Ping the server.
+	Ping(frugal.Context) (err error)
+	// Blah the server.
+	Blah(frugal.Context, int32) (r int64, err error)
 }
 
 type FrugalFooClient struct {
@@ -143,14 +51,92 @@ func NewFrugalFooClientProtocol(t thrift.TTransport, iprot, oprot frugal.FProtoc
 	}
 }
 
+// Ping the server.
+func (f *FrugalFooClient) Ping(ctx frugal.Context) (err error) {
+	if err = f.sendPing(ctx, ); err != nil {
+		return
+	}
+	return f.recvPing(ctx)
+}
+
+func (f *FrugalFooClient) sendPing(ctx frugal.Context) (err error) {
+	oprot := f.OutputProtocol
+	if oprot == nil {
+		oprot = f.ProtocolFactory.GetProtocol(f.Transport)
+		f.OutputProtocol = oprot
+	}
+	if err = f.OutputProtocol.WriteRequestHeader(ctx); err != nil {
+		return
+	}
+	f.SeqId++
+	if err = oprot.WriteMessageBegin("ping", thrift.CALL, f.SeqId); err != nil {
+		return
+	}
+	args := FooPingArgs{
+	}
+	if err = args.Write(oprot); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	return oprot.Flush()
+}
+
+func (f *FrugalFooClient) recvPing(ctx frugal.Context) (err error) {
+	iprot := f.InputProtocol
+	if iprot == nil {
+		iprot = f.ProtocolFactory.GetProtocol(f.Transport)
+		f.InputProtocol = iprot
+	}
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
+		return
+	}
+	method, mTypeId, seqId, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
+	}
+	if method != "ping" {
+	err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "ping failed: wrong method name")
+		return
+	}
+	if f.SeqId != seqId {
+	err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "ping failed: out of sequence response")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 error
+		error1, err = error0.Read(iprot)
+		if err != nil {
+			return
+		}
+		if err = iprot.ReadMessageEnd(); err != nil {
+			return
+		}
+		err = error1
+		return
+	}
+	if mTypeId != thrift.REPLY {
+	err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "ping failed: invalid message type")
+		return
+	}
+	result := FooPingResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	return
+}
+
+// Blah the server.
 func (f *FrugalFooClient) Blah(ctx frugal.Context, num int32) (r int64, err error) {
 	if err = f.sendBlah(ctx, num); err != nil {
 		return
 	}
-	if r, err = f.recvBlah(ctx); err != nil {
-		return
-	}
-	return r, err
+	return f.recvBlah(ctx)
 }
 
 func (f *FrugalFooClient) sendBlah(ctx frugal.Context, num int32) (err error) {
@@ -178,7 +164,7 @@ func (f *FrugalFooClient) sendBlah(ctx frugal.Context, num int32) (err error) {
 	return oprot.Flush()
 }
 
-func (f *FrugalFooClient) recvBlah(ctx frugal.Context) (value int64, err error) {
+func (f *FrugalFooClient) recvBlah(ctx frugal.Context) (r int64, err error) {
 	iprot := f.InputProtocol
 	if iprot == nil {
 		iprot = f.ProtocolFactory.GetProtocol(f.Transport)
@@ -223,7 +209,7 @@ func (f *FrugalFooClient) recvBlah(ctx frugal.Context) (value int64, err error) 
 	if err = iprot.ReadMessageEnd(); err != nil {
 		return
 	}
-	value = result.GetSuccess()
+	r = result.GetSuccess()
 	return
 }
 
@@ -242,6 +228,7 @@ func NewFrugalFooProcessor(handler FrugalFoo) *FrugalFooProcessor {
 		handler:      handler,
 		processorMap: make(map[string]frugal.FProcessorFunction),
 	}
+	p.processorMap["ping"] = &fooFrugalProcessorPing{handler: handler}
 	p.processorMap["blah"] = &fooFrugalProcessorBlah{handler: handler}
 	return p
 }
@@ -268,6 +255,54 @@ func (p *FrugalFooProcessor) Process(iprot, oprot frugal.FProtocol) (success boo
 	return false, x3
 }
 
+type fooFrugalProcessorPing struct {
+	handler FrugalFoo
+}
+
+func (p *fooFrugalProcessorPing) Process(ctx frugal.Context, seqId int32, iprot, oprot frugal.FProtocol) (success bool, err thrift.TException) {
+	args := FooPingArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("ping", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush()
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	result := FooPingResult{}
+	var err2 error
+	if err2 = p.handler.Ping(ctx, ); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing ping: "+err2.Error())
+		oprot.WriteMessageBegin("ping", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush()
+		return true, err2
+	}
+	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageBegin("ping", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
 type fooFrugalProcessorBlah struct {
 	handler FrugalFoo
 }
@@ -286,8 +321,8 @@ func (p *fooFrugalProcessorBlah) Process(ctx frugal.Context, seqId int32, iprot,
 
 	iprot.ReadMessageEnd()
 	result := FooBlahResult{}
-	var retval int64
 	var err2 error
+	var retval int64
 	if retval, err2 = p.handler.Blah(ctx, args.Num); err2 != nil {
 		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing blah: "+err2.Error())
 		oprot.WriteMessageBegin("blah", thrift.EXCEPTION, seqId)
