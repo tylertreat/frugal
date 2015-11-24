@@ -14,7 +14,7 @@ func TestValidJava(t *testing.T) {
 	defer func() {
 		globals.Now = nowBefore
 	}()
-	globals.Now = time.Date(2015, 11, 23, 0, 0, 0, 0, time.UTC)
+	globals.Now = time.Date(2015, 11, 24, 0, 0, 0, 0, time.UTC)
 
 	options := compiler.Options{
 		File:  validFile,
@@ -30,8 +30,8 @@ func TestValidJava(t *testing.T) {
 	compareFiles(t, "expected/java/FooPublisher.java", pubPath)
 	subPath := filepath.Join(outputDir, "foo", "FooSubscriber.java")
 	compareFiles(t, "expected/java/FooSubscriber.java", subPath)
-	pubPath = filepath.Join(outputDir, "foo", "BarPublisher.java")
-	compareFiles(t, "expected/java/BarPublisher.java", pubPath)
-	subPath = filepath.Join(outputDir, "foo", "BarSubscriber.java")
-	compareFiles(t, "expected/java/BarSubscriber.java", subPath)
+	pubPath = filepath.Join(outputDir, "foo", "BlahPublisher.java")
+	compareFiles(t, "expected/java/BlahPublisher.java", pubPath)
+	subPath = filepath.Join(outputDir, "foo", "BlahSubscriber.java")
+	compareFiles(t, "expected/java/BlahSubscriber.java", subPath)
 }

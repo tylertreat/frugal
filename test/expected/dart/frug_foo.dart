@@ -27,6 +27,7 @@ class FooPublisher {
     seqId = 0;
   }
 
+  /// This is an operation docstring.
   Future publishFoo(String baz, t_thing.Thing req) {
     var op = "Foo";
     var prefix = "foo.bar.${baz}.qux.";
@@ -42,14 +43,8 @@ class FooPublisher {
   }
 
 
-<<<<<<< HEAD
   Future publishBar(String baz, t_stuff.Stuff req) {
     var op = "Bar";
-=======
-  /// This is an operation docstring.
-  Future publishFoo(String baz, t_thing.Thing req) {
-    var op = "Foo";
->>>>>>> f9437bcd253b3b469f34e48af9202b19d5a276f6
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
     transport.preparePublish(topic);
@@ -70,6 +65,7 @@ class FooSubscriber {
 
   FooSubscriber(this.provider) {}
 
+  /// This is an operation docstring.
   Future<frugal.Subscription> subscribeFoo(String baz, dynamic onThing(t_thing.Thing req)) async {
     var op = "Foo";
     var prefix = "foo.bar.${baz}.qux.";
@@ -101,14 +97,8 @@ class FooSubscriber {
   }
 
 
-<<<<<<< HEAD
   Future<frugal.Subscription> subscribeBar(String baz, dynamic onStuff(t_stuff.Stuff req)) async {
     var op = "Bar";
-=======
-  /// This is an operation docstring.
-  Future<frugal.Subscription> subscribeFoo(String baz, dynamic onThing(t_thing.Thing req)) async {
-    var op = "Foo";
->>>>>>> f9437bcd253b3b469f34e48af9202b19d5a276f6
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
     var tp = provider.newTransportProtocol();

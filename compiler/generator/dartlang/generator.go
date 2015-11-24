@@ -207,14 +207,19 @@ func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *par
 
 	// Import same-package references.
 	params := make(map[string]bool)
+	paramSlice := []string{}
 	for _, op := range s.Operations {
 		if !strings.Contains(op.Param, ".") {
 			params[op.Param] = true
+			paramSlice = append(paramSlice, op.Param)
 		}
 	}
-	for param, _ := range params {
-		lowerParam := strings.ToLower(param)
-		imports += fmt.Sprintf("import '%s.dart' as t_%s;\n", lowerParam, lowerParam)
+	for _, param := range paramSlice {
+		if params[param] {
+			lowerParam := strings.ToLower(param)
+			imports += fmt.Sprintf("import '%s.dart' as t_%s;\n", lowerParam, lowerParam)
+			params[param] = false
+		}
 	}
 
 	_, err := file.WriteString(imports)
