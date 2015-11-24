@@ -35,8 +35,11 @@ func Compile(options Options) error {
 		if !options.RetainIntermediate {
 			// Clean up intermediate IDL.
 			for _, file := range globals.IntermediateIDL {
-				if err := os.Remove(file); err != nil {
-					fmt.Printf("Failed to remove intermediate IDL %s\n", file)
+				// Only try to remove if file still exists.
+				if _, err := os.Stat(file); err == nil {
+					if err := os.Remove(file); err != nil {
+						fmt.Printf("Failed to remove intermediate IDL %s\n", file)
+					}
 				}
 			}
 		}
