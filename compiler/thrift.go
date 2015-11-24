@@ -241,6 +241,7 @@ func generateThrift(frugal *parser.Frugal, idlDir, out, gen string) error {
 	if err != nil {
 		return err
 	}
+	globals.IntermediateIDL = append(globals.IntermediateIDL, idlFile)
 
 	// Generate Thrift code.
 	args := []string{}
@@ -254,8 +255,6 @@ func generateThrift(frugal *parser.Frugal, idlDir, out, gen string) error {
 		fmt.Println(string(out))
 		return err
 	}
-
-	globals.IntermediateIDL = append(globals.IntermediateIDL, idlFile)
 
 	return nil
 }
