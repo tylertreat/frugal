@@ -14,6 +14,8 @@ import (
 const (
 	lang             = "go"
 	defaultOutputDir = "gen-go"
+	serviceSuffix    = "_service"
+	scopeSuffix      = "_scope"
 )
 
 type Generator struct {
@@ -48,10 +50,14 @@ func (g *Generator) GenerateDependencies(f *parser.Frugal, dir string) error {
 }
 
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
-	if fileType != generator.CombinedFile {
+	switch fileType {
+	case generator.CombinedServiceFile:
+		return g.CreateFile(strings.ToLower(name)+serviceSuffix, outputDir, lang, true)
+	case generator.CombinedScopeFile:
+		return g.CreateFile(strings.ToLower(name)+scopeSuffix, outputDir, lang, true)
+	default:
 		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
 	}
-	return g.CreateFile(strings.ToLower(name), outputDir, lang, true)
 }
 
 func (g *Generator) GenerateDocStringComment(file *os.File) error {
@@ -325,6 +331,9 @@ func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.S
 func (g *Generator) generateInterface(service *parser.Service) string {
 	contents := fmt.Sprintf("type Frugal%s interface {\n", strings.Title(service.Name))
 	for _, method := range service.Methods {
+		if method.Comment != nil {
+			contents += g.GenerateInlineComment(method.Comment, "\t")
+		}
 		contents += fmt.Sprintf("\t%s(frugal.Context%s) %s\n",
 			strings.Title(method.Name), g.generateInterfaceArgs(method.Arguments),
 			g.generateReurnArgs(method))
@@ -386,7 +395,11 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	nameTitle := strings.Title(method.Name)
 	nameLower := strings.ToLower(method.Name)
 
-	contents := fmt.Sprintf("func (f *Frugal%sClient) %s(ctx frugal.Context%s) %s {\n",
+	contents := ""
+	if method.Comment != nil {
+		contents += g.GenerateInlineComment(method.Comment, "")
+	}
+	contents += fmt.Sprintf("func (f *Frugal%sClient) %s(ctx frugal.Context%s) %s {\n",
 		servTitle, nameTitle, g.generateInputArgs(method.Arguments),
 		g.generateReurnArgs(method))
 	contents += fmt.Sprintf("\tif err = f.send%s(ctx, %s); err != nil {\n",

@@ -12,9 +12,10 @@ const FilePrefix = "frug_"
 type FileType string
 
 const (
-	CombinedFile  FileType = "combined"
-	PublishFile   FileType = "publish"
-	SubscribeFile FileType = "subscribe"
+	CombinedServiceFile FileType = "combined_service"
+	CombinedScopeFile   FileType = "combined_scope"
+	PublishFile         FileType = "publish"
+	SubscribeFile       FileType = "subscribe"
 )
 
 // Languages is a map of supported language to a slice of the generator options
@@ -191,7 +192,7 @@ func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir
 				return err
 			}
 		} else {
-			if err := o.generateScopeFile(frugal, scope, outputDir, CombinedFile); err != nil {
+			if err := o.generateScopeFile(frugal, scope, outputDir, CombinedScopeFile); err != nil {
 				return err
 			}
 		}
@@ -201,7 +202,7 @@ func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir
 
 func (o MultipleFileProgramGenerator) generateServiceFile(frugal *parser.Frugal, service *parser.Service,
 	outputDir string) error {
-	file, err := o.GenerateFile(service.Name, outputDir, CombinedFile)
+	file, err := o.GenerateFile(service.Name, outputDir, CombinedServiceFile)
 	if err != nil {
 		return err
 	}
@@ -278,19 +279,19 @@ func (o MultipleFileProgramGenerator) generateScopeFile(frugal *parser.Frugal, s
 		return err
 	}
 
-	if fileType == CombinedFile || fileType == PublishFile {
+	if fileType == CombinedScopeFile || fileType == PublishFile {
 		if err := o.GeneratePublisher(file, scope); err != nil {
 			return err
 		}
 	}
 
-	if fileType == CombinedFile {
+	if fileType == CombinedScopeFile {
 		if err := o.GenerateNewline(file, 2); err != nil {
 			return err
 		}
 	}
 
-	if fileType == CombinedFile || fileType == SubscribeFile {
+	if fileType == CombinedScopeFile || fileType == SubscribeFile {
 		if err := o.GenerateSubscriber(file, scope); err != nil {
 			return err
 		}

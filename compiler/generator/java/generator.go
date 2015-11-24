@@ -58,13 +58,14 @@ func (g *Generator) GenerateDependencies(f *parser.Frugal, dir string) error {
 }
 
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
-	if fileType == generator.CombinedFile {
+	switch fileType {
+	case generator.PublishFile:
+		return g.CreateFile(strings.Title(name)+"Publisher", outputDir, lang, false)
+	case generator.SubscribeFile:
+		return g.CreateFile(strings.Title(name)+"Subscriber", outputDir, lang, false)
+	default:
 		return nil, fmt.Errorf("frugal: Bad file type for Java generator: %s", fileType)
 	}
-	if fileType == generator.PublishFile {
-		return g.CreateFile(strings.Title(name)+"Publisher", outputDir, lang, false)
-	}
-	return g.CreateFile(strings.Title(name)+"Subscriber", outputDir, lang, false)
 }
 
 func (g *Generator) GenerateDocStringComment(file *os.File) error {

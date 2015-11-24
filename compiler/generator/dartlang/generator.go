@@ -153,7 +153,7 @@ func (g *Generator) exportClasses(f *parser.Frugal, dir string) error {
 }
 
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
-	if fileType != generator.CombinedFile {
+	if fileType != generator.CombinedScopeFile {
 		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
 	}
 	outputDir = filepath.Join(outputDir, "lib")
