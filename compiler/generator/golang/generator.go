@@ -23,7 +23,7 @@ type Generator struct {
 	generateConstants bool
 }
 
-func NewGenerator(options map[string]string) generator.MultipleFileGenerator {
+func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	return &Generator{&generator.BaseGenerator{Options: options}, true}
 }
 

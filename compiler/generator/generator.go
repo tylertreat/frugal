@@ -39,9 +39,8 @@ type ProgramGenerator interface {
 	DefaultOutputDir() string
 }
 
-// MultipleFileGenerator generates source code in a specified language in a
-// multiple source files.
-type MultipleFileGenerator interface {
+// Generator generates source code as implemented for specific languages.
+type LanguageGenerator interface {
 	// Generic methods
 	GenerateDependencies(f *parser.Frugal, dir string) error
 	GenerateFile(name, outputDir string, fileType FileType) (*os.File, error)
@@ -69,20 +68,18 @@ func GetPackageComponents(pkg string) []string {
 	return strings.Split(pkg, ".")
 }
 
-// MultipleFileProgramGenerator is an implementation of the ProgramGenerator
-// interface which generates source code in one file.
-type MultipleFileProgramGenerator struct {
-	MultipleFileGenerator
-	SplitPublisherSubscriber bool
+// programGenerator is an implementation of the ProgramGenerator interface
+type programGenerator struct {
+	LanguageGenerator
+	splitPublisherSubscriber bool
 }
 
-func NewMultipleFileProgramGenerator(generator MultipleFileGenerator,
-	splitPublisherSubscriber bool) ProgramGenerator {
-	return &MultipleFileProgramGenerator{generator, splitPublisherSubscriber}
+func NewProgramGenerator(generator LanguageGenerator, splitPublisherSubscriber bool) ProgramGenerator {
+	return &programGenerator{generator, splitPublisherSubscriber}
 }
 
 // Generate the Frugal in the given directory.
-func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir string) error {
+func (o *programGenerator) Generate(frugal *parser.Frugal, outputDir string) error {
 	o.SetFrugal(frugal)
 	if err := o.GenerateDependencies(frugal, outputDir); err != nil {
 		return err
@@ -95,7 +92,7 @@ func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir
 		}
 	}
 	for _, scope := range frugal.Scopes {
-		if o.SplitPublisherSubscriber {
+		if o.splitPublisherSubscriber {
 			if err := o.generateScopeFile(frugal, scope, outputDir, PublishFile); err != nil {
 				return err
 			}
@@ -111,7 +108,7 @@ func (o *MultipleFileProgramGenerator) Generate(frugal *parser.Frugal, outputDir
 	return nil
 }
 
-func (o MultipleFileProgramGenerator) generateServiceFile(frugal *parser.Frugal, service *parser.Service,
+func (o *programGenerator) generateServiceFile(frugal *parser.Frugal, service *parser.Service,
 	outputDir string) error {
 	file, err := o.GenerateFile(service.Name, outputDir, CombinedServiceFile)
 	if err != nil {
@@ -150,7 +147,7 @@ func (o MultipleFileProgramGenerator) generateServiceFile(frugal *parser.Frugal,
 	return nil
 }
 
-func (o MultipleFileProgramGenerator) generateScopeFile(frugal *parser.Frugal, scope *parser.Scope,
+func (o *programGenerator) generateScopeFile(frugal *parser.Frugal, scope *parser.Scope,
 	outputDir string, fileType FileType) error {
 	file, err := o.GenerateFile(scope.Name, outputDir, fileType)
 	if err != nil {
@@ -216,11 +213,11 @@ func (o MultipleFileProgramGenerator) generateScopeFile(frugal *parser.Frugal, s
 }
 
 // GetOutputDir returns the full output directory for generated code.
-func (o *MultipleFileProgramGenerator) GetOutputDir(dir string, f *parser.Frugal) string {
-	return o.MultipleFileGenerator.GetOutputDir(dir, f)
+func (o *programGenerator) GetOutputDir(dir string, f *parser.Frugal) string {
+	return o.LanguageGenerator.GetOutputDir(dir, f)
 }
 
 // DefaultOutputDir returns the default directory for generated code.
-func (o *MultipleFileProgramGenerator) DefaultOutputDir() string {
-	return o.MultipleFileGenerator.DefaultOutputDir()
+func (o *programGenerator) DefaultOutputDir() string {
+	return o.LanguageGenerator.DefaultOutputDir()
 }

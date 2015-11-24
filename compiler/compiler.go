@@ -66,11 +66,11 @@ func compile(file string) (*parser.Frugal, error) {
 	var g generator.ProgramGenerator
 	switch lang {
 	case "dart":
-		g = generator.NewMultipleFileProgramGenerator(dartlang.NewGenerator(options), false)
+		g = generator.NewProgramGenerator(dartlang.NewGenerator(options), false)
 	case "go":
-		g = generator.NewMultipleFileProgramGenerator(golang.NewGenerator(options), false)
+		g = generator.NewProgramGenerator(golang.NewGenerator(options), false)
 	case "java":
-		g = generator.NewMultipleFileProgramGenerator(java.NewGenerator(options), true)
+		g = generator.NewProgramGenerator(java.NewGenerator(options), true)
 	default:
 		return nil, fmt.Errorf("Invalid gen value %s", gen)
 	}

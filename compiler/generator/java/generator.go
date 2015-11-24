@@ -30,7 +30,7 @@ type Generator struct {
 	time time.Time
 }
 
-func NewGenerator(options map[string]string) generator.MultipleFileGenerator {
+func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	return &Generator{
 		&generator.BaseGenerator{Options: options},
 		globals.Now,
