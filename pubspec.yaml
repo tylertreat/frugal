@@ -8,6 +8,8 @@ dependencies:
   messaging_frontend:
     git:
       url: git@github.com:Workiva/messaging-frontend-dart.git
+      ref: 0.0.1
   thrift: # '>=0.1.0'
     git:
       url: git@github.com:Workiva/thrift-dart.git
+      ref: 0.0.1
