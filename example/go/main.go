@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"flag"
 	"fmt"
 	"log"
@@ -10,6 +9,7 @@ import (
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal-go"
+	"github.com/Workiva/thrift-nats/thrift_nats"
 	"github.com/nats-io/nats"
 
 	"github.com/Workiva/frugal/example/go/gen-go/event"
@@ -31,7 +31,7 @@ func main() {
 		protocol = flag.String("P", "binary", "Specify the protocol (binary, compact, json, simplejson)")
 		framed   = flag.Bool("framed", false, "Use framed transport")
 		buffered = flag.Bool("buffered", false, "Use buffered transport")
-		addr     = flag.String("addr", "", "NATS address")
+		addr     = flag.String("addr", nats.DefaultURL, "NATS address")
 		secure   = flag.Bool("secure", false, "Use tls secure transport")
 	)
 	flag.Parse()
@@ -64,32 +64,25 @@ func main() {
 		transportFactory = thrift.NewTFramedTransportFactory(transportFactory)
 	}
 
-	_addr := *addr
-	if *client || *server {
-		if _addr == "" {
-			_addr = "localhost:9090"
-		}
-		if *client {
-			if err := runClient(transportFactory, fprotocolFactory, _addr, *secure); err != nil {
-				fmt.Println("error running client:", err)
-			}
-		} else if *server {
-			if err := runServer(transportFactory, fprotocolFactory, _addr, *secure); err != nil {
-				fmt.Println("error running server:", err)
-			}
-		}
-		return
-	}
-
-	if _addr == "" {
-		_addr = nats.DefaultURL
-	}
 	natsOptions := nats.DefaultOptions
-	natsOptions.Servers = []string{_addr}
+	natsOptions.Servers = []string{*addr}
 	natsOptions.Secure = *secure
 	conn, err := natsOptions.Connect()
 	if err != nil {
 		panic(err)
+	}
+
+	if *client || *server {
+		if *client {
+			if err := runClient(conn, transportFactory, fprotocolFactory); err != nil {
+				fmt.Println("error running client:", err)
+			}
+		} else if *server {
+			if err := runServer(conn, transportFactory, fprotocolFactory); err != nil {
+				fmt.Println("error running server:", err)
+			}
+		}
+		return
 	}
 
 	if *sub {
@@ -115,18 +108,9 @@ func handleClient(client *event.FrugalFooClient) (err error) {
 }
 
 // Client runner
-func runClient(transportFactory thrift.TTransportFactory, protocolFactory frugal.FProtocolFactory, addr string, secure bool) error {
-	var transport thrift.TTransport
-	var err error
-	if secure {
-		cfg := new(tls.Config)
-		cfg.InsecureSkipVerify = true
-		transport, err = thrift.NewTSSLSocket(addr, cfg)
-	} else {
-		transport, err = thrift.NewTSocket(addr)
-	}
+func runClient(conn *nats.Conn, transportFactory thrift.TTransportFactory, protocolFactory frugal.FProtocolFactory) error {
+	transport, err := thrift_nats.NATSTransportFactory(conn, "foo", time.Second, time.Second)
 	if err != nil {
-		fmt.Println("Error opening socket:", err)
 		return err
 	}
 	transport = transportFactory.GetTransport(transport)
@@ -153,31 +137,13 @@ func (f *FooHandler) Blah(ctx frugal.Context, num int32) (int64, error) {
 }
 
 // Server runner
-func runServer(transportFactory thrift.TTransportFactory,
-	protocolFactory frugal.FProtocolFactory, addr string, secure bool) error {
-	var transport thrift.TServerTransport
-	var err error
-	if secure {
-		cfg := new(tls.Config)
-		if cert, err := tls.LoadX509KeyPair("server.crt", "server.key"); err == nil {
-			cfg.Certificates = append(cfg.Certificates, cert)
-		} else {
-			return err
-		}
-		transport, err = thrift.NewTSSLServerSocket(addr, cfg)
-	} else {
-		transport, err = thrift.NewTServerSocket(addr)
-	}
-
-	if err != nil {
-		return err
-	}
-	fmt.Printf("%T\n", transport)
+func runServer(conn *nats.Conn, transportFactory thrift.TTransportFactory,
+	protocolFactory frugal.FProtocolFactory) error {
 	handler := &FooHandler{}
 	processor := event.NewFrugalFooProcessor(handler)
-	server := frugal.NewFSimpleServer4(processor, transport, transportFactory, protocolFactory)
-
-	fmt.Println("Starting the simple server... on ", addr)
+	server := frugal.NewNATSServer(conn, "foo", -1, time.Minute, processor,
+		transportFactory, protocolFactory)
+	fmt.Println("Starting the simple nats server... on ", "foo")
 	return server.Serve()
 }
 
