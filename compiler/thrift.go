@@ -241,8 +241,14 @@ func generateEnums(enums map[string]*parser.Enum) string {
 }
 
 func generateStructLikes(structs map[string]*parser.Struct, typ structLike) string {
+	keys := make([]string, 0, len(structs))
+	for key, _ := range structs {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
 	contents := ""
-	for _, strct := range structs {
+	for _, key := range keys {
+		strct := structs[key]
 		if strct.Comment != nil {
 			contents += generateThriftDocString(strct.Comment, "")
 		}
