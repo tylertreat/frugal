@@ -149,7 +149,7 @@ func generateMapLiteral(entries []parser.KeyValue, indent int) string {
 	for i := indent - 1; i > 0; i-- {
 		nesting += "\t"
 	}
-	str := nesting + "{\n"
+	str := "{\n"
 	for _, entry := range entries {
 		switch entry.Key.(type) {
 		case string:
@@ -178,15 +178,15 @@ func generateListLiteral(list []interface{}, indent int) string {
 	for i := indent - 1; i > 0; i-- {
 		nesting += "\t"
 	}
-	str := nesting + "[\n"
+	str := "[\n"
 	for _, val := range list {
 		switch v := val.(type) {
 		case string:
 			str += fmt.Sprintf("%s\"%s\"", indentN(indent), v)
 		case []interface{}:
-			str += generateListLiteral(v, indent+1)
+			str += indentN(indent) + generateListLiteral(v, indent+1)
 		case []parser.KeyValue:
-			str += generateMapLiteral(v, indent+1)
+			str += indentN(indent) + generateMapLiteral(v, indent+1)
 		default:
 			str += fmt.Sprintf("%s%v", indentN(indent), v)
 		}
