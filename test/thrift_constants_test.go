@@ -1,6 +1,7 @@
 package test
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/Workiva/frugal/compiler"
@@ -23,4 +24,6 @@ func TestThriftConstants(t *testing.T) {
 	if err := compiler.Compile(options); err != nil {
 		t.Fatal("Unexpected error", err)
 	}
+	outputPath := filepath.Join("idl", "constants.thrift")
+	compareFiles(t, expectedFile, outputPath)
 }

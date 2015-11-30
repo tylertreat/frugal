@@ -91,8 +91,9 @@ func generateIncludes(frugal *parser.Frugal) (string, error) {
 	return contents, nil
 }
 
-func generateConstants(constants map[string]*parser.Constant, typedefs map[string]*parser.TypeDef) string {
+func generateConstants(consts map[string]*parser.Constant, typedefs map[string]*parser.TypeDef) string {
 	contents := ""
+	constants := constMapToSortedSlice(consts)
 	complexConstants := make([]*parser.Constant, 0, len(constants))
 
 	for _, constant := range constants {
@@ -393,4 +394,27 @@ func (e enumValues) Less(i, j int) bool {
 func isThriftPrimitive(typeName string) bool {
 	_, ok := thriftTypes[typeName]
 	return ok
+}
+
+type ConstantsByName []*parser.Constant
+
+func (b ConstantsByName) Len() int {
+	return len(b)
+}
+
+func (b ConstantsByName) Swap(i, j int) {
+	b[i], b[j] = b[j], b[i]
+}
+
+func (b ConstantsByName) Less(i, j int) bool {
+	return b[i].Name < b[j].Name
+}
+
+func constMapToSortedSlice(consts map[string]*parser.Constant) ConstantsByName {
+	sorted := make(ConstantsByName, 0, len(consts))
+	for _, c := range consts {
+		sorted = append(sorted, c)
+	}
+	sort.Sort(sorted)
+	return sorted
 }
