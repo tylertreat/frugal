@@ -15,7 +15,7 @@ syn keyword frugalTodo TODO todo FIXME fixme XXX xxx NOTE contained
 " Comments
 syn match frugalComment "#.*" contains=frugalTodo
 syn region frugalComment start="/\*" end="\*/" contains=frugalTodo
-syn match frugalComment "//.\{-}\(?>\|$\)\@="
+syn match frugalComment "//.\{-}\(?>\|$\)\@=" contains=frugalTodo
 
 " String
 syn region frugalStringDouble matchgroup=None start=+"+  end=+"+
