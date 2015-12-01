@@ -360,7 +360,7 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 		}
 		contents += fmt.Sprintf("\t%s(frugal.Context%s) %s\n",
 			strings.Title(method.Name), g.generateInterfaceArgs(method.Arguments),
-			g.generateReurnArgs(method))
+			g.generateReturnArgs(method))
 	}
 	contents += "}\n\n"
 	return contents
@@ -378,13 +378,13 @@ func (g *Generator) generateAsyncInterface(async *parser.Async) string {
 		}
 		contents += fmt.Sprintf("\t%s(frugal.Context%s) %s\n",
 			strings.Title(method.Name), g.generateInterfaceArgs(method.Arguments),
-			g.generateReurnArgs(method))
+			g.generateReturnArgs(method))
 	}
 	contents += "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateReurnArgs(method *parser.Method) string {
+func (g *Generator) generateReturnArgs(method *parser.Method) string {
 	if method.ReturnType == nil {
 		return "(err error)"
 	}
@@ -443,7 +443,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 	contents += fmt.Sprintf("func (f *Frugal%sClient) %s(ctx frugal.Context%s) %s {\n",
 		servTitle, nameTitle, g.generateInputArgs(method.Arguments),
-		g.generateReurnArgs(method))
+		g.generateReturnArgs(method))
 	contents += fmt.Sprintf("\tif err = f.send%s(ctx, %s); err != nil {\n",
 		nameTitle, g.generateClientOutputArgs(method.Arguments))
 	contents += "\t\treturn\n"
@@ -480,7 +480,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf("func (f *Frugal%sClient) recv%s(ctx frugal.Context) %s {\n",
-		servTitle, nameTitle, g.generateReurnArgs(method))
+		servTitle, nameTitle, g.generateReturnArgs(method))
 	contents += "\tiprot := f.InputProtocol\n"
 	contents += "\tif iprot == nil {\n"
 	contents += "\t\tiprot = f.ProtocolFactory.GetProtocol(f.Transport)\n"
@@ -757,7 +757,11 @@ func (g *Generator) GenerateAsync(file *os.File, f *parser.Frugal, async *parser
 }
 
 func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
-	switch t.Name {
+	typeName := t.Name
+	if typedef, ok := g.Frugal.Thrift.Typedefs[typeName]; ok {
+		typeName = typedef.Type.Name
+	}
+	switch typeName {
 	case "bool":
 		return "bool"
 	case "byte":
@@ -783,8 +787,21 @@ func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
 			g.getGoTypeFromThriftType(t.ValueType))
 	default:
 		// This is a custom type, return a pointer to it
-		return "*" + t.Name
+		return "*" + g.qualifiedTypeName(t)
 	}
+}
+
+func (g *Generator) qualifiedTypeName(t *parser.Type) string {
+	param := t.ParamName()
+	include := t.IncludeName()
+	if include != "" {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		param = fmt.Sprintf("%s.%s", namespace, param)
+	}
+	return param
 }
 
 func (g *Generator) qualifiedParamName(op *parser.Operation) string {
