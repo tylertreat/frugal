@@ -84,22 +84,24 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 }
 
 func (g *Generator) GenerateServicePackage(file *os.File, f *parser.Frugal, s *parser.Service) error {
-	// TODO
-	return nil
+	return g.generatePackage(file, f)
 }
 
 func (g *Generator) GenerateScopePackage(file *os.File, f *parser.Frugal, s *parser.Scope) error {
+	return g.generatePackage(file, f)
+}
+
+func (g *Generator) GenerateAsyncPackage(file *os.File, f *parser.Frugal, a *parser.Async) error {
+	return g.generatePackage(file, f)
+}
+
+func (g *Generator) generatePackage(file *os.File, f *parser.Frugal) error {
 	pkg, ok := f.Thrift.Namespaces[lang]
 	if !ok {
 		return nil
 	}
 	_, err := file.WriteString(fmt.Sprintf("package %s;", pkg))
 	return err
-}
-
-func (g *Generator) GenerateAsyncPackage(f *os.File, p *parser.Frugal, a *parser.Async) error {
-	// TODO
-	return nil
 }
 
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
@@ -122,9 +124,10 @@ func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *par
 	return err
 }
 
-func (g *Generator) GenerateAsyncImports(*os.File, *parser.Frugal, *parser.Async) error {
-	// TODO
-	return nil
+func (g *Generator) GenerateAsyncImports(file *os.File, f *parser.Frugal, a *parser.Async) error {
+	imports := "import com.workiva.frugal.Context;\n"
+	_, err := file.WriteString(imports)
+	return err
 }
 
 func (g *Generator) GenerateConstants(file *os.File, name string) error {
@@ -297,9 +300,90 @@ func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.S
 	return nil
 }
 
-func (g *Generator) GenerateAsync(*os.File, *parser.Frugal, *parser.Async) error {
-	// TODO
-	return nil
+func (g *Generator) GenerateAsync(file *os.File, f *parser.Frugal, async *parser.Async) error {
+	// TODO: Implement async client/processor. For now, generating an interface
+	// which can be used for stubbing.
+	contents := g.generateAsyncInterface(async)
+
+	_, err := file.WriteString(contents)
+	return err
+}
+
+func (g *Generator) generateAsyncInterface(async *parser.Async) string {
+	contents := ""
+	if async.Comment != nil {
+		contents += g.GenerateBlockComment(async.Comment, "")
+	}
+	contents += fmt.Sprintf("public interface %sAsync {\n", strings.Title(async.Name))
+	for _, method := range async.Methods {
+		if method.Comment != nil {
+			contents += g.GenerateBlockComment(method.Comment, "\t")
+		}
+		contents += fmt.Sprintf("\t%s %s(Context ctx%s);\n", g.getJavaTypeFromThriftType(method.ReturnType),
+			method.Name, g.generateInterfaceArgs(method.Arguments))
+	}
+	contents += "}\n\n"
+	return contents
+}
+
+func (g *Generator) generateInterfaceArgs(args []*parser.Field) string {
+	argStr := ""
+	prefix := ", "
+	for _, arg := range args {
+		argStr += prefix + g.getJavaTypeFromThriftType(arg.Type) + " " + arg.Name
+	}
+	return argStr
+}
+
+func (g *Generator) getJavaTypeFromThriftType(t *parser.Type) string {
+	if t == nil {
+		return "void"
+	}
+	typeName := t.Name
+	if typedef, ok := g.Frugal.Thrift.Typedefs[typeName]; ok {
+		typeName = typedef.Type.Name
+	}
+	switch typeName {
+	case "bool":
+		return "boolean"
+	case "byte":
+		return "byte"
+	case "i16":
+		return "short"
+	case "i32":
+		return "int"
+	case "i64":
+		return "long"
+	case "double":
+		return "double"
+	case "string":
+		return "String"
+	case "binary":
+		return "byte[]"
+	case "list":
+		return fmt.Sprintf("List<%s>", g.getJavaTypeFromThriftType(t.ValueType))
+	case "set":
+		return fmt.Sprintf("Set<%s>", g.getJavaTypeFromThriftType(t.ValueType))
+	case "map":
+		return fmt.Sprintf("Map<%s, %s>", g.getJavaTypeFromThriftType(t.KeyType),
+			g.getJavaTypeFromThriftType(t.ValueType))
+	default:
+		// This is a custom type, return a pointer to it
+		return g.qualifiedTypeName(t)
+	}
+}
+
+func (g *Generator) qualifiedTypeName(t *parser.Type) string {
+	param := t.ParamName()
+	include := t.IncludeName()
+	if include != "" {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		param = fmt.Sprintf("%s.%s", namespace, param)
+	}
+	return param
 }
 
 func (g *Generator) qualifiedParamName(op *parser.Operation) string {
