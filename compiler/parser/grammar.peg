@@ -84,15 +84,16 @@
 
 Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
     thrift := &Thrift{
-        Includes:   []*Include{},
-        Namespaces: make(map[string]string),
-        Typedefs:   make(map[string]*TypeDef),
-        Constants:  make(map[string]*Constant),
-        Enums:      make(map[string]*Enum),
-        Structs:    make(map[string]*Struct),
-        Exceptions: make(map[string]*Struct),
-        Unions:     make(map[string]*Struct),
-        Services:   make(map[string]*Service),
+        Includes:     []*Include{},
+        Namespaces:   make(map[string]string),
+        Typedefs:     []*TypeDef{},
+        Constants:    make(map[string]*Constant),
+        Enums:        make(map[string]*Enum),
+        Structs:      make(map[string]*Struct),
+        Exceptions:   make(map[string]*Struct),
+        Unions:       make(map[string]*Struct),
+        Services:     make(map[string]*Service),
+        typedefIndex: make(map[string]*TypeDef),
     }
     frugal := &Frugal{
         Thrift:         thrift,
@@ -114,7 +115,8 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
             thrift.Enums[v.Name] = v
         case *TypeDef:
             v.Comment = wrapper.comment
-            thrift.Typedefs[v.Name] = v
+            thrift.Typedefs = append(thrift.Typedefs, v)
+            thrift.typedefIndex[v.Name] = v
         case *Struct:
             v.Comment = wrapper.comment
             thrift.Structs[v.Name] = v

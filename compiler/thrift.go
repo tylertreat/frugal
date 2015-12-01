@@ -37,7 +37,7 @@ func generateThriftIDL(dir string, frugal *parser.Frugal) (string, error) {
 		return "", err
 	}
 	contents += includes
-	contents += generateConstants(thrift.Constants, thrift.Typedefs)
+	contents += generateConstants(thrift)
 	contents += generateTypedefs(thrift.Typedefs)
 	contents += generateEnums(thrift.Enums)
 	contents += generateStructLikes(thrift.Structs, structLikeStruct)
@@ -81,17 +81,14 @@ func generateIncludes(frugal *parser.Frugal) (string, error) {
 	return contents, nil
 }
 
-func generateConstants(constants map[string]*parser.Constant, typedefs map[string]*parser.TypeDef) string {
+func generateConstants(thrift *parser.Thrift) string {
 	contents := ""
-	for _, constant := range constants {
+	for _, constant := range thrift.Constants {
 		if constant.Comment != nil {
 			contents += generateThriftDocString(constant.Comment, "")
 		}
 		value := constant.Value
-		typeName := constant.Type.Name
-		if typedef, ok := typedefs[typeName]; ok {
-			typeName = typedef.Type.Name
-		}
+		typeName := thrift.UnderlyingType(constant.Type.Name)
 		if typeName == "string" {
 			value = fmt.Sprintf(`"%s"`, value)
 		}
@@ -101,13 +98,13 @@ func generateConstants(constants map[string]*parser.Constant, typedefs map[strin
 	return contents
 }
 
-func generateTypedefs(typedefs map[string]*parser.TypeDef) string {
+func generateTypedefs(typedefs []*parser.TypeDef) string {
 	contents := ""
-	for name, typedef := range typedefs {
+	for _, typedef := range typedefs {
 		if typedef.Comment != nil {
 			contents += generateThriftDocString(typedef.Comment, "")
 		}
-		contents += fmt.Sprintf("typedef %s %s\n", typedef.Type, name)
+		contents += fmt.Sprintf("typedef %s %s\n", typedef.Type, typedef.Name)
 	}
 	contents += "\n"
 	return contents

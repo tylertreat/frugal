@@ -71,7 +71,7 @@ type Service struct {
 
 type Thrift struct {
 	Includes   []*Include
-	Typedefs   map[string]*TypeDef
+	Typedefs   []*TypeDef
 	Namespaces map[string]string
 	Constants  map[string]*Constant
 	Enums      map[string]*Enum
@@ -79,6 +79,15 @@ type Thrift struct {
 	Exceptions map[string]*Struct
 	Unions     map[string]*Struct
 	Services   map[string]*Service
+
+	typedefIndex map[string]*TypeDef
+}
+
+func (t *Thrift) UnderlyingType(typeName string) string {
+	if typedef, ok := t.typedefIndex[typeName]; ok {
+		typeName = typedef.Type.Name
+	}
+	return typeName
 }
 
 type Identifier string
