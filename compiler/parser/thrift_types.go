@@ -1,11 +1,43 @@
 package parser
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Type struct {
 	Name      string
 	KeyType   *Type // If map
 	ValueType *Type // If map, list, or set
+}
+
+// IncludeName returns the base include name of the type, if any.
+func (t *Type) IncludeName() string {
+	if strings.Contains(t.Name, ".") {
+		return t.Name[0:strings.Index(t.Name, ".")]
+	}
+	return ""
+}
+
+// ParamName returns the base type name with any include prefix removed.
+func (t *Type) ParamName() string {
+	name := t.Name
+	if strings.Contains(name, ".") {
+		name = name[strings.Index(name, ".")+1:]
+	}
+	return name
+}
+
+func (t *Type) String() string {
+	switch t.Name {
+	case "map":
+		return fmt.Sprintf("map<%s,%s>", t.KeyType.String(), t.ValueType.String())
+	case "list":
+		return fmt.Sprintf("list<%s>", t.ValueType.String())
+	case "set":
+		return fmt.Sprintf("set<%s>", t.ValueType.String())
+	}
+	return t.Name
 }
 
 type TypeDef struct {
@@ -80,16 +112,4 @@ type Identifier string
 
 type KeyValue struct {
 	Key, Value interface{}
-}
-
-func (t *Type) String() string {
-	switch t.Name {
-	case "map":
-		return fmt.Sprintf("map<%s,%s>", t.KeyType.String(), t.ValueType.String())
-	case "list":
-		return fmt.Sprintf("list<%s>", t.ValueType.String())
-	case "set":
-		return fmt.Sprintf("set<%s>", t.ValueType.String())
-	}
-	return t.Name
 }
