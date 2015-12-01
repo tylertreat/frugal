@@ -30,11 +30,15 @@ type Generator struct {
 	time time.Time
 }
 
-func NewGenerator(options map[string]string) generator.MultipleFileGenerator {
+func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	return &Generator{
 		&generator.BaseGenerator{Options: options},
 		globals.Now,
 	}
+}
+
+func (g *Generator) GenerateThrift() bool {
+	return false
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
@@ -54,13 +58,14 @@ func (g *Generator) GenerateDependencies(f *parser.Frugal, dir string) error {
 }
 
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
-	if fileType == generator.CombinedFile {
+	switch fileType {
+	case generator.PublishFile:
+		return g.CreateFile(strings.Title(name)+"Publisher", outputDir, lang, false)
+	case generator.SubscribeFile:
+		return g.CreateFile(strings.Title(name)+"Subscriber", outputDir, lang, false)
+	default:
 		return nil, fmt.Errorf("frugal: Bad file type for Java generator: %s", fileType)
 	}
-	if fileType == generator.PublishFile {
-		return g.CreateFile(strings.Title(name)+"Publisher", outputDir, lang, false)
-	}
-	return g.CreateFile(strings.Title(name)+"Subscriber", outputDir, lang, false)
 }
 
 func (g *Generator) GenerateDocStringComment(file *os.File) error {
@@ -76,7 +81,11 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 	return err
 }
 
-func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *parser.Scope) error {
+func (g *Generator) GenerateServicePackage(file *os.File, f *parser.Frugal, s *parser.Service) error {
+	return nil
+}
+
+func (g *Generator) GenerateScopePackage(file *os.File, f *parser.Frugal, s *parser.Scope) error {
 	pkg, ok := f.Thrift.Namespaces[lang]
 	if !ok {
 		return nil
@@ -85,7 +94,11 @@ func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *pars
 	return err
 }
 
-func (g *Generator) GenerateImports(file *os.File, scope *parser.Scope) error {
+func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
+	return nil
+}
+
+func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *parser.Scope) error {
 	imports := "import com.workiva.frugal.Provider;\n"
 	imports += "import com.workiva.frugal.Transport;\n"
 	imports += "import com.workiva.frugal.TransportFactory;\n"
@@ -263,6 +276,10 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 	_, err := file.WriteString(subscriber)
 	return err
+}
+
+func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.Service) error {
+	return nil
 }
 
 func (g *Generator) qualifiedParamName(op *parser.Operation) string {

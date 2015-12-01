@@ -20,6 +20,6 @@ func TestValidDart(t *testing.T) {
 
 	fooPath := filepath.Join(outputDir, "valid", "lib", "src", "frug_foo.dart")
 	compareFiles(t, "expected/dart/frug_foo.dart", fooPath)
-	barPath := filepath.Join(outputDir, "valid", "lib", "src", "frug_bar.dart")
-	compareFiles(t, "expected/dart/frug_bar.dart", barPath)
+	blahPath := filepath.Join(outputDir, "valid", "lib", "src", "frug_blah.dart")
+	compareFiles(t, "expected/dart/frug_blah.dart", blahPath)
 }

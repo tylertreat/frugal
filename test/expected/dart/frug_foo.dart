@@ -8,8 +8,8 @@ import 'dart:async';
 import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
 
-import 'stuff.dart' as t_stuff;
 import 'thing.dart' as t_thing;
+import 'stuff.dart' as t_stuff;
 
 
 const String delimiter = '.';
@@ -27,8 +27,9 @@ class FooPublisher {
     seqId = 0;
   }
 
-  Future publishBar(String baz, t_stuff.Stuff req) {
-    var op = "Bar";
+  /// This is an operation docstring.
+  Future publishFoo(String baz, t_thing.Thing req) {
+    var op = "Foo";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
     transport.preparePublish(topic);
@@ -42,9 +43,8 @@ class FooPublisher {
   }
 
 
-  /// This is an operation docstring.
-  Future publishFoo(String baz, t_thing.Thing req) {
-    var op = "Foo";
+  Future publishBar(String baz, t_stuff.Stuff req) {
+    var op = "Bar";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
     transport.preparePublish(topic);
@@ -64,37 +64,6 @@ class FooSubscriber {
   final frugal.Provider provider;
 
   FooSubscriber(this.provider) {}
-
-  Future<frugal.Subscription> subscribeBar(String baz, dynamic onStuff(t_stuff.Stuff req)) async {
-    var op = "Bar";
-    var prefix = "foo.bar.${baz}.qux.";
-    var topic = "${prefix}Foo${delimiter}${op}";
-    var tp = provider.newTransportProtocol();
-    await tp.transport.subscribe(topic);
-    tp.transport.signalRead.listen((_) {
-      onStuff(_recvBar(op, tp.protocol));
-    });
-    var sub = new frugal.Subscription(topic, tp.transport);
-    tp.transport.error.listen((Error e) {;
-      sub.signal(e);
-    });
-    return sub;
-  }
-
-  t_stuff.Stuff _recvBar(String op, thrift.TProtocol iprot) {
-    var tMsg = iprot.readMessageBegin();
-    if (tMsg.name != op) {
-      thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
-      iprot.readMessageEnd();
-      throw new thrift.TApplicationError(
-      thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
-    }
-    var req = new t_stuff.Stuff();
-    req.read(iprot);
-    iprot.readMessageEnd();
-    return req;
-  }
-
 
   /// This is an operation docstring.
   Future<frugal.Subscription> subscribeFoo(String baz, dynamic onThing(t_thing.Thing req)) async {
@@ -122,6 +91,37 @@ class FooSubscriber {
       thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
     }
     var req = new t_thing.Thing();
+    req.read(iprot);
+    iprot.readMessageEnd();
+    return req;
+  }
+
+
+  Future<frugal.Subscription> subscribeBar(String baz, dynamic onStuff(t_stuff.Stuff req)) async {
+    var op = "Bar";
+    var prefix = "foo.bar.${baz}.qux.";
+    var topic = "${prefix}Foo${delimiter}${op}";
+    var tp = provider.newTransportProtocol();
+    await tp.transport.subscribe(topic);
+    tp.transport.signalRead.listen((_) {
+      onStuff(_recvBar(op, tp.protocol));
+    });
+    var sub = new frugal.Subscription(topic, tp.transport);
+    tp.transport.error.listen((Error e) {;
+      sub.signal(e);
+    });
+    return sub;
+  }
+
+  t_stuff.Stuff _recvBar(String op, thrift.TProtocol iprot) {
+    var tMsg = iprot.readMessageBegin();
+    if (tMsg.name != op) {
+      thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
+      iprot.readMessageEnd();
+      throw new thrift.TApplicationError(
+      thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+    }
+    var req = new t_stuff.Stuff();
     req.read(iprot);
     iprot.readMessageEnd();
     return req;
