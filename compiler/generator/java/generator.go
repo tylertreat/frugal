@@ -63,6 +63,8 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 		return g.CreateFile(strings.Title(name)+"Publisher", outputDir, lang, false)
 	case generator.SubscribeFile:
 		return g.CreateFile(strings.Title(name)+"Subscriber", outputDir, lang, false)
+	case generator.CombinedAsyncFile:
+		return g.CreateFile(strings.Title(name)+"Async", outputDir, lang, false)
 	default:
 		return nil, fmt.Errorf("frugal: Bad file type for Java generator: %s", fileType)
 	}
@@ -82,6 +84,7 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 }
 
 func (g *Generator) GenerateServicePackage(file *os.File, f *parser.Frugal, s *parser.Service) error {
+	// TODO
 	return nil
 }
 
@@ -94,7 +97,13 @@ func (g *Generator) GenerateScopePackage(file *os.File, f *parser.Frugal, s *par
 	return err
 }
 
+func (g *Generator) GenerateAsyncPackage(f *os.File, p *parser.Frugal, a *parser.Async) error {
+	// TODO
+	return nil
+}
+
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
+	// TODO
 	return nil
 }
 
@@ -111,6 +120,11 @@ func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *par
 	imports += "import javax.annotation.Generated;"
 	_, err := file.WriteString(imports)
 	return err
+}
+
+func (g *Generator) GenerateAsyncImports(*os.File, *parser.Frugal, *parser.Async) error {
+	// TODO
+	return nil
 }
 
 func (g *Generator) GenerateConstants(file *os.File, name string) error {
@@ -279,6 +293,12 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 }
 
 func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.Service) error {
+	// TODO
+	return nil
+}
+
+func (g *Generator) GenerateAsync(*os.File, *parser.Frugal, *parser.Async) error {
+	// TODO
 	return nil
 }
 

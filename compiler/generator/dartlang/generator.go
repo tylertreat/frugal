@@ -153,12 +153,17 @@ func (g *Generator) exportClasses(f *parser.Frugal, dir string) error {
 }
 
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
-	if fileType != generator.CombinedScopeFile {
+	switch fileType {
+	case generator.CombinedScopeFile:
+		outputDir = filepath.Join(outputDir, "lib")
+		outputDir = filepath.Join(outputDir, "src")
+		return g.CreateFile(strings.ToLower(name), outputDir, lang, true)
+	case generator.CombinedAsyncFile:
+		// TODO
+		return nil, nil
+	default:
 		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
 	}
-	outputDir = filepath.Join(outputDir, "lib")
-	outputDir = filepath.Join(outputDir, "src")
-	return g.CreateFile(strings.ToLower(name), outputDir, lang, true)
 }
 
 func (g *Generator) GenerateDocStringComment(file *os.File) error {
@@ -172,6 +177,7 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 }
 
 func (g *Generator) GenerateServicePackage(file *os.File, f *parser.Frugal, s *parser.Service) error {
+	// TODO
 	return nil
 }
 
@@ -188,7 +194,18 @@ func (g *Generator) GenerateScopePackage(file *os.File, f *parser.Frugal, s *par
 	return err
 }
 
+func (g *Generator) GenerateAsyncPackage(f *os.File, p *parser.Frugal, a *parser.Async) error {
+	// TODO
+	return nil
+}
+
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
+	// TODO
+	return nil
+}
+
+func (g *Generator) GenerateAsyncImports(*os.File, *parser.Frugal, *parser.Async) error {
+	// TODO
 	return nil
 }
 
@@ -364,6 +381,12 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 }
 
 func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.Service) error {
+	// TODO
+	return nil
+}
+
+func (g *Generator) GenerateAsync(*os.File, *parser.Frugal, *parser.Async) error {
+	// TODO
 	return nil
 }
 

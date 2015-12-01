@@ -75,7 +75,7 @@ type Async struct {
 	Comment []string
 	Name    string
 	Extends string
-	Methods map[string]*Method
+	Methods []*Method
 	Frugal  *Frugal // Pointer back to containing Frugal
 }
 

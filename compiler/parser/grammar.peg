@@ -468,14 +468,14 @@ Async ← "async" _ name:Identifier _ extends:("extends" __ Identifier __)? __ '
     ms := methods.([]interface{})
     async := &Async{
         Name:    string(name.(Identifier)),
-        Methods: make(map[string]*Method, len(ms)),
+        Methods: make([]*Method, len(ms)),
     }
     if extends != nil {
         async.Extends = string(extends.([]interface{})[2].(Identifier))
     }
-    for _, m := range ms {
+    for i, m := range ms {
         mt :=  m.([]interface{})[0].(*Method)
-        async.Methods[mt.Name] = mt
+        async.Methods[i] = mt
     }
     return async, nil
 }
