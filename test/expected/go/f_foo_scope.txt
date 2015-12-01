@@ -15,16 +15,16 @@ const delimiter = "."
 
 // And this is a scope docstring.
 type FooPublisher struct {
-	Transport frugal.Transport
-	Protocol  thrift.TProtocol
+	FTransport frugal.FTransport
+	TProtocol  thrift.TProtocol
 	SeqId     int32
 }
 
 func NewFooPublisher(provider *frugal.Provider) *FooPublisher {
 	transport, protocol := provider.New()
 	return &FooPublisher{
-		Transport: transport,
-		Protocol:  protocol,
+		FTransport: transport,
+		TProtocol:  protocol,
 		SeqId:     0,
 	}
 }
@@ -34,8 +34,8 @@ func (l *FooPublisher) PublishFoo(baz string, req *Thing) error {
 	op := "Foo"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
-	l.Transport.PreparePublish(topic)
-	oprot := l.Protocol
+	l.FTransport.PreparePublish(topic)
+	oprot := l.TProtocol
 	l.SeqId++
 	if err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {
 		return err
@@ -53,8 +53,8 @@ func (l *FooPublisher) PublishBar(baz string, req *Stuff) error {
 	op := "Bar"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
-	l.Transport.PreparePublish(topic)
-	oprot := l.Protocol
+	l.FTransport.PreparePublish(topic)
+	oprot := l.TProtocol
 	l.SeqId++
 	if err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {
 		return err
