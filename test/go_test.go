@@ -10,7 +10,7 @@ import (
 func TestValidGo(t *testing.T) {
 	options := compiler.Options{
 		File:  validFile,
-		Gen:   "go",
+		Gen:   "go:package_prefix=github.com/Workiva/frugal/test/out/",
 		Out:   outputDir,
 		Delim: delim,
 	}
