@@ -2,6 +2,11 @@ package parser
 
 import "fmt"
 
+type Include struct {
+	Name  string
+	Value string
+}
+
 type Type struct {
 	Name      string
 	KeyType   *Type // If map
@@ -65,7 +70,7 @@ type Service struct {
 }
 
 type Thrift struct {
-	Includes   map[string]string // name -> unique identifier (absolute path generally)
+	Includes   []*Include
 	Typedefs   map[string]*TypeDef
 	Namespaces map[string]string
 	Constants  map[string]*Constant

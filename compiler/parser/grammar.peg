@@ -84,7 +84,7 @@
 
 Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
     thrift := &Thrift{
-        Includes:   make(map[string]string),
+        Includes:   []*Include{},
         Namespaces: make(map[string]string),
         Typedefs:   make(map[string]*TypeDef),
         Constants:  make(map[string]*Constant),
@@ -134,7 +134,7 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
             if ix := strings.LastIndex(name, "."); ix > 0 {
                 name = name[:ix]
             }
-            thrift.Includes[name] = string(v)
+            thrift.Includes = append(thrift.Includes, &Include{Name: name, Value: string(v)})
         case *Scope:
             v.Comment = wrapper.comment
             v.Frugal = frugal

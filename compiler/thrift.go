@@ -60,7 +60,8 @@ func generateNamespaces(namespaces map[string]string) string {
 
 func generateIncludes(frugal *parser.Frugal) (string, error) {
 	contents := ""
-	for _, include := range frugal.Thrift.Includes {
+	for _, incl := range frugal.Thrift.Includes {
+		include := incl.Value
 		if strings.HasSuffix(strings.ToLower(include), ".frugal") {
 			// Recurse on frugal includes
 			parsed, err := compile(filepath.Join(frugal.Dir, include))
