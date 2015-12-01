@@ -56,7 +56,7 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 	case generator.CombinedScopeFile:
 		return g.CreateFile(strings.ToLower(name)+scopeSuffix, outputDir, lang, true)
 	default:
-		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
+		return nil, fmt.Errorf("frugal: Bad file type for golang generator: %s", fileType)
 	}
 }
 

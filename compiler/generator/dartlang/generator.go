@@ -17,6 +17,8 @@ import (
 const (
 	lang               = "dart"
 	defaultOutputDir   = "gen-dart"
+	serviceSuffix      = "_service"
+	scopeSuffix        = "_scope"
 	minimumDartVersion = "1.12.0"
 	tab                = "  "
 	tabtab             = tab + tab
@@ -32,7 +34,7 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 }
 
 func (g *Generator) GenerateThrift() bool {
-	return false
+	return true
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
@@ -153,12 +155,16 @@ func (g *Generator) exportClasses(f *parser.Frugal, dir string) error {
 }
 
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
-	if fileType != generator.CombinedScopeFile {
-		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
-	}
 	outputDir = filepath.Join(outputDir, "lib")
 	outputDir = filepath.Join(outputDir, "src")
-	return g.CreateFile(strings.ToLower(name), outputDir, lang, true)
+	switch fileType {
+	case generator.CombinedServiceFile:
+		return g.CreateFile(strings.ToLower(name)+serviceSuffix, outputDir, lang, true)
+	case generator.CombinedScopeFile:
+		return g.CreateFile(strings.ToLower(name)+scopeSuffix, outputDir, lang, true)
+	default:
+		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
+	}
 }
 
 func (g *Generator) GenerateDocStringComment(file *os.File) error {
@@ -172,10 +178,14 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 }
 
 func (g *Generator) GenerateServicePackage(file *os.File, f *parser.Frugal, s *parser.Service) error {
-	return nil
+	return g.generatePackage(file, f, s.Name, serviceSuffix)
 }
 
 func (g *Generator) GenerateScopePackage(file *os.File, f *parser.Frugal, s *parser.Scope) error {
+	return g.generatePackage(file, f, s.Name, scopeSuffix)
+}
+
+func (g *Generator) generatePackage(file *os.File, f *parser.Frugal, name, suffix string) error {
 	pkg, ok := f.Thrift.Namespaces[lang]
 	if ok {
 		components := generator.GetPackageComponents(pkg)
@@ -183,13 +193,35 @@ func (g *Generator) GenerateScopePackage(file *os.File, f *parser.Frugal, s *par
 	} else {
 		pkg = f.Name
 	}
-	_, err := file.WriteString(fmt.Sprintf("library %s.src.%s%s;", pkg,
-		generator.FilePrefix, strings.ToLower(s.Name)))
+	_, err := file.WriteString(fmt.Sprintf("library %s.src.%s%s%s;", pkg,
+		generator.FilePrefix, strings.ToLower(name), scopeSuffix))
 	return err
 }
 
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
-	return nil
+	imports := "import 'dart:async';\n\n"
+	imports += "import 'dart:typed_data' show Uint8List;\n"
+	imports += "import 'package:thrift/thrift.dart' as thrift;\n"
+	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
+	/* TODO: Sort out includes
+	for _, include := range s.ReferencedIncludes() {
+		namespace, ok := .NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		namespace = strings.ToLower(toLibraryName(namespace))
+		imports += fmt.Sprintf("import 'package:%s/%s.dart' as t_%s;\n", namespace, namespace, namespace)
+	}
+	*/
+
+	// Import same-package references.
+	for _, param := range s.ReferencedInternals() {
+		lowerParam := strings.ToLower(param)
+		imports += fmt.Sprintf("import '%s.dart' as t_%s;\n", lowerParam, lowerParam)
+	}
+
+	_, err := file.WriteString(imports)
+	return err
 }
 
 func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *parser.Scope) error {
@@ -364,7 +396,30 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 }
 
 func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.Service) error {
-	return nil
+	contents := ""
+	contents += g.generateInterface(s)
+	contents += g.generateClient(s)
+	contents += g.generateServer(s)
+
+	_, err := file.WriteString(contents)
+	return err
+}
+
+func (g *Generator) generateInterface(service *parser.Service) string {
+	contents := fmt.Sprintf("abstract class F%s {\n", strings.Title(service.Name))
+	for _, method := range service.Methods {
+		if method.Comment != nil {
+			contents += g.GenerateInlineComment(method.Comment, "\t")
+		}
+		contents += fmt.Sprintf("\tFuture %s(frugal.Context%s) %s\n",
+			strings.Title(method.Name))
+		/*
+			g.generateInterfaceArgs(method.Arguments),
+			g.generateReurnArgs(method))
+		*/
+	}
+	contents += "}\n\n"
+	return contents
 }
 
 func (g *Generator) qualifiedParamName(op *parser.Operation) string {
@@ -381,6 +436,14 @@ func (g *Generator) qualifiedParamName(op *parser.Operation) string {
 		param = fmt.Sprintf("t_%s.%s", strings.ToLower(param), param)
 	}
 	return param
+}
+
+func (g *Generator) generateClient(service *parser.Service) string {
+	return ""
+}
+
+func (g *Generator) generateServer(service *parser.Service) string {
+	return ""
 }
 
 func toLibraryName(name string) string {
