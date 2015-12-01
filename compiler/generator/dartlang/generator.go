@@ -27,8 +27,12 @@ type Generator struct {
 	*generator.BaseGenerator
 }
 
-func NewGenerator(options map[string]string) generator.MultipleFileGenerator {
+func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	return &Generator{&generator.BaseGenerator{Options: options}}
+}
+
+func (g *Generator) GenerateThrift() bool {
+	return false
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
@@ -149,7 +153,7 @@ func (g *Generator) exportClasses(f *parser.Frugal, dir string) error {
 }
 
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
-	if fileType != generator.CombinedFile {
+	if fileType != generator.CombinedScopeFile {
 		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
 	}
 	outputDir = filepath.Join(outputDir, "lib")
@@ -167,7 +171,11 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 	return err
 }
 
-func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *parser.Scope) error {
+func (g *Generator) GenerateServicePackage(file *os.File, f *parser.Frugal, s *parser.Service) error {
+	return nil
+}
+
+func (g *Generator) GenerateScopePackage(file *os.File, f *parser.Frugal, s *parser.Scope) error {
 	pkg, ok := f.Thrift.Namespaces[lang]
 	if ok {
 		components := generator.GetPackageComponents(pkg)
@@ -176,16 +184,20 @@ func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *pars
 		pkg = f.Name
 	}
 	_, err := file.WriteString(fmt.Sprintf("library %s.src.%s%s;", pkg,
-		generator.FilePrefix, strings.ToLower(scope.Name)))
+		generator.FilePrefix, strings.ToLower(s.Name)))
 	return err
 }
 
-func (g *Generator) GenerateImports(file *os.File, scope *parser.Scope) error {
+func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
+	return nil
+}
+
+func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *parser.Scope) error {
 	imports := "import 'dart:async';\n\n"
 	imports += "import 'package:thrift/thrift.dart' as thrift;\n"
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
-	for _, include := range scope.ReferencedIncludes() {
-		namespace, ok := scope.Frugal.NamespaceForInclude(include, lang)
+	for _, include := range s.ReferencedIncludes() {
+		namespace, ok := s.Frugal.NamespaceForInclude(include, lang)
 		if !ok {
 			namespace = include
 		}
@@ -195,14 +207,19 @@ func (g *Generator) GenerateImports(file *os.File, scope *parser.Scope) error {
 
 	// Import same-package references.
 	params := make(map[string]bool)
-	for _, op := range scope.Operations {
+	paramSlice := []string{}
+	for _, op := range s.Operations {
 		if !strings.Contains(op.Param, ".") {
 			params[op.Param] = true
+			paramSlice = append(paramSlice, op.Param)
 		}
 	}
-	for param, _ := range params {
-		lowerParam := strings.ToLower(param)
-		imports += fmt.Sprintf("import '%s.dart' as t_%s;\n", lowerParam, lowerParam)
+	for _, param := range paramSlice {
+		if params[param] {
+			lowerParam := strings.ToLower(param)
+			imports += fmt.Sprintf("import '%s.dart' as t_%s;\n", lowerParam, lowerParam)
+			params[param] = false
+		}
 	}
 
 	_, err := file.WriteString(imports)
@@ -344,6 +361,10 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 	_, err := file.WriteString(subscribers)
 	return err
+}
+
+func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.Service) error {
+	return nil
 }
 
 func (g *Generator) qualifiedParamName(op *parser.Operation) string {

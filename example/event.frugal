@@ -20,6 +20,17 @@ struct Event {
 }
 
 /**@
+ * This is a thrift service. Frugal will generate bindings that include 
+ * a frugal Context for each service call.
+ */
+service Foo {
+    /**@ Ping the server. */
+    void ping(),
+    /**@ Blah the server. */
+    i64 blah(1:i32 num),
+}
+
+/**@
  * This docstring gets added to the generated code because it has
  * the @ sign.
  */

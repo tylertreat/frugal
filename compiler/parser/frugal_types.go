@@ -113,9 +113,6 @@ func (f *Frugal) assignFrugal() {
 
 func (f *Frugal) sort() {
 	sort.Sort(ScopesByName(f.Scopes))
-	for _, scope := range f.Scopes {
-		sort.Sort(OperationsByName(scope.Operations))
-	}
 }
 
 type ScopesByName []*Scope
@@ -129,19 +126,5 @@ func (b ScopesByName) Swap(i, j int) {
 }
 
 func (b ScopesByName) Less(i, j int) bool {
-	return b[i].Name < b[j].Name
-}
-
-type OperationsByName []*Operation
-
-func (b OperationsByName) Len() int {
-	return len(b)
-}
-
-func (b OperationsByName) Swap(i, j int) {
-	b[i], b[j] = b[j], b[i]
-}
-
-func (b OperationsByName) Less(i, j int) bool {
 	return b[i].Name < b[j].Name
 }

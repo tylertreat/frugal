@@ -61,7 +61,7 @@ type Service struct {
 	Comment []string
 	Name    string
 	Extends string
-	Methods map[string]*Method
+	Methods []*Method
 }
 
 type Thrift struct {

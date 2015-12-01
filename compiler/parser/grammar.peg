@@ -278,14 +278,14 @@ Service ← "service" _ name:Identifier _ extends:("extends" __ Identifier __)? 
     ms := methods.([]interface{})
     svc := &Service{
         Name: string(name.(Identifier)),
-        Methods: make(map[string]*Method, len(ms)),
+        Methods: make([]*Method, len(ms)),
     }
     if extends != nil {
         svc.Extends = string(extends.([]interface{})[2].(Identifier))
     }
-    for _, m := range ms {
+    for i, m := range ms {
         mt :=  m.([]interface{})[0].(*Method)
-        svc.Methods[mt.Name] = mt
+        svc.Methods[i] = mt
     }
     return svc, nil
 }
