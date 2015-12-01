@@ -1,12 +1,12 @@
 part of frugal;
 
 /// Responsible for creating new Frugal Transports.
-abstract class TransportFactory {
-  Transport getTransport();
+abstract class FTransportFactory {
+  FTransport getTransport();
 }
 
 /// Wraps a Thrift TTransport which supports pub/sub.
-abstract class Transport {
+abstract class FTransport {
   /// Stream that signals to transport listener that data is available on
   /// the thrift transport.
   Stream get signalRead;

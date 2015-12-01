@@ -1,22 +1,22 @@
 part of frugal;
 
-class NatsTransportFactory implements TransportFactory {
+class NatsTransportFactory implements FTransportFactory {
   Nats client;
 
   NatsTransportFactory(this.client);
 
-  Transport getTransport() => new NatsTransport(this.client);
+  FTransport getTransport() => new FNatsTransport(this.client);
 }
 
 
-class NatsTransport implements Transport {
+class FNatsTransport implements FTransport {
   TTransport tTransport;
   NatsThriftTransport nTransport;
 
   Stream get signalRead => nTransport.signalRead;
   Stream get error => nTransport.error;
 
-  NatsTransport(Nats client) {
+  FNatsTransport(Nats client) {
     var tr = new NatsThriftTransport(client);
     tTransport = tr;
     nTransport = tr;

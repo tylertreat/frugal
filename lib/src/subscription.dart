@@ -2,7 +2,7 @@ part of frugal;
 
 class Subscription {
   String subject;
-  Transport _transport;
+  FTransport _transport;
   StreamController _errorControler = new StreamController.broadcast();
   Stream<Error> get error => _errorControler.stream;
 
