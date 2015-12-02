@@ -49,10 +49,10 @@ func generateThriftIDL(dir string, frugal *parser.Frugal) (string, error) {
 	return file, err
 }
 
-func generateNamespaces(namespaces map[string]string) string {
+func generateNamespaces(namespaces []*parser.Namespace) string {
 	contents := ""
-	for lang, namespace := range namespaces {
-		contents += fmt.Sprintf("namespace %s %s\n", lang, namespace)
+	for _, namespace := range namespaces {
+		contents += fmt.Sprintf("namespace %s %s\n", namespace.Scope, namespace.Value)
 	}
 	contents += "\n"
 	return contents

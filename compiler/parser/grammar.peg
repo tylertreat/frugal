@@ -19,12 +19,6 @@
         statement interface{}
     }
 
-    type namespace struct {
-        scope     string
-        namespace string
-    }
-
-    
     type exception *Struct
 
     type union *Struct
@@ -84,16 +78,17 @@
 
 Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
     thrift := &Thrift{
-        Includes:     []*Include{},
-        Namespaces:   make(map[string]string),
-        Typedefs:     []*TypeDef{},
-        Constants:    make(map[string]*Constant),
-        Enums:        make(map[string]*Enum),
-        Structs:      make(map[string]*Struct),
-        Exceptions:   make(map[string]*Struct),
-        Unions:       make(map[string]*Struct),
-        Services:     make(map[string]*Service),
-        typedefIndex: make(map[string]*TypeDef),
+        Includes:       []*Include{},
+        Namespaces:     []*Namespace{},
+        Typedefs:       []*TypeDef{},
+        Constants:      make(map[string]*Constant),
+        Enums:          make(map[string]*Enum),
+        Structs:        make(map[string]*Struct),
+        Exceptions:     make(map[string]*Struct),
+        Unions:         make(map[string]*Struct),
+        Services:       make(map[string]*Service),
+        typedefIndex:   make(map[string]*TypeDef),
+        namespaceIndex: make(map[string]*Namespace),
     }
     frugal := &Frugal{
         Thrift:         thrift,
@@ -105,8 +100,9 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
     for _, st := range stmts {
         wrapper := st.([]interface{})[0].(*statementWrapper)
         switch v := wrapper.statement.(type) {
-        case *namespace:
-            thrift.Namespaces[v.scope] = v.namespace
+        case *Namespace:
+            thrift.Namespaces = append(thrift.Namespaces, v)
+            thrift.namespaceIndex[v.Scope] = v
         case *Constant:
             v.Comment = wrapper.comment
             thrift.Constants[v.Name] = v
@@ -172,9 +168,9 @@ Include ← "include" _ file:Literal EOS {
 }
 
 Namespace ← "namespace" _ scope:[a-z.-]+ _ ns:Identifier EOS {
-    return &namespace{
-        scope:     ifaceSliceToString(scope),
-        namespace: string(ns.(Identifier)),
+    return &Namespace{
+        Scope: ifaceSliceToString(scope),
+        Value: string(ns.(Identifier)),
     }, nil
 }
 

@@ -7,6 +7,11 @@ type Include struct {
 	Value string
 }
 
+type Namespace struct {
+	Scope string
+	Value string
+}
+
 type Type struct {
 	Name      string
 	KeyType   *Type // If map
@@ -72,7 +77,7 @@ type Service struct {
 type Thrift struct {
 	Includes   []*Include
 	Typedefs   []*TypeDef
-	Namespaces map[string]string
+	Namespaces []*Namespace
 	Constants  map[string]*Constant
 	Enums      map[string]*Enum
 	Structs    map[string]*Struct
@@ -80,7 +85,8 @@ type Thrift struct {
 	Unions     map[string]*Struct
 	Services   map[string]*Service
 
-	typedefIndex map[string]*TypeDef
+	typedefIndex   map[string]*TypeDef
+	namespaceIndex map[string]*Namespace
 }
 
 func (t *Thrift) UnderlyingType(typeName string) string {
@@ -88,6 +94,15 @@ func (t *Thrift) UnderlyingType(typeName string) string {
 		typeName = typedef.Type.Name
 	}
 	return typeName
+}
+
+func (t *Thrift) Namespace(scope string) (string, bool) {
+	namespace, ok := t.namespaceIndex[scope]
+	value := ""
+	if ok {
+		value = namespace.Value
+	}
+	return value, ok
 }
 
 type Identifier string
