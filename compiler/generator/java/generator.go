@@ -359,7 +359,7 @@ func (g *Generator) getJavaTypeFromThriftType(t *parser.Type) string {
 	case "string":
 		return "String"
 	case "binary":
-		return "byte[]"
+		return "java.nio.ByteBuffer"
 	case "list":
 		return fmt.Sprintf("List<%s>", g.getJavaTypeFromThriftType(t.ValueType))
 	case "set":

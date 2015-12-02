@@ -180,16 +180,16 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publisher += g.GenerateInlineComment(scope.Comment, "")
 	}
 	publisher += fmt.Sprintf("type %sPublisher struct {\n", strings.Title(scope.Name))
-	publisher += "\tTransport frugal.Transport\n"
-	publisher += "\tProtocol  thrift.TProtocol\n"
+	publisher += "\tFTransport frugal.FTransport\n"
+	publisher += "\tTProtocol  thrift.TProtocol\n"
 	publisher += "\tSeqId     int32\n"
 	publisher += "}\n\n"
 
 	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.Provider) *%sPublisher {\n", strings.Title(scope.Name), strings.Title(scope.Name))
 	publisher += "\ttransport, protocol := provider.New()\n"
 	publisher += fmt.Sprintf("\treturn &%sPublisher{\n", strings.Title(scope.Name))
-	publisher += "\t\tTransport: transport,\n"
-	publisher += "\t\tProtocol:  protocol,\n"
+	publisher += "\t\tFTransport: transport,\n"
+	publisher += "\t\tTProtocol:  protocol,\n"
 	publisher += "\t\tSeqId:     0,\n"
 	publisher += "\t}\n"
 	publisher += "}\n\n"
@@ -216,8 +216,8 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publisher += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		publisher += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 		publisher += "\ttopic := fmt.Sprintf(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op)\n"
-		publisher += "\tl.Transport.PreparePublish(topic)\n"
-		publisher += "\toprot := l.Protocol\n"
+		publisher += "\tl.FTransport.PreparePublish(topic)\n"
+		publisher += "\toprot := l.TProtocol\n"
 		publisher += "\tl.SeqId++\n"
 		publisher += "\tif err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {\n"
 		publisher += "\t\treturn err\n"

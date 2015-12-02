@@ -7,7 +7,7 @@ import (
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
-const FilePrefix = "frug_"
+const FilePrefix = "f_"
 
 type FileType string
 

@@ -5,8 +5,8 @@ import 'package:thrift/thrift.dart';
 import 'package:event/event.dart' as event;
 import 'package:frugal/frugal.dart' as frugal;
 import 'package:messaging_frontend/messaging_frontend.dart' show Message, MessagingFrontendClient, Nats;
-import 'package:w_service/w_service.dart';
-import 'package:w_service/w_service_client.dart' show configureWServiceForBrowser;
+import 'package:w_transport/w_transport.dart';
+import 'package:w_transport/w_transport_browser.dart' show configureWTransportForBrowser;
 
 frugal.Subscription sub;
 
@@ -23,19 +23,30 @@ class EventUI {
   event.EventsPublisher _eventsPublisher;
   event.EventsSubscriber _eventsSubscriber;
 
+  frugal.FTransport _fTransport;
+  event.FFooClient _fFooClient;
+
   void start() {
     _buildInterface();
     _initConnection();
   }
 
   void _initConnection() {
-    configureWServiceForBrowser();
-    var client = new MessagingFrontendClient("http://localhost:8100", "some-sweet-client", new HttpProvider());
+    configureWTransportForBrowser(useSockJS: true, sockJSProtocolsWhitelist: ["websocket", "xhr-streaming"]);
+    var client = new MessagingFrontendClient("http://localhost:8100", "some-sweet-client", new Client());
     var nats = client.nats();
     nats.connect().then((_) {
-      var provider = new frugal.Provider(new frugal.NatsTransportFactory(nats), null, new TJsonProtocolFactory());
+      var provider = new frugal.Provider(new frugal.NatsTransportFactory(nats), null, new TBinaryProtocolFactory());
       _eventsPublisher = new event.EventsPublisher(provider);
       _eventsSubscriber = new event.EventsSubscriber(provider);
+
+      var timeout = new Duration(seconds: 1);
+      frugal.TNatsTransportFactory.New(nats, "foo", timeout, timeout).then((TTransport T) {
+        T.open().then((_){
+          frugal.FProtocol protocol = new frugal.FBinaryProtocol(T);
+          _fFooClient = new event.FFooClient(protocol);
+        });
+      });
     });
   }
 
@@ -46,6 +57,7 @@ class EventUI {
 
     _buildPublishComponent();
     _buildSubscribeComponent();
+    _buildRequestComponent();
   }
 
   void _buildPublishComponent() {
@@ -100,7 +112,41 @@ class EventUI {
     }
   }
 
+  void _buildRequestComponent() {
+    output.append(new HeadingElement.h3()
+      ..text = "Foo Sevice");
+    ButtonElement pingButton = new ButtonElement()
+      ..text = "Ping"
+      ..onClick.listen(_onPingClick);
+    output.append(pingButton);
+    InputElement blahMsg = new InputElement()
+      ..id = "blahMsg"
+      ..type = "number";
+    output.append(blahMsg);
+    ButtonElement blahButton = new ButtonElement()
+      ..text = "Blah"
+      ..onClick.listen(_onBlahClick);
+    output.append(blahButton);
+  }
+
+  void _onPingClick(MouseEvent e) {
+    var ctx = new frugal.Context("some-sweet-correlation");
+    _fFooClient.ping(ctx);
+  }
+
+  void _onBlahClick(MouseEvent e) {
+    var ctx = new frugal.Context("some-other-correlation");
+    InputElement blahMsg = querySelector("#blahMsg");
+    var num = int.parse(blahMsg.value);
+    var e = new event.Event();
+    e.message = "(╯°□°)╯︵ ┻━┻";
+    _fFooClient.blah(ctx, num, "yey", e).then((int r) {
+      window.alert("Got this rpc response ${r.toString()}");
+    });
+  }
+
   void onEvent(event.Event e) {
     window.alert(e.toString());
   }
 }
+
