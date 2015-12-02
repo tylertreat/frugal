@@ -16,16 +16,16 @@ const delimiter = "."
 // This docstring gets added to the generated code because it has
 // the @ sign.
 type EventsPublisher struct {
-	Transport frugal.Transport
-	Protocol  thrift.TProtocol
+	FTransport frugal.FTransport
+	TProtocol  thrift.TProtocol
 	SeqId     int32
 }
 
 func NewEventsPublisher(provider *frugal.Provider) *EventsPublisher {
 	transport, protocol := provider.New()
 	return &EventsPublisher{
-		Transport: transport,
-		Protocol:  protocol,
+		FTransport: transport,
+		TProtocol:  protocol,
 		SeqId:     0,
 	}
 }
@@ -35,8 +35,8 @@ func (l *EventsPublisher) PublishEventCreated(user string, req *Event) error {
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
-	l.Transport.PreparePublish(topic)
-	oprot := l.Protocol
+	l.FTransport.PreparePublish(topic)
+	oprot := l.TProtocol
 	l.SeqId++
 	if err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {
 		return err
