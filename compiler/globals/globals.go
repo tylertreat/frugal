@@ -9,6 +9,17 @@ var (
 	Gen             string
 	Out             string
 	FileDir         string
+	DryRun          bool
 	Now             = time.Now()
 	IntermediateIDL = []string{}
 )
+
+func Reset() {
+	TopicDelimiter = "."
+	Gen = ""
+	Out = ""
+	FileDir = ""
+	DryRun = false
+	Now = time.Now()
+	IntermediateIDL = []string{}
+}

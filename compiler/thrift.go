@@ -20,6 +20,17 @@ const (
 	structLikeUnion     structLike = "union"
 )
 
+var thriftTypes = map[string]bool{
+	"bool":   true,
+	"byte":   true,
+	"i16":    true,
+	"i32":    true,
+	"i64":    true,
+	"double": true,
+	"string": true,
+	"binary": true,
+}
+
 func generateThriftIDL(dir string, frugal *parser.Frugal) (string, error) {
 	file := filepath.Join(dir, fmt.Sprintf("%s.thrift", frugal.Name))
 	f, err := os.Create(file)
@@ -83,19 +94,112 @@ func generateIncludes(frugal *parser.Frugal) (string, error) {
 
 func generateConstants(thrift *parser.Thrift) string {
 	contents := ""
+	complexConstants := make([]*parser.Constant, 0, len(thrift.Constants))
+
 	for _, constant := range thrift.Constants {
+		value := constant.Value
+		typeName := thrift.UnderlyingType(constant.Type.Name)
+		if isThriftPrimitive(typeName) {
+			if typeName == "string" {
+				value = fmt.Sprintf(`"%s"`, value)
+			}
+		} else {
+			// Generate complex constants separately after primitives.
+			complexConstants = append(complexConstants, constant)
+			continue
+		}
 		if constant.Comment != nil {
 			contents += generateThriftDocString(constant.Comment, "")
 		}
-		value := constant.Value
-		typeName := thrift.UnderlyingType(constant.Type.Name)
-		if typeName == "string" {
-			value = fmt.Sprintf(`"%s"`, value)
-		}
 		contents += fmt.Sprintf("const %s %s = %v\n", constant.Type, constant.Name, value)
 	}
+
+	for _, constant := range complexConstants {
+		contents += "\n"
+		if constant.Comment != nil {
+			contents += generateThriftDocString(constant.Comment, "")
+		}
+		contents += fmt.Sprintf("const %s %s = %s\n", constant.Type, constant.Name,
+			generateComplexConstant(constant))
+	}
+
 	contents += "\n"
 	return contents
+}
+
+func generateComplexConstant(constant *parser.Constant) string {
+	switch constant.Type.Name {
+	case "map":
+		return generateMapLiteral(constant.Value.([]parser.KeyValue), 1)
+	case "list":
+		return generateListLiteral(constant.Value.([]interface{}), 1)
+	case "set":
+		return generateListLiteral(constant.Value.([]interface{}), 1)
+	default:
+		return generateMapLiteral(constant.Value.([]parser.KeyValue), 1)
+	}
+
+	return ""
+}
+
+func generateMapLiteral(entries []parser.KeyValue, indent int) string {
+	nesting := ""
+	for i := indent - 1; i > 0; i-- {
+		nesting += "\t"
+	}
+	str := "{\n"
+	for _, entry := range entries {
+		switch entry.Key.(type) {
+		case string:
+			str += fmt.Sprintf(`%s"%s": `, indentN(indent), entry.Key)
+		default:
+			str += fmt.Sprintf(`%s%v: `, indentN(indent), entry.Key)
+		}
+		switch v := entry.Value.(type) {
+		case string:
+			str += fmt.Sprintf("\"%s\"", v)
+		case []interface{}:
+			str += generateListLiteral(v, indent+1)
+		case []parser.KeyValue:
+			str += generateMapLiteral(v, indent+1)
+		default:
+			str += fmt.Sprintf("%v", v)
+		}
+		str += ",\n"
+	}
+	str += nesting + "}"
+	return str
+}
+
+func generateListLiteral(list []interface{}, indent int) string {
+	nesting := ""
+	for i := indent - 1; i > 0; i-- {
+		nesting += "\t"
+	}
+	str := "[\n"
+	for _, val := range list {
+		switch v := val.(type) {
+		case string:
+			str += fmt.Sprintf("%s\"%s\"", indentN(indent), v)
+		case []interface{}:
+			str += indentN(indent) + generateListLiteral(v, indent+1)
+		case []parser.KeyValue:
+			str += indentN(indent) + generateMapLiteral(v, indent+1)
+		default:
+			str += fmt.Sprintf("%s%v", indentN(indent), v)
+		}
+		str += ",\n"
+	}
+	str += nesting + "]"
+	return str
+}
+
+func indentN(indent int) string {
+	str := ""
+	for i := 0; i < indent; i++ {
+		str += "\t"
+	}
+	return str
 }
 
 func generateTypedefs(typedefs []*parser.TypeDef) string {
@@ -233,11 +337,16 @@ func generateServices(services []*parser.Service) string {
 	return contents
 }
 
-func generateThrift(frugal *parser.Frugal, idlDir, out, gen string) error {
+func generateThrift(frugal *parser.Frugal, idlDir, out, gen string, dryRun bool) error {
 	// Generate intermediate Thrift IDL.
 	idlFile, err := generateThriftIDL(idlDir, frugal)
 	if err != nil {
 		return err
+	}
+	globals.IntermediateIDL = append(globals.IntermediateIDL, idlFile)
+
+	if dryRun {
+		return nil
 	}
 
 	// Generate Thrift code.
@@ -252,8 +361,6 @@ func generateThrift(frugal *parser.Frugal, idlDir, out, gen string) error {
 		fmt.Println(string(out))
 		return err
 	}
-
-	globals.IntermediateIDL = append(globals.IntermediateIDL, idlFile)
 
 	return nil
 }
@@ -279,4 +386,9 @@ func (e enumValues) Swap(i, j int) {
 
 func (e enumValues) Less(i, j int) bool {
 	return e[i].Value < e[j].Value
+}
+
+func isThriftPrimitive(typeName string) bool {
+	_, ok := thriftTypes[typeName]
+	return ok
 }
