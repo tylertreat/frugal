@@ -1,20 +1,5 @@
 part of frugal;
 
-abstract class FProtocolFactory {
-  FProtocol getProtocol(TTransport transport);
-}
-
-abstract class FProtocol extends TProtocol {
-  FProtocol(TTransport transport)
-    : super(transport);
-
-  void writeRequestHeader(Context);
-  Context readRequestHeader();
-
-  void writeResponseHeader(Context);
-  void readResponseHeader(Context);
-}
-
 class FBinaryProtocol extends TBinaryProtocol implements FProtocol {
   FBinaryProtocol(TTransport transport)
     : super(transport);

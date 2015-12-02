@@ -1,14 +1,5 @@
 part of frugal;
 
-class NatsTransportFactory implements FTransportFactory {
-  Nats client;
-
-  NatsTransportFactory(this.client);
-
-  FTransport getTransport() => new FNatsTransport(this.client);
-}
-
-
 class FNatsTransport implements FTransport {
   TTransport tTransport;
   TNatsTransport nTransport;
