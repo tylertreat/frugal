@@ -13,4 +13,5 @@ export 'src/foo.dart' show Foo;
 export 'src/foo.dart' show FooClient;
 export 'src/foo.dart' show FooProcessor;
 
-export 'src/frug_events.dart' show EventsPublisher, EventsSubscriber;
+export 'src/f_events_scope.dart' show EventsPublisher, EventsSubscriber;
+export 'src/f_foo_service.dart' show FFooClient;

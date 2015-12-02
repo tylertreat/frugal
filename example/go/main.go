@@ -25,7 +25,7 @@ func main() {
 	flag.Usage = Usage
 	var (
 		client   = flag.Bool("client", false, "Run client")
-		server   = flag.Bool("server", true, "Run server")
+		server   = flag.Bool("server", false, "Run server")
 		pub      = flag.Bool("pub", false, "Run publisher")
 		sub      = flag.Bool("sub", false, "Run subscriber")
 		protocol = flag.String("P", "binary", "Specify the protocol (binary, compact, json, simplejson)")
@@ -153,7 +153,7 @@ func runSubscriber(conn *nats.Conn, protocolFactory thrift.TProtocolFactory,
 	factory := frugal.NewFNatsTransportFactory(conn)
 	provider := frugal.NewProvider(factory, transportFactory, protocolFactory)
 	subscriber := event.NewEventsSubscriber(provider)
-	_, err := subscriber.SubscribeEventCreated("foouser", func(e *event.Event) {
+	_, err := subscriber.SubscribeEventCreated("barUser", func(e *event.Event) {
 		fmt.Printf("received %+v\n", e)
 	})
 	if err != nil {
@@ -172,7 +172,7 @@ func runPublisher(conn *nats.Conn, protocolFactory thrift.TProtocolFactory,
 	provider := frugal.NewProvider(factory, transportFactory, protocolFactory)
 	publisher := event.NewEventsPublisher(provider)
 	event := &event.Event{Message: "hello, world!"}
-	if err := publisher.PublishEventCreated("foouser", event); err != nil {
+	if err := publisher.PublishEventCreated("barUser", event); err != nil {
 		return err
 	}
 	fmt.Println("EventCreated()")
