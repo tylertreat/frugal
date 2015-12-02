@@ -81,8 +81,8 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
         Includes:       []*Include{},
         Namespaces:     []*Namespace{},
         Typedefs:       []*TypeDef{},
-        Constants:      make(map[string]*Constant),
-        Enums:          make(map[string]*Enum),
+        Constants:      []*Constant{},
+        Enums:          []*Enum{},
         Structs:        make(map[string]*Struct),
         Exceptions:     make(map[string]*Struct),
         Unions:         make(map[string]*Struct),
@@ -105,10 +105,10 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
             thrift.namespaceIndex[v.Scope] = v
         case *Constant:
             v.Comment = wrapper.comment
-            thrift.Constants[v.Name] = v
+            thrift.Constants = append(thrift.Constants, v)
         case *Enum:
             v.Comment = wrapper.comment
-            thrift.Enums[v.Name] = v
+            thrift.Enums = append(thrift.Enums, v)
         case *TypeDef:
             v.Comment = wrapper.comment
             thrift.Typedefs = append(thrift.Typedefs, v)

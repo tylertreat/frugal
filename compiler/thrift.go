@@ -110,7 +110,7 @@ func generateTypedefs(typedefs []*parser.TypeDef) string {
 	return contents
 }
 
-func generateEnums(enums map[string]*parser.Enum) string {
+func generateEnums(enums []*parser.Enum) string {
 	contents := ""
 	for _, enum := range enums {
 		if enum.Comment != nil {

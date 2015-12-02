@@ -78,8 +78,8 @@ type Thrift struct {
 	Includes   []*Include
 	Typedefs   []*TypeDef
 	Namespaces []*Namespace
-	Constants  map[string]*Constant
-	Enums      map[string]*Enum
+	Constants  []*Constant
+	Enums      []*Enum
 	Structs    map[string]*Struct
 	Exceptions map[string]*Struct
 	Unions     map[string]*Struct
