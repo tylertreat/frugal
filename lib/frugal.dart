@@ -12,5 +12,6 @@ part 'src/f_protocol.dart';
 part 'src/provider.dart';
 part 'src/subscription.dart';
 part 'src/f_transport.dart';
-part 'src/nats_thrift_transport.dart';
-part 'src/nats_transport.dart';
+part 'src/t_nats_socket.dart';
+part 'src/t_nats_transport.dart';
+part 'src/f_nats_transport.dart';

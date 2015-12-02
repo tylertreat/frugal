@@ -11,13 +11,13 @@ class NatsTransportFactory implements FTransportFactory {
 
 class FNatsTransport implements FTransport {
   TTransport tTransport;
-  NatsThriftTransport nTransport;
+  TNatsTransport nTransport;
 
   Stream get signalRead => nTransport.signalRead;
   Stream get error => nTransport.error;
 
   FNatsTransport(Nats client) {
-    var tr = new NatsThriftTransport(client);
+    var tr = new TNatsTransport(client);
     tTransport = tr;
     nTransport = tr;
   }
