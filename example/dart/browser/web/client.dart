@@ -138,7 +138,9 @@ class EventUI {
     var ctx = new frugal.Context("some-other-correlation");
     InputElement blahMsg = querySelector("#blahMsg");
     var num = int.parse(blahMsg.value);
-    _fFooClient.blah(ctx, num).then((int r) {
+    var e = new event.Event();
+    e.message = "(╯°□°)╯︵ ┻━┻";
+    _fFooClient.blah(ctx, num, "yey", e).then((int r) {
       window.alert("Got this rpc response ${r.toString()}");
     });
   }
