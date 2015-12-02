@@ -1,24 +1,24 @@
 part of frugal;
 
 class Provider {
-  final FTransportFactory transportFactory;
-  final TTransportFactory thriftTransportFactory;
-  final TProtocolFactory protocolFactory;
+  final FTransportFactory fTransportFactory;
+  final TTransportFactory tTransportFactory;
+  final TProtocolFactory tProtocolFactory;
 
-  Provider(this.transportFactory, this.thriftTransportFactory, this.protocolFactory);
+  Provider(this.fTransportFactory, this.tTransportFactory, this.tProtocolFactory);
 
   TransportWithProtocol newTransportProtocol () {
-    var tr = transportFactory.getTransport();
-    if (thriftTransportFactory != null) {
-      tr.applyProxy(thriftTransportFactory);
+    var tr = fTransportFactory.getTransport();
+    if (tTransportFactory != null) {
+      tr.applyProxy(tTransportFactory);
     }
-    var pr = protocolFactory.getProtocol(tr.thriftTransport());
+    var pr = tProtocolFactory.getProtocol(tr.thriftTransport());
     return new TransportWithProtocol(tr, pr);
   }
 }
 
 class TransportWithProtocol {
-  final FTransport transport;
-  final TProtocol protocol;
-  TransportWithProtocol(this.transport, this.protocol);
+  final FTransport fTransport;
+  final TProtocol tProtocol;
+  TransportWithProtocol(this.fTransport, this.tProtocol);
 }
