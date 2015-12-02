@@ -133,7 +133,7 @@ func generateEnums(enums []*parser.Enum) string {
 	return contents
 }
 
-func generateStructLikes(structs map[string]*parser.Struct, typ structLike) string {
+func generateStructLikes(structs []*parser.Struct, typ structLike) string {
 	contents := ""
 	for _, strct := range structs {
 		if strct.Comment != nil {
@@ -169,7 +169,7 @@ func generateStructLikes(structs map[string]*parser.Struct, typ structLike) stri
 	return contents
 }
 
-func generateServices(services map[string]*parser.Service) string {
+func generateServices(services []*parser.Service) string {
 	contents := ""
 	for _, service := range services {
 		if service.Comment != nil {

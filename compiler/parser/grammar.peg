@@ -83,10 +83,10 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
         Typedefs:       []*TypeDef{},
         Constants:      []*Constant{},
         Enums:          []*Enum{},
-        Structs:        make(map[string]*Struct),
-        Exceptions:     make(map[string]*Struct),
-        Unions:         make(map[string]*Struct),
-        Services:       make(map[string]*Service),
+        Structs:        []*Struct{},
+        Exceptions:     []*Struct{},
+        Unions:         []*Struct{},
+        Services:       []*Service{},
         typedefIndex:   make(map[string]*TypeDef),
         namespaceIndex: make(map[string]*Namespace),
     }
@@ -115,18 +115,18 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
             thrift.typedefIndex[v.Name] = v
         case *Struct:
             v.Comment = wrapper.comment
-            thrift.Structs[v.Name] = v
+            thrift.Structs = append(thrift.Structs, v)
         case exception:
             strct := (*Struct)(v)
             strct.Comment = wrapper.comment
-            thrift.Exceptions[v.Name] = strct
+            thrift.Exceptions = append(thrift.Exceptions, strct)
         case union:
             strct := unionToStruct(v)
             strct.Comment = wrapper.comment
-            thrift.Unions[v.Name] = strct
+            thrift.Unions = append(thrift.Unions, strct)
         case *Service:
             v.Comment = wrapper.comment
-            thrift.Services[v.Name] = v
+            thrift.Services = append(thrift.Services, v)
         case include:
             name := string(v)
             if ix := strings.LastIndex(name, "."); ix > 0 {

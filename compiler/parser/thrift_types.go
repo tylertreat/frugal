@@ -80,10 +80,10 @@ type Thrift struct {
 	Namespaces []*Namespace
 	Constants  []*Constant
 	Enums      []*Enum
-	Structs    map[string]*Struct
-	Exceptions map[string]*Struct
-	Unions     map[string]*Struct
-	Services   map[string]*Service
+	Structs    []*Struct
+	Exceptions []*Struct
+	Unions     []*Struct
+	Services   []*Service
 
 	typedefIndex   map[string]*TypeDef
 	namespaceIndex map[string]*Namespace
