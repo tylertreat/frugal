@@ -349,11 +349,7 @@ func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.S
 }
 
 func (g *Generator) generateServiceInterface(service *parser.Service) string {
-	contents := ""
-	if service.Comment != nil {
-		contents += g.GenerateInlineComment(service.Comment, "")
-	}
-	contents += fmt.Sprintf("type Frugal%s interface {\n", strings.Title(service.Name))
+	contents := fmt.Sprintf("type F%s interface {\n", strings.Title(service.Name))
 	for _, method := range service.Methods {
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, "\t")
@@ -394,20 +390,20 @@ func (g *Generator) generateReturnArgs(method *parser.Method) string {
 func (g *Generator) generateClient(service *parser.Service) string {
 	servTitle := strings.Title(service.Name)
 
-	contents := fmt.Sprintf("type Frugal%sClient struct {\n", servTitle)
-	contents += "\tTransport       thrift.TTransport\n"
-	contents += "\tProtocolFactory frugal.FProtocolFactory\n"
+	contents := fmt.Sprintf("type F%sClient struct {\n", servTitle)
+	contents += "\tTTransport       thrift.TTransport\n"
+	contents += "\tFProtocolFactory frugal.FProtocolFactory\n"
 	contents += "\tInputProtocol   frugal.FProtocol\n"
 	contents += "\tOutputProtocol  frugal.FProtocol\n"
 	contents += "\tSeqId           int32\n"
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf(
-		"func NewFrugal%sClientFactory(t thrift.TTransport, f frugal.FProtocolFactory) *Frugal%sClient {\n",
+		"func NewF%sClientFactory(t thrift.TTransport, f frugal.FProtocolFactory) *F%sClient {\n",
 		servTitle, servTitle)
-	contents += fmt.Sprintf("\treturn &Frugal%sClient{\n", servTitle)
-	contents += "\t\tTransport:       t,\n"
-	contents += "\t\tProtocolFactory: f,\n"
+	contents += fmt.Sprintf("\treturn &F%sClient{\n", servTitle)
+	contents += "\t\tTTransport:       t,\n"
+	contents += "\t\tFProtocolFactory: f,\n"
 	contents += "\t\tInputProtocol:   f.GetProtocol(t),\n"
 	contents += "\t\tOutputProtocol:  f.GetProtocol(t),\n"
 	contents += "\t\tSeqId:           0,\n"
@@ -415,11 +411,11 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf(
-		"func NewFrugal%sClientProtocol(t thrift.TTransport, iprot, oprot frugal.FProtocol) *Frugal%sClient {\n",
+		"func NewF%sClientProtocol(t thrift.TTransport, iprot, oprot frugal.FProtocol) *F%sClient {\n",
 		service.Name, service.Name)
-	contents += fmt.Sprintf("\treturn &Frugal%sClient{\n", servTitle)
-	contents += "\t\tTransport:       t,\n"
-	contents += "\t\tProtocolFactory: nil,\n"
+	contents += fmt.Sprintf("\treturn &F%sClient{\n", servTitle)
+	contents += "\t\tTTransport:       t,\n"
+	contents += "\t\tFProtocolFactory: nil,\n"
 	contents += "\t\tInputProtocol:   iprot,\n"
 	contents += "\t\tOutputProtocol:  oprot,\n"
 	contents += "\t\tSeqId:           0,\n"
@@ -441,21 +437,21 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	if method.Comment != nil {
 		contents += g.GenerateInlineComment(method.Comment, "")
 	}
-	contents += fmt.Sprintf("func (f *Frugal%sClient) %s(ctx frugal.Context%s) %s {\n",
+	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx frugal.Context%s) %s {\n",
 		servTitle, nameTitle, g.generateInputArgs(method.Arguments),
 		g.generateReturnArgs(method))
-	contents += fmt.Sprintf("\tif err = f.send%s(ctx, %s); err != nil {\n",
+	contents += fmt.Sprintf("\tif err = f.send%s(ctx%s); err != nil {\n",
 		nameTitle, g.generateClientOutputArgs(method.Arguments))
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += fmt.Sprintf("\treturn f.recv%s(ctx)\n", nameTitle)
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func (f *Frugal%sClient) send%s(ctx frugal.Context%s) (err error) {\n",
+	contents += fmt.Sprintf("func (f *F%sClient) send%s(ctx frugal.Context%s) (err error) {\n",
 		servTitle, nameTitle, g.generateInputArgs(method.Arguments))
 	contents += "\toprot := f.OutputProtocol\n"
 	contents += "\tif oprot == nil {\n"
-	contents += "\t\toprot = f.ProtocolFactory.GetProtocol(f.Transport)\n"
+	contents += "\t\toprot = f.FProtocolFactory.GetProtocol(f.TTransport)\n"
 	contents += "\t\tf.OutputProtocol = oprot\n"
 	contents += "\t}\n"
 	contents += fmt.Sprintf("\tif err = f.OutputProtocol.WriteRequestHeader(ctx); err != nil {\n")
@@ -479,11 +475,11 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += "\treturn oprot.Flush()\n"
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func (f *Frugal%sClient) recv%s(ctx frugal.Context) %s {\n",
+	contents += fmt.Sprintf("func (f *F%sClient) recv%s(ctx frugal.Context) %s {\n",
 		servTitle, nameTitle, g.generateReturnArgs(method))
 	contents += "\tiprot := f.InputProtocol\n"
 	contents += "\tif iprot == nil {\n"
-	contents += "\t\tiprot = f.ProtocolFactory.GetProtocol(f.Transport)\n"
+	contents += "\t\tiprot = f.FProtocolFactory.GetProtocol(f.TTransport)\n"
 	contents += "\t\tf.InputProtocol = iprot\n"
 	contents += "\t}\n"
 	contents += "\tif err = iprot.ReadResponseHeader(ctx); err != nil {\n"
@@ -560,31 +556,31 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	servTitle := strings.Title(service.Name)
 	servLower := strings.ToLower(service.Name)
 	contents := ""
-	contents += fmt.Sprintf("type Frugal%sProcessor struct {\n", servTitle)
+	contents += fmt.Sprintf("type F%sProcessor struct {\n", servTitle)
 	contents += "\tprocessorMap map[string]frugal.FProcessorFunction\n"
-	contents += fmt.Sprintf("\thandler      Frugal%s\n", servTitle)
+	contents += fmt.Sprintf("\thandler      F%s\n", servTitle)
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func (p *Frugal%sProcessor) GetProcessorFunction(key string) "+
+	contents += fmt.Sprintf("func (p *F%sProcessor) GetProcessorFunction(key string) "+
 		"(processor frugal.FProcessorFunction, ok bool) {\n", servTitle)
 	contents += "\tprocessor, ok = p.processorMap[key]\n"
 	contents += "\treturn\n"
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func NewFrugal%sProcessor(handler Frugal%s) *Frugal%sProcessor {\n",
+	contents += fmt.Sprintf("func NewF%sProcessor(handler F%s) *F%sProcessor {\n",
 		servTitle, servTitle, servTitle)
-	contents += fmt.Sprintf("\tp := &Frugal%sProcessor{\n", servTitle)
+	contents += fmt.Sprintf("\tp := &F%sProcessor{\n", servTitle)
 	contents += "\t\thandler:      handler,\n"
 	contents += "\t\tprocessorMap: make(map[string]frugal.FProcessorFunction),\n"
 	contents += "\t}\n"
 	for _, method := range service.Methods {
-		contents += fmt.Sprintf("\tp.processorMap[\"%s\"] = &%sFrugalProcessor%s{handler: handler}\n",
+		contents += fmt.Sprintf("\tp.processorMap[\"%s\"] = &%sF%s{handler: handler}\n",
 			strings.ToLower(method.Name), servLower, strings.Title(method.Name))
 	}
 	contents += "\treturn p\n"
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func (p *Frugal%sProcessor) Process(iprot, oprot frugal.FProtocol) "+
+	contents += fmt.Sprintf("func (p *F%sProcessor) Process(iprot, oprot frugal.FProtocol) "+
 		"(success bool, err thrift.TException) {\n", servTitle)
 	contents += "\tctx, err := iprot.ReadRequestHeader()\n"
 	contents += "\tif err != nil {\n"
@@ -616,11 +612,11 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	nameTitle := strings.Title(method.Name)
 	nameLower := strings.ToLower(method.Name)
 
-	contents := fmt.Sprintf("type %sFrugalProcessor%s struct {\n", servLower, nameTitle)
-	contents += fmt.Sprintf("\thandler Frugal%s\n", servTitle)
+	contents := fmt.Sprintf("type %sF%s struct {\n", servLower, nameTitle)
+	contents += fmt.Sprintf("\thandler F%s\n", servTitle)
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func (p *%sFrugalProcessor%s) Process(ctx frugal.Context, "+
+	contents += fmt.Sprintf("func (p *%sF%s) Process(ctx frugal.Context, "+
 		"seqId int32, iprot, oprot frugal.FProtocol) (success bool, err thrift.TException) {\n",
 		servLower, nameTitle)
 	contents += fmt.Sprintf("\targs := %s%sArgs{}\n", servTitle, nameTitle)
@@ -711,11 +707,8 @@ func (g *Generator) generateInterfaceArgs(args []*parser.Field) string {
 
 func (g *Generator) generateClientOutputArgs(args []*parser.Field) string {
 	argStr := ""
-	for i, arg := range args {
-		argStr += arg.Name
-		if i < len(args)-1 {
-			argStr += ", "
-		}
+	for _, arg := range args {
+		argStr += ", " + arg.Name
 	}
 	return argStr
 }
