@@ -16,11 +16,11 @@ const String delimiter = '.';
 /// This docstring gets added to the generated code because it has
 /// the @ sign.
 class EventsPublisher {
-  frugal.FTransport fTransport;
+  frugal.FScopeTransport fTransport;
   thrift.TProtocol tProtocol;
   int seqId;
 
-  EventsPublisher(frugal.Provider provider) {
+  EventsPublisher(frugal.ScopeProvider provider) {
     var tp = provider.newTransportProtocol();
     fTransport = tp.fTransport;
     tProtocol = tp.tProtocol;
@@ -47,7 +47,7 @@ class EventsPublisher {
 /// This docstring gets added to the generated code because it has
 /// the @ sign.
 class EventsSubscriber {
-  final frugal.Provider provider;
+  final frugal.ScopeProvider provider;
 
   EventsSubscriber(this.provider) {}
 

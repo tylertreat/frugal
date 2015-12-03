@@ -281,11 +281,11 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += g.GenerateInlineComment(scope.Comment, "/")
 	}
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
-	publishers += tab + "frugal.FTransport fTransport;\n"
+	publishers += tab + "frugal.FScopeTransport fTransport;\n"
 	publishers += tab + "thrift.TProtocol tProtocol;\n"
 	publishers += tab + "int seqId;\n\n"
 
-	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.Provider provider) {\n", strings.Title(scope.Name))
+	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.ScopeProvider provider) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "var tp = provider.newTransportProtocol();\n"
 	publishers += tabtab + "fTransport = tp.fTransport;\n"
 	publishers += tabtab + "tProtocol = tp.tProtocol;\n"
@@ -350,7 +350,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += g.GenerateInlineComment(scope.Comment, "/")
 	}
 	subscribers += fmt.Sprintf("class %sSubscriber {\n", strings.Title(scope.Name))
-	subscribers += tab + "final frugal.Provider provider;\n\n"
+	subscribers += tab + "final frugal.ScopeProvider provider;\n\n"
 
 	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider) {}\n\n", strings.Title(scope.Name))
 

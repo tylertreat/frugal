@@ -23,7 +23,6 @@ class EventUI {
   event.EventsPublisher _eventsPublisher;
   event.EventsSubscriber _eventsSubscriber;
 
-  frugal.FTransport _fTransport;
   event.FFooClient _fFooClient;
 
   void start() {
@@ -36,12 +35,12 @@ class EventUI {
     var client = new MessagingFrontendClient("http://localhost:8100", "some-sweet-client", new Client());
     var nats = client.nats();
     nats.connect().then((_) {
-      var provider = new frugal.Provider(new frugal.FNatsTransportFactory(nats), null, new TBinaryProtocolFactory());
+      var provider = new frugal.ScopeProvider(new frugal.FNatsScopeTransportFactory(nats), null, new TBinaryProtocolFactory());
       _eventsPublisher = new event.EventsPublisher(provider);
       _eventsSubscriber = new event.EventsSubscriber(provider);
 
       var timeout = new Duration(seconds: 1);
-      frugal.TNatsTransportFactory.New(nats, "foo", timeout, timeout).then((TTransport T) {
+      frugal.TNatsServiceTransportFactory.New(nats, "foo", timeout, timeout).then((TTransport T) {
         T.open().then((_){
           frugal.FProtocol protocol = new frugal.FBinaryProtocol(T);
           _fFooClient = new event.FFooClient(protocol);
