@@ -2,6 +2,7 @@ part of frugal;
 
 int _nextOpId = 0;
 
+/// Context for Frugal message
 class Context {
   static const _cid = "_cid";
   static const _opid= "_opid";
@@ -20,33 +21,41 @@ class Context {
     _nextOpId++;
   }
 
+  /// Correlation Id for the context
   String correlationId() => _requestHeaders[_cid];
 
+  /// Operation id for the context
   int opId() {
     var opIdStr = _requestHeaders[_opid];
     return int.parse(opIdStr);
   }
 
+  /// Add a request header to the context for the given name
   void addRequestHeader(String name, value) {
     _requestHeaders[name] = value;
   }
 
+  /// Get the named request header
   String requestHeader(String name) {
     return _requestHeaders[name];
   }
 
+  /// Get requests headers map
   Map<String, String> requestHeaders() {
     return _requestHeaders;
   }
 
+  /// Add a response header to the context for the given name
   void addResponseHeader(String name, value) {
     _responseHeaders[name] = value;
   }
 
+  /// Get the named response header
   String responseHeader(String name) {
     return _requestHeaders[name];
   }
 
+  /// Get response headers map
   Map<String, String> responseHeaders() {
     return _responseHeaders;
   }

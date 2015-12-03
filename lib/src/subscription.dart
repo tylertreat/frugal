@@ -1,5 +1,6 @@
 part of frugal;
 
+/// Frugal Subscription
 class Subscription {
   String subject;
   FScopeTransport _transport;

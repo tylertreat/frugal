@@ -1,7 +1,7 @@
 part of frugal;
 
 /// Implementation of FScopeTransportFactory backed by FNatsScopeTransport
-class FNatsScopeTransportFactory implements FTransportFactory {
+class FNatsScopeTransportFactory implements FScopeTransportFactory {
   Nats client;
   FNatsScopeTransportFactory(this.client);
 
