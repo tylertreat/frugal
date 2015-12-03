@@ -1,6 +1,6 @@
 part of frugal;
 
-int _nextOpId = 0;
+int _globalOpId = 0;
 
 /// Context for Frugal message
 class Context {
@@ -9,16 +9,23 @@ class Context {
   Map<String, String> _requestHeaders;
   Map<String, String> _responseHeaders;
 
-  Context(String correlationId) {
-    if (correlationId == "") {
-      correlationId = new Uuid().v4().toString().replaceAll('-', '');
-    }
+  Context({String correlationId: _generateCorrelationId()}) {
     _requestHeaders = {
       _cid: correlationId,
-      _opid: _nextOpId.toString(),
+      _opid: _nextOpId(),
     };
     _responseHeaders = {};
-    _nextOpId++;
+  }
+
+  Context.withRequestHeaders(Map<String, String> headers) {
+    if (headers[_cid] == "") {
+      headers[_cid] = _generateCorrelationId();
+    }
+    if (headers[_opid] = "") {
+      headers[_opid] = _nextOpId();
+    }
+    _requestHeaders = headers;
+    _responseHeaders = {};
   }
 
   /// Correlation Id for the context
@@ -58,5 +65,13 @@ class Context {
   /// Get response headers map
   Map<String, String> responseHeaders() {
     return _responseHeaders;
+  }
+
+  static String _generateCorrelationId() => new Uuid().v4().toString().replaceAll('-', '');
+
+  static String _nextOpId(){
+    var id = _globalOpId.toString();
+    _globalOpId++;
+    return id;
   }
 }
