@@ -13,13 +13,19 @@ import 'event.dart' as t_event;
 import 'foo.dart' as t_foo;
 
 
+/// This is a thrift service. Frugal will generate bindings that include 
+/// a frugal Context for each service call.
 abstract class FFoo {
-  // Ping the server.
+  /// Ping the server.
+
   Future ping(frugal.Context ctx);
-  // Blah the server.
+  /// Blah the server.
+
   Future<int> blah(frugal.Context ctx, int num, String str, t_event.Event event);
 }
 
+/// This is a thrift service. Frugal will generate bindings that include 
+/// a frugal Context for each service call.
 class FFooClient implements FFoo {
 
   FFooClient(thrift.TProtocol iprot, [thrift.TProtocol oprot = null]) {
@@ -41,7 +47,7 @@ class FFooClient implements FFoo {
 
   int nextSeqid() => ++_seqid;
 
-  // Ping the server.
+  /// Ping the server.
   Future ping(frugal.Context ctx) async {
     oprot.writeRequestHeader(ctx);
     oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, nextSeqid()));
@@ -65,7 +71,7 @@ class FFooClient implements FFoo {
     return;
   }
 
-  // Blah the server.
+  /// Blah the server.
   Future<int> blah(frugal.Context ctx, int num, String str, t_event.Event event) async {
     oprot.writeRequestHeader(ctx);
     oprot.writeMessageBegin(new thrift.TMessage("blah", thrift.TMessageType.CALL, nextSeqid()));

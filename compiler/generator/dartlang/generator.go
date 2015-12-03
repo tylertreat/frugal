@@ -281,14 +281,14 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += g.GenerateInlineComment(scope.Comment, "/")
 	}
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
-	publishers += tab + "frugal.FTransport transport;\n"
-	publishers += tab + "thrift.TProtocol protocol;\n"
+	publishers += tab + "frugal.FTransport fTransport;\n"
+	publishers += tab + "thrift.TProtocol tProtocol;\n"
 	publishers += tab + "int seqId;\n\n"
 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.Provider provider) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "var tp = provider.newTransportProtocol();\n"
-	publishers += tabtab + "transport = tp.transport;\n"
-	publishers += tabtab + "protocol = tp.protocol;\n"
+	publishers += tabtab + "fTransport = tp.fTransport;\n"
+	publishers += tabtab + "tProtocol = tp.tProtocol;\n"
 	publishers += tabtab + "seqId = 0;\n"
 	publishers += tab + "}\n\n"
 
@@ -309,8 +309,8 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
-		publishers += tabtab + "transport.preparePublish(topic);\n"
-		publishers += tabtab + "var oprot = protocol;\n"
+		publishers += tabtab + "fTransport.preparePublish(topic);\n"
+		publishers += tabtab + "var oprot = tProtocol;\n"
 		publishers += tabtab + "seqId++;\n"
 		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);\n"
 		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
@@ -373,12 +373,12 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		subscribers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
 		subscribers += tabtab + "var tp = provider.newTransportProtocol();\n"
-		subscribers += tabtab + "await tp.transport.subscribe(topic);\n"
-		subscribers += tabtab + "tp.transport.signalRead.listen((_) {\n"
-		subscribers += fmt.Sprintf(tabtabtab+"on%s(_recv%s(op, tp.protocol));\n", op.ParamName(), op.Name)
+		subscribers += tabtab + "await tp.fTransport.subscribe(topic);\n"
+		subscribers += tabtab + "tp.fTransport.signalRead.listen((_) {\n"
+		subscribers += fmt.Sprintf(tabtabtab+"on%s(_recv%s(op, tp.tProtocol));\n", op.ParamName(), op.Name)
 		subscribers += tabtab + "});\n"
-		subscribers += tabtab + "var sub = new frugal.Subscription(topic, tp.transport);\n"
-		subscribers += tabtab + "tp.transport.error.listen((Error e) {;\n"
+		subscribers += tabtab + "var sub = new frugal.Subscription(topic, tp.fTransport);\n"
+		subscribers += tabtab + "tp.fTransport.error.listen((Error e) {;\n"
 		subscribers += tabtabtab + "sub.signal(e);\n"
 		subscribers += tabtab + "});\n"
 		subscribers += tabtab + "return sub;\n"
@@ -416,12 +416,16 @@ func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.S
 }
 
 func (g *Generator) generateInterface(service *parser.Service) string {
-	contents := fmt.Sprintf("abstract class F%s {\n", strings.Title(service.Name))
+	contents := ""
+	if service.Comment != nil {
+		contents += g.GenerateInlineComment(service.Comment, "/")
+	}
+	contents += fmt.Sprintf("abstract class F%s {\n", strings.Title(service.Name))
 	for _, method := range service.Methods {
 		if method.Comment != nil {
-			contents += g.GenerateInlineComment(method.Comment, tab)
+			contents += g.GenerateInlineComment(method.Comment, tab+"/")
 		}
-		contents += fmt.Sprintf(tab+"Future%s %s(frugal.Context ctx%s);\n",
+		contents += fmt.Sprintf("\n"+tab+"Future%s %s(frugal.Context ctx%s);\n",
 			g.generateReturnArg(method), strings.ToLower(method.Name), g.generateInputArgs(method.Arguments))
 	}
 	contents += "}\n\n"
@@ -447,6 +451,9 @@ func (g *Generator) qualifiedParamName(op *parser.Operation) string {
 func (g *Generator) generateClient(service *parser.Service) string {
 	servTitle := strings.Title(service.Name)
 	contents := ""
+	if service.Comment != nil {
+		contents += g.GenerateInlineComment(service.Comment, "/")
+	}
 	contents += fmt.Sprintf("class F%sClient implements F%s {\n", servTitle, servTitle)
 	contents += "\n"
 	contents += fmt.Sprintf(tab+"F%sClient(thrift.TProtocol iprot, [thrift.TProtocol oprot = null]) {\n", servTitle)
@@ -475,7 +482,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 
 	contents := ""
 	if method.Comment != nil {
-		contents += g.GenerateInlineComment(method.Comment, tab)
+		contents += g.GenerateInlineComment(method.Comment, tab+"/")
 	}
 	contents += fmt.Sprintf(tab+"Future%s %s(frugal.Context ctx%s) async {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))

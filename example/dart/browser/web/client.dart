@@ -36,7 +36,7 @@ class EventUI {
     var client = new MessagingFrontendClient("http://localhost:8100", "some-sweet-client", new Client());
     var nats = client.nats();
     nats.connect().then((_) {
-      var provider = new frugal.Provider(new frugal.NatsTransportFactory(nats), null, new TBinaryProtocolFactory());
+      var provider = new frugal.Provider(new frugal.FNatsTransportFactory(nats), null, new TBinaryProtocolFactory());
       _eventsPublisher = new event.EventsPublisher(provider);
       _eventsSubscriber = new event.EventsSubscriber(provider);
 

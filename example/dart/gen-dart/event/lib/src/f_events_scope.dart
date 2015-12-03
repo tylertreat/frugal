@@ -16,14 +16,14 @@ const String delimiter = '.';
 /// This docstring gets added to the generated code because it has
 /// the @ sign.
 class EventsPublisher {
-  frugal.FTransport transport;
-  thrift.TProtocol protocol;
+  frugal.FTransport fTransport;
+  thrift.TProtocol tProtocol;
   int seqId;
 
   EventsPublisher(frugal.Provider provider) {
     var tp = provider.newTransportProtocol();
-    transport = tp.transport;
-    protocol = tp.protocol;
+    fTransport = tp.fTransport;
+    tProtocol = tp.tProtocol;
     seqId = 0;
   }
 
@@ -32,8 +32,8 @@ class EventsPublisher {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
-    transport.preparePublish(topic);
-    var oprot = protocol;
+    fTransport.preparePublish(topic);
+    var oprot = tProtocol;
     seqId++;
     var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);
     oprot.writeMessageBegin(msg);
@@ -57,12 +57,12 @@ class EventsSubscriber {
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
     var tp = provider.newTransportProtocol();
-    await tp.transport.subscribe(topic);
-    tp.transport.signalRead.listen((_) {
-      onEvent(_recvEventCreated(op, tp.protocol));
+    await tp.fTransport.subscribe(topic);
+    tp.fTransport.signalRead.listen((_) {
+      onEvent(_recvEventCreated(op, tp.tProtocol));
     });
-    var sub = new frugal.Subscription(topic, tp.transport);
-    tp.transport.error.listen((Error e) {;
+    var sub = new frugal.Subscription(topic, tp.fTransport);
+    tp.fTransport.error.listen((Error e) {;
       sub.signal(e);
     });
     return sub;
