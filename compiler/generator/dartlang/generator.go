@@ -32,7 +32,7 @@ func NewGenerator(options map[string]string) generator.MultipleFileGenerator {
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
-	if pkg, ok := f.Thrift.Namespaces[lang]; ok {
+	if pkg, ok := f.Thrift.Namespace(lang); ok {
 		dir = filepath.Join(dir, toLibraryName(pkg))
 	} else {
 		dir = filepath.Join(dir, f.Name)
@@ -91,7 +91,7 @@ func (g *Generator) addToPubspec(f *parser.Frugal, dir string) error {
 		deps[toLibraryName(namespace)] = dep{Path: "../" + toLibraryName(namespace)}
 	}
 
-	namespace, ok := f.Thrift.Namespaces[lang]
+	namespace, ok := f.Thrift.Namespace(lang)
 	if !ok {
 		namespace = f.Name
 	}
@@ -124,7 +124,7 @@ func (g *Generator) addToPubspec(f *parser.Frugal, dir string) error {
 
 func (g *Generator) exportClasses(f *parser.Frugal, dir string) error {
 	filename := strings.ToLower(f.Name)
-	if ns, ok := f.Thrift.Namespaces[lang]; ok {
+	if ns, ok := f.Thrift.Namespace(lang); ok {
 		filename = strings.ToLower(toLibraryName(ns))
 	}
 	dartFile := fmt.Sprintf("%s.%s", filename, lang)
@@ -168,7 +168,7 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 }
 
 func (g *Generator) GeneratePackage(file *os.File, f *parser.Frugal, scope *parser.Scope) error {
-	pkg, ok := f.Thrift.Namespaces[lang]
+	pkg, ok := f.Thrift.Namespace(lang)
 	if ok {
 		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]

@@ -48,7 +48,7 @@ func generateThriftIDL(dir string, frugal *parser.Frugal) (string, error) {
 		return "", err
 	}
 	contents += includes
-	contents += generateConstants(thrift.Constants, thrift.Typedefs)
+	contents += generateConstants(thrift)
 	contents += generateTypedefs(thrift.Typedefs)
 	contents += generateEnums(thrift.Enums)
 	contents += generateStructLikes(thrift.Structs, structLikeStruct)
@@ -60,10 +60,10 @@ func generateThriftIDL(dir string, frugal *parser.Frugal) (string, error) {
 	return file, err
 }
 
-func generateNamespaces(namespaces map[string]string) string {
+func generateNamespaces(namespaces []*parser.Namespace) string {
 	contents := ""
-	for lang, namespace := range namespaces {
-		contents += fmt.Sprintf("namespace %s %s\n", lang, namespace)
+	for _, namespace := range namespaces {
+		contents += fmt.Sprintf("namespace %s %s\n", namespace.Scope, namespace.Value)
 	}
 	contents += "\n"
 	return contents
@@ -71,7 +71,8 @@ func generateNamespaces(namespaces map[string]string) string {
 
 func generateIncludes(frugal *parser.Frugal) (string, error) {
 	contents := ""
-	for _, include := range frugal.Thrift.Includes {
+	for _, incl := range frugal.Thrift.Includes {
+		include := incl.Value
 		if strings.HasSuffix(strings.ToLower(include), ".frugal") {
 			// Recurse on frugal includes
 			parsed, err := compile(filepath.Join(frugal.Dir, include))
@@ -91,17 +92,13 @@ func generateIncludes(frugal *parser.Frugal) (string, error) {
 	return contents, nil
 }
 
-func generateConstants(consts map[string]*parser.Constant, typedefs map[string]*parser.TypeDef) string {
+func generateConstants(thrift *parser.Thrift) string {
 	contents := ""
-	constants := constMapToSortedSlice(consts)
-	complexConstants := make([]*parser.Constant, 0, len(constants))
+	complexConstants := make([]*parser.Constant, 0, len(thrift.Constants))
 
-	for _, constant := range constants {
+	for _, constant := range thrift.Constants {
 		value := constant.Value
-		typeName := constant.Type.Name
-		if typedef, ok := typedefs[typeName]; ok {
-			typeName = typedef.Type.Name
-		}
+		typeName := thrift.UnderlyingType(constant.Type.Name)
 		if isThriftPrimitive(typeName) {
 			if typeName == "string" {
 				value = fmt.Sprintf(`"%s"`, value)
@@ -205,19 +202,19 @@ func indentN(indent int) string {
 	return str
 }
 
-func generateTypedefs(typedefs map[string]*parser.TypeDef) string {
+func generateTypedefs(typedefs []*parser.TypeDef) string {
 	contents := ""
-	for name, typedef := range typedefs {
+	for _, typedef := range typedefs {
 		if typedef.Comment != nil {
 			contents += generateThriftDocString(typedef.Comment, "")
 		}
-		contents += fmt.Sprintf("typedef %s %s\n", typedef.Type, name)
+		contents += fmt.Sprintf("typedef %s %s\n", typedef.Type, typedef.Name)
 	}
 	contents += "\n"
 	return contents
 }
 
-func generateEnums(enums map[string]*parser.Enum) string {
+func generateEnums(enums []*parser.Enum) string {
 	contents := ""
 	for _, enum := range enums {
 		if enum.Comment != nil {
@@ -240,15 +237,9 @@ func generateEnums(enums map[string]*parser.Enum) string {
 	return contents
 }
 
-func generateStructLikes(structs map[string]*parser.Struct, typ structLike) string {
-	keys := make([]string, 0, len(structs))
-	for key, _ := range structs {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
+func generateStructLikes(structs []*parser.Struct, typ structLike) string {
 	contents := ""
-	for _, key := range keys {
-		strct := structs[key]
+	for _, strct := range structs {
 		if strct.Comment != nil {
 			contents += generateThriftDocString(strct.Comment, "")
 		}
@@ -282,7 +273,7 @@ func generateStructLikes(structs map[string]*parser.Struct, typ structLike) stri
 	return contents
 }
 
-func generateServices(services map[string]*parser.Service) string {
+func generateServices(services []*parser.Service) string {
 	contents := ""
 	for _, service := range services {
 		if service.Comment != nil {
@@ -400,27 +391,4 @@ func (e enumValues) Less(i, j int) bool {
 func isThriftPrimitive(typeName string) bool {
 	_, ok := thriftTypes[typeName]
 	return ok
-}
-
-type ConstantsByName []*parser.Constant
-
-func (b ConstantsByName) Len() int {
-	return len(b)
-}
-
-func (b ConstantsByName) Swap(i, j int) {
-	b[i], b[j] = b[j], b[i]
-}
-
-func (b ConstantsByName) Less(i, j int) bool {
-	return b[i].Name < b[j].Name
-}
-
-func constMapToSortedSlice(consts map[string]*parser.Constant) ConstantsByName {
-	sorted := make(ConstantsByName, 0, len(consts))
-	for _, c := range consts {
-		sorted = append(sorted, c)
-	}
-	sort.Sort(sorted)
-	return sorted
 }
