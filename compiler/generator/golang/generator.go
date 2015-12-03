@@ -59,7 +59,7 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 	case generator.CombinedAsyncFile:
 		return g.CreateFile(strings.ToLower(name)+asyncSuffix, outputDir, lang, true)
 	default:
-		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
+		return nil, fmt.Errorf("frugal: Bad file type for golang generator: %s", fileType)
 	}
 }
 
