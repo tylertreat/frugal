@@ -13,6 +13,7 @@ type FileType string
 
 const (
 	CombinedServiceFile FileType = "combined_service"
+	CombinedAsyncFile   FileType = "combined_async"
 	CombinedScopeFile   FileType = "combined_scope"
 	PublishFile         FileType = "publish"
 	SubscribeFile       FileType = "subscribe"
@@ -62,6 +63,11 @@ type LanguageGenerator interface {
 	GenerateScopeImports(*os.File, *parser.Frugal, *parser.Scope) error
 	GeneratePublisher(*os.File, *parser.Scope) error
 	GenerateSubscriber(*os.File, *parser.Scope) error
+
+	// Async-specific methods
+	GenerateAsyncPackage(f *os.File, p *parser.Frugal, a *parser.Async) error
+	GenerateAsyncImports(*os.File, *parser.Frugal, *parser.Async) error
+	GenerateAsync(*os.File, *parser.Frugal, *parser.Async) error
 }
 
 func GetPackageComponents(pkg string) []string {
@@ -89,6 +95,11 @@ func (o *programGenerator) Generate(frugal *parser.Frugal, outputDir string) err
 			if err := o.generateServiceFile(frugal, service, outputDir); err != nil {
 				return err
 			}
+		}
+	}
+	for _, async := range frugal.Asyncs {
+		if err := o.generateAsyncFile(frugal, async, outputDir); err != nil {
+			return err
 		}
 	}
 	for _, scope := range frugal.Scopes {
@@ -141,6 +152,45 @@ func (o *programGenerator) generateServiceFile(frugal *parser.Frugal, service *p
 	}
 
 	if err := o.GenerateService(file, frugal, service); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *programGenerator) generateAsyncFile(frugal *parser.Frugal, async *parser.Async,
+	outputDir string) error {
+	file, err := o.GenerateFile(async.Name, outputDir, CombinedAsyncFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if err := o.GenerateDocStringComment(file); err != nil {
+		return err
+	}
+
+	if err := o.GenerateNewline(file, 2); err != nil {
+		return err
+	}
+
+	if err := o.GenerateAsyncPackage(file, frugal, async); err != nil {
+		return err
+	}
+
+	if err := o.GenerateNewline(file, 2); err != nil {
+		return err
+	}
+
+	if err := o.GenerateAsyncImports(file, frugal, async); err != nil {
+		return err
+	}
+
+	if err := o.GenerateNewline(file, 2); err != nil {
+		return err
+	}
+
+	if err := o.GenerateAsync(file, frugal, async); err != nil {
 		return err
 	}
 
