@@ -6,6 +6,7 @@ import "dart:typed_data";
 
 import "package:thrift/thrift.dart";
 import "package:messaging_frontend/messaging_frontend.dart";
+import "package:uuid/uuid.dart";
 
 part 'src/context.dart';
 part 'src/protocol/f_binary_protocol.dart';

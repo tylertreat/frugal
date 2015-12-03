@@ -11,7 +11,7 @@ class Context {
 
   Context(String correlationId) {
     if (correlationId == "") {
-      correlationId = "foo";
+      correlationId = new Uuid().v4().toString().replaceAll('-', '');
     }
     _requestHeaders = {
       _cid: correlationId,
