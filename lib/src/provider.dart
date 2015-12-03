@@ -1,7 +1,7 @@
 part of frugal;
 
 class Provider {
-  final FTransportFactory fTransportFactory;
+  final FScopeTransportFactory fTransportFactory;
   final TTransportFactory tTransportFactory;
   final TProtocolFactory tProtocolFactory;
 
@@ -18,7 +18,7 @@ class Provider {
 }
 
 class TransportWithProtocol {
-  final FTransport fTransport;
+  final FScopeTransport fTransport;
   final TProtocol tProtocol;
   TransportWithProtocol(this.fTransport, this.tProtocol);
 }

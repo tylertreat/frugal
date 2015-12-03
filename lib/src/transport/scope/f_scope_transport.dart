@@ -1,7 +1,7 @@
 part of frugal;
 
-/// Wraps a Thrift TTransport which supports pub/sub.
-abstract class FTransport {
+/// Wraps a Thrift TTransport. Used for frugal Scopes.
+abstract class FScopeTransport {
   /// Stream that signals to transport listener that data is available on
   /// the thrift transport.
   Stream get signalRead;

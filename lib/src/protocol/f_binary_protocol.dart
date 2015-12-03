@@ -1,13 +1,17 @@
 part of frugal;
 
+/// Binary protocol implementation for Frugal. Extends upon the
+/// associated TProtocol.
 class FBinaryProtocol extends TBinaryProtocol implements FProtocol {
   FBinaryProtocol(TTransport transport)
     : super(transport);
 
-  writeRequestHeader(Context ctx) {
+  /// write the request headers on the given Context
+  void writeRequestHeader(Context ctx) {
     _writeHeader(ctx.requestHeaders());
   }
 
+  /// read the requests headers into a new Context
   Context readRequestHeader() {
     // Check version when more are available.
     readByte();
@@ -23,10 +27,12 @@ class FBinaryProtocol extends TBinaryProtocol implements FProtocol {
     return ctx;
   }
 
-  writeResponseHeader(Context ctx) {
+  /// write the response headers on the given Context
+  void writeResponseHeader(Context ctx) {
     _writeHeader(ctx.requestHeaders());
   }
 
+  /// read the requests headers into the given Context
   void readResponseHeader(Context ctx) {
     // Check version when more are available.
     readByte();

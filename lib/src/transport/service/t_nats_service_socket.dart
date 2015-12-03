@@ -1,7 +1,7 @@
 part of frugal;
 
-/// A [TSocket] backed by a [Nats] client
-class TNatsSocket implements  TSocket {
+/// A Service TSocket backed by a NATS client
+class TNatsServiceSocket implements TSocket {
   static const String DISCONNECT = "DISCONNECT";
   final Nats _natsClient;
   final String _listenTo;
@@ -23,7 +23,7 @@ class TNatsSocket implements  TSocket {
 
   final List<Uint8List> _requests = [];
 
-  TNatsSocket(this._natsClient, this._listenTo, this._replyTo, this._heartbeat,
+  TNatsServiceSocket(this._natsClient, this._listenTo, this._replyTo, this._heartbeat,
               Duration readTimeout, this._heartbeatInterval)
   : _onStateController = new StreamController.broadcast(),
   _onErrorController = new StreamController.broadcast(),
