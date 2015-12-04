@@ -440,10 +440,11 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 	}
 	contents += fmt.Sprintf("abstract class F%s {\n", strings.Title(service.Name))
 	for _, method := range service.Methods {
+		contents += "\n"
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, tab+"/")
 		}
-		contents += fmt.Sprintf("\n"+tab+"Future%s %s(frugal.Context ctx%s);\n",
+		contents += fmt.Sprintf(tab+"Future%s %s(frugal.Context ctx%s);\n",
 			g.generateReturnArg(method), strings.ToLower(method.Name), g.generateInputArgs(method.Arguments))
 	}
 	contents += "}\n\n"

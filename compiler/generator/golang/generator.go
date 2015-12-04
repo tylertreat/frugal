@@ -716,7 +716,7 @@ func (g *Generator) generateClientOutputArgs(args []*parser.Field) string {
 func (g *Generator) generateInputArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += ", " + arg.Name + " " + g.getGoTypeFromThriftType(arg.Type)
+		argStr += ", " + strings.ToLower(arg.Name) + " " + g.getGoTypeFromThriftType(arg.Type)
 	}
 	return argStr
 }
