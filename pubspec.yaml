@@ -13,3 +13,4 @@ dependencies:
     git:
       url: git@github.com:Workiva/thrift-dart.git
       ref: 0.0.1
+  uuid: any

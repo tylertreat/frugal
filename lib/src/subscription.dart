@@ -1,8 +1,9 @@
 part of frugal;
 
+/// Frugal Subscription
 class Subscription {
   String subject;
-  Transport _transport;
+  FScopeTransport _transport;
   StreamController _errorControler = new StreamController.broadcast();
   Stream<Error> get error => _errorControler.stream;
 

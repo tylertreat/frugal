@@ -1,24 +1,25 @@
 part of frugal;
 
-class Provider {
-  final TransportFactory transportFactory;
-  final TTransportFactory thriftTransportFactory;
-  final TProtocolFactory protocolFactory;
+/// Provider for Frugal Scopes
+class ScopeProvider {
+  final FScopeTransportFactory fTransportFactory;
+  final TTransportFactory tTransportFactory;
+  final TProtocolFactory tProtocolFactory;
 
-  Provider(this.transportFactory, this.thriftTransportFactory, this.protocolFactory);
+  ScopeProvider(this.fTransportFactory, this.tTransportFactory, this.tProtocolFactory);
 
-  TransportWithProtocol newTransportProtocol () {
-    var tr = transportFactory.getTransport();
-    if (thriftTransportFactory != null) {
-      tr.applyProxy(thriftTransportFactory);
+  ScopeTransportWithProtocol newTransportProtocol () {
+    var tr = fTransportFactory.getTransport();
+    if (tTransportFactory != null) {
+      tr.applyProxy(tTransportFactory);
     }
-    var pr = protocolFactory.getProtocol(tr.thriftTransport());
-    return new TransportWithProtocol(tr, pr);
+    var pr = tProtocolFactory.getProtocol(tr.thriftTransport());
+    return new ScopeTransportWithProtocol(tr, pr);
   }
 }
 
-class TransportWithProtocol {
-  final Transport transport;
-  final TProtocol protocol;
-  TransportWithProtocol(this.transport, this.protocol);
+class ScopeTransportWithProtocol {
+  final FScopeTransport fTransport;
+  final TProtocol tProtocol;
+  ScopeTransportWithProtocol(this.fTransport, this.tProtocol);
 }
