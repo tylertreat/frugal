@@ -49,7 +49,7 @@ class Context {
 
   /// Get requests headers map
   Map<String, String> requestHeaders() {
-    return _requestHeaders;
+    return UnmodifiableMapView(_requestHeaders);
   }
 
   /// Add a response header to the context for the given name
@@ -64,7 +64,7 @@ class Context {
 
   /// Get response headers map
   Map<String, String> responseHeaders() {
-    return _responseHeaders;
+    return UnmodifiableMapView(_responseHeaders);
   }
 
   static String _generateCorrelationId() => new Uuid().v4().toString().replaceAll('-', '');
