@@ -10,7 +10,6 @@ import 'package:w_transport/w_transport_browser.dart' show configureWTransportFo
 
 frugal.Subscription sub;
 
-/// Adapted from the AS3 tutorial
 void main() {
   new EventUI(querySelector('#output')).start();
 }
@@ -129,12 +128,12 @@ class EventUI {
   }
 
   void _onPingClick(MouseEvent e) {
-    var ctx = new frugal.Context("some-sweet-correlation");
+    var ctx = new frugal.Context(correlationId:"some-sweet-correlation");
     _fFooClient.ping(ctx);
   }
 
   void _onBlahClick(MouseEvent e) {
-    var ctx = new frugal.Context("some-other-correlation");
+    var ctx = new frugal.Context(correlationId: "some-other-correlation");
     InputElement blahMsg = querySelector("#blahMsg");
     var num = int.parse(blahMsg.value);
     var e = new event.Event();

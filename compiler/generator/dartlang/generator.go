@@ -87,7 +87,7 @@ func (g *Generator) addToPubspec(f *parser.Frugal, dir string) error {
 
 	deps := map[interface{}]interface{}{
 		"thrift": dep{Git: gitDep{URL: "git@github.com:Workiva/thrift-dart.git", Ref: "0.0.1"}},
-		"frugal": dep{Git: gitDep{URL: "git@github.com:Workiva/frugal-dart.git"}},
+		"frugal": dep{Git: gitDep{URL: "git@github.com:Workiva/frugal-dart.git", Ref: "0.0.2"}},
 	}
 
 	for _, include := range f.ReferencedIncludes() {
