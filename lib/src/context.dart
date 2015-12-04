@@ -9,7 +9,10 @@ class Context {
   Map<String, String> _requestHeaders;
   Map<String, String> _responseHeaders;
 
-  Context({String correlationId: _generateCorrelationId()}) {
+  Context({String correlationId: ""}) {
+    if (correlationId == "") {
+      correlationId = _generateCorrelationId();
+    }
     _requestHeaders = {
       _cid: correlationId,
       _opid: _nextOpId(),
@@ -21,7 +24,7 @@ class Context {
     if (headers[_cid] == "") {
       headers[_cid] = _generateCorrelationId();
     }
-    if (headers[_opid] = "") {
+    if (headers[_opid] == "") {
       headers[_opid] = _nextOpId();
     }
     _requestHeaders = headers;
@@ -49,7 +52,7 @@ class Context {
 
   /// Get requests headers map
   Map<String, String> requestHeaders() {
-    return UnmodifiableMapView(_requestHeaders);
+    return new UnmodifiableMapView(_requestHeaders);
   }
 
   /// Add a response header to the context for the given name
@@ -64,7 +67,7 @@ class Context {
 
   /// Get response headers map
   Map<String, String> responseHeaders() {
-    return UnmodifiableMapView(_responseHeaders);
+    return new UnmodifiableMapView(_responseHeaders);
   }
 
   static String _generateCorrelationId() => new Uuid().v4().toString().replaceAll('-', '');
