@@ -708,7 +708,7 @@ func (g *Generator) generateInterfaceArgs(args []*parser.Field) string {
 func (g *Generator) generateClientOutputArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += ", " + arg.Name
+		argStr += ", " + strings.ToLower(arg.Name)
 	}
 	return argStr
 }
@@ -724,7 +724,7 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 func (g *Generator) generateStructArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += "\t\t" + strings.Title(arg.Name) + ": " + arg.Name + ",\n"
+		argStr += "\t\t" + strings.Title(arg.Name) + ": " + strings.ToLower(arg.Name) + ",\n"
 	}
 	return argStr
 }

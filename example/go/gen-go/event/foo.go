@@ -23,7 +23,9 @@ type Foo interface { //This is a thrift service. Frugal will generate bindings t
 	//
 	// Parameters:
 	//  - Num
-	Blah(num int32) (r int64, err error)
+	//  - Str
+	//  - Event
+	Blah(num int32, Str string, event *Event) (r int64, err error)
 }
 
 //This is a thrift service. Frugal will generate bindings that include
@@ -131,14 +133,16 @@ func (p *FooClient) recvPing() (err error) {
 //
 // Parameters:
 //  - Num
-func (p *FooClient) Blah(num int32) (r int64, err error) {
-	if err = p.sendBlah(num); err != nil {
+//  - Str
+//  - Event
+func (p *FooClient) Blah(num int32, Str string, event *Event) (r int64, err error) {
+	if err = p.sendBlah(num, Str, event); err != nil {
 		return
 	}
 	return p.recvBlah()
 }
 
-func (p *FooClient) sendBlah(num int32) (err error) {
+func (p *FooClient) sendBlah(num int32, Str string, event *Event) (err error) {
 	oprot := p.OutputProtocol
 	if oprot == nil {
 		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -149,7 +153,9 @@ func (p *FooClient) sendBlah(num int32) (err error) {
 		return
 	}
 	args := FooBlahArgs{
-		Num: num,
+		Num:   num,
+		Str:   Str,
+		Event: event,
 	}
 	if err = args.Write(oprot); err != nil {
 		return
@@ -200,6 +206,10 @@ func (p *FooClient) recvBlah() (value int64, err error) {
 		return
 	}
 	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	if result.Awe != nil {
+		err = result.Awe
 		return
 	}
 	value = result.GetSuccess()
@@ -316,13 +326,18 @@ func (p *fooProcessorBlah) Process(seqId int32, iprot, oprot thrift.TProtocol) (
 	result := FooBlahResult{}
 	var retval int64
 	var err2 error
-	if retval, err2 = p.handler.Blah(args.Num); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing blah: "+err2.Error())
-		oprot.WriteMessageBegin("blah", thrift.EXCEPTION, seqId)
-		x.Write(oprot)
-		oprot.WriteMessageEnd()
-		oprot.Flush()
-		return true, err2
+	if retval, err2 = p.handler.Blah(args.Num, args.Str, args.Event); err2 != nil {
+		switch v := err2.(type) {
+		case *AwesomeException:
+			result.Awe = v
+		default:
+			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing blah: "+err2.Error())
+			oprot.WriteMessageBegin("blah", thrift.EXCEPTION, seqId)
+			x.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
+			return true, err2
+		}
 	} else {
 		result.Success = &retval
 	}
@@ -454,8 +469,12 @@ func (p *FooPingResult) String() string {
 
 // Attributes:
 //  - Num
+//  - Str
+//  - Event
 type FooBlahArgs struct {
-	Num int32 `thrift:"num,1,required" json:"num"`
+	Num   int32  `thrift:"num,1,required" json:"num"`
+	Str   string `thrift:"Str,2,required" json:"Str"`
+	Event *Event `thrift:"event,3,required" json:"event"`
 }
 
 func NewFooBlahArgs() *FooBlahArgs {
@@ -465,12 +484,31 @@ func NewFooBlahArgs() *FooBlahArgs {
 func (p *FooBlahArgs) GetNum() int32 {
 	return p.Num
 }
+
+func (p *FooBlahArgs) GetStr() string {
+	return p.Str
+}
+
+var FooBlahArgs_Event_DEFAULT *Event
+
+func (p *FooBlahArgs) GetEvent() *Event {
+	if !p.IsSetEvent() {
+		return FooBlahArgs_Event_DEFAULT
+	}
+	return p.Event
+}
+func (p *FooBlahArgs) IsSetEvent() bool {
+	return p.Event != nil
+}
+
 func (p *FooBlahArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
 	}
 
 	var issetNum bool = false
+	var issetStr bool = false
+	var issetEvent bool = false
 
 	for {
 		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
@@ -486,6 +524,16 @@ func (p *FooBlahArgs) Read(iprot thrift.TProtocol) error {
 				return err
 			}
 			issetNum = true
+		case 2:
+			if err := p.readField2(iprot); err != nil {
+				return err
+			}
+			issetStr = true
+		case 3:
+			if err := p.readField3(iprot); err != nil {
+				return err
+			}
+			issetEvent = true
 		default:
 			if err := iprot.Skip(fieldTypeId); err != nil {
 				return err
@@ -501,6 +549,12 @@ func (p *FooBlahArgs) Read(iprot thrift.TProtocol) error {
 	if !issetNum {
 		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Num is not set"))
 	}
+	if !issetStr {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Str is not set"))
+	}
+	if !issetEvent {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Event is not set"))
+	}
 	return nil
 }
 
@@ -513,11 +567,36 @@ func (p *FooBlahArgs) readField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *FooBlahArgs) readField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return thrift.PrependError("error reading field 2: ", err)
+	} else {
+		p.Str = v
+	}
+	return nil
+}
+
+func (p *FooBlahArgs) readField3(iprot thrift.TProtocol) error {
+	p.Event = &Event{
+		ID: -1,
+	}
+	if err := p.Event.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Event), err)
+	}
+	return nil
+}
+
 func (p *FooBlahArgs) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("blah_args"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField3(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -542,6 +621,32 @@ func (p *FooBlahArgs) writeField1(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *FooBlahArgs) writeField2(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("Str", thrift.STRING, 2); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:Str: ", p), err)
+	}
+	if err := oprot.WriteString(string(p.Str)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.Str (2) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:Str: ", p), err)
+	}
+	return err
+}
+
+func (p *FooBlahArgs) writeField3(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("event", thrift.STRUCT, 3); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:event: ", p), err)
+	}
+	if err := p.Event.Write(oprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Event), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 3:event: ", p), err)
+	}
+	return err
+}
+
 func (p *FooBlahArgs) String() string {
 	if p == nil {
 		return "<nil>"
@@ -551,8 +656,10 @@ func (p *FooBlahArgs) String() string {
 
 // Attributes:
 //  - Success
+//  - Awe
 type FooBlahResult struct {
-	Success *int64 `thrift:"success,0" json:"success,omitempty"`
+	Success *int64            `thrift:"success,0" json:"success,omitempty"`
+	Awe     *AwesomeException `thrift:"awe,1" json:"awe,omitempty"`
 }
 
 func NewFooBlahResult() *FooBlahResult {
@@ -567,8 +674,21 @@ func (p *FooBlahResult) GetSuccess() int64 {
 	}
 	return *p.Success
 }
+
+var FooBlahResult_Awe_DEFAULT *AwesomeException
+
+func (p *FooBlahResult) GetAwe() *AwesomeException {
+	if !p.IsSetAwe() {
+		return FooBlahResult_Awe_DEFAULT
+	}
+	return p.Awe
+}
 func (p *FooBlahResult) IsSetSuccess() bool {
 	return p.Success != nil
+}
+
+func (p *FooBlahResult) IsSetAwe() bool {
+	return p.Awe != nil
 }
 
 func (p *FooBlahResult) Read(iprot thrift.TProtocol) error {
@@ -587,6 +707,10 @@ func (p *FooBlahResult) Read(iprot thrift.TProtocol) error {
 		switch fieldId {
 		case 0:
 			if err := p.readField0(iprot); err != nil {
+				return err
+			}
+		case 1:
+			if err := p.readField1(iprot); err != nil {
 				return err
 			}
 		default:
@@ -613,11 +737,22 @@ func (p *FooBlahResult) readField0(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *FooBlahResult) readField1(iprot thrift.TProtocol) error {
+	p.Awe = &AwesomeException{}
+	if err := p.Awe.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Awe), err)
+	}
+	return nil
+}
+
 func (p *FooBlahResult) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("blah_result"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if err := p.writeField0(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField1(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -639,6 +774,21 @@ func (p *FooBlahResult) writeField0(oprot thrift.TProtocol) (err error) {
 		}
 		if err := oprot.WriteFieldEnd(); err != nil {
 			return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err)
+		}
+	}
+	return err
+}
+
+func (p *FooBlahResult) writeField1(oprot thrift.TProtocol) (err error) {
+	if p.IsSetAwe() {
+		if err := oprot.WriteFieldBegin("awe", thrift.STRUCT, 1); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:awe: ", p), err)
+		}
+		if err := p.Awe.Write(oprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Awe), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 1:awe: ", p), err)
 		}
 	}
 	return err

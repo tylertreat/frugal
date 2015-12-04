@@ -99,7 +99,8 @@ func main() {
 // Client handler
 func handleClient(client *event.FFooClient) (err error) {
 	ctx := frugal.NewContext("")
-	result, err := client.Blah(ctx, 100)
+	event := &event.Event{Message: "hello, world!"}
+	result, err := client.Blah(ctx, 100, "awesomesauce", event)
 	fmt.Printf("Blah = %d\n", result)
 	fmt.Println(err)
 	fmt.Println(ctx.ResponseHeader("foo"))
@@ -130,8 +131,8 @@ func (f *FooHandler) Ping(ctx frugal.Context) error {
 	return nil
 }
 
-func (f *FooHandler) Blah(ctx frugal.Context, num int32) (int64, error) {
-	fmt.Printf("Blah(%s, %d)\n", ctx, num)
+func (f *FooHandler) Blah(ctx frugal.Context, num int32, str string, e *event.Event) (int64, error) {
+	fmt.Printf("Blah(%s, %d, %s, %v)\n", ctx, num, str, e)
 	ctx.AddResponseHeader("foo", "bar")
 	return 42, nil
 }
