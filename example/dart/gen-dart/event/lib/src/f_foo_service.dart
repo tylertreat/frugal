@@ -99,6 +99,9 @@ class FFooClient implements FFoo {
       return result.success;
     }
 
+    if (result.awe != null) {
+      throw result.awe;
+    }
     throw new thrift.TApplicationError(thrift.TApplicationErrorType.MISSING_RESULT, "blah failed: unknown result");
   }
 

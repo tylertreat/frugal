@@ -95,6 +95,9 @@ class FBlahClient implements FBlah {
       return result.success;
     }
 
+    if (result.oops != null) {
+      throw result.oops;
+    }
     throw new thrift.TApplicationError(thrift.TApplicationErrorType.MISSING_RESULT, "bleh failed: unknown result");
   }
 

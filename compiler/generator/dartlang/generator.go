@@ -532,11 +532,13 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtab + "result.read(iprot);\n"
 	contents += tabtab + "iprot.readMessageEnd();\n"
 	if method.ReturnType == nil {
+		contents += g.generateErrors(method)
 		contents += tabtab + "return;\n"
 	} else {
 		contents += tabtab + "if (result.isSetSuccess()) {\n"
 		contents += tabtabtab + "return result.success;\n"
 		contents += tabtab + "}\n\n"
+		contents += g.generateErrors(method)
 		contents += fmt.Sprintf(tabtab+
 			"throw new thrift.TApplicationError(thrift.TApplicationErrorType.MISSING_RESULT, \"%s failed: unknown result\");\n",
 			nameLower)
@@ -559,6 +561,16 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 		argStr += ", " + g.getDartTypeFromThriftType(arg.Type) + " " + strings.ToLower(arg.Name)
 	}
 	return argStr
+}
+
+func (g *Generator) generateErrors(method *parser.Method) string {
+	contents := ""
+	for _, exp := range method.Exceptions {
+		contents += fmt.Sprintf(tabtab+"if (result.%s != null) {\n", strings.ToLower(exp.Name))
+		contents += fmt.Sprintf(tabtabtab+"throw result.%s;\n", strings.ToLower(exp.Name))
+		contents += tabtab + "}\n"
+	}
+	return contents
 }
 
 func (g *Generator) getDartTypeFromThriftType(t *parser.Type) string {
