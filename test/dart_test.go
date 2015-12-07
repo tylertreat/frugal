@@ -5,9 +5,11 @@ import (
 	"testing"
 
 	"github.com/Workiva/frugal/compiler"
+	"github.com/Workiva/frugal/compiler/globals"
 )
 
 func TestValidDart(t *testing.T) {
+	defer globals.Reset()
 	options := compiler.Options{
 		File:  validFile,
 		Gen:   "dart",

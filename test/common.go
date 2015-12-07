@@ -2,6 +2,8 @@ package test
 
 import (
 	"bufio"
+	"github.com/Workiva/frugal/compiler"
+	"github.com/Workiva/frugal/compiler/globals"
 	"os"
 	"testing"
 )
@@ -9,9 +11,26 @@ import (
 const (
 	outputDir   = "out"
 	delim       = "."
-	validFile   = "valid.frugal"
-	invalidFile = "invalid.frugal"
+	validFile   = "idl/valid.frugal"
+	invalidFile = "idl/invalid.frugal"
 )
+
+var (
+	languages = []string{"go", "dart", "java"}
+)
+
+func TestInvalid(t *testing.T) {
+	defer globals.Reset()
+	options := compiler.Options{
+		File:  invalidFile,
+		Gen:   languages[0],
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if compiler.Compile(options) == nil {
+		t.Fatal("Expected error")
+	}
+}
 
 func compareFiles(t *testing.T, expectedPath, generatedPath string) {
 	expected, err := os.Open(expectedPath)

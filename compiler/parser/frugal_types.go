@@ -91,7 +91,7 @@ type Frugal struct {
 }
 
 func (f *Frugal) NamespaceForInclude(include, lang string) (string, bool) {
-	namespace, ok := f.ParsedIncludes[include].Thrift.Namespaces[lang]
+	namespace, ok := f.ParsedIncludes[include].Thrift.Namespace(lang)
 	return namespace, ok
 }
 

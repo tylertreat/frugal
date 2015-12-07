@@ -21,6 +21,7 @@ type Options struct {
 	Out                string
 	Delim              string
 	RetainIntermediate bool
+	DryRun             bool
 }
 
 // Compile parses the respective Frugal and Thrift and generates code for them,
@@ -29,6 +30,7 @@ func Compile(options Options) error {
 	globals.TopicDelimiter = options.Delim
 	globals.Gen = options.Gen
 	globals.Out = options.Out
+	globals.DryRun = options.DryRun
 	globals.FileDir = filepath.Dir(options.File)
 
 	defer func() {
@@ -56,9 +58,10 @@ func Compile(options Options) error {
 
 func compile(file string) (*parser.Frugal, error) {
 	var (
-		gen = globals.Gen
-		out = globals.Out
-		dir = filepath.Dir(file)
+		gen    = globals.Gen
+		out    = globals.Out
+		dryRun = globals.DryRun
+		dir    = filepath.Dir(file)
 	)
 
 	// Ensure Frugal file exists.
@@ -97,12 +100,12 @@ func compile(file string) (*parser.Frugal, error) {
 	}
 
 	// Generate Thrift code.
-	if err := generateThrift(frugal, dir, out, gen); err != nil {
+	if err := generateThrift(frugal, dir, out, gen, dryRun); err != nil {
 		return nil, err
 	}
 
 	// Generate Frugal code.
-	if frugal.ContainsFrugalDefinitions() {
+	if !dryRun && frugal.ContainsFrugalDefinitions() {
 		return frugal, g.Generate(frugal, fullOut)
 	}
 	return frugal, nil

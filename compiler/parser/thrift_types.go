@@ -5,6 +5,16 @@ import (
 	"strings"
 )
 
+type Include struct {
+	Name  string
+	Value string
+}
+
+type Namespace struct {
+	Scope string
+	Value string
+}
+
 type Type struct {
 	Name      string
 	KeyType   *Type // If map
@@ -138,15 +148,34 @@ func (s *Service) ReferencedInternals() []string {
 }
 
 type Thrift struct {
-	Includes   map[string]string // name -> unique identifier (absolute path generally)
-	Typedefs   map[string]*TypeDef
-	Namespaces map[string]string
-	Constants  map[string]*Constant
-	Enums      map[string]*Enum
-	Structs    map[string]*Struct
-	Exceptions map[string]*Struct
-	Unions     map[string]*Struct
-	Services   map[string]*Service
+	Includes   []*Include
+	Typedefs   []*TypeDef
+	Namespaces []*Namespace
+	Constants  []*Constant
+	Enums      []*Enum
+	Structs    []*Struct
+	Exceptions []*Struct
+	Unions     []*Struct
+	Services   []*Service
+
+	typedefIndex   map[string]*TypeDef
+	namespaceIndex map[string]*Namespace
+}
+
+func (t *Thrift) UnderlyingType(typeName string) string {
+	if typedef, ok := t.typedefIndex[typeName]; ok {
+		typeName = typedef.Type.Name
+	}
+	return typeName
+}
+
+func (t *Thrift) Namespace(scope string) (string, bool) {
+	namespace, ok := t.namespaceIndex[scope]
+	value := ""
+	if ok {
+		value = namespace.Value
+	}
+	return value, ok
 }
 
 type Identifier string
@@ -156,8 +185,11 @@ type KeyValue struct {
 }
 
 func (t *Thrift) NamespaceForInclude(include, lang string) (string, bool) {
-	namespace, ok := t.Includes[lang]
-	return namespace, ok
+	namespace, ok := t.namespaceIndex[lang]
+	if !ok {
+		return "", ok
+	}
+	return namespace.Value, ok
 }
 
 // ReferencedIncludes returns a slice containing the referenced includes which

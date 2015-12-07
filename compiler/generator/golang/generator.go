@@ -29,7 +29,7 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 }
 
 func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
-	if pkg, ok := f.Thrift.Namespaces[lang]; ok {
+	if pkg, ok := f.Thrift.Namespace(lang); ok {
 		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
@@ -86,7 +86,7 @@ func (g *Generator) GenerateAsyncPackage(file *os.File, f *parser.Frugal, a *par
 }
 
 func (g *Generator) generatePackage(file *os.File, f *parser.Frugal) error {
-	pkg, ok := f.Thrift.Namespaces[lang]
+	pkg, ok := f.Thrift.Namespace(lang)
 	if ok {
 		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]
@@ -750,10 +750,7 @@ func (g *Generator) GenerateAsync(file *os.File, f *parser.Frugal, async *parser
 }
 
 func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
-	typeName := t.Name
-	if typedef, ok := g.Frugal.Thrift.Typedefs[typeName]; ok {
-		typeName = typedef.Type.Name
-	}
+	typeName := g.Frugal.Thrift.UnderlyingType(t.Name)
 	switch typeName {
 	case "bool":
 		return "bool"
