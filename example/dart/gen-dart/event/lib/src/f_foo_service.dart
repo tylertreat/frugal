@@ -9,7 +9,7 @@ import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
 
-import 'event.dart' as t_event;
+import 'package:event/event.dart' as t_event;
 import 'foo.dart' as t_foo;
 
 

@@ -9,8 +9,7 @@ import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
 
-import 'thing.dart' as t_thing;
-import 'stuff.dart' as t_stuff;
+import 'package:valid/valid.dart' as t_valid;
 import 'blah.dart' as t_blah;
 
 
@@ -20,7 +19,7 @@ abstract class FBlah {
   Future ping(frugal.Context ctx);
 
   /// Use this to tell the sever how you feel.
-  Future<int> bleh(frugal.Context ctx, t_thing.Thing one, t_stuff.Stuff two);
+  Future<int> bleh(frugal.Context ctx, t_valid.Thing one, t_valid.Stuff two);
 }
 
 class FBlahClient implements FBlah {
@@ -69,7 +68,7 @@ class FBlahClient implements FBlah {
   }
 
   /// Use this to tell the sever how you feel.
-  Future<int> bleh(frugal.Context ctx, t_thing.Thing one, t_stuff.Stuff two) async {
+  Future<int> bleh(frugal.Context ctx, t_valid.Thing one, t_valid.Stuff two) async {
     oprot.writeRequestHeader(ctx);
     oprot.writeMessageBegin(new thrift.TMessage("bleh", thrift.TMessageType.CALL, nextSeqid()));
     t_blah.bleh_args args = new t_blah.bleh_args();

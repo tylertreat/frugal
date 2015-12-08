@@ -8,8 +8,7 @@ import 'dart:async';
 import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
 
-import 'thing.dart' as t_thing;
-import 'stuff.dart' as t_stuff;
+import 'package:valid/valid.dart' as t_valid;
 
 
 const String delimiter = '.';

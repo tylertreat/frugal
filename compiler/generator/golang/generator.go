@@ -28,12 +28,12 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	return &Generator{&generator.BaseGenerator{Options: options}, true}
 }
 
-func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
-	if pkg, ok := f.Thrift.Namespace(lang); ok {
+func (g *Generator) GetOutputDir(dir string) string {
+	if pkg, ok := g.Frugal.Thrift.Namespace(lang); ok {
 		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
-		dir = filepath.Join(dir, f.Name)
+		dir = filepath.Join(dir, g.Frugal.Name)
 	}
 	return dir
 }
@@ -46,7 +46,7 @@ func (g *Generator) GenerateThrift() bool {
 	return true
 }
 
-func (g *Generator) GenerateDependencies(f *parser.Frugal, dir string) error {
+func (g *Generator) GenerateDependencies(dir string) error {
 	return nil
 }
 
@@ -73,25 +73,25 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 	return err
 }
 
-func (g *Generator) GenerateServicePackage(file *os.File, f *parser.Frugal, s *parser.Service) error {
-	return g.generatePackage(file, f)
+func (g *Generator) GenerateServicePackage(file *os.File, s *parser.Service) error {
+	return g.generatePackage(file)
 }
 
-func (g *Generator) GenerateScopePackage(file *os.File, f *parser.Frugal, s *parser.Scope) error {
-	return g.generatePackage(file, f)
+func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
+	return g.generatePackage(file)
 }
 
-func (g *Generator) GenerateAsyncPackage(file *os.File, f *parser.Frugal, a *parser.Async) error {
-	return g.generatePackage(file, f)
+func (g *Generator) GenerateAsyncPackage(file *os.File, a *parser.Async) error {
+	return g.generatePackage(file)
 }
 
-func (g *Generator) generatePackage(file *os.File, f *parser.Frugal) error {
-	pkg, ok := f.Thrift.Namespace(lang)
+func (g *Generator) generatePackage(file *os.File) error {
+	pkg, ok := g.Frugal.Thrift.Namespace(lang)
 	if ok {
 		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]
 	} else {
-		pkg = f.Name
+		pkg = g.Frugal.Name
 	}
 	_, err := file.WriteString(fmt.Sprintf("package %s", pkg))
 	return err
@@ -122,7 +122,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	return err
 }
 
-func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *parser.Scope) error {
+func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "import (\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"
@@ -138,8 +138,8 @@ func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *par
 	}
 
 	pkgPrefix := g.Options["package_prefix"]
-	for _, include := range f.ReferencedIncludes() {
-		namespace, ok := f.NamespaceForInclude(include, lang)
+	for _, include := range g.Frugal.ReferencedIncludes() {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
 		if !ok {
 			namespace = include
 		}
@@ -152,7 +152,7 @@ func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *par
 	return err
 }
 
-func (g *Generator) GenerateAsyncImports(file *os.File, f *parser.Frugal, a *parser.Async) error {
+func (g *Generator) GenerateAsyncImports(file *os.File, a *parser.Async) error {
 	imports := "import (\n"
 	imports += "\t\"github.com/Workiva/frugal-go\"\n"
 	imports += ")"
@@ -338,7 +338,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	return err
 }
 
-func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.Service) error {
+func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 	contents := ""
 	contents += g.generateServiceInterface(s)
 	contents += g.generateClient(s)
@@ -740,7 +740,7 @@ func (g *Generator) generateServerOutputArgs(args []*parser.Field) string {
 	return argStr
 }
 
-func (g *Generator) GenerateAsync(file *os.File, f *parser.Frugal, async *parser.Async) error {
+func (g *Generator) GenerateAsync(file *os.File, async *parser.Async) error {
 	// TODO: Implement async client/processor. For now, generating an interface
 	// which can be used for stubbing.
 	contents := g.generateAsyncInterface(async)
