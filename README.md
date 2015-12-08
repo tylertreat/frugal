@@ -9,7 +9,7 @@ $ go get github.com/Workiva/frugal
 ```
 
 If you don't have a Go environment setup or don't want to install Thrift you can
-use Docker. [Check the bottom of the Readme](/frugal#docker) for more info.
+use Docker. [Check the bottom of the Readme](#docker) for more info.
 
 ## Usage
 
