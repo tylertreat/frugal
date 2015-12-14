@@ -2,7 +2,6 @@ package integration
 
 import (
 	"flag"
-	"log"
 	"testing"
 
 	"github.com/nats-io/nats"
@@ -42,7 +41,6 @@ func TestPublishSubscribe(t *testing.T) {
 
 	for pf, protocolFactory := range protocolFactories {
 		for tf, transportFactory := range transportFactories {
-			log.Printf("Testing with %v and %v.", pf, tf)
 			name := pf + " " + tf
 			PublishSubscribe(t, protocolFactory, transportFactory, conn, name)
 		}
