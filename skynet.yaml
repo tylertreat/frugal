@@ -1,0 +1,38 @@
+requires: 
+  Workiva/frugal: binary
+
+run:
+  when-branch-name-is:
+    - .+
+
+image: "golang:1.5.1"
+
+env:
+  - GORACE="halt_on_errors=1"
+
+scripts:
+  - testing=$PWD
+  - mkdir -p $GOPATH/src/github.com/Workiva
+  - cp -r $testing $GOPATH/src/github.com/Workiva/frugal
+  - cd $GOPATH/src/github.com/Workiva/frugal
+  - frugal=$PWD
+  - go get bitbucket.org/tebeka/go2xunit
+  - go get -v github.com/tools/godep
+  - cd $GOPATH/src/github.com/tools/godep
+  - go install
+  - cd $frugal
+  - cp $SKYNET_APPLICATION_FRUGAL $GOPATH/bin/frugal
+  - chmod 755 $GOPATH/bin/frugal
+
+  # Start nats server
+  - cd $testing
+  - go get github.com/nats-io/gnatsd
+  - gnatsd &
+
+  - cd $frugal
+  - ./scripts/run_tests_skynet.sh
+
+timeout: long
+
+test-reports:
+  - /testing/reports
