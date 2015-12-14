@@ -1,5 +1,6 @@
 frugal
 test/out
+test/idl/constants.thrift
 target/
 *.iml
 .idea

@@ -8,13 +8,14 @@ import (
 	"testing"
 
 	"github.com/Workiva/frugal/compiler"
+	"github.com/Workiva/frugal/compiler/globals"
 )
 
 const (
 	outputDir   = "out"
 	delim       = "."
-	validFile   = "valid.frugal"
-	invalidFile = "invalid.frugal"
+	validFile   = "idl/valid.frugal"
+	invalidFile = "idl/invalid.frugal"
 )
 
 var (
@@ -31,6 +32,7 @@ func TestSingleFileValid(t *testing.T) {
 }
 
 func TestInvalid(t *testing.T) {
+	defer globals.Reset()
 	options := compiler.Options{
 		File:  invalidFile,
 		Gen:   languages[0],
@@ -43,6 +45,7 @@ func TestInvalid(t *testing.T) {
 }
 
 func testSingleFileLanguage(t *testing.T, language string) {
+	defer globals.Reset()
 	options := compiler.Options{
 		File:  validFile,
 		Gen:   language,

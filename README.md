@@ -8,6 +8,9 @@ Frugal is an extension of [Apache Thrift](https://thrift.apache.org/) which prov
 $ go get github.com/Workiva/frugal
 ```
 
+If you don't have a Go environment setup or don't want to install Thrift you can
+use Docker. [Check the bottom of the Readme](#docker) for more info.
+
 ## Usage
 
 Define your Frugal file which contains your pub/sub interface, or *scopes*, and Thrift definitions.
@@ -149,4 +152,26 @@ service FooService {
     /** This comment isn't included because it doesn't have the @ sign. */
     Foo getFoo()
 }
+```
+
+## Docker
+
+### Via Shipyard
+
+Grab the frugal Docker image id for the image you would like to use from [Shipyard](https://shipyard.workiva.org/repo/Workiva/frugal).
+
+Switch to the directory that has the files you would like to generate.
+
+Then run the docker image. This command will mount your local directory into the
+image. It supports all of the standard Frugal commands.
+
+```
+docker run -v "$(pwd):/data" drydock.workiva.org/workiva/frugal:{SHIPYARD_ID} frugal -gen={LANG} {FILE_TO_GEN}
+```
+
+An example to generate the Go code off the event.frugal definition in the example directory.
+
+```
+$ cd example
+$ docker run -v "$(pwd):/data" drydock.workiva.org/workiva/frugal:17352 frugal -gen=go event.frugal
 ```
