@@ -48,6 +48,8 @@ func messageHandler(
 	}()
 	close(started)
 
+	t.Logf("Testing with %v", name)
+
 	_, err := subscriber.SubscribeEventCreated(name, func(e *event.Event) {
 
 		expectedMsgKey := e.GetMessage()
@@ -60,7 +62,7 @@ func messageHandler(
 		}
 		expected.RUnlock()
 		if expectedMsg == true {
-			t.Logf("already received %v on %v, continuing", expectedMsgKey, name)
+			return
 		}
 
 		expected.Lock()
@@ -85,7 +87,7 @@ func messageHandler(
 	case <-wait:
 		return
 	case <-time.After(time.Second * 4):
-		t.Logf("Test timed out while using %v.", name)
+		t.Errorf("Test timed out while using %v.", name)
 	}
 
 	return
