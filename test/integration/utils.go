@@ -69,15 +69,13 @@ func messageHandler(
 		expected.messageList[expectedMsgKey] = true
 		expected.Unlock()
 
-		// There is a race condition here.
-		// Not sure of a better way to handle this yet.
-		allDone := true
 		for _, hasBeenReceived := range expected.messageList {
-			allDone = allDone && (hasBeenReceived == true)
+			if hasBeenReceived == false{
+				return
+			}
 		}
-		if allDone {
 			wait <- true
-		}
+
 	})
 	if err != nil {
 		panic(err)
