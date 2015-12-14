@@ -87,7 +87,7 @@ func messageHandler(
 	case <-wait:
 		return
 	case <-time.After(time.Second * 4):
-		t.Errorf("Test timed out while using %v.", name)
+		t.Errorf("Test timed out.")
 	}
 
 	return
