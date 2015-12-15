@@ -4,38 +4,34 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-library event.src.event;
+library event.src.awesome_exception;
 
 import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart';
 import 'package:event/event.dart';
 
-/// This docstring gets added to the generated code because it has
-/// the @ sign.
-class Event implements TBase {
-  static final TStruct _STRUCT_DESC = new TStruct("Event");
+class AwesomeException extends Error implements TBase {
+  static final TStruct _STRUCT_DESC = new TStruct("AwesomeException");
   static final TField _ID_FIELD_DESC = new TField("ID", TType.I64, 1);
-  static final TField _MESSAGE_FIELD_DESC = new TField("Message", TType.STRING, 2);
+  static final TField _REASON_FIELD_DESC = new TField("Reason", TType.STRING, 2);
 
-  /// ID is a unique identifier for an event.
+  /// ID is a unique identifier for an awesome exception.
   int _iD;
   static const int ID = 1;
-  /// Message contains the event payload.
-  String _message;
-  static const int MESSAGE = 2;
+  /// Reason contains the error message.
+  String _reason;
+  static const int REASON = 2;
 
   bool __isset_iD = false;
 
-  Event() {
-    this.iD = -1;
-
+  AwesomeException() {
   }
 
   // iD
-  /// ID is a unique identifier for an event.
+  /// ID is a unique identifier for an awesome exception.
   int get iD => this._iD;
 
-  /// ID is a unique identifier for an event.
+  /// ID is a unique identifier for an awesome exception.
   set iD(int iD) {
     this._iD = iD;
     this.__isset_iD = true;
@@ -47,27 +43,27 @@ class Event implements TBase {
     this.__isset_iD = false;
   }
 
-  // message
-  /// Message contains the event payload.
-  String get message => this._message;
+  // reason
+  /// Reason contains the error message.
+  String get reason => this._reason;
 
-  /// Message contains the event payload.
-  set message(String message) {
-    this._message = message;
+  /// Reason contains the error message.
+  set reason(String reason) {
+    this._reason = reason;
   }
 
-  bool isSetMessage() => this.message != null;
+  bool isSetReason() => this.reason != null;
 
-  unsetMessage() {
-    this.message = null;
+  unsetReason() {
+    this.reason = null;
   }
 
   getFieldValue(int fieldID) {
     switch (fieldID) {
       case ID:
         return this.iD;
-      case MESSAGE:
-        return this.message;
+      case REASON:
+        return this.reason;
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -83,11 +79,11 @@ class Event implements TBase {
         }
         break;
 
-      case MESSAGE:
+      case REASON:
         if (value == null) {
-          unsetMessage();
+          unsetReason();
         } else {
-          this.message = value;
+          this.reason = value;
         }
         break;
 
@@ -101,8 +97,8 @@ class Event implements TBase {
     switch (fieldID) {
       case ID:
         return isSetID();
-      case MESSAGE:
-        return isSetMessage();
+      case REASON:
+        return isSetReason();
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -125,9 +121,9 @@ class Event implements TBase {
             TProtocolUtil.skip(iprot, field.type);
           }
           break;
-        case MESSAGE:
+        case REASON:
           if (field.type == TType.STRING) {
-            this.message = iprot.readString();
+            this.reason = iprot.readString();
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
@@ -155,9 +151,9 @@ class Event implements TBase {
     oprot.writeFieldBegin(_ID_FIELD_DESC);
     oprot.writeI64(this.iD);
     oprot.writeFieldEnd();
-    if (this.message != null) {
-      oprot.writeFieldBegin(_MESSAGE_FIELD_DESC);
-      oprot.writeString(this.message);
+    if (this.reason != null) {
+      oprot.writeFieldBegin(_REASON_FIELD_DESC);
+      oprot.writeString(this.reason);
       oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();
@@ -165,17 +161,17 @@ class Event implements TBase {
   }
 
   String toString() {
-    StringBuffer ret = new StringBuffer("Event(");
+    StringBuffer ret = new StringBuffer("AwesomeException(");
 
     ret.write("iD:");
     ret.write(this.iD);
 
     ret.write(", ");
-    ret.write("message:");
-    if (this.message == null) {
+    ret.write("reason:");
+    if (this.reason == null) {
       ret.write("null");
     } else {
-      ret.write(this.message);
+      ret.write(this.reason);
     }
 
     ret.write(")");
@@ -186,8 +182,8 @@ class Event implements TBase {
   validate() {
     // check for required fields
     // alas, we cannot check 'iD' because it's a primitive and you chose the non-beans generator.
-    if (message == null) {
-      throw new TProtocolError(TProtocolErrorType.UNKNOWN, "Required field 'message' was not present! Struct: " + toString());
+    if (reason == null) {
+      throw new TProtocolError(TProtocolErrorType.UNKNOWN, "Required field 'reason' was not present! Struct: " + toString());
     }
     // check that fields of type enum have valid values
   }

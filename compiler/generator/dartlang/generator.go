@@ -17,6 +17,8 @@ import (
 const (
 	lang               = "dart"
 	defaultOutputDir   = "gen-dart"
+	serviceSuffix      = "_service"
+	scopeSuffix        = "_scope"
 	minimumDartVersion = "1.12.0"
 	tab                = "  "
 	tabtab             = tab + tab
@@ -32,14 +34,14 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 }
 
 func (g *Generator) GenerateThrift() bool {
-	return false
+	return true
 }
 
-func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
-	if pkg, ok := f.Thrift.Namespaces[lang]; ok {
+func (g *Generator) GetOutputDir(dir string) string {
+	if pkg, ok := g.Frugal.Thrift.Namespace(lang); ok {
 		dir = filepath.Join(dir, toLibraryName(pkg))
 	} else {
-		dir = filepath.Join(dir, f.Name)
+		dir = filepath.Join(dir, g.Frugal.Name)
 	}
 	return dir
 }
@@ -48,11 +50,11 @@ func (g *Generator) DefaultOutputDir() string {
 	return defaultOutputDir
 }
 
-func (g *Generator) GenerateDependencies(f *parser.Frugal, dir string) error {
-	if err := g.addToPubspec(f, dir); err != nil {
+func (g *Generator) GenerateDependencies(dir string) error {
+	if err := g.addToPubspec(dir); err != nil {
 		return err
 	}
-	if err := g.exportClasses(f, dir); err != nil {
+	if err := g.exportClasses(dir); err != nil {
 		return err
 	}
 	return nil
@@ -77,27 +79,28 @@ type dep struct {
 
 type gitDep struct {
 	URL string `yaml:"url"`
+	Ref string `yaml:"ref,omitempty"`
 }
 
-func (g *Generator) addToPubspec(f *parser.Frugal, dir string) error {
+func (g *Generator) addToPubspec(dir string) error {
 	pubFilePath := filepath.Join(dir, "pubspec.yaml")
 
 	deps := map[interface{}]interface{}{
-		"thrift": dep{Git: gitDep{URL: "git@github.com:Workiva/thrift-dart.git"}},
-		"frugal": dep{Git: gitDep{URL: "git@github.com:Workiva/frugal-dart.git"}},
+		"thrift": dep{Git: gitDep{URL: "git@github.com:Workiva/thrift-dart.git", Ref: "0.0.1"}},
+		"frugal": dep{Git: gitDep{URL: "git@github.com:Workiva/frugal-dart.git", Ref: "0.0.2"}},
 	}
 
-	for _, include := range f.ReferencedIncludes() {
-		namespace, ok := f.NamespaceForInclude(include, lang)
+	for _, include := range g.Frugal.ReferencedIncludes() {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
 		if !ok {
 			namespace = include
 		}
 		deps[toLibraryName(namespace)] = dep{Path: "../" + toLibraryName(namespace)}
 	}
 
-	namespace, ok := f.Thrift.Namespaces[lang]
+	namespace, ok := g.Frugal.Thrift.Namespace(lang)
 	if !ok {
-		namespace = f.Name
+		namespace = g.Frugal.Name
 	}
 
 	ps := &pubspec{
@@ -126,9 +129,9 @@ func (g *Generator) addToPubspec(f *parser.Frugal, dir string) error {
 	return nil
 }
 
-func (g *Generator) exportClasses(f *parser.Frugal, dir string) error {
-	filename := strings.ToLower(f.Name)
-	if ns, ok := f.Thrift.Namespaces[lang]; ok {
+func (g *Generator) exportClasses(dir string) error {
+	filename := strings.ToLower(g.Frugal.Name)
+	if ns, ok := g.Frugal.Thrift.Namespace(lang); ok {
 		filename = strings.ToLower(toLibraryName(ns))
 	}
 	dartFile := fmt.Sprintf("%s.%s", filename, lang)
@@ -140,9 +143,15 @@ func (g *Generator) exportClasses(f *parser.Frugal, dir string) error {
 	}
 
 	exports := "\n"
-	for _, scope := range f.Scopes {
-		exports += fmt.Sprintf("export 'src/%s%s.%s' show %sPublisher, %sSubscriber;\n",
-			generator.FilePrefix, strings.ToLower(scope.Name), lang, scope.Name, scope.Name)
+	for _, service := range g.Frugal.Thrift.Services {
+		servTitle := strings.Title(service.Name)
+		exports += fmt.Sprintf("export 'src/%s%s%s.%s' show F%sClient;\n",
+			generator.FilePrefix, strings.ToLower(service.Name), serviceSuffix, lang, servTitle)
+	}
+	for _, scope := range g.Frugal.Scopes {
+		scopeTitle := strings.Title(scope.Name)
+		exports += fmt.Sprintf("export 'src/%s%s%s.%s' show %sPublisher, %sSubscriber;\n",
+			generator.FilePrefix, strings.ToLower(scope.Name), scopeSuffix, lang, scopeTitle, scopeTitle)
 	}
 	stat, err := mainFile.Stat()
 	if err != nil {
@@ -153,12 +162,19 @@ func (g *Generator) exportClasses(f *parser.Frugal, dir string) error {
 }
 
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
-	if fileType != generator.CombinedScopeFile {
-		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
-	}
 	outputDir = filepath.Join(outputDir, "lib")
 	outputDir = filepath.Join(outputDir, "src")
-	return g.CreateFile(strings.ToLower(name), outputDir, lang, true)
+	switch fileType {
+	case generator.CombinedServiceFile:
+		return g.CreateFile(strings.ToLower(name)+serviceSuffix, outputDir, lang, true)
+	case generator.CombinedScopeFile:
+		return g.CreateFile(strings.ToLower(name)+scopeSuffix, outputDir, lang, true)
+	case generator.CombinedAsyncFile:
+		// TODO
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
+	}
 }
 
 func (g *Generator) GenerateDocStringComment(file *os.File) error {
@@ -171,31 +187,69 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 	return err
 }
 
-func (g *Generator) GenerateServicePackage(file *os.File, f *parser.Frugal, s *parser.Service) error {
+func (g *Generator) GenerateServicePackage(file *os.File, s *parser.Service) error {
+	return g.generatePackage(file, s.Name, serviceSuffix)
+}
+
+func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
+	return g.generatePackage(file, s.Name, scopeSuffix)
+}
+
+func (g *Generator) GenerateAsyncPackage(f *os.File, a *parser.Async) error {
+	// TODO
 	return nil
 }
 
-func (g *Generator) GenerateScopePackage(file *os.File, f *parser.Frugal, s *parser.Scope) error {
-	pkg, ok := f.Thrift.Namespaces[lang]
+func (g *Generator) generatePackage(file *os.File, name, suffix string) error {
+	pkg, ok := g.Frugal.Thrift.Namespace(lang)
 	if ok {
 		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]
 	} else {
-		pkg = f.Name
+		pkg = g.Frugal.Name
 	}
-	_, err := file.WriteString(fmt.Sprintf("library %s.src.%s%s;", pkg,
-		generator.FilePrefix, strings.ToLower(s.Name)))
+	_, err := file.WriteString(fmt.Sprintf("library %s.src.%s%s%s;", pkg,
+		generator.FilePrefix, strings.ToLower(name), scopeSuffix))
 	return err
 }
 
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
+	imports := "import 'dart:async';\n\n"
+	imports += "import 'dart:typed_data' show Uint8List;\n"
+	imports += "import 'package:thrift/thrift.dart' as thrift;\n"
+	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
+	// import included packages
+	for _, include := range s.ReferencedIncludes() {
+		namespace, ok := g.Frugal.Thrift.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		namespace = strings.ToLower(toLibraryName(namespace))
+		imports += fmt.Sprintf("import 'package:%s/%s.dart' as t_%s;\n", namespace, namespace, namespace)
+	}
+
+	// Import same package.
+	pkgLower := strings.ToLower(g.Frugal.Name)
+	imports += fmt.Sprintf("import 'package:%s/%s.dart' as t_%s;\n", pkgLower, pkgLower, pkgLower)
+
+	// Import thrift package for method args
+	servLower := strings.ToLower(s.Name)
+	imports += fmt.Sprintf("import '%s.dart' as t_%s;\n", servLower, servLower)
+
+	_, err := file.WriteString(imports)
+	return err
+}
+
+func (g *Generator) GenerateAsyncImports(*os.File, *parser.Async) error {
+	// TODO
 	return nil
 }
 
-func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *parser.Scope) error {
+func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "import 'dart:async';\n\n"
 	imports += "import 'package:thrift/thrift.dart' as thrift;\n"
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
+	// import included packages
 	for _, include := range s.ReferencedIncludes() {
 		namespace, ok := s.Frugal.NamespaceForInclude(include, lang)
 		if !ok {
@@ -205,22 +259,9 @@ func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *par
 		imports += fmt.Sprintf("import 'package:%s/%s.dart' as t_%s;\n", namespace, namespace, namespace)
 	}
 
-	// Import same-package references.
-	params := make(map[string]bool)
-	paramSlice := []string{}
-	for _, op := range s.Operations {
-		if !strings.Contains(op.Param, ".") {
-			params[op.Param] = true
-			paramSlice = append(paramSlice, op.Param)
-		}
-	}
-	for _, param := range paramSlice {
-		if params[param] {
-			lowerParam := strings.ToLower(param)
-			imports += fmt.Sprintf("import '%s.dart' as t_%s;\n", lowerParam, lowerParam)
-			params[param] = false
-		}
-	}
+	// Import same package.
+	pkgLower := strings.ToLower(g.Frugal.Name)
+	imports += fmt.Sprintf("import 'package:%s/%s.dart' as t_%s;\n", pkgLower, pkgLower, pkgLower)
 
 	_, err := file.WriteString(imports)
 	return err
@@ -238,14 +279,14 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += g.GenerateInlineComment(scope.Comment, "/")
 	}
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
-	publishers += tab + "frugal.Transport transport;\n"
-	publishers += tab + "thrift.TProtocol protocol;\n"
+	publishers += tab + "frugal.FScopeTransport fTransport;\n"
+	publishers += tab + "thrift.TProtocol tProtocol;\n"
 	publishers += tab + "int seqId;\n\n"
 
-	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.Provider provider) {\n", strings.Title(scope.Name))
+	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.ScopeProvider provider) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "var tp = provider.newTransportProtocol();\n"
-	publishers += tabtab + "transport = tp.transport;\n"
-	publishers += tabtab + "protocol = tp.protocol;\n"
+	publishers += tabtab + "fTransport = tp.fTransport;\n"
+	publishers += tabtab + "tProtocol = tp.tProtocol;\n"
 	publishers += tabtab + "seqId = 0;\n"
 	publishers += tab + "}\n\n"
 
@@ -266,8 +307,8 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
-		publishers += tabtab + "transport.preparePublish(topic);\n"
-		publishers += tabtab + "var oprot = protocol;\n"
+		publishers += tabtab + "fTransport.preparePublish(topic);\n"
+		publishers += tabtab + "var oprot = tProtocol;\n"
 		publishers += tabtab + "seqId++;\n"
 		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);\n"
 		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
@@ -307,7 +348,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += g.GenerateInlineComment(scope.Comment, "/")
 	}
 	subscribers += fmt.Sprintf("class %sSubscriber {\n", strings.Title(scope.Name))
-	subscribers += tab + "final frugal.Provider provider;\n\n"
+	subscribers += tab + "final frugal.ScopeProvider provider;\n\n"
 
 	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider) {}\n\n", strings.Title(scope.Name))
 
@@ -330,12 +371,12 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		subscribers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
 		subscribers += tabtab + "var tp = provider.newTransportProtocol();\n"
-		subscribers += tabtab + "await tp.transport.subscribe(topic);\n"
-		subscribers += tabtab + "tp.transport.signalRead.listen((_) {\n"
-		subscribers += fmt.Sprintf(tabtabtab+"on%s(_recv%s(op, tp.protocol));\n", op.ParamName(), op.Name)
+		subscribers += tabtab + "await tp.fTransport.subscribe(topic);\n"
+		subscribers += tabtab + "tp.fTransport.signalRead.listen((_) {\n"
+		subscribers += fmt.Sprintf(tabtabtab+"on%s(_recv%s(op, tp.tProtocol));\n", op.ParamName(), op.Name)
 		subscribers += tabtab + "});\n"
-		subscribers += tabtab + "var sub = new frugal.Subscription(topic, tp.transport);\n"
-		subscribers += tabtab + "tp.transport.error.listen((Error e) {;\n"
+		subscribers += tabtab + "var sub = new frugal.Subscription(topic, tp.fTransport);\n"
+		subscribers += tabtab + "tp.fTransport.error.listen((Error e) {;\n"
 		subscribers += tabtabtab + "sub.signal(e);\n"
 		subscribers += tabtab + "});\n"
 		subscribers += tabtab + "return sub;\n"
@@ -363,8 +404,190 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	return err
 }
 
-func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.Service) error {
+func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
+	contents := ""
+	contents += g.generateInterface(s)
+	contents += g.generateClient(s)
+
+	_, err := file.WriteString(contents)
+	return err
+}
+
+func (g *Generator) GenerateAsync(*os.File, *parser.Async) error {
+	// TODO
 	return nil
+}
+
+func (g *Generator) generateInterface(service *parser.Service) string {
+	contents := ""
+	if service.Comment != nil {
+		contents += g.GenerateInlineComment(service.Comment, "/")
+	}
+	contents += fmt.Sprintf("abstract class F%s {\n", strings.Title(service.Name))
+	for _, method := range service.Methods {
+		contents += "\n"
+		if method.Comment != nil {
+			contents += g.GenerateInlineComment(method.Comment, tab+"/")
+		}
+		contents += fmt.Sprintf(tab+"Future%s %s(frugal.Context ctx%s);\n",
+			g.generateReturnArg(method), strings.ToLower(method.Name), g.generateInputArgs(method.Arguments))
+	}
+	contents += "}\n\n"
+	return contents
+}
+
+func (g *Generator) generateClient(service *parser.Service) string {
+	servTitle := strings.Title(service.Name)
+	contents := ""
+	if service.Comment != nil {
+		contents += g.GenerateInlineComment(service.Comment, "/")
+	}
+	contents += fmt.Sprintf("class F%sClient implements F%s {\n", servTitle, servTitle)
+	contents += "\n"
+	contents += fmt.Sprintf(tab+"F%sClient(thrift.TProtocol iprot, [thrift.TProtocol oprot = null]) {\n", servTitle)
+	contents += tabtab + "_iprot = iprot;\n"
+	contents += tabtab + "_oprot = (oprot == null) ? iprot : oprot;\n"
+	contents += tab + "}\n\n"
+	contents += tab + "frugal.FProtocol _iprot;\n\n"
+	contents += tab + "frugal.FProtocol get iprot => _iprot;\n\n"
+	contents += tab + "frugal.FProtocol _oprot;\n\n"
+	contents += tab + "frugal.FProtocol get oprot => _oprot;\n\n"
+	contents += tab + "int _seqid = 0;\n\n"
+	contents += tab + "int get seqid => _seqid;\n\n"
+	contents += tab + "int nextSeqid() => ++_seqid;\n\n"
+
+	for _, method := range service.Methods {
+		contents += g.generateClientMethod(service, method)
+	}
+	contents += "}\n"
+	return contents
+}
+
+func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
+	servLower := strings.ToLower(service.Name)
+	nameLower := strings.ToLower(method.Name)
+
+	contents := ""
+	if method.Comment != nil {
+		contents += g.GenerateInlineComment(method.Comment, tab+"/")
+	}
+	contents += fmt.Sprintf(tab+"Future%s %s(frugal.Context ctx%s) async {\n",
+		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
+	contents += tabtab + "oprot.writeRequestHeader(ctx);\n"
+	contents += fmt.Sprintf(tabtab+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.CALL, nextSeqid()));\n",
+		nameLower)
+	contents += fmt.Sprintf(tabtab+"t_%s.%s_args args = new t_%s.%s_args();\n",
+		servLower, nameLower, servLower, nameLower)
+	for _, arg := range method.Arguments {
+		argLower := strings.ToLower(arg.Name)
+		contents += fmt.Sprintf(tabtab+"args.%s = %s;\n", argLower, argLower)
+	}
+	contents += tabtab + "args.write(oprot);\n"
+	contents += tabtab + "oprot.writeMessageEnd();\n\n"
+
+	contents += tabtab + "await oprot.transport.flush();\n\n"
+
+	contents += tabtab + "iprot.readResponseHeader(ctx);\n"
+	contents += tabtab + "thrift.TMessage msg = iprot.readMessageBegin();\n"
+	contents += tabtab + "if (msg.type == thrift.TMessageType.EXCEPTION) {\n"
+	contents += tabtabtab + "thrift.TApplicationError error = thrift.TApplicationError.read(iprot);\n"
+	contents += tabtabtab + "iprot.readMessageEnd();\n"
+	contents += tabtabtab + "throw error;\n"
+	contents += tabtab + "}\n\n"
+
+	contents += fmt.Sprintf(tabtab+"t_%s.%s_result result = new t_%s.%s_result();\n",
+		servLower, nameLower, servLower, nameLower)
+	contents += tabtab + "result.read(iprot);\n"
+	contents += tabtab + "iprot.readMessageEnd();\n"
+	if method.ReturnType == nil {
+		contents += g.generateErrors(method)
+		contents += tabtab + "return;\n"
+	} else {
+		contents += tabtab + "if (result.isSetSuccess()) {\n"
+		contents += tabtabtab + "return result.success;\n"
+		contents += tabtab + "}\n\n"
+		contents += g.generateErrors(method)
+		contents += fmt.Sprintf(tabtab+
+			"throw new thrift.TApplicationError(thrift.TApplicationErrorType.MISSING_RESULT, \"%s failed: unknown result\");\n",
+			nameLower)
+	}
+	contents += tab + "}\n\n"
+
+	return contents
+}
+
+func (g *Generator) generateReturnArg(method *parser.Method) string {
+	if method.ReturnType == nil {
+		return ""
+	}
+	return fmt.Sprintf("<%s>", g.getDartTypeFromThriftType(method.ReturnType))
+}
+
+func (g *Generator) generateInputArgs(args []*parser.Field) string {
+	argStr := ""
+	for _, arg := range args {
+		argStr += ", " + g.getDartTypeFromThriftType(arg.Type) + " " + strings.ToLower(arg.Name)
+	}
+	return argStr
+}
+
+func (g *Generator) generateErrors(method *parser.Method) string {
+	contents := ""
+	for _, exp := range method.Exceptions {
+		contents += fmt.Sprintf(tabtab+"if (result.%s != null) {\n", strings.ToLower(exp.Name))
+		contents += fmt.Sprintf(tabtabtab+"throw result.%s;\n", strings.ToLower(exp.Name))
+		contents += tabtab + "}\n"
+	}
+	return contents
+}
+
+func (g *Generator) getDartTypeFromThriftType(t *parser.Type) string {
+	typeName := g.Frugal.Thrift.UnderlyingType(t.Name)
+	switch typeName {
+	case "bool":
+		return "bool"
+	case "byte":
+		return "int"
+	case "i16":
+		return "int"
+	case "i32":
+		return "int"
+	case "i64":
+		return "int"
+	case "double":
+		return "double"
+	case "string":
+		return "String"
+	case "binary":
+		return "Uint8List"
+	case "list":
+		return fmt.Sprintf("List<%s>", g.getDartTypeFromThriftType(t.ValueType))
+	case "set":
+		return fmt.Sprintf("Set<%s>", g.getDartTypeFromThriftType(t.ValueType))
+	case "map":
+		return fmt.Sprintf("Map<%s,%s>", g.getDartTypeFromThriftType(t.KeyType),
+			g.getDartTypeFromThriftType(t.ValueType))
+	default:
+		// This is a custom type
+		return g.qualifiedTypeName(t)
+	}
+}
+
+// get qualafied type names for custom types
+func (g *Generator) qualifiedTypeName(t *parser.Type) string {
+	param := strings.Title(t.ParamName())
+	include := t.IncludeName()
+	if include != "" {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		namespace = toLibraryName(namespace)
+		param = fmt.Sprintf("t_%s.%s", strings.ToLower(namespace), param)
+	} else {
+		param = fmt.Sprintf("t_%s.%s", strings.ToLower(g.Frugal.Name), param)
+	}
+	return param
 }
 
 func (g *Generator) qualifiedParamName(op *parser.Operation) string {

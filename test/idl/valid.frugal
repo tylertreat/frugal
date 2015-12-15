@@ -15,7 +15,7 @@ service Blah {
     /**@ Use this to ping the server. */
     void ping(),
     /**@ Use this to tell the sever how you feel. */
-    i64 bleh(1:Thing one, 2:Stuff two) throws (1: InvalidOperation oops),
+    i64 bleh(1:Thing one, 2:Stuff Two) throws (1: InvalidOperation oops),
 }
 
 // This is a scope

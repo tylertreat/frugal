@@ -52,15 +52,16 @@ type Scope struct {
 // ReferencedIncludes returns a slice containing the referenced includes which
 // will need to be imported in generated code for this Scope.
 func (s *Scope) ReferencedIncludes() []string {
+	includes := []string{}
 	includesSet := make(map[string]bool)
 	for _, op := range s.Operations {
 		if strings.Contains(op.Param, ".") {
-			includesSet[op.Param[0:strings.Index(op.Param, ".")]] = true
+			reducedStr := op.Param[0:strings.Index(op.Param, ".")]
+			if _, ok := includesSet[reducedStr]; !ok {
+				includesSet[reducedStr] = true
+				includes = append(includes, reducedStr)
+			}
 		}
-	}
-	includes := make([]string, 0, len(includesSet))
-	for include, _ := range includesSet {
-		includes = append(includes, include)
 	}
 	return includes
 }
@@ -71,36 +72,45 @@ func (s *Scope) assignScope() {
 	}
 }
 
+type Async struct {
+	Comment []string
+	Name    string
+	Extends string
+	Methods []*Method
+	Frugal  *Frugal // Pointer back to containing Frugal
+}
+
 type Frugal struct {
 	Name           string
 	Dir            string
 	Path           string
 	Scopes         []*Scope
+	Asyncs         []*Async
 	Thrift         *Thrift
 	ParsedIncludes map[string]*Frugal
 }
 
 func (f *Frugal) NamespaceForInclude(include, lang string) (string, bool) {
-	namespace, ok := f.ParsedIncludes[include].Thrift.Namespaces[lang]
+	namespace, ok := f.ParsedIncludes[include].Thrift.Namespace(lang)
 	return namespace, ok
 }
 
 func (f *Frugal) ContainsFrugalDefinitions() bool {
-	return len(f.Scopes) > 0
+	return len(f.Scopes)+len(f.Thrift.Services) > 0
 }
 
 // ReferencedIncludes returns a slice containing the referenced includes which
 // will need to be imported in generated code.
 func (f *Frugal) ReferencedIncludes() []string {
+	includes := []string{}
 	includesSet := make(map[string]bool)
 	for _, scope := range f.Scopes {
 		for _, include := range scope.ReferencedIncludes() {
-			includesSet[include] = true
+			if _, ok := includesSet[include]; !ok {
+				includesSet[include] = true
+				includes = append(includes, include)
+			}
 		}
-	}
-	includes := make([]string, 0, len(includesSet))
-	for include, _ := range includesSet {
-		includes = append(includes, include)
 	}
 	return includes
 }

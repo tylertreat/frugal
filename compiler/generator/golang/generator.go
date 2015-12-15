@@ -16,6 +16,7 @@ const (
 	defaultOutputDir = "gen-go"
 	serviceSuffix    = "_service"
 	scopeSuffix      = "_scope"
+	asyncSuffix      = "_async"
 )
 
 type Generator struct {
@@ -27,12 +28,12 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	return &Generator{&generator.BaseGenerator{Options: options}, true}
 }
 
-func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
-	if pkg, ok := f.Thrift.Namespaces[lang]; ok {
+func (g *Generator) GetOutputDir(dir string) string {
+	if pkg, ok := g.Frugal.Thrift.Namespace(lang); ok {
 		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
-		dir = filepath.Join(dir, f.Name)
+		dir = filepath.Join(dir, g.Frugal.Name)
 	}
 	return dir
 }
@@ -45,7 +46,7 @@ func (g *Generator) GenerateThrift() bool {
 	return true
 }
 
-func (g *Generator) GenerateDependencies(f *parser.Frugal, dir string) error {
+func (g *Generator) GenerateDependencies(dir string) error {
 	return nil
 }
 
@@ -55,8 +56,10 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 		return g.CreateFile(strings.ToLower(name)+serviceSuffix, outputDir, lang, true)
 	case generator.CombinedScopeFile:
 		return g.CreateFile(strings.ToLower(name)+scopeSuffix, outputDir, lang, true)
+	case generator.CombinedAsyncFile:
+		return g.CreateFile(strings.ToLower(name)+asyncSuffix, outputDir, lang, true)
 	default:
-		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
+		return nil, fmt.Errorf("frugal: Bad file type for golang generator: %s", fileType)
 	}
 }
 
@@ -70,25 +73,25 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 	return err
 }
 
-func (g *Generator) GenerateServicePackage(file *os.File, f *parser.Frugal, s *parser.Service) error {
-	pkg, ok := f.Thrift.Namespaces[lang]
-	if ok {
-		components := generator.GetPackageComponents(pkg)
-		pkg = components[len(components)-1]
-	} else {
-		pkg = f.Name
-	}
-	_, err := file.WriteString(fmt.Sprintf("package %s", pkg))
-	return err
+func (g *Generator) GenerateServicePackage(file *os.File, s *parser.Service) error {
+	return g.generatePackage(file)
 }
 
-func (g *Generator) GenerateScopePackage(file *os.File, f *parser.Frugal, s *parser.Scope) error {
-	pkg, ok := f.Thrift.Namespaces[lang]
+func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
+	return g.generatePackage(file)
+}
+
+func (g *Generator) GenerateAsyncPackage(file *os.File, a *parser.Async) error {
+	return g.generatePackage(file)
+}
+
+func (g *Generator) generatePackage(file *os.File) error {
+	pkg, ok := g.Frugal.Thrift.Namespace(lang)
 	if ok {
 		components := generator.GetPackageComponents(pkg)
 		pkg = components[len(components)-1]
 	} else {
-		pkg = f.Name
+		pkg = g.Frugal.Name
 	}
 	_, err := file.WriteString(fmt.Sprintf("package %s", pkg))
 	return err
@@ -98,8 +101,16 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports := "import (\n"
 	imports += "\t\"bytes\"\n"
 	imports += "\t\"fmt\"\n"
-	imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
-	imports += "\t\"github.com/Workiva/frugal-go\"\n"
+	if g.Options["thrift_import"] != "" {
+		imports += "\t\"" + g.Options["thrift_import"] + "\"\n"
+	} else {
+		imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
+	}
+	if g.Options["frugal_import"] != "" {
+		imports += "\t\"" + g.Options["frugal_import"] + "\"\n"
+	} else {
+		imports += "\t\"github.com/Workiva/frugal-go\"\n"
+	}
 	imports += ")\n\n"
 
 	imports += "// (needed to ensure safety because of naive import list construction.)\n"
@@ -111,7 +122,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	return err
 }
 
-func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *parser.Scope) error {
+func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "import (\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"
@@ -127,14 +138,23 @@ func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *par
 	}
 
 	pkgPrefix := g.Options["package_prefix"]
-	for _, include := range f.ReferencedIncludes() {
-		namespace, ok := f.NamespaceForInclude(include, lang)
+	for _, include := range g.Frugal.ReferencedIncludes() {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
 		if !ok {
 			namespace = include
 		}
 		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, namespace)
 	}
 
+	imports += ")"
+
+	_, err := file.WriteString(imports)
+	return err
+}
+
+func (g *Generator) GenerateAsyncImports(file *os.File, a *parser.Async) error {
+	imports := "import (\n"
+	imports += "\t\"github.com/Workiva/frugal-go\"\n"
 	imports += ")"
 
 	_, err := file.WriteString(imports)
@@ -318,9 +338,9 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	return err
 }
 
-func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.Service) error {
+func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 	contents := ""
-	contents += g.generateInterface(s)
+	contents += g.generateServiceInterface(s)
 	contents += g.generateClient(s)
 	contents += g.generateServer(s)
 
@@ -328,9 +348,27 @@ func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.S
 	return err
 }
 
-func (g *Generator) generateInterface(service *parser.Service) string {
+func (g *Generator) generateServiceInterface(service *parser.Service) string {
 	contents := fmt.Sprintf("type F%s interface {\n", strings.Title(service.Name))
 	for _, method := range service.Methods {
+		if method.Comment != nil {
+			contents += g.GenerateInlineComment(method.Comment, "\t")
+		}
+		contents += fmt.Sprintf("\t%s(frugal.Context%s) %s\n",
+			strings.Title(method.Name), g.generateInterfaceArgs(method.Arguments),
+			g.generateReturnArgs(method))
+	}
+	contents += "}\n\n"
+	return contents
+}
+
+func (g *Generator) generateAsyncInterface(async *parser.Async) string {
+	contents := ""
+	if async.Comment != nil {
+		contents += g.GenerateInlineComment(async.Comment, "")
+	}
+	contents += fmt.Sprintf("type %sAsync interface {\n", strings.Title(async.Name))
+	for _, method := range async.Methods {
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, "\t")
 		}
@@ -670,7 +708,7 @@ func (g *Generator) generateInterfaceArgs(args []*parser.Field) string {
 func (g *Generator) generateClientOutputArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += ", " + arg.Name
+		argStr += ", " + strings.ToLower(arg.Name)
 	}
 	return argStr
 }
@@ -678,7 +716,7 @@ func (g *Generator) generateClientOutputArgs(args []*parser.Field) string {
 func (g *Generator) generateInputArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += ", " + arg.Name + " " + g.getGoTypeFromThriftType(arg.Type)
+		argStr += ", " + strings.ToLower(arg.Name) + " " + g.getGoTypeFromThriftType(arg.Type)
 	}
 	return argStr
 }
@@ -686,7 +724,7 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 func (g *Generator) generateStructArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += "\t\t" + strings.Title(arg.Name) + ": " + arg.Name + ",\n"
+		argStr += "\t\t" + strings.Title(arg.Name) + ": " + strings.ToLower(arg.Name) + ",\n"
 	}
 	return argStr
 }
@@ -702,8 +740,18 @@ func (g *Generator) generateServerOutputArgs(args []*parser.Field) string {
 	return argStr
 }
 
+func (g *Generator) GenerateAsync(file *os.File, async *parser.Async) error {
+	// TODO: Implement async client/processor. For now, generating an interface
+	// which can be used for stubbing.
+	contents := g.generateAsyncInterface(async)
+
+	_, err := file.WriteString(contents)
+	return err
+}
+
 func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
-	switch t.Name {
+	typeName := g.Frugal.Thrift.UnderlyingType(t.Name)
+	switch typeName {
 	case "bool":
 		return "bool"
 	case "byte":
@@ -729,8 +777,21 @@ func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
 			g.getGoTypeFromThriftType(t.ValueType))
 	default:
 		// This is a custom type, return a pointer to it
-		return "*" + t.Name
+		return "*" + g.qualifiedTypeName(t)
 	}
+}
+
+func (g *Generator) qualifiedTypeName(t *parser.Type) string {
+	param := t.ParamName()
+	include := t.IncludeName()
+	if include != "" {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		param = fmt.Sprintf("%s.%s", namespace, param)
+	}
+	return param
 }
 
 func (g *Generator) qualifiedParamName(op *parser.Operation) string {

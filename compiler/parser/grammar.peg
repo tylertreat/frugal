@@ -19,12 +19,6 @@
         statement interface{}
     }
 
-    type namespace struct {
-        scope     string
-        namespace string
-    }
-
-    
     type exception *Struct
 
     type union *Struct
@@ -84,19 +78,22 @@
 
 Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
     thrift := &Thrift{
-        Includes:   make(map[string]string),
-        Namespaces: make(map[string]string),
-        Typedefs:   make(map[string]*TypeDef),
-        Constants:  make(map[string]*Constant),
-        Enums:      make(map[string]*Enum),
-        Structs:    make(map[string]*Struct),
-        Exceptions: make(map[string]*Struct),
-        Unions:     make(map[string]*Struct),
-        Services:   make(map[string]*Service),
+        Includes:       []*Include{},
+        Namespaces:     []*Namespace{},
+        Typedefs:       []*TypeDef{},
+        Constants:      []*Constant{},
+        Enums:          []*Enum{},
+        Structs:        []*Struct{},
+        Exceptions:     []*Struct{},
+        Unions:         []*Struct{},
+        Services:       []*Service{},
+        typedefIndex:   make(map[string]*TypeDef),
+        namespaceIndex: make(map[string]*Namespace),
     }
     frugal := &Frugal{
         Thrift:         thrift,
         Scopes:         []*Scope{},
+        Asyncs:         []*Async{},
         ParsedIncludes: make(map[string]*Frugal),
     }
 
@@ -104,41 +101,47 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
     for _, st := range stmts {
         wrapper := st.([]interface{})[0].(*statementWrapper)
         switch v := wrapper.statement.(type) {
-        case *namespace:
-            thrift.Namespaces[v.scope] = v.namespace
+        case *Namespace:
+            thrift.Namespaces = append(thrift.Namespaces, v)
+            thrift.namespaceIndex[v.Scope] = v
         case *Constant:
             v.Comment = wrapper.comment
-            thrift.Constants[v.Name] = v
+            thrift.Constants = append(thrift.Constants, v)
         case *Enum:
             v.Comment = wrapper.comment
-            thrift.Enums[v.Name] = v
+            thrift.Enums = append(thrift.Enums, v)
         case *TypeDef:
             v.Comment = wrapper.comment
-            thrift.Typedefs[v.Name] = v
+            thrift.Typedefs = append(thrift.Typedefs, v)
+            thrift.typedefIndex[v.Name] = v
         case *Struct:
             v.Comment = wrapper.comment
-            thrift.Structs[v.Name] = v
+            thrift.Structs = append(thrift.Structs, v)
         case exception:
             strct := (*Struct)(v)
             strct.Comment = wrapper.comment
-            thrift.Exceptions[v.Name] = strct
+            thrift.Exceptions = append(thrift.Exceptions, strct)
         case union:
             strct := unionToStruct(v)
             strct.Comment = wrapper.comment
-            thrift.Unions[v.Name] = strct
+            thrift.Unions = append(thrift.Unions, strct)
         case *Service:
             v.Comment = wrapper.comment
-            thrift.Services[v.Name] = v
+            thrift.Services = append(thrift.Services, v)
         case include:
             name := string(v)
             if ix := strings.LastIndex(name, "."); ix > 0 {
                 name = name[:ix]
             }
-            thrift.Includes[name] = string(v)
+            thrift.Includes = append(thrift.Includes, &Include{Name: name, Value: string(v)})
         case *Scope:
             v.Comment = wrapper.comment
             v.Frugal = frugal
             frugal.Scopes = append(frugal.Scopes, v)
+        case *Async:
+            v.Comment = wrapper.comment
+            v.Frugal = frugal
+            frugal.Asyncs = append(frugal.Asyncs, v)
         default:
             return nil, fmt.Errorf("parser: unknown value %#v", v)
         }
@@ -170,9 +173,9 @@ Include ← "include" _ file:Literal EOS {
 }
 
 Namespace ← "namespace" _ scope:[a-z.-]+ _ ns:Identifier EOS {
-    return &namespace{
-        scope:     ifaceSliceToString(scope),
-        namespace: string(ns.(Identifier)),
+    return &Namespace{
+        Scope: ifaceSliceToString(scope),
+        Value: string(ns.(Identifier)),
     }, nil
 }
 
@@ -277,7 +280,7 @@ FieldReq ← ("required" / "optional") {
 Service ← "service" _ name:Identifier _ extends:("extends" __ Identifier __)? __ '{' __ methods:(Function __)* ('}' / EndOfServiceError) EOS {
     ms := methods.([]interface{})
     svc := &Service{
-        Name: string(name.(Identifier)),
+        Name:    string(name.(Identifier)),
         Methods: make([]*Method, len(ms)),
     }
     if extends != nil {
@@ -289,6 +292,7 @@ Service ← "service" _ name:Identifier _ extends:("extends" __ Identifier __)? 
     }
     return svc, nil
 }
+
 EndOfServiceError ← . {
     return nil, errors.New("parser: expected end of service")
 }
@@ -415,7 +419,7 @@ ConstMap ← '{' __ values:(ConstValue __ ':' __ ConstValue __ (',' / &'}') __)*
 //                                   FRUGAL                                  //
 ///////////////////////////////////////////////////////////////////////////////
 
-FrugalStatement ← Scope
+FrugalStatement ← Scope / Async
 
 Scope ← docstr:(DocString __)? "scope" __ name:Identifier __ '{' __ prefix:Prefix? __ operations:(Operation __)* ('}' / EndOfScopeError) EOS {
     ops := operations.([]interface{})
@@ -456,6 +460,22 @@ Operation ← docstr:(DocString __)? name:Identifier _ ':' __ param:Identifier _
         o.Comment = rawCommentToDocStr(raw)
     }
     return o, nil
+}
+
+Async ← "async" _ name:Identifier _ extends:("extends" __ Identifier __)? __ '{' __ methods:(Function __)* ('}' / EndOfServiceError) EOS {
+    ms := methods.([]interface{})
+    async := &Async{
+        Name:    string(name.(Identifier)),
+        Methods: make([]*Method, len(ms)),
+    }
+    if extends != nil {
+        async.Extends = string(extends.([]interface{})[2].(Identifier))
+    }
+    for i, m := range ms {
+        mt :=  m.([]interface{})[0].(*Method)
+        async.Methods[i] = mt
+    }
+    return async, nil
 }
 
 ///////////////////////////////////////////////////////////////////////////////

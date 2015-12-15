@@ -41,8 +41,8 @@ func (g *Generator) GenerateThrift() bool {
 	return false
 }
 
-func (g *Generator) GetOutputDir(dir string, f *parser.Frugal) string {
-	if pkg, ok := f.Thrift.Namespaces[lang]; ok {
+func (g *Generator) GetOutputDir(dir string) string {
+	if pkg, ok := g.Frugal.Thrift.Namespace(lang); ok {
 		path := generator.GetPackageComponents(pkg)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	}
@@ -53,7 +53,7 @@ func (g *Generator) DefaultOutputDir() string {
 	return defaultOutputDir
 }
 
-func (g *Generator) GenerateDependencies(f *parser.Frugal, dir string) error {
+func (g *Generator) GenerateDependencies(dir string) error {
 	return nil
 }
 
@@ -63,6 +63,8 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 		return g.CreateFile(strings.Title(name)+"Publisher", outputDir, lang, false)
 	case generator.SubscribeFile:
 		return g.CreateFile(strings.Title(name)+"Subscriber", outputDir, lang, false)
+	case generator.CombinedAsyncFile:
+		return g.CreateFile(strings.Title(name)+"Async", outputDir, lang, false)
 	default:
 		return nil, fmt.Errorf("frugal: Bad file type for Java generator: %s", fileType)
 	}
@@ -81,12 +83,20 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 	return err
 }
 
-func (g *Generator) GenerateServicePackage(file *os.File, f *parser.Frugal, s *parser.Service) error {
-	return nil
+func (g *Generator) GenerateServicePackage(file *os.File, s *parser.Service) error {
+	return g.generatePackage(file)
 }
 
-func (g *Generator) GenerateScopePackage(file *os.File, f *parser.Frugal, s *parser.Scope) error {
-	pkg, ok := f.Thrift.Namespaces[lang]
+func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
+	return g.generatePackage(file)
+}
+
+func (g *Generator) GenerateAsyncPackage(file *os.File, a *parser.Async) error {
+	return g.generatePackage(file)
+}
+
+func (g *Generator) generatePackage(file *os.File) error {
+	pkg, ok := g.Frugal.Thrift.Namespace(lang)
 	if !ok {
 		return nil
 	}
@@ -95,10 +105,11 @@ func (g *Generator) GenerateScopePackage(file *os.File, f *parser.Frugal, s *par
 }
 
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
+	// TODO
 	return nil
 }
 
-func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *parser.Scope) error {
+func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "import com.workiva.frugal.Provider;\n"
 	imports += "import com.workiva.frugal.Transport;\n"
 	imports += "import com.workiva.frugal.TransportFactory;\n"
@@ -109,6 +120,12 @@ func (g *Generator) GenerateScopeImports(file *os.File, f *parser.Frugal, s *par
 	imports += "import org.apache.thrift.transport.TTransportException;\n\n"
 	imports += "import org.apache.thrift.transport.TTransportFactory;\n\n"
 	imports += "import javax.annotation.Generated;"
+	_, err := file.WriteString(imports)
+	return err
+}
+
+func (g *Generator) GenerateAsyncImports(file *os.File, a *parser.Async) error {
+	imports := "import com.workiva.frugal.Context;\n"
 	_, err := file.WriteString(imports)
 	return err
 }
@@ -278,8 +295,92 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	return err
 }
 
-func (g *Generator) GenerateService(file *os.File, p *parser.Frugal, s *parser.Service) error {
+func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
+	// TODO
 	return nil
+}
+
+func (g *Generator) GenerateAsync(file *os.File, async *parser.Async) error {
+	// TODO: Implement async client/processor. For now, generating an interface
+	// which can be used for stubbing.
+	contents := g.generateAsyncInterface(async)
+
+	_, err := file.WriteString(contents)
+	return err
+}
+
+func (g *Generator) generateAsyncInterface(async *parser.Async) string {
+	contents := ""
+	if async.Comment != nil {
+		contents += g.GenerateBlockComment(async.Comment, "")
+	}
+	contents += fmt.Sprintf("public interface %sAsync {\n", strings.Title(async.Name))
+	for _, method := range async.Methods {
+		if method.Comment != nil {
+			contents += g.GenerateBlockComment(method.Comment, "\t")
+		}
+		contents += fmt.Sprintf("\t%s %s(Context ctx%s);\n", g.getJavaTypeFromThriftType(method.ReturnType),
+			method.Name, g.generateInterfaceArgs(method.Arguments))
+	}
+	contents += "}\n\n"
+	return contents
+}
+
+func (g *Generator) generateInterfaceArgs(args []*parser.Field) string {
+	argStr := ""
+	prefix := ", "
+	for _, arg := range args {
+		argStr += prefix + g.getJavaTypeFromThriftType(arg.Type) + " " + arg.Name
+	}
+	return argStr
+}
+
+func (g *Generator) getJavaTypeFromThriftType(t *parser.Type) string {
+	if t == nil {
+		return "void"
+	}
+	typeName := g.Frugal.Thrift.UnderlyingType(t.Name)
+	switch typeName {
+	case "bool":
+		return "boolean"
+	case "byte":
+		return "byte"
+	case "i16":
+		return "short"
+	case "i32":
+		return "int"
+	case "i64":
+		return "long"
+	case "double":
+		return "double"
+	case "string":
+		return "String"
+	case "binary":
+		return "java.nio.ByteBuffer"
+	case "list":
+		return fmt.Sprintf("List<%s>", g.getJavaTypeFromThriftType(t.ValueType))
+	case "set":
+		return fmt.Sprintf("Set<%s>", g.getJavaTypeFromThriftType(t.ValueType))
+	case "map":
+		return fmt.Sprintf("Map<%s, %s>", g.getJavaTypeFromThriftType(t.KeyType),
+			g.getJavaTypeFromThriftType(t.ValueType))
+	default:
+		// This is a custom type, return a pointer to it
+		return g.qualifiedTypeName(t)
+	}
+}
+
+func (g *Generator) qualifiedTypeName(t *parser.Type) string {
+	param := t.ParamName()
+	include := t.IncludeName()
+	if include != "" {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		param = fmt.Sprintf("%s.%s", namespace, param)
+	}
+	return param
 }
 
 func (g *Generator) qualifiedParamName(op *parser.Operation) string {

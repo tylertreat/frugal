@@ -20,7 +20,7 @@ type FFoo interface {
 	// Ping the server.
 	Ping(frugal.Context) (err error)
 	// Blah the server.
-	Blah(frugal.Context, int32) (r int64, err error)
+	Blah(frugal.Context, int32, string, *Event) (r int64, err error)
 }
 
 type FFooClient struct {
@@ -132,14 +132,14 @@ func (f *FFooClient) recvPing(ctx frugal.Context) (err error) {
 }
 
 // Blah the server.
-func (f *FFooClient) Blah(ctx frugal.Context, num int32) (r int64, err error) {
-	if err = f.sendBlah(ctx, num); err != nil {
+func (f *FFooClient) Blah(ctx frugal.Context, num int32, str string, event *Event) (r int64, err error) {
+	if err = f.sendBlah(ctx, num, str, event); err != nil {
 		return
 	}
 	return f.recvBlah(ctx)
 }
 
-func (f *FFooClient) sendBlah(ctx frugal.Context, num int32) (err error) {
+func (f *FFooClient) sendBlah(ctx frugal.Context, num int32, str string, event *Event) (err error) {
 	oprot := f.OutputProtocol
 	if oprot == nil {
 		oprot = f.FProtocolFactory.GetProtocol(f.TTransport)
@@ -154,6 +154,8 @@ func (f *FFooClient) sendBlah(ctx frugal.Context, num int32) (err error) {
 	}
 	args := FooBlahArgs{
 		Num: num,
+		Str: str,
+		Event: event,
 	}
 	if err = args.Write(oprot); err != nil {
 		return
@@ -207,6 +209,10 @@ func (f *FFooClient) recvBlah(ctx frugal.Context) (r int64, err error) {
 		return
 	}
 	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	if result.Awe != nil {
+		err = result.Awe
 		return
 	}
 	r = result.GetSuccess()
@@ -323,13 +329,18 @@ func (p *fooFBlah) Process(ctx frugal.Context, seqId int32, iprot, oprot frugal.
 	result := FooBlahResult{}
 	var err2 error
 	var retval int64
-	if retval, err2 = p.handler.Blah(ctx, args.Num); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing blah: "+err2.Error())
-		oprot.WriteMessageBegin("blah", thrift.EXCEPTION, seqId)
-		x.Write(oprot)
-		oprot.WriteMessageEnd()
-		oprot.Flush()
-		return true, err2
+	if retval, err2 = p.handler.Blah(ctx, args.Num, args.Str, args.Event); err2 != nil {
+		switch v := err2.(type) {
+		case *AwesomeException:
+			result.Awe = v
+		default:
+			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing blah: "+err2.Error())
+			oprot.WriteMessageBegin("blah", thrift.EXCEPTION, seqId)
+			x.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
+			return true, err2
+		}
 	} else {
 		result.Success = &retval
 	}
