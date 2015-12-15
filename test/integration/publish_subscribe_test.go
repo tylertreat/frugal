@@ -12,14 +12,14 @@ import (
 func TestPublishSubscribe(t *testing.T) {
 
 	protocolFactories := map[string]thrift.TProtocolFactory{
-		"TCompactProtocolFactory":       thrift.NewTCompactProtocolFactory(),
-		"TSimpleJSONProtocolFactory":    thrift.NewTSimpleJSONProtocolFactory(),
+		// "TCompactProtocolFactory":       thrift.NewTCompactProtocolFactory(),
+		// "TSimpleJSONProtocolFactory":    thrift.NewTSimpleJSONProtocolFactory(),
 		"TJSONProtocolFactory":          thrift.NewTJSONProtocolFactory(),
-		"TBinaryProtocolFactoryDefault": thrift.NewTBinaryProtocolFactoryDefault(),
+		// "TBinaryProtocolFactoryDefault": thrift.NewTBinaryProtocolFactoryDefault(),
 	}
 	transportFactories := map[string]thrift.TTransportFactory{
 		"TBufferedTransportFactory": thrift.NewTBufferedTransportFactory(8192),
-		"TTransportFactory":         thrift.NewTTransportFactory(),
+		// "TTransportFactory":         thrift.NewTTransportFactory(),
 	}
 
 	// If framed is to be tested, it is a separate option for TransportFactories
