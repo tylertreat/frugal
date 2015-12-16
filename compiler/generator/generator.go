@@ -13,7 +13,6 @@ type FileType string
 
 const (
 	CombinedServiceFile FileType = "combined_service"
-	CombinedAsyncFile   FileType = "combined_async"
 	CombinedScopeFile   FileType = "combined_scope"
 	PublishFile         FileType = "publish"
 	SubscribeFile       FileType = "subscribe"
@@ -63,11 +62,6 @@ type LanguageGenerator interface {
 	GenerateScopeImports(*os.File, *parser.Scope) error
 	GeneratePublisher(*os.File, *parser.Scope) error
 	GenerateSubscriber(*os.File, *parser.Scope) error
-
-	// Async-specific methods
-	GenerateAsyncPackage(*os.File, *parser.Async) error
-	GenerateAsyncImports(*os.File, *parser.Async) error
-	GenerateAsync(*os.File, *parser.Async) error
 }
 
 func GetPackageComponents(pkg string) []string {
@@ -95,11 +89,6 @@ func (o *programGenerator) Generate(frugal *parser.Frugal, outputDir string) err
 			if err := o.generateServiceFile(service, outputDir); err != nil {
 				return err
 			}
-		}
-	}
-	for _, async := range frugal.Asyncs {
-		if err := o.generateAsyncFile(async, outputDir); err != nil {
-			return err
 		}
 	}
 	for _, scope := range frugal.Scopes {
@@ -151,44 +140,6 @@ func (o *programGenerator) generateServiceFile(service *parser.Service, outputDi
 	}
 
 	if err := o.GenerateService(file, service); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (o *programGenerator) generateAsyncFile(async *parser.Async, outputDir string) error {
-	file, err := o.GenerateFile(async.Name, outputDir, CombinedAsyncFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	if err := o.GenerateDocStringComment(file); err != nil {
-		return err
-	}
-
-	if err := o.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-
-	if err := o.GenerateAsyncPackage(file, async); err != nil {
-		return err
-	}
-
-	if err := o.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-
-	if err := o.GenerateAsyncImports(file, async); err != nil {
-		return err
-	}
-
-	if err := o.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-
-	if err := o.GenerateAsync(file, async); err != nil {
 		return err
 	}
 

@@ -169,9 +169,6 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 		return g.CreateFile(strings.ToLower(name)+serviceSuffix, outputDir, lang, true)
 	case generator.CombinedScopeFile:
 		return g.CreateFile(strings.ToLower(name)+scopeSuffix, outputDir, lang, true)
-	case generator.CombinedAsyncFile:
-		// TODO
-		return nil, nil
 	default:
 		return nil, fmt.Errorf("frugal: Bad file type for dartlang generator: %s", fileType)
 	}
@@ -193,11 +190,6 @@ func (g *Generator) GenerateServicePackage(file *os.File, s *parser.Service) err
 
 func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
 	return g.generatePackage(file, s.Name, scopeSuffix)
-}
-
-func (g *Generator) GenerateAsyncPackage(f *os.File, a *parser.Async) error {
-	// TODO
-	return nil
 }
 
 func (g *Generator) generatePackage(file *os.File, name, suffix string) error {
@@ -238,11 +230,6 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 
 	_, err := file.WriteString(imports)
 	return err
-}
-
-func (g *Generator) GenerateAsyncImports(*os.File, *parser.Async) error {
-	// TODO
-	return nil
 }
 
 func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
@@ -411,11 +398,6 @@ func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 
 	_, err := file.WriteString(contents)
 	return err
-}
-
-func (g *Generator) GenerateAsync(*os.File, *parser.Async) error {
-	// TODO
-	return nil
 }
 
 func (g *Generator) generateInterface(service *parser.Service) string {

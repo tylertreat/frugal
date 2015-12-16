@@ -63,8 +63,6 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 		return g.CreateFile(strings.Title(name)+"Publisher", outputDir, lang, false)
 	case generator.SubscribeFile:
 		return g.CreateFile(strings.Title(name)+"Subscriber", outputDir, lang, false)
-	case generator.CombinedAsyncFile:
-		return g.CreateFile(strings.Title(name)+"Async", outputDir, lang, false)
 	default:
 		return nil, fmt.Errorf("frugal: Bad file type for Java generator: %s", fileType)
 	}
@@ -88,10 +86,6 @@ func (g *Generator) GenerateServicePackage(file *os.File, s *parser.Service) err
 }
 
 func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
-	return g.generatePackage(file)
-}
-
-func (g *Generator) GenerateAsyncPackage(file *os.File, a *parser.Async) error {
 	return g.generatePackage(file)
 }
 
@@ -120,12 +114,6 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports += "import org.apache.thrift.transport.TTransportException;\n\n"
 	imports += "import org.apache.thrift.transport.TTransportFactory;\n\n"
 	imports += "import javax.annotation.Generated;"
-	_, err := file.WriteString(imports)
-	return err
-}
-
-func (g *Generator) GenerateAsyncImports(file *os.File, a *parser.Async) error {
-	imports := "import com.workiva.frugal.Context;\n"
 	_, err := file.WriteString(imports)
 	return err
 }
@@ -298,41 +286,6 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 	// TODO
 	return nil
-}
-
-func (g *Generator) GenerateAsync(file *os.File, async *parser.Async) error {
-	// TODO: Implement async client/processor. For now, generating an interface
-	// which can be used for stubbing.
-	contents := g.generateAsyncInterface(async)
-
-	_, err := file.WriteString(contents)
-	return err
-}
-
-func (g *Generator) generateAsyncInterface(async *parser.Async) string {
-	contents := ""
-	if async.Comment != nil {
-		contents += g.GenerateBlockComment(async.Comment, "")
-	}
-	contents += fmt.Sprintf("public interface %sAsync {\n", strings.Title(async.Name))
-	for _, method := range async.Methods {
-		if method.Comment != nil {
-			contents += g.GenerateBlockComment(method.Comment, "\t")
-		}
-		contents += fmt.Sprintf("\t%s %s(Context ctx%s);\n", g.getJavaTypeFromThriftType(method.ReturnType),
-			method.Name, g.generateInterfaceArgs(method.Arguments))
-	}
-	contents += "}\n\n"
-	return contents
-}
-
-func (g *Generator) generateInterfaceArgs(args []*parser.Field) string {
-	argStr := ""
-	prefix := ", "
-	for _, arg := range args {
-		argStr += prefix + g.getJavaTypeFromThriftType(arg.Type) + " " + arg.Name
-	}
-	return argStr
 }
 
 func (g *Generator) getJavaTypeFromThriftType(t *parser.Type) string {

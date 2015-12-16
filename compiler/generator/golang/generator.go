@@ -56,8 +56,6 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 		return g.CreateFile(strings.ToLower(name)+serviceSuffix, outputDir, lang, true)
 	case generator.CombinedScopeFile:
 		return g.CreateFile(strings.ToLower(name)+scopeSuffix, outputDir, lang, true)
-	case generator.CombinedAsyncFile:
-		return g.CreateFile(strings.ToLower(name)+asyncSuffix, outputDir, lang, true)
 	default:
 		return nil, fmt.Errorf("frugal: Bad file type for golang generator: %s", fileType)
 	}
@@ -78,10 +76,6 @@ func (g *Generator) GenerateServicePackage(file *os.File, s *parser.Service) err
 }
 
 func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
-	return g.generatePackage(file)
-}
-
-func (g *Generator) GenerateAsyncPackage(file *os.File, a *parser.Async) error {
 	return g.generatePackage(file)
 }
 
@@ -146,15 +140,6 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, namespace)
 	}
 
-	imports += ")"
-
-	_, err := file.WriteString(imports)
-	return err
-}
-
-func (g *Generator) GenerateAsyncImports(file *os.File, a *parser.Async) error {
-	imports := "import (\n"
-	imports += "\t\"github.com/Workiva/frugal-go\"\n"
 	imports += ")"
 
 	_, err := file.WriteString(imports)
@@ -352,24 +337,6 @@ func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 func (g *Generator) generateServiceInterface(service *parser.Service) string {
 	contents := fmt.Sprintf("type F%s interface {\n", strings.Title(service.Name))
 	for _, method := range service.Methods {
-		if method.Comment != nil {
-			contents += g.GenerateInlineComment(method.Comment, "\t")
-		}
-		contents += fmt.Sprintf("\t%s(frugal.Context%s) %s\n",
-			strings.Title(method.Name), g.generateInterfaceArgs(method.Arguments),
-			g.generateReturnArgs(method))
-	}
-	contents += "}\n\n"
-	return contents
-}
-
-func (g *Generator) generateAsyncInterface(async *parser.Async) string {
-	contents := ""
-	if async.Comment != nil {
-		contents += g.GenerateInlineComment(async.Comment, "")
-	}
-	contents += fmt.Sprintf("type %sAsync interface {\n", strings.Title(async.Name))
-	for _, method := range async.Methods {
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, "\t")
 		}
@@ -739,15 +706,6 @@ func (g *Generator) generateServerOutputArgs(args []*parser.Field) string {
 		}
 	}
 	return argStr
-}
-
-func (g *Generator) GenerateAsync(file *os.File, async *parser.Async) error {
-	// TODO: Implement async client/processor. For now, generating an interface
-	// which can be used for stubbing.
-	contents := g.generateAsyncInterface(async)
-
-	_, err := file.WriteString(contents)
-	return err
 }
 
 func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
