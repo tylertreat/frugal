@@ -97,12 +97,12 @@ func recvPingHandler(ctx frugal.Context, resultC chan<- struct{}, errorC chan<- 
 	return func(iprot *frugal.FProtocol) error {
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
 			errorC <- err
-			return nil
+			return err
 		}
 		method, mTypeId, _, err := iprot.ReadMessageBegin()
 		if err != nil {
 			errorC <- err
-			return nil
+			return err
 		}
 		if method != "ping" {
 			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "ping failed: wrong method name")
@@ -115,11 +115,11 @@ func recvPingHandler(ctx frugal.Context, resultC chan<- struct{}, errorC chan<- 
 			error1, err = error0.Read(iprot)
 			if err != nil {
 				errorC <- err
-				return nil
+				return err
 			}
 			if err = iprot.ReadMessageEnd(); err != nil {
 				errorC <- err
-				return nil
+				return err
 			}
 			err = error1
 			errorC <- err
@@ -137,7 +137,7 @@ func recvPingHandler(ctx frugal.Context, resultC chan<- struct{}, errorC chan<- 
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			errorC <- err
-			return nil
+			return err
 		}
 		resultC <- struct{}{}
 		return nil
@@ -202,12 +202,12 @@ func recvBlahHandler(ctx frugal.Context, resultC chan<- int64, errorC chan<- err
 	return func(iprot *frugal.FProtocol) error {
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
 			errorC <- err
-			return nil
+			return err
 		}
 		method, mTypeId, _, err := iprot.ReadMessageBegin()
 		if err != nil {
 			errorC <- err
-			return nil
+			return err
 		}
 		if method != "blah" {
 			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "blah failed: wrong method name")
@@ -220,11 +220,11 @@ func recvBlahHandler(ctx frugal.Context, resultC chan<- int64, errorC chan<- err
 			error1, err = error0.Read(iprot)
 			if err != nil {
 				errorC <- err
-				return nil
+				return err
 			}
 			if err = iprot.ReadMessageEnd(); err != nil {
 				errorC <- err
-				return nil
+				return err
 			}
 			err = error1
 			errorC <- err
@@ -242,7 +242,7 @@ func recvBlahHandler(ctx frugal.Context, resultC chan<- int64, errorC chan<- err
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			errorC <- err
-			return nil
+			return err
 		}
 		if result.Awe != nil {
 			errorC <- result.Awe
