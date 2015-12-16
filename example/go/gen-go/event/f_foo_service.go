@@ -94,12 +94,7 @@ func (f *FFooClient) Ping(ctx frugal.Context) (err error) {
 }
 
 func recvPingHandler(ctx frugal.Context, resultC chan<- struct{}, errorC chan<- error) frugal.AsyncCallback {
-	return func(iprot *frugal.FProtocol, err error) error {
-		if err != nil {
-			errorC <- err
-			return nil
-		}
-
+	return func(iprot *frugal.FProtocol) error {
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
 			errorC <- err
 			return nil
@@ -138,7 +133,7 @@ func recvPingHandler(ctx frugal.Context, resultC chan<- struct{}, errorC chan<- 
 		result := FooPingResult{}
 		if err = result.Read(iprot); err != nil {
 			errorC <- err
-		return err
+			return err
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			errorC <- err
@@ -204,12 +199,7 @@ func (f *FFooClient) Blah(ctx frugal.Context, num int32, str string, event *Even
 }
 
 func recvBlahHandler(ctx frugal.Context, resultC chan<- int64, errorC chan<- error) frugal.AsyncCallback {
-	return func(iprot *frugal.FProtocol, err error) error {
-		if err != nil {
-			errorC <- err
-			return nil
-		}
-
+	return func(iprot *frugal.FProtocol) error {
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
 			errorC <- err
 			return nil
@@ -248,7 +238,7 @@ func recvBlahHandler(ctx frugal.Context, resultC chan<- int64, errorC chan<- err
 		result := FooBlahResult{}
 		if err = result.Read(iprot); err != nil {
 			errorC <- err
-		return err
+			return err
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			errorC <- err

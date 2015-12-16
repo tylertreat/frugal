@@ -461,11 +461,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf("func recv%sHandler(ctx frugal.Context, resultC chan<- %s, errorC chan<- error) frugal.AsyncCallback {\n", nameTitle, returnType)
-	contents += "\treturn func(iprot *frugal.FProtocol, err error) error {\n"
-	contents += "\t\tif err != nil {\n"
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn nil\n"
-	contents += "\t\t}\n"
+	contents += "\treturn func(iprot *frugal.FProtocol) error {\n"
 	contents += "\t\tif err := iprot.ReadResponseHeader(ctx); err != nil {\n"
 	contents += "\t\t\terrorC <- err\n"
 	contents += "\t\t\treturn nil\n"
