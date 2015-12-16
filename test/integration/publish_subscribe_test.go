@@ -12,23 +12,18 @@ import (
 func TestPublishSubscribe(t *testing.T) {
 
 	protocolFactories := map[string]thrift.TProtocolFactory{
-		// "TCompactProtocolFactory":       thrift.NewTCompactProtocolFactory(),
-		// "TSimpleJSONProtocolFactory":    thrift.NewTSimpleJSONProtocolFactory(),
+		"TCompactProtocolFactory":       thrift.NewTCompactProtocolFactory(),
 		"TJSONProtocolFactory":          thrift.NewTJSONProtocolFactory(),
-		// "TBinaryProtocolFactoryDefault": thrift.NewTBinaryProtocolFactoryDefault(),
+		"TBinaryProtocolFactoryDefault": thrift.NewTBinaryProtocolFactoryDefault(),
 	}
 	transportFactories := map[string]thrift.TTransportFactory{
 		"TBufferedTransportFactory": thrift.NewTBufferedTransportFactory(8192),
-		// "TTransportFactory":         thrift.NewTTransportFactory(),
+		"TTransportFactory":         thrift.NewTTransportFactory(),
 	}
 
-	// If framed is to be tested, it is a separate option for TransportFactories
-	// thrift.NewTFramedTransportFactory(transportFactory),
-
-	tls := false // This will need to match the server configuration
+	tls := false // TODO: test with TLS enabled
 
 	addr := flag.String("addr", nats.DefaultURL, "NATS address")
-	// Probably need to set this to true for additional testing
 	secure := flag.Bool("secure", tls, "Use tls secure transport")
 
 	natsOptions := nats.DefaultOptions
