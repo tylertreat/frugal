@@ -22,6 +22,7 @@ type EventsPublisher struct {
 
 func NewEventsPublisher(provider *frugal.Provider) *EventsPublisher {
 	transport, protocol := provider.New()
+	transport.Open()
 	return &EventsPublisher{
 		FTransport: transport,
 		FProtocol:  protocol,

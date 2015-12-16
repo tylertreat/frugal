@@ -107,7 +107,7 @@ func recvPingHandler(ctx frugal.Context, resultC chan<- struct{}, errorC chan<- 
 		if method != "ping" {
 			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "ping failed: wrong method name")
 			errorC <- err
-			return nil
+			return err
 		}
 		if mTypeId == thrift.EXCEPTION {
 			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
@@ -212,7 +212,7 @@ func recvBlahHandler(ctx frugal.Context, resultC chan<- int64, errorC chan<- err
 		if method != "blah" {
 			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "blah failed: wrong method name")
 			errorC <- err
-			return nil
+			return err
 		}
 		if mTypeId == thrift.EXCEPTION {
 			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
@@ -256,6 +256,8 @@ func recvBlahHandler(ctx frugal.Context, resultC chan<- int64, errorC chan<- err
 type FFooProcessor struct {
 	processorMap map[string]frugal.FProcessorFunction
 	handler      FFoo
+	writeMu      *sync.Mutex
+	errors       chan error
 }
 
 func (p *FFooProcessor) GetProcessorFunction(key string) (processor frugal.FProcessorFunction, ok bool) {
@@ -264,51 +266,78 @@ func (p *FFooProcessor) GetProcessorFunction(key string) (processor frugal.FProc
 }
 
 func NewFFooProcessor(handler FFoo) *FFooProcessor {
+	writeMu := &sync.Mutex{}
+	errors := make(chan error, 1)
 	p := &FFooProcessor{
 		handler:      handler,
 		processorMap: make(map[string]frugal.FProcessorFunction),
+		writeMu:      writeMu,
+		errors:       errors,
 	}
-	p.processorMap["ping"] = &fooFPing{handler: handler}
-	p.processorMap["blah"] = &fooFBlah{handler: handler}
+	p.processorMap["ping"] = &fooFPing{
+		handler: handler,
+		writeMu: writeMu,
+		errors:  errors,
+	}
+	p.processorMap["blah"] = &fooFBlah{
+		handler: handler,
+		writeMu: writeMu,
+		errors:  errors,
+	}
 	return p
 }
 
-func (p *FFooProcessor) Process(iprot, oprot frugal.FProtocol) (success bool, err thrift.TException) {
+func (p *FFooProcessor) Errors() <-chan error {
+	return p.errors
+}
+
+func (p *FFooProcessor) Process(iprot, oprot *frugal.FProtocol) {
 	ctx, err := iprot.ReadRequestHeader()
 	if err != nil {
-		return false, err
+		p.errors <- err
+		return
 	}
-	name, _, seqId, err := iprot.ReadMessageBegin()
+	name, _, _, err := iprot.ReadMessageBegin()
 	if err != nil {
-		return false, err
+		p.errors <- err
+		return
 	}
 	if processor, ok := p.GetProcessorFunction(name); ok {
-		return processor.Process(ctx, seqId, iprot, oprot)
+		processor.Process(ctx, iprot, oprot)
+		return
 	}
 	iprot.Skip(thrift.STRUCT)
 	iprot.ReadMessageEnd()
 	x3 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
-	oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
+	p.writeMu.Lock()
+	oprot.WriteMessageBegin(name, thrift.EXCEPTION, 0)
 	x3.Write(oprot)
 	oprot.WriteMessageEnd()
 	oprot.Flush()
-	return false, x3
+	p.writeMu.Unlock()
+	p.errors <- x3
 }
 
 type fooFPing struct {
 	handler FFoo
+	writeMu *sync.Mutex
+	errors  chan<- error
 }
 
-func (p *fooFPing) Process(ctx frugal.Context, seqId int32, iprot, oprot frugal.FProtocol) (success bool, err thrift.TException) {
+func (p *fooFPing) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) {
 	args := FooPingArgs{}
+	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
 		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
-		oprot.WriteMessageBegin("ping", thrift.EXCEPTION, seqId)
+		p.writeMu.Lock()
+		oprot.WriteMessageBegin("ping", thrift.EXCEPTION, 0)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush()
-		return false, err
+		p.writeMu.Unlock()
+		p.errors <- err
+		return
 	}
 
 	iprot.ReadMessageEnd()
@@ -316,16 +345,20 @@ func (p *fooFPing) Process(ctx frugal.Context, seqId int32, iprot, oprot frugal.
 	var err2 error
 	if err2 = p.handler.Ping(ctx, ); err2 != nil {
 		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing ping: "+err2.Error())
-		oprot.WriteMessageBegin("ping", thrift.EXCEPTION, seqId)
+		p.writeMu.Lock()
+		oprot.WriteMessageBegin("ping", thrift.EXCEPTION, 0)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush()
-		return true, err2
+		p.writeMu.Unlock()
+		p.errors <- err2
+		return
 	}
+	p.writeMu.Lock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		err = err2
 	}
-	if err2 = oprot.WriteMessageBegin("ping", thrift.REPLY, seqId); err2 != nil {
+	if err2 = oprot.WriteMessageBegin("ping", thrift.REPLY, 0); err2 != nil {
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -337,26 +370,32 @@ func (p *fooFPing) Process(ctx frugal.Context, seqId int32, iprot, oprot frugal.
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		err = err2
 	}
+	p.writeMu.Unlock()
 	if err != nil {
-		return
+		p.errors <- err
 	}
-	return true, err
 }
 
 type fooFBlah struct {
 	handler FFoo
+	writeMu *sync.Mutex
+	errors  chan<- error
 }
 
-func (p *fooFBlah) Process(ctx frugal.Context, seqId int32, iprot, oprot frugal.FProtocol) (success bool, err thrift.TException) {
+func (p *fooFBlah) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) {
 	args := FooBlahArgs{}
+	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
 		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
-		oprot.WriteMessageBegin("blah", thrift.EXCEPTION, seqId)
+		p.writeMu.Lock()
+		oprot.WriteMessageBegin("blah", thrift.EXCEPTION, 0)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush()
-		return false, err
+		p.writeMu.Unlock()
+		p.errors <- err
+		return
 	}
 
 	iprot.ReadMessageEnd()
@@ -369,19 +408,23 @@ func (p *fooFBlah) Process(ctx frugal.Context, seqId int32, iprot, oprot frugal.
 			result.Awe = v
 		default:
 			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing blah: "+err2.Error())
-			oprot.WriteMessageBegin("blah", thrift.EXCEPTION, seqId)
+			p.writeMu.Lock()
+			oprot.WriteMessageBegin("blah", thrift.EXCEPTION, 0)
 			x.Write(oprot)
 			oprot.WriteMessageEnd()
 			oprot.Flush()
-			return true, err2
+			p.writeMu.Unlock()
+			p.errors <- err2
+			return
 		}
 	} else {
 		result.Success = &retval
 	}
+	p.writeMu.Lock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		err = err2
 	}
-	if err2 = oprot.WriteMessageBegin("blah", thrift.REPLY, seqId); err2 != nil {
+	if err2 = oprot.WriteMessageBegin("blah", thrift.REPLY, 0); err2 != nil {
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -393,9 +436,9 @@ func (p *fooFBlah) Process(ctx frugal.Context, seqId int32, iprot, oprot frugal.
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		err = err2
 	}
+	p.writeMu.Unlock()
 	if err != nil {
-		return
+		p.errors <- err
 	}
-	return true, err
 }
 

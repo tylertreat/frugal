@@ -172,6 +172,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.Provider) *%sPublisher {\n", strings.Title(scope.Name), strings.Title(scope.Name))
 	publisher += "\ttransport, protocol := provider.New()\n"
+	publisher += "\ttransport.Open()\n"
 	publisher += fmt.Sprintf("\treturn &%sPublisher{\n", strings.Title(scope.Name))
 	publisher += "\t\tFTransport: transport,\n"
 	publisher += "\t\tFProtocol:  protocol,\n"
@@ -543,6 +544,8 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	contents += fmt.Sprintf("type F%sProcessor struct {\n", servTitle)
 	contents += "\tprocessorMap map[string]frugal.FProcessorFunction\n"
 	contents += fmt.Sprintf("\thandler      F%s\n", servTitle)
+	contents += "\twriteMu      *sync.Mutex\n"
+	contents += "\terrors       chan error\n"
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf("func (p *F%sProcessor) GetProcessorFunction(key string) "+
@@ -553,38 +556,55 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 
 	contents += fmt.Sprintf("func NewF%sProcessor(handler F%s) *F%sProcessor {\n",
 		servTitle, servTitle, servTitle)
+	contents += "\twriteMu := &sync.Mutex{}\n"
+	contents += "\terrors := make(chan error, 1)\n"
 	contents += fmt.Sprintf("\tp := &F%sProcessor{\n", servTitle)
 	contents += "\t\thandler:      handler,\n"
 	contents += "\t\tprocessorMap: make(map[string]frugal.FProcessorFunction),\n"
+	contents += "\t\twriteMu:      writeMu,\n"
+	contents += "\t\terrors:       errors,\n"
 	contents += "\t}\n"
 	for _, method := range service.Methods {
-		contents += fmt.Sprintf("\tp.processorMap[\"%s\"] = &%sF%s{handler: handler}\n",
+		contents += fmt.Sprintf("\tp.processorMap[\"%s\"] = &%sF%s{\n",
 			strings.ToLower(method.Name), servLower, strings.Title(method.Name))
+		contents += "\t\thandler: handler,\n"
+		contents += "\t\twriteMu: writeMu,\n"
+		contents += "\t\terrors:  errors,\n"
+		contents += "\t}\n"
 	}
 	contents += "\treturn p\n"
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func (p *F%sProcessor) Process(iprot, oprot frugal.FProtocol) "+
-		"(success bool, err thrift.TException) {\n", servTitle)
+	contents += fmt.Sprintf("func (p *F%sProcessor) Errors() <-chan error {\n", servTitle)
+	contents += "\treturn p.errors\n"
+	contents += "}\n\n"
+
+	contents += fmt.Sprintf(
+		"func (p *F%sProcessor) Process(iprot, oprot *frugal.FProtocol) {\n", servTitle)
 	contents += "\tctx, err := iprot.ReadRequestHeader()\n"
 	contents += "\tif err != nil {\n"
-	contents += "\t\treturn false, err\n"
+	contents += "\t\tp.errors <- err\n"
+	contents += "\t\treturn\n"
 	contents += "\t}\n"
-	contents += "\tname, _, seqId, err := iprot.ReadMessageBegin()\n"
+	contents += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
 	contents += "\tif err != nil {\n"
-	contents += "\t\treturn false, err\n"
+	contents += "\t\tp.errors <- err\n"
+	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += "\tif processor, ok := p.GetProcessorFunction(name); ok {\n"
-	contents += "\t\treturn processor.Process(ctx, seqId, iprot, oprot)\n"
+	contents += "\t\tprocessor.Process(ctx, iprot, oprot)\n"
+	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += "\tiprot.Skip(thrift.STRUCT)\n"
 	contents += "\tiprot.ReadMessageEnd()\n"
 	contents += "\tx3 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
-	contents += "\toprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)\n"
+	contents += "\tp.writeMu.Lock()\n"
+	contents += "\toprot.WriteMessageBegin(name, thrift.EXCEPTION, 0)\n"
 	contents += "\tx3.Write(oprot)\n"
 	contents += "\toprot.WriteMessageEnd()\n"
 	contents += "\toprot.Flush()\n"
-	contents += "\treturn false, x3\n"
+	contents += "\tp.writeMu.Unlock()\n"
+	contents += "\tp.errors <- x3\n"
 	contents += "}\n\n"
 
 	return contents
@@ -598,21 +618,25 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 
 	contents := fmt.Sprintf("type %sF%s struct {\n", servLower, nameTitle)
 	contents += fmt.Sprintf("\thandler F%s\n", servTitle)
+	contents += "\twriteMu *sync.Mutex\n"
+	contents += "\terrors  chan<- error\n"
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func (p *%sF%s) Process(ctx frugal.Context, "+
-		"seqId int32, iprot, oprot frugal.FProtocol) (success bool, err thrift.TException) {\n",
-		servLower, nameTitle)
+	contents += fmt.Sprintf("func (p *%sF%s) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) {\n", servLower, nameTitle)
 	contents += fmt.Sprintf("\targs := %s%sArgs{}\n", servTitle, nameTitle)
+	contents += "\tvar err error\n"
 	contents += "\tif err = args.Read(iprot); err != nil {\n"
 	contents += "\t\tiprot.ReadMessageEnd()\n"
 	contents += "\t\tx := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())\n"
-	contents += fmt.Sprintf("\t\toprot.WriteMessageBegin(\"%s\", thrift.EXCEPTION, seqId)\n",
+	contents += "\t\tp.writeMu.Lock()\n"
+	contents += fmt.Sprintf("\t\toprot.WriteMessageBegin(\"%s\", thrift.EXCEPTION, 0)\n",
 		nameLower)
 	contents += "\t\tx.Write(oprot)\n"
 	contents += "\t\toprot.WriteMessageEnd()\n"
 	contents += "\t\toprot.Flush()\n"
-	contents += "\t\treturn false, err\n"
+	contents += "\t\tp.writeMu.Unlock()\n"
+	contents += "\t\tp.errors <- err\n"
+	contents += "\t\treturn\n"
 	contents += "\t}\n\n"
 
 	contents += "\tiprot.ReadMessageEnd()\n"
@@ -644,11 +668,12 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	}
 	contents += "\t}\n"
 
+	contents += "\tp.writeMu.Lock()\n"
 	contents += "\tif err2 = oprot.WriteResponseHeader(ctx); err2 != nil {\n"
 	contents += "\t\terr = err2\n"
 	contents += "\t}\n"
 	contents += fmt.Sprintf("\tif err2 = oprot.WriteMessageBegin(\"%s\", "+
-		"thrift.REPLY, seqId); err2 != nil {\n", nameLower)
+		"thrift.REPLY, 0); err2 != nil {\n", nameLower)
 	contents += "\t\terr = err2\n"
 	contents += "\t}\n"
 	contents += "\tif err2 = result.Write(oprot); err == nil && err2 != nil {\n"
@@ -660,10 +685,10 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\tif err2 = oprot.Flush(); err == nil && err2 != nil {\n"
 	contents += "\t\terr = err2\n"
 	contents += "\t}\n"
+	contents += "\tp.writeMu.Unlock()\n"
 	contents += "\tif err != nil {\n"
-	contents += "\t\treturn\n"
+	contents += "\t\tp.errors <- err\n"
 	contents += "\t}\n"
-	contents += "\treturn true, err\n"
 	contents += "}\n\n"
 
 	return contents
@@ -672,12 +697,15 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 func (g *Generator) generateMethodException(prefix, methodName string) string {
 	contents := fmt.Sprintf(prefix+"x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "+
 		"\"Internal error processing %s: \"+err2.Error())\n", methodName)
-	contents += fmt.Sprintf(prefix+"oprot.WriteMessageBegin(\"%s\", thrift.EXCEPTION, seqId)\n",
+	contents += prefix + "p.writeMu.Lock()\n"
+	contents += fmt.Sprintf(prefix+"oprot.WriteMessageBegin(\"%s\", thrift.EXCEPTION, 0)\n",
 		methodName)
 	contents += prefix + "x.Write(oprot)\n"
 	contents += prefix + "oprot.WriteMessageEnd()\n"
 	contents += prefix + "oprot.Flush()\n"
-	contents += prefix + "return true, err2\n"
+	contents += prefix + "p.writeMu.Unlock()\n"
+	contents += prefix + "p.errors <- err2\n"
+	contents += prefix + "return\n"
 	return contents
 }
 
