@@ -16,17 +16,15 @@ const delimiter = "."
 // This docstring gets added to the generated code because it has
 // the @ sign.
 type EventsPublisher struct {
-	FTransport frugal.FTransport
-	TProtocol  thrift.TProtocol
-	SeqId     int32
+	FTransport frugal.FScopeTransport
+	FProtocol  *frugal.FProtocol
 }
 
 func NewEventsPublisher(provider *frugal.Provider) *EventsPublisher {
 	transport, protocol := provider.New()
 	return &EventsPublisher{
 		FTransport: transport,
-		TProtocol:  protocol,
-		SeqId:     0,
+		FProtocol:  protocol,
 	}
 }
 
@@ -35,10 +33,12 @@ func (l *EventsPublisher) PublishEventCreated(user string, req *Event) error {
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
-	l.FTransport.PreparePublish(topic)
-	oprot := l.TProtocol
-	l.SeqId++
-	if err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {
+	if err := l.FTransport.LockTopic(topic); err != nil {
+		return err
+	}
+	defer l.FTransport.UnlockTopic()
+	oprot := l.FProtocol
+	if err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {
 		return err
 	}
 	if err := req.Write(oprot); err != nil {
@@ -78,7 +78,7 @@ func (l *EventsSubscriber) SubscribeEventCreated(user string, handler func(*Even
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 					return
 				}
-				log.Println("frugal: error receiving:", err)
+				log.Printf("frugal: error receiving %s: %s\n", topic, err.Error())
 				sub.Signal(err)
 				sub.Unsubscribe()
 				return

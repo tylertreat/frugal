@@ -23,8 +23,8 @@ var GoUnusedProtection__ int
 //  - ID: ID is a unique identifier for an event.
 //  - Message: Message contains the event payload.
 type Event struct {
-	ID      int64  `thrift:"ID,1,required" json:"ID"`
-	Message string `thrift:"Message,2,required" json:"Message"`
+	ID      int64  `thrift:"ID,1,required" db:"ID" json:"ID"`
+	Message string `thrift:"Message,2,required" db:"Message" json:"Message"`
 }
 
 func NewEvent() *Event {
@@ -58,12 +58,12 @@ func (p *Event) Read(iprot thrift.TProtocol) error {
 		}
 		switch fieldId {
 		case 1:
-			if err := p.readField1(iprot); err != nil {
+			if err := p.ReadField1(iprot); err != nil {
 				return err
 			}
 			issetID = true
 		case 2:
-			if err := p.readField2(iprot); err != nil {
+			if err := p.ReadField2(iprot); err != nil {
 				return err
 			}
 			issetMessage = true
@@ -88,7 +88,7 @@ func (p *Event) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Event) readField1(iprot thrift.TProtocol) error {
+func (p *Event) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
@@ -97,7 +97,7 @@ func (p *Event) readField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Event) readField2(iprot thrift.TProtocol) error {
+func (p *Event) ReadField2(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {
@@ -162,8 +162,8 @@ func (p *Event) String() string {
 //  - ID: ID is a unique identifier for an awesome exception.
 //  - Reason: Reason contains the error message.
 type AwesomeException struct {
-	ID     int64  `thrift:"ID,1,required" json:"ID"`
-	Reason string `thrift:"Reason,2,required" json:"Reason"`
+	ID     int64  `thrift:"ID,1,required" db:"ID" json:"ID"`
+	Reason string `thrift:"Reason,2,required" db:"Reason" json:"Reason"`
 }
 
 func NewAwesomeException() *AwesomeException {
@@ -195,12 +195,12 @@ func (p *AwesomeException) Read(iprot thrift.TProtocol) error {
 		}
 		switch fieldId {
 		case 1:
-			if err := p.readField1(iprot); err != nil {
+			if err := p.ReadField1(iprot); err != nil {
 				return err
 			}
 			issetID = true
 		case 2:
-			if err := p.readField2(iprot); err != nil {
+			if err := p.ReadField2(iprot); err != nil {
 				return err
 			}
 			issetReason = true
@@ -225,7 +225,7 @@ func (p *AwesomeException) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *AwesomeException) readField1(iprot thrift.TProtocol) error {
+func (p *AwesomeException) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
@@ -234,7 +234,7 @@ func (p *AwesomeException) readField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *AwesomeException) readField2(iprot thrift.TProtocol) error {
+func (p *AwesomeException) ReadField2(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {
