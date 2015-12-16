@@ -95,6 +95,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports := "import (\n"
 	imports += "\t\"bytes\"\n"
 	imports += "\t\"fmt\"\n"
+	imports += "\t\"sync\"\n"
 	if g.Options["thrift_import"] != "" {
 		imports += "\t\"" + g.Options["thrift_import"] + "\"\n"
 	} else {
@@ -359,34 +360,22 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	servTitle := strings.Title(service.Name)
 
 	contents := fmt.Sprintf("type F%sClient struct {\n", servTitle)
-	contents += "\tTTransport       thrift.TTransport\n"
-	contents += "\tFProtocolFactory frugal.FProtocolFactory\n"
-	contents += "\tInputProtocol   frugal.FProtocol\n"
-	contents += "\tOutputProtocol  frugal.FProtocol\n"
-	contents += "\tSeqId           int32\n"
+	contents += "\tFTransport       frugal.FTransport\n"
+	contents += "\tFProtocolFactory *frugal.FProtocolFactory\n"
+	contents += "\tInputProtocol    *frugal.FProtocol\n"
+	contents += "\tOutputProtocol   *frugal.FProtocol\n"
+	contents += "\tmu               sync.Mutex\n"
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf(
-		"func NewF%sClientFactory(t thrift.TTransport, f frugal.FProtocolFactory) *F%sClient {\n",
+		"func NewF%sClient(t frugal.FTransport, f *frugal.FProtocolFactory) *F%sClient {\n",
 		servTitle, servTitle)
+	contents += "\tt.SetRegistry(frugal.NewClientRegistry())\n"
 	contents += fmt.Sprintf("\treturn &F%sClient{\n", servTitle)
-	contents += "\t\tTTransport:       t,\n"
+	contents += "\t\tFTransport:       t,\n"
 	contents += "\t\tFProtocolFactory: f,\n"
-	contents += "\t\tInputProtocol:   f.GetProtocol(t),\n"
-	contents += "\t\tOutputProtocol:  f.GetProtocol(t),\n"
-	contents += "\t\tSeqId:           0,\n"
-	contents += "\t}\n"
-	contents += "}\n\n"
-
-	contents += fmt.Sprintf(
-		"func NewF%sClientProtocol(t thrift.TTransport, iprot, oprot frugal.FProtocol) *F%sClient {\n",
-		service.Name, service.Name)
-	contents += fmt.Sprintf("\treturn &F%sClient{\n", servTitle)
-	contents += "\t\tTTransport:       t,\n"
-	contents += "\t\tFProtocolFactory: nil,\n"
-	contents += "\t\tInputProtocol:   iprot,\n"
-	contents += "\t\tOutputProtocol:  oprot,\n"
-	contents += "\t\tSeqId:           0,\n"
+	contents += "\t\tInputProtocol:    f.GetProtocol(t),\n"
+	contents += "\t\tOutputProtocol:   f.GetProtocol(t),\n"
 	contents += "\t}\n"
 	contents += "}\n\n"
 
@@ -399,6 +388,8 @@ func (g *Generator) generateClient(service *parser.Service) string {
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
 	servTitle := strings.Title(service.Name)
 	nameTitle := strings.Title(method.Name)
+
+	// TODO: Is this assumption correct? Does Thrift just use the name as is?
 	nameLower := strings.ToLower(method.Name)
 
 	contents := ""
@@ -408,104 +399,133 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx frugal.Context%s) %s {\n",
 		servTitle, nameTitle, g.generateInputArgs(method.Arguments),
 		g.generateReturnArgs(method))
-	contents += fmt.Sprintf("\tif err = f.send%s(ctx%s); err != nil {\n",
-		nameTitle, g.generateClientOutputArgs(method.Arguments))
-	contents += "\t\treturn\n"
-	contents += "\t}\n"
-	contents += fmt.Sprintf("\treturn f.recv%s(ctx)\n", nameTitle)
-	contents += "}\n\n"
-
-	contents += fmt.Sprintf("func (f *F%sClient) send%s(ctx frugal.Context%s) (err error) {\n",
-		servTitle, nameTitle, g.generateInputArgs(method.Arguments))
 	contents += "\toprot := f.OutputProtocol\n"
 	contents += "\tif oprot == nil {\n"
-	contents += "\t\toprot = f.FProtocolFactory.GetProtocol(f.TTransport)\n"
+	contents += "\t\toprot = f.FProtocolFactory.GetProtocol(f.FTransport)\n"
 	contents += "\t\tf.OutputProtocol = oprot\n"
 	contents += "\t}\n"
-	contents += fmt.Sprintf("\tif err = f.OutputProtocol.WriteRequestHeader(ctx); err != nil {\n")
+	contents += "\terrorC := make(chan error, 1)\n"
+	var returnType string
+	if method.ReturnType == nil {
+		returnType = "struct{}"
+	} else {
+		returnType = g.getGoTypeFromThriftType(method.ReturnType)
+	}
+	contents += fmt.Sprintf("\tresultC := make(chan %s, 1)\n", returnType)
+	contents += fmt.Sprintf("\tif err = f.FTransport.Register(ctx, f.FProtocolFactory, recv%sHandler(ctx, resultC, errorC)); err != nil {\n", nameTitle)
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
-	contents += "\tf.SeqId++\n"
+	contents += "\tf.mu.Lock()\n"
+	contents += fmt.Sprintf("\tif err = oprot.WriteRequestHeader(ctx); err != nil {\n")
+	contents += "\t\tf.mu.Unlock()\n"
+	contents += "\t\tf.FTransport.Unregister(ctx)\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
 	contents += fmt.Sprintf(
-		"\tif err = oprot.WriteMessageBegin(\"%s\", thrift.CALL, f.SeqId); err != nil {\n",
-		nameLower)
+		"\tif err = oprot.WriteMessageBegin(\"%s\", thrift.CALL, 0); err != nil {\n", nameLower)
+	contents += "\t\tf.mu.Unlock()\n"
+	contents += "\t\tf.FTransport.Unregister(ctx)\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += fmt.Sprintf("\targs := %s%sArgs{\n", servTitle, nameTitle)
 	contents += g.generateStructArgs(method.Arguments)
 	contents += "\t}\n"
 	contents += "\tif err = args.Write(oprot); err != nil {\n"
+	contents += "\t\tf.mu.Unlock()\n"
+	contents += "\t\tf.FTransport.Unregister(ctx)\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += "\tif err = oprot.WriteMessageEnd(); err != nil {\n"
+	contents += "\t\tf.mu.Unlock()\n"
+	contents += "\t\tf.FTransport.Unregister(ctx)\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
-	contents += "\treturn oprot.Flush()\n"
+	contents += "\tif err = oprot.Flush(); err != nil {\n"
+	contents += "\t\tf.mu.Unlock()\n"
+	contents += "\t\tf.FTransport.Unregister(ctx)\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tf.mu.Unlock()\n\n"
+
+	contents += "\tselect {\n"
+	contents += "\tcase err = <-errorC:\n"
+	contents += "\t\treturn\n"
+	if method.ReturnType == nil {
+		contents += "\tcase <-resultC:\n"
+	} else {
+		contents += "\tcase r = <-resultC:\n"
+	}
+	contents += "\t\tf.FTransport.Unregister(ctx)\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func (f *F%sClient) recv%s(ctx frugal.Context) %s {\n",
-		servTitle, nameTitle, g.generateReturnArgs(method))
-	contents += "\tiprot := f.InputProtocol\n"
-	contents += "\tif iprot == nil {\n"
-	contents += "\t\tiprot = f.FProtocolFactory.GetProtocol(f.TTransport)\n"
-	contents += "\t\tf.InputProtocol = iprot\n"
-	contents += "\t}\n"
-	contents += "\tif err = iprot.ReadResponseHeader(ctx); err != nil {\n"
-	contents += "\t\treturn\n"
-	contents += "\t}\n"
-	contents += "\tmethod, mTypeId, seqId, err := iprot.ReadMessageBegin()\n"
-	contents += "\tif err != nil {\n"
-	contents += "\t\treturn\n"
-	contents += "\t}\n"
-	contents += fmt.Sprintf("\tif method != \"%s\" {\n", nameLower)
-	contents += fmt.Sprintf(
-		"\terr = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, \"%s failed: wrong method name\")\n",
-		nameLower)
-	contents += "\t\treturn\n"
-	contents += "\t}\n"
-	contents += "\tif f.SeqId != seqId {\n"
-	contents += fmt.Sprintf(
-		"\terr = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, \"%s failed: out of sequence response\")\n",
-		nameLower)
-	contents += "\t\treturn\n"
-	contents += "\t}\n"
-	contents += "\tif mTypeId == thrift.EXCEPTION {\n"
-	contents += "\t\terror0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, \"Unknown Exception\")\n"
-	contents += "\t\tvar error1 error\n"
-	contents += "\t\terror1, err = error0.Read(iprot)\n"
+	contents += fmt.Sprintf("func recv%sHandler(ctx frugal.Context, resultC chan<- %s, errorC chan<- error) frugal.AsyncCallback {\n", nameTitle, returnType)
+	contents += "\treturn func(iprot *frugal.FProtocol, err error) error {\n"
 	contents += "\t\tif err != nil {\n"
-	contents += "\t\t\treturn\n"
+	contents += "\t\t\terrorC <- err\n"
+	contents += "\t\t\treturn nil\n"
+	contents += "\t\t}\n"
+	contents += "\t\tif err := iprot.ReadResponseHeader(ctx); err != nil {\n"
+	contents += "\t\t\terrorC <- err\n"
+	contents += "\t\t\treturn nil\n"
+	contents += "\t\t}\n"
+	contents += "\t\tmethod, mTypeId, _, err := iprot.ReadMessageBegin()\n"
+	contents += "\t\tif err != nil {\n"
+	contents += "\t\t\terrorC <- err\n"
+	contents += "\t\t\treturn nil\n"
+	contents += "\t\t}\n"
+	contents += fmt.Sprintf("\t\tif method != \"%s\" {\n", nameLower)
+	contents += fmt.Sprintf(
+		"\t\t\terr = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, \"%s failed: wrong method name\")\n", nameLower)
+	contents += "\t\t\terrorC <- err\n"
+	contents += "\t\t\treturn nil\n"
+	contents += "\t\t}\n"
+	contents += "\t\tif mTypeId == thrift.EXCEPTION {\n"
+	contents += "\t\t\terror0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, \"Unknown Exception\")\n"
+	contents += "\t\t\tvar error1 error\n"
+	contents += "\t\t\terror1, err = error0.Read(iprot)\n"
+	contents += "\t\t\tif err != nil {\n"
+	contents += "\t\t\t\terrorC <- err\n"
+	contents += "\t\t\t\treturn nil\n"
+	contents += "\t\t\t}\n"
+	contents += "\t\t\tif err = iprot.ReadMessageEnd(); err != nil {\n"
+	contents += "\t\t\t\terrorC <- err\n"
+	contents += "\t\t\t\treturn nil\n"
+	contents += "\t\t\t}\n"
+	contents += "\t\t\terr = error1\n"
+	contents += "\t\t\terrorC <- err\n"
+	contents += "\t\t\treturn err\n"
+	contents += "\t\t}\n"
+	contents += "\t\tif mTypeId != thrift.REPLY {\n"
+	contents += fmt.Sprintf(
+		"\t\t\terr = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, \"%s failed: invalid message type\")\n", nameLower)
+	contents += "\t\t\terrorC <- err\n"
+	contents += "\t\t\treturn err\n"
+	contents += "\t\t}\n"
+	contents += fmt.Sprintf("\t\tresult := %s%sResult{}\n", servTitle, nameTitle)
+	contents += "\t\tif err = result.Read(iprot); err != nil {\n"
+	contents += "\t\t\terrorC <- err\n"
+	contents += "\t\t\treturn err\n"
 	contents += "\t\t}\n"
 	contents += "\t\tif err = iprot.ReadMessageEnd(); err != nil {\n"
-	contents += "\t\t\treturn\n"
+	contents += "\t\t\terrorC <- err\n"
+	contents += "\t\t\treturn nil\n"
 	contents += "\t\t}\n"
-	contents += "\t\terr = error1\n"
-	contents += "\t\treturn\n"
-	contents += "\t}\n"
-	contents += "\tif mTypeId != thrift.REPLY {\n"
-	contents += fmt.Sprintf(
-		"\terr = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, \"%s failed: invalid message type\")\n",
-		nameLower)
-	contents += "\t\treturn\n"
-	contents += "\t}\n"
-	contents += fmt.Sprintf("\tresult := %s%sResult{}\n", servTitle, nameTitle)
-	contents += "\tif err = result.Read(iprot); err != nil {\n"
-	contents += "\t\treturn\n"
-	contents += "\t}\n"
-	contents += "\tif err = iprot.ReadMessageEnd(); err != nil {\n"
-	contents += "\t\treturn\n"
-	contents += "\t}\n"
 	for _, err := range method.Exceptions {
 		errTitle := strings.Title(err.Name)
-		contents += fmt.Sprintf("\tif result.%s != nil {\n", errTitle)
-		contents += fmt.Sprintf("\t\terr = result.%s\n", errTitle)
-		contents += "\t\treturn\n"
-		contents += "\t}\n"
+		contents += fmt.Sprintf("\t\tif result.%s != nil {\n", errTitle)
+		contents += fmt.Sprintf("\t\t\terrorC <- result.%s\n", errTitle)
+		contents += fmt.Sprintf("\t\t\treturn result.%s\n", errTitle)
+		contents += "\t\t}\n"
 	}
-	if method.ReturnType != nil {
-		contents += "\tr = result.GetSuccess()\n"
+	if method.ReturnType == nil {
+		contents += "\t\tresultC <- struct{}{}\n"
+	} else {
+		contents += "\t\tresultC <- result.GetSuccess()\n"
 	}
-	contents += "\treturn\n"
+	contents += "\t\treturn nil\n"
+	contents += "\t}\n"
 	contents += "}\n\n"
 
 	return contents
