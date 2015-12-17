@@ -54,42 +54,38 @@ func (f *FFooClient) Ping(ctx frugal.Context) (err error) {
 	if err = f.FTransport.Register(ctx, f.recvPingHandler(ctx, resultC, errorC)); err != nil {
 		return
 	}
+	defer f.FTransport.Unregister(ctx)
 	f.mu.Lock()
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		f.mu.Unlock()
-		f.FTransport.Unregister(ctx)
 		return
 	}
 	if err = oprot.WriteMessageBegin("ping", thrift.CALL, 0); err != nil {
 		f.mu.Unlock()
-		f.FTransport.Unregister(ctx)
 		return
 	}
 	args := FooPingArgs{}
 	if err = args.Write(oprot); err != nil {
 		f.mu.Unlock()
-		f.FTransport.Unregister(ctx)
 		return
 	}
 	if err = oprot.WriteMessageEnd(); err != nil {
 		f.mu.Unlock()
-		f.FTransport.Unregister(ctx)
 		return
 	}
 	if err = oprot.Flush(); err != nil {
 		f.mu.Unlock()
-		f.FTransport.Unregister(ctx)
 		return
 	}
 	f.mu.Unlock()
 
 	select {
 	case err = <-errorC:
-		return
 	case <-resultC:
-		f.FTransport.Unregister(ctx)
-		return
+	case <-f.FTransport.Closed():
+		err = frugal.ErrTransportClosed
 	}
+	return
 }
 
 func (f *FFooClient) recvPingHandler(ctx frugal.Context, resultC chan<- struct{}, errorC chan<- error) frugal.AsyncCallback {
@@ -156,15 +152,14 @@ func (f *FFooClient) Blah(ctx frugal.Context, num int32, str string, event *Even
 	if err = f.FTransport.Register(ctx, f.recvBlahHandler(ctx, resultC, errorC)); err != nil {
 		return
 	}
+	defer f.FTransport.Unregister(ctx)
 	f.mu.Lock()
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		f.mu.Unlock()
-		f.FTransport.Unregister(ctx)
 		return
 	}
 	if err = oprot.WriteMessageBegin("blah", thrift.CALL, 0); err != nil {
 		f.mu.Unlock()
-		f.FTransport.Unregister(ctx)
 		return
 	}
 	args := FooBlahArgs{
@@ -174,28 +169,25 @@ func (f *FFooClient) Blah(ctx frugal.Context, num int32, str string, event *Even
 	}
 	if err = args.Write(oprot); err != nil {
 		f.mu.Unlock()
-		f.FTransport.Unregister(ctx)
 		return
 	}
 	if err = oprot.WriteMessageEnd(); err != nil {
 		f.mu.Unlock()
-		f.FTransport.Unregister(ctx)
 		return
 	}
 	if err = oprot.Flush(); err != nil {
 		f.mu.Unlock()
-		f.FTransport.Unregister(ctx)
 		return
 	}
 	f.mu.Unlock()
 
 	select {
 	case err = <-errorC:
-		return
 	case r = <-resultC:
-		f.FTransport.Unregister(ctx)
-		return
+	case <-f.FTransport.Closed():
+		err = frugal.ErrTransportClosed
 	}
+	return
 }
 
 func (f *FFooClient) recvBlahHandler(ctx frugal.Context, resultC chan<- int64, errorC chan<- error) frugal.AsyncCallback {
@@ -258,7 +250,6 @@ type FFooProcessor struct {
 	processorMap map[string]frugal.FProcessorFunction
 	handler      FFoo
 	writeMu      *sync.Mutex
-	errors       chan error
 }
 
 func (p *FFooProcessor) GetProcessorFunction(key string) (processor frugal.FProcessorFunction, ok bool) {
@@ -268,44 +259,27 @@ func (p *FFooProcessor) GetProcessorFunction(key string) (processor frugal.FProc
 
 func NewFFooProcessor(handler FFoo) *FFooProcessor {
 	writeMu := &sync.Mutex{}
-	errors := make(chan error, 1)
 	p := &FFooProcessor{
 		handler:      handler,
 		processorMap: make(map[string]frugal.FProcessorFunction),
 		writeMu:      writeMu,
-		errors:       errors,
 	}
-	p.processorMap["ping"] = &fooFPing{
-		handler: handler,
-		writeMu: writeMu,
-		errors:  errors,
-	}
-	p.processorMap["blah"] = &fooFBlah{
-		handler: handler,
-		writeMu: writeMu,
-		errors:  errors,
-	}
+	p.processorMap["ping"] = &fooFPing{handler: handler, writeMu: writeMu}
+	p.processorMap["blah"] = &fooFBlah{handler: handler, writeMu: writeMu}
 	return p
 }
 
-func (p *FFooProcessor) Errors() <-chan error {
-	return p.errors
-}
-
-func (p *FFooProcessor) Process(iprot, oprot *frugal.FProtocol) {
+func (p *FFooProcessor) Process(iprot, oprot *frugal.FProtocol) error {
 	ctx, err := iprot.ReadRequestHeader()
 	if err != nil {
-		p.errors <- err
-		return
+		return err
 	}
 	name, _, _, err := iprot.ReadMessageBegin()
 	if err != nil {
-		p.errors <- err
-		return
+		return err
 	}
 	if processor, ok := p.GetProcessorFunction(name); ok {
-		processor.Process(ctx, iprot, oprot)
-		return
+		return processor.Process(ctx, iprot, oprot)
 	}
 	iprot.Skip(thrift.STRUCT)
 	iprot.ReadMessageEnd()
@@ -316,16 +290,15 @@ func (p *FFooProcessor) Process(iprot, oprot *frugal.FProtocol) {
 	oprot.WriteMessageEnd()
 	oprot.Flush()
 	p.writeMu.Unlock()
-	p.errors <- x3
+	return x3
 }
 
 type fooFPing struct {
 	handler FFoo
 	writeMu *sync.Mutex
-	errors  chan<- error
 }
 
-func (p *fooFPing) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) {
+func (p *fooFPing) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) error {
 	args := FooPingArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -337,8 +310,7 @@ func (p *fooFPing) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) {
 		oprot.WriteMessageEnd()
 		oprot.Flush()
 		p.writeMu.Unlock()
-		p.errors <- err
-		return
+		return err
 	}
 
 	iprot.ReadMessageEnd()
@@ -352,8 +324,7 @@ func (p *fooFPing) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) {
 		oprot.WriteMessageEnd()
 		oprot.Flush()
 		p.writeMu.Unlock()
-		p.errors <- err2
-		return
+		return err2
 	}
 	p.writeMu.Lock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
@@ -372,18 +343,15 @@ func (p *fooFPing) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) {
 		err = err2
 	}
 	p.writeMu.Unlock()
-	if err != nil {
-		p.errors <- err
-	}
+	return err
 }
 
 type fooFBlah struct {
 	handler FFoo
 	writeMu *sync.Mutex
-	errors  chan<- error
 }
 
-func (p *fooFBlah) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) {
+func (p *fooFBlah) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) error {
 	args := FooBlahArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -395,8 +363,7 @@ func (p *fooFBlah) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) {
 		oprot.WriteMessageEnd()
 		oprot.Flush()
 		p.writeMu.Unlock()
-		p.errors <- err
-		return
+		return err
 	}
 
 	iprot.ReadMessageEnd()
@@ -415,8 +382,7 @@ func (p *fooFBlah) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) {
 			oprot.WriteMessageEnd()
 			oprot.Flush()
 			p.writeMu.Unlock()
-			p.errors <- err2
-			return
+			return err2
 		}
 	} else {
 		result.Success = &retval
@@ -438,7 +404,5 @@ func (p *fooFBlah) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) {
 		err = err2
 	}
 	p.writeMu.Unlock()
-	if err != nil {
-		p.errors <- err
-	}
+	return err
 }
