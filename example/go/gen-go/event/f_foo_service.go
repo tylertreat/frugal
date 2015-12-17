@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"sync"
+
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal-go"
 )
@@ -15,7 +16,6 @@ import (
 var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
-
 
 type FFoo interface {
 	// Ping the server.
@@ -51,7 +51,7 @@ func (f *FFooClient) Ping(ctx frugal.Context) (err error) {
 	}
 	errorC := make(chan error, 1)
 	resultC := make(chan struct{}, 1)
-	if err = f.FTransport.Register(ctx, f.FProtocolFactory, recvPingHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.FTransport.Register(ctx, f.recvPingHandler(ctx, resultC, errorC)); err != nil {
 		return
 	}
 	f.mu.Lock()
@@ -65,8 +65,7 @@ func (f *FFooClient) Ping(ctx frugal.Context) (err error) {
 		f.FTransport.Unregister(ctx)
 		return
 	}
-	args := FooPingArgs{
-	}
+	args := FooPingArgs{}
 	if err = args.Write(oprot); err != nil {
 		f.mu.Unlock()
 		f.FTransport.Unregister(ctx)
@@ -93,8 +92,9 @@ func (f *FFooClient) Ping(ctx frugal.Context) (err error) {
 	}
 }
 
-func recvPingHandler(ctx frugal.Context, resultC chan<- struct{}, errorC chan<- error) frugal.AsyncCallback {
-	return func(iprot *frugal.FProtocol) error {
+func (f *FFooClient) recvPingHandler(ctx frugal.Context, resultC chan<- struct{}, errorC chan<- error) frugal.AsyncCallback {
+	return func(tr thrift.TTransport) error {
+		iprot := f.FProtocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
 			errorC <- err
 			return err
@@ -153,7 +153,7 @@ func (f *FFooClient) Blah(ctx frugal.Context, num int32, str string, event *Even
 	}
 	errorC := make(chan error, 1)
 	resultC := make(chan int64, 1)
-	if err = f.FTransport.Register(ctx, f.FProtocolFactory, recvBlahHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.FTransport.Register(ctx, f.recvBlahHandler(ctx, resultC, errorC)); err != nil {
 		return
 	}
 	f.mu.Lock()
@@ -168,8 +168,8 @@ func (f *FFooClient) Blah(ctx frugal.Context, num int32, str string, event *Even
 		return
 	}
 	args := FooBlahArgs{
-		Num: num,
-		Str: str,
+		Num:   num,
+		Str:   str,
 		Event: event,
 	}
 	if err = args.Write(oprot); err != nil {
@@ -198,8 +198,9 @@ func (f *FFooClient) Blah(ctx frugal.Context, num int32, str string, event *Even
 	}
 }
 
-func recvBlahHandler(ctx frugal.Context, resultC chan<- int64, errorC chan<- error) frugal.AsyncCallback {
-	return func(iprot *frugal.FProtocol) error {
+func (f *FFooClient) recvBlahHandler(ctx frugal.Context, resultC chan<- int64, errorC chan<- error) frugal.AsyncCallback {
+	return func(tr thrift.TTransport) error {
+		iprot := f.FProtocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
 			errorC <- err
 			return err
@@ -343,7 +344,7 @@ func (p *fooFPing) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) {
 	iprot.ReadMessageEnd()
 	result := FooPingResult{}
 	var err2 error
-	if err2 = p.handler.Ping(ctx, ); err2 != nil {
+	if err2 = p.handler.Ping(ctx); err2 != nil {
 		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing ping: "+err2.Error())
 		p.writeMu.Lock()
 		oprot.WriteMessageBegin("ping", thrift.EXCEPTION, 0)
@@ -441,4 +442,3 @@ func (p *fooFBlah) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) {
 		p.errors <- err
 	}
 }
-
