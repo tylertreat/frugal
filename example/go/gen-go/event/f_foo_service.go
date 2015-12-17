@@ -64,7 +64,8 @@ func (f *FFooClient) Ping(ctx frugal.Context) (err error) {
 		f.mu.Unlock()
 		return
 	}
-	args := FooPingArgs{}
+	args := FooPingArgs{
+	}
 	if err = args.Write(oprot); err != nil {
 		f.mu.Unlock()
 		return
@@ -163,8 +164,8 @@ func (f *FFooClient) Blah(ctx frugal.Context, num int32, str string, event *Even
 		return
 	}
 	args := FooBlahArgs{
-		Num:   num,
-		Str:   str,
+		Num: num,
+		Str: str,
 		Event: event,
 	}
 	if err = args.Write(oprot); err != nil {
@@ -406,3 +407,4 @@ func (p *fooFBlah) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) e
 	p.writeMu.Unlock()
 	return err
 }
+
