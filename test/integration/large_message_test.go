@@ -20,14 +20,9 @@ func TestLargeMessage(t *testing.T) {
 		"TTransportFactory":         thrift.NewTTransportFactory(),
 	}
 
-	// tls := false // TODO: test with TLS enabled
-
-	// addr := flag.String("addr", nats.DefaultURL, "NATS address")
-	// secure := flag.Bool("secure", tls, "Use tls secure transport")
-
 	natsOptions := nats.DefaultOptions
 	natsOptions.Servers = []string{nats.DefaultURL}
-	natsOptions.Secure = false
+	natsOptions.Secure = false // TODO: Test with TLS enabled
 	conn, err := natsOptions.Connect()
 	if err != nil {
 		panic(err)
