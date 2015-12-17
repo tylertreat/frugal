@@ -8,7 +8,7 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
 
-func TestPublishSubscribe(t *testing.T) {
+func TestLargeMessage(t *testing.T) {
 
 	protocolFactories := map[string]thrift.TProtocolFactory{
 		"TCompactProtocolFactory":       thrift.NewTCompactProtocolFactory(),
@@ -20,9 +20,14 @@ func TestPublishSubscribe(t *testing.T) {
 		"TTransportFactory":         thrift.NewTTransportFactory(),
 	}
 
+	// tls := false // TODO: test with TLS enabled
+
+	// addr := flag.String("addr", nats.DefaultURL, "NATS address")
+	// secure := flag.Bool("secure", tls, "Use tls secure transport")
+
 	natsOptions := nats.DefaultOptions
 	natsOptions.Servers = []string{nats.DefaultURL}
-	natsOptions.Secure = false // TODO: Test with TLS enabled
+	natsOptions.Secure = false
 	conn, err := natsOptions.Connect()
 	if err != nil {
 		panic(err)
@@ -32,7 +37,7 @@ func TestPublishSubscribe(t *testing.T) {
 	for pf, protocolFactory := range protocolFactories {
 		for tf, transportFactory := range transportFactories {
 			name := pf + " " + tf
-			PublishSubscribe(t, protocolFactory, transportFactory, conn, name)
+			LargeMessage(t, protocolFactory, transportFactory, conn, name)
 		}
 	}
 }
