@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"sync"
+	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal-go"
@@ -83,6 +84,8 @@ func (f *FFooClient) Ping(ctx frugal.Context) (err error) {
 	select {
 	case err = <-errorC:
 	case <-resultC:
+	case <-time.After(ctx.Timeout()):
+		err = frugal.ErrTimeout
 	case <-f.FTransport.Closed():
 		err = frugal.ErrTransportClosed
 	}
@@ -185,6 +188,8 @@ func (f *FFooClient) Blah(ctx frugal.Context, num int32, str string, event *Even
 	select {
 	case err = <-errorC:
 	case r = <-resultC:
+	case <-time.After(ctx.Timeout()):
+		err = frugal.ErrTimeout
 	case <-f.FTransport.Closed():
 		err = frugal.ErrTransportClosed
 	}

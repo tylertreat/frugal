@@ -95,7 +95,8 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports := "import (\n"
 	imports += "\t\"bytes\"\n"
 	imports += "\t\"fmt\"\n"
-	imports += "\t\"sync\"\n\n"
+	imports += "\t\"sync\"\n"
+	imports += "\t\"time\"\n\n"
 	if g.Options["thrift_import"] != "" {
 		imports += "\t\"" + g.Options["thrift_import"] + "\"\n"
 	} else {
@@ -451,6 +452,8 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	} else {
 		contents += "\tcase r = <-resultC:\n"
 	}
+	contents += "\tcase <-time.After(ctx.Timeout()):\n"
+	contents += "\t\terr = frugal.ErrTimeout\n"
 	contents += "\tcase <-f.FTransport.Closed():\n"
 	contents += "\t\terr = frugal.ErrTransportClosed\n"
 	contents += "\t}\n"

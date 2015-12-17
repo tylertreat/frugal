@@ -76,9 +76,13 @@ func main() {
 
 // Client handler
 func handleClient(client *event.FFooClient) (err error) {
-	client.Ping(frugal.NewContext(""))
-	event := &event.Event{Message: "hello, world!"}
 	ctx := frugal.NewContext("")
+	ctx.SetTimeout(10 * time.Millisecond)
+	if err := client.Ping(ctx); err != nil {
+		fmt.Println("ping error:", err)
+	}
+	event := &event.Event{Message: "hello, world!"}
+	ctx = frugal.NewContext("")
 	result, err := client.Blah(ctx, 100, "awesomesauce", event)
 	fmt.Printf("Blah = %d\n", result)
 	fmt.Println(ctx.ResponseHeader("foo"))
