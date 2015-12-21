@@ -1,0 +1,115 @@
+part of frugal;
+
+class _TFramedTransport extends TTransport {
+  static const int headerByteCount = 4;
+  final Uint8List writeHeaderBytes = new Uint8List(headerByteCount);
+
+  final TSocket socket;
+  final List<int> _writeBuffer = [];
+  final List<int> _readBuffer = [];
+  final List<int> _readHeaderBytes = [];
+  int _frameSize;
+
+  StreamController<Uint8List> _frameStream = new StreamController();
+  Stream<Uint8List> get onFrame => _frameStream.stream;
+
+  bool _isOpen;
+
+  final Uint8List headerBytes = new Uint8List(headerByteCount);
+
+  _TFramedTransport(this.socket) {
+    if (socket == null) {
+      throw new ArgumentError.notNull("socket");
+    }
+  }
+
+  void _reset({bool isOpen: false}) {
+    _isOpen = isOpen;
+    _writeBuffer.clear();
+    _readBuffer.clear();
+  }
+
+  bool get isOpen => _isOpen;
+
+  Future open() async {
+    _reset(isOpen: true);
+    if (socket.isClosed) {
+      return socket.open();
+    }
+  }
+
+  Future close() async {
+    _reset(isOpen: false);
+    if (socket.isOpen) {
+      return socket.close();
+    }
+  }
+
+  int read(Uint8List buffer, int offset, int length) {
+    throw new TTransportError(
+        TTransportErrorType.UNKNOWN, "frugal: cannot read directly from _TFramedSocket.");
+  }
+
+  void messageHandler(Uint8List list) {
+    var offset = 0;
+    if (_frameSize == null) {
+      // Not enough bytes to get the frame length. Add these and move on.
+      if ((_readHeaderBytes.length + list.length) < headerByteCount) {
+        _readHeaderBytes.addAll(list);
+        return;
+      }
+
+      // Get the frame size
+      var headerBytesToGet = headerByteCount - _readHeaderBytes.length;
+      _readHeaderBytes.addAll(list.getRange(0, headerBytesToGet));
+      var frameBuffer = new Uint8List.fromList(_readHeaderBytes).buffer;
+      _frameSize = frameBuffer.asByteData().getInt32(0);
+      _readHeaderBytes.clear();
+      offset += headerBytesToGet;
+    }
+
+    if (_frameSize < 0) {
+      // TODO: Put this error on an error stream and bubble it up.
+      throw new TTransportError(
+          TTransportErrorType.UNKNOWN, "Read a negative frame size: $_frameSize");
+    }
+
+    // Grab up to the frame size in bytes
+    var bytesToGet = min(_frameSize - _readBuffer.length, list.length - offset);
+    _readBuffer.addAll(list.getRange(offset, offset + bytesToGet));
+
+    // Have an entire frame. Fire it off and reset.
+    if (_readBuffer.length == _frameSize) {
+      _frameStream.add(new Uint8List.fromList(_readBuffer));
+      _readBuffer.clear();
+      _frameSize = null;
+    }
+
+    // More bytes to get. Run through the handler again.
+    if ((bytesToGet + offset < list.length)) {
+      messageHandler(new Uint8List.fromList(list.sublist(bytesToGet + offset)));
+      return;
+    }
+  }
+
+  void write(Uint8List buffer, int offset, int length) {
+    if (buffer == null) {
+      throw new ArgumentError.notNull("buffer");
+    }
+
+    if (offset + length > buffer.length) {
+      throw new ArgumentError("The range exceeds the buffer length");
+    }
+
+    _writeBuffer.addAll(buffer.sublist(offset, offset + length));
+  }
+
+  Future flush() {
+    int length = _writeBuffer.length;
+    headerBytes.buffer.asByteData().setUint32(0, length);
+    _writeBuffer.insertAll(0, headerBytes);
+    var buff = new Uint8List.fromList(_writeBuffer);
+    _writeBuffer.clear();
+    return new Future.value(socket.send(buff));
+  }
+}

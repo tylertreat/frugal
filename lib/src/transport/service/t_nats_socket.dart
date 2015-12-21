@@ -1,7 +1,7 @@
 part of frugal;
 
 /// A Service TSocket backed by a NATS client
-class TNatsServiceSocket implements TSocket {
+class TNatsSocket implements TSocket {
   static const String DISCONNECT = "DISCONNECT";
   final Nats _natsClient;
   final String _listenTo;
@@ -23,7 +23,7 @@ class TNatsServiceSocket implements TSocket {
 
   final List<Uint8List> _requests = [];
 
-  TNatsServiceSocket(this._natsClient, this._listenTo, this._replyTo, this._heartbeat,
+  TNatsSocket(this._natsClient, this._listenTo, this._replyTo, this._heartbeat,
               Duration readTimeout, this._heartbeatInterval)
   : _onStateController = new StreamController.broadcast(),
   _onErrorController = new StreamController.broadcast(),
@@ -51,7 +51,7 @@ class TNatsServiceSocket implements TSocket {
     _listenStream.listen((Message msg) {
       if (msg.reply == DISCONNECT) {
         _onErrorController.add(
-            new StateError("Thrift nats: server initiated disconnect."));
+            new StateError("frugal: server initiated disconnect."));
         close();
         return;
       }
@@ -76,7 +76,7 @@ class TNatsServiceSocket implements TSocket {
 
     if (_requests.isNotEmpty) {
       _onErrorController
-      .add(new StateError('Socket was closed with pending requests'));
+      .add(new StateError('frugal: socket was closed with pending requests'));
     }
     _requests.clear();
 

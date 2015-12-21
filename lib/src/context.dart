@@ -1,11 +1,11 @@
 part of frugal;
 
 int _globalOpId = 0;
+String _cid = "_cid";
+String _opid = "_opid";
 
-/// Context for Frugal message
+/// Context for Frugal request.
 class Context {
-  static const _cid = "_cid";
-  static const _opid= "_opid";
   Map<String, String> _requestHeaders;
   Map<String, String> _responseHeaders;
 
@@ -40,9 +40,22 @@ class Context {
     return int.parse(opIdStr);
   }
 
-  /// Add a request header to the context for the given name
+  /// Add a request header to the context for the given name.
+  /// Will overwrite existing header of the same name.
   void addRequestHeader(String name, value) {
     _requestHeaders[name] = value;
+  }
+
+  /// Add given request headers to the context. Will overwrite
+  /// existing pre-existing headers with the same names as the
+  /// given headers.
+  void addRequestsHeaders(Map<String, String> headers) {
+    if (headers == null || headers.length == 0) {
+      return;
+    }
+    for (var name in headers.keys) {
+      _requestHeaders[name] = headers[name];
+    }
   }
 
   /// Get the named request header
@@ -56,8 +69,21 @@ class Context {
   }
 
   /// Add a response header to the context for the given name
+  /// Will overwrite existing header of the same name.
   void addResponseHeader(String name, value) {
     _responseHeaders[name] = value;
+  }
+
+  /// Add given response headers to the context. Will overwrite
+  /// existing pre-existing headers with the same names as the
+  /// given headers.
+  void addResponseHeaders(Map<String, String> headers) {
+    if (headers == null || headers.length == 0) {
+      return;
+    }
+    for (var name in headers.keys) {
+      _responseHeaders[name] = headers[name];
+    }
   }
 
   /// Get the named response header

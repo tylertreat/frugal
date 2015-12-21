@@ -1,10 +1,10 @@
 part of frugal;
 
 /// Factory for Service TTransport backed by NATS client
-class TNatsServiceTransportFactory {
+class TNatsTransportFactory {
   static Utf8Codec _codec = new Utf8Codec();
 
-  static Future<TTransport> New(Nats client, String subject, Duration timeout,
+  static Future<TSocketTransport> New(Nats client, String subject, Duration timeout,
                                 readTimeout) async {
     var inbox = await client.newInbox();
     var stream = await client.subscribe(inbox);
@@ -29,8 +29,7 @@ class TNatsServiceTransportFactory {
         interval = new Duration(milliseconds: deadline);
       }
 
-      /// TODO: Return a generic transport (i.e. not a buffered or framed tansport).
-      var socket = new TNatsServiceSocket(client, inbox, msg.reply, heartbeat, readTimeout, interval);
+      var socket = new TNatsSocket(client, inbox, msg.reply, heartbeat, readTimeout, interval);
       return new TClientSocketTransport(socket);
     });
   }
