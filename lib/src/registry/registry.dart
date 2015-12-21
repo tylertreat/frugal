@@ -1,7 +1,7 @@
 part of frugal;
 
 /// Invoked when a message frame is received.
-typedef void AsyncCallback(FBaseTransport);
+typedef void AsyncCallback(TTransport);
 
 /// Responsible for multiplexing received messages to the
 /// appropriate callback.

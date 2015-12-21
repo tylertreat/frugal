@@ -81,13 +81,3 @@ class FTransport extends FBaseTransport {
     _registry.unregister(ctx);
   }
 }
-
-/// _FTransport is a memory backed transport.
-class _FTransport extends FBaseTransport {
-  _FTransport(TUint8List transport) {
-    super.transport = transport;
-  }
-  void setRegistry(Registry registry) {}
-  void register(Context ctx, AsyncCallback callback) {}
-  void unregister(Context ctx) {}
-}

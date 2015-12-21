@@ -37,7 +37,6 @@ class ClientRegistry implements Registry {
       // Unknown handler. Drop the frame.
       return;
     }
-    _handlers[opId](new _FTransport(new TUint8List(frame)));
-
+    _handlers[opId](new TUint8List(frame));
   }
 }
