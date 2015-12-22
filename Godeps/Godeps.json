@@ -1,0 +1,43 @@
+{
+	"ImportPath": "github.com/Workiva/frugal",
+	"GoVersion": "go1.5.1",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "git.apache.org/thrift.git/lib/go/thrift",
+			"Rev": "614a67016d8b2af56d850070973d4cd8f21c83c5"
+		},
+		{
+			"ImportPath": "github.com/Workiva/frugal-go",
+			"Rev": "71279331a10c7addc9118333d7120fca2a338548"
+		},
+		{
+			"ImportPath": "github.com/Workiva/thrift-nats/thrift_nats",
+			"Rev": "e4cc1ae3c92ed5a69a6190b95af7abb97dc87e22"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "1.2.0-179-g0302d39",
+			"Rev": "0302d3914d2a6ad61404584cdae6e6dbc9c03599"
+		},
+		{
+			"ImportPath": "github.com/mattrobenolt/gocql/uuid",
+			"Rev": "56c5a46b65eead93e1e53e983d1b2e7dbfde570d"
+		},
+		{
+			"ImportPath": "github.com/nats-io/nats",
+			"Comment": "v1.0.9-6-ge8cd0eb",
+			"Rev": "e8cd0eb2a341438867e4d593ef45f2665ebf3e97"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Rev": "efa3c4c36479edac5af79cbcb4bc8cb525e09b13"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "53feefa2559fb8dfa8d81baad31be332c97d6c77"
+		}
+	]
+}

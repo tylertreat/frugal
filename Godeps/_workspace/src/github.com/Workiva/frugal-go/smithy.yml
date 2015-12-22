@@ -1,0 +1,15 @@
+project: golang
+language: golang
+
+before_script:
+   - go get git.apache.org/thrift.git/lib/go/thrift
+   - go get github.com/Workiva/thrift-nats/thrift_nats
+   - go get github.com/nats-io/nats
+   - go get github.com/stretchr/testify
+   - go get github.com/nats-io/gnatsd
+   - go get github.com/mattrobenolt/gocql/uuid
+
+script: go test -cover -race ./...
+
+test_reports:
+   - unit_tests.xml
