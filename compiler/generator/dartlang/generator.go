@@ -23,6 +23,7 @@ const (
 	tab                = "  "
 	tabtab             = tab + tab
 	tabtabtab          = tab + tab + tab
+	tabtabtabtab       = tab + tab + tab + tab
 )
 
 type Generator struct {
@@ -87,7 +88,7 @@ func (g *Generator) addToPubspec(dir string) error {
 
 	deps := map[interface{}]interface{}{
 		"thrift": dep{Git: gitDep{URL: "git@github.com:Workiva/thrift-dart.git", Ref: "0.0.1"}},
-		"frugal": dep{Git: gitDep{URL: "git@github.com:Workiva/frugal-dart.git", Ref: "0.0.2"}},
+		"frugal": dep{Git: gitDep{URL: "git@github.com:Workiva/frugal-dart.git", Ref: "new_stack"}},
 	}
 
 	for _, include := range g.Frugal.ReferencedIncludes() {
@@ -426,17 +427,16 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	}
 	contents += fmt.Sprintf("class F%sClient implements F%s {\n", servTitle, servTitle)
 	contents += "\n"
-	contents += fmt.Sprintf(tab+"F%sClient(thrift.TProtocol iprot, [thrift.TProtocol oprot = null]) {\n", servTitle)
-	contents += tabtab + "_iprot = iprot;\n"
-	contents += tabtab + "_oprot = (oprot == null) ? iprot : oprot;\n"
+	contents += fmt.Sprintf(tab+"F%sClient(frugal.FBaseTransport transport, frugal.FProtocolFactory protocolFactory) {\n", servTitle)
+	contents += tabtab + "_transport = transport;\n"
+	contents += tabtab + "_transport.setRegistry(new frugal.ClientRegistry());\n"
+	contents += tabtab + "_protocolFactory = protocolFactory;\n"
+	contents += tabtab + "_oprot = _protocolFactory.getProtocol(transport);\n"
 	contents += tab + "}\n\n"
-	contents += tab + "frugal.FProtocol _iprot;\n\n"
-	contents += tab + "frugal.FProtocol get iprot => _iprot;\n\n"
-	contents += tab + "frugal.FProtocol _oprot;\n\n"
+	contents += tab + "frugal.FBaseTransport _transport;\n"
+	contents += tab + "frugal.FProtocolFactory _protocolFactory;\n"
+	contents += tab + "frugal.FProtocol _oprot;\n"
 	contents += tab + "frugal.FProtocol get oprot => _oprot;\n\n"
-	contents += tab + "int _seqid = 0;\n\n"
-	contents += tab + "int get seqid => _seqid;\n\n"
-	contents += tab + "int nextSeqid() => ++_seqid;\n\n"
 
 	for _, method := range service.Methods {
 		contents += g.generateClientMethod(service, method)
@@ -447,16 +447,19 @@ func (g *Generator) generateClient(service *parser.Service) string {
 
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
 	servLower := strings.ToLower(service.Name)
+	nameTitle := strings.Title(method.Name)
 	nameLower := strings.ToLower(method.Name)
 
 	contents := ""
 	if method.Comment != nil {
 		contents += g.GenerateInlineComment(method.Comment, tab+"/")
 	}
+	// Generate the calling method
 	contents += fmt.Sprintf(tab+"Future%s %s(frugal.Context ctx%s) async {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
+	contents += fmt.Sprintf(tabtab+"Stream<Future> stream = _transport.register(ctx, _recv%sHandler(ctx));\n", nameTitle)
 	contents += tabtab + "oprot.writeRequestHeader(ctx);\n"
-	contents += fmt.Sprintf(tabtab+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.CALL, nextSeqid()));\n",
+	contents += fmt.Sprintf(tabtab+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.CALL, 0));\n",
 		nameLower)
 	contents += fmt.Sprintf(tabtab+"t_%s.%s_args args = new t_%s.%s_args();\n",
 		servLower, nameLower, servLower, nameLower)
@@ -465,34 +468,44 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += fmt.Sprintf(tabtab+"args.%s = %s;\n", argLower, argLower)
 	}
 	contents += tabtab + "args.write(oprot);\n"
-	contents += tabtab + "oprot.writeMessageEnd();\n\n"
+	contents += tabtab + "oprot.writeMessageEnd();\n"
+	contents += tabtab + "await oprot.transport.flush();\n"
+	contents += tabtab + "return stream.first;\n"
+	contents += tab + "}\n\n"
 
-	contents += tabtab + "await oprot.transport.flush();\n\n"
+	// Generate the callback
+	contents += fmt.Sprintf(tab+"_recv%sHandler(frugal.Context ctx) {\n", nameTitle)
+	contents += fmt.Sprintf(tabtab+"Future%s %sCallback(thrift.TTransport transport) async {\n",
+		g.generateReturnArg(method), nameLower)
+	contents += tabtabtab + "var iprot = _protocolFactory.getProtocol(transport);\n"
+	contents += tabtabtab + "iprot.readResponseHeader(ctx);\n"
+	contents += tabtabtab + "thrift.TMessage msg = iprot.readMessageBegin();\n"
+	contents += tabtabtab + "if (msg.type == thrift.TMessageType.EXCEPTION) {\n"
+	contents += tabtabtabtab + "thrift.TApplicationError error = thrift.TApplicationError.read(iprot);\n"
+	contents += tabtabtabtab + "iprot.readMessageEnd();\n"
+	contents += tabtabtabtab + "throw error;\n"
+	contents += tabtabtab + "}\n\n"
 
-	contents += tabtab + "iprot.readResponseHeader(ctx);\n"
-	contents += tabtab + "thrift.TMessage msg = iprot.readMessageBegin();\n"
-	contents += tabtab + "if (msg.type == thrift.TMessageType.EXCEPTION) {\n"
-	contents += tabtabtab + "thrift.TApplicationError error = thrift.TApplicationError.read(iprot);\n"
-	contents += tabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtab + "throw error;\n"
-	contents += tabtab + "}\n\n"
-
-	contents += fmt.Sprintf(tabtab+"t_%s.%s_result result = new t_%s.%s_result();\n",
+	contents += fmt.Sprintf(tabtabtab+"t_%s.%s_result result = new t_%s.%s_result();\n",
 		servLower, nameLower, servLower, nameLower)
-	contents += tabtab + "result.read(iprot);\n"
-	contents += tabtab + "iprot.readMessageEnd();\n"
+	contents += tabtabtab + "result.read(iprot);\n"
+	contents += tabtabtab + "iprot.readMessageEnd();\n"
 	if method.ReturnType == nil {
 		contents += g.generateErrors(method)
-		contents += tabtab + "return;\n"
+		contents += tabtabtab + "return;\n"
 	} else {
-		contents += tabtab + "if (result.isSetSuccess()) {\n"
-		contents += tabtabtab + "return result.success;\n"
-		contents += tabtab + "}\n\n"
+		contents += tabtabtab + "if (result.isSetSuccess()) {\n"
+		contents += tabtabtabtab + "return result.success;\n"
+		contents += tabtabtab + "}\n\n"
 		contents += g.generateErrors(method)
-		contents += fmt.Sprintf(tabtab+
-			"throw new thrift.TApplicationError(thrift.TApplicationErrorType.MISSING_RESULT, \"%s failed: unknown result\");\n",
+		contents += tabtabtab + "throw new thrift.TApplicationError(\n"
+		contents += fmt.Sprintf(tabtabtabtab+"thrift.TApplicationErrorType.MISSING_RESULT, "+
+			"\"%s failed: unknown result\"\n",
 			nameLower)
+		contents += tabtabtab + ");\n"
 	}
+	contents += tabtab + "}\n"
+	contents += fmt.Sprintf(tabtab+"return %sCallback;\n", nameLower)
 	contents += tab + "}\n\n"
 
 	return contents
@@ -516,9 +529,9 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 func (g *Generator) generateErrors(method *parser.Method) string {
 	contents := ""
 	for _, exp := range method.Exceptions {
-		contents += fmt.Sprintf(tabtab+"if (result.%s != null) {\n", strings.ToLower(exp.Name))
-		contents += fmt.Sprintf(tabtabtab+"throw result.%s;\n", strings.ToLower(exp.Name))
-		contents += tabtab + "}\n"
+		contents += fmt.Sprintf(tabtabtab+"if (result.%s != null) {\n", strings.ToLower(exp.Name))
+		contents += fmt.Sprintf(tabtabtabtab+"throw result.%s;\n", strings.ToLower(exp.Name))
+		contents += tabtabtab + "}\n"
 	}
 	return contents
 }
