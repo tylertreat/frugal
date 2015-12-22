@@ -5,9 +5,8 @@ runner_image: docker.webfilings.org/wlayout/smithy-runner-thrift:1.5
 
 script:
     - go get github.com/tools/godep
-    - go get -d ./...
-    - go build
-    - go test ./test
+    - godep go build
+    - godep go test ./test
 
 artifacts:
     - ./frugal
