@@ -39,10 +39,11 @@ class EventUI {
       _eventsSubscriber = new event.EventsSubscriber(provider);
 
       var timeout = new Duration(seconds: 1);
-      frugal.TNatsServiceTransportFactory.New(nats, "foo", timeout, timeout).then((TTransport T) {
+      frugal.TNatsTransportFactory.New(nats, "foo", timeout, timeout).then((TSocketTransport T) {
         T.open().then((_){
-          frugal.FProtocol protocol = new frugal.FBinaryProtocol(T);
-          _fFooClient = new event.FFooClient(protocol);
+          var transport = new frugal.FTransport(T);
+          var protocolFactory = new frugal.FProtocolFactory(new TBinaryProtocolFactory());
+          _fFooClient = new event.FFooClient(transport, protocolFactory);
         });
       });
     });

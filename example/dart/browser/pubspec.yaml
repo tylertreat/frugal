@@ -11,7 +11,7 @@ dependencies:
   frugal:
     git:
       url: git@github.com:Workiva/frugal-dart.git
-      ref: 0.0.2
+      ref: new_stack
   messaging_frontend:
     git:
       url: git@github.com:Workiva/messaging-frontend-dart.git

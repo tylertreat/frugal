@@ -28,81 +28,93 @@ abstract class FFoo {
 /// a frugal Context for each service call.
 class FFooClient implements FFoo {
 
-  FFooClient(thrift.TProtocol iprot, [thrift.TProtocol oprot = null]) {
-    _iprot = iprot;
-    _oprot = (oprot == null) ? iprot : oprot;
+  FFooClient(frugal.FBaseTransport transport, frugal.FProtocolFactory protocolFactory) {
+    _transport = transport;
+    _transport.setRegistry(new frugal.ClientRegistry());
+    _protocolFactory = protocolFactory;
+    _oprot = protocolFactory.getProtocol(transport);
   }
 
-  frugal.FProtocol _iprot;
-
-  frugal.FProtocol get iprot => _iprot;
-
+  frugal.FBaseTransport _transport;
+  frugal.FProtocolFactory _protocolFactory;
   frugal.FProtocol _oprot;
-
   frugal.FProtocol get oprot => _oprot;
-
-  int _seqid = 0;
-
-  int get seqid => _seqid;
-
-  int nextSeqid() => ++_seqid;
 
   /// Ping the server.
   Future ping(frugal.Context ctx) async {
+    StreamController result = new StreamController.broadcast();
+    _transport.register(ctx, _recvPingHandler(ctx, result));
     oprot.writeRequestHeader(ctx);
-    oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, nextSeqid()));
+    oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
     t_foo.ping_args args = new t_foo.ping_args();
     args.write(oprot);
     oprot.writeMessageEnd();
-
     await oprot.transport.flush();
+    await result.stream.first;
+  }
 
-    iprot.readResponseHeader(ctx);
-    thrift.TMessage msg = iprot.readMessageBegin();
-    if (msg.type == thrift.TMessageType.EXCEPTION) {
-      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+
+  _recvPingHandler(frugal.Context ctx, StreamController stream) {
+    pingCallback(thrift.TTransport transport) {
+      var iprot = _protocolFactory.getProtocol(transport);
+      iprot.readResponseHeader(ctx);
+      thrift.TMessage msg = iprot.readMessageBegin();
+      if (msg.type == thrift.TMessageType.EXCEPTION) {
+        thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+        iprot.readMessageEnd();
+        stream.addError(error);
+      }
+
+      t_foo.ping_result result = new t_foo.ping_result();
+      result.read(iprot);
       iprot.readMessageEnd();
-      throw error;
+      stream.add(null);
     }
-
-    t_foo.ping_result result = new t_foo.ping_result();
-    result.read(iprot);
-    iprot.readMessageEnd();
-    return;
+    return pingCallback;
   }
 
   /// Blah the server.
   Future<int> blah(frugal.Context ctx, int num, String str, t_event.Event event) async {
+    StreamController result = new StreamController.broadcast();
+    _transport.register(ctx, _recvBlahHandler(ctx, result));
     oprot.writeRequestHeader(ctx);
-    oprot.writeMessageBegin(new thrift.TMessage("blah", thrift.TMessageType.CALL, nextSeqid()));
+    oprot.writeMessageBegin(new thrift.TMessage("blah", thrift.TMessageType.CALL, 0));
     t_foo.blah_args args = new t_foo.blah_args();
     args.num = num;
     args.str = str;
     args.event = event;
     args.write(oprot);
     oprot.writeMessageEnd();
-
     await oprot.transport.flush();
+    await result.stream.first;
+  }
 
-    iprot.readResponseHeader(ctx);
-    thrift.TMessage msg = iprot.readMessageBegin();
-    if (msg.type == thrift.TMessageType.EXCEPTION) {
-      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+
+  _recvBlahHandler(frugal.Context ctx, StreamController stream) {
+    blahCallback(thrift.TTransport transport) {
+      var iprot = _protocolFactory.getProtocol(transport);
+      iprot.readResponseHeader(ctx);
+      thrift.TMessage msg = iprot.readMessageBegin();
+      if (msg.type == thrift.TMessageType.EXCEPTION) {
+        thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+        iprot.readMessageEnd();
+        throw error;
+      }
+
+      t_foo.blah_result result = new t_foo.blah_result();
+      result.read(iprot);
       iprot.readMessageEnd();
-      throw error;
-    }
+      if (result.isSetSuccess()) {
+        stream.add(result.success);
+        return;
+      }
 
-    t_foo.blah_result result = new t_foo.blah_result();
-    result.read(iprot);
-    iprot.readMessageEnd();
-    if (result.isSetSuccess()) {
-      return result.success;
+      if (result.awe != null) {
+        stream.addError(result.awe);
+        return;
+      }
+      stream.addError(new thrift.TApplicationError(thrift.TApplicationErrorType.MISSING_RESULT, "blah failed: unknown result"));
     }
-
-    if (result.awe != null) {
-      throw result.awe;
-    }
-    throw new thrift.TApplicationError(thrift.TApplicationErrorType.MISSING_RESULT, "blah failed: unknown result");
   }
 
 }
