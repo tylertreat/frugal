@@ -15,8 +15,6 @@ scripts:
   - cd ..
   - mkdir go
   - cd go
-  - wget https://storage.googleapis.com/golang/go1.5.2.src.tar.gz
-  - tar -xzf go1.5.2.src.tar.gz --exclude=.git
   - export GOPATH=$PWD
   - export PATH=$PATH:$GOPATH/bin
   - mkdir -p $GOPATH/src/github.com/Workiva
@@ -29,6 +27,7 @@ scripts:
   - rm -rf $frugal/example/go/gen-go
   - cd $frugal/example
   - frugal -gen=go event.frugal
+  - frugal -gen go:package_prefix=github.com/Workiva/frugal/example/gen-go/ event.frugal
   - mv gen-go go
 
   # Start nats server
