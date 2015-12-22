@@ -53,7 +53,6 @@ class FFooClient implements FFoo {
     await result.stream.first;
   }
 
-
   _recvPingHandler(frugal.Context ctx, StreamController stream) {
     pingCallback(thrift.TTransport transport) {
       var iprot = _protocolFactory.getProtocol(transport);
@@ -86,9 +85,8 @@ class FFooClient implements FFoo {
     args.write(oprot);
     oprot.writeMessageEnd();
     await oprot.transport.flush();
-    await result.stream.first;
+    return result.stream.first;
   }
-
 
   _recvBlahHandler(frugal.Context ctx, StreamController stream) {
     blahCallback(thrift.TTransport transport) {
@@ -115,6 +113,7 @@ class FFooClient implements FFoo {
       }
       stream.addError(new thrift.TApplicationError(thrift.TApplicationErrorType.MISSING_RESULT, "blah failed: unknown result"));
     }
+    return blahCallback;
   }
 
 }
