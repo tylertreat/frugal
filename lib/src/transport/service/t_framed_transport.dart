@@ -17,6 +17,8 @@ class _TFramedTransport extends TTransport {
 
   final Uint8List headerBytes = new Uint8List(headerByteCount);
 
+  StreamSubscription _messageSub;
+
   _TFramedTransport(this.socket) {
     if (socket == null) {
       throw new ArgumentError.notNull("socket");
@@ -34,14 +36,18 @@ class _TFramedTransport extends TTransport {
   Future open() async {
     _reset(isOpen: true);
     if (socket.isClosed) {
-      return socket.open();
+      await socket.open();
     }
+    _messageSub = socket.onMessage.listen(messageHandler);
   }
 
   Future close() async {
     _reset(isOpen: false);
     if (socket.isOpen) {
-      return socket.close();
+      await socket.close();
+    }
+    if (_messageSub != null) {
+      _messageSub.cancel();
     }
   }
 
