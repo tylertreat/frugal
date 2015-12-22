@@ -29,7 +29,7 @@ abstract class FBaseTransport extends TTransport {
   /// Writes up to [len] bytes from the buffer.
   /// Throws [TTransportError] if there was an error writing data
   void write(Uint8List buffer, int offset, int length) {
-    _transport.read(buffer, offset, length);
+    _transport.write(buffer, offset, length);
   }
 
   /// Flush any pending data out of a transport buffer.
