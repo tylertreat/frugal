@@ -3,9 +3,9 @@ package integration
 import (
 	"testing"
 
-	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal-go"
 	"github.com/Workiva/frugal/example/go/gen-go/event"
+	"github.com/Workiva/thrift/lib/go/thrift"
 	"github.com/nats-io/nats"
 	"github.com/stretchr/testify/assert"
 )
