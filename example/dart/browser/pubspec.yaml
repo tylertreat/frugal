@@ -9,7 +9,9 @@ dependencies:
   event:
     path: ../gen-dart/event
   frugal:
-    path: ../../../../../../../../../IdeaProjects/frugal-dart
+    git:
+      url: git@github.com:Workiva/frugal-dart.git
+      ref: new_stack
   messaging_frontend:
     git:
       url: git@github.com:Workiva/messaging-frontend-dart.git
