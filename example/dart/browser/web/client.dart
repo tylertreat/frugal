@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:html';
 
+import 'package:logging/logging.dart';
 import 'package:thrift/thrift.dart';
 import 'package:event/event.dart' as event;
 import 'package:frugal/frugal.dart' as frugal;
@@ -11,6 +12,10 @@ import 'package:w_transport/w_transport_browser.dart' show configureWTransportFo
 frugal.Subscription sub;
 
 void main() {
+  Logger.root.level = Level.FINEST;
+  Logger.root.onRecord.listen((LogRecord r) {
+    window.console.log('${r.loggerName}(${r.level}): ${r.message}');
+  });
   new EventUI(querySelector('#output')).start();
 }
 
@@ -130,7 +135,9 @@ class EventUI {
 
   void _onPingClick(MouseEvent e) {
     var ctx = new frugal.Context(correlationId:"some-sweet-correlation");
-    _fFooClient.ping(ctx);
+    _fFooClient.ping(ctx).catchError( (e) {
+      window.alert("Ping errored! ${e.toString()}");
+    });
   }
 
   void _onBlahClick(MouseEvent e) {
