@@ -1,5 +1,7 @@
 part of frugal;
 
+/// A framed implementation of TTransport. Has stream for consuming
+/// entire frames. Disallows direct reads.
 class _TFramedTransport extends TTransport {
   static const int headerByteCount = 4;
   final Uint8List writeHeaderBytes = new Uint8List(headerByteCount);
@@ -11,7 +13,6 @@ class _TFramedTransport extends TTransport {
   int _frameSize;
 
   StreamController<Uint8List> _frameStream = new StreamController();
-  Stream<Uint8List> get onFrame => _frameStream.stream;
 
   bool _isOpen;
 
@@ -31,8 +32,15 @@ class _TFramedTransport extends TTransport {
     _readBuffer.clear();
   }
 
+  /// Stream for getting frame data.
+  Stream<Uint8List> get onFrame => _frameStream.stream;
+
+  /// Queries whether the transport is open.
+  /// Returns [true] if the transport is open.
   bool get isOpen => _isOpen;
 
+  /// Opens the transport for reading/writing.
+  /// Throws [TTransportError] if the transport could not be opened.
   Future open() async {
     _reset(isOpen: true);
     if (socket.isClosed) {
@@ -41,6 +49,8 @@ class _TFramedTransport extends TTransport {
     _messageSub = socket.onMessage.listen(messageHandler);
   }
 
+  /// Closes the transport.
+  /// Will also close the underlying TSocket.
   Future close() async {
     _reset(isOpen: false);
     if (socket.isOpen) {
@@ -51,11 +61,14 @@ class _TFramedTransport extends TTransport {
     }
   }
 
+  /// Direct reading is not allowed. To consume read data listen
+  /// to onFrame.
   int read(Uint8List buffer, int offset, int length) {
     throw new TTransportError(
         TTransportErrorType.UNKNOWN, "frugal: cannot read directly from _TFramedSocket.");
   }
 
+  /// Handler for messages received on the TSocket.
   void messageHandler(Uint8List list) {
     var offset = 0;
     if (_frameSize == null) {
@@ -98,6 +111,8 @@ class _TFramedTransport extends TTransport {
     }
   }
 
+  /// Writes up to [len] bytes from the buffer.
+  /// Throws [TTransportError] if there was an error writing data
   void write(Uint8List buffer, int offset, int length) {
     if (buffer == null) {
       throw new ArgumentError.notNull("buffer");
@@ -110,6 +125,8 @@ class _TFramedTransport extends TTransport {
     _writeBuffer.addAll(buffer.sublist(offset, offset + length));
   }
 
+  /// Flush any pending data out of a transport buffer.
+  /// Throws [TTransportError] if there was an error writing out data.
   Future flush() {
     int length = _writeBuffer.length;
     headerBytes.buffer.asByteData().setUint32(0, length);

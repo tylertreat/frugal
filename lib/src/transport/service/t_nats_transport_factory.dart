@@ -1,6 +1,6 @@
 part of frugal;
 
-/// Factory for Service TTransport backed by NATS client
+/// Factory for Service TSocketTransport backed by NATS client
 class TNatsTransportFactory {
   static Utf8Codec _codec = new Utf8Codec();
 
