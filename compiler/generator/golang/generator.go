@@ -513,7 +513,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		errTitle := strings.Title(err.Name)
 		contents += fmt.Sprintf("\t\tif result.%s != nil {\n", errTitle)
 		contents += fmt.Sprintf("\t\t\terrorC <- result.%s\n", errTitle)
-		contents += fmt.Sprintf("\t\t\treturn result.%s\n", errTitle)
+		contents += "\t\t\treturn nil\n"
 		contents += "\t\t}\n"
 	}
 	if method.ReturnType == nil {

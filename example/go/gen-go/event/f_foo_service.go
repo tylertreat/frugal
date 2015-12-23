@@ -245,7 +245,7 @@ func (f *FFooClient) recvBlahHandler(ctx frugal.Context, resultC chan<- int64, e
 		}
 		if result.Awe != nil {
 			errorC <- result.Awe
-			return result.Awe
+			return nil
 		}
 		resultC <- result.GetSuccess()
 		return nil
