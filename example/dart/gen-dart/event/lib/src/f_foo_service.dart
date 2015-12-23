@@ -42,7 +42,7 @@ class FFooClient implements FFoo {
 
   /// Ping the server.
   Future ping(frugal.Context ctx) async {
-    StreamController controller = new StreamController();
+    var controller = new StreamController();
     _transport.register(ctx, _recvPingHandler(ctx, controller));
     try {
       oprot.writeRequestHeader(ctx);
@@ -68,11 +68,12 @@ class FFooClient implements FFoo {
           iprot.readMessageEnd();
           throw error;
         }
+
         t_foo.ping_result result = new t_foo.ping_result();
         result.read(iprot);
         iprot.readMessageEnd();
         controller.add(null);
-      } catch (e) {
+      } catch(e) {
         controller.addError(e);
         rethrow;
       }
@@ -82,7 +83,7 @@ class FFooClient implements FFoo {
 
   /// Blah the server.
   Future<int> blah(frugal.Context ctx, int num, String str, t_event.Event event) async {
-    StreamController controller = new StreamController();
+    var controller = new StreamController();
     _transport.register(ctx, _recvBlahHandler(ctx, controller));
     try {
       oprot.writeRequestHeader(ctx);
@@ -111,6 +112,7 @@ class FFooClient implements FFoo {
           iprot.readMessageEnd();
           throw error;
         }
+
         t_foo.blah_result result = new t_foo.blah_result();
         result.read(iprot);
         iprot.readMessageEnd();
@@ -118,18 +120,20 @@ class FFooClient implements FFoo {
           controller.add(result.success);
           return;
         }
+
         if (result.awe != null) {
           controller.addError(result.awe);
           return;
         }
         throw new thrift.TApplicationError(
-            thrift.TApplicationErrorType.MISSING_RESULT, "blah failed: unknown result"
+          thrift.TApplicationErrorType.MISSING_RESULT, "blah failed: unknown result"
         );
-      } catch (e) {
+      } catch(e) {
         controller.addError(e);
         rethrow;
       }
     }
     return blahCallback;
   }
+
 }

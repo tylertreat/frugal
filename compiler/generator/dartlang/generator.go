@@ -24,6 +24,7 @@ const (
 	tabtab             = tab + tab
 	tabtabtab          = tab + tab + tab
 	tabtabtabtab       = tab + tab + tab + tab
+	tabtabtabtabtab    = tab + tab + tab + tab + tab
 )
 
 type Generator struct {
@@ -457,53 +458,63 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	// Generate the calling method
 	contents += fmt.Sprintf(tab+"Future%s %s(frugal.Context ctx%s) async {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
-	contents += fmt.Sprintf(tabtab+"Stream<Future> stream = _transport.register(ctx, _recv%sHandler(ctx));\n", nameTitle)
-	contents += tabtab + "oprot.writeRequestHeader(ctx);\n"
-	contents += fmt.Sprintf(tabtab+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.CALL, 0));\n",
+	contents += tabtab + "var controller = new StreamController();\n"
+	contents += fmt.Sprintf(tabtab+"_transport.register(ctx, _recv%sHandler(ctx, controller));\n", nameTitle)
+	contents += tabtab + "try {\n"
+	contents += tabtabtab + "oprot.writeRequestHeader(ctx);\n"
+	contents += fmt.Sprintf(tabtabtab+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.CALL, 0));\n",
 		nameLower)
-	contents += fmt.Sprintf(tabtab+"t_%s.%s_args args = new t_%s.%s_args();\n",
+	contents += fmt.Sprintf(tabtabtab+"t_%s.%s_args args = new t_%s.%s_args();\n",
 		servLower, nameLower, servLower, nameLower)
 	for _, arg := range method.Arguments {
 		argLower := strings.ToLower(arg.Name)
-		contents += fmt.Sprintf(tabtab+"args.%s = %s;\n", argLower, argLower)
+		contents += fmt.Sprintf(tabtabtab+"args.%s = %s;\n", argLower, argLower)
 	}
-	contents += tabtab + "args.write(oprot);\n"
-	contents += tabtab + "oprot.writeMessageEnd();\n"
-	contents += tabtab + "await oprot.transport.flush();\n"
-	contents += tabtab + "return stream.first;\n"
+	contents += tabtabtab + "args.write(oprot);\n"
+	contents += tabtabtab + "oprot.writeMessageEnd();\n"
+	contents += tabtabtab + "await oprot.transport.flush();\n"
+	contents += tabtabtab + "return await controller.stream.first;\n"
+	contents += tabtab + "} finally {\n"
+	contents += tabtabtab + "_transport.unregister(ctx);\n"
+	contents += tabtab + "}\n"
 	contents += tab + "}\n\n"
 
 	// Generate the callback
-	contents += fmt.Sprintf(tab+"_recv%sHandler(frugal.Context ctx) {\n", nameTitle)
-	contents += fmt.Sprintf(tabtab+"Future%s %sCallback(thrift.TTransport transport) async {\n",
-		g.generateReturnArg(method), nameLower)
-	contents += tabtabtab + "var iprot = _protocolFactory.getProtocol(transport);\n"
-	contents += tabtabtab + "iprot.readResponseHeader(ctx);\n"
-	contents += tabtabtab + "thrift.TMessage msg = iprot.readMessageBegin();\n"
-	contents += tabtabtab + "if (msg.type == thrift.TMessageType.EXCEPTION) {\n"
-	contents += tabtabtabtab + "thrift.TApplicationError error = thrift.TApplicationError.read(iprot);\n"
-	contents += tabtabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtabtab + "throw error;\n"
-	contents += tabtabtab + "}\n\n"
+	contents += fmt.Sprintf(tab+"_recv%sHandler(frugal.Context ctx, StreamController controller) {\n", nameTitle)
+	contents += fmt.Sprintf(tabtab+"%sCallback(thrift.TTransport transport) {\n", nameLower)
+	contents += tabtabtab + "try {\n"
+	contents += tabtabtabtab + "var iprot = _protocolFactory.getProtocol(transport);\n"
+	contents += tabtabtabtab + "iprot.readResponseHeader(ctx);\n"
+	contents += tabtabtabtab + "thrift.TMessage msg = iprot.readMessageBegin();\n"
+	contents += tabtabtabtab + "if (msg.type == thrift.TMessageType.EXCEPTION) {\n"
+	contents += tabtabtabtabtab + "thrift.TApplicationError error = thrift.TApplicationError.read(iprot);\n"
+	contents += tabtabtabtabtab + "iprot.readMessageEnd();\n"
+	contents += tabtabtabtabtab + "throw error;\n"
+	contents += tabtabtabtab + "}\n\n"
 
-	contents += fmt.Sprintf(tabtabtab+"t_%s.%s_result result = new t_%s.%s_result();\n",
+	contents += fmt.Sprintf(tabtabtabtab+"t_%s.%s_result result = new t_%s.%s_result();\n",
 		servLower, nameLower, servLower, nameLower)
-	contents += tabtabtab + "result.read(iprot);\n"
-	contents += tabtabtab + "iprot.readMessageEnd();\n"
+	contents += tabtabtabtab + "result.read(iprot);\n"
+	contents += tabtabtabtab + "iprot.readMessageEnd();\n"
 	if method.ReturnType == nil {
 		contents += g.generateErrors(method)
-		contents += tabtabtab + "return;\n"
+		contents += tabtabtabtab + "controller.add(null);\n"
 	} else {
-		contents += tabtabtab + "if (result.isSetSuccess()) {\n"
-		contents += tabtabtabtab + "return result.success;\n"
-		contents += tabtabtab + "}\n\n"
+		contents += tabtabtabtab + "if (result.isSetSuccess()) {\n"
+		contents += tabtabtabtabtab + "controller.add(result.success);\n"
+		contents += tabtabtabtabtab + "return;\n"
+		contents += tabtabtabtab + "}\n\n"
 		contents += g.generateErrors(method)
-		contents += tabtabtab + "throw new thrift.TApplicationError(\n"
-		contents += fmt.Sprintf(tabtabtabtab+"thrift.TApplicationErrorType.MISSING_RESULT, "+
+		contents += tabtabtabtab + "throw new thrift.TApplicationError(\n"
+		contents += fmt.Sprintf(tabtabtabtabtab+"thrift.TApplicationErrorType.MISSING_RESULT, "+
 			"\"%s failed: unknown result\"\n",
 			nameLower)
-		contents += tabtabtab + ");\n"
+		contents += tabtabtabtab + ");\n"
 	}
+	contents += tabtabtab + "} catch(e) {\n"
+	contents += tabtabtabtab + "controller.addError(e);\n"
+	contents += tabtabtabtab + "rethrow;\n"
+	contents += tabtabtab + "}\n"
 	contents += tabtab + "}\n"
 	contents += fmt.Sprintf(tabtab+"return %sCallback;\n", nameLower)
 	contents += tab + "}\n\n"
@@ -529,9 +540,10 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 func (g *Generator) generateErrors(method *parser.Method) string {
 	contents := ""
 	for _, exp := range method.Exceptions {
-		contents += fmt.Sprintf(tabtabtab+"if (result.%s != null) {\n", strings.ToLower(exp.Name))
-		contents += fmt.Sprintf(tabtabtabtab+"throw result.%s;\n", strings.ToLower(exp.Name))
-		contents += tabtabtab + "}\n"
+		contents += fmt.Sprintf(tabtabtabtab+"if (result.%s != null) {\n", strings.ToLower(exp.Name))
+		contents += fmt.Sprintf(tabtabtabtabtab+"controller.addError(result.%s);\n", strings.ToLower(exp.Name))
+		contents += tabtabtabtabtab + "return;\n"
+		contents += tabtabtabtab + "}\n"
 	}
 	return contents
 }
