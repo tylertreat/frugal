@@ -49,6 +49,7 @@ abstract class FBaseTransport extends TTransport {
 /// FTransport is a multiplexed Transport that routes frames to the
 /// correct callbacks.
 class FTransport extends FBaseTransport {
+  final Logger log = new Logger('FTransport');
   _TFramedTransport _transport;
   Registry _registry;
 
@@ -61,7 +62,14 @@ class FTransport extends FBaseTransport {
   void setRegistry(Registry registry) {
     _registry = registry;
     _transport.onFrame.listen((Uint8List frame) {
-      _registry.execute(frame);
+      try {
+        _registry.execute(frame);
+      } catch(e) {
+        // Fatal error. Close the transport.
+        log.severe("AsyncCallback had a fatal error ${e.toString()}." +
+          "Closing transport.");
+        close();
+      }
     });
   }
 

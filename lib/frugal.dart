@@ -6,6 +6,7 @@ import "dart:convert";
 import "dart:math";
 import "dart:typed_data";
 
+import "package:logging/logging.dart";
 import "package:thrift/thrift.dart";
 import "package:messaging_frontend/messaging_frontend.dart";
 import "package:uuid/uuid.dart";

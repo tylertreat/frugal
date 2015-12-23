@@ -3,6 +3,7 @@ part of frugal;
 /// Responsible for multiplexing received client messages to the
 /// appropriate callback.
 class ClientRegistry implements Registry {
+  final Logger log = new Logger('ClientRegistry');
   Map<int, AsyncCallback> _handlers;
 
   ClientRegistry() {
@@ -30,11 +31,12 @@ class ClientRegistry implements Registry {
     try {
       opId = int.parse(headers[_opid]);
     } catch(e) {
-      throw new StateError("frugal: frame header does not have opId");
+      log.warn("Frame headers does not have an opId");
+      return;
     }
 
     if (!_handlers.containsKey(opId)) {
-      // Unknown handler. Drop the frame.
+      log.info("No handler for op $opId}. Dropping frame.");
       return;
     }
     _handlers[opId](new TUint8List(frame));
