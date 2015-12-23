@@ -1,6 +1,8 @@
 part of frugal;
 
-/// Invoked when a message frame is received.
+/// Invoked when a message frame is received. Any error thrown by
+/// this callback is considered fatal and will result in the
+/// shutdown of the transport.
 typedef void AsyncCallback(TTransport);
 
 /// Responsible for multiplexing received messages to the

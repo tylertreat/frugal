@@ -31,7 +31,7 @@ class ClientRegistry implements Registry {
     try {
       opId = int.parse(headers[_opid]);
     } catch(e) {
-      log.warn("Frame headers does not have an opId");
+      log.warning("Frame headers does not have an opId");
       return;
     }
 
