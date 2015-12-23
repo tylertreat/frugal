@@ -8,7 +8,7 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
 
-func TestPublishSubscribe(t *testing.T) {
+func TestLargeMessage(t *testing.T) {
 
 	protocolFactories := map[string]thrift.TProtocolFactory{
 		"TCompactProtocolFactory":       thrift.NewTCompactProtocolFactory(),
@@ -32,7 +32,7 @@ func TestPublishSubscribe(t *testing.T) {
 	for pf, protocolFactory := range protocolFactories {
 		for tf, transportFactory := range transportFactories {
 			name := pf + " " + tf
-			PublishSubscribe(t, protocolFactory, transportFactory, conn, name)
+			LargeMessage(t, protocolFactory, transportFactory, conn, name)
 		}
 	}
 }
