@@ -13,7 +13,6 @@ class ScopeProvider {
     if (tTransportFactory != null) {
       tr.applyProxy(tTransportFactory);
     }
-//    var pr = tProtocolFactory.getProtocol(tr.thriftTransport());
     var pr = tProtocolFactory.getProtocol(tr);
     return new ScopeTransportWithProtocol(tr, pr);
   }
