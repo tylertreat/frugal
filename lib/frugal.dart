@@ -19,7 +19,6 @@ part 'src/registry/registry.dart';
 part 'src/registry/client_registry.dart';
 part 'src/transport/scope/f_nats_scope_transport.dart';
 part 'src/transport/scope/f_nats_scope_transport_factory.dart';
-part 'src/transport/scope/t_nats_scope_transport.dart';
 part 'src/transport/scope/f_scope_transport.dart';
 part 'src/transport/scope/f_scope_transport_factory.dart';
 part 'src/transport/service/t_framed_transport.dart';

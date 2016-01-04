@@ -1,27 +1,12 @@
 part of frugal;
 
 /// Wraps a Thrift TTransport. Used for frugal Scopes.
-abstract class FScopeTransport {
-  /// Stream that signals to transport listener that data is available on
-  /// the thrift transport.
-  Stream get signalRead;
+abstract class FScopeTransport extends TTransport {
 
-  /// Stream that signals to transport listener that there was an error.
-  Stream get error;
+  // LockTopic sets the publish topic and locks the transport for exclusive
+  // access.
+  void setTopic(string);// error
 
-  /// Open the Transport to receive messages on the subscription.
-  Future subscribe(String);
-
-  /// Close the Transport to stop receiving messages on the subscription.
-  Future unsubscribe();
-
-  /// Prepare the Transport for publishing to the given topic.
-  void preparePublish(String);
-
-  /// Return the wrapped Thrift TTransport.
-  TTransport thriftTransport();
-
-  /// Wrap the underlying TTransport with the TTransport returned by the
-  /// given TTransportFactory.
-  Future applyProxy(TTransportFactory);
+  // Subscribe sets the subscribe topic and opens the transport.
+  Future subscribe(string);// error
 }
