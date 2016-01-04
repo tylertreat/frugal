@@ -72,7 +72,7 @@ class FNatsScopeTransport extends FScopeTransport {
       return;
     }
 
-    if(subject == null) {
+    if(topic == null) {
       throw new StateError('cannot subscribe to empty subject');
     }
 
