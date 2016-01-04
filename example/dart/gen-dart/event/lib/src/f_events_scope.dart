@@ -19,27 +19,30 @@ class EventsPublisher {
   frugal.FScopeTransport fTransport;
   thrift.TProtocol tProtocol;
   int seqId;
+  Future open;
 
   EventsPublisher(frugal.ScopeProvider provider) {
     var tp = provider.newTransportProtocol();
     fTransport = tp.fTransport;
     tProtocol = tp.tProtocol;
     seqId = 0;
+    open = fTransport.open();
   }
 
   /// This is a docstring.
-  Future publishEventCreated(String user, t_event.Event req) {
+  Future publishEventCreated(String user, t_event.Event req) async {
+    await open;
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
-    fTransport.preparePublish(topic);
+    fTransport.setTopic(topic);
     var oprot = tProtocol;
     seqId++;
     var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);
     oprot.writeMessageBegin(msg);
     req.write(oprot);
     oprot.writeMessageEnd();
-    return oprot.transport.flush();
+    await oprot.transport.flush();
   }
 }
 

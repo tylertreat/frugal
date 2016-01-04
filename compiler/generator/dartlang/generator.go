@@ -270,13 +270,15 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
 	publishers += tab + "frugal.FScopeTransport fTransport;\n"
 	publishers += tab + "thrift.TProtocol tProtocol;\n"
-	publishers += tab + "int seqId;\n\n"
+	publishers += tab + "int seqId;\n"
+	publishers += tab + "Future open;\n\n";
 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.ScopeProvider provider) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "var tp = provider.newTransportProtocol();\n"
 	publishers += tabtab + "fTransport = tp.fTransport;\n"
 	publishers += tabtab + "tProtocol = tp.tProtocol;\n"
 	publishers += tabtab + "seqId = 0;\n"
+	publishers += tabtab + "open = fTransport.open();\n";
 	publishers += tab + "}\n\n"
 
 	args := ""
@@ -292,18 +294,19 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		if op.Comment != nil {
 			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
-		publishers += fmt.Sprintf(tab+"Future publish%s(%s%s req) {\n", op.Name, args, g.qualifiedParamName(op))
+		publishers += fmt.Sprintf(tab+"Future publish%s(%s%s req) async {\n", op.Name, args, g.qualifiedParamName(op))
+		publishers += tabtab + "await open;\n";
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
-		publishers += tabtab + "fTransport.preparePublish(topic);\n"
+		publishers += tabtab + "fTransport.setTopic(topic);\n"
 		publishers += tabtab + "var oprot = tProtocol;\n"
 		publishers += tabtab + "seqId++;\n"
 		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);\n"
 		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
 		publishers += tabtab + "req.write(oprot);\n"
 		publishers += tabtab + "oprot.writeMessageEnd();\n"
-		publishers += tabtab + "return oprot.transport.flush();\n"
+		publishers += tabtab + "await oprot.transport.flush();\n"
 		publishers += tab + "}\n"
 	}
 
