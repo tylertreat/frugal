@@ -3,10 +3,9 @@ part of frugal;
 /// Wraps a Thrift TTransport. Used for frugal Scopes.
 abstract class FScopeTransport extends TTransport {
 
-  // LockTopic sets the publish topic and locks the transport for exclusive
-  // access.
-  void setTopic(string);// error
+  // setTopic sets the publish topic.
+  void setTopic(string);
 
-  // Subscribe sets the subscribe topic and opens the transport.
-  Future subscribe(string);// error
+  // subscribe sets the subscribe topic and opens the transport.
+  Future subscribe(string);
 }

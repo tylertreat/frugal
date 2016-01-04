@@ -49,7 +49,7 @@ class FNatsScopeTransport extends FScopeTransport {
   @override
   void setTopic(String topic) {
     if(subscriber) {
-      throw new StateError('frugal: subscriber cannot lock topic');
+      throw new StateError('frugal: subscriber cannot set topic');
     }
     this.topic = topic;
   }
