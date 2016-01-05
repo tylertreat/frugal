@@ -24,6 +24,9 @@ class Context {
       _opid: _nextOpId(),
     };
     _responseHeaders = {};
+
+    // Default timeout to 1 minute
+    _timeout = new Duration(minutes: 1);
   }
 
   Context.withRequestHeaders(Map<String, String> headers) {
