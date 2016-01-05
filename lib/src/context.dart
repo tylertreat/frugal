@@ -8,6 +8,12 @@ String _opid = "_opid";
 class Context {
   Map<String, String> _requestHeaders;
   Map<String, String> _responseHeaders;
+  Duration _timeout;
+
+  Duration get timeout => _timeout;
+  void set timeout(timeout) {
+    _timeout = timeout;
+  }
 
   Context({String correlationId: ""}) {
     if (correlationId == "") {
