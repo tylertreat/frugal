@@ -3,12 +3,16 @@ part of frugal;
 /// A Service TSocket backed by a NATS client
 class TNatsSocket implements TSocket {
   static const String DISCONNECT = "DISCONNECT";
+  static const int maxMissedHeartbeats = 5;
+
   final Nats _natsClient;
   final String _listenTo;
   final String _replyTo;
-  final String _heartbeat;
+  final String _heartbeatListen;
+  final String _heartbeatReply;
   Duration _heartbeatInterval;
   Timer _heartbeatTimer;
+  Stream<Message> _heartbeatListenStream;
 
   final StreamController<TSocketState> _onStateController;
   Stream<TSocketState> get onState => _onStateController.stream;
@@ -23,7 +27,8 @@ class TNatsSocket implements TSocket {
 
   final List<Uint8List> _requests = [];
 
-  TNatsSocket(this._natsClient, this._listenTo, this._replyTo, this._heartbeat,
+  TNatsSocket(this._natsClient, this._listenTo, this._replyTo,
+              this._heartbeatListen, this._heartbeatReply,
               Duration readTimeout, this._heartbeatInterval)
   : _onStateController = new StreamController.broadcast(),
   _onErrorController = new StreamController.broadcast(),
@@ -58,13 +63,23 @@ class TNatsSocket implements TSocket {
       _onMessageController.add(msg.payload);
     });
     if (_heartbeatInterval.inMilliseconds > 0) {
-      _heartbeatTimer = new Timer.periodic(_heartbeatInterval, heartbeat);
+      int missed = 0;
+
+      _heartbeatListenStream = await _natsClient.subscribe(_heartbeatListen);
+      _heartbeatListenStream.listen((Message message) {
+        // Send a heartbeat response and clear missed field
+        _natsClient.publish(_heartbeatReply, "", new Uint8List.fromList([]));
+        missed = 0;
+      });
+      _heartbeatTimer = new Timer.periodic(_heartbeatInterval, (Timer timer) {
+        // increment missed and check the count
+        missed++;
+        if(missed >= maxMissedHeartbeats) {
+          close();
+        }
+      });
     }
     _onStateController.add(TSocketState.OPEN);
-  }
-
-  void heartbeat(Timer timer) {
-    _natsClient.publish(_heartbeat, "", new Uint8List.fromList([]));
   }
 
   Future close() async {
@@ -73,6 +88,10 @@ class TNatsSocket implements TSocket {
     }
     _natsClient.unsubscribe(_listenTo);
     _listenStream = null;
+    if(_heartbeatInterval.inMilliseconds > 0) {
+      _natsClient.unsubscribe(_heartbeatListen);
+      _heartbeatListenStream = null;
+    }
 
     if (_requests.isNotEmpty) {
       _onErrorController

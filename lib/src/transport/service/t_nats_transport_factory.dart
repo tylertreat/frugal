@@ -13,19 +13,20 @@ class TNatsTransportFactory {
             (e) => client.unsubscribe(inbox)).then((Message msg) {
       client.unsubscribe(inbox);
       if (msg.reply == "") {
-        throw new StateError("thrift_nats: no reply subject on connect");
+        throw new StateError("frugal: no reply subject on connect");
       }
 
-      var heatbeatAndDeadline = _codec.decode(msg.payload).split(" ");
-      if (heatbeatAndDeadline.length != 2) {
-        throw new StateError("thrift_nats: invalid connect message");
+      // Connect message consists of "[heartbeat subject] [heartbeat reply subject] [expected interval ms]"
+      List<String> subjects = _codec.decode(msg.payload).split(" ");
+      if (subjects.length != 3) {
+        throw new StateError("frugal: invalid connect message");
       }
 
-      var heartbeat = heatbeatAndDeadline[0];
-      var deadline = int.parse(heatbeatAndDeadline[1]);
+      String heartbeatListen = subjects[0];
+      String heartbeatReply = subjects[1];
+      int deadline = int.parse(subjects[2]);
       Duration interval = new Duration();
       if (deadline > 0) {
-        deadline = (deadline - (deadline/4)).floor();
         interval = new Duration(milliseconds: deadline);
       }
 
