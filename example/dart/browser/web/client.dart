@@ -45,7 +45,7 @@ class EventUI {
 
       var timeout = new Duration(seconds: 1);
       frugal.TNatsTransportFactory.New(nats, "foo", timeout, timeout).then((TSocketTransport T) {
-        var transport = new frugal.FTransport(T);
+        var transport = new frugal.FMultiplexedTransport(T);
         transport.open().then((_){
           var protocolFactory = new frugal.FProtocolFactory(new TBinaryProtocolFactory());
           _fFooClient = new event.FFooClient(transport, protocolFactory);

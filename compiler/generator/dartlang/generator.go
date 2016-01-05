@@ -431,13 +431,13 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	}
 	contents += fmt.Sprintf("class F%sClient implements F%s {\n", servTitle, servTitle)
 	contents += "\n"
-	contents += fmt.Sprintf(tab+"F%sClient(frugal.FBaseTransport transport, frugal.FProtocolFactory protocolFactory) {\n", servTitle)
+	contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory) {\n", servTitle)
 	contents += tabtab + "_transport = transport;\n"
 	contents += tabtab + "_transport.setRegistry(new frugal.ClientRegistry());\n"
 	contents += tabtab + "_protocolFactory = protocolFactory;\n"
 	contents += tabtab + "_oprot = _protocolFactory.getProtocol(transport);\n"
 	contents += tab + "}\n\n"
-	contents += tab + "frugal.FBaseTransport _transport;\n"
+	contents += tab + "frugal.FTransport _transport;\n"
 	contents += tab + "frugal.FProtocolFactory _protocolFactory;\n"
 	contents += tab + "frugal.FProtocol _oprot;\n"
 	contents += tab + "frugal.FProtocol get oprot => _oprot;\n\n"
