@@ -30,7 +30,7 @@ class TNatsTransportFactory {
         interval = new Duration(milliseconds: deadline);
       }
 
-      var socket = new TNatsSocket(client, inbox, msg.reply, heartbeatListen, heartbeatReply, interval);
+      var socket = new TNatsSocket(client, inbox, msg.reply, heartbeatListen, heartbeatReply, readTimeout, interval);
       return new TClientSocketTransport(socket);
     });
   }
