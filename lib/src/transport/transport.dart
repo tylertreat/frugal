@@ -1,7 +1,7 @@
 part of frugal;
 
-/// FBaseTransport is a TTransport for services.
-abstract class FBaseTransport extends TTransport {
+/// FTransport is a TTransport for services.
+abstract class FTransport extends TTransport {
   TTransport _transport;
 
   void set transport(TTransport transport) {
@@ -46,14 +46,14 @@ abstract class FBaseTransport extends TTransport {
   void unregister(Context ctx);
 }
 
-/// FTransport is a multiplexed Transport that routes frames to the
+/// FMultiplexedTransport is a multiplexed Transport that routes frames to the
 /// correct callbacks.
-class FTransport extends FBaseTransport {
+class FMultiplexedTransport extends FTransport {
   final Logger log = new Logger('FTransport');
   _TFramedTransport _transport;
   Registry _registry;
 
-  FTransport(TSocketTransport transport)
+  FMultiplexedTransport(TSocketTransport transport)
     : _transport = new _TFramedTransport(transport.socket) {
     super.transport = _transport;
   }
