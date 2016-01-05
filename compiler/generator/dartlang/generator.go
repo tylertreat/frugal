@@ -476,7 +476,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtab + "args.write(oprot);\n"
 	contents += tabtabtab + "oprot.writeMessageEnd();\n"
 	contents += tabtabtab + "await oprot.transport.flush();\n"
-	contents += tabtabtab + "return await controller.stream.first;\n"
+	contents += tabtabtab + "return await controller.stream.first.timeout(ctx.timeout);\n"
 	contents += tabtab + "} finally {\n"
 	contents += tabtabtab + "_transport.unregister(ctx);\n"
 	contents += tabtab + "}\n"

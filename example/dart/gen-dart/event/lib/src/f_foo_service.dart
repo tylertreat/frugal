@@ -51,7 +51,7 @@ class FFooClient implements FFoo {
       args.write(oprot);
       oprot.writeMessageEnd();
       await oprot.transport.flush();
-      return await controller.stream.first;
+      return await controller.stream.first.timeout(ctx.timeout);
     } finally {
       _transport.unregister(ctx);
     }
@@ -95,7 +95,7 @@ class FFooClient implements FFoo {
       args.write(oprot);
       oprot.writeMessageEnd();
       await oprot.transport.flush();
-      return await controller.stream.first;
+      return await controller.stream.first.timeout(ctx.timeout);
     } finally {
       _transport.unregister(ctx);
     }
