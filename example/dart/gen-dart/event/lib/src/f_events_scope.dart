@@ -21,7 +21,7 @@ class EventsPublisher {
   int seqId;
   Future open;
 
-  EventsPublisher(frugal.ScopeProvider provider) {
+  EventsPublisher(frugal.FProvider provider) {
     var tp = provider.newTransportProtocol();
     fTransport = tp.fTransport;
     tProtocol = tp.tProtocol;
@@ -50,12 +50,12 @@ class EventsPublisher {
 /// This docstring gets added to the generated code because it has
 /// the @ sign.
 class EventsSubscriber {
-  final frugal.ScopeProvider provider;
+  final frugal.FProvider provider;
 
   EventsSubscriber(this.provider) {}
 
   /// This is a docstring.
-  Future<frugal.Subscription> subscribeEventCreated(String user, dynamic onEvent(t_event.Event req)) async {
+  Future<frugal.FSubscription> subscribeEventCreated(String user, dynamic onEvent(t_event.Event req)) async {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
@@ -64,7 +64,7 @@ class EventsSubscriber {
     tp.fTransport.signalRead.listen((_) {
       onEvent(_recvEventCreated(op, tp.tProtocol));
     });
-    var sub = new frugal.Subscription(topic, tp.fTransport);
+    var sub = new frugal.FSubscription(topic, tp.fTransport);
     tp.fTransport.error.listen((Error e) {;
       sub.signal(e);
     });

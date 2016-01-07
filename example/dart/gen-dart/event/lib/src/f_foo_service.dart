@@ -18,10 +18,10 @@ import 'foo.dart' as t_foo;
 abstract class FFoo {
 
   /// Ping the server.
-  Future ping(frugal.Context ctx);
+  Future ping(frugal.FContext ctx);
 
   /// Blah the server.
-  Future<int> blah(frugal.Context ctx, int num, String str, t_event.Event event);
+  Future<int> blah(frugal.FContext ctx, int num, String str, t_event.Event event);
 }
 
 /// This is a thrift service. Frugal will generate bindings that include 
@@ -30,7 +30,7 @@ class FFooClient implements FFoo {
 
   FFooClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory) {
     _transport = transport;
-    _transport.setRegistry(new frugal.ClientRegistry());
+    _transport.setRegistry(new frugal.FClientRegistry());
     _protocolFactory = protocolFactory;
     _oprot = _protocolFactory.getProtocol(transport);
   }
@@ -41,7 +41,7 @@ class FFooClient implements FFoo {
   frugal.FProtocol get oprot => _oprot;
 
   /// Ping the server.
-  Future ping(frugal.Context ctx) async {
+  Future ping(frugal.FContext ctx) async {
     var controller = new StreamController();
     _transport.register(ctx, _recvPingHandler(ctx, controller));
     try {
@@ -57,7 +57,7 @@ class FFooClient implements FFoo {
     }
   }
 
-  _recvPingHandler(frugal.Context ctx, StreamController controller) {
+  _recvPingHandler(frugal.FContext ctx, StreamController controller) {
     pingCallback(thrift.TTransport transport) {
       try {
         var iprot = _protocolFactory.getProtocol(transport);
@@ -82,7 +82,7 @@ class FFooClient implements FFoo {
   }
 
   /// Blah the server.
-  Future<int> blah(frugal.Context ctx, int num, String str, t_event.Event event) async {
+  Future<int> blah(frugal.FContext ctx, int num, String str, t_event.Event event) async {
     var controller = new StreamController();
     _transport.register(ctx, _recvBlahHandler(ctx, controller));
     try {
@@ -101,7 +101,7 @@ class FFooClient implements FFoo {
     }
   }
 
-  _recvBlahHandler(frugal.Context ctx, StreamController controller) {
+  _recvBlahHandler(frugal.FContext ctx, StreamController controller) {
     blahCallback(thrift.TTransport transport) {
       try {
         var iprot = _protocolFactory.getProtocol(transport);
