@@ -76,13 +76,13 @@ func main() {
 
 // Client handler
 func handleClient(client *event.FFooClient) (err error) {
-	ctx := frugal.NewContext("")
+	ctx := frugal.NewFContext("")
 	ctx.SetTimeout(10 * time.Millisecond)
 	if err := client.Ping(ctx); err != nil {
 		fmt.Println("ping error:", err)
 	}
 	event := &event.Event{Message: "hello, world!"}
-	ctx = frugal.NewContext("")
+	ctx = frugal.NewFContext("")
 	result, err := client.Blah(ctx, 100, "awesomesauce", event)
 	fmt.Printf("Blah = %d\n", result)
 	fmt.Println(ctx.ResponseHeader("foo"))
@@ -108,12 +108,12 @@ func runClient(conn *nats.Conn, transportFactory frugal.FTransportFactory, proto
 type FooHandler struct {
 }
 
-func (f *FooHandler) Ping(ctx frugal.Context) error {
+func (f *FooHandler) Ping(ctx frugal.FContext) error {
 	fmt.Printf("Ping(%s)\n", ctx)
 	return nil
 }
 
-func (f *FooHandler) Blah(ctx frugal.Context, num int32, str string, e *event.Event) (int64, error) {
+func (f *FooHandler) Blah(ctx frugal.FContext, num int32, str string, e *event.Event) (int64, error) {
 	fmt.Printf("Blah(%s, %d, %s, %v)\n", ctx, num, str, e)
 	ctx.AddResponseHeader("foo", "bar")
 	return 42, nil
@@ -133,7 +133,7 @@ func runServer(conn *nats.Conn, transportFactory frugal.FTransportFactory,
 // Subscriber runner
 func runSubscriber(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory) error {
 	factory := frugal.NewFNatsScopeTransportFactory(conn)
-	provider := frugal.NewProvider(factory, protocolFactory)
+	provider := frugal.NewFProvider(factory, protocolFactory)
 	subscriber := event.NewEventsSubscriber(provider)
 	_, err := subscriber.SubscribeEventCreated("barUser", func(e *event.Event) {
 		fmt.Printf("received %+v\n", e)
@@ -148,7 +148,7 @@ func runSubscriber(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory) er
 // Publisher runner
 func runPublisher(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory) error {
 	factory := frugal.NewFNatsScopeTransportFactory(conn)
-	provider := frugal.NewProvider(factory, protocolFactory)
+	provider := frugal.NewFProvider(factory, protocolFactory)
 	publisher := event.NewEventsPublisher(provider)
 	event := &event.Event{Message: "hello, world!"}
 	if err := publisher.PublishEventCreated("barUser", event); err != nil {

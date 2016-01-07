@@ -171,7 +171,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += "\tFProtocol  *frugal.FProtocol\n"
 	publisher += "}\n\n"
 
-	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.Provider) *%sPublisher {\n", strings.Title(scope.Name), strings.Title(scope.Name))
+	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.FProvider) *%sPublisher {\n", strings.Title(scope.Name), strings.Title(scope.Name))
 	publisher += "\ttransport, protocol := provider.New()\n"
 	publisher += "\ttransport.Open()\n"
 	publisher += fmt.Sprintf("\treturn &%sPublisher{\n", strings.Title(scope.Name))
@@ -250,10 +250,10 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += g.GenerateInlineComment(scope.Comment, "")
 	}
 	subscriber += fmt.Sprintf("type %sSubscriber struct {\n", strings.Title(scope.Name))
-	subscriber += "\tProvider *frugal.Provider\n"
+	subscriber += "\tProvider *frugal.FProvider\n"
 	subscriber += "}\n\n"
 
-	subscriber += fmt.Sprintf("func New%sSubscriber(provider *frugal.Provider) *%sSubscriber {\n", strings.Title(scope.Name), strings.Title(scope.Name))
+	subscriber += fmt.Sprintf("func New%sSubscriber(provider *frugal.FProvider) *%sSubscriber {\n", strings.Title(scope.Name), strings.Title(scope.Name))
 	subscriber += fmt.Sprintf("\treturn &%sSubscriber{Provider: provider}\n", strings.Title(scope.Name))
 	subscriber += "}\n\n"
 
@@ -274,7 +274,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		if op.Comment != nil {
 			subscriber += g.GenerateInlineComment(op.Comment, "")
 		}
-		subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*%s)) (*frugal.Subscription, error) {\n",
+		subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*%s)) (*frugal.FSubscription, error) {\n",
 			strings.Title(scope.Name), op.Name, args, g.qualifiedParamName(op))
 		subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		subscriber += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
@@ -283,7 +283,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += "\tif err := transport.Subscribe(topic); err != nil {\n"
 		subscriber += "\t\treturn nil, err\n"
 		subscriber += "\t}\n\n"
-		subscriber += "\tsub := frugal.NewSubscription(topic, transport)\n"
+		subscriber += "\tsub := frugal.NewFSubscription(topic, transport)\n"
 		subscriber += "\tgo func() {\n"
 		subscriber += "\t\tfor {\n"
 		subscriber += fmt.Sprintf("\t\t\treceived, err := l.recv%s(op, protocol)\n", op.Name)
@@ -343,7 +343,7 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, "\t")
 		}
-		contents += fmt.Sprintf("\t%s(frugal.Context%s) %s\n",
+		contents += fmt.Sprintf("\t%s(frugal.FContext%s) %s\n",
 			strings.Title(method.Name), g.generateInterfaceArgs(method.Arguments),
 			g.generateReturnArgs(method))
 	}
@@ -372,7 +372,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += fmt.Sprintf(
 		"func NewF%sClient(t frugal.FTransport, f *frugal.FProtocolFactory) *F%sClient {\n",
 		servTitle, servTitle)
-	contents += "\tt.SetRegistry(frugal.NewClientRegistry())\n"
+	contents += "\tt.SetRegistry(frugal.NewFClientRegistry())\n"
 	contents += fmt.Sprintf("\treturn &F%sClient{\n", servTitle)
 	contents += "\t\tFTransport:       t,\n"
 	contents += "\t\tFProtocolFactory: f,\n"
@@ -398,7 +398,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	if method.Comment != nil {
 		contents += g.GenerateInlineComment(method.Comment, "")
 	}
-	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx frugal.Context%s) %s {\n",
+	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx frugal.FContext%s) %s {\n",
 		servTitle, nameTitle, g.generateInputArgs(method.Arguments),
 		g.generateReturnArgs(method))
 	contents += "\toprot := f.OutputProtocol\n"
@@ -460,7 +460,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += "\treturn\n"
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func (f *F%sClient) recv%sHandler(ctx frugal.Context, resultC chan<- %s, errorC chan<- error) frugal.AsyncCallback {\n", servTitle, nameTitle, returnType)
+	contents += fmt.Sprintf("func (f *F%sClient) recv%sHandler(ctx frugal.FContext, resultC chan<- %s, errorC chan<- error) frugal.FAsyncCallback {\n", servTitle, nameTitle, returnType)
 	contents += "\treturn func(tr thrift.TTransport) error {\n"
 	contents += "\t\tiprot := f.FProtocolFactory.GetProtocol(tr)\n"
 	contents += "\t\tif err := iprot.ReadResponseHeader(ctx); err != nil {\n"
@@ -607,7 +607,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\twriteMu *sync.Mutex\n"
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func (p *%sF%s) Process(ctx frugal.Context, iprot, oprot *frugal.FProtocol) error {\n", servLower, nameTitle)
+	contents += fmt.Sprintf("func (p *%sF%s) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {\n", servLower, nameTitle)
 	contents += fmt.Sprintf("\targs := %s%sArgs{}\n", servTitle, nameTitle)
 	contents += "\tvar err error\n"
 	contents += "\tif err = args.Read(iprot); err != nil {\n"
