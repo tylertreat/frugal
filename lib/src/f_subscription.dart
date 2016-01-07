@@ -1,13 +1,13 @@
 part of frugal;
 
 /// Frugal Subscription
-class Subscription {
+class FSubscription {
   String subject;
   FScopeTransport _transport;
   StreamController _errorControler = new StreamController.broadcast();
   Stream<Error> get error => _errorControler.stream;
 
-  Subscription(this.subject, this._transport);
+  FSubscription(this.subject, this._transport);
 
   /// Unsubscribe from the subject.
   Future unsubscribe() => _transport.unsubscribe();

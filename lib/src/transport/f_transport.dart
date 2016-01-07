@@ -37,13 +37,13 @@ abstract class FTransport extends TTransport {
   Future flush() => _transport.flush();
 
   /// Set the Registry on the transport.
-  void setRegistry(Registry registry);
+  void setRegistry(FRegistry registry);
 
   /// Register a callback for the given Context.
-  void register(Context ctx, AsyncCallback callback);
+  void register(FContext ctx, FAsyncCallback callback);
 
   /// Unregister a callback for the given Context.
-  void unregister(Context ctx);
+  void unregister(FContext ctx);
 }
 
 /// FMultiplexedTransport is a multiplexed Transport that routes frames to the
@@ -51,7 +51,7 @@ abstract class FTransport extends TTransport {
 class FMultiplexedTransport extends FTransport {
   final Logger log = new Logger('FTransport');
   _TFramedTransport _transport;
-  Registry _registry;
+  FRegistry _registry;
 
   FMultiplexedTransport(TSocketTransport transport)
     : _transport = new _TFramedTransport(transport.socket) {
@@ -59,14 +59,14 @@ class FMultiplexedTransport extends FTransport {
   }
 
   /// Set the Registry on the transport and starts listening for frames.
-  void setRegistry(Registry registry) {
+  void setRegistry(FRegistry registry) {
     _registry = registry;
     _transport.onFrame.listen((Uint8List frame) {
       try {
         _registry.execute(frame);
       } catch(e) {
         // Fatal error. Close the transport.
-        log.severe("AsyncCallback had a fatal error ${e.toString()}." +
+        log.severe("FAsyncCallback had a fatal error ${e.toString()}." +
           "Closing transport.");
         close();
       }
@@ -74,7 +74,7 @@ class FMultiplexedTransport extends FTransport {
   }
 
   /// Register a callback for the given Context.
-  void register(Context ctx, AsyncCallback callback) {
+  void register(FContext ctx, FAsyncCallback callback) {
     if (_registry == null) {
       throw new StateError("frugal: transport registry not set");
     }
@@ -82,7 +82,7 @@ class FMultiplexedTransport extends FTransport {
   }
 
   /// Unregister a callback for the given Context.
-  void unregister(Context ctx) {
+  void unregister(FContext ctx) {
     if (_registry == null) {
       throw new StateError("frugal: transport registry not set");
     }

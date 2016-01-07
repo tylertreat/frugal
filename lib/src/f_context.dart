@@ -5,7 +5,7 @@ String _cid = "_cid";
 String _opid = "_opid";
 
 /// Context for Frugal request.
-class Context {
+class FContext {
   Map<String, String> _requestHeaders;
   Map<String, String> _responseHeaders;
   Duration _timeout;
@@ -15,7 +15,7 @@ class Context {
     _timeout = timeout;
   }
 
-  Context({String correlationId: ""}) {
+  FContext({String correlationId: ""}) {
     if (correlationId == "") {
       correlationId = _generateCorrelationId();
     }
@@ -29,7 +29,7 @@ class Context {
     _timeout = new Duration(minutes: 1);
   }
 
-  Context.withRequestHeaders(Map<String, String> headers) {
+  FContext.withRequestHeaders(Map<String, String> headers) {
     if (headers[_cid] == "") {
       headers[_cid] = _generateCorrelationId();
     }

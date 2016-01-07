@@ -9,22 +9,22 @@ class FProtocol extends TProtocolDecorator {
       super(protocol);
 
   /// write the request headers on the given Context
-  void writeRequestHeader(Context ctx) {
+  void writeRequestHeader(FContext ctx) {
     _protocol.transport.writeAll(encodeHeaders(ctx.requestHeaders()));
   }
 
   /// read the requests headers into a new Context
-  Context readRequestHeader() {
-    return new Context.withRequestHeaders(readHeaders(_protocol.transport));
+  FContext readRequestHeader() {
+    return new FContext.withRequestHeaders(readHeaders(_protocol.transport));
   }
 
   /// write the response headers on the given Context
-  void writeResponseHeader(Context ctx) {
+  void writeResponseHeader(FContext ctx) {
     _protocol.transport.writeAll(encodeHeaders(ctx.responseHeaders()));
   }
 
   /// read the requests headers into the given Context
-  void readResponseHeader(Context ctx) {
+  void readResponseHeader(FContext ctx) {
     ctx.addResponseHeaders(readHeaders(_protocol.transport));
   }
 }

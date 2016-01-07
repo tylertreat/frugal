@@ -2,16 +2,16 @@ part of frugal;
 
 /// Responsible for multiplexing received client messages to the
 /// appropriate callback.
-class ClientRegistry implements Registry {
+class FClientRegistry implements FRegistry {
   final Logger log = new Logger('ClientRegistry');
-  Map<int, AsyncCallback> _handlers;
+  Map<int, FAsyncCallback> _handlers;
 
-  ClientRegistry() {
+  FClientRegistry() {
     _handlers = {};
   }
 
   /// Register a callback for the given Context.
-  void register(Context ctx, AsyncCallback callback) {
+  void register(FContext ctx, FAsyncCallback callback) {
     var opId = ctx.opId();
     if (_handlers.containsKey(opId)) {
       throw new StateError("frugal: context already registered");
@@ -20,7 +20,7 @@ class ClientRegistry implements Registry {
   }
 
   /// Unregister a callback for the given Context.
-  void unregister(Context ctx) {
+  void unregister(FContext ctx) {
     _handlers.remove(ctx.opId());
   }
 
