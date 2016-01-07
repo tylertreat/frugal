@@ -21,14 +21,14 @@ Uint8List encodeHeaders(Map<String, String> headers) {
 
   // Write size
   var bdata = new ByteData.view(buff.buffer);
-  bdata.setUint32(1, size);
+  bdata.setInt32(1, size);
 
   // Write headers
   if (headers != null && headers.length > 0) {
     var i = 5;
     for (var name in headers.keys) {
       // Write name length
-      bdata.setUint32(i, name.length);
+      bdata.setInt32(i, name.length);
       i += 4;
       // Write name
       buff.setAll(i, _encoder.convert(name));
@@ -36,7 +36,7 @@ Uint8List encodeHeaders(Map<String, String> headers) {
 
       // Write value length
       var value = headers[name];
-      bdata.setUint32(i, value.length);
+      bdata.setInt32(i, value.length);
       i += 4;
       buff.setAll(i, _encoder.convert(value));
       i += value.length;
@@ -60,7 +60,7 @@ Map<String, String> readHeaders(TTransport transport) {
   buff = new Uint8List(4);
   transport.read(buff, 0, 4);
   var bdata = new ByteData.view(buff.buffer);
-  var size = bdata.getUint32(0);
+  var size = bdata.getInt32(0);
   
   return _readHeaderPairs(transport, size);
 }
@@ -77,7 +77,7 @@ Map<String, String> decodeHeadersFromFrame(Uint8List frame) {
   }
 
   var bdata = new ByteData.view(frame.buffer);
-  var size = bdata.getUint32(1);
+  var size = bdata.getInt32(1);
   var transport = new TUint8List(frame.sublist(5, 5+size));
   return _readHeaderPairs(transport, size);
 }
@@ -89,7 +89,7 @@ Map<String, String> _readHeaderPairs(TTransport transport, int size) {
   var bdata = new ByteData.view(buff.buffer);
   var headers = {};
   for (var i = 0; i < size; i) {
-    var nameSize = bdata.getUint32(i);
+    var nameSize = bdata.getInt32(i);
     i += 4;
     if (i > size || i+nameSize > size) {
       throw new StateError("frugal: invalid protocol header name");
@@ -97,7 +97,7 @@ Map<String, String> _readHeaderPairs(TTransport transport, int size) {
     var name = _decoder.convert(buff, i, i+nameSize);
     i += nameSize;
 
-    var valueSize = bdata.getUint32(i);
+    var valueSize = bdata.getInt32(i);
     i += 4;
     if (i > size || i+valueSize > size) {
       throw new StateError("frugal: invalid protocol header value");
