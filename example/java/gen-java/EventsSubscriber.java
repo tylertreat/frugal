@@ -6,7 +6,7 @@
 
 
 
-import com.workiva.frugal.Provider;
+import com.workiva.frugal.FProvider;
 import com.workiva.frugal.Transport;
 import com.workiva.frugal.TransportFactory;
 import com.workiva.frugal.Subscription;
@@ -31,9 +31,9 @@ public class EventsSubscriber {
 
 	private static final String delimiter = ".";
 
-	private final Provider provider;
+	private final FProvider provider;
 
-	public EventsSubscriber(Provider provider) {
+	public EventsSubscriber(FProvider provider) {
 		this.provider = provider;
 	}
 
@@ -48,11 +48,11 @@ public class EventsSubscriber {
 		final String op = "EventCreated";
 		String prefix = String.format("foo.%s.", user);
 		String topic = String.format("%sEvents%s%s", prefix, delimiter, op);
-		final Provider.Client client = provider.build();
+		final FProvider.Client client = provider.build();
 		Transport transport = client.getTransport();
 		transport.subscribe(topic);
 
-		final Subscription sub = new Subscription(topic, transport);
+		final FSubscription sub = new FSubscription(topic, transport);
 		new Thread(new Runnable() {
 			public void run() {
 				while (true) {
@@ -77,7 +77,7 @@ public class EventsSubscriber {
 		return sub;
 	}
 
-	private Event recvEventCreated(String op, TProtocol iprot) throws TException {
+	private Event recvEventCreated(String op, FProtocol iprot) throws TException {
 		TMessage msg = iprot.readMessageBegin();
 		if (!msg.name.equals(op)) {
 			TProtocolUtil.skip(iprot, TType.STRUCT);

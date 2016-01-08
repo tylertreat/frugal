@@ -6,7 +6,7 @@
 
 
 
-import com.workiva.frugal.Provider;
+import com.workiva.frugal.FProvider;
 import com.workiva.frugal.Transport;
 import com.workiva.frugal.TransportFactory;
 import com.workiva.frugal.Subscription;
@@ -31,14 +31,13 @@ public class EventsPublisher {
 
 	private static final String delimiter = ".";
 
-	private Transport transport;
-	private TProtocol protocol;
-	private int seqId;
+	private FTransport transport;
+	private FProtocol protocol;
 
-	public EventsPublisher(Provider provider) {
-		Provider.Client client = provider.build();
-		transport = client.getTransport();
-		protocol = client.getProtocol();
+	public EventsPublisher(FProvider provider) {
+		FProvider.Client client = provider.build();
+		this.transport = client.getTransport();
+		this.protocol = client.getProtocol();
 	}
 
 	/**
@@ -48,11 +47,14 @@ public class EventsPublisher {
 		String op = "EventCreated";
 		String prefix = String.format("foo.%s.", user);
 		String topic = String.format("%sEvents%s%s", prefix, delimiter, op);
-		transport.preparePublish(topic);
-		seqId++;
-		protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, seqId));
-		req.write(protocol);
-		protocol.writeMessageEnd();
-		transport.flush();
+        transport.lockTopic(topic);
+        try {
+            protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
+            req.write(protocol);
+            protocol.writeMessageEnd();
+            transport.flush();
+        } finally {
+            transport.unlockTopic();
+        }
 	}
 }
