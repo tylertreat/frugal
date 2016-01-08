@@ -269,14 +269,14 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	}
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
 	publishers += tab + "frugal.FScopeTransport fTransport;\n"
-	publishers += tab + "thrift.TProtocol tProtocol;\n"
+	publishers += tab + "frugal.FProtocol fProtocol;\n"
 	publishers += tab + "int seqId;\n"
 	publishers += tab + "Future open;\n\n";
 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FProvider provider) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "var tp = provider.newTransportProtocol();\n"
 	publishers += tabtab + "fTransport = tp.fTransport;\n"
-	publishers += tabtab + "tProtocol = tp.tProtocol;\n"
+	publishers += tabtab + "fProtocol = tp.fProtocol;\n"
 	publishers += tabtab + "seqId = 0;\n"
 	publishers += tabtab + "open = fTransport.open();\n";
 	publishers += tab + "}\n\n"
@@ -300,7 +300,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
 		publishers += tabtab + "fTransport.setTopic(topic);\n"
-		publishers += tabtab + "var oprot = tProtocol;\n"
+		publishers += tabtab + "var oprot = fProtocol;\n"
 		publishers += tabtab + "seqId++;\n"
 		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);\n"
 		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
@@ -365,7 +365,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += tabtab + "var tp = provider.newTransportProtocol();\n"
 		subscribers += tabtab + "await tp.fTransport.subscribe(topic);\n"
 		subscribers += tabtab + "tp.fTransport.signalRead.listen((_) {\n"
-		subscribers += fmt.Sprintf(tabtabtab+"on%s(_recv%s(op, tp.tProtocol));\n", op.ParamName(), op.Name)
+		subscribers += fmt.Sprintf(tabtabtab+"on%s(_recv%s(op, tp.fProtocol));\n", op.ParamName(), op.Name)
 		subscribers += tabtab + "});\n"
 		subscribers += tabtab + "var sub = new frugal.FSubscription(topic, tp.fTransport);\n"
 		subscribers += tabtab + "tp.fTransport.error.listen((Error e) {;\n"
@@ -374,7 +374,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += tabtab + "return sub;\n"
 		subscribers += tab + "}\n\n"
 
-		subscribers += fmt.Sprintf(tab+"%s _recv%s(String op, thrift.TProtocol iprot) {\n",
+		subscribers += fmt.Sprintf(tab+"%s _recv%s(String op, frugal.FProtocol iprot) {\n",
 			g.qualifiedParamName(op), op.Name)
 		subscribers += tabtab + "var tMsg = iprot.readMessageBegin();\n"
 		subscribers += tabtab + "if (tMsg.name != op) {\n"
