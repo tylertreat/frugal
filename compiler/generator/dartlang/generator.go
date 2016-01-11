@@ -273,7 +273,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += tab + "int seqId;\n"
 	publishers += tab + "Future open;\n\n";
 
-	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FProvider provider) {\n", strings.Title(scope.Name))
+	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "var tp = provider.newTransportProtocol();\n"
 	publishers += tabtab + "fTransport = tp.fTransport;\n"
 	publishers += tabtab + "fProtocol = tp.fProtocol;\n"
@@ -340,7 +340,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += g.GenerateInlineComment(scope.Comment, "/")
 	}
 	subscribers += fmt.Sprintf("class %sSubscriber {\n", strings.Title(scope.Name))
-	subscribers += tab + "final frugal.FProvider provider;\n\n"
+	subscribers += tab + "final frugal.FScopeProvider provider;\n\n"
 
 	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider) {}\n\n", strings.Title(scope.Name))
 
@@ -431,11 +431,11 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	}
 	contents += fmt.Sprintf("class F%sClient implements F%s {\n", servTitle, servTitle)
 	contents += "\n"
-	contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory) {\n", servTitle)
-	contents += tabtab + "_transport = transport;\n"
+	contents += fmt.Sprintf(tab+"F%sClient(frugal.FServiceProvider provider) {\n", servTitle)
+	contents += tabtab + "_transport = provider.fTransport;\n"
 	contents += tabtab + "_transport.setRegistry(new frugal.FClientRegistry());\n"
-	contents += tabtab + "_protocolFactory = protocolFactory;\n"
-	contents += tabtab + "_oprot = _protocolFactory.getProtocol(transport);\n"
+	contents += tabtab + "_protocolFactory = provider.fProtocolFactory;\n"
+	contents += tabtab + "_oprot = _protocolFactory.getProtocol(_transport);\n"
 	contents += tab + "}\n\n"
 	contents += tab + "frugal.FTransport _transport;\n"
 	contents += tab + "frugal.FProtocolFactory _protocolFactory;\n"

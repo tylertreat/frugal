@@ -21,7 +21,7 @@ class EventsPublisher {
   int seqId;
   Future open;
 
-  EventsPublisher(frugal.FProvider provider) {
+  EventsPublisher(frugal.FScopeProvider provider) {
     var tp = provider.newTransportProtocol();
     fTransport = tp.fTransport;
     fProtocol = tp.fProtocol;
@@ -50,7 +50,7 @@ class EventsPublisher {
 /// This docstring gets added to the generated code because it has
 /// the @ sign.
 class EventsSubscriber {
-  final frugal.FProvider provider;
+  final frugal.FScopeProvider provider;
 
   EventsSubscriber(this.provider) {}
 

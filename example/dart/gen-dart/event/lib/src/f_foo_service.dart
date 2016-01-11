@@ -28,11 +28,11 @@ abstract class FFoo {
 /// a frugal Context for each service call.
 class FFooClient implements FFoo {
 
-  FFooClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory) {
-    _transport = transport;
+  FFooClient(frugal.FServiceProvider provider) {
+    _transport = provider.fTransport;
     _transport.setRegistry(new frugal.FClientRegistry());
-    _protocolFactory = protocolFactory;
-    _oprot = _protocolFactory.getProtocol(transport);
+    _protocolFactory = provider.fProtocolFactory;
+    _oprot = _protocolFactory.getProtocol(_transport);
   }
 
   frugal.FTransport _transport;

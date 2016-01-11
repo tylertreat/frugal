@@ -40,7 +40,7 @@ class EventUI {
     var nats = client.nats();
     nats.connect().then((_) {
       TProtocolFactory tProtocolFactory = new TBinaryProtocolFactory();
-      var provider = new frugal.FProvider(new frugal.FNatsScopeTransportFactory(nats), new frugal.FProtocolFactory(tProtocolFactory));
+      var provider = new frugal.FScopeProvider(new frugal.FNatsScopeTransportFactory(nats), new frugal.FProtocolFactory(tProtocolFactory));
       _eventsPublisher = new event.EventsPublisher(provider);
       _eventsSubscriber = new event.EventsSubscriber(provider);
 
@@ -49,7 +49,8 @@ class EventUI {
         var transport = new frugal.FMultiplexedTransport(T);
         transport.open().then((_){
           var protocolFactory = new frugal.FProtocolFactory(new TBinaryProtocolFactory());
-          _fFooClient = new event.FFooClient(transport, protocolFactory);
+          frugal.FServiceProvider provider = new frugal.FServiceProvider(transport, protocolFactory);
+          _fFooClient = new event.FFooClient(provider);
         });
       });
     });
