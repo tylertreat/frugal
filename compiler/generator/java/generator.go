@@ -122,21 +122,23 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import java.util.Map;\n"
 	imports += "import java.util.concurrent.BlockingQueue;\n"
 	imports += "import java.util.concurrent.ArrayBlockingQueue;\n"
+
 	_, err := file.WriteString(imports)
 	return err
 }
 
 func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "import com.workiva.frugal.FProvider;\n"
-	imports += "import com.workiva.frugal.FTransport;\n"
-	imports += "import com.workiva.frugal.TransportFactory;\n"
 	imports += "import com.workiva.frugal.FSubscription;\n"
+	imports += "import com.workiva.frugal.protocol.FProtocol;\n"
+	imports += "import com.workiva.frugal.transport.FScopeTransport;\n"
 	imports += "import org.apache.thrift.TException;\n"
-	imports += "import org.apache.thrift.protocol.*;\n"
-	imports += "import org.apache.thrift.TApplicationException;\n\n"
-	imports += "import org.apache.thrift.transport.TTransportException;\n\n"
-	imports += "import org.apache.thrift.transport.TTransportFactory;\n\n"
-	imports += "import javax.annotation.Generated;"
+	imports += "import org.apache.thrift.TApplicationException;\n"
+	imports += "import org.apache.thrift.transport.TTransportException;\n"
+	imports += "import org.apache.thrift.protocol.*;\n\n"
+
+	imports += "import javax.annotation.Generated;\n"
+
 	_, err := file.WriteString(imports)
 	return err
 }
@@ -156,7 +158,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 	publisher += fmt.Sprintf(tab+"private static final String delimiter = \"%s\";\n\n", globals.TopicDelimiter)
 
-	publisher += tab + "private FTransport transport;\n"
+	publisher += tab + "private FScopeTransport transport;\n"
 	publisher += tab + "private FProtocol protocol;\n"
 
 	publisher += fmt.Sprintf(tab+"public %sPublisher(FProvider provider) {\n", strings.Title(scope.Name))
@@ -184,7 +186,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publisher += tabtab + "String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op);\n"
 		publisher += tabtab + "transport.lockTopic(topic);\n"
 		publisher += tabtab + "try {\n"
-		publisher += tabtabtab + "protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, seqId));\n"
+		publisher += tabtabtab + "protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));\n"
 		publisher += tabtabtab + "req.write(protocol);\n"
 		publisher += tabtabtab + "protocol.writeMessageEnd();\n"
 		publisher += tabtabtab + "transport.flush();\n"
@@ -259,8 +261,8 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += fmt.Sprintf(tabtab+"final String op = \"%s\";\n", op.Name)
 		subscriber += fmt.Sprintf(tabtab+"String prefix = %s;\n", generatePrefixStringTemplate(scope))
 		subscriber += tabtab + "String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op);\n"
-		subscriber += tabtab + "final Provider.Client client = provider.build();\n"
-		subscriber += tabtab + "Transport transport = client.getTransport();\n"
+		subscriber += tabtab + "final FProvider.Client client = provider.build();\n"
+		subscriber += tabtab + "FScopeTransport transport = client.getTransport();\n"
 		subscriber += tabtab + "transport.subscribe(topic);\n\n"
 
 		subscriber += tabtab + "final FSubscription sub = new FSubscription(topic, transport);\n"
@@ -331,8 +333,8 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 		if method.Comment != nil {
 			contents += g.GenerateBlockComment(method.Comment, tabtab)
 		}
-		contents += fmt.Sprintf(tabtab+"public %s %s(FContext ctx%s) throws TException;\n\n",
-			g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments))
+		contents += fmt.Sprintf(tabtab+"public %s %s(FContext ctx%s) %s;\n\n",
+			g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments), g.generateExceptions(method.Exceptions))
 	}
 	contents += "}\n\n"
 	return contents
