@@ -58,12 +58,12 @@ func (p *Event) Read(iprot thrift.TProtocol) error {
 		}
 		switch fieldId {
 		case 1:
-			if err := p.ReadField1(iprot); err != nil {
+			if err := p.readField1(iprot); err != nil {
 				return err
 			}
 			issetID = true
 		case 2:
-			if err := p.ReadField2(iprot); err != nil {
+			if err := p.readField2(iprot); err != nil {
 				return err
 			}
 			issetMessage = true
@@ -88,7 +88,7 @@ func (p *Event) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Event) ReadField1(iprot thrift.TProtocol) error {
+func (p *Event) readField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
@@ -97,7 +97,7 @@ func (p *Event) ReadField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Event) ReadField2(iprot thrift.TProtocol) error {
+func (p *Event) readField2(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {
@@ -195,12 +195,12 @@ func (p *AwesomeException) Read(iprot thrift.TProtocol) error {
 		}
 		switch fieldId {
 		case 1:
-			if err := p.ReadField1(iprot); err != nil {
+			if err := p.readField1(iprot); err != nil {
 				return err
 			}
 			issetID = true
 		case 2:
-			if err := p.ReadField2(iprot); err != nil {
+			if err := p.readField2(iprot); err != nil {
 				return err
 			}
 			issetReason = true
@@ -225,7 +225,7 @@ func (p *AwesomeException) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *AwesomeException) ReadField1(iprot thrift.TProtocol) error {
+func (p *AwesomeException) readField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
@@ -234,7 +234,7 @@ func (p *AwesomeException) ReadField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *AwesomeException) ReadField2(iprot thrift.TProtocol) error {
+func (p *AwesomeException) readField2(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {

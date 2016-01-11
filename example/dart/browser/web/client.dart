@@ -9,7 +9,7 @@ import 'package:messaging_frontend/messaging_frontend.dart' show Message, Messag
 import 'package:w_transport/w_transport.dart';
 import 'package:w_transport/w_transport_browser.dart' show configureWTransportForBrowser;
 
-frugal.Subscription sub;
+frugal.FSubscription sub;
 
 void main() {
   Logger.root.level = Level.FINEST;
@@ -39,7 +39,8 @@ class EventUI {
     var client = new MessagingFrontendClient("http://localhost:8100", "some-sweet-client", new Client());
     var nats = client.nats();
     nats.connect().then((_) {
-      var provider = new frugal.ScopeProvider(new frugal.FNatsScopeTransportFactory(nats), null, new TBinaryProtocolFactory());
+      TProtocolFactory tProtocolFactory = new TBinaryProtocolFactory();
+      var provider = new frugal.FScopeProvider(new frugal.FNatsScopeTransportFactory(nats), new frugal.FProtocolFactory(tProtocolFactory));
       _eventsPublisher = new event.EventsPublisher(provider);
       _eventsSubscriber = new event.EventsSubscriber(provider);
 
@@ -48,7 +49,8 @@ class EventUI {
         var transport = new frugal.FMultiplexedTransport(T);
         transport.open().then((_){
           var protocolFactory = new frugal.FProtocolFactory(new TBinaryProtocolFactory());
-          _fFooClient = new event.FFooClient(transport, protocolFactory);
+          frugal.FServiceProvider provider = new frugal.FServiceProvider(transport, protocolFactory);
+          _fFooClient = new event.FFooClient(provider);
         });
       });
     });
@@ -134,14 +136,14 @@ class EventUI {
   }
 
   void _onPingClick(MouseEvent e) {
-    var ctx = new frugal.Context(correlationId:"some-sweet-correlation");
+    var ctx = new frugal.FContext(correlationId:"some-sweet-correlation");
     _fFooClient.ping(ctx).catchError( (e) {
       window.alert("Ping errored! ${e.toString()}");
     });
   }
 
   void _onBlahClick(MouseEvent e) {
-    var ctx = new frugal.Context(correlationId: "some-other-correlation");
+    var ctx = new frugal.FContext(correlationId: "some-other-correlation");
     InputElement blahMsg = querySelector("#blahMsg");
     var num = int.parse(blahMsg.value);
     var e = new event.Event();

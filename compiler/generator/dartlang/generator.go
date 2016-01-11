@@ -269,14 +269,14 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	}
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
 	publishers += tab + "frugal.FScopeTransport fTransport;\n"
-	publishers += tab + "thrift.TProtocol tProtocol;\n"
+	publishers += tab + "frugal.FProtocol fProtocol;\n"
 	publishers += tab + "int seqId;\n"
 	publishers += tab + "Future open;\n\n";
 
-	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.ScopeProvider provider) {\n", strings.Title(scope.Name))
+	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "var tp = provider.newTransportProtocol();\n"
 	publishers += tabtab + "fTransport = tp.fTransport;\n"
-	publishers += tabtab + "tProtocol = tp.tProtocol;\n"
+	publishers += tabtab + "fProtocol = tp.fProtocol;\n"
 	publishers += tabtab + "seqId = 0;\n"
 	publishers += tabtab + "open = fTransport.open();\n";
 	publishers += tab + "}\n\n"
@@ -300,7 +300,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
 		publishers += tabtab + "fTransport.setTopic(topic);\n"
-		publishers += tabtab + "var oprot = tProtocol;\n"
+		publishers += tabtab + "var oprot = fProtocol;\n"
 		publishers += tabtab + "seqId++;\n"
 		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);\n"
 		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
@@ -340,7 +340,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += g.GenerateInlineComment(scope.Comment, "/")
 	}
 	subscribers += fmt.Sprintf("class %sSubscriber {\n", strings.Title(scope.Name))
-	subscribers += tab + "final frugal.ScopeProvider provider;\n\n"
+	subscribers += tab + "final frugal.FScopeProvider provider;\n\n"
 
 	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider) {}\n\n", strings.Title(scope.Name))
 
@@ -357,7 +357,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		if op.Comment != nil {
 			subscribers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
-		subscribers += fmt.Sprintf(tab+"Future<frugal.Subscription> subscribe%s(%sdynamic on%s(%s req)) async {\n",
+		subscribers += fmt.Sprintf(tab+"Future<frugal.FSubscription> subscribe%s(%sdynamic on%s(%s req)) async {\n",
 			op.Name, args, op.ParamName(), g.qualifiedParamName(op))
 		subscribers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		subscribers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
@@ -365,16 +365,16 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += tabtab + "var tp = provider.newTransportProtocol();\n"
 		subscribers += tabtab + "await tp.fTransport.subscribe(topic);\n"
 		subscribers += tabtab + "tp.fTransport.signalRead.listen((_) {\n"
-		subscribers += fmt.Sprintf(tabtabtab+"on%s(_recv%s(op, tp.tProtocol));\n", op.ParamName(), op.Name)
+		subscribers += fmt.Sprintf(tabtabtab+"on%s(_recv%s(op, tp.fProtocol));\n", op.ParamName(), op.Name)
 		subscribers += tabtab + "});\n"
-		subscribers += tabtab + "var sub = new frugal.Subscription(topic, tp.fTransport);\n"
+		subscribers += tabtab + "var sub = new frugal.FSubscription(topic, tp.fTransport);\n"
 		subscribers += tabtab + "tp.fTransport.error.listen((Error e) {;\n"
 		subscribers += tabtabtab + "sub.signal(e);\n"
 		subscribers += tabtab + "});\n"
 		subscribers += tabtab + "return sub;\n"
 		subscribers += tab + "}\n\n"
 
-		subscribers += fmt.Sprintf(tab+"%s _recv%s(String op, thrift.TProtocol iprot) {\n",
+		subscribers += fmt.Sprintf(tab+"%s _recv%s(String op, frugal.FProtocol iprot) {\n",
 			g.qualifiedParamName(op), op.Name)
 		subscribers += tabtab + "var tMsg = iprot.readMessageBegin();\n"
 		subscribers += tabtab + "if (tMsg.name != op) {\n"
@@ -416,7 +416,7 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, tab+"/")
 		}
-		contents += fmt.Sprintf(tab+"Future%s %s(frugal.Context ctx%s);\n",
+		contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s);\n",
 			g.generateReturnArg(method), strings.ToLower(method.Name), g.generateInputArgs(method.Arguments))
 	}
 	contents += "}\n\n"
@@ -431,11 +431,11 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	}
 	contents += fmt.Sprintf("class F%sClient implements F%s {\n", servTitle, servTitle)
 	contents += "\n"
-	contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory) {\n", servTitle)
-	contents += tabtab + "_transport = transport;\n"
-	contents += tabtab + "_transport.setRegistry(new frugal.ClientRegistry());\n"
-	contents += tabtab + "_protocolFactory = protocolFactory;\n"
-	contents += tabtab + "_oprot = _protocolFactory.getProtocol(transport);\n"
+	contents += fmt.Sprintf(tab+"F%sClient(frugal.FServiceProvider provider) {\n", servTitle)
+	contents += tabtab + "_transport = provider.fTransport;\n"
+	contents += tabtab + "_transport.setRegistry(new frugal.FClientRegistry());\n"
+	contents += tabtab + "_protocolFactory = provider.fProtocolFactory;\n"
+	contents += tabtab + "_oprot = _protocolFactory.getProtocol(_transport);\n"
 	contents += tab + "}\n\n"
 	contents += tab + "frugal.FTransport _transport;\n"
 	contents += tab + "frugal.FProtocolFactory _protocolFactory;\n"
@@ -459,7 +459,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += g.GenerateInlineComment(method.Comment, tab+"/")
 	}
 	// Generate the calling method
-	contents += fmt.Sprintf(tab+"Future%s %s(frugal.Context ctx%s) async {\n",
+	contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s) async {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
 	contents += tabtab + "var controller = new StreamController();\n"
 	contents += fmt.Sprintf(tabtab+"_transport.register(ctx, _recv%sHandler(ctx, controller));\n", nameTitle)
@@ -483,7 +483,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tab + "}\n\n"
 
 	// Generate the callback
-	contents += fmt.Sprintf(tab+"_recv%sHandler(frugal.Context ctx, StreamController controller) {\n", nameTitle)
+	contents += fmt.Sprintf(tab+"_recv%sHandler(frugal.FContext ctx, StreamController controller) {\n", nameTitle)
 	contents += fmt.Sprintf(tabtab+"%sCallback(thrift.TTransport transport) {\n", nameLower)
 	contents += tabtabtab + "try {\n"
 	contents += tabtabtabtab + "var iprot = _protocolFactory.getProtocol(transport);\n"

@@ -17,14 +17,14 @@ const String delimiter = '.';
 /// the @ sign.
 class EventsPublisher {
   frugal.FScopeTransport fTransport;
-  thrift.TProtocol tProtocol;
+  frugal.FProtocol fProtocol;
   int seqId;
   Future open;
 
-  EventsPublisher(frugal.ScopeProvider provider) {
+  EventsPublisher(frugal.FScopeProvider provider) {
     var tp = provider.newTransportProtocol();
     fTransport = tp.fTransport;
-    tProtocol = tp.tProtocol;
+    fProtocol = tp.fProtocol;
     seqId = 0;
     open = fTransport.open();
   }
@@ -36,7 +36,7 @@ class EventsPublisher {
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
     fTransport.setTopic(topic);
-    var oprot = tProtocol;
+    var oprot = fProtocol;
     seqId++;
     var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);
     oprot.writeMessageBegin(msg);
@@ -50,28 +50,28 @@ class EventsPublisher {
 /// This docstring gets added to the generated code because it has
 /// the @ sign.
 class EventsSubscriber {
-  final frugal.ScopeProvider provider;
+  final frugal.FScopeProvider provider;
 
   EventsSubscriber(this.provider) {}
 
   /// This is a docstring.
-  Future<frugal.Subscription> subscribeEventCreated(String user, dynamic onEvent(t_event.Event req)) async {
+  Future<frugal.FSubscription> subscribeEventCreated(String user, dynamic onEvent(t_event.Event req)) async {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
     var tp = provider.newTransportProtocol();
     await tp.fTransport.subscribe(topic);
     tp.fTransport.signalRead.listen((_) {
-      onEvent(_recvEventCreated(op, tp.tProtocol));
+      onEvent(_recvEventCreated(op, tp.fProtocol));
     });
-    var sub = new frugal.Subscription(topic, tp.fTransport);
+    var sub = new frugal.FSubscription(topic, tp.fTransport);
     tp.fTransport.error.listen((Error e) {;
       sub.signal(e);
     });
     return sub;
   }
 
-  t_event.Event _recvEventCreated(String op, thrift.TProtocol iprot) {
+  t_event.Event _recvEventCreated(String op, frugal.FProtocol iprot) {
     var tMsg = iprot.readMessageBegin();
     if (tMsg.name != op) {
       thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
