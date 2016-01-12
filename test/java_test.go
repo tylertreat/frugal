@@ -35,4 +35,6 @@ func TestValidJava(t *testing.T) {
 	compareFiles(t, "expected/java/BlahPublisher.java", pubPath)
 	subPath = filepath.Join(outputDir, "foo", "BlahSubscriber.java")
 	compareFiles(t, "expected/java/BlahSubscriber.java", subPath)
+	servicePath := filepath.Join(outputDir, "foo", "FBlah.java")
+	compareFiles(t, "expected/java/FBlah.java", servicePath)
 }

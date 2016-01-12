@@ -2,10 +2,11 @@ package test
 
 import (
 	"bufio"
-	"github.com/Workiva/frugal/compiler"
-	"github.com/Workiva/frugal/compiler/globals"
 	"os"
 	"testing"
+
+	"github.com/Workiva/frugal/compiler"
+	"github.com/Workiva/frugal/compiler/globals"
 )
 
 const (
@@ -52,7 +53,8 @@ func compareFiles(t *testing.T, expectedPath, generatedPath string) {
 		expectedLine := expectedScanner.Text()
 		generatedLine := generatedScanner.Text()
 		if expectedLine != generatedLine {
-			t.Fatalf("Expected line <%s>, generated line <%s> at line %d", expectedLine, generatedLine, line)
+			t.Fatalf("Expected line <%s> (%s), generated line <%s> (%s) at line %d",
+				expectedLine, expectedPath, generatedLine, generatedPath, line)
 		}
 		line++
 	}

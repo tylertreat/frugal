@@ -16,88 +16,119 @@ import 'blah.dart' as t_blah;
 abstract class FBlah {
 
   /// Use this to ping the server.
-  Future ping(frugal.Context ctx);
+  Future ping(frugal.FContext ctx);
 
   /// Use this to tell the sever how you feel.
-  Future<int> bleh(frugal.Context ctx, t_valid.Thing one, t_valid.Stuff two);
+  Future<int> bleh(frugal.FContext ctx, t_valid.Thing one, t_valid.Stuff two);
 }
 
 class FBlahClient implements FBlah {
 
-  FBlahClient(thrift.TProtocol iprot, [thrift.TProtocol oprot = null]) {
-    _iprot = iprot;
-    _oprot = (oprot == null) ? iprot : oprot;
+  FBlahClient(frugal.FServiceProvider provider) {
+    _transport = provider.fTransport;
+    _transport.setRegistry(new frugal.FClientRegistry());
+    _protocolFactory = provider.fProtocolFactory;
+    _oprot = _protocolFactory.getProtocol(_transport);
   }
 
-  frugal.FProtocol _iprot;
-
-  frugal.FProtocol get iprot => _iprot;
-
+  frugal.FTransport _transport;
+  frugal.FProtocolFactory _protocolFactory;
   frugal.FProtocol _oprot;
-
   frugal.FProtocol get oprot => _oprot;
 
-  int _seqid = 0;
-
-  int get seqid => _seqid;
-
-  int nextSeqid() => ++_seqid;
-
   /// Use this to ping the server.
-  Future ping(frugal.Context ctx) async {
-    oprot.writeRequestHeader(ctx);
-    oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, nextSeqid()));
-    t_blah.ping_args args = new t_blah.ping_args();
-    args.write(oprot);
-    oprot.writeMessageEnd();
-
-    await oprot.transport.flush();
-
-    iprot.readResponseHeader(ctx);
-    thrift.TMessage msg = iprot.readMessageBegin();
-    if (msg.type == thrift.TMessageType.EXCEPTION) {
-      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
-      iprot.readMessageEnd();
-      throw error;
+  Future ping(frugal.FContext ctx) async {
+    var controller = new StreamController();
+    _transport.register(ctx, _recvPingHandler(ctx, controller));
+    try {
+      oprot.writeRequestHeader(ctx);
+      oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
+      t_blah.ping_args args = new t_blah.ping_args();
+      args.write(oprot);
+      oprot.writeMessageEnd();
+      await oprot.transport.flush();
+      return await controller.stream.first.timeout(ctx.timeout);
+    } finally {
+      _transport.unregister(ctx);
     }
+  }
 
-    t_blah.ping_result result = new t_blah.ping_result();
-    result.read(iprot);
-    iprot.readMessageEnd();
-    return;
+  _recvPingHandler(frugal.FContext ctx, StreamController controller) {
+    pingCallback(thrift.TTransport transport) {
+      try {
+        var iprot = _protocolFactory.getProtocol(transport);
+        iprot.readResponseHeader(ctx);
+        thrift.TMessage msg = iprot.readMessageBegin();
+        if (msg.type == thrift.TMessageType.EXCEPTION) {
+          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+          iprot.readMessageEnd();
+          throw error;
+        }
+
+        t_blah.ping_result result = new t_blah.ping_result();
+        result.read(iprot);
+        iprot.readMessageEnd();
+        controller.add(null);
+      } catch(e) {
+        controller.addError(e);
+        rethrow;
+      }
+    }
+    return pingCallback;
   }
 
   /// Use this to tell the sever how you feel.
-  Future<int> bleh(frugal.Context ctx, t_valid.Thing one, t_valid.Stuff two) async {
-    oprot.writeRequestHeader(ctx);
-    oprot.writeMessageBegin(new thrift.TMessage("bleh", thrift.TMessageType.CALL, nextSeqid()));
-    t_blah.bleh_args args = new t_blah.bleh_args();
-    args.one = one;
-    args.two = two;
-    args.write(oprot);
-    oprot.writeMessageEnd();
-
-    await oprot.transport.flush();
-
-    iprot.readResponseHeader(ctx);
-    thrift.TMessage msg = iprot.readMessageBegin();
-    if (msg.type == thrift.TMessageType.EXCEPTION) {
-      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
-      iprot.readMessageEnd();
-      throw error;
+  Future<int> bleh(frugal.FContext ctx, t_valid.Thing one, t_valid.Stuff two) async {
+    var controller = new StreamController();
+    _transport.register(ctx, _recvBlehHandler(ctx, controller));
+    try {
+      oprot.writeRequestHeader(ctx);
+      oprot.writeMessageBegin(new thrift.TMessage("bleh", thrift.TMessageType.CALL, 0));
+      t_blah.bleh_args args = new t_blah.bleh_args();
+      args.one = one;
+      args.two = two;
+      args.write(oprot);
+      oprot.writeMessageEnd();
+      await oprot.transport.flush();
+      return await controller.stream.first.timeout(ctx.timeout);
+    } finally {
+      _transport.unregister(ctx);
     }
+  }
 
-    t_blah.bleh_result result = new t_blah.bleh_result();
-    result.read(iprot);
-    iprot.readMessageEnd();
-    if (result.isSetSuccess()) {
-      return result.success;
-    }
+  _recvBlehHandler(frugal.FContext ctx, StreamController controller) {
+    blehCallback(thrift.TTransport transport) {
+      try {
+        var iprot = _protocolFactory.getProtocol(transport);
+        iprot.readResponseHeader(ctx);
+        thrift.TMessage msg = iprot.readMessageBegin();
+        if (msg.type == thrift.TMessageType.EXCEPTION) {
+          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+          iprot.readMessageEnd();
+          throw error;
+        }
 
-    if (result.oops != null) {
-      throw result.oops;
+        t_blah.bleh_result result = new t_blah.bleh_result();
+        result.read(iprot);
+        iprot.readMessageEnd();
+        if (result.isSetSuccess()) {
+          controller.add(result.success);
+          return;
+        }
+
+        if (result.oops != null) {
+          controller.addError(result.oops);
+          return;
+        }
+        throw new thrift.TApplicationError(
+          thrift.TApplicationErrorType.MISSING_RESULT, "bleh failed: unknown result"
+        );
+      } catch(e) {
+        controller.addError(e);
+        rethrow;
+      }
     }
-    throw new thrift.TApplicationError(thrift.TApplicationErrorType.MISSING_RESULT, "bleh failed: unknown result");
+    return blehCallback;
   }
 
 }

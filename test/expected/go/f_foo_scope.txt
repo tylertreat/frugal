@@ -15,17 +15,16 @@ const delimiter = "."
 
 // And this is a scope docstring.
 type FooPublisher struct {
-	FTransport frugal.FTransport
-	TProtocol  thrift.TProtocol
-	SeqId     int32
+	FTransport frugal.FScopeTransport
+	FProtocol  *frugal.FProtocol
 }
 
-func NewFooPublisher(provider *frugal.Provider) *FooPublisher {
+func NewFooPublisher(provider *frugal.FProvider) *FooPublisher {
 	transport, protocol := provider.New()
+	transport.Open()
 	return &FooPublisher{
 		FTransport: transport,
-		TProtocol:  protocol,
-		SeqId:     0,
+		FProtocol:  protocol,
 	}
 }
 
@@ -34,10 +33,12 @@ func (l *FooPublisher) PublishFoo(baz string, req *Thing) error {
 	op := "Foo"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
-	l.FTransport.PreparePublish(topic)
-	oprot := l.TProtocol
-	l.SeqId++
-	if err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {
+	if err := l.FTransport.LockTopic(topic); err != nil {
+		return err
+	}
+	defer l.FTransport.UnlockTopic()
+	oprot := l.FProtocol
+	if err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {
 		return err
 	}
 	if err := req.Write(oprot); err != nil {
@@ -53,10 +54,12 @@ func (l *FooPublisher) PublishBar(baz string, req *Stuff) error {
 	op := "Bar"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
-	l.FTransport.PreparePublish(topic)
-	oprot := l.TProtocol
-	l.SeqId++
-	if err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {
+	if err := l.FTransport.LockTopic(topic); err != nil {
+		return err
+	}
+	defer l.FTransport.UnlockTopic()
+	oprot := l.FProtocol
+	if err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {
 		return err
 	}
 	if err := req.Write(oprot); err != nil {
@@ -70,15 +73,15 @@ func (l *FooPublisher) PublishBar(baz string, req *Stuff) error {
 
 // And this is a scope docstring.
 type FooSubscriber struct {
-	Provider *frugal.Provider
+	Provider *frugal.FProvider
 }
 
-func NewFooSubscriber(provider *frugal.Provider) *FooSubscriber {
+func NewFooSubscriber(provider *frugal.FProvider) *FooSubscriber {
 	return &FooSubscriber{Provider: provider}
 }
 
 // This is an operation docstring.
-func (l *FooSubscriber) SubscribeFoo(baz string, handler func(*Thing)) (*frugal.Subscription, error) {
+func (l *FooSubscriber) SubscribeFoo(baz string, handler func(*Thing)) (*frugal.FSubscription, error) {
 	op := "Foo"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
@@ -87,7 +90,7 @@ func (l *FooSubscriber) SubscribeFoo(baz string, handler func(*Thing)) (*frugal.
 		return nil, err
 	}
 
-	sub := frugal.NewSubscription(topic, transport)
+	sub := frugal.NewFSubscription(topic, transport)
 	go func() {
 		for {
 			received, err := l.recvFoo(op, protocol)
@@ -95,7 +98,7 @@ func (l *FooSubscriber) SubscribeFoo(baz string, handler func(*Thing)) (*frugal.
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 					return
 				}
-				log.Println("frugal: error receiving:", err)
+				log.Printf("frugal: error receiving %s: %s\n", topic, err.Error())
 				sub.Signal(err)
 				sub.Unsubscribe()
 				return
@@ -127,7 +130,7 @@ func (l *FooSubscriber) recvFoo(op string, iprot thrift.TProtocol) (*Thing, erro
 	return req, nil
 }
 
-func (l *FooSubscriber) SubscribeBar(baz string, handler func(*Stuff)) (*frugal.Subscription, error) {
+func (l *FooSubscriber) SubscribeBar(baz string, handler func(*Stuff)) (*frugal.FSubscription, error) {
 	op := "Bar"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
@@ -136,7 +139,7 @@ func (l *FooSubscriber) SubscribeBar(baz string, handler func(*Stuff)) (*frugal.
 		return nil, err
 	}
 
-	sub := frugal.NewSubscription(topic, transport)
+	sub := frugal.NewFSubscription(topic, transport)
 	go func() {
 		for {
 			received, err := l.recvBar(op, protocol)
@@ -144,7 +147,7 @@ func (l *FooSubscriber) SubscribeBar(baz string, handler func(*Stuff)) (*frugal.
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 					return
 				}
-				log.Println("frugal: error receiving:", err)
+				log.Printf("frugal: error receiving %s: %s\n", topic, err.Error())
 				sub.Signal(err)
 				sub.Unsubscribe()
 				return

@@ -6,19 +6,17 @@
 
 package foo;
 
-import com.workiva.frugal.Provider;
-import com.workiva.frugal.Transport;
-import com.workiva.frugal.TransportFactory;
-import com.workiva.frugal.Subscription;
+import com.workiva.frugal.FProvider;
+import com.workiva.frugal.FSubscription;
+import com.workiva.frugal.protocol.FProtocol;
+import com.workiva.frugal.transport.FScopeTransport;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.*;
 import org.apache.thrift.TApplicationException;
-
 import org.apache.thrift.transport.TTransportException;
-
-import org.apache.thrift.transport.TTransportFactory;
+import org.apache.thrift.protocol.*;
 
 import javax.annotation.Generated;
+
 
 
 
@@ -30,9 +28,9 @@ public class FooSubscriber {
 
 	private static final String delimiter = ".";
 
-	private final Provider provider;
+	private final FProvider provider;
 
-	public FooSubscriber(Provider provider) {
+	public FooSubscriber(FProvider provider) {
 		this.provider = provider;
 	}
 
@@ -43,15 +41,15 @@ public class FooSubscriber {
 	/**
 	 * This is an operation docstring.
 	 */
-	public Subscription subscribeFoo(String baz, final FooHandler handler) throws TException {
+	public FSubscription subscribeFoo(String baz, final FooHandler handler) throws TException {
 		final String op = "Foo";
 		String prefix = String.format("foo.bar.%s.qux.", baz);
 		String topic = String.format("%sFoo%s%s", prefix, delimiter, op);
-		final Provider.Client client = provider.build();
-		Transport transport = client.getTransport();
+		final FProvider.Client client = provider.build();
+		FScopeTransport transport = client.getTransport();
 		transport.subscribe(topic);
 
-		final Subscription sub = new Subscription(topic, transport);
+		final FSubscription sub = new FSubscription(topic, transport);
 		new Thread(new Runnable() {
 			public void run() {
 				while (true) {
@@ -76,7 +74,7 @@ public class FooSubscriber {
 		return sub;
 	}
 
-	private Thing recvFoo(String op, TProtocol iprot) throws TException {
+	private Thing recvFoo(String op, FProtocol iprot) throws TException {
 		TMessage msg = iprot.readMessageBegin();
 		if (!msg.name.equals(op)) {
 			TProtocolUtil.skip(iprot, TType.STRUCT);
@@ -95,15 +93,15 @@ public class FooSubscriber {
 
 
 
-	public Subscription subscribeBar(String baz, final BarHandler handler) throws TException {
+	public FSubscription subscribeBar(String baz, final BarHandler handler) throws TException {
 		final String op = "Bar";
 		String prefix = String.format("foo.bar.%s.qux.", baz);
 		String topic = String.format("%sFoo%s%s", prefix, delimiter, op);
-		final Provider.Client client = provider.build();
-		Transport transport = client.getTransport();
+		final FProvider.Client client = provider.build();
+		FScopeTransport transport = client.getTransport();
 		transport.subscribe(topic);
 
-		final Subscription sub = new Subscription(topic, transport);
+		final FSubscription sub = new FSubscription(topic, transport);
 		new Thread(new Runnable() {
 			public void run() {
 				while (true) {
@@ -128,7 +126,7 @@ public class FooSubscriber {
 		return sub;
 	}
 
-	private Stuff recvBar(String op, TProtocol iprot) throws TException {
+	private Stuff recvBar(String op, FProtocol iprot) throws TException {
 		TMessage msg = iprot.readMessageBegin();
 		if (!msg.name.equals(op)) {
 			TProtocolUtil.skip(iprot, TType.STRUCT);
