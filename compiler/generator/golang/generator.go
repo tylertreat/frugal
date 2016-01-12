@@ -592,6 +592,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	contents += "\tiprot.ReadMessageEnd()\n"
 	contents += "\tx3 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
 	contents += "\tp.writeMu.Lock()\n"
+	contents += "\toprot.WriteResponseHeader(ctx)\n"
 	contents += "\toprot.WriteMessageBegin(name, thrift.EXCEPTION, 0)\n"
 	contents += "\tx3.Write(oprot)\n"
 	contents += "\toprot.WriteMessageEnd()\n"
@@ -621,6 +622,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\t\tiprot.ReadMessageEnd()\n"
 	contents += "\t\tx := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())\n"
 	contents += "\t\tp.writeMu.Lock()\n"
+	contents += "\t\toprot.WriteResponseHeader(ctx)\n"
 	contents += fmt.Sprintf("\t\toprot.WriteMessageBegin(\"%s\", thrift.EXCEPTION, 0)\n",
 		nameLower)
 	contents += "\t\tx.Write(oprot)\n"
@@ -687,6 +689,7 @@ func (g *Generator) generateMethodException(prefix, methodName string) string {
 	contents := fmt.Sprintf(prefix+"x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "+
 		"\"Internal error processing %s: \"+err2.Error())\n", methodName)
 	contents += prefix + "p.writeMu.Lock()\n"
+	contents += prefix + "oprot.WriteResponseHeader(ctx)\n"
 	contents += fmt.Sprintf(prefix+"oprot.WriteMessageBegin(\"%s\", thrift.EXCEPTION, 0)\n",
 		methodName)
 	contents += prefix + "x.Write(oprot)\n"
