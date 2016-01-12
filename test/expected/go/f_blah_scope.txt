@@ -14,17 +14,16 @@ import (
 
 
 type BlahPublisher struct {
-	FTransport frugal.FTransport
-	TProtocol  thrift.TProtocol
-	SeqId     int32
+	FTransport frugal.FScopeTransport
+	FProtocol  *frugal.FProtocol
 }
 
-func NewBlahPublisher(provider *frugal.Provider) *BlahPublisher {
+func NewBlahPublisher(provider *frugal.FProvider) *BlahPublisher {
 	transport, protocol := provider.New()
+	transport.Open()
 	return &BlahPublisher{
 		FTransport: transport,
-		TProtocol:  protocol,
-		SeqId:     0,
+		FProtocol:  protocol,
 	}
 }
 
@@ -32,10 +31,12 @@ func (l *BlahPublisher) PublishDoStuff(req *Thing) error {
 	op := "DoStuff"
 	prefix := ""
 	topic := fmt.Sprintf("%sBlah%s%s", prefix, delimiter, op)
-	l.FTransport.PreparePublish(topic)
-	oprot := l.TProtocol
-	l.SeqId++
-	if err := oprot.WriteMessageBegin(op, thrift.CALL, l.SeqId); err != nil {
+	if err := l.FTransport.LockTopic(topic); err != nil {
+		return err
+	}
+	defer l.FTransport.UnlockTopic()
+	oprot := l.FProtocol
+	if err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {
 		return err
 	}
 	if err := req.Write(oprot); err != nil {
@@ -48,14 +49,14 @@ func (l *BlahPublisher) PublishDoStuff(req *Thing) error {
 }
 
 type BlahSubscriber struct {
-	Provider *frugal.Provider
+	Provider *frugal.FProvider
 }
 
-func NewBlahSubscriber(provider *frugal.Provider) *BlahSubscriber {
+func NewBlahSubscriber(provider *frugal.FProvider) *BlahSubscriber {
 	return &BlahSubscriber{Provider: provider}
 }
 
-func (l *BlahSubscriber) SubscribeDoStuff(handler func(*Thing)) (*frugal.Subscription, error) {
+func (l *BlahSubscriber) SubscribeDoStuff(handler func(*Thing)) (*frugal.FSubscription, error) {
 	op := "DoStuff"
 	prefix := ""
 	topic := fmt.Sprintf("%sBlah%s%s", prefix, delimiter, op)
@@ -64,7 +65,7 @@ func (l *BlahSubscriber) SubscribeDoStuff(handler func(*Thing)) (*frugal.Subscri
 		return nil, err
 	}
 
-	sub := frugal.NewSubscription(topic, transport)
+	sub := frugal.NewFSubscription(topic, transport)
 	go func() {
 		for {
 			received, err := l.recvDoStuff(op, protocol)
@@ -72,7 +73,7 @@ func (l *BlahSubscriber) SubscribeDoStuff(handler func(*Thing)) (*frugal.Subscri
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 					return
 				}
-				log.Println("frugal: error receiving:", err)
+				log.Printf("frugal: error receiving %s: %s\n", topic, err.Error())
 				sub.Signal(err)
 				sub.Unsubscribe()
 				return

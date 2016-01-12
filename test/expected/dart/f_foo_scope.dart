@@ -16,72 +16,76 @@ const String delimiter = '.';
 /// And this is a scope docstring.
 class FooPublisher {
   frugal.FScopeTransport fTransport;
-  thrift.TProtocol tProtocol;
+  frugal.FProtocol fProtocol;
   int seqId;
+  Future open;
 
-  FooPublisher(frugal.ScopeProvider provider) {
+  FooPublisher(frugal.FScopeProvider provider) {
     var tp = provider.newTransportProtocol();
     fTransport = tp.fTransport;
-    tProtocol = tp.tProtocol;
+    fProtocol = tp.fProtocol;
     seqId = 0;
+    open = fTransport.open();
   }
 
   /// This is an operation docstring.
-  Future publishFoo(String baz, t_thing.Thing req) {
+  Future publishFoo(String baz, t_thing.Thing req) async {
+    await open;
     var op = "Foo";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
-    fTransport.preparePublish(topic);
-    var oprot = tProtocol;
+    fTransport.setTopic(topic);
+    var oprot = fProtocol;
     seqId++;
     var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);
     oprot.writeMessageBegin(msg);
     req.write(oprot);
     oprot.writeMessageEnd();
-    return oprot.transport.flush();
+    await oprot.transport.flush();
   }
 
 
-  Future publishBar(String baz, t_stuff.Stuff req) {
+  Future publishBar(String baz, t_stuff.Stuff req) async {
+    await open;
     var op = "Bar";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
-    fTransport.preparePublish(topic);
-    var oprot = tProtocol;
+    fTransport.setTopic(topic);
+    var oprot = fProtocol;
     seqId++;
     var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);
     oprot.writeMessageBegin(msg);
     req.write(oprot);
     oprot.writeMessageEnd();
-    return oprot.transport.flush();
+    await oprot.transport.flush();
   }
 }
 
 
 /// And this is a scope docstring.
 class FooSubscriber {
-  final frugal.ScopeProvider provider;
+  final frugal.FScopeProvider provider;
 
   FooSubscriber(this.provider) {}
 
   /// This is an operation docstring.
-  Future<frugal.Subscription> subscribeFoo(String baz, dynamic onThing(t_thing.Thing req)) async {
+  Future<frugal.FSubscription> subscribeFoo(String baz, dynamic onThing(t_thing.Thing req)) async {
     var op = "Foo";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
     var tp = provider.newTransportProtocol();
     await tp.fTransport.subscribe(topic);
     tp.fTransport.signalRead.listen((_) {
-      onThing(_recvFoo(op, tp.tProtocol));
+      onThing(_recvFoo(op, tp.fProtocol));
     });
-    var sub = new frugal.Subscription(topic, tp.fTransport);
+    var sub = new frugal.FSubscription(topic, tp.fTransport);
     tp.fTransport.error.listen((Error e) {;
       sub.signal(e);
     });
     return sub;
   }
 
-  t_thing.Thing _recvFoo(String op, thrift.TProtocol iprot) {
+  t_thing.Thing _recvFoo(String op, frugal.FProtocol iprot) {
     var tMsg = iprot.readMessageBegin();
     if (tMsg.name != op) {
       thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
@@ -96,23 +100,23 @@ class FooSubscriber {
   }
 
 
-  Future<frugal.Subscription> subscribeBar(String baz, dynamic onStuff(t_stuff.Stuff req)) async {
+  Future<frugal.FSubscription> subscribeBar(String baz, dynamic onStuff(t_stuff.Stuff req)) async {
     var op = "Bar";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
     var tp = provider.newTransportProtocol();
     await tp.fTransport.subscribe(topic);
     tp.fTransport.signalRead.listen((_) {
-      onStuff(_recvBar(op, tp.tProtocol));
+      onStuff(_recvBar(op, tp.fProtocol));
     });
-    var sub = new frugal.Subscription(topic, tp.fTransport);
+    var sub = new frugal.FSubscription(topic, tp.fTransport);
     tp.fTransport.error.listen((Error e) {;
       sub.signal(e);
     });
     return sub;
   }
 
-  t_stuff.Stuff _recvBar(String op, thrift.TProtocol iprot) {
+  t_stuff.Stuff _recvBar(String op, frugal.FProtocol iprot) {
     var tMsg = iprot.readMessageBegin();
     if (tMsg.name != op) {
       thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);

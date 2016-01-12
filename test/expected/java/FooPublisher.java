@@ -6,19 +6,17 @@
 
 package foo;
 
-import com.workiva.frugal.Provider;
-import com.workiva.frugal.Transport;
-import com.workiva.frugal.TransportFactory;
-import com.workiva.frugal.Subscription;
+import com.workiva.frugal.FProvider;
+import com.workiva.frugal.FSubscription;
+import com.workiva.frugal.protocol.FProtocol;
+import com.workiva.frugal.transport.FScopeTransport;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.*;
 import org.apache.thrift.TApplicationException;
-
 import org.apache.thrift.transport.TTransportException;
-
-import org.apache.thrift.transport.TTransportFactory;
+import org.apache.thrift.protocol.*;
 
 import javax.annotation.Generated;
+
 
 
 
@@ -30,12 +28,10 @@ public class FooPublisher {
 
 	private static final String delimiter = ".";
 
-	private Transport transport;
-	private TProtocol protocol;
-	private int seqId;
-
-	public FooPublisher(Provider provider) {
-		Provider.Client client = provider.build();
+	private FScopeTransport transport;
+	private FProtocol protocol;
+	public FooPublisher(FProvider provider) {
+		FProvider.Client client = provider.build();
 		transport = client.getTransport();
 		protocol = client.getProtocol();
 	}
@@ -47,12 +43,15 @@ public class FooPublisher {
 		String op = "Foo";
 		String prefix = String.format("foo.bar.%s.qux.", baz);
 		String topic = String.format("%sFoo%s%s", prefix, delimiter, op);
-		transport.preparePublish(topic);
-		seqId++;
-		protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, seqId));
-		req.write(protocol);
-		protocol.writeMessageEnd();
-		transport.flush();
+		transport.lockTopic(topic);
+		try {
+			protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
+			req.write(protocol);
+			protocol.writeMessageEnd();
+			transport.flush();
+		} finally {
+			transport.unlockTopic();
+		}
 	}
 
 
@@ -60,11 +59,14 @@ public class FooPublisher {
 		String op = "Bar";
 		String prefix = String.format("foo.bar.%s.qux.", baz);
 		String topic = String.format("%sFoo%s%s", prefix, delimiter, op);
-		transport.preparePublish(topic);
-		seqId++;
-		protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, seqId));
-		req.write(protocol);
-		protocol.writeMessageEnd();
-		transport.flush();
+		transport.lockTopic(topic);
+		try {
+			protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
+			req.write(protocol);
+			protocol.writeMessageEnd();
+			transport.flush();
+		} finally {
+			transport.unlockTopic();
+		}
 	}
 }

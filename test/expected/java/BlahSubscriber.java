@@ -6,19 +6,17 @@
 
 package foo;
 
-import com.workiva.frugal.Provider;
-import com.workiva.frugal.Transport;
-import com.workiva.frugal.TransportFactory;
-import com.workiva.frugal.Subscription;
+import com.workiva.frugal.FProvider;
+import com.workiva.frugal.FSubscription;
+import com.workiva.frugal.protocol.FProtocol;
+import com.workiva.frugal.transport.FScopeTransport;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.*;
 import org.apache.thrift.TApplicationException;
-
 import org.apache.thrift.transport.TTransportException;
-
-import org.apache.thrift.transport.TTransportFactory;
+import org.apache.thrift.protocol.*;
 
 import javax.annotation.Generated;
+
 
 
 
@@ -27,9 +25,9 @@ public class BlahSubscriber {
 
 	private static final String delimiter = ".";
 
-	private final Provider provider;
+	private final FProvider provider;
 
-	public BlahSubscriber(Provider provider) {
+	public BlahSubscriber(FProvider provider) {
 		this.provider = provider;
 	}
 
@@ -37,15 +35,15 @@ public class BlahSubscriber {
 		void onDoStuff(Thing req);
 	}
 
-	public Subscription subscribeDoStuff(final DoStuffHandler handler) throws TException {
+	public FSubscription subscribeDoStuff(final DoStuffHandler handler) throws TException {
 		final String op = "DoStuff";
 		String prefix = "";
 		String topic = String.format("%sBlah%s%s", prefix, delimiter, op);
-		final Provider.Client client = provider.build();
-		Transport transport = client.getTransport();
+		final FProvider.Client client = provider.build();
+		FScopeTransport transport = client.getTransport();
 		transport.subscribe(topic);
 
-		final Subscription sub = new Subscription(topic, transport);
+		final FSubscription sub = new FSubscription(topic, transport);
 		new Thread(new Runnable() {
 			public void run() {
 				while (true) {
@@ -70,7 +68,7 @@ public class BlahSubscriber {
 		return sub;
 	}
 
-	private Thing recvDoStuff(String op, TProtocol iprot) throws TException {
+	private Thing recvDoStuff(String op, FProtocol iprot) throws TException {
 		TMessage msg = iprot.readMessageBegin();
 		if (!msg.name.equals(op)) {
 			TProtocolUtil.skip(iprot, TType.STRUCT);

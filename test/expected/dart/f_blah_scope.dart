@@ -15,54 +15,57 @@ const String delimiter = '.';
 
 class BlahPublisher {
   frugal.FScopeTransport fTransport;
-  thrift.TProtocol tProtocol;
+  frugal.FProtocol fProtocol;
   int seqId;
+  Future open;
 
-  BlahPublisher(frugal.ScopeProvider provider) {
+  BlahPublisher(frugal.FScopeProvider provider) {
     var tp = provider.newTransportProtocol();
     fTransport = tp.fTransport;
-    tProtocol = tp.tProtocol;
+    fProtocol = tp.fProtocol;
     seqId = 0;
+    open = fTransport.open();
   }
 
-  Future publishDoStuff(t_thing.Thing req) {
+  Future publishDoStuff(t_thing.Thing req) async {
+    await open;
     var op = "DoStuff";
     var prefix = "";
     var topic = "${prefix}Blah${delimiter}${op}";
-    fTransport.preparePublish(topic);
-    var oprot = tProtocol;
+    fTransport.setTopic(topic);
+    var oprot = fProtocol;
     seqId++;
     var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);
     oprot.writeMessageBegin(msg);
     req.write(oprot);
     oprot.writeMessageEnd();
-    return oprot.transport.flush();
+    await oprot.transport.flush();
   }
 }
 
 
 class BlahSubscriber {
-  final frugal.ScopeProvider provider;
+  final frugal.FScopeProvider provider;
 
   BlahSubscriber(this.provider) {}
 
-  Future<frugal.Subscription> subscribeDoStuff(dynamic onThing(t_thing.Thing req)) async {
+  Future<frugal.FSubscription> subscribeDoStuff(dynamic onThing(t_thing.Thing req)) async {
     var op = "DoStuff";
     var prefix = "";
     var topic = "${prefix}Blah${delimiter}${op}";
     var tp = provider.newTransportProtocol();
     await tp.fTransport.subscribe(topic);
     tp.fTransport.signalRead.listen((_) {
-      onThing(_recvDoStuff(op, tp.tProtocol));
+      onThing(_recvDoStuff(op, tp.fProtocol));
     });
-    var sub = new frugal.Subscription(topic, tp.fTransport);
+    var sub = new frugal.FSubscription(topic, tp.fTransport);
     tp.fTransport.error.listen((Error e) {;
       sub.signal(e);
     });
     return sub;
   }
 
-  t_thing.Thing _recvDoStuff(String op, thrift.TProtocol iprot) {
+  t_thing.Thing _recvDoStuff(String op, frugal.FProtocol iprot) {
     var tMsg = iprot.readMessageBegin();
     if (tMsg.name != op) {
       thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
