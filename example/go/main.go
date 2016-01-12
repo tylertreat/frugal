@@ -150,6 +150,10 @@ func runPublisher(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory) err
 	factory := frugal.NewFNatsScopeTransportFactory(conn)
 	provider := frugal.NewFProvider(factory, protocolFactory)
 	publisher := event.NewEventsPublisher(provider)
+	if err := publisher.Open(); err != nil {
+		return err
+	}
+	defer publisher.Close()
 	event := &event.Event{Message: "hello, world!"}
 	if err := publisher.PublishEventCreated("barUser", event); err != nil {
 		return err
