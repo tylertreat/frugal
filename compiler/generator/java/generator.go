@@ -102,10 +102,10 @@ func (g *Generator) generatePackage(file *os.File) error {
 
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
 	imports := "import com.workiva.frugal.FContext;\n"
+	imports += "import com.workiva.frugal.FProtocol;\n"
+	imports += "import com.workiva.frugal.FProtocolFactory;\n"
 	imports += "import com.workiva.frugal.processor.FProcessor;\n"
 	imports += "import com.workiva.frugal.processor.FProcessorFunction;\n"
-	imports += "import com.workiva.frugal.protocol.FProtocol;\n"
-	imports += "import com.workiva.frugal.protocol.FProtocolFactory;\n"
 	imports += "import com.workiva.frugal.registry.FAsyncCallback;\n"
 	imports += "import com.workiva.frugal.registry.FClientRegistry;\n"
 	imports += "import com.workiva.frugal.transport.FTransport;\n"
@@ -410,7 +410,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtab + "res = result.take();\n"
 	contents += tabtabtabtab + "} catch (InterruptedException e) {\n"
 	contents += tabtabtabtabtab + fmt.Sprintf(
-		"throw new TApplicationException(TApplicationException.INTERNAL_ERROR, \"%s failed: \" + e.getMessage());\n",
+		"throw new TApplicationException(TApplicationException.INTERNAL_ERROR, \"%s interrupted: \" + e.getMessage());\n",
 		method.Name)
 	contents += tabtabtabtab + "}\n"
 	contents += tabtabtabtab + "if (res instanceof TException) {\n"
@@ -468,7 +468,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtabtabtab + "result.put(res);\n"
 	contents += tabtabtabtabtabtab + "} catch (InterruptedException e) {\n"
 	contents += tabtabtabtabtabtabtab + fmt.Sprintf(
-		"throw new TApplicationException(TApplicationException.INTERNAL_ERROR, \"%s failed: \" + e.getMessage());\n",
+		"throw new TApplicationException(TApplicationException.INTERNAL_ERROR, \"%s interrupted: \" + e.getMessage());\n",
 		method.Name)
 	contents += tabtabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtab + "} catch (TException e) {\n"

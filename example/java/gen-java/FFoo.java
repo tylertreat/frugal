@@ -7,10 +7,10 @@
 
 
 import com.workiva.frugal.FContext;
+import com.workiva.frugal.FProtocol;
+import com.workiva.frugal.FProtocolFactory;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFunction;
-import com.workiva.frugal.protocol.FProtocol;
-import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.registry.FAsyncCallback;
 import com.workiva.frugal.registry.FClientRegistry;
 import com.workiva.frugal.transport.FTransport;
@@ -88,7 +88,7 @@ public class FFoo {
 				try {
 					res = result.take();
 				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "ping failed: " + e.getMessage());
+					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "ping interrupted: " + e.getMessage());
 				}
 				if (res instanceof TException) {
 					throw (TException) res;
@@ -123,7 +123,7 @@ public class FFoo {
 						try {
 							result.put(res);
 						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "ping failed: " + e.getMessage());
+							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "ping interrupted: " + e.getMessage());
 						}
 					} catch (TException e) {
 						try {
@@ -160,7 +160,7 @@ public class FFoo {
 				try {
 					res = result.take();
 				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "blah failed: " + e.getMessage());
+					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "blah interrupted: " + e.getMessage());
 				}
 				if (res instanceof TException) {
 					throw (TException) res;
@@ -202,7 +202,7 @@ public class FFoo {
 						try {
 							result.put(res);
 						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "blah failed: " + e.getMessage());
+							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "blah interrupted: " + e.getMessage());
 						}
 					} catch (TException e) {
 						try {
