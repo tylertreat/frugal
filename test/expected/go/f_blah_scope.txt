@@ -20,11 +20,18 @@ type BlahPublisher struct {
 
 func NewBlahPublisher(provider *frugal.FProvider) *BlahPublisher {
 	transport, protocol := provider.New()
-	transport.Open()
 	return &BlahPublisher{
 		FTransport: transport,
 		FProtocol:  protocol,
 	}
+}
+
+func (l *BlahPublisher) Open() error {
+	return l.FTransport.Open()
+}
+
+func (l *BlahPublisher) Close() error {
+	return l.FTransport.Close()
 }
 
 func (l *BlahPublisher) PublishDoStuff(req *Thing) error {

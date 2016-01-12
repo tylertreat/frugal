@@ -21,11 +21,18 @@ type FooPublisher struct {
 
 func NewFooPublisher(provider *frugal.FProvider) *FooPublisher {
 	transport, protocol := provider.New()
-	transport.Open()
 	return &FooPublisher{
 		FTransport: transport,
 		FProtocol:  protocol,
 	}
+}
+
+func (l *FooPublisher) Open() error {
+	return l.FTransport.Open()
+}
+
+func (l *FooPublisher) Close() error {
+	return l.FTransport.Close()
 }
 
 // This is an operation docstring.

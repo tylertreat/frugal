@@ -6,9 +6,9 @@
 
 package foo;
 
-import com.workiva.frugal.FProvider;
+import com.workiva.frugal.FScopeProvider;
 import com.workiva.frugal.FSubscription;
-import com.workiva.frugal.protocol.FProtocol;
+import com.workiva.frugal.FProtocol;
 import com.workiva.frugal.transport.FScopeTransport;
 import org.apache.thrift.TException;
 import org.apache.thrift.TApplicationException;
@@ -28,9 +28,9 @@ public class FooSubscriber {
 
 	private static final String delimiter = ".";
 
-	private final FProvider provider;
+	private final FScopeProvider provider;
 
-	public FooSubscriber(FProvider provider) {
+	public FooSubscriber(FScopeProvider provider) {
 		this.provider = provider;
 	}
 
@@ -45,7 +45,7 @@ public class FooSubscriber {
 		final String op = "Foo";
 		String prefix = String.format("foo.bar.%s.qux.", baz);
 		String topic = String.format("%sFoo%s%s", prefix, delimiter, op);
-		final FProvider.Client client = provider.build();
+		final FScopeProvider.Client client = provider.build();
 		FScopeTransport transport = client.getTransport();
 		transport.subscribe(topic);
 
@@ -97,7 +97,7 @@ public class FooSubscriber {
 		final String op = "Bar";
 		String prefix = String.format("foo.bar.%s.qux.", baz);
 		String topic = String.format("%sFoo%s%s", prefix, delimiter, op);
-		final FProvider.Client client = provider.build();
+		final FScopeProvider.Client client = provider.build();
 		FScopeTransport transport = client.getTransport();
 		transport.subscribe(topic);
 

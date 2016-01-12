@@ -6,9 +6,9 @@
 
 package foo;
 
-import com.workiva.frugal.FProvider;
+import com.workiva.frugal.FScopeProvider;
 import com.workiva.frugal.FSubscription;
-import com.workiva.frugal.protocol.FProtocol;
+import com.workiva.frugal.FProtocol;
 import com.workiva.frugal.transport.FScopeTransport;
 import org.apache.thrift.TException;
 import org.apache.thrift.TApplicationException;
@@ -25,9 +25,9 @@ public class BlahSubscriber {
 
 	private static final String delimiter = ".";
 
-	private final FProvider provider;
+	private final FScopeProvider provider;
 
-	public BlahSubscriber(FProvider provider) {
+	public BlahSubscriber(FScopeProvider provider) {
 		this.provider = provider;
 	}
 
@@ -39,7 +39,7 @@ public class BlahSubscriber {
 		final String op = "DoStuff";
 		String prefix = "";
 		String topic = String.format("%sBlah%s%s", prefix, delimiter, op);
-		final FProvider.Client client = provider.build();
+		final FScopeProvider.Client client = provider.build();
 		FScopeTransport transport = client.getTransport();
 		transport.subscribe(topic);
 

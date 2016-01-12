@@ -7,10 +7,11 @@
 package foo;
 
 import com.workiva.frugal.FContext;
+import com.workiva.frugal.FProtocol;
+import com.workiva.frugal.FProtocolFactory;
+import com.workiva.frugal.FServiceProvider;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFunction;
-import com.workiva.frugal.protocol.FProtocol;
-import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.registry.FAsyncCallback;
 import com.workiva.frugal.registry.FClientRegistry;
 import com.workiva.frugal.transport.FTransport;
@@ -55,12 +56,12 @@ public class FBlah {
 		private FProtocol inputProtocol;
 		private FProtocol outputProtocol;
 
-		public Client(FTransport t, FProtocolFactory f) {
-			t.setRegistry(new FClientRegistry());
-			this.transport = t;
-			this.protocolFactory = f;
-			this.inputProtocol = f.getProtocol(t);
-			this.outputProtocol = f.getProtocol(t);
+		public Client(FServiceProvider provider) {
+			this.transport = provider.getTransport();
+			this.transport.setRegistry(new FClientRegistry());
+			this.protocolFactory = provider.getProtocolFactory();
+			this.inputProtocol = this.protocolFactory.getProtocol(this.transport);
+			this.outputProtocol = this.protocolFactory.getProtocol(this.transport);
 		}
 
 		/**
@@ -84,7 +85,7 @@ public class FBlah {
 				try {
 					res = result.take();
 				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "ping failed: " + e.getMessage());
+					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "ping interrupted: " + e.getMessage());
 				}
 				if (res instanceof TException) {
 					throw (TException) res;
@@ -119,7 +120,7 @@ public class FBlah {
 						try {
 							result.put(res);
 						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "ping failed: " + e.getMessage());
+							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "ping interrupted: " + e.getMessage());
 						}
 					} catch (TException e) {
 						try {
@@ -155,7 +156,7 @@ public class FBlah {
 				try {
 					res = result.take();
 				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "bleh failed: " + e.getMessage());
+					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "bleh interrupted: " + e.getMessage());
 				}
 				if (res instanceof TException) {
 					throw (TException) res;
@@ -197,7 +198,7 @@ public class FBlah {
 						try {
 							result.put(res);
 						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "bleh failed: " + e.getMessage());
+							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "bleh interrupted: " + e.getMessage());
 						}
 					} catch (TException e) {
 						try {
