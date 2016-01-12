@@ -395,10 +395,14 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtab + "try {\n"
 	contents += tabtabtabtab + "synchronized (WRITE_LOCK) {\n"
 	contents += tabtabtabtabtab + "oprot.writeRequestHeader(ctx);\n"
-	contents += tabtabtabtabtab + "oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.CALL, 0));\n"
+	contents += tabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.CALL, 0));\n", method.Name)
 	contents += tabtabtabtabtab + fmt.Sprintf("%s.%s_args args = new %s.%s_args();\n", servTitle, method.Name, servTitle, method.Name)
+	for _, arg := range method.Arguments {
+		contents += tabtabtabtabtab + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
+	}
 	contents += tabtabtabtabtab + "args.write(oprot);\n"
 	contents += tabtabtabtabtab + "oprot.writeMessageEnd();\n"
+	contents += tabtabtabtabtab + "oprot.getTransport().flush();\n"
 	contents += tabtabtabtab + "}\n\n"
 
 	contents += tabtabtabtab + "Object res = null;\n"
@@ -521,6 +525,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	contents += tabtabtabtab + "oprot.writeMessageBegin(new TMessage(message.name, TMessageType.EXCEPTION, 0));\n"
 	contents += tabtabtabtab + "e.write(oprot);\n"
 	contents += tabtabtabtab + "oprot.writeMessageEnd();\n"
+	contents += tabtabtabtab + "oprot.getTransport().flush();\n"
 	contents += tabtabtab + "}\n"
 	contents += tabtabtab + "throw e;\n"
 	contents += tabtab + "}\n\n"
@@ -546,6 +551,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.EXCEPTION, 0));\n", method.Name)
 		contents += tabtabtabtabtabtab + "x.write(oprot);\n"
 		contents += tabtabtabtabtabtab + "oprot.writeMessageEnd();\n"
+		contents += tabtabtabtabtabtab + "oprot.getTransport().flush();\n"
 		contents += tabtabtabtabtab + "}\n"
 		contents += tabtabtabtabtab + "throw x;\n"
 		contents += tabtabtabtab + "}\n\n"
@@ -572,13 +578,16 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.EXCEPTION, 0));\n", method.Name)
 		contents += tabtabtabtabtabtab + "x.write(oprot);\n"
 		contents += tabtabtabtabtabtab + "oprot.writeMessageEnd();\n"
+		contents += tabtabtabtabtabtab + "oprot.getTransport().flush();\n"
 		contents += tabtabtabtabtab + "}\n"
 		contents += tabtabtabtabtab + "throw e;\n"
 		contents += tabtabtabtab + "}\n"
 		contents += tabtabtabtab + "synchronized (WRITE_LOCK) {\n"
 		contents += tabtabtabtabtab + "oprot.writeResponseHeader(ctx);\n"
 		contents += tabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.REPLY, 0));\n", method.Name)
+		contents += tabtabtabtabtab + "result.write(oprot);\n"
 		contents += tabtabtabtabtab + "oprot.writeMessageEnd();\n"
+		contents += tabtabtabtabtab + "oprot.getTransport().flush();\n"
 		contents += tabtabtabtab + "}\n"
 		contents += tabtabtab + "}\n"
 		contents += tabtab + "}\n\n"
