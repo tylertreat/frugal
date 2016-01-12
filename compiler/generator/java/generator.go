@@ -101,10 +101,7 @@ func (g *Generator) generatePackage(file *os.File) error {
 }
 
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
-	imports := "import com.workiva.frugal.FContext;\n"
-	imports += "import com.workiva.frugal.FProtocol;\n"
-	imports += "import com.workiva.frugal.FProtocolFactory;\n"
-	imports += "import com.workiva.frugal.FServiceProvider;\n"
+	imports := "import com.workiva.frugal.*;\n"
 	imports += "import com.workiva.frugal.processor.FProcessor;\n"
 	imports += "import com.workiva.frugal.processor.FProcessorFunction;\n"
 	imports += "import com.workiva.frugal.registry.FAsyncCallback;\n"
@@ -123,6 +120,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import java.util.Map;\n"
 	imports += "import java.util.concurrent.BlockingQueue;\n"
 	imports += "import java.util.concurrent.ArrayBlockingQueue;\n"
+	imports += "import java.util.concurrent.TimeUnit;\n"
 
 	_, err := file.WriteString(imports)
 	return err
@@ -416,11 +414,14 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 
 	contents += tabtabtabtab + "Object res = null;\n"
 	contents += tabtabtabtab + "try {\n"
-	contents += tabtabtabtabtab + "res = result.take();\n"
+	contents += tabtabtabtabtab + "res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);\n"
 	contents += tabtabtabtab + "} catch (InterruptedException e) {\n"
 	contents += tabtabtabtabtab + fmt.Sprintf(
 		"throw new TApplicationException(TApplicationException.INTERNAL_ERROR, \"%s interrupted: \" + e.getMessage());\n",
 		method.Name)
+	contents += tabtabtabtab + "}\n"
+	contents += tabtabtabtab + "if (res == null) {\n"
+	contents += tabtabtabtabtab + fmt.Sprintf("throw new FTimeoutException(\"%s timed out\");\n", method.Name)
 	contents += tabtabtabtab + "}\n"
 	contents += tabtabtabtab + "if (res instanceof TException) {\n"
 	contents += tabtabtabtabtab + "throw (TException) res;\n"
