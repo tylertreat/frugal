@@ -520,17 +520,17 @@ func (p *FooBlahArgs) Read(iprot thrift.TProtocol) error {
 		}
 		switch fieldId {
 		case 1:
-			if err := p.readField1(iprot); err != nil {
+			if err := p.ReadField1(iprot); err != nil {
 				return err
 			}
 			issetNum = true
 		case 2:
-			if err := p.readField2(iprot); err != nil {
+			if err := p.ReadField2(iprot); err != nil {
 				return err
 			}
 			issetStr = true
 		case 3:
-			if err := p.readField3(iprot); err != nil {
+			if err := p.ReadField3(iprot); err != nil {
 				return err
 			}
 			issetEvent = true
@@ -558,7 +558,7 @@ func (p *FooBlahArgs) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *FooBlahArgs) readField1(iprot thrift.TProtocol) error {
+func (p *FooBlahArgs) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI32(); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
@@ -567,7 +567,7 @@ func (p *FooBlahArgs) readField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *FooBlahArgs) readField2(iprot thrift.TProtocol) error {
+func (p *FooBlahArgs) ReadField2(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {
@@ -576,7 +576,7 @@ func (p *FooBlahArgs) readField2(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *FooBlahArgs) readField3(iprot thrift.TProtocol) error {
+func (p *FooBlahArgs) ReadField3(iprot thrift.TProtocol) error {
 	p.Event = &Event{
 		ID: -1,
 	}
@@ -706,11 +706,11 @@ func (p *FooBlahResult) Read(iprot thrift.TProtocol) error {
 		}
 		switch fieldId {
 		case 0:
-			if err := p.readField0(iprot); err != nil {
+			if err := p.ReadField0(iprot); err != nil {
 				return err
 			}
 		case 1:
-			if err := p.readField1(iprot); err != nil {
+			if err := p.ReadField1(iprot); err != nil {
 				return err
 			}
 		default:
@@ -728,7 +728,7 @@ func (p *FooBlahResult) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *FooBlahResult) readField0(iprot thrift.TProtocol) error {
+func (p *FooBlahResult) ReadField0(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return thrift.PrependError("error reading field 0: ", err)
 	} else {
@@ -737,7 +737,7 @@ func (p *FooBlahResult) readField0(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *FooBlahResult) readField1(iprot thrift.TProtocol) error {
+func (p *FooBlahResult) ReadField1(iprot thrift.TProtocol) error {
 	p.Awe = &AwesomeException{}
 	if err := p.Awe.Read(iprot); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Awe), err)

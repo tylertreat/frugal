@@ -22,11 +22,18 @@ type EventsPublisher struct {
 
 func NewEventsPublisher(provider *frugal.FProvider) *EventsPublisher {
 	transport, protocol := provider.New()
-	transport.Open()
 	return &EventsPublisher{
 		FTransport: transport,
 		FProtocol:  protocol,
 	}
+}
+
+func (l *EventsPublisher) Open() error {
+	return l.FTransport.Open()
+}
+
+func (l *EventsPublisher) Close() error {
+	return l.FTransport.Close()
 }
 
 // This is a docstring.

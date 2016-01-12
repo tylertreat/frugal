@@ -173,11 +173,18 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.FProvider) *%sPublisher {\n", strings.Title(scope.Name), strings.Title(scope.Name))
 	publisher += "\ttransport, protocol := provider.New()\n"
-	publisher += "\ttransport.Open()\n"
 	publisher += fmt.Sprintf("\treturn &%sPublisher{\n", strings.Title(scope.Name))
 	publisher += "\t\tFTransport: transport,\n"
 	publisher += "\t\tFProtocol:  protocol,\n"
 	publisher += "\t}\n"
+	publisher += "}\n\n"
+
+	publisher += fmt.Sprintf("func (l *%sPublisher) Open() error {\n", strings.Title(scope.Name))
+	publisher += "\treturn l.FTransport.Open()\n"
+	publisher += "}\n\n"
+
+	publisher += fmt.Sprintf("func (l *%sPublisher) Close() error {\n", strings.Title(scope.Name))
+	publisher += "\treturn l.FTransport.Close()\n"
 	publisher += "}\n\n"
 
 	args := ""
