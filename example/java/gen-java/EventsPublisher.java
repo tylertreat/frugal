@@ -6,9 +6,9 @@
 
 
 
-import com.workiva.frugal.FProvider;
+import com.workiva.frugal.FScopeProvider;
 import com.workiva.frugal.FSubscription;
-import com.workiva.frugal.protocol.FProtocol;
+import com.workiva.frugal.FProtocol;
 import com.workiva.frugal.transport.FScopeTransport;
 import org.apache.thrift.TException;
 import org.apache.thrift.TApplicationException;
@@ -31,10 +31,18 @@ public class EventsPublisher {
 
 	private FScopeTransport transport;
 	private FProtocol protocol;
-	public EventsPublisher(FProvider provider) {
-		FProvider.Client client = provider.build();
+	public EventsPublisher(FScopeProvider provider) {
+		FScopeProvider.Client client = provider.build();
 		transport = client.getTransport();
 		protocol = client.getProtocol();
+	}
+
+	public void open() throws TException {
+		this.transport.open();
+		}
+
+	public void close() throws TException {
+		this.transport.close();
 	}
 
 	/**

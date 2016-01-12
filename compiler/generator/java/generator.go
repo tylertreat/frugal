@@ -104,6 +104,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports := "import com.workiva.frugal.FContext;\n"
 	imports += "import com.workiva.frugal.FProtocol;\n"
 	imports += "import com.workiva.frugal.FProtocolFactory;\n"
+	imports += "import com.workiva.frugal.FServiceProvider;\n"
 	imports += "import com.workiva.frugal.processor.FProcessor;\n"
 	imports += "import com.workiva.frugal.processor.FProcessorFunction;\n"
 	imports += "import com.workiva.frugal.registry.FAsyncCallback;\n"
@@ -128,9 +129,9 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 }
 
 func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
-	imports := "import com.workiva.frugal.FProvider;\n"
+	imports := "import com.workiva.frugal.FScopeProvider;\n"
 	imports += "import com.workiva.frugal.FSubscription;\n"
-	imports += "import com.workiva.frugal.protocol.FProtocol;\n"
+	imports += "import com.workiva.frugal.FProtocol;\n"
 	imports += "import com.workiva.frugal.transport.FScopeTransport;\n"
 	imports += "import org.apache.thrift.TException;\n"
 	imports += "import org.apache.thrift.TApplicationException;\n"
@@ -161,10 +162,18 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += tab + "private FScopeTransport transport;\n"
 	publisher += tab + "private FProtocol protocol;\n"
 
-	publisher += fmt.Sprintf(tab+"public %sPublisher(FProvider provider) {\n", strings.Title(scope.Name))
-	publisher += tabtab + "FProvider.Client client = provider.build();\n"
+	publisher += fmt.Sprintf(tab+"public %sPublisher(FScopeProvider provider) {\n", strings.Title(scope.Name))
+	publisher += tabtab + "FScopeProvider.Client client = provider.build();\n"
 	publisher += tabtab + "transport = client.getTransport();\n"
 	publisher += tabtab + "protocol = client.getProtocol();\n"
+	publisher += tab + "}\n\n"
+
+	publisher += tab + "public void open() throws TException {\n"
+	publisher += tabtab + "this.transport.open();\n"
+	publisher += tabtab + "}\n\n"
+
+	publisher += tab + "public void close() throws TException {\n"
+	publisher += tabtab + "this.transport.close();\n"
 	publisher += tab + "}\n\n"
 
 	args := ""
@@ -232,9 +241,9 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 	subscriber += fmt.Sprintf(tab+"private static final String delimiter = \"%s\";\n\n", globals.TopicDelimiter)
 
-	subscriber += tab + "private final FProvider provider;\n\n"
+	subscriber += tab + "private final FScopeProvider provider;\n\n"
 
-	subscriber += fmt.Sprintf(tab+"public %sSubscriber(FProvider provider) {\n",
+	subscriber += fmt.Sprintf(tab+"public %sSubscriber(FScopeProvider provider) {\n",
 		strings.Title(scope.Name))
 	subscriber += tabtab + "this.provider = provider;\n"
 	subscriber += tab + "}\n\n"
@@ -261,7 +270,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += fmt.Sprintf(tabtab+"final String op = \"%s\";\n", op.Name)
 		subscriber += fmt.Sprintf(tabtab+"String prefix = %s;\n", generatePrefixStringTemplate(scope))
 		subscriber += tabtab + "String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op);\n"
-		subscriber += tabtab + "final FProvider.Client client = provider.build();\n"
+		subscriber += tabtab + "final FScopeProvider.Client client = provider.build();\n"
 		subscriber += tabtab + "FScopeTransport transport = client.getTransport();\n"
 		subscriber += tabtab + "transport.subscribe(topic);\n\n"
 
@@ -364,12 +373,12 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += tabtab + "private FProtocol inputProtocol;\n"
 	contents += tabtab + "private FProtocol outputProtocol;\n\n"
 
-	contents += tabtab + "public Client(FTransport t, FProtocolFactory f) {\n"
-	contents += tabtabtab + "t.setRegistry(new FClientRegistry());\n"
-	contents += tabtabtab + "this.transport = t;\n"
-	contents += tabtabtab + "this.protocolFactory = f;\n"
-	contents += tabtabtab + "this.inputProtocol = f.getProtocol(t);\n"
-	contents += tabtabtab + "this.outputProtocol = f.getProtocol(t);\n"
+	contents += tabtab + "public Client(FServiceProvider provider) {\n"
+	contents += tabtabtab + "this.transport = provider.getTransport();\n"
+	contents += tabtabtab + "this.transport.setRegistry(new FClientRegistry());\n"
+	contents += tabtabtab + "this.protocolFactory = provider.getProtocolFactory();\n"
+	contents += tabtabtab + "this.inputProtocol = this.protocolFactory.getProtocol(this.transport);\n"
+	contents += tabtabtab + "this.outputProtocol = this.protocolFactory.getProtocol(this.transport);\n"
 	contents += tabtab + "}\n\n"
 
 	for _, method := range service.Methods {

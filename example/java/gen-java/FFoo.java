@@ -9,6 +9,7 @@
 import com.workiva.frugal.FContext;
 import com.workiva.frugal.FProtocol;
 import com.workiva.frugal.FProtocolFactory;
+import com.workiva.frugal.FServiceProvider;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFunction;
 import com.workiva.frugal.registry.FAsyncCallback;
@@ -59,12 +60,12 @@ public class FFoo {
 		private FProtocol inputProtocol;
 		private FProtocol outputProtocol;
 
-		public Client(FTransport t, FProtocolFactory f) {
-			t.setRegistry(new FClientRegistry());
-			this.transport = t;
-			this.protocolFactory = f;
-			this.inputProtocol = f.getProtocol(t);
-			this.outputProtocol = f.getProtocol(t);
+		public Client(FServiceProvider provider) {
+			this.transport = provider.getTransport();
+			this.transport.setRegistry(new FClientRegistry());
+			this.protocolFactory = provider.getProtocolFactory();
+			this.inputProtocol = this.protocolFactory.getProtocol(this.transport);
+			this.outputProtocol = this.protocolFactory.getProtocol(this.transport);
 		}
 
 		/**

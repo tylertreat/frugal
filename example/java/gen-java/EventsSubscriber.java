@@ -6,9 +6,9 @@
 
 
 
-import com.workiva.frugal.FProvider;
+import com.workiva.frugal.FScopeProvider;
 import com.workiva.frugal.FSubscription;
-import com.workiva.frugal.protocol.FProtocol;
+import com.workiva.frugal.FProtocol;
 import com.workiva.frugal.transport.FScopeTransport;
 import org.apache.thrift.TException;
 import org.apache.thrift.TApplicationException;
@@ -29,9 +29,9 @@ public class EventsSubscriber {
 
 	private static final String delimiter = ".";
 
-	private final FProvider provider;
+	private final FScopeProvider provider;
 
-	public EventsSubscriber(FProvider provider) {
+	public EventsSubscriber(FScopeProvider provider) {
 		this.provider = provider;
 	}
 
@@ -46,7 +46,7 @@ public class EventsSubscriber {
 		final String op = "EventCreated";
 		String prefix = String.format("foo.%s.", user);
 		String topic = String.format("%sEvents%s%s", prefix, delimiter, op);
-		final FProvider.Client client = provider.build();
+		final FScopeProvider.Client client = provider.build();
 		FScopeTransport transport = client.getTransport();
 		transport.subscribe(topic);
 
