@@ -17,18 +17,22 @@ class BlahPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
   int seqId;
-  Future open;
-
   BlahPublisher(frugal.FScopeProvider provider) {
     var tp = provider.newTransportProtocol();
     fTransport = tp.fTransport;
     fProtocol = tp.fProtocol;
     seqId = 0;
-    open = fTransport.open();
+  }
+
+  Future open() {
+    return fTransport.open();
+  }
+
+  Future close() {
+    return fTransport.close();
   }
 
   Future publishDoStuff(t_thing.Thing req) async {
-    await open;
     var op = "DoStuff";
     var prefix = "";
     var topic = "${prefix}Blah${delimiter}${op}";

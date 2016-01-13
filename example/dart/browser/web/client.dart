@@ -42,6 +42,7 @@ class EventUI {
       TProtocolFactory tProtocolFactory = new TBinaryProtocolFactory();
       var provider = new frugal.FScopeProvider(new frugal.FNatsScopeTransportFactory(nats), new frugal.FProtocolFactory(tProtocolFactory));
       _eventsPublisher = new event.EventsPublisher(provider);
+      _eventsPublisher.open();
       _eventsSubscriber = new event.EventsSubscriber(provider);
 
       var timeout = new Duration(seconds: 1);

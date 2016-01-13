@@ -19,19 +19,23 @@ class EventsPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
   int seqId;
-  Future open;
-
   EventsPublisher(frugal.FScopeProvider provider) {
     var tp = provider.newTransportProtocol();
     fTransport = tp.fTransport;
     fProtocol = tp.fProtocol;
     seqId = 0;
-    open = fTransport.open();
+  }
+
+  Future open() {
+    return fTransport.open();
+  }
+
+  Future close() {
+    return fTransport.close();
   }
 
   /// This is a docstring.
   Future publishEventCreated(String user, t_event.Event req) async {
-    await open;
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";

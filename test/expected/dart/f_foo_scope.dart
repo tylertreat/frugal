@@ -18,19 +18,23 @@ class FooPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
   int seqId;
-  Future open;
-
   FooPublisher(frugal.FScopeProvider provider) {
     var tp = provider.newTransportProtocol();
     fTransport = tp.fTransport;
     fProtocol = tp.fProtocol;
     seqId = 0;
-    open = fTransport.open();
+  }
+
+  Future open() {
+    return fTransport.open();
+  }
+
+  Future close() {
+    return fTransport.close();
   }
 
   /// This is an operation docstring.
   Future publishFoo(String baz, t_thing.Thing req) async {
-    await open;
     var op = "Foo";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
@@ -46,7 +50,6 @@ class FooPublisher {
 
 
   Future publishBar(String baz, t_stuff.Stuff req) async {
-    await open;
     var op = "Bar";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";

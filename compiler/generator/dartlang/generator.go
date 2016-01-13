@@ -271,14 +271,20 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += tab + "frugal.FScopeTransport fTransport;\n"
 	publishers += tab + "frugal.FProtocol fProtocol;\n"
 	publishers += tab + "int seqId;\n"
-	publishers += tab + "Future open;\n\n";
 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "var tp = provider.newTransportProtocol();\n"
 	publishers += tabtab + "fTransport = tp.fTransport;\n"
 	publishers += tabtab + "fProtocol = tp.fProtocol;\n"
 	publishers += tabtab + "seqId = 0;\n"
-	publishers += tabtab + "open = fTransport.open();\n";
+	publishers += tab + "}\n\n"
+
+	publishers += tab + "Future open() {\n"
+	publishers += tabtab + "return fTransport.open();\n"
+	publishers += tab + "}\n\n"
+
+	publishers += tab + "Future close() {\n"
+	publishers += tabtab + "return fTransport.close();\n"
 	publishers += tab + "}\n\n"
 
 	args := ""
@@ -295,7 +301,6 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
 		publishers += fmt.Sprintf(tab+"Future publish%s(%s%s req) async {\n", op.Name, args, g.qualifiedParamName(op))
-		publishers += tabtab + "await open;\n";
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
