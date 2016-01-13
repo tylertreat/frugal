@@ -157,21 +157,23 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 	publisher += fmt.Sprintf(tab+"private static final String delimiter = \"%s\";\n\n", globals.TopicDelimiter)
 
+	publisher += tab + "private FScopeProvider provider;\n"
 	publisher += tab + "private FScopeTransport transport;\n"
-	publisher += tab + "private FProtocol protocol;\n"
+	publisher += tab + "private FProtocol protocol;\n\n"
 
 	publisher += fmt.Sprintf(tab+"public %sPublisher(FScopeProvider provider) {\n", strings.Title(scope.Name))
-	publisher += tabtab + "FScopeProvider.Client client = provider.build();\n"
-	publisher += tabtab + "transport = client.getTransport();\n"
-	publisher += tabtab + "protocol = client.getProtocol();\n"
+	publisher += tabtab + "this.provider = provider;\n"
 	publisher += tab + "}\n\n"
 
 	publisher += tab + "public void open() throws TException {\n"
-	publisher += tabtab + "this.transport.open();\n"
-	publisher += tabtab + "}\n\n"
+	publisher += tabtab + "FScopeProvider.Client client = provider.build();\n"
+	publisher += tabtab + "transport = client.getTransport();\n"
+	publisher += tabtab + "protocol = client.getProtocol();\n"
+	publisher += tabtab + "transport.open();\n"
+	publisher += tab + "}\n\n"
 
 	publisher += tab + "public void close() throws TException {\n"
-	publisher += tabtab + "this.transport.close();\n"
+	publisher += tabtab + "transport.close();\n"
 	publisher += tab + "}\n\n"
 
 	args := ""
@@ -197,6 +199,9 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publisher += tabtabtab + "req.write(protocol);\n"
 		publisher += tabtabtab + "protocol.writeMessageEnd();\n"
 		publisher += tabtabtab + "transport.flush();\n"
+		publisher += tabtab + "} catch (TException e) {\n"
+		publisher += tabtabtab + "close();\n"
+		publisher += tabtabtab + "throw e;\n"
 		publisher += tabtab + "} finally {\n"
 		publisher += tabtabtab + "transport.unlockTopic();\n"
 		publisher += tabtab + "}\n"

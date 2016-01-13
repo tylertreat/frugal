@@ -28,20 +28,23 @@ public class FooPublisher {
 
 	private static final String delimiter = ".";
 
+	private FScopeProvider provider;
 	private FScopeTransport transport;
 	private FProtocol protocol;
+
 	public FooPublisher(FScopeProvider provider) {
-		FScopeProvider.Client client = provider.build();
-		transport = client.getTransport();
-		protocol = client.getProtocol();
+		this.provider = provider;
 	}
 
 	public void open() throws TException {
-		this.transport.open();
-		}
+		FScopeProvider.Client client = provider.build();
+		transport = client.getTransport();
+		protocol = client.getProtocol();
+		transport.open();
+	}
 
 	public void close() throws TException {
-		this.transport.close();
+		transport.close();
 	}
 
 	/**
@@ -57,6 +60,9 @@ public class FooPublisher {
 			req.write(protocol);
 			protocol.writeMessageEnd();
 			transport.flush();
+		} catch (TException e) {
+			close();
+			throw e;
 		} finally {
 			transport.unlockTopic();
 		}
@@ -73,6 +79,9 @@ public class FooPublisher {
 			req.write(protocol);
 			protocol.writeMessageEnd();
 			transport.flush();
+		} catch (TException e) {
+			close();
+			throw e;
 		} finally {
 			transport.unlockTopic();
 		}
