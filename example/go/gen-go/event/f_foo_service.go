@@ -20,62 +20,57 @@ var _ = bytes.Equal
 
 type FFoo interface {
 	// Ping the server.
-	Ping(frugal.FContext) (err error)
+	Ping(*frugal.FContext) (err error)
 	// Blah the server.
-	Blah(frugal.FContext, int32, string, *Event) (r int64, err error)
+	Blah(*frugal.FContext, int32, string, *Event) (r int64, err error)
 }
 
 type FFooClient struct {
-	FTransport       frugal.FTransport
-	FProtocolFactory *frugal.FProtocolFactory
-	InputProtocol    *frugal.FProtocol
-	OutputProtocol   *frugal.FProtocol
-	mu               sync.Mutex
+	transport       frugal.FTransport
+	protocolFactory *frugal.FProtocolFactory
+	oprot           *frugal.FProtocol
+	mu              sync.Mutex
 }
 
-func NewFFooClient(t frugal.FTransport, f *frugal.FProtocolFactory) *FFooClient {
+func NewFFooClient(p *frugal.FServiceProvider) *FFooClient {
+	t := p.Transport()
+	f := p.ProtocolFactory()
 	t.SetRegistry(frugal.NewFClientRegistry())
 	return &FFooClient{
-		FTransport:       t,
-		FProtocolFactory: f,
-		InputProtocol:    f.GetProtocol(t),
-		OutputProtocol:   f.GetProtocol(t),
+		transport:       t,
+		protocolFactory: f,
+		oprot:           f.GetProtocol(t),
 	}
 }
 
 // Ping the server.
-func (f *FFooClient) Ping(ctx frugal.FContext) (err error) {
-	oprot := f.OutputProtocol
-	if oprot == nil {
-		oprot = f.FProtocolFactory.GetProtocol(f.FTransport)
-		f.OutputProtocol = oprot
-	}
+func (f *FFooClient) Ping(ctx *frugal.FContext) (err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan struct{}, 1)
-	if err = f.FTransport.Register(ctx, f.recvPingHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.transport.Register(ctx, f.recvPingHandler(ctx, resultC, errorC)); err != nil {
 		return
 	}
-	defer f.FTransport.Unregister(ctx)
+	defer f.transport.Unregister(ctx)
 	f.mu.Lock()
-	if err = oprot.WriteRequestHeader(ctx); err != nil {
+	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
 		f.mu.Unlock()
 		return
 	}
-	if err = oprot.WriteMessageBegin("ping", thrift.CALL, 0); err != nil {
+	if err = f.oprot.WriteMessageBegin("ping", thrift.CALL, 0); err != nil {
 		f.mu.Unlock()
 		return
 	}
 	args := FooPingArgs{
 	}
-	if err = args.Write(oprot); err != nil {
+	if err = args.Write(f.oprot); err != nil {
 		f.mu.Unlock()
 		return
 	}
-	if err = oprot.WriteMessageEnd(); err != nil {
+	if err = f.oprot.WriteMessageEnd(); err != nil {
 		f.mu.Unlock()
 		return
 	}
-	if err = oprot.Flush(); err != nil {
+	if err = f.oprot.Flush(); err != nil {
 		f.mu.Unlock()
 		return
 	}
@@ -86,15 +81,15 @@ func (f *FFooClient) Ping(ctx frugal.FContext) (err error) {
 	case <-resultC:
 	case <-time.After(ctx.Timeout()):
 		err = frugal.ErrTimeout
-	case <-f.FTransport.Closed():
+	case <-f.transport.Closed():
 		err = frugal.ErrTransportClosed
 	}
 	return
 }
 
-func (f *FFooClient) recvPingHandler(ctx frugal.FContext, resultC chan<- struct{}, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FFooClient) recvPingHandler(ctx *frugal.FContext, resultC chan<- struct{}, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
-		iprot := f.FProtocolFactory.GetProtocol(tr)
+		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
 			errorC <- err
 			return err
@@ -145,24 +140,19 @@ func (f *FFooClient) recvPingHandler(ctx frugal.FContext, resultC chan<- struct{
 }
 
 // Blah the server.
-func (f *FFooClient) Blah(ctx frugal.FContext, num int32, str string, event *Event) (r int64, err error) {
-	oprot := f.OutputProtocol
-	if oprot == nil {
-		oprot = f.FProtocolFactory.GetProtocol(f.FTransport)
-		f.OutputProtocol = oprot
-	}
+func (f *FFooClient) Blah(ctx *frugal.FContext, num int32, str string, event *Event) (r int64, err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan int64, 1)
-	if err = f.FTransport.Register(ctx, f.recvBlahHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.transport.Register(ctx, f.recvBlahHandler(ctx, resultC, errorC)); err != nil {
 		return
 	}
-	defer f.FTransport.Unregister(ctx)
+	defer f.transport.Unregister(ctx)
 	f.mu.Lock()
-	if err = oprot.WriteRequestHeader(ctx); err != nil {
+	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
 		f.mu.Unlock()
 		return
 	}
-	if err = oprot.WriteMessageBegin("blah", thrift.CALL, 0); err != nil {
+	if err = f.oprot.WriteMessageBegin("blah", thrift.CALL, 0); err != nil {
 		f.mu.Unlock()
 		return
 	}
@@ -171,15 +161,15 @@ func (f *FFooClient) Blah(ctx frugal.FContext, num int32, str string, event *Eve
 		Str: str,
 		Event: event,
 	}
-	if err = args.Write(oprot); err != nil {
+	if err = args.Write(f.oprot); err != nil {
 		f.mu.Unlock()
 		return
 	}
-	if err = oprot.WriteMessageEnd(); err != nil {
+	if err = f.oprot.WriteMessageEnd(); err != nil {
 		f.mu.Unlock()
 		return
 	}
-	if err = oprot.Flush(); err != nil {
+	if err = f.oprot.Flush(); err != nil {
 		f.mu.Unlock()
 		return
 	}
@@ -190,15 +180,15 @@ func (f *FFooClient) Blah(ctx frugal.FContext, num int32, str string, event *Eve
 	case r = <-resultC:
 	case <-time.After(ctx.Timeout()):
 		err = frugal.ErrTimeout
-	case <-f.FTransport.Closed():
+	case <-f.transport.Closed():
 		err = frugal.ErrTransportClosed
 	}
 	return
 }
 
-func (f *FFooClient) recvBlahHandler(ctx frugal.FContext, resultC chan<- int64, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- int64, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
-		iprot := f.FProtocolFactory.GetProtocol(tr)
+		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
 			errorC <- err
 			return err
@@ -305,7 +295,7 @@ type fooFPing struct {
 	writeMu *sync.Mutex
 }
 
-func (p *fooFPing) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := FooPingArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -360,7 +350,7 @@ type fooFBlah struct {
 	writeMu *sync.Mutex
 }
 
-func (p *fooFBlah) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := FooBlahArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {

@@ -20,7 +20,7 @@ type EventsPublisher struct {
 	FProtocol  *frugal.FProtocol
 }
 
-func NewEventsPublisher(provider *frugal.FProvider) *EventsPublisher {
+func NewEventsPublisher(provider *frugal.FScopeProvider) *EventsPublisher {
 	transport, protocol := provider.New()
 	return &EventsPublisher{
 		FTransport: transport,
@@ -61,10 +61,10 @@ func (l *EventsPublisher) PublishEventCreated(user string, req *Event) error {
 // This docstring gets added to the generated code because it has
 // the @ sign.
 type EventsSubscriber struct {
-	Provider *frugal.FProvider
+	Provider *frugal.FScopeProvider
 }
 
-func NewEventsSubscriber(provider *frugal.FProvider) *EventsSubscriber {
+func NewEventsSubscriber(provider *frugal.FScopeProvider) *EventsSubscriber {
 	return &EventsSubscriber{Provider: provider}
 }
 

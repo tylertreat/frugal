@@ -47,7 +47,7 @@ func main() {
 	}
 
 	fprotocolFactory := frugal.NewFProtocolFactory(protocolFactory)
-	ftransportFactory := frugal.NewFTransportFactory()
+	ftransportFactory := frugal.NewFMuxTransportFactory(5)
 
 	natsOptions := nats.DefaultOptions
 	natsOptions.Servers = []string{*addr}
@@ -96,24 +96,24 @@ func runClient(conn *nats.Conn, transportFactory frugal.FTransportFactory, proto
 	if err != nil {
 		return err
 	}
-	ftransport := transportFactory.GetTransport(transport, 5)
+	ftransport := transportFactory.GetTransport(transport)
 	defer ftransport.Close()
 	if err := ftransport.Open(); err != nil {
 		return err
 	}
-	return handleClient(event.NewFFooClient(ftransport, protocolFactory))
+	return handleClient(event.NewFFooClient(frugal.NewFServiceProvider(ftransport, protocolFactory)))
 }
 
 // Sever handler
 type FooHandler struct {
 }
 
-func (f *FooHandler) Ping(ctx frugal.FContext) error {
+func (f *FooHandler) Ping(ctx *frugal.FContext) error {
 	fmt.Printf("Ping(%s)\n", ctx)
 	return nil
 }
 
-func (f *FooHandler) Blah(ctx frugal.FContext, num int32, str string, e *event.Event) (int64, error) {
+func (f *FooHandler) Blah(ctx *frugal.FContext, num int32, str string, e *event.Event) (int64, error) {
 	fmt.Printf("Blah(%s, %d, %s, %v)\n", ctx, num, str, e)
 	ctx.AddResponseHeader("foo", "bar")
 	return 42, nil
@@ -133,7 +133,7 @@ func runServer(conn *nats.Conn, transportFactory frugal.FTransportFactory,
 // Subscriber runner
 func runSubscriber(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory) error {
 	factory := frugal.NewFNatsScopeTransportFactory(conn)
-	provider := frugal.NewFProvider(factory, protocolFactory)
+	provider := frugal.NewFScopeProvider(factory, protocolFactory)
 	subscriber := event.NewEventsSubscriber(provider)
 	_, err := subscriber.SubscribeEventCreated("barUser", func(e *event.Event) {
 		fmt.Printf("received %+v\n", e)
@@ -148,7 +148,7 @@ func runSubscriber(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory) er
 // Publisher runner
 func runPublisher(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory) error {
 	factory := frugal.NewFNatsScopeTransportFactory(conn)
-	provider := frugal.NewFProvider(factory, protocolFactory)
+	provider := frugal.NewFScopeProvider(factory, protocolFactory)
 	publisher := event.NewEventsPublisher(provider)
 	if err := publisher.Open(); err != nil {
 		return err
