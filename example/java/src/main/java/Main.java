@@ -19,7 +19,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException, TimeoutException, TException {
         FProtocolFactory protocolFactory = new FProtocolFactory(new TBinaryProtocol.Factory());
-        FTransportFactory transportFactory = new FMultiplexedTransport.Factory();
+        FTransportFactory transportFactory = new FMuxTransport.Factory(5);
         ConnectionFactory cf = new ConnectionFactory(Constants.DEFAULT_URL);
         Connection conn = cf.createConnection();
 
@@ -63,7 +63,7 @@ public class Main {
     }
 
     private static void runClient(Connection conn, FTransportFactory transportFactory, FProtocolFactory protocolFactory) throws TTransportException, TimeoutException {
-        FTransport transport = transportFactory.getTransport(TNatsServiceTransport.client(conn, "foo", 60000), 5);
+        FTransport transport = transportFactory.getTransport(TNatsServiceTransport.client(conn, "foo", 60000));
         transport.open();
         try {
             handleClient(new FFoo.Client(new FServiceProvider(transport, protocolFactory)));
