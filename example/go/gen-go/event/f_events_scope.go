@@ -16,24 +16,24 @@ const delimiter = "."
 // This docstring gets added to the generated code because it has
 // the @ sign.
 type EventsPublisher struct {
-	FTransport frugal.FScopeTransport
-	FProtocol  *frugal.FProtocol
+	transport frugal.FScopeTransport
+	protocol  *frugal.FProtocol
 }
 
 func NewEventsPublisher(provider *frugal.FScopeProvider) *EventsPublisher {
 	transport, protocol := provider.New()
 	return &EventsPublisher{
-		FTransport: transport,
-		FProtocol:  protocol,
+		transport: transport,
+		protocol:  protocol,
 	}
 }
 
 func (l *EventsPublisher) Open() error {
-	return l.FTransport.Open()
+	return l.transport.Open()
 }
 
 func (l *EventsPublisher) Close() error {
-	return l.FTransport.Close()
+	return l.transport.Close()
 }
 
 // This is a docstring.
@@ -41,11 +41,11 @@ func (l *EventsPublisher) PublishEventCreated(user string, req *Event) error {
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
-	if err := l.FTransport.LockTopic(topic); err != nil {
+	if err := l.transport.LockTopic(topic); err != nil {
 		return err
 	}
-	defer l.FTransport.UnlockTopic()
-	oprot := l.FProtocol
+	defer l.transport.UnlockTopic()
+	oprot := l.protocol
 	if err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {
 		return err
 	}
@@ -61,11 +61,11 @@ func (l *EventsPublisher) PublishEventCreated(user string, req *Event) error {
 // This docstring gets added to the generated code because it has
 // the @ sign.
 type EventsSubscriber struct {
-	Provider *frugal.FScopeProvider
+	provider *frugal.FScopeProvider
 }
 
 func NewEventsSubscriber(provider *frugal.FScopeProvider) *EventsSubscriber {
-	return &EventsSubscriber{Provider: provider}
+	return &EventsSubscriber{provider: provider}
 }
 
 // This is a docstring.
@@ -73,7 +73,7 @@ func (l *EventsSubscriber) SubscribeEventCreated(user string, handler func(*Even
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
-	transport, protocol := l.Provider.New()
+	transport, protocol := l.provider.New()
 	if err := transport.Subscribe(topic); err != nil {
 		return nil, err
 	}

@@ -167,25 +167,25 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publisher += g.GenerateInlineComment(scope.Comment, "")
 	}
 	publisher += fmt.Sprintf("type %sPublisher struct {\n", strings.Title(scope.Name))
-	publisher += "\tFTransport frugal.FScopeTransport\n"
-	publisher += "\tFProtocol  *frugal.FProtocol\n"
+	publisher += "\ttransport frugal.FScopeTransport\n"
+	publisher += "\tprotocol  *frugal.FProtocol\n"
 	publisher += "}\n\n"
 
 	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.FScopeProvider) *%sPublisher {\n",
 		strings.Title(scope.Name), strings.Title(scope.Name))
 	publisher += "\ttransport, protocol := provider.New()\n"
 	publisher += fmt.Sprintf("\treturn &%sPublisher{\n", strings.Title(scope.Name))
-	publisher += "\t\tFTransport: transport,\n"
-	publisher += "\t\tFProtocol:  protocol,\n"
+	publisher += "\t\ttransport: transport,\n"
+	publisher += "\t\tprotocol:  protocol,\n"
 	publisher += "\t}\n"
 	publisher += "}\n\n"
 
 	publisher += fmt.Sprintf("func (l *%sPublisher) Open() error {\n", strings.Title(scope.Name))
-	publisher += "\treturn l.FTransport.Open()\n"
+	publisher += "\treturn l.transport.Open()\n"
 	publisher += "}\n\n"
 
 	publisher += fmt.Sprintf("func (l *%sPublisher) Close() error {\n", strings.Title(scope.Name))
-	publisher += "\treturn l.FTransport.Close()\n"
+	publisher += "\treturn l.transport.Close()\n"
 	publisher += "}\n\n"
 
 	args := ""
@@ -211,11 +211,11 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publisher += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 		publisher += "\ttopic := fmt.Sprintf(\"%s" + strings.Title(scope.Name) +
 			"%s%s\", prefix, delimiter, op)\n"
-		publisher += "\tif err := l.FTransport.LockTopic(topic); err != nil {\n"
+		publisher += "\tif err := l.transport.LockTopic(topic); err != nil {\n"
 		publisher += "\t\treturn err\n"
 		publisher += "\t}\n"
-		publisher += "\tdefer l.FTransport.UnlockTopic()\n"
-		publisher += "\toprot := l.FProtocol\n"
+		publisher += "\tdefer l.transport.UnlockTopic()\n"
+		publisher += "\toprot := l.protocol\n"
 		publisher += "\tif err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {\n"
 		publisher += "\t\treturn err\n"
 		publisher += "\t}\n"
@@ -258,12 +258,12 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += g.GenerateInlineComment(scope.Comment, "")
 	}
 	subscriber += fmt.Sprintf("type %sSubscriber struct {\n", strings.Title(scope.Name))
-	subscriber += "\tProvider *frugal.FScopeProvider\n"
+	subscriber += "\tprovider *frugal.FScopeProvider\n"
 	subscriber += "}\n\n"
 
 	subscriber += fmt.Sprintf("func New%sSubscriber(provider *frugal.FScopeProvider) *%sSubscriber {\n",
 		strings.Title(scope.Name), strings.Title(scope.Name))
-	subscriber += fmt.Sprintf("\treturn &%sSubscriber{Provider: provider}\n", strings.Title(scope.Name))
+	subscriber += fmt.Sprintf("\treturn &%sSubscriber{provider: provider}\n", strings.Title(scope.Name))
 	subscriber += "}\n\n"
 
 	args := ""
@@ -288,7 +288,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		subscriber += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 		subscriber += "\ttopic := fmt.Sprintf(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op)\n"
-		subscriber += "\ttransport, protocol := l.Provider.New()\n"
+		subscriber += "\ttransport, protocol := l.provider.New()\n"
 		subscriber += "\tif err := transport.Subscribe(topic); err != nil {\n"
 		subscriber += "\t\treturn nil, err\n"
 		subscriber += "\t}\n\n"
