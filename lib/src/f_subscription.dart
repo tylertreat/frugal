@@ -10,7 +10,7 @@ class FSubscription {
   FSubscription(this.subject, this._transport);
 
   /// Unsubscribe from the subject.
-  Future unsubscribe() => _transport.unsubscribe();
+  Future unsubscribe() => _transport.close();
 
   signal(Error err) { _errorControler.add(err); }
 }
