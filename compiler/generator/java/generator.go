@@ -630,7 +630,7 @@ func (g *Generator) getJavaTypeFromThriftType(t *parser.Type) string {
 	if t == nil {
 		return "void"
 	}
-	typeName := g.Frugal.Thrift.UnderlyingType(t.Name)
+	typeName := g.Frugal.UnderlyingType(t)
 	switch typeName {
 	case "bool":
 		return "boolean"
