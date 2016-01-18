@@ -116,10 +116,6 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import org.apache.thrift.transport.TTransport;\n\n"
 
 	imports += "import javax.annotation.Generated;\n"
-	imports += "import java.util.HashMap;\n"
-	imports += "import java.util.List;\n"
-	imports += "import java.util.Map;\n"
-	imports += "import java.util.Set;\n"
 	imports += "import java.util.concurrent.BlockingQueue;\n"
 	imports += "import java.util.concurrent.ArrayBlockingQueue;\n"
 	imports += "import java.util.concurrent.TimeUnit;\n"
@@ -523,7 +519,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 
 	contents += tabtab + "private static final Object WRITE_LOCK = new Object();\n\n"
 
-	contents += tabtab + "private Map<String, FProcessorFunction> processorMap = new HashMap<>();\n\n"
+	contents += tabtab + "private java.util.Map<String, FProcessorFunction> processorMap = new java.util.HashMap<>();\n\n"
 
 	contents += tabtab + "public Processor(Iface handler) {\n"
 	for _, method := range service.Methods {
@@ -651,11 +647,13 @@ func (g *Generator) getJavaTypeFromThriftType(t *parser.Type) string {
 	case "binary":
 		return "java.nio.ByteBuffer"
 	case "list":
-		return fmt.Sprintf("List<%s>", containerType(g.getJavaTypeFromThriftType(t.ValueType)))
+		return fmt.Sprintf("java.util.List<%s>",
+			containerType(g.getJavaTypeFromThriftType(t.ValueType)))
 	case "set":
-		return fmt.Sprintf("Set<%s>", containerType(g.getJavaTypeFromThriftType(t.ValueType)))
+		return fmt.Sprintf("java.util.Set<%s>",
+			containerType(g.getJavaTypeFromThriftType(t.ValueType)))
 	case "map":
-		return fmt.Sprintf("Map<%s, %s>",
+		return fmt.Sprintf("java.util.Map<%s, %s>",
 			containerType(g.getJavaTypeFromThriftType(t.KeyType)),
 			containerType(g.getJavaTypeFromThriftType(t.ValueType)))
 	default:
