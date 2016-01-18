@@ -135,8 +135,8 @@ func runSubscriber(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory) er
 	factory := frugal.NewFNatsScopeTransportFactory(conn)
 	provider := frugal.NewFScopeProvider(factory, protocolFactory)
 	subscriber := event.NewEventsSubscriber(provider)
-	_, err := subscriber.SubscribeEventCreated("barUser", func(e *event.Event) {
-		fmt.Printf("received %+v\n", e)
+	_, err := subscriber.SubscribeEventCreated("barUser", func(ctx *frugal.FContext, e *event.Event) {
+		fmt.Printf("received %+v : %+v\n", ctx, e)
 	})
 	if err != nil {
 		return err
@@ -154,8 +154,9 @@ func runPublisher(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory) err
 		return err
 	}
 	defer publisher.Close()
+	ctx := frugal.NewFContext("a-corr-id")
 	event := &event.Event{Message: "hello, world!"}
-	if err := publisher.PublishEventCreated("barUser", event); err != nil {
+	if err := publisher.PublishEventCreated(ctx, "barUser", event); err != nil {
 		return err
 	}
 	fmt.Println("EventCreated()")

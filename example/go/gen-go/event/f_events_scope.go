@@ -37,7 +37,7 @@ func (l *EventsPublisher) Close() error {
 }
 
 // This is a docstring.
-func (l *EventsPublisher) PublishEventCreated(user string, req *Event) error {
+func (l *EventsPublisher) PublishEventCreated(ctx *frugal.FContext, user string, req *Event) error {
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
@@ -46,6 +46,9 @@ func (l *EventsPublisher) PublishEventCreated(user string, req *Event) error {
 	}
 	defer l.transport.UnlockTopic()
 	oprot := l.protocol
+	if err := oprot.WriteRequestHeader(ctx); err != nil {
+		return err
+	}
 	if err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {
 		return err
 	}
@@ -69,7 +72,7 @@ func NewEventsSubscriber(provider *frugal.FScopeProvider) *EventsSubscriber {
 }
 
 // This is a docstring.
-func (l *EventsSubscriber) SubscribeEventCreated(user string, handler func(*Event)) (*frugal.FSubscription, error) {
+func (l *EventsSubscriber) SubscribeEventCreated(user string, handler func(*frugal.FContext, *Event)) (*frugal.FSubscription, error) {
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
@@ -81,7 +84,7 @@ func (l *EventsSubscriber) SubscribeEventCreated(user string, handler func(*Even
 	sub := frugal.NewFSubscription(topic, transport)
 	go func() {
 		for {
-			received, err := l.recvEventCreated(op, protocol)
+			ctx, received, err := l.recvEventCreated(op, protocol)
 			if err != nil {
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 					return
@@ -91,29 +94,33 @@ func (l *EventsSubscriber) SubscribeEventCreated(user string, handler func(*Even
 				sub.Unsubscribe()
 				return
 			}
-			handler(received)
+			handler(ctx, received)
 		}
 	}()
 
 	return sub, nil
 }
 
-func (l *EventsSubscriber) recvEventCreated(op string, iprot thrift.TProtocol) (*Event, error) {
+func (l *EventsSubscriber) recvEventCreated(op string, iprot *frugal.FProtocol) (*frugal.FContext, *Event, error) {
+	ctx, err := iprot.ReadRequestHeader()
+	if err != nil {
+		return nil, nil, err
+	}
 	name, _, _, err := iprot.ReadMessageBegin()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if name != op {
 		iprot.Skip(thrift.STRUCT)
 		iprot.ReadMessageEnd()
 		x9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
-		return nil, x9
+		return nil, nil, x9
 	}
 	req := &Event{}
 	if err := req.Read(iprot); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	iprot.ReadMessageEnd()
-	return req, nil
+	return ctx, req, nil
 }
