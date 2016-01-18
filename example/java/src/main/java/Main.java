@@ -5,9 +5,7 @@ import com.workiva.frugal.FServiceProvider;
 import com.workiva.frugal.server.FNatsServer;
 import com.workiva.frugal.server.FServer;
 import com.workiva.frugal.transport.*;
-import io.nats.client.Connection;
-import io.nats.client.ConnectionFactory;
-import io.nats.client.Constants;
+import io.nats.client.*;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.transport.TTransportException;
@@ -19,7 +17,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException, TimeoutException, TException {
         FProtocolFactory protocolFactory = new FProtocolFactory(new TBinaryProtocol.Factory());
-        FTransportFactory transportFactory = new FMuxTransport.Factory(5);
+        FTransportFactory transportFactory = new FMultiplexedTransport.Factory();
         ConnectionFactory cf = new ConnectionFactory(Constants.DEFAULT_URL);
         Connection conn = cf.createConnection();
 
@@ -63,7 +61,7 @@ public class Main {
     }
 
     private static void runClient(Connection conn, FTransportFactory transportFactory, FProtocolFactory protocolFactory) throws TTransportException, TimeoutException {
-        FTransport transport = transportFactory.getTransport(TNatsServiceTransport.client(conn, "foo", 60000));
+        FTransport transport = transportFactory.getTransport(TNatsServiceTransport.client(conn, "foo", 60000), 5);
         transport.open();
         try {
             handleClient(new FFoo.Client(new FServiceProvider(transport, protocolFactory)));
