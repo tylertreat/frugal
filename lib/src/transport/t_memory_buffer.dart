@@ -1,15 +1,16 @@
 part of frugal;
 
-/// A Uint8List-backed implementation of TTransport.
+/// A ReadByteBuffer-backed implementation of TTransport.
 class TMemoryBuffer extends TTransport {
 
-  final FByteBuffer _buff;
+  final ReadByteBuffer _buff;
 
-  TMemoryBuffer(Uint8List buff)
-    : _buff =new FByteBuffer.fromUInt8List(buff);
-
-  /// A read-only representation of the bytes in the buffer.
-  Uint8List get buff => _buff.asUint8List();
+  TMemoryBuffer([Uint8List buffer])
+    : _buff =new ReadByteBuffer() {
+    if (buffer != null) {
+      _buff.add(buffer);
+    }
+  }
 
   /// Queries whether the transport is open.
   bool get isOpen => true;
@@ -34,7 +35,10 @@ class TMemoryBuffer extends TTransport {
   /// Writes up to [len] bytes from the buffer.
   /// Throws [TTransportError] if there was an error writing data
   void write(Uint8List buffer, int offset, int length) {
-    _buff.write(buffer, offset, length);
+    if (offset + length > buffer.length) {
+      throw new TTransportError(TTransportErrorType.UNKNOWN, 'not enough bytes to write.');
+    }
+    _buff.add(buffer.sublist(offset, offset + length));
   }
 
   /// Flush any pending data out of a transport buffer.
