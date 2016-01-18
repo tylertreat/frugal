@@ -300,7 +300,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		if op.Comment != nil {
 			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
-		publishers += fmt.Sprintf(tab+"Future publish%s(%s%s req) async {\n", op.Name, args, g.qualifiedParamName(op))
+		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedParamName(op))
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
@@ -308,6 +308,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += tabtab + "var oprot = fProtocol;\n"
 		publishers += tabtab + "seqId++;\n"
 		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);\n"
+		publishers += tabtab + "oprot.writeRequestHeader(ctx);\n"
 		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
 		publishers += tabtab + "req.write(oprot);\n"
 		publishers += tabtab + "oprot.writeMessageEnd();\n"
@@ -362,7 +363,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		if op.Comment != nil {
 			subscribers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
-		subscribers += fmt.Sprintf(tab+"Future<frugal.FSubscription> subscribe%s(%sdynamic on%s(%s req)) async {\n",
+		subscribers += fmt.Sprintf(tab+"Future<frugal.FSubscription> subscribe%s(%sdynamic on%s(frugal.FContext ctx, %s req)) async {\n",
 			op.Name, args, op.ParamName(), g.qualifiedParamName(op))
 		subscribers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		subscribers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
@@ -370,7 +371,9 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += tabtab + "var tp = provider.newTransportProtocol();\n"
 		subscribers += tabtab + "await tp.fTransport.subscribe(topic);\n"
 		subscribers += tabtab + "tp.fTransport.signalRead.listen((_) {\n"
-		subscribers += fmt.Sprintf(tabtabtab+"on%s(_recv%s(op, tp.fProtocol));\n", op.ParamName(), op.Name)
+		subscribers += tabtabtab + "frugal.FContext ctx = new frugal.FContext();\n"
+		subscribers += tabtabtab + "tp.fProtocol.readResponseHeader(ctx);\n"
+		subscribers += fmt.Sprintf(tabtabtab+"on%s(ctx, _recv%s(op, tp.fProtocol));\n", op.ParamName(), op.Name)
 		subscribers += tabtab + "});\n"
 		subscribers += tabtab + "var sub = new frugal.FSubscription(topic, tp.fTransport);\n"
 		subscribers += tabtab + "tp.fTransport.error.listen((Error e) {;\n"

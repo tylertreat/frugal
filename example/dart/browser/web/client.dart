@@ -90,7 +90,8 @@ class EventUI {
     var e = new event.Event();
     e.iD = int.parse(pubId.value);
     e.message = pubMsg.value;
-    _eventsPublisher.publishEventCreated("barUser", e);
+    frugal.FContext ctx = new frugal.FContext(correlationId: 'an-id');
+    _eventsPublisher.publishEventCreated(ctx, "barUser", e);
   }
 
   void _buildSubscribeComponent() {
@@ -154,8 +155,8 @@ class EventUI {
     });
   }
 
-  void onEvent(event.Event e) {
-    window.alert(e.toString());
+  void onEvent(frugal.FContext ctx, event.Event e) {
+    window.alert(ctx.opId().toString() + ' : ' + e.toString());
   }
 }
 

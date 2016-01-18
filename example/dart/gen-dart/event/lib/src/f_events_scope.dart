@@ -35,7 +35,7 @@ class EventsPublisher {
   }
 
   /// This is a docstring.
-  Future publishEventCreated(String user, t_event.Event req) async {
+  Future publishEventCreated(frugal.FContext ctx, String user, t_event.Event req) async {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
@@ -43,6 +43,7 @@ class EventsPublisher {
     var oprot = fProtocol;
     seqId++;
     var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);
+    oprot.writeRequestHeader(ctx);
     oprot.writeMessageBegin(msg);
     req.write(oprot);
     oprot.writeMessageEnd();
@@ -59,14 +60,16 @@ class EventsSubscriber {
   EventsSubscriber(this.provider) {}
 
   /// This is a docstring.
-  Future<frugal.FSubscription> subscribeEventCreated(String user, dynamic onEvent(t_event.Event req)) async {
+  Future<frugal.FSubscription> subscribeEventCreated(String user, dynamic onEvent(frugal.FContext ctx, t_event.Event req)) async {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
     var tp = provider.newTransportProtocol();
     await tp.fTransport.subscribe(topic);
     tp.fTransport.signalRead.listen((_) {
-      onEvent(_recvEventCreated(op, tp.fProtocol));
+      frugal.FContext ctx = new frugal.FContext();
+      tp.fProtocol.readResponseHeader(ctx);
+      onEvent(ctx, _recvEventCreated(op, tp.fProtocol));
     });
     var sub = new frugal.FSubscription(topic, tp.fTransport);
     tp.fTransport.error.listen((Error e) {;
