@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/globals"
@@ -166,29 +167,6 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	if scope.Comment != nil {
 		publisher += g.GenerateInlineComment(scope.Comment, "")
 	}
-
-	publisher += fmt.Sprintf("type %sPublisher struct {\n", strings.Title(scope.Name))
-	publisher += "\ttransport frugal.FScopeTransport\n"
-	publisher += "\tprotocol  *frugal.FProtocol\n"
-	publisher += "}\n\n"
-
-	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.FScopeProvider) *%sPublisher {\n",
-		strings.Title(scope.Name), strings.Title(scope.Name))
-	publisher += "\ttransport, protocol := provider.New()\n"
-	publisher += fmt.Sprintf("\treturn &%sPublisher{\n", strings.Title(scope.Name))
-	publisher += "\t\ttransport: transport,\n"
-	publisher += "\t\tprotocol:  protocol,\n"
-	publisher += "\t}\n"
-	publisher += "}\n\n"
-
-	publisher += fmt.Sprintf("func (l *%sPublisher) Open() error {\n", strings.Title(scope.Name))
-	publisher += "\treturn l.transport.Open()\n"
-	publisher += "}\n\n"
-
-	publisher += fmt.Sprintf("func (l *%sPublisher) Close() error {\n", strings.Title(scope.Name))
-	publisher += "\treturn l.transport.Close()\n"
-	publisher += "}\n\n"
-
 	args := ""
 	if len(scope.Prefix.Variables) > 0 {
 		prefix := ""
@@ -199,6 +177,36 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		args += " string, "
 	}
 
+	publisher += fmt.Sprintf("type %sPublisher interface {\n", strings.Title(scope.Name))
+	publisher += "\tOpen() error\n"
+	publisher += "\tClose() error\n"
+	for _, op := range scope.Operations {
+		publisher += fmt.Sprintf("\tPublish%s(ctx *frugal.FContext, %sreq *%s) error\n", op.Name, args, g.qualifiedParamName(op)) // TODO
+	}
+	publisher += "}\n\n"
+
+	publisher += fmt.Sprintf("type %sPublisher struct {\n", lowercaseFirstLetter(scope.Name))
+	publisher += "\ttransport frugal.FScopeTransport\n"
+	publisher += "\tprotocol  *frugal.FProtocol\n"
+	publisher += "}\n\n"
+
+	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.FScopeProvider) %sPublisher {\n",
+		strings.Title(scope.Name), strings.Title(scope.Name))
+	publisher += "\ttransport, protocol := provider.New()\n"
+	publisher += fmt.Sprintf("\treturn &%sPublisher{\n", lowercaseFirstLetter(scope.Name))
+	publisher += "\t\ttransport: transport,\n"
+	publisher += "\t\tprotocol:  protocol,\n"
+	publisher += "\t}\n"
+	publisher += "}\n\n"
+
+	publisher += fmt.Sprintf("func (l *%sPublisher) Open() error {\n", lowercaseFirstLetter(scope.Name))
+	publisher += "\treturn l.transport.Open()\n"
+	publisher += "}\n\n"
+
+	publisher += fmt.Sprintf("func (l *%sPublisher) Close() error {\n", lowercaseFirstLetter(scope.Name))
+	publisher += "\treturn l.transport.Close()\n"
+	publisher += "}\n\n"
+
 	prefix := ""
 	for _, op := range scope.Operations {
 		publisher += prefix
@@ -207,7 +215,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 			publisher += g.GenerateInlineComment(op.Comment, "")
 		}
 		publisher += fmt.Sprintf("func (l *%sPublisher) Publish%s(ctx *frugal.FContext, %sreq *%s) error {\n",
-			strings.Title(scope.Name), op.Name, args, g.qualifiedParamName(op))
+			lowercaseFirstLetter(scope.Name), op.Name, args, g.qualifiedParamName(op))
 		publisher += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		publisher += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 		publisher += "\ttopic := fmt.Sprintf(\"%s" + strings.Title(scope.Name) +
@@ -261,14 +269,6 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	if scope.Comment != nil {
 		subscriber += g.GenerateInlineComment(scope.Comment, "")
 	}
-	subscriber += fmt.Sprintf("type %sSubscriber struct {\n", strings.Title(scope.Name))
-	subscriber += "\tprovider *frugal.FScopeProvider\n"
-	subscriber += "}\n\n"
-
-	subscriber += fmt.Sprintf("func New%sSubscriber(provider *frugal.FScopeProvider) *%sSubscriber {\n",
-		strings.Title(scope.Name), strings.Title(scope.Name))
-	subscriber += fmt.Sprintf("\treturn &%sSubscriber{provider: provider}\n", strings.Title(scope.Name))
-	subscriber += "}\n\n"
 
 	args := ""
 	prefix := ""
@@ -280,6 +280,22 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		args += " string, "
 	}
 
+	subscriber += fmt.Sprintf("type %sSubscriber interface {\n", strings.Title(scope.Name))
+	for _, op := range scope.Operations {
+		subscriber += fmt.Sprintf("\tSubscribe%s(%shandler func(*frugal.FContext, *%s)) (*frugal.FSubscription, error)\n",
+			op.Name, args, g.qualifiedParamName(op))
+	}
+	subscriber += "}\n\n"
+
+	subscriber += fmt.Sprintf("type %sSubscriber struct {\n", lowercaseFirstLetter(scope.Name))
+	subscriber += "\tprovider *frugal.FScopeProvider\n"
+	subscriber += "}\n\n"
+
+	subscriber += fmt.Sprintf("func New%sSubscriber(provider *frugal.FScopeProvider) %sSubscriber {\n",
+		strings.Title(scope.Name), strings.Title(scope.Name))
+	subscriber += fmt.Sprintf("\treturn &%sSubscriber{provider: provider}\n", lowercaseFirstLetter(scope.Name))
+	subscriber += "}\n\n"
+
 	prefix = ""
 	for _, op := range scope.Operations {
 		subscriber += prefix
@@ -288,7 +304,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 			subscriber += g.GenerateInlineComment(op.Comment, "")
 		}
 		subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*frugal.FContext, *%s)) (*frugal.FSubscription, error) {\n",
-			strings.Title(scope.Name), op.Name, args, g.qualifiedParamName(op))
+			lowercaseFirstLetter(scope.Name), op.Name, args, g.qualifiedParamName(op))
 		subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		subscriber += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 		subscriber += "\ttopic := fmt.Sprintf(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, delimiter, op)\n"
@@ -316,7 +332,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += "}\n\n"
 
 		subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, iprot *frugal.FProtocol) (*frugal.FContext, *%s, error) {\n",
-			strings.Title(scope.Name), op.Name, g.qualifiedParamName(op))
+			lowercaseFirstLetter(scope.Name), op.Name, g.qualifiedParamName(op))
 		subscriber += "\tctx, err := iprot.ReadRequestHeader()\n"
 		subscriber += "\tif err != nil {\n"
 		subscriber += "\t\treturn nil, nil, err\n"
@@ -801,4 +817,10 @@ func (g *Generator) qualifiedParamName(op *parser.Operation) string {
 		param = fmt.Sprintf("%s.%s", namespace, param)
 	}
 	return param
+}
+
+func lowercaseFirstLetter(s string) string {
+	runes := []rune(s)
+	runes[0] = unicode.ToLower(runes[0])
+	return string(runes)
 }
