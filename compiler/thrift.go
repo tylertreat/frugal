@@ -79,9 +79,14 @@ func generateIncludes(frugal *parser.Frugal) (string, error) {
 			if err != nil {
 				return "", err
 			}
+
 			// Lop off .frugal
 			includeBase := include[:len(include)-7]
-			frugal.ParsedIncludes[includeBase] = parsed
+
+			// Lop off path
+			includeName := filepath.Base(includeBase)
+
+			frugal.ParsedIncludes[includeName] = parsed
 
 			// Replace .frugal with .thrift
 			include = includeBase + ".thrift"
