@@ -2,29 +2,29 @@ part of frugal;
 
 /// Extension of TProtocol with the addition of headers
 class FProtocol extends TProtocolDecorator {
-  final TProtocol _protocol;
+  final TTransport _transport;
 
   FProtocol(TProtocol protocol)
-    : this._protocol = protocol,
+    : this._transport = protocol.transport,
       super(protocol);
 
   /// write the request headers on the given Context
   void writeRequestHeader(FContext ctx) {
-    _protocol.transport.writeAll(encodeHeaders(ctx.requestHeaders()));
+    transport.writeAll(Headers.encode(ctx.requestHeaders()));
   }
 
   /// read the requests headers into a new Context
   FContext readRequestHeader() {
-    return new FContext.withRequestHeaders(readHeaders(_protocol.transport));
+    return new FContext.withRequestHeaders(Headers.read(transport));
   }
 
   /// write the response headers on the given Context
   void writeResponseHeader(FContext ctx) {
-    _protocol.transport.writeAll(encodeHeaders(ctx.responseHeaders()));
+    transport.writeAll(Headers.encode(ctx.responseHeaders()));
   }
 
   /// read the requests headers into the given Context
   void readResponseHeader(FContext ctx) {
-    ctx.addResponseHeaders(readHeaders(_protocol.transport));
+    ctx.addResponseHeaders(Headers.read(transport));
   }
 }

@@ -26,7 +26,7 @@ class FClientRegistry implements FRegistry {
 
   /// Dispatch a single Frugal message frame.
   void execute(Uint8List frame) {
-    var headers = decodeHeadersFromFrame(frame);
+    var headers = Headers.decodeFromFrame(frame);
     var opId;
     try {
       opId = int.parse(headers[_opid]);
@@ -39,6 +39,6 @@ class FClientRegistry implements FRegistry {
       log.info("No handler for op $opId}. Dropping frame.");
       return;
     }
-    _handlers[opId](new TUint8List(frame));
+    _handlers[opId](new TMemoryBuffer(frame));
   }
 }

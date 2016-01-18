@@ -6,7 +6,7 @@ import "package:thrift/thrift.dart";
 void main() {
  test("writeRequestHeader writes the request headers and readRequestHeader reads the headers", () {
    var list = new Uint8List(1024);
-   var transport = new TUint8List(list);
+   var transport = new TMemoryBuffer(list);
    var tProtocol = new TBinaryProtocol(transport);
    var fProtocol = new FProtocol(tProtocol);
 

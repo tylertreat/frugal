@@ -3,110 +3,130 @@ part of frugal;
 var _encoder = new Utf8Encoder();
 var _decoder = new Utf8Decoder();
 
-Uint8List encodeHeaders(Map<String, String> headers) {
-  var size = 0;
-  // Get total frame size headers
-  if (headers != null && headers.length > 0) {
-    for (var name in headers.keys) {
-      // 4 bytes each for name, value length
-      size += 8 + name.length + headers[name].length;
+/**
+ * This is an internal-only class. Don't use it!
+ */
+class Headers {
+  static const _V0 = 0x00;
+
+  /// Encode the headers
+  static Uint8List encode(Map<String, String> headers) {
+    var size = 0;
+    // Get total frame size headers
+    if (headers != null && headers.length > 0) {
+      for (var name in headers.keys) {
+        // 4 bytes each for name, value length
+        size += 8 + name.length + headers[name].length;
+      }
     }
+
+    // Header buff = [version (1 byte), size (4 bytes), headers (size bytes)]
+    var buff = new Uint8List(5 + size);
+
+    // Write version
+    buff[0] = _V0;
+
+    // Write size
+    _writeInt(size, buff, 1);
+
+    // Write headers
+    if (headers != null && headers.length > 0) {
+      var i = 5;
+      for (var name in headers.keys) {
+        // Write name length
+        _writeInt(name.length, buff, i);
+        i += 4;
+        // Write name
+        _writeString(name, buff, i);
+        i += name.length;
+
+        // Write value length
+        var value = headers[name];
+        _writeInt(value.length, buff, i);
+        i += 4;
+        _writeString(value, buff, i);
+        i += value.length;
+      }
+    }
+    return buff;
   }
 
-  // Header buff = [version (1 byte), size (4 bytes), headers (size bytes)]
-  var buff = new Uint8List(5 + size);
+  /// Reads the headers from a TTransort
+  static Map<String, String> read(TTransport transport) {
+    // Buffer version
+    var buff = new Uint8List(5);
+    transport.readAll(buff, 0, 1);
 
-  // Write version
-  buff[0] = 0x00;
+    // Support more versions when available
+    if (buff[0] != _V0) {
+      throw new FError.withMessage("unsupported header version ${buff[0]}");
+    }
 
-  // Write size
-  var bdata = new ByteData.view(buff.buffer);
-  bdata.setInt32(1, size);
+    // Read size
+    transport.readAll(buff, 1, 4);
+    var size = _readInt(buff, 1);
 
-  // Write headers
-  if (headers != null && headers.length > 0) {
-    var i = 5;
-    for (var name in headers.keys) {
-      // Write name length
-      bdata.setInt32(i, name.length);
+    // Read the rest of the header bytes into a buffer
+    buff = new Uint8List(size);
+    transport.readAll(buff, 0, size);
+
+    return _readPairs(buff, 0, size);
+  }
+
+  /// Returns the headers from Frugal frame
+  static Map<String, String> decodeFromFrame(Uint8List frame) {
+    if (frame.length < 5) {
+      throw new FError.withMessage("invalid frame size ${frame.length}");
+    }
+
+    // Support more versions when available
+    if (frame[0] != _V0) {
+      throw new FError.withMessage("unsupported header version ${frame[0]}");
+    }
+
+    return _readPairs(frame, 5, _readInt(frame, 1) + 5);
+  }
+
+  static Map<String, String> _readPairs(Uint8List buff, int start, int end) {
+    var headers = {};
+    for (var i = start; i < end; i) {
+      // Read header name
+      var nameSize = _readInt(buff, i);
       i += 4;
-      // Write name
-      buff.setAll(i, _encoder.convert(name));
-      i += name.length;
+      if (i > end || i + nameSize > end) {
+        throw new FError.withMessage("invalid protocol header name");
+      }
+      var name = _decoder.convert(buff, i, i + nameSize);
+      i += nameSize;
 
-      // Write value length
-      var value = headers[name];
-      bdata.setInt32(i, value.length);
+      // Read header value
+      var valueSize = _readInt(buff, i);
       i += 4;
-      buff.setAll(i, _encoder.convert(value));
-      i += value.length;
+      if (i > end || i + valueSize > end) {
+        throw new FError.withMessage("invalid protocol header value");
+      }
+      var value = _decoder.convert(buff, i, i + valueSize);
+      i += valueSize;
+
+      // Set the pair
+      headers[name] = value;
     }
-  }
-  return buff;
-}
-
-/// Returns the headers from a TTransort
-Map<String, String> readHeaders(TTransport transport) {
-  // Buffer version
-  var buff = new Uint8List(1);
-  transport.read(buff, 0, 1);
-
-  // Support more versions when available
-  if (buff[0] != 0x00) {
-    throw new UnsupportedError("frugal: Unsupported header version ${buff[0]}");
+    return headers;
   }
 
-  // Read size
-  buff = new Uint8List(4);
-  transport.read(buff, 0, 4);
-  var bdata = new ByteData.view(buff.buffer);
-  var size = bdata.getInt32(0);
-  
-  return _readHeaderPairs(transport, size);
-}
-
-/// Returns the headers from Frugal frame
-Map<String, String> decodeHeadersFromFrame(Uint8List frame) {
-  if (frame.length < 5) {
-    throw new StateError("frugal: invalid frame size ${frame.length}");
+  static int _readInt(Uint8List buff, int i) {
+    return ((buff[i] & 0xff) << 24) | ((buff[i+1] & 0xff) << 16) | ((buff[i+2] & 0xff) << 8)  | (buff[i+3] & 0xff);
   }
 
-  // Support more versions when available
-  if (frame[0] != 0x00) {
-    throw new UnsupportedError("frugal: Unsupported header version ${frame[0]}");
+  static void _writeInt(int i, Uint8List buff, int i1) {
+    buff[i1] = (0xff & (i >> 24));
+    buff[i1+1] = (0xff & (i >> 16));
+    buff[i1+2] = (0xff & (i >> 8));
+    buff[i1+3] = (0xff & (i));
   }
 
-  var bdata = new ByteData.view(frame.buffer);
-  var size = bdata.getInt32(1);
-  var transport = new TUint8List(frame.sublist(5, 5+size));
-  return _readHeaderPairs(transport, size);
-}
-
-Map<String, String> _readHeaderPairs(TTransport transport, int size) {
-  var buff = new Uint8List(size);
-  transport.read(buff, 0, size);
-
-  var bdata = new ByteData.view(buff.buffer);
-  var headers = {};
-  for (var i = 0; i < size; i) {
-    var nameSize = bdata.getInt32(i);
-    i += 4;
-    if (i > size || i+nameSize > size) {
-      throw new StateError("frugal: invalid protocol header name");
-    }
-    var name = _decoder.convert(buff, i, i+nameSize);
-    i += nameSize;
-
-    var valueSize = bdata.getInt32(i);
-    i += 4;
-    if (i > size || i+valueSize > size) {
-      throw new StateError("frugal: invalid protocol header value");
-    }
-    var value = _decoder.convert(buff, i, i+valueSize);
-    i += valueSize;
-
-    headers[name] = value;
+  static void _writeString(String s, Uint8List buff, int i) {
+    var strBytes = _encoder.convert(s);
+    buff.setRange(i, i + strBytes.length, strBytes);
   }
-
-  return headers;
 }
