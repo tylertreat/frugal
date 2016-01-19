@@ -4,15 +4,13 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
-	"fmt"
+	"io/ioutil"
 
 	"github.com/Workiva/frugal/compiler"
 	"github.com/Workiva/frugal/compiler/globals"
 )
 
 func TestValidJava(t *testing.T) {
-	t.Log("thing")
-	fmt.Println("thing2")
 	defer globals.Reset()
 	nowBefore := globals.Now
 	defer func() {
@@ -39,6 +37,10 @@ func TestValidJava(t *testing.T) {
 	subPath = filepath.Join(outputDir, "foo", "BlahSubscriber.java")
 	compareFiles(t, "expected/java/BlahSubscriber.java", subPath)
 	servicePath := filepath.Join(outputDir, "foo", "FBlah.java")
-	t.Log(servicePath)
+
+	contents, _ := ioutil.ReadFile("expected/java/FBlah.java")
+	t.Log(string(contents))
+	contents2, _ := ioutil.ReadFile(servicePath)
+	t.Log(string(contents2))
 	compareFiles(t, "expected/java/FBlah.java", servicePath)
 }
