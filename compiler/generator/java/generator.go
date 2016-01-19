@@ -116,6 +116,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import org.apache.thrift.transport.TTransport;\n\n"
 
 	imports += "import javax.annotation.Generated;\n"
+	imports += "// a comment\n"
 	imports += "import java.util.HashMap;\n"
 	imports += "import java.util.Map;\n"
 	imports += "import java.util.concurrent.BlockingQueue;\n"
