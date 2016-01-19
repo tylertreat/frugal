@@ -7,7 +7,7 @@ script:
     - go get -d ./compiler .
     - go build
     - go test ./test
-    - rm -rf ./test/out
+    # - rm -rf ./test/out
 
 artifacts:
     - ./frugal
