@@ -6,6 +6,7 @@
 
 package foo;
 
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.FScopeProvider;
 import com.workiva.frugal.FSubscription;
 import com.workiva.frugal.FProtocol;
@@ -45,12 +46,13 @@ public class BlahPublisher {
 		transport.close();
 	}
 
-	public void publishDoStuff(Thing req) throws TException {
+	public void publishDoStuff(FContext ctx, Thing req) throws TException {
 		String op = "DoStuff";
 		String prefix = "";
 		String topic = String.format("%sBlah%s%s", prefix, DELIMITER, op);
 		transport.lockTopic(topic);
 		try {
+			protocol.writeRequestHeader(ctx);
 			protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
 			req.write(protocol);
 			protocol.writeMessageEnd();

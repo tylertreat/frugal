@@ -14,37 +14,47 @@ import (
 const delimiter = "."
 
 // And this is a scope docstring.
-type FooPublisher struct {
-	FTransport frugal.FScopeTransport
-	FProtocol  *frugal.FProtocol
+type FooPublisher interface {
+	Open() error
+	Close() error
+	PublishFoo(ctx *frugal.FContext, baz string, req *Thing) error
+	PublishBar(ctx *frugal.FContext, baz string, req *Stuff) error
 }
 
-func NewFooPublisher(provider *frugal.FProvider) *FooPublisher {
+type fooPublisher struct {
+	transport frugal.FScopeTransport
+	protocol  *frugal.FProtocol
+}
+
+func NewFooPublisher(provider *frugal.FScopeProvider) FooPublisher {
 	transport, protocol := provider.New()
-	return &FooPublisher{
-		FTransport: transport,
-		FProtocol:  protocol,
+	return &fooPublisher{
+		transport: transport,
+		protocol:  protocol,
 	}
 }
 
-func (l *FooPublisher) Open() error {
-	return l.FTransport.Open()
+func (l *fooPublisher) Open() error {
+	return l.transport.Open()
 }
 
-func (l *FooPublisher) Close() error {
-	return l.FTransport.Close()
+func (l *fooPublisher) Close() error {
+	return l.transport.Close()
 }
 
 // This is an operation docstring.
-func (l *FooPublisher) PublishFoo(baz string, req *Thing) error {
+func (l *fooPublisher) PublishFoo(ctx *frugal.FContext, baz string, req *Thing) error {
 	op := "Foo"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
-	if err := l.FTransport.LockTopic(topic); err != nil {
+	if err := l.transport.LockTopic(topic); err != nil {
 		return err
 	}
-	defer l.FTransport.UnlockTopic()
-	oprot := l.FProtocol
+	defer l.transport.UnlockTopic()
+	oprot := l.protocol
+	if err := oprot.WriteRequestHeader(ctx); err != nil {
+		return err
+	}
 	if err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {
 		return err
 	}
@@ -57,15 +67,18 @@ func (l *FooPublisher) PublishFoo(baz string, req *Thing) error {
 	return oprot.Flush()
 }
 
-func (l *FooPublisher) PublishBar(baz string, req *Stuff) error {
+func (l *fooPublisher) PublishBar(ctx *frugal.FContext, baz string, req *Stuff) error {
 	op := "Bar"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
-	if err := l.FTransport.LockTopic(topic); err != nil {
+	if err := l.transport.LockTopic(topic); err != nil {
 		return err
 	}
-	defer l.FTransport.UnlockTopic()
-	oprot := l.FProtocol
+	defer l.transport.UnlockTopic()
+	oprot := l.protocol
+	if err := oprot.WriteRequestHeader(ctx); err != nil {
+		return err
+	}
 	if err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {
 		return err
 	}
@@ -79,20 +92,25 @@ func (l *FooPublisher) PublishBar(baz string, req *Stuff) error {
 }
 
 // And this is a scope docstring.
-type FooSubscriber struct {
-	Provider *frugal.FProvider
+type FooSubscriber interface {
+	SubscribeFoo(baz string, handler func(*frugal.FContext, *Thing)) (*frugal.FSubscription, error)
+	SubscribeBar(baz string, handler func(*frugal.FContext, *Stuff)) (*frugal.FSubscription, error)
 }
 
-func NewFooSubscriber(provider *frugal.FProvider) *FooSubscriber {
-	return &FooSubscriber{Provider: provider}
+type fooSubscriber struct {
+	provider *frugal.FScopeProvider
+}
+
+func NewFooSubscriber(provider *frugal.FScopeProvider) FooSubscriber {
+	return &fooSubscriber{provider: provider}
 }
 
 // This is an operation docstring.
-func (l *FooSubscriber) SubscribeFoo(baz string, handler func(*Thing)) (*frugal.FSubscription, error) {
+func (l *fooSubscriber) SubscribeFoo(baz string, handler func(*frugal.FContext, *Thing)) (*frugal.FSubscription, error) {
 	op := "Foo"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
-	transport, protocol := l.Provider.New()
+	transport, protocol := l.provider.New()
 	if err := transport.Subscribe(topic); err != nil {
 		return nil, err
 	}
@@ -100,7 +118,7 @@ func (l *FooSubscriber) SubscribeFoo(baz string, handler func(*Thing)) (*frugal.
 	sub := frugal.NewFSubscription(topic, transport)
 	go func() {
 		for {
-			received, err := l.recvFoo(op, protocol)
+			ctx, received, err := l.recvFoo(op, protocol)
 			if err != nil {
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 					return
@@ -110,38 +128,42 @@ func (l *FooSubscriber) SubscribeFoo(baz string, handler func(*Thing)) (*frugal.
 				sub.Unsubscribe()
 				return
 			}
-			handler(received)
+			handler(ctx, received)
 		}
 	}()
 
 	return sub, nil
 }
 
-func (l *FooSubscriber) recvFoo(op string, iprot thrift.TProtocol) (*Thing, error) {
+func (l *fooSubscriber) recvFoo(op string, iprot *frugal.FProtocol) (*frugal.FContext, *Thing, error) {
+	ctx, err := iprot.ReadRequestHeader()
+	if err != nil {
+		return nil, nil, err
+	}
 	name, _, _, err := iprot.ReadMessageBegin()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if name != op {
 		iprot.Skip(thrift.STRUCT)
 		iprot.ReadMessageEnd()
 		x9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
-		return nil, x9
+		return nil, nil, x9
 	}
 	req := &Thing{}
 	if err := req.Read(iprot); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	iprot.ReadMessageEnd()
-	return req, nil
+	return ctx, req, nil
 }
 
-func (l *FooSubscriber) SubscribeBar(baz string, handler func(*Stuff)) (*frugal.FSubscription, error) {
+func (l *fooSubscriber) SubscribeBar(baz string, handler func(*frugal.FContext, *Stuff)) (*frugal.FSubscription, error) {
 	op := "Bar"
 	prefix := fmt.Sprintf("foo.bar.%s.qux.", baz)
 	topic := fmt.Sprintf("%sFoo%s%s", prefix, delimiter, op)
-	transport, protocol := l.Provider.New()
+	transport, protocol := l.provider.New()
 	if err := transport.Subscribe(topic); err != nil {
 		return nil, err
 	}
@@ -149,7 +171,7 @@ func (l *FooSubscriber) SubscribeBar(baz string, handler func(*Stuff)) (*frugal.
 	sub := frugal.NewFSubscription(topic, transport)
 	go func() {
 		for {
-			received, err := l.recvBar(op, protocol)
+			ctx, received, err := l.recvBar(op, protocol)
 			if err != nil {
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 					return
@@ -159,29 +181,33 @@ func (l *FooSubscriber) SubscribeBar(baz string, handler func(*Stuff)) (*frugal.
 				sub.Unsubscribe()
 				return
 			}
-			handler(received)
+			handler(ctx, received)
 		}
 	}()
 
 	return sub, nil
 }
 
-func (l *FooSubscriber) recvBar(op string, iprot thrift.TProtocol) (*Stuff, error) {
+func (l *fooSubscriber) recvBar(op string, iprot *frugal.FProtocol) (*frugal.FContext, *Stuff, error) {
+	ctx, err := iprot.ReadRequestHeader()
+	if err != nil {
+		return nil, nil, err
+	}
 	name, _, _, err := iprot.ReadMessageBegin()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if name != op {
 		iprot.Skip(thrift.STRUCT)
 		iprot.ReadMessageEnd()
 		x9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
-		return nil, x9
+		return nil, nil, x9
 	}
 	req := &Stuff{}
 	if err := req.Read(iprot); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	iprot.ReadMessageEnd()
-	return req, nil
+	return ctx, req, nil
 }
