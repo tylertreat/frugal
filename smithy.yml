@@ -11,3 +11,4 @@ script:
 
 artifacts:
     - ./frugal
+    - ./test
