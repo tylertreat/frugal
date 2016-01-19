@@ -16,6 +16,8 @@ class FMultiplexedTransport extends FTransport {
   /// Returns [true] if the transport is open.
   bool get isOpen => _transport.isOpen && _registry != null;
 
+  // TODO: Throw error if direct read
+
   /// Set the Registry on the transport and starts listening for frames.
   void setRegistry(FRegistry registry) {
     if (registry == null) {

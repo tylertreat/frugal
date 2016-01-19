@@ -1,16 +1,12 @@
 part of frugal;
 
 /// A ReadByteBuffer-backed implementation of TTransport.
-class TMemoryBuffer extends TTransport {
+class TMemoryTransport extends TTransport {
 
-  final ReadByteBuffer _buff;
+  final FByteBuffer _buff;
 
-  TMemoryBuffer([Uint8List buffer])
-    : _buff =new ReadByteBuffer() {
-    if (buffer != null) {
-      _buff.add(buffer);
-    }
-  }
+  TMemoryTransport([Uint8List buffer])
+    : _buff =new FByteBuffer.fromUInt8List(buffer);
 
   /// Queries whether the transport is open.
   bool get isOpen => true;
