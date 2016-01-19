@@ -371,8 +371,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += tabtab + "var tp = provider.newTransportProtocol();\n"
 		subscribers += tabtab + "await tp.fTransport.subscribe(topic);\n"
 		subscribers += tabtab + "tp.fTransport.signalRead.listen((_) {\n"
-		subscribers += tabtabtab + "frugal.FContext ctx = new frugal.FContext();\n"
-		subscribers += tabtabtab + "tp.fProtocol.readResponseHeader(ctx);\n"
+		subscribers += tabtabtab + "var ctx = tp.fProtocol.readRequestHeader();\n"
 		subscribers += fmt.Sprintf(tabtabtab+"on%s(ctx, _recv%s(op, tp.fProtocol));\n", op.ParamName(), op.Name)
 		subscribers += tabtab + "});\n"
 		subscribers += tabtab + "var sub = new frugal.FSubscription(topic, tp.fTransport);\n"
