@@ -12,3 +12,4 @@ script:
 artifacts:
     - ./frugal
     - ./test
+    - ./test/out/foo/FBlah.java
