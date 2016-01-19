@@ -270,13 +270,11 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
 	publishers += tab + "frugal.FScopeTransport fTransport;\n"
 	publishers += tab + "frugal.FProtocol fProtocol;\n"
-	publishers += tab + "int seqId;\n"
 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "var tp = provider.newTransportProtocol();\n"
 	publishers += tabtab + "fTransport = tp.fTransport;\n"
 	publishers += tabtab + "fProtocol = tp.fProtocol;\n"
-	publishers += tabtab + "seqId = 0;\n"
 	publishers += tab + "}\n\n"
 
 	publishers += tab + "Future open() {\n"
@@ -306,8 +304,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
 		publishers += tabtab + "fTransport.setTopic(topic);\n"
 		publishers += tabtab + "var oprot = fProtocol;\n"
-		publishers += tabtab + "seqId++;\n"
-		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);\n"
+		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);\n"
 		publishers += tabtab + "oprot.writeRequestHeader(ctx);\n"
 		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
 		publishers += tabtab + "req.write(oprot);\n"
