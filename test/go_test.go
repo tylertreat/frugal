@@ -8,6 +8,8 @@ import (
 )
 
 func TestValidGo(t *testing.T) {
+	t.Log("go")
+	println("go2")
 	options := compiler.Options{
 		File:  validFile,
 		Gen:   "go:package_prefix=github.com/Workiva/frugal/test/out/",
