@@ -15,12 +15,15 @@ class TNatsSocket implements TSocket {
   Stream<Message> _heartbeatListenStream;
 
   final StreamController<TSocketState> _onStateController;
+  @override
   Stream<TSocketState> get onState => _onStateController.stream;
 
   final StreamController<Object> _onErrorController;
+  @override
   Stream<Object> get onError => _onErrorController.stream;
 
   final StreamController<List<int>> _onMessageController;
+  @override
   Stream<List<int>> get onMessage => _onMessageController.stream;
 
   Stream<Message> _listenStream;
@@ -37,10 +40,13 @@ class TNatsSocket implements TSocket {
   _onMessageController = new StreamController.broadcast() {
   }
 
+  @override
   bool get isOpen => _listenStream != null && _natsClient.isConnected;
 
+  @override
   bool get isClosed => _listenStream == null;
 
+  @override
   Future open() async {
     if (!isClosed) {
       throw new TTransportError(TTransportErrorType.ALREADY_OPEN, 'Socket already connected');
@@ -92,6 +98,7 @@ class TNatsSocket implements TSocket {
     });
   }
 
+  @override
   Future close() async {
     if (_heartbeatTimer != null) {
       _heartbeatTimer.cancel();
@@ -117,6 +124,7 @@ class TNatsSocket implements TSocket {
     }
   }
 
+  @override
   void send(Uint8List data) {
     _requests.add(data);
     _sendRequests();

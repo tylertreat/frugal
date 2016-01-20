@@ -35,12 +35,10 @@ class _TFramedTransport extends TTransport {
   /// Stream for getting frame data.
   Stream<Uint8List> get onFrame => _frameStream.stream;
 
-  /// Queries whether the transport is open.
-  /// Returns [true] if the transport is open.
+  @override
   bool get isOpen => _isOpen;
 
-  /// Opens the transport for reading/writing.
-  /// Throws [TTransportError] if the transport could not be opened.
+  @override
   Future open() async {
     _reset(isOpen: true);
     if (socket.isClosed) {
@@ -111,8 +109,7 @@ class _TFramedTransport extends TTransport {
     }
   }
 
-  /// Writes up to [len] bytes from the buffer.
-  /// Throws [TTransportError] if there was an error writing data
+  @override
   void write(Uint8List buffer, int offset, int length) {
     if (buffer == null) {
       throw new ArgumentError.notNull("buffer");
@@ -125,8 +122,7 @@ class _TFramedTransport extends TTransport {
     _writeBuffer.addAll(buffer.sublist(offset, offset + length));
   }
 
-  /// Flush any pending data out of a transport buffer.
-  /// Throws [TTransportError] if there was an error writing out data.
+  @override
   Future flush() {
     int length = _writeBuffer.length;
     headerBytes.buffer.asByteData().setUint32(0, length);

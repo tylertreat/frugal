@@ -12,7 +12,7 @@ class FNatsScopeTransport extends FScopeTransport {
   StreamController _error = new StreamController.broadcast();
   Stream<Error> get error => _error.stream;
 
-  WriteByteBuffer _writeBuffer;
+  FByteBuffer _writeBuffer;
   FAsyncCallback _callback;
 
   FNatsScopeTransport(Nats this._nats);
@@ -52,7 +52,7 @@ class FNatsScopeTransport extends FScopeTransport {
     }
 
     if(!_subscriber) {
-      _writeBuffer = new WriteByteBuffer(_NATS_MAX_MESSAGE_SIZE);
+      _writeBuffer = new FByteBuffer(_NATS_MAX_MESSAGE_SIZE);
       return;
     }
 
@@ -64,13 +64,11 @@ class FNatsScopeTransport extends FScopeTransport {
       throw new TTransportError(e);
     });
     _subscription.listen((Message message) {
-      this._callback(new TMemoryTransport(message.payload));
-    }, onError: signalSubscriptionErr);
-  }
-
-  void signalSubscriptionErr(Error e) {
-    _error.addError(e);
-    close();
+      this._callback(new TMemoryTransport.fromUnt8List(message.payload));
+    }, onError: (Error e) {
+      _error.addError(e);
+      close();
+    });
   }
 
   @override
@@ -88,7 +86,7 @@ class FNatsScopeTransport extends FScopeTransport {
 
   @override
   void write(Uint8List buffer, int offset, int length) {
-    if (_writeBuffer.remaining < length) {
+    if (_writeBuffer.writeRemaining < length) {
       _writeBuffer.reset();
       throw new FError.withMessage(
           'Message is too large. Maximum capacity for a NATS message is $_NATS_MAX_MESSAGE_SIZE bytes.'

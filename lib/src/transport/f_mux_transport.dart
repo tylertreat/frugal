@@ -12,13 +12,12 @@ class FMultiplexedTransport extends FTransport {
     super.transport = _transport;
   }
 
-  /// Queries whether the transport is open.
-  /// Returns [true] if the transport is open.
+  @override
   bool get isOpen => _transport.isOpen && _registry != null;
 
   // TODO: Throw error if direct read
 
-  /// Set the Registry on the transport and starts listening for frames.
+  @override
   void setRegistry(FRegistry registry) {
     if (registry == null) {
       throw new FError.withMessage("registry cannot be null");
@@ -41,7 +40,7 @@ class FMultiplexedTransport extends FTransport {
     });
   }
 
-  /// Register a callback for the given Context.
+  @override
   void register(FContext ctx, FAsyncCallback callback) {
     if (_registry == null) {
       throw new FError.withMessage("transport registry not set");
@@ -49,7 +48,7 @@ class FMultiplexedTransport extends FTransport {
     _registry.register(ctx, callback);
   }
 
-  /// Unregister a callback for the given Context.
+  @override
   void unregister(FContext ctx) {
     if (_registry == null) {
       throw new FError.withMessage("frugal: transport registry not set");

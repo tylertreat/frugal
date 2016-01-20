@@ -39,6 +39,6 @@ class FClientRegistry implements FRegistry {
       log.info("No handler for op $opId}. Dropping frame.");
       return;
     }
-    _handlers[opId](new TMemoryTransport(frame));
+    _handlers[opId](new TMemoryTransport.fromUnt8List(frame));
   }
 }

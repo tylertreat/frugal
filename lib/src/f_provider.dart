@@ -6,20 +6,9 @@ class FScopeProvider {
   final FProtocolFactory fProtocolFactory;
 
   FScopeProvider(this.fTransportFactory, this.fProtocolFactory);
-
-  FScopeTransportWithProtocol newTransportProtocol () {
-    FScopeTransport transport = fTransportFactory.getTransport();
-    FProtocol protocol = fProtocolFactory.getProtocol(transport);
-    return new FScopeTransportWithProtocol(transport, protocol);
-  }
 }
 
-class FScopeTransportWithProtocol {
-  final FScopeTransport fTransport;
-  final FProtocol fProtocol;
-  FScopeTransportWithProtocol(this.fTransport, this.fProtocol);
-}
-
+/// Provider for Frugal Services
 class FServiceProvider {
   final FTransport fTransport;
   final FProtocolFactory fProtocolFactory;

@@ -9,14 +9,14 @@ var list = [0, 0, 0, 0, 29, 0, 0, 0, 3, 102, 111, 111, 0, 0, 0, 3, 98, 97,
 void main() {
   test("read reads the headers out of the transport", () {
     var encodedHeaders = new Uint8List.fromList(list);
-    var transport = new TMemoryTransport(encodedHeaders);
+    var transport = new TMemoryTransport.fromUnt8List(encodedHeaders);
     var decodedHeaders = Headers.read(transport);
     expect(decodedHeaders, headers);
   });
 
   test("read throws error for unsupported version", () {
     var encodedHeaders = new Uint8List.fromList([0x01]);
-    var transport = new TMemoryTransport(encodedHeaders);
+    var transport = new TMemoryTransport.fromUnt8List(encodedHeaders);
     expect(() => Headers.read(transport), throwsA(new isInstanceOf<FError>()));
   });
 

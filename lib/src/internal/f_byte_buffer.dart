@@ -11,7 +11,7 @@ class FByteBuffer {
   FByteBuffer(int capacity)
   : this._buff = new Uint8List(capacity);
 
-  FByteBuffer.fromUInt8List(Uint8List buff)
+  FByteBuffer.fromUint8List(Uint8List buff)
   : this._buff = buff;
 
   int get writeRemaining => _buff.length - _writeIndex;
