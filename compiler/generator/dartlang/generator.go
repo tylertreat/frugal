@@ -557,6 +557,9 @@ func (g *Generator) generateErrors(method *parser.Method) string {
 }
 
 func (g *Generator) getDartTypeFromThriftType(t *parser.Type) string {
+	if t == nil {
+		return "void"
+	}
 	typeName := g.Frugal.UnderlyingType(t)
 	switch typeName {
 	case "bool":
