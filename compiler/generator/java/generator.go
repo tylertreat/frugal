@@ -125,7 +125,8 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 }
 
 func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
-	imports := "import com.workiva.frugal.FScopeProvider;\n"
+	imports := "import com.workiva.frugal.FContext;\n"
+	imports += "import com.workiva.frugal.FScopeProvider;\n"
 	imports += "import com.workiva.frugal.FSubscription;\n"
 	imports += "import com.workiva.frugal.FProtocol;\n"
 	imports += "import com.workiva.frugal.transport.FScopeTransport;\n"
@@ -188,12 +189,13 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		if op.Comment != nil {
 			publisher += g.GenerateBlockComment(op.Comment, tab)
 		}
-		publisher += fmt.Sprintf(tab+"public void publish%s(%s%s req) throws TException {\n", op.Name, args, g.qualifiedParamName(op))
+		publisher += fmt.Sprintf(tab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.qualifiedParamName(op))
 		publisher += fmt.Sprintf(tabtab+"String op = \"%s\";\n", op.Name)
 		publisher += fmt.Sprintf(tabtab+"String prefix = %s;\n", generatePrefixStringTemplate(scope))
 		publisher += tabtab + "String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, DELIMITER, op);\n"
 		publisher += tabtab + "transport.lockTopic(topic);\n"
 		publisher += tabtab + "try {\n"
+		publisher += tabtabtab + "protocol.writeRequestHeader(ctx);\n"
 		publisher += tabtabtab + "protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));\n"
 		publisher += tabtabtab + "req.write(protocol);\n"
 		publisher += tabtabtab + "protocol.writeMessageEnd();\n"
@@ -262,7 +264,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	prefix := ""
 	for _, op := range scope.Operations {
 		subscriber += fmt.Sprintf(tab+"public interface %sHandler {\n", op.Name)
-		subscriber += fmt.Sprintf(tabtab+"void on%s(%s req);\n", op.Name, g.qualifiedParamName(op))
+		subscriber += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s req);\n", op.Name, g.qualifiedParamName(op))
 		subscriber += tab + "}\n\n"
 
 		subscriber += prefix
@@ -284,9 +286,10 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += tabtabtab + "public void run() {\n"
 		subscriber += tabtabtabtab + "while (true) {\n"
 		subscriber += tabtabtabtabtab + "try {\n"
+		subscriber += tabtabtabtabtabtab + "FContext ctx = client.getProtocol().readRequestHeader();\n"
 		subscriber += tabtabtabtabtabtab + fmt.Sprintf("%s received = recv%s(op, client.getProtocol());\n",
 			g.qualifiedParamName(op), op.Name)
-		subscriber += tabtabtabtabtabtab + fmt.Sprintf("handler.on%s(received);\n", op.Name)
+		subscriber += tabtabtabtabtabtab + fmt.Sprintf("handler.on%s(ctx, received);\n", op.Name)
 		subscriber += tabtabtabtabtab + "} catch (TException e) {\n"
 		subscriber += tabtabtabtabtabtab + "if (e instanceof TTransportException) {\n"
 		subscriber += tabtabtabtabtabtabtab + "TTransportException transportException = (TTransportException) e;\n"

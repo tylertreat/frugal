@@ -6,6 +6,7 @@
 
 package foo;
 
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.FScopeProvider;
 import com.workiva.frugal.FSubscription;
 import com.workiva.frugal.FProtocol;
@@ -51,12 +52,13 @@ public class FooPublisher {
 	/**
 	 * This is an operation docstring.
 	 */
-	public void publishFoo(String baz, Thing req) throws TException {
+	public void publishFoo(FContext ctx, String baz, Thing req) throws TException {
 		String op = "Foo";
 		String prefix = String.format("foo.bar.%s.qux.", baz);
 		String topic = String.format("%sFoo%s%s", prefix, DELIMITER, op);
 		transport.lockTopic(topic);
 		try {
+			protocol.writeRequestHeader(ctx);
 			protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
 			req.write(protocol);
 			protocol.writeMessageEnd();
@@ -70,12 +72,13 @@ public class FooPublisher {
 	}
 
 
-	public void publishBar(String baz, Stuff req) throws TException {
+	public void publishBar(FContext ctx, String baz, Stuff req) throws TException {
 		String op = "Bar";
 		String prefix = String.format("foo.bar.%s.qux.", baz);
 		String topic = String.format("%sFoo%s%s", prefix, DELIMITER, op);
 		transport.lockTopic(topic);
 		try {
+			protocol.writeRequestHeader(ctx);
 			protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
 			req.write(protocol);
 			protocol.writeMessageEnd();

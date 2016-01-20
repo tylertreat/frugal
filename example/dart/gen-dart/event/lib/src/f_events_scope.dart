@@ -18,11 +18,9 @@ const String delimiter = '.';
 class EventsPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
-  int seqId;
   EventsPublisher(frugal.FScopeProvider provider) {
     fTransport = provider.fTransportFactory.getTransport();
     fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
-    seqId = 0;
   }
 
   Future open() {
@@ -34,14 +32,14 @@ class EventsPublisher {
   }
 
   /// This is a docstring.
-  Future publishEventCreated(String user, t_event.Event req) async {
+  Future publishEventCreated(frugal.FContext ctx, String user, t_event.Event req) async {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
     fTransport.setTopic(topic);
     var oprot = fProtocol;
-    seqId++;
-    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);
+    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
+    oprot.writeRequestHeader(ctx);
     oprot.writeMessageBegin(msg);
     req.write(oprot);
     oprot.writeMessageEnd();
@@ -58,7 +56,7 @@ class EventsSubscriber {
   EventsSubscriber(this.provider) {}
 
   /// This is a docstring.
-  Future<frugal.FSubscription> subscribeEventCreated(String user, dynamic onEvent(t_event.Event req)) async {
+  Future<frugal.FSubscription> subscribeEventCreated(String user, dynamic onEvent(frugal.FContext ctx, t_event.Event req)) async {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
@@ -67,9 +65,10 @@ class EventsSubscriber {
     return new frugal.FSubscription(topic, transport);
   }
 
-  _recvEventCreated(String op, frugal.FProtocolFactory protocolFactory, onEvent(t_event.Event req)) {
+  _recvEventCreated(String op, frugal.FProtocolFactory protocolFactory, dynamic onEvent(frugal.FContext ctx, t_event.Event req)) {
     callbackEventCreated(thrift.TTransport transport) {
       var iprot = protocolFactory.getProtocol(transport);
+      var ctx = iprot.readRequestHeader();
       var tMsg = iprot.readMessageBegin();
       if (tMsg.name != op) {
         thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
@@ -80,7 +79,7 @@ class EventsSubscriber {
       var req = new t_event.Event();
       req.read(iprot);
       iprot.readMessageEnd();
-      onEvent(req);
+      onEvent(ctx, req);
     }
     return callbackEventCreated;
   }

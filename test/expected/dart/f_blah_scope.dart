@@ -16,11 +16,9 @@ const String delimiter = '.';
 class BlahPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
-  int seqId;
   BlahPublisher(frugal.FScopeProvider provider) {
     fTransport = provider.fTransportFactory.getTransport();
     fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
-    seqId = 0;
   }
 
   Future open() {
@@ -31,14 +29,14 @@ class BlahPublisher {
     return fTransport.close();
   }
 
-  Future publishDoStuff(t_thing.Thing req) async {
+  Future publishDoStuff(frugal.FContext ctx, t_thing.Thing req) async {
     var op = "DoStuff";
     var prefix = "";
     var topic = "${prefix}Blah${delimiter}${op}";
     fTransport.setTopic(topic);
     var oprot = fProtocol;
-    seqId++;
-    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);
+    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
+    oprot.writeRequestHeader(ctx);
     oprot.writeMessageBegin(msg);
     req.write(oprot);
     oprot.writeMessageEnd();
@@ -52,7 +50,7 @@ class BlahSubscriber {
 
   BlahSubscriber(this.provider) {}
 
-  Future<frugal.FSubscription> subscribeDoStuff(dynamic onThing(t_thing.Thing req)) async {
+  Future<frugal.FSubscription> subscribeDoStuff(dynamic onThing(frugal.FContext ctx, t_thing.Thing req)) async {
     var op = "DoStuff";
     var prefix = "";
     var topic = "${prefix}Blah${delimiter}${op}";
@@ -61,9 +59,10 @@ class BlahSubscriber {
     return new frugal.FSubscription(topic, transport);
   }
 
-  _recvDoStuff(String op, frugal.FProtocolFactory protocolFactory, onThing(t_thing.Thing req)) {
+  _recvDoStuff(String op, frugal.FProtocolFactory protocolFactory, dynamic onThing(frugal.FContext ctx, t_thing.Thing req)) {
     callbackDoStuff(thrift.TTransport transport) {
       var iprot = protocolFactory.getProtocol(transport);
+      var ctx = iprot.readRequestHeader();
       var tMsg = iprot.readMessageBegin();
       if (tMsg.name != op) {
         thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
@@ -74,7 +73,7 @@ class BlahSubscriber {
       var req = new t_thing.Thing();
       req.read(iprot);
       iprot.readMessageEnd();
-      onThing(req);
+      onThing(ctx, req);
     }
     return callbackDoStuff;
   }

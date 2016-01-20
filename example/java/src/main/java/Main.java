@@ -76,7 +76,7 @@ public class Main {
         EventsSubscriber subscriber = new EventsSubscriber(provider);
         subscriber.subscribeEventCreated("barUser", new EventsSubscriber.EventCreatedHandler() {
             @Override
-            public void onEventCreated(Event req) {
+            public void onEventCreated(FContext ctx, Event req) {
                 System.out.println("received " + req);
             }
         });
@@ -89,7 +89,7 @@ public class Main {
         EventsPublisher publisher = new EventsPublisher(provider);
         publisher.open();
         Event event = new Event(42, "hello, world!");
-        publisher.publishEventCreated("barUser", event);
+        publisher.publishEventCreated(new FContext(), "barUser", event);
         System.out.println("Published event");
         publisher.close();
     }

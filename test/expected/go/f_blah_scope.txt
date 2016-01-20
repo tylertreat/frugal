@@ -13,36 +13,45 @@ import (
 
 
 
-type BlahPublisher struct {
-	FTransport frugal.FScopeTransport
-	FProtocol  *frugal.FProtocol
+type BlahPublisher interface {
+	Open() error
+	Close() error
+	PublishDoStuff(ctx *frugal.FContext, req *Thing) error
 }
 
-func NewBlahPublisher(provider *frugal.FProvider) *BlahPublisher {
+type blahPublisher struct {
+	transport frugal.FScopeTransport
+	protocol  *frugal.FProtocol
+}
+
+func NewBlahPublisher(provider *frugal.FScopeProvider) BlahPublisher {
 	transport, protocol := provider.New()
-	return &BlahPublisher{
-		FTransport: transport,
-		FProtocol:  protocol,
+	return &blahPublisher{
+		transport: transport,
+		protocol:  protocol,
 	}
 }
 
-func (l *BlahPublisher) Open() error {
-	return l.FTransport.Open()
+func (l *blahPublisher) Open() error {
+	return l.transport.Open()
 }
 
-func (l *BlahPublisher) Close() error {
-	return l.FTransport.Close()
+func (l *blahPublisher) Close() error {
+	return l.transport.Close()
 }
 
-func (l *BlahPublisher) PublishDoStuff(req *Thing) error {
+func (l *blahPublisher) PublishDoStuff(ctx *frugal.FContext, req *Thing) error {
 	op := "DoStuff"
 	prefix := ""
 	topic := fmt.Sprintf("%sBlah%s%s", prefix, delimiter, op)
-	if err := l.FTransport.LockTopic(topic); err != nil {
+	if err := l.transport.LockTopic(topic); err != nil {
 		return err
 	}
-	defer l.FTransport.UnlockTopic()
-	oprot := l.FProtocol
+	defer l.transport.UnlockTopic()
+	oprot := l.protocol
+	if err := oprot.WriteRequestHeader(ctx); err != nil {
+		return err
+	}
 	if err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {
 		return err
 	}
@@ -55,19 +64,23 @@ func (l *BlahPublisher) PublishDoStuff(req *Thing) error {
 	return oprot.Flush()
 }
 
-type BlahSubscriber struct {
-	Provider *frugal.FProvider
+type BlahSubscriber interface {
+	SubscribeDoStuff(handler func(*frugal.FContext, *Thing)) (*frugal.FSubscription, error)
 }
 
-func NewBlahSubscriber(provider *frugal.FProvider) *BlahSubscriber {
-	return &BlahSubscriber{Provider: provider}
+type blahSubscriber struct {
+	provider *frugal.FScopeProvider
 }
 
-func (l *BlahSubscriber) SubscribeDoStuff(handler func(*Thing)) (*frugal.FSubscription, error) {
+func NewBlahSubscriber(provider *frugal.FScopeProvider) BlahSubscriber {
+	return &blahSubscriber{provider: provider}
+}
+
+func (l *blahSubscriber) SubscribeDoStuff(handler func(*frugal.FContext, *Thing)) (*frugal.FSubscription, error) {
 	op := "DoStuff"
 	prefix := ""
 	topic := fmt.Sprintf("%sBlah%s%s", prefix, delimiter, op)
-	transport, protocol := l.Provider.New()
+	transport, protocol := l.provider.New()
 	if err := transport.Subscribe(topic); err != nil {
 		return nil, err
 	}
@@ -75,7 +88,7 @@ func (l *BlahSubscriber) SubscribeDoStuff(handler func(*Thing)) (*frugal.FSubscr
 	sub := frugal.NewFSubscription(topic, transport)
 	go func() {
 		for {
-			received, err := l.recvDoStuff(op, protocol)
+			ctx, received, err := l.recvDoStuff(op, protocol)
 			if err != nil {
 				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 					return
@@ -85,29 +98,33 @@ func (l *BlahSubscriber) SubscribeDoStuff(handler func(*Thing)) (*frugal.FSubscr
 				sub.Unsubscribe()
 				return
 			}
-			handler(received)
+			handler(ctx, received)
 		}
 	}()
 
 	return sub, nil
 }
 
-func (l *BlahSubscriber) recvDoStuff(op string, iprot thrift.TProtocol) (*Thing, error) {
+func (l *blahSubscriber) recvDoStuff(op string, iprot *frugal.FProtocol) (*frugal.FContext, *Thing, error) {
+	ctx, err := iprot.ReadRequestHeader()
+	if err != nil {
+		return nil, nil, err
+	}
 	name, _, _, err := iprot.ReadMessageBegin()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if name != op {
 		iprot.Skip(thrift.STRUCT)
 		iprot.ReadMessageEnd()
 		x9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
-		return nil, x9
+		return nil, nil, x9
 	}
 	req := &Thing{}
 	if err := req.Read(iprot); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	iprot.ReadMessageEnd()
-	return req, nil
+	return ctx, req, nil
 }

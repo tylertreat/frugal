@@ -6,6 +6,7 @@
 
 package foo;
 
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.FScopeProvider;
 import com.workiva.frugal.FSubscription;
 import com.workiva.frugal.FProtocol;
@@ -34,7 +35,7 @@ public class BlahSubscriber {
 	}
 
 	public interface DoStuffHandler {
-		void onDoStuff(Thing req);
+		void onDoStuff(FContext ctx, Thing req);
 	}
 
 	public FSubscription subscribeDoStuff(final DoStuffHandler handler) throws TException {
@@ -50,8 +51,9 @@ public class BlahSubscriber {
 			public void run() {
 				while (true) {
 					try {
+						FContext ctx = client.getProtocol().readRequestHeader();
 						Thing received = recvDoStuff(op, client.getProtocol());
-						handler.onDoStuff(received);
+						handler.onDoStuff(ctx, received);
 					} catch (TException e) {
 						if (e instanceof TTransportException) {
 							TTransportException transportException = (TTransportException) e;

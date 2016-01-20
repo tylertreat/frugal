@@ -17,11 +17,9 @@ const String delimiter = '.';
 class FooPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
-  int seqId;
   FooPublisher(frugal.FScopeProvider provider) {
     fTransport = provider.fTransportFactory.getTransport();
     fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
-    seqId = 0;
   }
 
   Future open() {
@@ -33,14 +31,14 @@ class FooPublisher {
   }
 
   /// This is an operation docstring.
-  Future publishFoo(String baz, t_thing.Thing req) async {
+  Future publishFoo(frugal.FContext ctx, String baz, t_thing.Thing req) async {
     var op = "Foo";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
     fTransport.setTopic(topic);
     var oprot = fProtocol;
-    seqId++;
-    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);
+    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
+    oprot.writeRequestHeader(ctx);
     oprot.writeMessageBegin(msg);
     req.write(oprot);
     oprot.writeMessageEnd();
@@ -48,14 +46,14 @@ class FooPublisher {
   }
 
 
-  Future publishBar(String baz, t_stuff.Stuff req) async {
+  Future publishBar(frugal.FContext ctx, String baz, t_stuff.Stuff req) async {
     var op = "Bar";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
     fTransport.setTopic(topic);
     var oprot = fProtocol;
-    seqId++;
-    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);
+    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
+    oprot.writeRequestHeader(ctx);
     oprot.writeMessageBegin(msg);
     req.write(oprot);
     oprot.writeMessageEnd();
@@ -71,7 +69,7 @@ class FooSubscriber {
   FooSubscriber(this.provider) {}
 
   /// This is an operation docstring.
-  Future<frugal.FSubscription> subscribeFoo(String baz, dynamic onThing(t_thing.Thing req)) async {
+  Future<frugal.FSubscription> subscribeFoo(String baz, dynamic onThing(frugal.FContext ctx, t_thing.Thing req)) async {
     var op = "Foo";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
@@ -80,9 +78,10 @@ class FooSubscriber {
     return new frugal.FSubscription(topic, transport);
   }
 
-  _recvFoo(String op, frugal.FProtocolFactory protocolFactory, onThing(t_thing.Thing req)) {
+  _recvFoo(String op, frugal.FProtocolFactory protocolFactory, dynamic onThing(frugal.FContext ctx, t_thing.Thing req)) {
     callbackFoo(thrift.TTransport transport) {
       var iprot = protocolFactory.getProtocol(transport);
+      var ctx = iprot.readRequestHeader();
       var tMsg = iprot.readMessageBegin();
       if (tMsg.name != op) {
         thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
@@ -93,13 +92,13 @@ class FooSubscriber {
       var req = new t_thing.Thing();
       req.read(iprot);
       iprot.readMessageEnd();
-      onThing(req);
+      onThing(ctx, req);
     }
     return callbackFoo;
   }
 
 
-  Future<frugal.FSubscription> subscribeBar(String baz, dynamic onStuff(t_stuff.Stuff req)) async {
+  Future<frugal.FSubscription> subscribeBar(String baz, dynamic onStuff(frugal.FContext ctx, t_stuff.Stuff req)) async {
     var op = "Bar";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
@@ -108,9 +107,10 @@ class FooSubscriber {
     return new frugal.FSubscription(topic, transport);
   }
 
-  _recvBar(String op, frugal.FProtocolFactory protocolFactory, onStuff(t_stuff.Stuff req)) {
+  _recvBar(String op, frugal.FProtocolFactory protocolFactory, dynamic onStuff(frugal.FContext ctx, t_stuff.Stuff req)) {
     callbackBar(thrift.TTransport transport) {
       var iprot = protocolFactory.getProtocol(transport);
+      var ctx = iprot.readRequestHeader();
       var tMsg = iprot.readMessageBegin();
       if (tMsg.name != op) {
         thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
@@ -121,7 +121,7 @@ class FooSubscriber {
       var req = new t_stuff.Stuff();
       req.read(iprot);
       iprot.readMessageEnd();
-      onStuff(req);
+      onStuff(ctx, req);
     }
     return callbackBar;
   }

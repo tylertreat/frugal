@@ -4,7 +4,7 @@ language: golang
 runner_image: docker.webfilings.org/wlayout/smithy-runner-thrift:1.5
 
 script:
-    - go get -d ./...
+    - go get -d ./compiler .
     - go build
     - go test ./test
     - rm -rf ./test/out

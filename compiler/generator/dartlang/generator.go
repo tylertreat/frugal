@@ -270,12 +270,10 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
 	publishers += tab + "frugal.FScopeTransport fTransport;\n"
 	publishers += tab + "frugal.FProtocol fProtocol;\n"
-	publishers += tab + "int seqId;\n"
 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "fTransport = provider.fTransportFactory.getTransport();\n"
 	publishers += tabtab + "fProtocol = provider.fProtocolFactory.getProtocol(fTransport);\n"
-	publishers += tabtab + "seqId = 0;\n"
 	publishers += tab + "}\n\n"
 
 	publishers += tab + "Future open() {\n"
@@ -299,14 +297,14 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		if op.Comment != nil {
 			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
-		publishers += fmt.Sprintf(tab+"Future publish%s(%s%s req) async {\n", op.Name, args, g.qualifiedParamName(op))
+		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedParamName(op))
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
 		publishers += tabtab + "fTransport.setTopic(topic);\n"
 		publishers += tabtab + "var oprot = fProtocol;\n"
-		publishers += tabtab + "seqId++;\n"
-		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, seqId);\n"
+		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);\n"
+		publishers += tabtab + "oprot.writeRequestHeader(ctx);\n"
 		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
 		publishers += tabtab + "req.write(oprot);\n"
 		publishers += tabtab + "oprot.writeMessageEnd();\n"
@@ -361,7 +359,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		if op.Comment != nil {
 			subscribers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
-		subscribers += fmt.Sprintf(tab+"Future<frugal.FSubscription> subscribe%s(%sdynamic on%s(%s req)) async {\n",
+		subscribers += fmt.Sprintf(tab+"Future<frugal.FSubscription> subscribe%s(%sdynamic on%s(frugal.FContext ctx, %s req)) async {\n",
 			op.Name, args, op.ParamName(), g.qualifiedParamName(op))
 		subscribers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		subscribers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
@@ -372,10 +370,11 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += tabtab + "return new frugal.FSubscription(topic, transport);\n"
 		subscribers += tab + "}\n\n"
 
-		subscribers += fmt.Sprintf(tab+"_recv%s(String op, frugal.FProtocolFactory protocolFactory, on%s(%s req)) {\n",
+		subscribers += fmt.Sprintf(tab+"_recv%s(String op, frugal.FProtocolFactory protocolFactory, dynamic on%s(frugal.FContext ctx, %s req)) {\n",
 			op.Name, op.ParamName(), g.qualifiedParamName(op))
 		subscribers += fmt.Sprintf(tabtab+"callback%s(thrift.TTransport transport) {\n", op.Name)
 		subscribers += tabtabtab + "var iprot = protocolFactory.getProtocol(transport);\n"
+		subscribers += tabtabtab + "var ctx = iprot.readRequestHeader();\n"
 		subscribers += tabtabtab + "var tMsg = iprot.readMessageBegin();\n"
 		subscribers += tabtabtab + "if (tMsg.name != op) {\n"
 		subscribers += tabtabtabtab + "thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);\n"
@@ -386,7 +385,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += fmt.Sprintf(tabtabtab+"var req = new %s();\n", g.qualifiedParamName(op))
 		subscribers += tabtabtab + "req.read(iprot);\n"
 		subscribers += tabtabtab + "iprot.readMessageEnd();\n"
-		subscribers += fmt.Sprintf(tabtabtab+"on%s(req);\n", op.ParamName())
+		subscribers += fmt.Sprintf(tabtabtab+"on%s(ctx, req);\n", op.ParamName())
 		subscribers += tabtab + "}\n"
 		subscribers += fmt.Sprintf(tabtab+"return callback%s;\n", op.Name)
 		subscribers += tab + "}\n"
