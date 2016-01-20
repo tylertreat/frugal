@@ -17,9 +17,8 @@ class BlahPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
   BlahPublisher(frugal.FScopeProvider provider) {
-    var tp = provider.newTransportProtocol();
-    fTransport = tp.fTransport;
-    fProtocol = tp.fProtocol;
+    fTransport = provider.fTransportFactory.getTransport();
+    fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
   }
 
   Future open() {
@@ -55,31 +54,28 @@ class BlahSubscriber {
     var op = "DoStuff";
     var prefix = "";
     var topic = "${prefix}Blah${delimiter}${op}";
-    var tp = provider.newTransportProtocol();
-    await tp.fTransport.subscribe(topic);
-    tp.fTransport.signalRead.listen((_) {
-      var ctx = tp.fProtocol.readRequestHeader();
-      onThing(ctx, _recvDoStuff(op, tp.fProtocol));
-    });
-    var sub = new frugal.FSubscription(topic, tp.fTransport);
-    tp.fTransport.error.listen((Error e) {;
-      sub.signal(e);
-    });
-    return sub;
+    var transport = provider.fTransportFactory.getTransport();
+    await transport.subscribe(topic, _recvDoStuff(op, provider.fProtocolFactory, onThing));
+    return new frugal.FSubscription(topic, transport);
   }
 
-  t_thing.Thing _recvDoStuff(String op, frugal.FProtocol iprot) {
-    var tMsg = iprot.readMessageBegin();
-    if (tMsg.name != op) {
-      thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
+  _recvDoStuff(String op, frugal.FProtocolFactory protocolFactory, dynamic onThing(frugal.FContext ctx, t_thing.Thing req)) {
+    callbackDoStuff(thrift.TTransport transport) {
+      var iprot = protocolFactory.getProtocol(transport);
+      var ctx = iprot.readRequestHeader();
+      var tMsg = iprot.readMessageBegin();
+      if (tMsg.name != op) {
+        thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
+        iprot.readMessageEnd();
+        throw new thrift.TApplicationError(
+        thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+      }
+      var req = new t_thing.Thing();
+      req.read(iprot);
       iprot.readMessageEnd();
-      throw new thrift.TApplicationError(
-      thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+      onThing(ctx, req);
     }
-    var req = new t_thing.Thing();
-    req.read(iprot);
-    iprot.readMessageEnd();
-    return req;
+    return callbackDoStuff;
   }
 }
 
