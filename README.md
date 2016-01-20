@@ -141,9 +141,9 @@ var (
     event = &event.Event{ID: 42, Message: "hello, world!"}
     user  = "bill"
 )
-publisher.PublishEventCreated(event, user)
+publisher.PublishEventCreated(frugal.NewFContext(""), event, user)
 
-subscriber.SubscribeEventCreated(user, func(e *event.Event) {
+subscriber.SubscribeEventCreated(user, func(ctx *frugal.FContext, e *event.Event) {
     fmt.Printf("Received event for %s: %s\n", user, e.Message)
 })
 ```
