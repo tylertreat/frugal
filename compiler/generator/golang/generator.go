@@ -738,8 +738,8 @@ func (g *Generator) generateServerOutputArgs(args []*parser.Field) string {
 }
 
 func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
-	typeName := g.Frugal.UnderlyingType(t)
-	switch typeName {
+	underlyingType := g.Frugal.UnderlyingType(t)
+	switch underlyingType.Name {
 	case "bool":
 		return "bool"
 	case "byte":
@@ -757,12 +757,15 @@ func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
 	case "binary":
 		return "[]byte"
 	case "list":
-		return fmt.Sprintf("[]%s", g.getGoTypeFromThriftType(t.ValueType))
+		return fmt.Sprintf("[]%s",
+			g.getGoTypeFromThriftType(underlyingType.ValueType))
 	case "set":
-		return fmt.Sprintf("map[%s]bool", g.getGoTypeFromThriftType(t.ValueType))
+		return fmt.Sprintf("map[%s]bool",
+			g.getGoTypeFromThriftType(underlyingType.ValueType))
 	case "map":
-		return fmt.Sprintf("map[%s]%s", g.getGoTypeFromThriftType(t.KeyType),
-			g.getGoTypeFromThriftType(t.ValueType))
+		return fmt.Sprintf("map[%s]%s",
+			g.getGoTypeFromThriftType(underlyingType.KeyType),
+			g.getGoTypeFromThriftType(underlyingType.ValueType))
 	default:
 		// This is a custom type, return a pointer to it
 		return "*" + g.qualifiedTypeName(t)

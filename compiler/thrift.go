@@ -103,9 +103,9 @@ func generateConstants(frugal *parser.Frugal) string {
 
 	for _, constant := range frugal.Thrift.Constants {
 		value := constant.Value
-		typeName := frugal.UnderlyingType(constant.Type)
-		if isThriftPrimitive(typeName) {
-			if typeName == "string" {
+		underlyingType := frugal.UnderlyingType(constant.Type)
+		if isThriftPrimitive(underlyingType) {
+			if underlyingType.Name == "string" {
 				value = fmt.Sprintf(`"%s"`, value)
 			}
 		} else {
@@ -393,7 +393,7 @@ func (e enumValues) Less(i, j int) bool {
 	return e[i].Value < e[j].Value
 }
 
-func isThriftPrimitive(typeName string) bool {
-	_, ok := thriftTypes[typeName]
+func isThriftPrimitive(typ *parser.Type) bool {
+	_, ok := thriftTypes[typ.Name]
 	return ok
 }

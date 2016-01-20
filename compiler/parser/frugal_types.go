@@ -115,7 +115,8 @@ func (f *Frugal) ReferencedIncludes() []string {
 	return includes
 }
 
-func (f *Frugal) UnderlyingType(t *Type) string {
+// UnderlyingType follows any typedefs to get the base IDL type.
+func (f *Frugal) UnderlyingType(t *Type) *Type {
 	if t == nil {
 		panic("frugal: Attempted to get underlying type of nil type")
 	}
@@ -125,9 +126,9 @@ func (f *Frugal) UnderlyingType(t *Type) string {
 		typedefIndex = f.ParsedIncludes[include].Thrift.typedefIndex
 	}
 	if typedef, ok := typedefIndex[t.ParamName()]; ok {
-		return typedef.Type.Name
+		return typedef.Type
 	}
-	return t.Name
+	return t
 }
 
 func (f *Frugal) assignFrugal() {

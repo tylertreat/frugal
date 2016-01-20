@@ -342,10 +342,6 @@ FieldType ← typ:(BaseType / ContainerType / Identifier) {
     return typ, nil
 }
 
-DefinitionType ← typ:(BaseType / ContainerType) {
-    return typ, nil
-}
-
 BaseType ← ("bool" / "byte" / "i16" / "i32" / "i64" / "double" / "string" / "binary" ) {
     return &Type{Name: string(c.text)}, nil
 }

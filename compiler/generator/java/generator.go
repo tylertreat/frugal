@@ -628,8 +628,8 @@ func (g *Generator) getJavaTypeFromThriftType(t *parser.Type) string {
 	if t == nil {
 		return "void"
 	}
-	typeName := g.Frugal.UnderlyingType(t)
-	switch typeName {
+	underlyingType := g.Frugal.UnderlyingType(t)
+	switch underlyingType.Name {
 	case "bool":
 		return "boolean"
 	case "byte":
@@ -648,14 +648,14 @@ func (g *Generator) getJavaTypeFromThriftType(t *parser.Type) string {
 		return "java.nio.ByteBuffer"
 	case "list":
 		return fmt.Sprintf("java.util.List<%s>",
-			containerType(g.getJavaTypeFromThriftType(t.ValueType)))
+			containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType)))
 	case "set":
 		return fmt.Sprintf("java.util.Set<%s>",
-			containerType(g.getJavaTypeFromThriftType(t.ValueType)))
+			containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType)))
 	case "map":
 		return fmt.Sprintf("java.util.Map<%s, %s>",
-			containerType(g.getJavaTypeFromThriftType(t.KeyType)),
-			containerType(g.getJavaTypeFromThriftType(t.ValueType)))
+			containerType(g.getJavaTypeFromThriftType(underlyingType.KeyType)),
+			containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType)))
 	default:
 		// This is a custom type, return a pointer to it
 		return g.qualifiedTypeName(t)

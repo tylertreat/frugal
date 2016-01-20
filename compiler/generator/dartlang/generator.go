@@ -560,8 +560,8 @@ func (g *Generator) getDartTypeFromThriftType(t *parser.Type) string {
 	if t == nil {
 		return "void"
 	}
-	typeName := g.Frugal.UnderlyingType(t)
-	switch typeName {
+	underlyingType := g.Frugal.UnderlyingType(t)
+	switch underlyingType.Name {
 	case "bool":
 		return "bool"
 	case "byte":
@@ -579,12 +579,15 @@ func (g *Generator) getDartTypeFromThriftType(t *parser.Type) string {
 	case "binary":
 		return "Uint8List"
 	case "list":
-		return fmt.Sprintf("List<%s>", g.getDartTypeFromThriftType(t.ValueType))
+		return fmt.Sprintf("List<%s>",
+			g.getDartTypeFromThriftType(underlyingType.ValueType))
 	case "set":
-		return fmt.Sprintf("Set<%s>", g.getDartTypeFromThriftType(t.ValueType))
+		return fmt.Sprintf("Set<%s>",
+			g.getDartTypeFromThriftType(underlyingType.ValueType))
 	case "map":
-		return fmt.Sprintf("Map<%s,%s>", g.getDartTypeFromThriftType(t.KeyType),
-			g.getDartTypeFromThriftType(t.ValueType))
+		return fmt.Sprintf("Map<%s,%s>",
+			g.getDartTypeFromThriftType(underlyingType.KeyType),
+			g.getDartTypeFromThriftType(underlyingType.ValueType))
 	default:
 		// This is a custom type
 		return g.qualifiedTypeName(t)
