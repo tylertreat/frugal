@@ -20,8 +20,10 @@ func TestValidDart(t *testing.T) {
 		t.Fatal("Unexpected error", err)
 	}
 
-	fooPath := filepath.Join(outputDir, "valid", "lib", "src", "frug_foo.dart")
-	compareFiles(t, "expected/dart/frug_foo.dart", fooPath)
-	barPath := filepath.Join(outputDir, "valid", "lib", "src", "frug_bar.dart")
-	compareFiles(t, "expected/dart/frug_bar.dart", barPath)
+	blahServPath := filepath.Join(outputDir, "valid", "lib", "src", "f_blah_service.dart")
+	compareFiles(t, "expected/dart/f_blah_service.dart", blahServPath)
+	blahScopePath := filepath.Join(outputDir, "valid", "lib", "src", "f_blah_scope.dart")
+	compareFiles(t, "expected/dart/f_blah_scope.dart", blahScopePath)
+	fooPath := filepath.Join(outputDir, "valid", "lib", "src", "f_foo_scope.dart")
+	compareFiles(t, "expected/dart/f_foo_scope.dart", fooPath)
 }

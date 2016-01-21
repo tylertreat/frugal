@@ -1,4 +1,3 @@
-frugal
 test/out
 test/idl/constants.thrift
 target/
@@ -19,3 +18,5 @@ packages
 *.js.map
 
 pubspec.lock
+
+skynet.Dockerfile

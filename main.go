@@ -85,7 +85,7 @@ func main() {
 		}
 
 		if err := compiler.Compile(options); err != nil {
-			fmt.Println(err)
+			fmt.Printf("Failed to generate %s:\n\t%s\n", options.File, err.Error())
 			os.Exit(1)
 		}
 	}

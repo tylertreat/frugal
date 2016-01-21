@@ -19,6 +19,26 @@ struct Event {
     2: string Message
 }
 
+exception AwesomeException {
+    /**@ ID is a unique identifier for an awesome exception. */
+    1: i64 ID,
+
+    /**@ Reason contains the error message. */
+    2: string Reason
+}
+
+/**@
+ * This is a thrift service. Frugal will generate bindings that include 
+ * a frugal Context for each service call.
+ */
+service Foo {
+    /**@ Ping the server. */
+    void ping(),
+
+    /**@ Blah the server. */
+    i64 blah(1:i32 num, 2:string Str, 3:Event event) throws (1:AwesomeException awe),
+}
+
 /**@
  * This docstring gets added to the generated code because it has
  * the @ sign.

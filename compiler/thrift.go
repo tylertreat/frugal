@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
@@ -33,6 +32,11 @@ var thriftTypes = map[string]bool{
 
 func generateThriftIDL(dir string, frugal *parser.Frugal) (string, error) {
 	file := filepath.Join(dir, fmt.Sprintf("%s.thrift", frugal.Name))
+	if exists(file) {
+		// Trying to generate an intermediate Thrift IDL but the .thrift file
+		// already exists.
+		return "", fmt.Errorf("Thrift file already exists: %s", file)
+	}
 	f, err := os.Create(file)
 	if err != nil {
 		return "", err
@@ -48,7 +52,7 @@ func generateThriftIDL(dir string, frugal *parser.Frugal) (string, error) {
 		return "", err
 	}
 	contents += includes
-	contents += generateConstants(thrift)
+	contents += generateConstants(frugal)
 	contents += generateTypedefs(thrift.Typedefs)
 	contents += generateEnums(thrift.Enums)
 	contents += generateStructLikes(thrift.Structs, structLikeStruct)
@@ -71,36 +75,48 @@ func generateNamespaces(namespaces []*parser.Namespace) string {
 
 func generateIncludes(frugal *parser.Frugal) (string, error) {
 	contents := ""
+	// Recurse on includes
 	for _, incl := range frugal.Thrift.Includes {
 		include := incl.Value
-		if strings.HasSuffix(strings.ToLower(include), ".frugal") {
-			// Recurse on frugal includes
-			parsed, err := compile(filepath.Join(frugal.Dir, include))
-			if err != nil {
-				return "", err
-			}
-			// Lop off .frugal
-			includeBase := include[:len(include)-7]
-			frugal.ParsedIncludes[includeBase] = parsed
-
-			// Replace .frugal with .thrift
-			include = includeBase + ".thrift"
+		pathAndExtension := strings.Split(strings.ToLower(include), ".")
+		if len(pathAndExtension) != 2 {
+			return "", fmt.Errorf("Bad include name: %s", include)
 		}
+		extension := pathAndExtension[1]
+		if extension != "thrift" && extension != "frugal" {
+			return "", fmt.Errorf("Bad include extension: %s", include)
+		}
+
+		parsed, err := compile(filepath.Join(frugal.Dir, include), extension == "thrift")
+		if err != nil {
+			return "", err
+		}
+
+		// Lop off extension (.frugal or .thrift)
+		includeBase := include[:len(include)-7]
+
+		// Lop off path
+		includeName := filepath.Base(includeBase)
+
+		frugal.ParsedIncludes[includeName] = parsed
+
+		// Replace .frugal with .thrift
+		include = includeBase + ".thrift"
 		contents += fmt.Sprintf("include \"%s\"\n", include)
 	}
 	contents += "\n"
 	return contents, nil
 }
 
-func generateConstants(thrift *parser.Thrift) string {
+func generateConstants(frugal *parser.Frugal) string {
 	contents := ""
-	complexConstants := make([]*parser.Constant, 0, len(thrift.Constants))
+	complexConstants := make([]*parser.Constant, 0, len(frugal.Thrift.Constants))
 
-	for _, constant := range thrift.Constants {
+	for _, constant := range frugal.Thrift.Constants {
 		value := constant.Value
-		typeName := thrift.UnderlyingType(constant.Type.Name)
-		if isThriftPrimitive(typeName) {
-			if typeName == "string" {
+		underlyingType := frugal.UnderlyingType(constant.Type)
+		if isThriftPrimitive(underlyingType) {
+			if underlyingType.Name == "string" {
 				value = fmt.Sprintf(`"%s"`, value)
 			}
 		} else {
@@ -337,25 +353,14 @@ func generateServices(services []*parser.Service) string {
 	return contents
 }
 
-func generateThrift(frugal *parser.Frugal, idlDir, out, gen string, dryRun bool) error {
-	// Generate intermediate Thrift IDL.
-	idlFile, err := generateThriftIDL(idlDir, frugal)
-	if err != nil {
-		return err
-	}
-	globals.IntermediateIDL = append(globals.IntermediateIDL, idlFile)
-
-	if dryRun {
-		return nil
-	}
-
+func generateThrift(frugal *parser.Frugal, idlDir, file, out, gen string) error {
 	// Generate Thrift code.
 	args := []string{}
 	if out != "" {
 		args = append(args, "-out", out)
 	}
 	args = append(args, "-gen", gen)
-	args = append(args, idlFile)
+	args = append(args, file)
 	// TODO: make thrift command configurable
 	if out, err := exec.Command("thrift", args...).CombinedOutput(); err != nil {
 		fmt.Println(string(out))
@@ -388,7 +393,7 @@ func (e enumValues) Less(i, j int) bool {
 	return e[i].Value < e[j].Value
 }
 
-func isThriftPrimitive(typeName string) bool {
-	_, ok := thriftTypes[typeName]
+func isThriftPrimitive(typ *parser.Type) bool {
+	_, ok := thriftTypes[typ.Name]
 	return ok
 }

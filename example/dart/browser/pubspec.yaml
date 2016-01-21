@@ -6,16 +6,19 @@ environment:
   sdk: ^1.12.0
 
 dependencies:
+  logging: ^0.11.2
   event:
     path: ../gen-dart/event
   frugal:
     git:
       url: git@github.com:Workiva/frugal-dart.git
+      ref: new_stack
   messaging_frontend:
     git:
       url: git@github.com:Workiva/messaging-frontend-dart.git
+      ref: 0.0.1
   thrift:
     git:
       url: git@github.com:Workiva/thrift-dart.git
-  w_service: "^1.0.2"
+      ref: 0.0.1
 
