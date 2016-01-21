@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"unicode"
 
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/globals"
@@ -159,7 +158,7 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 }
 
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
-	scopeLower := lowercaseFirstLetter(scope.Name)
+	scopeLower := generator.LowercaseFirstLetter(scope.Name)
 	scopeTitle := strings.Title(scope.Name)
 
 	publisher := ""
@@ -264,7 +263,7 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 }
 
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
-	scopeLower := lowercaseFirstLetter(scope.Name)
+	scopeLower := generator.LowercaseFirstLetter(scope.Name)
 	scopeTitle := strings.Title(scope.Name)
 
 	subscriber := ""
@@ -822,10 +821,4 @@ func (g *Generator) qualifiedParamName(op *parser.Operation) string {
 		param = fmt.Sprintf("%s.%s", namespace, param)
 	}
 	return param
-}
-
-func lowercaseFirstLetter(s string) string {
-	runes := []rune(s)
-	runes[0] = unicode.ToLower(runes[0])
-	return string(runes)
 }
