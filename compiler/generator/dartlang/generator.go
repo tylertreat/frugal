@@ -418,7 +418,7 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 			contents += g.GenerateInlineComment(method.Comment, tab+"/")
 		}
 		contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s);\n",
-			g.generateReturnArg(method), strings.ToLower(method.Name), g.generateInputArgs(method.Arguments))
+			g.generateReturnArg(method), generator.LowercaseFirstLetter(method.Name), g.generateInputArgs(method.Arguments))
 	}
 	contents += "}\n\n"
 	return contents
@@ -453,7 +453,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
 	servLower := strings.ToLower(service.Name)
 	nameTitle := strings.Title(method.Name)
-	nameLower := strings.ToLower(method.Name)
+	nameLower := generator.LowercaseFirstLetter(method.Name)
 
 	contents := ""
 	if method.Comment != nil {
@@ -471,7 +471,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += fmt.Sprintf(tabtabtab+"t_%s.%s_args args = new t_%s.%s_args();\n",
 		servLower, nameLower, servLower, nameLower)
 	for _, arg := range method.Arguments {
-		argLower := strings.ToLower(arg.Name)
+		argLower := generator.LowercaseFirstLetter(arg.Name)
 		contents += fmt.Sprintf(tabtabtab+"args.%s = %s;\n", argLower, argLower)
 	}
 	contents += tabtabtab + "args.write(oprot);\n"
@@ -536,7 +536,7 @@ func (g *Generator) generateReturnArg(method *parser.Method) string {
 func (g *Generator) generateInputArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += ", " + g.getDartTypeFromThriftType(arg.Type) + " " + strings.ToLower(arg.Name)
+		argStr += ", " + g.getDartTypeFromThriftType(arg.Type) + " " + generator.LowercaseFirstLetter(arg.Name)
 	}
 	return argStr
 }
@@ -544,8 +544,8 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 func (g *Generator) generateErrors(method *parser.Method) string {
 	contents := ""
 	for _, exp := range method.Exceptions {
-		contents += fmt.Sprintf(tabtabtabtab+"if (result.%s != null) {\n", strings.ToLower(exp.Name))
-		contents += fmt.Sprintf(tabtabtabtabtab+"controller.addError(result.%s);\n", strings.ToLower(exp.Name))
+		contents += fmt.Sprintf(tabtabtabtab+"if (result.%s != null) {\n", generator.LowercaseFirstLetter(exp.Name))
+		contents += fmt.Sprintf(tabtabtabtabtab+"controller.addError(result.%s);\n", generator.LowercaseFirstLetter(exp.Name))
 		contents += tabtabtabtabtab + "return;\n"
 		contents += tabtabtabtab + "}\n"
 	}
