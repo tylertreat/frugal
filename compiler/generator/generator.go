@@ -52,7 +52,6 @@ type LanguageGenerator interface {
 	DefaultOutputDir() string
 
 	// Service-specific methods
-	GenerateThrift() bool // TODO: remove this once all languages impl rpc
 	GenerateServicePackage(*os.File, *parser.Service) error
 	GenerateServiceImports(*os.File, *parser.Service) error
 	GenerateService(*os.File, *parser.Service) error
@@ -84,13 +83,13 @@ func (o *programGenerator) Generate(frugal *parser.Frugal, outputDir string) err
 	if err := o.GenerateDependencies(outputDir); err != nil {
 		return err
 	}
-	if o.GenerateThrift() {
-		for _, service := range frugal.Thrift.Services {
-			if err := o.generateServiceFile(service, outputDir); err != nil {
-				return err
-			}
+	// Generate services
+	for _, service := range frugal.Thrift.Services {
+		if err := o.generateServiceFile(service, outputDir); err != nil {
+			return err
 		}
 	}
+	// Generate scopes
 	for _, scope := range frugal.Scopes {
 		if o.splitPublisherSubscriber {
 			if err := o.generateScopeFile(scope, outputDir, PublishFile); err != nil {

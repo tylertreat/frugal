@@ -43,10 +43,6 @@ func (g *Generator) DefaultOutputDir() string {
 	return defaultOutputDir
 }
 
-func (g *Generator) GenerateThrift() bool {
-	return true
-}
-
 func (g *Generator) GenerateDependencies(dir string) error {
 	return nil
 }

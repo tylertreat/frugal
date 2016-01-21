@@ -37,10 +37,6 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	}
 }
 
-func (g *Generator) GenerateThrift() bool {
-	return true
-}
-
 func (g *Generator) GetOutputDir(dir string) string {
 	if pkg, ok := g.Frugal.Thrift.Namespace(lang); ok {
 		path := generator.GetPackageComponents(pkg)
