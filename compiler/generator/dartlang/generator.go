@@ -86,7 +86,10 @@ func (g *Generator) addToPubspec(dir string) error {
 
 	deps := map[interface{}]interface{}{
 		"thrift": dep{Hosted: hostedDep{Name: "thrift", URL: "https://pub.workiva.org"}, Version: "^0.0.1"},
-		"frugal": dep{Hosted: hostedDep{Name: "frugal", URL: "https://pub.workiva.org"}, Version: "^0.0.1"},
+	}
+
+	if g.Frugal.ContainsFrugalDefinitions() {
+		deps["frugal"] = dep{Hosted: hostedDep{Name: "frugal", URL: "https://pub.workiva.org"}, Version: "^0.0.1"}
 	}
 
 	for _, include := range g.Frugal.ReferencedIncludes() {

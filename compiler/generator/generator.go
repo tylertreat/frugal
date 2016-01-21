@@ -83,6 +83,12 @@ func (o *programGenerator) Generate(frugal *parser.Frugal, outputDir string) err
 	if err := o.GenerateDependencies(outputDir); err != nil {
 		return err
 	}
+
+	// If no frugal definitions, we can return.
+	if !frugal.ContainsFrugalDefinitions() {
+		return nil
+	}
+
 	// Generate services
 	for _, service := range frugal.Thrift.Services {
 		if err := o.generateServiceFile(service, outputDir); err != nil {
