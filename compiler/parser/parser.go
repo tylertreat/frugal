@@ -26,6 +26,9 @@ func ParseFrugal(filePath string) (*Frugal, error) {
 	}
 
 	frugal := parsed.(*Frugal)
+	if err := frugal.Thrift.validateIncludes(); err != nil {
+		return nil, err
+	}
 	frugal.Name = name
 	frugal.Dir = filepath.Dir(file.Name())
 	frugal.Path = filePath

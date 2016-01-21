@@ -118,7 +118,7 @@ func (f *Frugal) ReferencedIncludes() []string {
 // UnderlyingType follows any typedefs to get the base IDL type.
 func (f *Frugal) UnderlyingType(t *Type) *Type {
 	if t == nil {
-		panic("frugal: Attempted to get underlying type of nil type")
+		panic("Attempted to get underlying type of nil type")
 	}
 	typedefIndex := f.Thrift.typedefIndex
 	include := t.IncludeName()

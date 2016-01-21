@@ -16,16 +16,16 @@ import (
 
 // Options contains compiler options for code generation.
 type Options struct {
-	File               string
-	Gen                string
-	Out                string
-	Delim              string
-	RetainIntermediate bool
-	DryRun             bool
+	File               string // Frugal file to generate
+	Gen                string // Language to generate
+	Out                string // Output location for generated code
+	Delim              string // Token delimiter for scope topics
+	RetainIntermediate bool   // Do not clean up generated intermediate IDL
+	DryRun             bool   // Do not generate code
 }
 
-// Compile parses the respective Frugal and Thrift and generates code for them,
-// returning an error if something failed.
+// Compile parses the Frugal IDL and generates code for it, returning an error
+// if something failed.
 func Compile(options Options) error {
 	globals.TopicDelimiter = options.Delim
 	globals.Gen = options.Gen
@@ -52,11 +52,13 @@ func Compile(options Options) error {
 		return err
 	}
 
-	_, err = compile(absFile)
+	_, err = compile(absFile, false)
 	return err
 }
 
-func compile(file string) (*parser.Frugal, error) {
+// compile parses the Frugal or Thrift IDL and generates code for it, returning
+// an error if something failed.
+func compile(file string, isThrift bool) (*parser.Frugal, error) {
 	var (
 		gen    = globals.Gen
 		out    = globals.Out
@@ -99,18 +101,34 @@ func compile(file string) (*parser.Frugal, error) {
 		return nil, err
 	}
 
+	// Generate intermediate Thrift IDL for Frugal. If this is already a
+	// .thrift file, do not generate an intermediate IDL.
+	if !isThrift {
+		idlFile, err := generateThriftIDL(dir, frugal)
+		if err != nil {
+			return nil, err
+		}
+		globals.IntermediateIDL = append(globals.IntermediateIDL, idlFile)
+		file = idlFile
+	}
+
+	if dryRun {
+		return frugal, nil
+	}
+
 	// Generate Thrift code.
-	if err := generateThrift(frugal, dir, out, gen, dryRun); err != nil {
+	if err := generateThrift(frugal, dir, file, out, gen); err != nil {
 		return nil, err
 	}
 
 	// Generate Frugal code.
-	if !dryRun && frugal.ContainsFrugalDefinitions() {
+	if frugal.ContainsFrugalDefinitions() {
 		return frugal, g.Generate(frugal, fullOut)
 	}
 	return frugal, nil
 }
 
+// exists determines if the file at the given path exists.
 func exists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
