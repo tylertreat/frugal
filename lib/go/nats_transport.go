@@ -8,6 +8,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -35,13 +36,15 @@ type natsServiceTTransport struct {
 	heartbeatInterval time.Duration
 	recvHeartbeat     chan struct{}
 	closed            chan struct{}
+	isOpen            bool
+	mutex             sync.RWMutex
 }
 
-// NewNatsServiceTTransportClient returns a new thrift TTransport which uses
+// NewNatsServiceTTransport returns a new thrift TTransport which uses
 // the NATS messaging system as the underlying transport. It performs a
 // handshake with a server listening on the given NATS subject. This TTransport
 // can only be used with FNatsServer.
-func NewNatsServiceTTransportClient(conn *nats.Conn, subject string,
+func NewNatsServiceTTransport(conn *nats.Conn, subject string,
 	timeout time.Duration) (thrift.TTransport, error) {
 
 	msg, err := conn.Request(subject, nil, timeout)
@@ -82,10 +85,10 @@ func NewNatsServiceTTransportClient(conn *nats.Conn, subject string,
 	}, nil
 }
 
-// NewNatsServiceTTransportServer returns a new thrift TTransport which uses
+// newNatsServiceTTransportServer returns a new thrift TTransport which uses
 // the NATS messaging system as the underlying transport. This TTransport can
 // only be used with FNatsServer.
-func NewNatsServiceTTransportServer(conn *nats.Conn, listenTo, writeTo string) thrift.TTransport {
+func newNatsServiceTTransportServer(conn *nats.Conn, listenTo, writeTo string) thrift.TTransport {
 	return &natsServiceTTransport{
 		conn:     conn,
 		listenTo: listenTo,
@@ -155,11 +158,16 @@ func (n *natsServiceTTransport) Open() error {
 			}
 		}()
 	}
+	n.mutex.Lock()
+	n.isOpen = true
+	n.mutex.Unlock()
 	return nil
 }
 
 func (n *natsServiceTTransport) IsOpen() bool {
-	if n.conn.Status() != nats.CONNECTED {
+	n.mutex.RLock()
+	defer n.mutex.RUnlock()
+	if n.conn.Status() != nats.CONNECTED && n.isOpen {
 		return false
 	}
 	return n.sub != nil
@@ -183,12 +191,15 @@ func (n *natsServiceTTransport) Close() error {
 	n.sub = nil
 	n.heartbeatSub = nil
 	close(n.closed)
+	n.mutex.Lock()
+	n.isOpen = false
+	n.mutex.Unlock()
 	return thrift.NewTTransportExceptionFromError(n.writer.Close())
 }
 
 func (n *natsServiceTTransport) Read(p []byte) (int, error) {
 	if !n.IsOpen() {
-		return 0, thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
+		return 0, thrift.NewTTransportException(thrift.NOT_OPEN, "transport not open")
 	}
 	num, err := n.reader.Read(p)
 	return num, thrift.NewTTransportExceptionFromError(err)
@@ -197,7 +208,7 @@ func (n *natsServiceTTransport) Read(p []byte) (int, error) {
 // Write the bytes to a buffer. If the buffer reaches 1MB, flush the message.
 func (n *natsServiceTTransport) Write(p []byte) (int, error) {
 	if !n.IsOpen() {
-		return 0, thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
+		return 0, thrift.NewTTransportException(thrift.NOT_OPEN, "transport not open")
 	}
 	remaining := natsMaxMessageSize - n.writeBuffer.Len()
 	if remaining < len(p) {
@@ -213,7 +224,7 @@ func (n *natsServiceTTransport) Write(p []byte) (int, error) {
 // Flush sends the buffered bytes over NATS.
 func (n *natsServiceTTransport) Flush() error {
 	if !n.IsOpen() {
-		return thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
+		return thrift.NewTTransportException(thrift.NOT_OPEN, "transport not open")
 	}
 	data := n.writeBuffer.Bytes()
 	if len(data) == 0 {
