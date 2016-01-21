@@ -152,6 +152,13 @@ func (c *FContext) setResponseOpID(id string) {
 	c.mu.Unlock()
 }
 
+// addRequestHeader bypasses the check for reserved headers.
+func (c *FContext) addRequestHeader(name, value string) {
+	c.mu.Lock()
+	c.requestHeaders[name] = value
+	c.mu.Unlock()
+}
+
 // addResponseHeader bypasses the check for reserved headers.
 func (c *FContext) addResponseHeader(name, value string) {
 	c.mu.Lock()

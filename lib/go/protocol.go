@@ -50,7 +50,7 @@ func (f *FProtocol) ReadRequestHeader() (*FContext, error) {
 	}
 
 	for name, value := range headers {
-		ctx.AddRequestHeader(name, value)
+		ctx.addRequestHeader(name, value)
 	}
 
 	// Put op id in response headers
