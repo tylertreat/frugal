@@ -71,21 +71,22 @@ type env struct {
 }
 
 type dep struct {
-	Git  gitDep `yaml:"git,omitempty"`
-	Path string `yaml:"path,omitempty"`
+	Hosted  hostedDep `yaml:"hosted,omitempty"`
+	Path    string    `yaml:"path,omitempty"`
+	Version string    `yaml:"version,omitempty"`
 }
 
-type gitDep struct {
-	URL string `yaml:"url"`
-	Ref string `yaml:"ref,omitempty"`
+type hostedDep struct {
+	Name string `yaml:"name"`
+	URL  string `yaml:"url"`
 }
 
 func (g *Generator) addToPubspec(dir string) error {
 	pubFilePath := filepath.Join(dir, "pubspec.yaml")
 
 	deps := map[interface{}]interface{}{
-		"thrift": dep{Git: gitDep{URL: "git@github.com:Workiva/thrift-dart.git", Ref: "0.0.1"}},
-		"frugal": dep{Git: gitDep{URL: "git@github.com:Workiva/frugal-dart.git", Ref: "new_stack"}},
+		"thrift": dep{Hosted: hostedDep{Name: "thrift", URL: "https://pub.workiva.org"}, Version: "^0.0.1"},
+		"frugal": dep{Hosted: hostedDep{Name: "frugal", URL: "https://pub.workiva.org"}, Version: "^0.0.1"},
 	}
 
 	for _, include := range g.Frugal.ReferencedIncludes() {

@@ -102,7 +102,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	if g.Options["frugal_import"] != "" {
 		imports += "\t\"" + g.Options["frugal_import"] + "\"\n"
 	} else {
-		imports += "\t\"github.com/Workiva/frugal-go\"\n"
+		imports += "\t\"github.com/Workiva/frugal/lib/go\"\n"
 	}
 	imports += ")\n\n"
 
@@ -127,7 +127,7 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	if g.Options["frugal_import"] != "" {
 		imports += "\t\"" + g.Options["frugal_import"] + "\"\n"
 	} else {
-		imports += "\t\"github.com/Workiva/frugal-go\"\n"
+		imports += "\t\"github.com/Workiva/frugal/lib/go\"\n"
 	}
 
 	pkgPrefix := g.Options["package_prefix"]

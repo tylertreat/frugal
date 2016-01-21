@@ -27,7 +27,7 @@ class Event implements TBase {
   bool __isset_iD = false;
 
   Event() {
-    this.iD = -1;
+    this.ID = -1;
 
   }
 
