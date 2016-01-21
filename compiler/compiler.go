@@ -105,7 +105,7 @@ func compile(file string) (*parser.Frugal, error) {
 	}
 
 	// Generate Frugal code.
-	if !dryRun && frugal.ContainsFrugalDefinitions() {
+	if !dryRun {
 		return frugal, g.Generate(frugal, fullOut)
 	}
 	return frugal, nil
