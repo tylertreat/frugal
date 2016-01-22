@@ -127,6 +127,13 @@ func (s *Service) ExtendsService() string {
 func (s *Service) ReferencedIncludes() []string {
 	includes := []string{}
 	includesSet := make(map[string]bool)
+	if s.Extends != "" && strings.Contains(s.Extends, ".") {
+		reducedStr := s.Extends[0:strings.Index(s.Extends, ".")]
+		if _, ok := includesSet[reducedStr]; !ok {
+			includesSet[reducedStr] = true
+			includes = append(includes, reducedStr)
+		}
+	}
 	for _, method := range s.Methods {
 		for _, arg := range method.Arguments {
 			if strings.Contains(arg.Type.Name, ".") {
@@ -135,6 +142,13 @@ func (s *Service) ReferencedIncludes() []string {
 					includesSet[reducedStr] = true
 					includes = append(includes, reducedStr)
 				}
+			}
+		}
+		if method.ReturnType != nil && strings.Contains(method.ReturnType.Name, ".") {
+			reducedStr := method.ReturnType.Name[0:strings.Index(method.ReturnType.Name, ".")]
+			if _, ok := includesSet[reducedStr]; !ok {
+				includesSet[reducedStr] = true
+				includes = append(includes, reducedStr)
 			}
 		}
 	}

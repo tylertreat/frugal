@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"syscall"
 
@@ -92,7 +93,20 @@ func (g *Generator) addToPubspec(dir string) error {
 		deps["frugal"] = dep{Hosted: hostedDep{Name: "frugal", URL: "https://pub.workiva.org"}, Version: "^0.0.1"}
 	}
 
-	for _, include := range g.Frugal.ReferencedIncludes() {
+	includesSet := make(map[string]bool)
+	for _, include := range g.Frugal.ReferencedScopeIncludes() {
+		includesSet[include] = true
+	}
+	for _, include := range g.Frugal.ReferencedServiceIncludes() {
+		includesSet[include] = true
+	}
+	includes := make([]string, 0, len(includesSet))
+	for include, _ := range includesSet {
+		includes = append(includes, include)
+	}
+	sort.Strings(includes)
+
+	for _, include := range includes {
 		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
 		if !ok {
 			namespace = include

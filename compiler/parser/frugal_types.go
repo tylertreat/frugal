@@ -99,9 +99,9 @@ func (f *Frugal) ContainsFrugalDefinitions() bool {
 	return len(f.Scopes)+len(f.Thrift.Services) > 0
 }
 
-// ReferencedIncludes returns a slice containing the referenced includes which
-// will need to be imported in generated code.
-func (f *Frugal) ReferencedIncludes() []string {
+// ReferencedScopeIncludes returns a slice containing the referenced includes
+// which will need to be imported in generated code for scopes.
+func (f *Frugal) ReferencedScopeIncludes() []string {
 	includes := []string{}
 	includesSet := make(map[string]bool)
 	for _, scope := range f.Scopes {
@@ -112,6 +112,24 @@ func (f *Frugal) ReferencedIncludes() []string {
 			}
 		}
 	}
+	sort.Strings(includes)
+	return includes
+}
+
+// ReferencedServiceIncludes returns a slice containing the referenced includes
+// which will need to be imported in generated code for services.
+func (f *Frugal) ReferencedServiceIncludes() []string {
+	includes := []string{}
+	includesSet := make(map[string]bool)
+	for _, service := range f.Thrift.Services {
+		for _, include := range service.ReferencedIncludes() {
+			if _, ok := includesSet[include]; !ok {
+				includesSet[include] = true
+				includes = append(includes, include)
+			}
+		}
+	}
+	sort.Strings(includes)
 	return includes
 }
 
