@@ -469,9 +469,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
 	servTitle := strings.Title(service.Name)
 	nameTitle := strings.Title(method.Name)
-
-	// TODO: Is this assumption correct? Does Thrift just use the name as is?
-	nameLower := strings.ToLower(method.Name)
+	nameLower := generator.LowercaseFirstLetter(method.Name)
 
 	contents := ""
 	if method.Comment != nil {
@@ -644,7 +642,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	for _, method := range service.Methods {
 		contents += fmt.Sprintf(
 			"\tp.AddToProcessorMap(\"%s\", &%sF%s{handler: handler, writeMu: p.GetWriteMutex()})\n",
-			strings.ToLower(method.Name), servLower, strings.Title(method.Name))
+			generator.LowercaseFirstLetter(method.Name), servLower, strings.Title(method.Name))
 	}
 
 	contents += "\treturn p\n"
@@ -703,7 +701,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	servTitle := strings.Title(service.Name)
 	servLower := strings.ToLower(service.Name)
 	nameTitle := strings.Title(method.Name)
-	nameLower := strings.ToLower(method.Name)
+	nameLower := generator.LowercaseFirstLetter(method.Name)
 
 	contents := fmt.Sprintf("type %sF%s struct {\n", servLower, nameTitle)
 	contents += fmt.Sprintf("\thandler F%s\n", servTitle)

@@ -97,7 +97,7 @@ func handleClient(client *event.FFooClient) (err error) {
 
 // Client runner
 func runClient(conn *nats.Conn, transportFactory frugal.FTransportFactory, protocolFactory *frugal.FProtocolFactory) error {
-	transport, err := frugal.NewNatsServiceTTransportClient(conn, "foo", time.Second)
+	transport, err := frugal.NewNatsServiceTTransport(conn, "foo", time.Second)
 	if err != nil {
 		return err
 	}
