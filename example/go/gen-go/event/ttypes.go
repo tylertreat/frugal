@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/Workiva/frugal/example/go/gen-go/base"
 )
 
 // (needed to ensure safety because of naive import list construction.)
@@ -14,6 +15,7 @@ var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
 
+var _ = base.GoUnusedProtection__
 var GoUnusedProtection__ int
 
 // This docstring gets added to the generated code because it has

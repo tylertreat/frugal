@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/Workiva/frugal/example/go/gen-go/base"
 )
 
 // (needed to ensure safety because of naive import list construction.)
@@ -14,7 +15,11 @@ var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
 
-type Foo interface { //This is a thrift service. Frugal will generate bindings that include
+var _ = base.GoUnusedProtection__
+
+type Foo interface {
+	base.Base
+	//This is a thrift service. Frugal will generate bindings that include
 	//a frugal Context for each service call.
 
 	// Ping the server.
@@ -31,29 +36,15 @@ type Foo interface { //This is a thrift service. Frugal will generate bindings t
 //This is a thrift service. Frugal will generate bindings that include
 //a frugal Context for each service call.
 type FooClient struct {
-	Transport       thrift.TTransport
-	ProtocolFactory thrift.TProtocolFactory
-	InputProtocol   thrift.TProtocol
-	OutputProtocol  thrift.TProtocol
-	SeqId           int32
+	*base.BaseClient
 }
 
 func NewFooClientFactory(t thrift.TTransport, f thrift.TProtocolFactory) *FooClient {
-	return &FooClient{Transport: t,
-		ProtocolFactory: f,
-		InputProtocol:   f.GetProtocol(t),
-		OutputProtocol:  f.GetProtocol(t),
-		SeqId:           0,
-	}
+	return &FooClient{BaseClient: base.NewBaseClientFactory(t, f)}
 }
 
 func NewFooClientProtocol(t thrift.TTransport, iprot thrift.TProtocol, oprot thrift.TProtocol) *FooClient {
-	return &FooClient{Transport: t,
-		ProtocolFactory: nil,
-		InputProtocol:   iprot,
-		OutputProtocol:  oprot,
-		SeqId:           0,
-	}
+	return &FooClient{BaseClient: base.NewBaseClientProtocol(t, iprot, oprot)}
 }
 
 // Ping the server.
@@ -217,48 +208,14 @@ func (p *FooClient) recvBlah() (value int64, err error) {
 }
 
 type FooProcessor struct {
-	processorMap map[string]thrift.TProcessorFunction
-	handler      Foo
-}
-
-func (p *FooProcessor) AddToProcessorMap(key string, processor thrift.TProcessorFunction) {
-	p.processorMap[key] = processor
-}
-
-func (p *FooProcessor) GetProcessorFunction(key string) (processor thrift.TProcessorFunction, ok bool) {
-	processor, ok = p.processorMap[key]
-	return processor, ok
-}
-
-func (p *FooProcessor) ProcessorMap() map[string]thrift.TProcessorFunction {
-	return p.processorMap
+	*base.BaseProcessor
 }
 
 func NewFooProcessor(handler Foo) *FooProcessor {
-
-	self4 := &FooProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
-	self4.processorMap["ping"] = &fooProcessorPing{handler: handler}
-	self4.processorMap["blah"] = &fooProcessorBlah{handler: handler}
+	self4 := &FooProcessor{base.NewBaseProcessor(handler)}
+	self4.AddToProcessorMap("ping", &fooProcessorPing{handler: handler})
+	self4.AddToProcessorMap("blah", &fooProcessorBlah{handler: handler})
 	return self4
-}
-
-func (p *FooProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
-	name, _, seqId, err := iprot.ReadMessageBegin()
-	if err != nil {
-		return false, err
-	}
-	if processor, ok := p.GetProcessorFunction(name); ok {
-		return processor.Process(seqId, iprot, oprot)
-	}
-	iprot.Skip(thrift.STRUCT)
-	iprot.ReadMessageEnd()
-	x5 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
-	oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
-	x5.Write(oprot)
-	oprot.WriteMessageEnd()
-	oprot.Flush()
-	return false, x5
-
 }
 
 type fooProcessorPing struct {

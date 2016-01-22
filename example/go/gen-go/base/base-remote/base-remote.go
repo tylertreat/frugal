@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/example/go/gen-go/base"
-	"github.com/Workiva/frugal/example/go/gen-go/event"
 	"math"
 	"net"
 	"net/url"
@@ -21,8 +20,6 @@ func Usage() {
 	fmt.Fprintln(os.Stderr, "Usage of ", os.Args[0], " [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]:")
 	flag.PrintDefaults()
 	fmt.Fprintln(os.Stderr, "\nFunctions:")
-	fmt.Fprintln(os.Stderr, "  void ping()")
-	fmt.Fprintln(os.Stderr, "  i64 blah(i32 num, string Str, Event event)")
 	fmt.Fprintln(os.Stderr, "  void basePing()")
 	fmt.Fprintln(os.Stderr)
 	os.Exit(0)
@@ -111,55 +108,13 @@ func main() {
 		Usage()
 		os.Exit(1)
 	}
-	client := event.NewFooClientFactory(trans, protocolFactory)
+	client := base.NewBaseClientFactory(trans, protocolFactory)
 	if err := trans.Open(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error opening socket to ", host, ":", port, " ", err)
 		os.Exit(1)
 	}
 
 	switch cmd {
-	case "ping":
-		if flag.NArg()-1 != 0 {
-			fmt.Fprintln(os.Stderr, "Ping requires 0 args")
-			flag.Usage()
-		}
-		fmt.Print(client.Ping())
-		fmt.Print("\n")
-		break
-	case "blah":
-		if flag.NArg()-1 != 3 {
-			fmt.Fprintln(os.Stderr, "Blah requires 3 args")
-			flag.Usage()
-		}
-		tmp0, err5 := (strconv.Atoi(flag.Arg(1)))
-		if err5 != nil {
-			Usage()
-			return
-		}
-		argvalue0 := int32(tmp0)
-		value0 := argvalue0
-		argvalue1 := flag.Arg(2)
-		value1 := argvalue1
-		arg7 := flag.Arg(3)
-		mbTrans8 := thrift.NewTMemoryBufferLen(len(arg7))
-		defer mbTrans8.Close()
-		_, err9 := mbTrans8.WriteString(arg7)
-		if err9 != nil {
-			Usage()
-			return
-		}
-		factory10 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt11 := factory10.GetProtocol(mbTrans8)
-		argvalue2 := event.NewEvent()
-		err12 := argvalue2.Read(jsProt11)
-		if err12 != nil {
-			Usage()
-			return
-		}
-		value2 := argvalue2
-		fmt.Print(client.Blah(value0, value1, value2))
-		fmt.Print("\n")
-		break
 	case "basePing":
 		if flag.NArg()-1 != 0 {
 			fmt.Fprintln(os.Stderr, "BasePing requires 0 args")

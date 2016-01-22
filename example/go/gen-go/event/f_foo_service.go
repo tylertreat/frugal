@@ -11,6 +11,7 @@ import (
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"
+	"github.com/Workiva/frugal/example/go/gen-go/base"
 )
 
 // (needed to ensure safety because of naive import list construction.)
@@ -19,6 +20,8 @@ var _ = fmt.Printf
 var _ = bytes.Equal
 
 type FFoo interface {
+	base.FBase
+
 	// Ping the server.
 	Ping(*frugal.FContext) (err error)
 	// Blah the server.
@@ -26,6 +29,7 @@ type FFoo interface {
 }
 
 type FFooClient struct {
+	*base.FBaseClient
 	transport       frugal.FTransport
 	protocolFactory *frugal.FProtocolFactory
 	oprot           *frugal.FProtocol
@@ -37,6 +41,7 @@ func NewFFooClient(p *frugal.FServiceProvider) *FFooClient {
 	f := p.ProtocolFactory()
 	t.SetRegistry(frugal.NewFClientRegistry())
 	return &FFooClient{
+		FBaseClient: base.NewFBaseClient(p),
 		transport:       t,
 		protocolFactory: f,
 		oprot:           f.GetProtocol(t),
@@ -243,51 +248,16 @@ func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- int64,
 }
 
 type FFooProcessor struct {
-	processorMap map[string]frugal.FProcessorFunction
-	handler      FFoo
-	writeMu      *sync.Mutex
-}
-
-func (p *FFooProcessor) GetProcessorFunction(key string) (processor frugal.FProcessorFunction, ok bool) {
-	processor, ok = p.processorMap[key]
-	return
+	*base.FBaseProcessor
 }
 
 func NewFFooProcessor(handler FFoo) *FFooProcessor {
-	writeMu := &sync.Mutex{}
 	p := &FFooProcessor{
-		handler:      handler,
-		processorMap: make(map[string]frugal.FProcessorFunction),
-		writeMu:      writeMu,
+		base.NewFBaseProcessor(handler),
 	}
-	p.processorMap["ping"] = &fooFPing{handler: handler, writeMu: writeMu}
-	p.processorMap["blah"] = &fooFBlah{handler: handler, writeMu: writeMu}
+	p.AddToProcessorMap("ping", &fooFPing{handler: handler, writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("blah", &fooFBlah{handler: handler, writeMu: p.GetWriteMutex()})
 	return p
-}
-
-func (p *FFooProcessor) Process(iprot, oprot *frugal.FProtocol) error {
-	ctx, err := iprot.ReadRequestHeader()
-	if err != nil {
-		return err
-	}
-	name, _, _, err := iprot.ReadMessageBegin()
-	if err != nil {
-		return err
-	}
-	if processor, ok := p.GetProcessorFunction(name); ok {
-		return processor.Process(ctx, iprot, oprot)
-	}
-	iprot.Skip(thrift.STRUCT)
-	iprot.ReadMessageEnd()
-	x3 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
-	p.writeMu.Lock()
-	oprot.WriteResponseHeader(ctx)
-	oprot.WriteMessageBegin(name, thrift.EXCEPTION, 0)
-	x3.Write(oprot)
-	oprot.WriteMessageEnd()
-	oprot.Flush()
-	p.writeMu.Unlock()
-	return x3
 }
 
 type fooFPing struct {

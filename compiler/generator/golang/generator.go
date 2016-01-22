@@ -103,6 +103,16 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	} else {
 		imports += "\t\"github.com/Workiva/frugal/lib/go\"\n"
 	}
+
+	pkgPrefix := g.Options["package_prefix"]
+	for _, include := range g.Frugal.ReferencedServiceIncludes() {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, namespace)
+	}
+
 	imports += ")\n\n"
 
 	imports += "// (needed to ensure safety because of naive import list construction.)\n"
@@ -130,7 +140,7 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	}
 
 	pkgPrefix := g.Options["package_prefix"]
-	for _, include := range g.Frugal.ReferencedIncludes() {
+	for _, include := range g.Frugal.ReferencedScopeIncludes() {
 		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
 		if !ok {
 			namespace = include
@@ -373,6 +383,9 @@ func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 
 func (g *Generator) generateServiceInterface(service *parser.Service) string {
 	contents := fmt.Sprintf("type F%s interface {\n", strings.Title(service.Name))
+	if service.Extends != "" {
+		contents += fmt.Sprintf("\t%s\n\n", g.getServiceExtendsName(service))
+	}
 	for _, method := range service.Methods {
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, "\t")
@@ -383,6 +396,31 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 	}
 	contents += "}\n\n"
 	return contents
+}
+
+func (g *Generator) getServiceExtendsName(service *parser.Service) string {
+	serviceName := "F" + service.ExtendsService()
+	include := service.ExtendsInclude()
+	if include != "" {
+		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
+			include = inc
+		}
+		serviceName = include + "." + serviceName
+	}
+	return serviceName
+}
+
+func (g *Generator) getServiceExtendsNamespace(service *parser.Service) string {
+	namespace := ""
+	if service.ExtendsInclude() != "" {
+		if ns, ok := g.Frugal.NamespaceForInclude(service.ExtendsInclude(), lang); ok {
+			namespace = ns
+		} else {
+			namespace = service.ExtendsInclude()
+		}
+		namespace += "."
+	}
+	return namespace
 }
 
 func (g *Generator) generateReturnArgs(method *parser.Method) string {
@@ -396,6 +434,9 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	servTitle := strings.Title(service.Name)
 
 	contents := fmt.Sprintf("type F%sClient struct {\n", servTitle)
+	if service.Extends != "" {
+		contents += fmt.Sprintf("\t*%sClient\n", g.getServiceExtendsName(service))
+	}
 	contents += "\ttransport       frugal.FTransport\n"
 	contents += "\tprotocolFactory *frugal.FProtocolFactory\n"
 	contents += "\toprot           *frugal.FProtocol\n"
@@ -409,6 +450,10 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += "\tf := p.ProtocolFactory()\n"
 	contents += "\tt.SetRegistry(frugal.NewFClientRegistry())\n"
 	contents += fmt.Sprintf("\treturn &F%sClient{\n", servTitle)
+	if service.Extends != "" {
+		contents += fmt.Sprintf("\t\tF%sClient: %sNewF%sClient(p),\n",
+			service.ExtendsService(), g.getServiceExtendsNamespace(service), service.ExtendsService())
+	}
 	contents += "\t\ttransport:       t,\n"
 	contents += "\t\tprotocolFactory: f,\n"
 	contents += "\t\toprot:           f.GetProtocol(t),\n"
@@ -571,57 +616,85 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	servLower := strings.ToLower(service.Name)
 	contents := ""
 	contents += fmt.Sprintf("type F%sProcessor struct {\n", servTitle)
-	contents += "\tprocessorMap map[string]frugal.FProcessorFunction\n"
-	contents += fmt.Sprintf("\thandler      F%s\n", servTitle)
-	contents += "\twriteMu      *sync.Mutex\n"
-	contents += "}\n\n"
-
-	contents += fmt.Sprintf("func (p *F%sProcessor) GetProcessorFunction(key string) "+
-		"(processor frugal.FProcessorFunction, ok bool) {\n", servTitle)
-	contents += "\tprocessor, ok = p.processorMap[key]\n"
-	contents += "\treturn\n"
+	if service.Extends == "" {
+		contents += "\tprocessorMap map[string]frugal.FProcessorFunction\n"
+		contents += "\twriteMu      *sync.Mutex\n"
+		contents += fmt.Sprintf("\thandler      F%s\n", servTitle)
+	} else {
+		contents += fmt.Sprintf("\t*%sF%sProcessor\n",
+			g.getServiceExtendsNamespace(service), service.ExtendsService())
+	}
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf("func NewF%sProcessor(handler F%s) *F%sProcessor {\n",
 		servTitle, servTitle, servTitle)
-	contents += "\twriteMu := &sync.Mutex{}\n"
+	if service.Extends == "" {
+		contents += "\twriteMu := &sync.Mutex{}\n"
+	}
 	contents += fmt.Sprintf("\tp := &F%sProcessor{\n", servTitle)
-	contents += "\t\thandler:      handler,\n"
-	contents += "\t\tprocessorMap: make(map[string]frugal.FProcessorFunction),\n"
-	contents += "\t\twriteMu:      writeMu,\n"
+	if service.Extends != "" {
+		contents += fmt.Sprintf("\t\t%sNewF%sProcessor(handler),\n",
+			g.getServiceExtendsNamespace(service), service.ExtendsService())
+	} else {
+		contents += "\t\tprocessorMap: make(map[string]frugal.FProcessorFunction),\n"
+		contents += "\t\twriteMu:      writeMu,\n"
+		contents += "\t\thandler:      handler,\n"
+	}
 	contents += "\t}\n"
 	for _, method := range service.Methods {
-		contents += fmt.Sprintf("\tp.processorMap[\"%s\"] = &%sF%s{handler: handler, writeMu: writeMu}\n",
+		contents += fmt.Sprintf(
+			"\tp.AddToProcessorMap(\"%s\", &%sF%s{handler: handler, writeMu: p.GetWriteMutex()})\n",
 			strings.ToLower(method.Name), servLower, strings.Title(method.Name))
 	}
+
 	contents += "\treturn p\n"
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf(
-		"func (p *F%sProcessor) Process(iprot, oprot *frugal.FProtocol) error {\n", servTitle)
-	contents += "\tctx, err := iprot.ReadRequestHeader()\n"
-	contents += "\tif err != nil {\n"
-	contents += "\t\treturn err\n"
-	contents += "\t}\n"
-	contents += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
-	contents += "\tif err != nil {\n"
-	contents += "\t\treturn err\n"
-	contents += "\t}\n"
-	contents += "\tif processor, ok := p.GetProcessorFunction(name); ok {\n"
-	contents += "\t\treturn processor.Process(ctx, iprot, oprot)\n"
-	contents += "\t}\n"
-	contents += "\tiprot.Skip(thrift.STRUCT)\n"
-	contents += "\tiprot.ReadMessageEnd()\n"
-	contents += "\tx3 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
-	contents += "\tp.writeMu.Lock()\n"
-	contents += "\toprot.WriteResponseHeader(ctx)\n"
-	contents += "\toprot.WriteMessageBegin(name, thrift.EXCEPTION, 0)\n"
-	contents += "\tx3.Write(oprot)\n"
-	contents += "\toprot.WriteMessageEnd()\n"
-	contents += "\toprot.Flush()\n"
-	contents += "\tp.writeMu.Unlock()\n"
-	contents += "\treturn x3\n"
-	contents += "}\n\n"
+	if service.Extends == "" {
+		contents += fmt.Sprintf(
+			"func (p *F%sProcessor) AddToProcessorMap(key string, proc frugal.FProcessorFunction) {\n",
+			servTitle)
+		contents += "\tp.processorMap[key] = proc\n"
+		contents += "}\n\n"
+
+		contents += fmt.Sprintf("func (p *F%sProcessor) GetProcessorFunction(key string) "+
+			"(processor frugal.FProcessorFunction, ok bool) {\n", servTitle)
+		contents += "\tprocessor, ok = p.processorMap[key]\n"
+		contents += "\treturn\n"
+		contents += "}\n\n"
+
+		contents += fmt.Sprintf("func (p *F%sProcessor) GetWriteMutex() *sync.Mutex {\n", servTitle)
+		contents += "\treturn p.writeMu\n"
+		contents += "}\n\n"
+	}
+
+	if service.Extends == "" {
+		contents += fmt.Sprintf(
+			"func (p *F%sProcessor) Process(iprot, oprot *frugal.FProtocol) error {\n", servTitle)
+		contents += "\tctx, err := iprot.ReadRequestHeader()\n"
+		contents += "\tif err != nil {\n"
+		contents += "\t\treturn err\n"
+		contents += "\t}\n"
+		contents += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
+		contents += "\tif err != nil {\n"
+		contents += "\t\treturn err\n"
+		contents += "\t}\n"
+		contents += "\tif processor, ok := p.GetProcessorFunction(name); ok {\n"
+		contents += "\t\treturn processor.Process(ctx, iprot, oprot)\n"
+		contents += "\t}\n"
+		contents += "\tiprot.Skip(thrift.STRUCT)\n"
+		contents += "\tiprot.ReadMessageEnd()\n"
+		contents += "\tx3 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
+		contents += "\tp.writeMu.Lock()\n"
+		contents += "\toprot.WriteResponseHeader(ctx)\n"
+		contents += "\toprot.WriteMessageBegin(name, thrift.EXCEPTION, 0)\n"
+		contents += "\tx3.Write(oprot)\n"
+		contents += "\toprot.WriteMessageEnd()\n"
+		contents += "\toprot.Flush()\n"
+		contents += "\tp.writeMu.Unlock()\n"
+		contents += "\treturn x3\n"
+		contents += "}\n\n"
+	}
 
 	return contents
 }
