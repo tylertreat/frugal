@@ -411,7 +411,12 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 	if service.Comment != nil {
 		contents += g.GenerateInlineComment(service.Comment, "/")
 	}
-	contents += fmt.Sprintf("abstract class F%s {\n", strings.Title(service.Name))
+	if service.Extends != "" {
+		contents += fmt.Sprintf("abstract class F%s extends %s {\n",
+			strings.Title(service.Name), g.getServiceExtendsName(service))
+	} else {
+		contents += fmt.Sprintf("abstract class F%s {\n", strings.Title(service.Name))
+	}
 	for _, method := range service.Methods {
 		contents += "\n"
 		if method.Comment != nil {
@@ -424,13 +429,31 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 	return contents
 }
 
+func (g *Generator) getServiceExtendsName(service *parser.Service) string {
+	serviceName := "F" + service.ExtendsService()
+	include := service.ExtendsInclude()
+	if include != "" {
+		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
+			include = inc
+		}
+		serviceName = include + "." + serviceName
+	}
+	return serviceName
+}
+
 func (g *Generator) generateClient(service *parser.Service) string {
 	servTitle := strings.Title(service.Name)
 	contents := ""
 	if service.Comment != nil {
 		contents += g.GenerateInlineComment(service.Comment, "/")
 	}
-	contents += fmt.Sprintf("class F%sClient implements F%s {\n", servTitle, servTitle)
+	if service.Extends != "" {
+		contents += fmt.Sprintf("class F%sClient extends %sClient implements F%s {\n",
+			servTitle, g.getServiceExtendsName(service), servTitle)
+	} else {
+		contents += fmt.Sprintf("class F%sClient implements F%s {\n",
+			servTitle, servTitle)
+	}
 	contents += "\n"
 	contents += fmt.Sprintf(tab+"F%sClient(frugal.FServiceProvider provider) {\n", servTitle)
 	contents += tabtab + "_transport = provider.fTransport;\n"
