@@ -108,7 +108,6 @@ func compile(file string, isThrift bool) (*parser.Frugal, error) {
 		if err != nil {
 			return nil, err
 		}
-		globals.IntermediateIDL = append(globals.IntermediateIDL, idlFile)
 		file = idlFile
 	}
 

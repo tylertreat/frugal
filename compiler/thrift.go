@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
@@ -34,13 +35,20 @@ func generateThriftIDL(dir string, frugal *parser.Frugal) (string, error) {
 	file := filepath.Join(dir, fmt.Sprintf("%s.thrift", frugal.Name))
 	if exists(file) {
 		// Trying to generate an intermediate Thrift IDL but the .thrift file
-		// already exists.
-		return "", fmt.Errorf("Thrift file already exists: %s", file)
+		// already exists. First check if we generated it. If so, skip it. If
+		// not, return an error.
+		for _, intermediate := range globals.IntermediateIDL {
+			if intermediate == file {
+				return file, nil
+			}
+		}
+		return "", fmt.Errorf("Couldn't generate intermediate Thrift, file already exists: %s", file)
 	}
 	f, err := os.Create(file)
 	if err != nil {
 		return "", err
 	}
+	globals.IntermediateIDL = append(globals.IntermediateIDL, file)
 	defer f.Close()
 
 	contents := ""
@@ -78,16 +86,11 @@ func generateIncludes(frugal *parser.Frugal) (string, error) {
 	// Recurse on includes
 	for _, incl := range frugal.Thrift.Includes {
 		include := incl.Value
-		pathAndExtension := strings.Split(strings.ToLower(include), ".")
-		if len(pathAndExtension) != 2 {
+		if !strings.HasSuffix(include, ".thrift") && !strings.HasSuffix(include, ".frugal") {
 			return "", fmt.Errorf("Bad include name: %s", include)
 		}
-		extension := pathAndExtension[1]
-		if extension != "thrift" && extension != "frugal" {
-			return "", fmt.Errorf("Bad include extension: %s", include)
-		}
 
-		parsed, err := compile(filepath.Join(frugal.Dir, include), extension == "thrift")
+		parsed, err := compile(filepath.Join(frugal.Dir, include), strings.HasSuffix(include, ".thrift"))
 		if err != nil {
 			return "", err
 		}
