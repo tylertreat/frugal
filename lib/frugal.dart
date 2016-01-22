@@ -8,7 +8,6 @@ import "dart:typed_data";
 
 import "package:logging/logging.dart";
 import "package:thrift/thrift.dart";
-import "package:messaging_frontend/messaging_frontend.dart";
 import "package:uuid/uuid.dart";
 
 part 'src/f_context.dart';
@@ -21,14 +20,10 @@ part 'src/protocol/f_protocol.dart';
 part 'src/protocol/f_protocol_factory.dart';
 part 'src/registry/f_client_registry.dart';
 part 'src/registry/f_registry.dart';
-part 'src/transport/f_nats_scope_transport.dart';
-part 'src/transport/f_nats_scope_transport_factory.dart';
 part 'src/transport/f_scope_transport.dart';
 part 'src/transport/f_scope_transport_factory.dart';
 part 'src/transport/f_transport.dart';
 part 'src/transport/t_framed_transport.dart';
 part 'src/transport/f_mux_transport.dart';
-part 'src/transport/t_nats_socket.dart';
-part 'src/transport/t_nats_transport_factory.dart';
 part 'src/transport/t_memory_transport.dart';
 
