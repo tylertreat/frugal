@@ -9,13 +9,14 @@ import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
 
+import 'package:base/base.dart' as t_base;
 import 'package:event/event.dart' as t_event;
 import 'foo.dart' as t_foo;
 
 
 /// This is a thrift service. Frugal will generate bindings that include 
 /// a frugal Context for each service call.
-abstract class FFoo extends base.FBase {
+abstract class FFoo extends t_base.FBase {
 
   /// Ping the server.
   Future ping(frugal.FContext ctx);
@@ -26,7 +27,7 @@ abstract class FFoo extends base.FBase {
 
 /// This is a thrift service. Frugal will generate bindings that include 
 /// a frugal Context for each service call.
-class FFooClient extends base.FBaseClient implements FFoo {
+class FFooClient extends t_base.FBaseClient implements FFoo {
 
   FFooClient(frugal.FServiceProvider provider) {
     _transport = provider.fTransport;

@@ -456,7 +456,7 @@ func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
 			include = inc
 		}
-		serviceName = include + "." + serviceName
+		serviceName = "t_" + include + "." + serviceName
 	}
 	return serviceName
 }
