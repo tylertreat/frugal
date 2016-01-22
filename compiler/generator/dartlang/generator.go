@@ -647,7 +647,7 @@ func (g *Generator) qualifiedParamName(op *parser.Operation) string {
 		namespace = toLibraryName(namespace)
 		param = fmt.Sprintf("t_%s.%s", strings.ToLower(namespace), param)
 	} else {
-		param = fmt.Sprintf("t_%s.%s", strings.ToLower(param), param)
+		param = fmt.Sprintf("t_%s.%s", strings.ToLower(g.Frugal.Name), param)
 	}
 	return param
 }
