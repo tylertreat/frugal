@@ -7,8 +7,8 @@
 
 library base;
 
-export 'src/base.dart' show Base;
-export 'src/base.dart' show BaseClient;
-export 'src/base.dart' show BaseProcessor;
+export 'src/base_foo.dart' show BaseFoo;
+export 'src/base_foo.dart' show BaseFooClient;
+export 'src/base_foo.dart' show BaseFooProcessor;
 
-export 'src/f_base_service.dart' show FBaseClient;
+export 'src/f_base_foo_service.dart' show FBaseFooClient;

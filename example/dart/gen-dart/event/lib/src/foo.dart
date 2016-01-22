@@ -15,7 +15,7 @@ import 'package:base/base.dart';
 
 /// This is a thrift service. Frugal will generate bindings that include
 /// a frugal Context for each service call.
-abstract class Foo extends Base {
+abstract class Foo extends BaseFoo {
 
   /// Ping the server.
   Future ping();
@@ -28,7 +28,7 @@ abstract class Foo extends Base {
   Future<int> blah(int num, String str, Event event);
 }
 
-class FooClient extends BaseClient implements Foo {
+class FooClient extends BaseFooClient implements Foo {
 
   FooClient(TProtocol iprot, [TProtocol oprot = null])
     : super(iprot, oprot);
@@ -58,7 +58,7 @@ class FooClient extends BaseClient implements Foo {
     oprot.writeMessageBegin(new TMessage("blah", TMessageType.CALL, nextSeqid()));
     blah_args args = new blah_args();
     args.num = num;
-    args.Str = Str;
+    args.str = str;
     args.event = event;
     args.write(oprot);
     oprot.writeMessageEnd();
@@ -89,7 +89,7 @@ class FooClient extends BaseClient implements Foo {
 
 typedef void ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
 
-class FooProcessor extends BaseProcessor implements TProcessor {
+class FooProcessor extends BaseFooProcessor implements TProcessor {
   FooProcessor(Foo iface)
     : super(iface) {
     PROCESS_MAP["ping"] = ping;

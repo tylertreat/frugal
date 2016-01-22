@@ -1,5 +1,6 @@
 # Example frugal file. Frugal is a superset of Thrift, meaning this file can
 # contain valid Thrift or Frugal-extended syntax.
+namespace java example
 
 include "base.frugal"
 
@@ -33,7 +34,7 @@ exception AwesomeException {
  * This is a thrift service. Frugal will generate bindings that include 
  * a frugal Context for each service call.
  */
-service Foo extends base.Base {
+service Foo extends base.BaseFoo {
     /**@ Ping the server. */
     void ping(),
 
