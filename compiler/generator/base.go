@@ -3,9 +3,16 @@ package generator
 import (
 	"fmt"
 	"os"
+	"unicode"
 
 	"github.com/Workiva/frugal/compiler/parser"
 )
+
+func LowercaseFirstLetter(s string) string {
+	runes := []rune(s)
+	runes[0] = unicode.ToLower(runes[0])
+	return string(runes)
+}
 
 type BaseGenerator struct {
 	Options map[string]string

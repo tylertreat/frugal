@@ -98,6 +98,7 @@ func (g *Generator) generatePackage(file *os.File) error {
 
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
 	imports := "import com.workiva.frugal.*;\n"
+	imports += "import com.workiva.frugal.processor.FBaseProcessor;\n"
 	imports += "import com.workiva.frugal.processor.FProcessor;\n"
 	imports += "import com.workiva.frugal.processor.FProcessorFunction;\n"
 	imports += "import com.workiva.frugal.registry.FAsyncCallback;\n"
@@ -107,8 +108,6 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import org.apache.thrift.TException;\n"
 	imports += "import org.apache.thrift.protocol.TMessage;\n"
 	imports += "import org.apache.thrift.protocol.TMessageType;\n"
-	imports += "import org.apache.thrift.protocol.TProtocolUtil;\n"
-	imports += "import org.apache.thrift.protocol.TType;\n"
 	imports += "import org.apache.thrift.transport.TTransport;\n\n"
 
 	imports += "import javax.annotation.Generated;\n"
@@ -342,7 +341,12 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 	if service.Comment != nil {
 		contents += g.GenerateBlockComment(service.Comment, tab)
 	}
-	contents += tab + "public interface Iface {\n\n"
+	if service.Extends != "" {
+		contents += tab + fmt.Sprintf("public interface Iface extends %s.Iface {\n\n",
+			g.getServiceExtendsName(service))
+	} else {
+		contents += tab + "public interface Iface {\n\n"
+	}
 	for _, method := range service.Methods {
 		if method.Comment != nil {
 			contents += g.GenerateBlockComment(method.Comment, tabtab)
@@ -352,6 +356,20 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 	}
 	contents += "}\n\n"
 	return contents
+}
+
+func (g *Generator) getServiceExtendsName(service *parser.Service) string {
+	serviceName := "F" + service.ExtendsService()
+	include := service.ExtendsInclude()
+	if include != "" {
+		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
+			include = inc
+		} else {
+			return serviceName
+		}
+		serviceName = include + "." + serviceName
+	}
+	return serviceName
 }
 
 func (g *Generator) generateReturnValue(method *parser.Method) string {
@@ -370,7 +388,13 @@ func (g *Generator) generateArgs(args []*parser.Field) string {
 }
 
 func (g *Generator) generateClient(service *parser.Service) string {
-	contents := tab + "public static class Client implements Iface {\n\n"
+	contents := ""
+	if service.Extends != "" {
+		contents += tab + fmt.Sprintf("public static class Client extends %s.Client implements Iface {\n\n",
+			g.getServiceExtendsName(service))
+	} else {
+		contents += tab + "public static class Client implements Iface {\n\n"
+	}
 	contents += tabtab + "private static final Object WRITE_LOCK = new Object();\n\n"
 
 	contents += tabtab + "private FTransport transport;\n"
@@ -379,6 +403,9 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += tabtab + "private FProtocol outputProtocol;\n\n"
 
 	contents += tabtab + "public Client(FServiceProvider provider) {\n"
+	if service.Extends != "" {
+		contents += tabtabtab + "super(provider);\n"
+	}
 	contents += tabtabtab + "this.transport = provider.getTransport();\n"
 	contents += tabtabtab + "this.transport.setRegistry(new FClientRegistry());\n"
 	contents += tabtabtab + "this.protocolFactory = provider.getProtocolFactory();\n"
@@ -514,37 +541,33 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	servTitle := strings.Title(service.Name)
 
 	contents := ""
-	contents += tab + "public static class Processor implements FProcessor {\n\n"
-
-	contents += tabtab + "private static final Object WRITE_LOCK = new Object();\n\n"
-
-	contents += tabtab + "private java.util.Map<String, FProcessorFunction> processorMap = new java.util.HashMap<>();\n\n"
-
-	contents += tabtab + "public Processor(Iface handler) {\n"
-	for _, method := range service.Methods {
-		contents += tabtabtab + fmt.Sprintf("this.processorMap.put(\"%s\", new %s(handler));\n", method.Name, strings.Title(method.Name))
+	extends := "FBaseProcessor"
+	if service.Extends != "" {
+		extends = g.getServiceExtendsName(service) + ".Processor"
 	}
-	contents += tabtab + "}\n\n"
+	contents += tab + fmt.Sprintf("public static class Processor extends %s implements FProcessor {\n\n", extends)
 
-	contents += tabtab + "public void process(FProtocol iprot, FProtocol oprot) throws TException {\n"
-	contents += tabtabtab + "FContext ctx = iprot.readRequestHeader();\n"
-	contents += tabtabtab + "TMessage message = iprot.readMessageBegin();\n"
-	contents += tabtabtab + "FProcessorFunction processor = this.processorMap.get(message.name);\n"
-	contents += tabtabtab + "if (processor != null) {\n"
-	contents += tabtabtabtab + "processor.process(ctx, iprot, oprot);\n"
-	contents += tabtabtabtab + "return;\n"
-	contents += tabtabtab + "}\n"
-	contents += tabtabtab + "TProtocolUtil.skip(iprot, TType.STRUCT);\n"
-	contents += tabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtab + "TApplicationException e = new TApplicationException(TApplicationException.UNKNOWN_METHOD, \"Unknown function \" + message.name);\n"
-	contents += tabtabtab + "synchronized (WRITE_LOCK) {\n"
-	contents += tabtabtabtab + "oprot.writeResponseHeader(ctx);\n"
-	contents += tabtabtabtab + "oprot.writeMessageBegin(new TMessage(message.name, TMessageType.EXCEPTION, 0));\n"
-	contents += tabtabtabtab + "e.write(oprot);\n"
-	contents += tabtabtabtab + "oprot.writeMessageEnd();\n"
-	contents += tabtabtabtab + "oprot.getTransport().flush();\n"
-	contents += tabtabtab + "}\n"
-	contents += tabtabtab + "throw e;\n"
+	contents += tab + "public Processor(Iface iface) {\n"
+	if service.Extends != "" {
+		contents += tabtab + "super(iface, getProcessMap(iface, new java.util.HashMap<String, FProcessorFunction>()));\n"
+	} else {
+		contents += tabtab + "super(getProcessMap(iface, new java.util.HashMap<String, FProcessorFunction>()));\n"
+	}
+	contents += tab + "}\n\n"
+
+	contents += tab + "protected Processor(Iface iface, java.util.Map<String, FProcessorFunction> processMap) {\n"
+	if service.Extends != "" {
+		contents += tabtab + "super(iface, getProcessMap(iface, processMap));\n"
+	} else {
+		contents += tabtab + "super(getProcessMap(iface, processMap));\n"
+	}
+	contents += tab + "}\n\n"
+
+	contents += tabtab + "private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap) {\n"
+	for _, method := range service.Methods {
+		contents += tabtabtab + fmt.Sprintf("processMap.put(\"%s\", new %s(handler));\n", method.Name, strings.Title(method.Name))
+	}
+	contents += tabtabtab + "return processMap;\n"
 	contents += tabtab + "}\n\n"
 
 	for _, method := range service.Methods {
