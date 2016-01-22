@@ -62,7 +62,7 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 	case generator.CombinedServiceFile:
 		return g.CreateFile("F"+name, outputDir, lang, false)
 	default:
-		return nil, fmt.Errorf("frugal: Bad file type for Java generator: %s", fileType)
+		return nil, fmt.Errorf("Bad file type for Java generator: %s", fileType)
 	}
 }
 

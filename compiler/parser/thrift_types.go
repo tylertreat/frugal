@@ -217,6 +217,17 @@ func (t *Thrift) ReferencedInternals() []string {
 	return internals
 }
 
+func (t *Thrift) validateIncludes() error {
+	includes := map[string]struct{}{}
+	for _, include := range t.Includes {
+		if _, ok := includes[include.Name]; ok {
+			return fmt.Errorf("Duplicate include: %s", include.Name)
+		}
+		includes[include.Name] = struct{}{}
+	}
+	return nil
+}
+
 func getImports(t *Type) []string {
 	list := []string{}
 	switch t.Name {
