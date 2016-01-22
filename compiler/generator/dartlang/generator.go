@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"syscall"
+	"unicode"
 
 	"gopkg.in/yaml.v2"
 
@@ -152,9 +153,9 @@ func (g *Generator) addToPubspec(dir string) error {
 }
 
 func (g *Generator) exportClasses(dir string) error {
-	filename := strings.ToLower(g.Frugal.Name)
+	filename := toFileName(g.Frugal.Name)
 	if ns, ok := g.Frugal.Thrift.Namespace(lang); ok {
-		filename = strings.ToLower(toLibraryName(ns))
+		filename = toFileName(toLibraryName(ns))
 	}
 	dartFile := fmt.Sprintf("%s.%s", filename, lang)
 	mainFilePath := filepath.Join(dir, "lib", dartFile)
@@ -168,12 +169,12 @@ func (g *Generator) exportClasses(dir string) error {
 	for _, service := range g.Frugal.Thrift.Services {
 		servTitle := strings.Title(service.Name)
 		exports += fmt.Sprintf("export 'src/%s%s%s.%s' show F%sClient;\n",
-			generator.FilePrefix, strings.ToLower(service.Name), serviceSuffix, lang, servTitle)
+			generator.FilePrefix, toFileName(service.Name), serviceSuffix, lang, servTitle)
 	}
 	for _, scope := range g.Frugal.Scopes {
 		scopeTitle := strings.Title(scope.Name)
 		exports += fmt.Sprintf("export 'src/%s%s%s.%s' show %sPublisher, %sSubscriber;\n",
-			generator.FilePrefix, strings.ToLower(scope.Name), scopeSuffix, lang, scopeTitle, scopeTitle)
+			generator.FilePrefix, toFileName(scope.Name), scopeSuffix, lang, scopeTitle, scopeTitle)
 	}
 	stat, err := mainFile.Stat()
 	if err != nil {
@@ -188,9 +189,9 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 	outputDir = filepath.Join(outputDir, "src")
 	switch fileType {
 	case generator.CombinedServiceFile:
-		return g.CreateFile(strings.ToLower(name)+serviceSuffix, outputDir, lang, true)
+		return g.CreateFile(toFileName(name)+serviceSuffix, outputDir, lang, true)
 	case generator.CombinedScopeFile:
-		return g.CreateFile(strings.ToLower(name)+scopeSuffix, outputDir, lang, true)
+		return g.CreateFile(toFileName(name)+scopeSuffix, outputDir, lang, true)
 	default:
 		return nil, fmt.Errorf("Bad file type for dartlang generator: %s", fileType)
 	}
@@ -247,8 +248,8 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += fmt.Sprintf("import 'package:%s/%s.dart' as t_%s;\n", pkgLower, pkgLower, pkgLower)
 
 	// Import thrift package for method args
-	servLower := strings.ToLower(s.Name)
-	imports += fmt.Sprintf("import '%s.dart' as t_%s;\n", servLower, servLower)
+	servSnake := toFileName(s.Name)
+	imports += fmt.Sprintf("import '%s.dart' as t_%s;\n", servSnake, servSnake)
 
 	_, err := file.WriteString(imports)
 	return err
@@ -494,7 +495,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 }
 
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
-	servLower := strings.ToLower(service.Name)
+	servSnake := toFileName(service.Name)
 	nameTitle := strings.Title(method.Name)
 	nameLower := generator.LowercaseFirstLetter(method.Name)
 
@@ -512,7 +513,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += fmt.Sprintf(tabtabtab+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.CALL, 0));\n",
 		nameLower)
 	contents += fmt.Sprintf(tabtabtab+"t_%s.%s_args args = new t_%s.%s_args();\n",
-		servLower, nameLower, servLower, nameLower)
+		servSnake, nameLower, servSnake, nameLower)
 	for _, arg := range method.Arguments {
 		argLower := generator.LowercaseFirstLetter(arg.Name)
 		contents += fmt.Sprintf(tabtabtab+"args.%s = %s;\n", argLower, argLower)
@@ -540,7 +541,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtab + "}\n\n"
 
 	contents += fmt.Sprintf(tabtabtabtab+"t_%s.%s_result result = new t_%s.%s_result();\n",
-		servLower, nameLower, servLower, nameLower)
+		servSnake, nameLower, servSnake, nameLower)
 	contents += tabtabtabtab + "result.read(iprot);\n"
 	contents += tabtabtabtab + "iprot.readMessageEnd();\n"
 	if method.ReturnType == nil {
@@ -668,4 +669,32 @@ func (g *Generator) qualifiedParamName(op *parser.Operation) string {
 
 func toLibraryName(name string) string {
 	return strings.Replace(name, ".", "_", -1)
+}
+
+// e.g. change APIForFileIO to api_for_file_io
+func toFileName(name string) string {
+	ret := ""
+	tmp := []rune(name)
+	is_prev_lc := true
+	is_current_lc := tmp[0] == unicode.ToLower(tmp[0])
+	is_next_lc := false
+
+	for i, _ := range tmp {
+		lc := unicode.ToLower(tmp[i])
+
+		if i == len(name)-1 {
+			is_next_lc = false
+		} else {
+			is_next_lc = (tmp[i+1] == unicode.ToLower(tmp[i+1]))
+		}
+
+		if i != 0 && !is_current_lc && (is_prev_lc || is_next_lc) {
+			ret += "_"
+		}
+		ret += string(lc)
+
+		is_prev_lc = is_current_lc
+		is_current_lc = is_next_lc
+	}
+	return ret
 }

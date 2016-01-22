@@ -1,4 +1,4 @@
 
-service Base {
+service BaseFoo {
     void basePing()
 }

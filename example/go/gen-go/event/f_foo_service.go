@@ -20,7 +20,7 @@ var _ = fmt.Printf
 var _ = bytes.Equal
 
 type FFoo interface {
-	base.FBase
+	base.FBaseFoo
 
 	// Ping the server.
 	Ping(*frugal.FContext) (err error)
@@ -29,7 +29,7 @@ type FFoo interface {
 }
 
 type FFooClient struct {
-	*base.FBaseClient
+	*base.FBaseFooClient
 	transport       frugal.FTransport
 	protocolFactory *frugal.FProtocolFactory
 	oprot           *frugal.FProtocol
@@ -41,7 +41,7 @@ func NewFFooClient(p *frugal.FServiceProvider) *FFooClient {
 	f := p.ProtocolFactory()
 	t.SetRegistry(frugal.NewFClientRegistry())
 	return &FFooClient{
-		FBaseClient: base.NewFBaseClient(p),
+		FBaseFooClient: base.NewFBaseFooClient(p),
 		transport:       t,
 		protocolFactory: f,
 		oprot:           f.GetProtocol(t),
@@ -248,12 +248,12 @@ func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- int64,
 }
 
 type FFooProcessor struct {
-	*base.FBaseProcessor
+	*base.FBaseFooProcessor
 }
 
 func NewFFooProcessor(handler FFoo) *FFooProcessor {
 	p := &FFooProcessor{
-		base.NewFBaseProcessor(handler),
+		base.NewFBaseFooProcessor(handler),
 	}
 	p.AddToProcessorMap("ping", &fooFPing{handler: handler, writeMu: p.GetWriteMutex()})
 	p.AddToProcessorMap("blah", &fooFBlah{handler: handler, writeMu: p.GetWriteMutex()})

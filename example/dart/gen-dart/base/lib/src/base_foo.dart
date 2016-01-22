@@ -4,7 +4,7 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-library base.src.base;
+library base.src.base_foo;
 
 import 'dart:async';
 import 'dart:typed_data' show Uint8List;
@@ -12,14 +12,14 @@ import 'package:thrift/thrift.dart';
 import 'package:base/base.dart';
 
 
-abstract class Base {
+abstract class BaseFoo {
 
   Future basePing();
 }
 
-class BaseClient implements Base {
+class BaseFooClient implements BaseFoo {
 
-  BaseClient(TProtocol iprot, [TProtocol oprot = null]) {
+  BaseFooClient(TProtocol iprot, [TProtocol oprot = null]) {
     _iprot = iprot;
     _oprot = (oprot == null) ? iprot : oprot;
   }
@@ -63,13 +63,13 @@ class BaseClient implements Base {
 
 typedef void ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
 
-class BaseProcessor implements TProcessor {
-  BaseProcessor(Base iface) {
+class BaseFooProcessor implements TProcessor {
+  BaseFooProcessor(BaseFoo iface) {
     iface_ = iface;
     PROCESS_MAP["basePing"] = basePing;
   }
 
-  Base iface_;
+  BaseFoo iface_;
   final Map<String, ProcessFunction> PROCESS_MAP = {};
 
   bool process(TProtocol iprot, TProtocol oprot) {

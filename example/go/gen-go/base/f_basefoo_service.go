@@ -18,29 +18,29 @@ var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
 
-type FBase interface {
+type FBaseFoo interface {
 	BasePing(*frugal.FContext) (err error)
 }
 
-type FBaseClient struct {
+type FBaseFooClient struct {
 	transport       frugal.FTransport
 	protocolFactory *frugal.FProtocolFactory
 	oprot           *frugal.FProtocol
 	mu              sync.Mutex
 }
 
-func NewFBaseClient(p *frugal.FServiceProvider) *FBaseClient {
+func NewFBaseFooClient(p *frugal.FServiceProvider) *FBaseFooClient {
 	t := p.Transport()
 	f := p.ProtocolFactory()
 	t.SetRegistry(frugal.NewFClientRegistry())
-	return &FBaseClient{
+	return &FBaseFooClient{
 		transport:       t,
 		protocolFactory: f,
 		oprot:           f.GetProtocol(t),
 	}
 }
 
-func (f *FBaseClient) BasePing(ctx *frugal.FContext) (err error) {
+func (f *FBaseFooClient) BasePing(ctx *frugal.FContext) (err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan struct{}, 1)
 	if err = f.transport.Register(ctx, f.recvBasePingHandler(ctx, resultC, errorC)); err != nil {
@@ -52,11 +52,11 @@ func (f *FBaseClient) BasePing(ctx *frugal.FContext) (err error) {
 		f.mu.Unlock()
 		return
 	}
-	if err = f.oprot.WriteMessageBegin("baseping", thrift.CALL, 0); err != nil {
+	if err = f.oprot.WriteMessageBegin("basePing", thrift.CALL, 0); err != nil {
 		f.mu.Unlock()
 		return
 	}
-	args := BaseBasePingArgs{
+	args := BaseFooBasePingArgs{
 	}
 	if err = args.Write(f.oprot); err != nil {
 		f.mu.Unlock()
@@ -83,7 +83,7 @@ func (f *FBaseClient) BasePing(ctx *frugal.FContext) (err error) {
 	return
 }
 
-func (f *FBaseClient) recvBasePingHandler(ctx *frugal.FContext, resultC chan<- struct{}, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FBaseFooClient) recvBasePingHandler(ctx *frugal.FContext, resultC chan<- struct{}, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -95,8 +95,8 @@ func (f *FBaseClient) recvBasePingHandler(ctx *frugal.FContext, resultC chan<- s
 			errorC <- err
 			return err
 		}
-		if method != "baseping" {
-			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "baseping failed: wrong method name")
+		if method != "basePing" {
+			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "basePing failed: wrong method name")
 			errorC <- err
 			return err
 		}
@@ -117,11 +117,11 @@ func (f *FBaseClient) recvBasePingHandler(ctx *frugal.FContext, resultC chan<- s
 			return err
 		}
 		if mTypeId != thrift.REPLY {
-			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "baseping failed: invalid message type")
+			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "basePing failed: invalid message type")
 			errorC <- err
 			return err
 		}
-		result := BaseBasePingResult{}
+		result := BaseFooBasePingResult{}
 		if err = result.Read(iprot); err != nil {
 			errorC <- err
 			return err
@@ -135,37 +135,37 @@ func (f *FBaseClient) recvBasePingHandler(ctx *frugal.FContext, resultC chan<- s
 	}
 }
 
-type FBaseProcessor struct {
+type FBaseFooProcessor struct {
 	processorMap map[string]frugal.FProcessorFunction
 	writeMu      *sync.Mutex
-	handler      FBase
+	handler      FBaseFoo
 }
 
-func NewFBaseProcessor(handler FBase) *FBaseProcessor {
+func NewFBaseFooProcessor(handler FBaseFoo) *FBaseFooProcessor {
 	writeMu := &sync.Mutex{}
-	p := &FBaseProcessor{
+	p := &FBaseFooProcessor{
 		processorMap: make(map[string]frugal.FProcessorFunction),
 		writeMu:      writeMu,
 		handler:      handler,
 	}
-	p.AddToProcessorMap("baseping", &baseFBasePing{handler: handler, writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("basePing", &basefooFBasePing{handler: handler, writeMu: p.GetWriteMutex()})
 	return p
 }
 
-func (p *FBaseProcessor) AddToProcessorMap(key string, proc frugal.FProcessorFunction) {
+func (p *FBaseFooProcessor) AddToProcessorMap(key string, proc frugal.FProcessorFunction) {
 	p.processorMap[key] = proc
 }
 
-func (p *FBaseProcessor) GetProcessorFunction(key string) (processor frugal.FProcessorFunction, ok bool) {
+func (p *FBaseFooProcessor) GetProcessorFunction(key string) (processor frugal.FProcessorFunction, ok bool) {
 	processor, ok = p.processorMap[key]
 	return
 }
 
-func (p *FBaseProcessor) GetWriteMutex() *sync.Mutex {
+func (p *FBaseFooProcessor) GetWriteMutex() *sync.Mutex {
 	return p.writeMu
 }
 
-func (p *FBaseProcessor) Process(iprot, oprot *frugal.FProtocol) error {
+func (p *FBaseFooProcessor) Process(iprot, oprot *frugal.FProtocol) error {
 	ctx, err := iprot.ReadRequestHeader()
 	if err != nil {
 		return err
@@ -190,20 +190,20 @@ func (p *FBaseProcessor) Process(iprot, oprot *frugal.FProtocol) error {
 	return x3
 }
 
-type baseFBasePing struct {
-	handler FBase
+type basefooFBasePing struct {
+	handler FBaseFoo
 	writeMu *sync.Mutex
 }
 
-func (p *baseFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
-	args := BaseBasePingArgs{}
+func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+	args := BaseFooBasePingArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
 		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
 		p.writeMu.Lock()
 		oprot.WriteResponseHeader(ctx)
-		oprot.WriteMessageBegin("baseping", thrift.EXCEPTION, 0)
+		oprot.WriteMessageBegin("basePing", thrift.EXCEPTION, 0)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush()
@@ -212,13 +212,13 @@ func (p *baseFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProt
 	}
 
 	iprot.ReadMessageEnd()
-	result := BaseBasePingResult{}
+	result := BaseFooBasePingResult{}
 	var err2 error
 	if err2 = p.handler.BasePing(ctx); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing baseping: "+err2.Error())
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing basePing: "+err2.Error())
 		p.writeMu.Lock()
 		oprot.WriteResponseHeader(ctx)
-		oprot.WriteMessageBegin("baseping", thrift.EXCEPTION, 0)
+		oprot.WriteMessageBegin("basePing", thrift.EXCEPTION, 0)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush()
@@ -229,7 +229,7 @@ func (p *baseFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProt
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		err = err2
 	}
-	if err2 = oprot.WriteMessageBegin("baseping", thrift.REPLY, 0); err2 != nil {
+	if err2 = oprot.WriteMessageBegin("basePing", thrift.REPLY, 0); err2 != nil {
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {

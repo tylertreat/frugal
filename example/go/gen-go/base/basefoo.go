@@ -14,11 +14,11 @@ var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
 
-type Base interface {
+type BaseFoo interface {
 	BasePing() (err error)
 }
 
-type BaseClient struct {
+type BaseFooClient struct {
 	Transport       thrift.TTransport
 	ProtocolFactory thrift.TProtocolFactory
 	InputProtocol   thrift.TProtocol
@@ -26,8 +26,8 @@ type BaseClient struct {
 	SeqId           int32
 }
 
-func NewBaseClientFactory(t thrift.TTransport, f thrift.TProtocolFactory) *BaseClient {
-	return &BaseClient{Transport: t,
+func NewBaseFooClientFactory(t thrift.TTransport, f thrift.TProtocolFactory) *BaseFooClient {
+	return &BaseFooClient{Transport: t,
 		ProtocolFactory: f,
 		InputProtocol:   f.GetProtocol(t),
 		OutputProtocol:  f.GetProtocol(t),
@@ -35,8 +35,8 @@ func NewBaseClientFactory(t thrift.TTransport, f thrift.TProtocolFactory) *BaseC
 	}
 }
 
-func NewBaseClientProtocol(t thrift.TTransport, iprot thrift.TProtocol, oprot thrift.TProtocol) *BaseClient {
-	return &BaseClient{Transport: t,
+func NewBaseFooClientProtocol(t thrift.TTransport, iprot thrift.TProtocol, oprot thrift.TProtocol) *BaseFooClient {
+	return &BaseFooClient{Transport: t,
 		ProtocolFactory: nil,
 		InputProtocol:   iprot,
 		OutputProtocol:  oprot,
@@ -44,14 +44,14 @@ func NewBaseClientProtocol(t thrift.TTransport, iprot thrift.TProtocol, oprot th
 	}
 }
 
-func (p *BaseClient) BasePing() (err error) {
+func (p *BaseFooClient) BasePing() (err error) {
 	if err = p.sendBasePing(); err != nil {
 		return
 	}
 	return p.recvBasePing()
 }
 
-func (p *BaseClient) sendBasePing() (err error) {
+func (p *BaseFooClient) sendBasePing() (err error) {
 	oprot := p.OutputProtocol
 	if oprot == nil {
 		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -61,7 +61,7 @@ func (p *BaseClient) sendBasePing() (err error) {
 	if err = oprot.WriteMessageBegin("basePing", thrift.CALL, p.SeqId); err != nil {
 		return
 	}
-	args := BaseBasePingArgs{}
+	args := BaseFooBasePingArgs{}
 	if err = args.Write(oprot); err != nil {
 		return
 	}
@@ -71,7 +71,7 @@ func (p *BaseClient) sendBasePing() (err error) {
 	return oprot.Flush()
 }
 
-func (p *BaseClient) recvBasePing() (err error) {
+func (p *BaseFooClient) recvBasePing() (err error) {
 	iprot := p.InputProtocol
 	if iprot == nil {
 		iprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -106,7 +106,7 @@ func (p *BaseClient) recvBasePing() (err error) {
 		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "basePing failed: invalid message type")
 		return
 	}
-	result := BaseBasePingResult{}
+	result := BaseFooBasePingResult{}
 	if err = result.Read(iprot); err != nil {
 		return
 	}
@@ -116,32 +116,32 @@ func (p *BaseClient) recvBasePing() (err error) {
 	return
 }
 
-type BaseProcessor struct {
+type BaseFooProcessor struct {
 	processorMap map[string]thrift.TProcessorFunction
-	handler      Base
+	handler      BaseFoo
 }
 
-func (p *BaseProcessor) AddToProcessorMap(key string, processor thrift.TProcessorFunction) {
+func (p *BaseFooProcessor) AddToProcessorMap(key string, processor thrift.TProcessorFunction) {
 	p.processorMap[key] = processor
 }
 
-func (p *BaseProcessor) GetProcessorFunction(key string) (processor thrift.TProcessorFunction, ok bool) {
+func (p *BaseFooProcessor) GetProcessorFunction(key string) (processor thrift.TProcessorFunction, ok bool) {
 	processor, ok = p.processorMap[key]
 	return processor, ok
 }
 
-func (p *BaseProcessor) ProcessorMap() map[string]thrift.TProcessorFunction {
+func (p *BaseFooProcessor) ProcessorMap() map[string]thrift.TProcessorFunction {
 	return p.processorMap
 }
 
-func NewBaseProcessor(handler Base) *BaseProcessor {
+func NewBaseFooProcessor(handler BaseFoo) *BaseFooProcessor {
 
-	self2 := &BaseProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
-	self2.processorMap["basePing"] = &baseProcessorBasePing{handler: handler}
+	self2 := &BaseFooProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
+	self2.processorMap["basePing"] = &baseFooProcessorBasePing{handler: handler}
 	return self2
 }
 
-func (p *BaseProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+func (p *BaseFooProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
 	name, _, seqId, err := iprot.ReadMessageBegin()
 	if err != nil {
 		return false, err
@@ -160,12 +160,12 @@ func (p *BaseProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, er
 
 }
 
-type baseProcessorBasePing struct {
-	handler Base
+type baseFooProcessorBasePing struct {
+	handler BaseFoo
 }
 
-func (p *baseProcessorBasePing) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
-	args := BaseBasePingArgs{}
+func (p *baseFooProcessorBasePing) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := BaseFooBasePingArgs{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
 		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
@@ -177,7 +177,7 @@ func (p *baseProcessorBasePing) Process(seqId int32, iprot, oprot thrift.TProtoc
 	}
 
 	iprot.ReadMessageEnd()
-	result := BaseBasePingResult{}
+	result := BaseFooBasePingResult{}
 	var err2 error
 	if err2 = p.handler.BasePing(); err2 != nil {
 		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing basePing: "+err2.Error())
@@ -207,14 +207,14 @@ func (p *baseProcessorBasePing) Process(seqId int32, iprot, oprot thrift.TProtoc
 
 // HELPER FUNCTIONS AND STRUCTURES
 
-type BaseBasePingArgs struct {
+type BaseFooBasePingArgs struct {
 }
 
-func NewBaseBasePingArgs() *BaseBasePingArgs {
-	return &BaseBasePingArgs{}
+func NewBaseFooBasePingArgs() *BaseFooBasePingArgs {
+	return &BaseFooBasePingArgs{}
 }
 
-func (p *BaseBasePingArgs) Read(iprot thrift.TProtocol) error {
+func (p *BaseFooBasePingArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
 	}
@@ -240,7 +240,7 @@ func (p *BaseBasePingArgs) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BaseBasePingArgs) Write(oprot thrift.TProtocol) error {
+func (p *BaseFooBasePingArgs) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("basePing_args"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
@@ -253,21 +253,21 @@ func (p *BaseBasePingArgs) Write(oprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BaseBasePingArgs) String() string {
+func (p *BaseFooBasePingArgs) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("BaseBasePingArgs(%+v)", *p)
+	return fmt.Sprintf("BaseFooBasePingArgs(%+v)", *p)
 }
 
-type BaseBasePingResult struct {
+type BaseFooBasePingResult struct {
 }
 
-func NewBaseBasePingResult() *BaseBasePingResult {
-	return &BaseBasePingResult{}
+func NewBaseFooBasePingResult() *BaseFooBasePingResult {
+	return &BaseFooBasePingResult{}
 }
 
-func (p *BaseBasePingResult) Read(iprot thrift.TProtocol) error {
+func (p *BaseFooBasePingResult) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
 	}
@@ -293,7 +293,7 @@ func (p *BaseBasePingResult) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BaseBasePingResult) Write(oprot thrift.TProtocol) error {
+func (p *BaseFooBasePingResult) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("basePing_result"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
@@ -306,9 +306,9 @@ func (p *BaseBasePingResult) Write(oprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BaseBasePingResult) String() string {
+func (p *BaseFooBasePingResult) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("BaseBasePingResult(%+v)", *p)
+	return fmt.Sprintf("BaseFooBasePingResult(%+v)", *p)
 }

@@ -18,7 +18,7 @@ var _ = bytes.Equal
 var _ = base.GoUnusedProtection__
 
 type Foo interface {
-	base.Base
+	base.BaseFoo
 	//This is a thrift service. Frugal will generate bindings that include
 	//a frugal Context for each service call.
 
@@ -36,15 +36,15 @@ type Foo interface {
 //This is a thrift service. Frugal will generate bindings that include
 //a frugal Context for each service call.
 type FooClient struct {
-	*base.BaseClient
+	*base.BaseFooClient
 }
 
 func NewFooClientFactory(t thrift.TTransport, f thrift.TProtocolFactory) *FooClient {
-	return &FooClient{BaseClient: base.NewBaseClientFactory(t, f)}
+	return &FooClient{BaseFooClient: base.NewBaseFooClientFactory(t, f)}
 }
 
 func NewFooClientProtocol(t thrift.TTransport, iprot thrift.TProtocol, oprot thrift.TProtocol) *FooClient {
-	return &FooClient{BaseClient: base.NewBaseClientProtocol(t, iprot, oprot)}
+	return &FooClient{BaseFooClient: base.NewBaseFooClientProtocol(t, iprot, oprot)}
 }
 
 // Ping the server.
@@ -208,11 +208,11 @@ func (p *FooClient) recvBlah() (value int64, err error) {
 }
 
 type FooProcessor struct {
-	*base.BaseProcessor
+	*base.BaseFooProcessor
 }
 
 func NewFooProcessor(handler Foo) *FooProcessor {
-	self4 := &FooProcessor{base.NewBaseProcessor(handler)}
+	self4 := &FooProcessor{base.NewBaseFooProcessor(handler)}
 	self4.AddToProcessorMap("ping", &fooProcessorPing{handler: handler})
 	self4.AddToProcessorMap("blah", &fooProcessorBlah{handler: handler})
 	return self4

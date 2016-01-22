@@ -16,7 +16,7 @@ import 'foo.dart' as t_foo;
 
 /// This is a thrift service. Frugal will generate bindings that include 
 /// a frugal Context for each service call.
-abstract class FFoo extends t_base.FBase {
+abstract class FFoo extends t_base.FBaseFoo {
 
   /// Ping the server.
   Future ping(frugal.FContext ctx);
@@ -27,7 +27,7 @@ abstract class FFoo extends t_base.FBase {
 
 /// This is a thrift service. Frugal will generate bindings that include 
 /// a frugal Context for each service call.
-class FFooClient extends t_base.FBaseClient implements FFoo {
+class FFooClient extends t_base.FBaseFooClient implements FFoo {
 
   FFooClient(frugal.FServiceProvider provider) {
     _transport = provider.fTransport;

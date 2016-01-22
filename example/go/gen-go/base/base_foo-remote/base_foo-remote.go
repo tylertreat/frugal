@@ -108,7 +108,7 @@ func main() {
 		Usage()
 		os.Exit(1)
 	}
-	client := base.NewBaseClientFactory(trans, protocolFactory)
+	client := base.NewBaseFooClientFactory(trans, protocolFactory)
 	if err := trans.Open(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error opening socket to ", host, ":", port, " ", err)
 		os.Exit(1)
