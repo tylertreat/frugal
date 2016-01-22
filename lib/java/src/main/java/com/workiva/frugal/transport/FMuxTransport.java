@@ -20,7 +20,7 @@ public class FMuxTransport extends FTransport {
     /**
      * Construct a new FMuxTransport.
      *
-     * @param transport TTransport to wrap
+     * @param transport  TTransport to wrap
      * @param numWorkers number of worker thread for the FTransport
      */
     public FMuxTransport(TTransport transport, int numWorkers) {
@@ -59,7 +59,7 @@ public class FMuxTransport extends FTransport {
             throw new RuntimeException("registry cannot by null");
         }
         if (this.registry != null) {
-            throw new RuntimeException("registry already set");
+            return;
         }
         this.registry = registry;
         for (int i = 0; i < workerThreads.length; i++) {

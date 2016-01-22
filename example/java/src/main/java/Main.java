@@ -31,15 +31,22 @@ public class Main {
     }
 
     private static void handleClient(FFoo.Client client) {
-        FContext ctx = new FContext();
         try {
-            client.ping(ctx);
+            client.ping(new FContext());
+            System.out.println("ping()");
         } catch (TException e) {
             System.out.println("ping error: " + e.getMessage());
         }
 
+        try {
+            client.basePing(new FContext());
+            System.out.println("basePing()");
+        } catch (TException e) {
+            System.out.println("basePing error: " + e.getMessage());
+        }
+
         Event event = new Event(42, "hello, world!");
-        ctx = new FContext();
+        FContext ctx = new FContext();
         try {
             long result = client.blah(ctx, 100, "awesomesauce", event);
             System.out.println("blah = " + result);
@@ -106,6 +113,12 @@ public class Main {
             System.out.format("blah(%s, %d, %s %s)\n", ctx, num, Str, event);
             return 42;
         }
+
+        @Override
+        public void basePing(FContext ctx) throws TException {
+            System.out.format("basePing(%s)\n", ctx);
+        }
+
     }
 
 }

@@ -9,6 +9,7 @@ library event.src.awesome_exception;
 import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart';
 import 'package:event/event.dart';
+import 'package:base/base.dart';
 
 class AwesomeException extends Error implements TBase {
   static final TStruct _STRUCT_DESC = new TStruct("AwesomeException");

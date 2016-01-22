@@ -5,10 +5,12 @@ environment:
   sdk: ^1.12.0
 dependencies:
   frugal:
-    git:
-      url: git@github.com:Workiva/frugal-dart.git
-      ref: new_stack
+    hosted:
+      name: frugal
+      url: https://pub.workiva.org
+    version: ^0.0.1
   thrift:
-    git:
-      url: git@github.com:Workiva/thrift-dart.git
-      ref: 0.0.1
+    hosted:
+      name: thrift
+      url: https://pub.workiva.org
+    version: ^0.0.1

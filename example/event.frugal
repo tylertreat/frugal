@@ -1,6 +1,8 @@
 # Example frugal file. Frugal is a superset of Thrift, meaning this file can
 # contain valid Thrift or Frugal-extended syntax.
 
+include "base.frugal"
+
 /**
  * This docstring doesn't get added to the generated code because
  * it doesn't have the @ sign.
@@ -31,7 +33,7 @@ exception AwesomeException {
  * This is a thrift service. Frugal will generate bindings that include 
  * a frugal Context for each service call.
  */
-service Foo {
+service Foo extends base.Base {
     /**@ Ping the server. */
     void ping(),
 
