@@ -6,15 +6,10 @@ environment:
 
 dependencies:
   logging: ^0.11.2
-  messaging_frontend:
-    git:
-      url: git@github.com:Workiva/messaging-frontend-dart.git
-      ref: 0.0.1
   thrift:
-    hosted:
-      name: thrift
-      url: https://pub.workiva.org
-    version: ^0.0.1
+    git:
+      url: git@github.com:Workiva/thrift-dart.git
+      ref: 0.0.1
   uuid: any
 
 dev_dependencies:
