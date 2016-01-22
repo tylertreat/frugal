@@ -9,6 +9,7 @@ library event.src.event;
 import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart';
 import 'package:event/event.dart';
+import 'package:base/base.dart';
 
 /// This docstring gets added to the generated code because it has
 /// the @ sign.

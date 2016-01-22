@@ -10,11 +10,12 @@ import 'dart:async';
 import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart';
 import 'package:event/event.dart';
+import 'package:base/base.dart';
 
 
 /// This is a thrift service. Frugal will generate bindings that include
 /// a frugal Context for each service call.
-abstract class Foo {
+abstract class Foo extends Base {
 
   /// Ping the server.
   Future ping();
@@ -27,26 +28,10 @@ abstract class Foo {
   Future<int> blah(int num, String str, Event event);
 }
 
-class FooClient implements Foo {
+class FooClient extends BaseClient implements Foo {
 
-  FooClient(TProtocol iprot, [TProtocol oprot = null]) {
-    _iprot = iprot;
-    _oprot = (oprot == null) ? iprot : oprot;
-  }
-
-  TProtocol _iprot;
-
-  TProtocol get iprot => _iprot;
-
-  TProtocol _oprot;
-
-  TProtocol get oprot => _oprot;
-
-  int _seqid = 0;
-
-  int get seqid => _seqid;
-
-  int nextSeqid() => ++_seqid;
+  FooClient(TProtocol iprot, [TProtocol oprot = null])
+    : super(iprot, oprot);
 
   Future ping() async {
     oprot.writeMessageBegin(new TMessage("ping", TMessageType.CALL, nextSeqid()));
@@ -104,15 +89,14 @@ class FooClient implements Foo {
 
 typedef void ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
 
-class FooProcessor implements TProcessor {
-  FooProcessor(Foo iface) {
-    iface_ = iface;
+class FooProcessor extends BaseProcessor implements TProcessor {
+  FooProcessor(Foo iface)
+    : super(iface) {
     PROCESS_MAP["ping"] = ping;
     PROCESS_MAP["blah"] = blah;
   }
 
   Foo iface_;
-  final Map<String, ProcessFunction> PROCESS_MAP = {};
 
   bool process(TProtocol iprot, TProtocol oprot) {
     TMessage msg = iprot.readMessageBegin();

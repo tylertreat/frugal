@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"unicode"
 
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/globals"
@@ -159,7 +158,7 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 }
 
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
-	scopeLower := lowercaseFirstLetter(scope.Name)
+	scopeLower := generator.LowercaseFirstLetter(scope.Name)
 	scopeTitle := strings.Title(scope.Name)
 
 	publisher := ""
@@ -264,7 +263,7 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 }
 
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
-	scopeLower := lowercaseFirstLetter(scope.Name)
+	scopeLower := generator.LowercaseFirstLetter(scope.Name)
 	scopeTitle := strings.Title(scope.Name)
 
 	subscriber := ""
@@ -425,9 +424,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
 	servTitle := strings.Title(service.Name)
 	nameTitle := strings.Title(method.Name)
-
-	// TODO: Is this assumption correct? Does Thrift just use the name as is?
-	nameLower := strings.ToLower(method.Name)
+	nameLower := generator.LowercaseFirstLetter(method.Name)
 
 	contents := ""
 	if method.Comment != nil {
@@ -631,7 +628,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	servTitle := strings.Title(service.Name)
 	servLower := strings.ToLower(service.Name)
 	nameTitle := strings.Title(method.Name)
-	nameLower := strings.ToLower(method.Name)
+	nameLower := generator.LowercaseFirstLetter(method.Name)
 
 	contents := fmt.Sprintf("type %sF%s struct {\n", servLower, nameTitle)
 	contents += fmt.Sprintf("\thandler F%s\n", servTitle)
@@ -822,10 +819,4 @@ func (g *Generator) qualifiedParamName(op *parser.Operation) string {
 		param = fmt.Sprintf("%s.%s", namespace, param)
 	}
 	return param
-}
-
-func lowercaseFirstLetter(s string) string {
-	runes := []rune(s)
-	runes[0] = unicode.ToLower(runes[0])
-	return string(runes)
 }

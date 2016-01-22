@@ -106,6 +106,22 @@ type Service struct {
 	Methods []*Method
 }
 
+func (s *Service) ExtendsInclude() string {
+	includeAndService := strings.Split(s.Extends, ".")
+	if len(includeAndService) == 2 {
+		return includeAndService[0]
+	}
+	return ""
+}
+
+func (s *Service) ExtendsService() string {
+	includeAndService := strings.Split(s.Extends, ".")
+	if len(includeAndService) == 2 {
+		return includeAndService[1]
+	}
+	return s.Extends
+}
+
 // ReferencedIncludes returns a slice containing the referenced includes which
 // will need to be imported in generated code for this Service.
 func (s *Service) ReferencedIncludes() []string {

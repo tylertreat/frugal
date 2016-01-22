@@ -411,17 +411,34 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 	if service.Comment != nil {
 		contents += g.GenerateInlineComment(service.Comment, "/")
 	}
-	contents += fmt.Sprintf("abstract class F%s {\n", strings.Title(service.Name))
+	if service.Extends != "" {
+		contents += fmt.Sprintf("abstract class F%s extends %s {\n",
+			strings.Title(service.Name), g.getServiceExtendsName(service))
+	} else {
+		contents += fmt.Sprintf("abstract class F%s {\n", strings.Title(service.Name))
+	}
 	for _, method := range service.Methods {
 		contents += "\n"
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, tab+"/")
 		}
 		contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s);\n",
-			g.generateReturnArg(method), strings.ToLower(method.Name), g.generateInputArgs(method.Arguments))
+			g.generateReturnArg(method), generator.LowercaseFirstLetter(method.Name), g.generateInputArgs(method.Arguments))
 	}
 	contents += "}\n\n"
 	return contents
+}
+
+func (g *Generator) getServiceExtendsName(service *parser.Service) string {
+	serviceName := "F" + service.ExtendsService()
+	include := service.ExtendsInclude()
+	if include != "" {
+		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
+			include = inc
+		}
+		serviceName = include + "." + serviceName
+	}
+	return serviceName
 }
 
 func (g *Generator) generateClient(service *parser.Service) string {
@@ -430,7 +447,13 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	if service.Comment != nil {
 		contents += g.GenerateInlineComment(service.Comment, "/")
 	}
-	contents += fmt.Sprintf("class F%sClient implements F%s {\n", servTitle, servTitle)
+	if service.Extends != "" {
+		contents += fmt.Sprintf("class F%sClient extends %sClient implements F%s {\n",
+			servTitle, g.getServiceExtendsName(service), servTitle)
+	} else {
+		contents += fmt.Sprintf("class F%sClient implements F%s {\n",
+			servTitle, servTitle)
+	}
 	contents += "\n"
 	contents += fmt.Sprintf(tab+"F%sClient(frugal.FServiceProvider provider) {\n", servTitle)
 	contents += tabtab + "_transport = provider.fTransport;\n"
@@ -453,7 +476,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
 	servLower := strings.ToLower(service.Name)
 	nameTitle := strings.Title(method.Name)
-	nameLower := strings.ToLower(method.Name)
+	nameLower := generator.LowercaseFirstLetter(method.Name)
 
 	contents := ""
 	if method.Comment != nil {
@@ -471,7 +494,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += fmt.Sprintf(tabtabtab+"t_%s.%s_args args = new t_%s.%s_args();\n",
 		servLower, nameLower, servLower, nameLower)
 	for _, arg := range method.Arguments {
-		argLower := strings.ToLower(arg.Name)
+		argLower := generator.LowercaseFirstLetter(arg.Name)
 		contents += fmt.Sprintf(tabtabtab+"args.%s = %s;\n", argLower, argLower)
 	}
 	contents += tabtabtab + "args.write(oprot);\n"
@@ -536,7 +559,7 @@ func (g *Generator) generateReturnArg(method *parser.Method) string {
 func (g *Generator) generateInputArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += ", " + g.getDartTypeFromThriftType(arg.Type) + " " + strings.ToLower(arg.Name)
+		argStr += ", " + g.getDartTypeFromThriftType(arg.Type) + " " + generator.LowercaseFirstLetter(arg.Name)
 	}
 	return argStr
 }
@@ -544,8 +567,8 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 func (g *Generator) generateErrors(method *parser.Method) string {
 	contents := ""
 	for _, exp := range method.Exceptions {
-		contents += fmt.Sprintf(tabtabtabtab+"if (result.%s != null) {\n", strings.ToLower(exp.Name))
-		contents += fmt.Sprintf(tabtabtabtabtab+"controller.addError(result.%s);\n", strings.ToLower(exp.Name))
+		contents += fmt.Sprintf(tabtabtabtab+"if (result.%s != null) {\n", generator.LowercaseFirstLetter(exp.Name))
+		contents += fmt.Sprintf(tabtabtabtabtab+"controller.addError(result.%s);\n", generator.LowercaseFirstLetter(exp.Name))
 		contents += tabtabtabtabtab + "return;\n"
 		contents += tabtabtabtab + "}\n"
 	}
