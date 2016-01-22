@@ -590,7 +590,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	contents += "\t}\n"
 	for _, method := range service.Methods {
 		contents += fmt.Sprintf("\tp.processorMap[\"%s\"] = &%sF%s{handler: handler, writeMu: writeMu}\n",
-			strings.ToLower(method.Name), servLower, strings.Title(method.Name))
+			generator.LowercaseFirstLetter(method.Name), servLower, strings.Title(method.Name))
 	}
 	contents += "\treturn p\n"
 	contents += "}\n\n"
