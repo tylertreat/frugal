@@ -153,9 +153,9 @@ func (g *Generator) addToPubspec(dir string) error {
 }
 
 func (g *Generator) exportClasses(dir string) error {
-	filename := toFileName(g.Frugal.Name)
+	filename := generator.LowercaseFirstLetter(g.Frugal.Name)
 	if ns, ok := g.Frugal.Thrift.Namespace(lang); ok {
-		filename = toFileName(toLibraryName(ns))
+		filename = generator.LowercaseFirstLetter(toLibraryName(ns))
 	}
 	dartFile := fmt.Sprintf("%s.%s", filename, lang)
 	mainFilePath := filepath.Join(dir, "lib", dartFile)
@@ -249,7 +249,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 
 	// Import thrift package for method args
 	servSnake := toFileName(s.Name)
-	imports += fmt.Sprintf("import '%s.dart' as t_%s;\n", servSnake, servSnake)
+	imports += fmt.Sprintf("import '%s.dart' as t_%s_file;\n", servSnake, servSnake)
 
 	_, err := file.WriteString(imports)
 	return err
@@ -512,7 +512,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtab + "oprot.writeRequestHeader(ctx);\n"
 	contents += fmt.Sprintf(tabtabtab+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.CALL, 0));\n",
 		nameLower)
-	contents += fmt.Sprintf(tabtabtab+"t_%s.%s_args args = new t_%s.%s_args();\n",
+	contents += fmt.Sprintf(tabtabtab+"t_%s_file.%s_args args = new t_%s_file.%s_args();\n",
 		servSnake, nameLower, servSnake, nameLower)
 	for _, arg := range method.Arguments {
 		argLower := generator.LowercaseFirstLetter(arg.Name)
@@ -540,7 +540,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtab + "throw error;\n"
 	contents += tabtabtabtab + "}\n\n"
 
-	contents += fmt.Sprintf(tabtabtabtab+"t_%s.%s_result result = new t_%s.%s_result();\n",
+	contents += fmt.Sprintf(tabtabtabtab+"t_%s_file.%s_result result = new t_%s_file.%s_result();\n",
 		servSnake, nameLower, servSnake, nameLower)
 	contents += tabtabtabtab + "result.read(iprot);\n"
 	contents += tabtabtabtab + "iprot.readMessageEnd();\n"
