@@ -516,8 +516,12 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		indent = tabtabtab
 	}
 	contents += indent + "oprot.writeRequestHeader(ctx);\n"
-	contents += fmt.Sprintf(indent+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.CALL, 0));\n",
-		nameLower)
+	msgType := "CALL"
+	if method.Oneway {
+		msgType = "ONEWAY"
+	}
+	contents += fmt.Sprintf(indent+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.%s, 0));\n",
+		nameLower, msgType)
 	contents += fmt.Sprintf(indent+"t_%s_file.%s_args args = new t_%s_file.%s_args();\n",
 		servSnake, nameLower, servSnake, nameLower)
 	for _, arg := range method.Arguments {

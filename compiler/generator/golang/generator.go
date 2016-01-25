@@ -505,8 +505,12 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += "\t\tf.mu.Unlock()\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
+	msgType := "CALL"
+	if method.Oneway {
+		msgType = "ONEWAY"
+	}
 	contents += fmt.Sprintf(
-		"\tif err = f.oprot.WriteMessageBegin(\"%s\", thrift.CALL, 0); err != nil {\n", nameLower)
+		"\tif err = f.oprot.WriteMessageBegin(\"%s\", thrift.%s, 0); err != nil {\n", nameLower, msgType)
 	contents += "\t\tf.mu.Unlock()\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
