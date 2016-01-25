@@ -124,7 +124,8 @@ scope Events {
 
 As a result, `EventCreated` would be published on `foo.bar.Events.EventCreated`.
 
-Prefixes can also define variables which are provided at publish and subscribe time:
+Prefixes can also define variables which are provided at publish and subscribe
+time:
 
 ```thrift
 scope Events {
@@ -150,7 +151,9 @@ subscriber.SubscribeEventCreated(user, func(ctx *frugal.FContext, e *event.Event
 
 ### Generated Comments
 
-In Thrift, comments of the form `/** ... */` are included in generated code. In Frugal, to include comments in generated code, they should be of the form `/**@ ... */`.
+In Thrift, comments of the form `/** ... */` are included in generated code. In
+Frugal, to include comments in generated code, they should be of the form `/**@
+... */`.
 
 ```thrift
 /**@
@@ -166,22 +169,31 @@ service FooService {
 }
 ```
 
+## Thrift Parity
+
+Frugal is intended to be a superset of Thrift, meaning valid Thrift should be
+valid Frugal. However, there are known Thrift features which are not currently
+supported in Frugal, namely annotations. File an issue if you discover an
+inconsistency with the IDL.
+
 ## Docker
 
 ### Via Shipyard
 
-Grab the frugal Docker image id for the image you would like to use from [Shipyard](https://shipyard.workiva.org/repo/Workiva/frugal).
+Grab the frugal Docker image id for the image you would like to use from
+[Shipyard](https://shipyard.workiva.org/repo/Workiva/frugal).
 
 Switch to the directory that has the files you would like to generate.
 
-Then run the docker image. This command will mount your local directory into the
-image. It supports all of the standard Frugal commands.
+Then run the docker image. This command will mount your local directory into
+the image. It supports all of the standard Frugal commands.
 
 ```
 docker run -v "$(pwd):/data" drydock.workiva.org/workiva/frugal:{SHIPYARD_ID} frugal -gen={LANG} {FILE_TO_GEN}
 ```
 
-An example to generate the Go code off the event.frugal definition in the example directory.
+An example to generate the Go code off the event.frugal definition in the
+example directory.
 
 ```
 $ cd example
