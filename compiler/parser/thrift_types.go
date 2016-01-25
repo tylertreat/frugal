@@ -193,6 +193,22 @@ func (s *Service) ReferencedInternals() []string {
 	return internals
 }
 
+func (s *Service) validate() error {
+	for _, method := range s.Methods {
+		if method.Oneway {
+			if len(method.Exceptions) > 0 {
+				return fmt.Errorf("Oneway method %s.%s cannot throw an exception",
+					s.Name, method.Name)
+			}
+			if method.ReturnType != nil {
+				return fmt.Errorf("Void method %s.%s cannot return %s",
+					s.Name, method.Name, method.ReturnType)
+			}
+		}
+	}
+	return nil
+}
+
 type Thrift struct {
 	Includes   []*Include
 	Typedefs   []*TypeDef
@@ -263,6 +279,16 @@ func (t *Thrift) ReferencedInternals() []string {
 	return internals
 }
 
+func (t *Thrift) validate() error {
+	if err := t.validateIncludes(); err != nil {
+		return err
+	}
+	if err := t.validateServices(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (t *Thrift) validateIncludes() error {
 	includes := map[string]struct{}{}
 	for _, include := range t.Includes {
@@ -270,6 +296,15 @@ func (t *Thrift) validateIncludes() error {
 			return fmt.Errorf("Duplicate include: %s", include.Name)
 		}
 		includes[include.Name] = struct{}{}
+	}
+	return nil
+}
+
+func (t *Thrift) validateServices() error {
+	for _, service := range t.Services {
+		if err := service.validate(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
