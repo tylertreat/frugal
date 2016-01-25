@@ -52,7 +52,7 @@ func Compile(options Options) error {
 		return err
 	}
 
-	_, err = compile(absFile, false)
+	_, err = compile(absFile, strings.HasSuffix(absFile, ".thrift"))
 	return err
 }
 
