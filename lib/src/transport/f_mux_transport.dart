@@ -23,7 +23,7 @@ class FMultiplexedTransport extends FTransport {
       throw new FError.withMessage("registry cannot be null");
     }
     if (_registry != null) {
-      throw new FError.withMessage("registry alread set");
+      return;
     }
 
     _registry = registry;
