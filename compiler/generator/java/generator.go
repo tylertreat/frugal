@@ -431,21 +431,35 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtab + fmt.Sprintf("public %s %s(FContext ctx%s) %s {\n",
 		g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments), g.generateExceptions(method.Exceptions))
 	contents += tabtabtab + "FProtocol oprot = this.outputProtocol;\n"
-	contents += tabtabtab + "BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);\n"
-	contents += tabtabtab + fmt.Sprintf("this.transport.register(ctx, recv%sHandler(ctx, result));\n", strings.Title(method.Name))
-	contents += tabtabtab + "try {\n"
-	contents += tabtabtabtab + "synchronized (WRITE_LOCK) {\n"
-	contents += tabtabtabtabtab + "oprot.writeRequestHeader(ctx);\n"
-	contents += tabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.CALL, 0));\n", method.Name)
-	contents += tabtabtabtabtab + fmt.Sprintf("%s.%s_args args = new %s.%s_args();\n", servTitle, method.Name, servTitle, method.Name)
-	for _, arg := range method.Arguments {
-		contents += tabtabtabtabtab + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
+	indent := tabtabtab
+	if !method.Oneway {
+		contents += tabtabtab + "BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);\n"
+		contents += tabtabtab + fmt.Sprintf("this.transport.register(ctx, recv%sHandler(ctx, result));\n", strings.Title(method.Name))
+		contents += tabtabtab + "try {\n"
+		indent += tab
 	}
-	contents += tabtabtabtabtab + "args.write(oprot);\n"
-	contents += tabtabtabtabtab + "oprot.writeMessageEnd();\n"
-	contents += tabtabtabtabtab + "oprot.getTransport().flush();\n"
-	contents += tabtabtabtab + "}\n\n"
+	contents += indent + "synchronized (WRITE_LOCK) {\n"
+	contents += indent + tab + "oprot.writeRequestHeader(ctx);\n"
+	msgType := "CALL"
+	if method.Oneway {
+		msgType = "ONEWAY"
+	}
+	contents += indent + tab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", method.Name, msgType)
+	contents += indent + tab + fmt.Sprintf("%s.%s_args args = new %s.%s_args();\n", servTitle, method.Name, servTitle, method.Name)
+	for _, arg := range method.Arguments {
+		contents += indent + tab + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
+	}
+	contents += indent + tab + "args.write(oprot);\n"
+	contents += indent + tab + "oprot.writeMessageEnd();\n"
+	contents += indent + tab + "oprot.getTransport().flush();\n"
+	contents += indent + "}\n"
 
+	if method.Oneway {
+		contents += tabtab + "}\n"
+		return contents
+	}
+
+	contents += "\n"
 	contents += tabtabtabtab + "Object res = null;\n"
 	contents += tabtabtabtab + "try {\n"
 	contents += tabtabtabtabtab + "res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);\n"
@@ -532,7 +546,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 func (g *Generator) generateExceptions(exceptions []*parser.Field) string {
 	contents := "throws TException"
 	for _, exception := range exceptions {
-		contents += ", " + exception.Type.String()
+		contents += ", " + g.getJavaTypeFromThriftType(exception.Type)
 	}
 	return contents
 }
@@ -585,18 +599,28 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtabtab + "args.read(iprot);\n"
 		contents += tabtabtabtab + "} catch (TException e) {\n"
 		contents += tabtabtabtabtab + "iprot.readMessageEnd();\n"
-		contents += tabtabtabtabtab + "TApplicationException x = new TApplicationException(TApplicationException.PROTOCOL_ERROR, e.getMessage());\n"
-		contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"
-		contents += tabtabtabtabtabtab + "oprot.writeResponseHeader(ctx);\n"
-		contents += tabtabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.EXCEPTION, 0));\n", method.Name)
-		contents += tabtabtabtabtabtab + "x.write(oprot);\n"
-		contents += tabtabtabtabtabtab + "oprot.writeMessageEnd();\n"
-		contents += tabtabtabtabtabtab + "oprot.getTransport().flush();\n"
-		contents += tabtabtabtabtab + "}\n"
-		contents += tabtabtabtabtab + "throw x;\n"
+		if !method.Oneway {
+			contents += tabtabtabtabtab + "TApplicationException x = new TApplicationException(TApplicationException.PROTOCOL_ERROR, e.getMessage());\n"
+			contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"
+			contents += tabtabtabtabtabtab + "oprot.writeResponseHeader(ctx);\n"
+			contents += tabtabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.EXCEPTION, 0));\n", method.Name)
+			contents += tabtabtabtabtabtab + "x.write(oprot);\n"
+			contents += tabtabtabtabtabtab + "oprot.writeMessageEnd();\n"
+			contents += tabtabtabtabtabtab + "oprot.getTransport().flush();\n"
+			contents += tabtabtabtabtab + "}\n"
+		}
+		contents += tabtabtabtabtab + "throw e;\n"
 		contents += tabtabtabtab + "}\n\n"
 
 		contents += tabtabtabtab + "iprot.readMessageEnd();\n"
+
+		if method.Oneway {
+			contents += tabtabtabtab + fmt.Sprintf("this.handler.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments))
+			contents += tabtabtab + "}\n"
+			contents += tabtab + "}\n\n"
+			continue
+		}
+
 		contents += tabtabtabtab + fmt.Sprintf("%s.%s_result result = new %s.%s_result();\n", servTitle, method.Name, servTitle, method.Name)
 		contents += tabtabtabtab + "try {\n"
 		if method.ReturnType == nil {
@@ -686,7 +710,9 @@ func (g *Generator) getJavaTypeFromThriftType(t *parser.Type) string {
 
 func containerType(typeName string) string {
 	switch typeName {
-	case "boolean", "byte", "short", "int", "long", "double":
+	case "int":
+		return "Integer"
+	case "boolean", "byte", "short", "long", "double":
 		return strings.Title(typeName)
 	default:
 		return typeName
@@ -698,10 +724,9 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 	include := t.IncludeName()
 	if include != "" {
 		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-		if !ok {
-			namespace = include
+		if ok {
+			return fmt.Sprintf("%s.%s", namespace, param)
 		}
-		param = fmt.Sprintf("%s.%s", namespace, param)
 	}
 	return param
 }

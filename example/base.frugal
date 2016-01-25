@@ -1,3 +1,4 @@
+namespace java base
 
 exception api_exception {}
 
