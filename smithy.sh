@@ -14,6 +14,5 @@ cd $ROOT
 # Run the generator tests
 go get -d ./compiler .
 go build
-# TODO: Re-enable tests
-# go test ./test
-# rm -rf ./test/out
+go test ./test
+rm -rf ./test/out
