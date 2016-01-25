@@ -164,6 +164,10 @@ func (f *Frugal) assignFrugal() {
 	}
 }
 
+func (f *Frugal) validate() error {
+	return f.Thrift.validate()
+}
+
 func (f *Frugal) sort() {
 	sort.Sort(ScopesByName(f.Scopes))
 }
