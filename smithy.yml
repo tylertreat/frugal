@@ -8,4 +8,4 @@ script:
 
 artifacts:
     artifactory:
-        - libfrugal-*.jar
+        - frugal-*.jar
