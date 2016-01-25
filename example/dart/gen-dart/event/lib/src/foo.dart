@@ -26,6 +26,12 @@ abstract class Foo extends BaseFoo {
   /// @param str
   /// @param event
   Future<int> blah(int num, String str, Event event);
+
+  /// oneway methods don't receive a response from the server.
+  /// 
+  /// @param id
+  /// @param req
+  Future oneWay(int id, Map<int, String> req);
 }
 
 class FooClient extends BaseFooClient implements Foo {
@@ -82,7 +88,22 @@ class FooClient extends BaseFooClient implements Foo {
     if (result.awe != null) {
       throw result.awe;
     }
+    if (result.api != null) {
+      throw result.api;
+    }
     throw new TApplicationError(TApplicationErrorType.MISSING_RESULT, "blah failed: unknown result");
+  }
+
+  Future oneWay(int id, Map<int, String> req) async {
+    oprot.writeMessageBegin(new TMessage("oneWay", TMessageType.ONEWAY, nextSeqid()));
+    oneWay_args args = new oneWay_args();
+    args.id = id;
+    args.req = req;
+    args.write(oprot);
+    oprot.writeMessageEnd();
+
+    await oprot.transport.flush();
+
   }
 
 }
@@ -94,6 +115,7 @@ class FooProcessor extends BaseFooProcessor implements TProcessor {
     : super(iface) {
     PROCESS_MAP["ping"] = ping;
     PROCESS_MAP["blah"] = blah;
+    PROCESS_MAP["oneWay"] = oneWay;
   }
 
   Foo iface_;
@@ -136,6 +158,8 @@ class FooProcessor extends BaseFooProcessor implements TProcessor {
       result.success = await iface_.blah(args.num, args.str, args.event);
     } on AwesomeException catch(awe) {
       result.awe = awe;
+    } on api_exception catch(api) {
+      result.api = api;
     } catch (th) {
       // Internal error
       TApplicationError x = new TApplicationError(TApplicationErrorType.INTERNAL_ERROR, "Internal error processing blah");
@@ -149,6 +173,14 @@ class FooProcessor extends BaseFooProcessor implements TProcessor {
     result.write(oprot);
     oprot.writeMessageEnd();
     oprot.transport.flush();
+  }
+
+  oneWay(int seqid, TProtocol iprot, TProtocol oprot) {
+    oneWay_args args = new oneWay_args();
+    args.read(iprot);
+    iprot.readMessageEnd();
+    iface_.oneWay(args.id, args.req);
+    return;
   }
 
 }
@@ -531,11 +563,14 @@ class blah_result implements TBase {
   static final TStruct _STRUCT_DESC = new TStruct("blah_result");
   static final TField _SUCCESS_FIELD_DESC = new TField("success", TType.I64, 0);
   static final TField _AWE_FIELD_DESC = new TField("awe", TType.STRUCT, 1);
+  static final TField _API_FIELD_DESC = new TField("api", TType.STRUCT, 2);
 
   int _success;
   static const int SUCCESS = 0;
   AwesomeException _awe;
   static const int AWE = 1;
+  api_exception _api;
+  static const int API = 2;
 
   bool __isset_success = false;
 
@@ -569,12 +604,27 @@ class blah_result implements TBase {
     this.awe = null;
   }
 
+  // api
+  api_exception get api => this._api;
+
+  set api(api_exception api) {
+    this._api = api;
+  }
+
+  bool isSetApi() => this.api != null;
+
+  unsetApi() {
+    this.api = null;
+  }
+
   getFieldValue(int fieldID) {
     switch (fieldID) {
       case SUCCESS:
         return this.success;
       case AWE:
         return this.awe;
+      case API:
+        return this.api;
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -598,6 +648,14 @@ class blah_result implements TBase {
         }
         break;
 
+      case API:
+        if (value == null) {
+          unsetApi();
+        } else {
+          this.api = value;
+        }
+        break;
+
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -610,6 +668,8 @@ class blah_result implements TBase {
         return isSetSuccess();
       case AWE:
         return isSetAwe();
+      case API:
+        return isSetApi();
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -640,6 +700,14 @@ class blah_result implements TBase {
             TProtocolUtil.skip(iprot, field.type);
           }
           break;
+        case API:
+          if (field.type == TType.STRUCT) {
+            this.api = new api_exception();
+            this.api.read(iprot);
+          } else {
+            TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
         default:
           TProtocolUtil.skip(iprot, field.type);
           break;
@@ -663,6 +731,10 @@ class blah_result implements TBase {
       oprot.writeFieldBegin(_AWE_FIELD_DESC);
       this.awe.write(oprot);
       oprot.writeFieldEnd();
+    } else if (this.isSetApi()) {
+      oprot.writeFieldBegin(_API_FIELD_DESC);
+      this.api.write(oprot);
+      oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
@@ -682,6 +754,14 @@ class blah_result implements TBase {
       ret.write(this.awe);
     }
 
+    ret.write(", ");
+    ret.write("api:");
+    if (this.api == null) {
+      ret.write("null");
+    } else {
+      ret.write(this.api);
+    }
+
     ret.write(")");
 
     return ret.toString();
@@ -689,6 +769,198 @@ class blah_result implements TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
+  }
+
+}
+
+class oneWay_args implements TBase {
+  static final TStruct _STRUCT_DESC = new TStruct("oneWay_args");
+  static final TField _ID_FIELD_DESC = new TField("id", TType.I64, 1);
+  static final TField _REQ_FIELD_DESC = new TField("req", TType.MAP, 2);
+
+  int _id;
+  static const int ID = 1;
+  Map<int, String> _req;
+  static const int REQ = 2;
+
+  bool __isset_id = false;
+
+  oneWay_args() {
+  }
+
+  // id
+  int get id => this._id;
+
+  set id(int id) {
+    this._id = id;
+    this.__isset_id = true;
+  }
+
+  bool isSetId() => this.__isset_id;
+
+  unsetId() {
+    this.__isset_id = false;
+  }
+
+  // req
+  Map<int, String> get req => this._req;
+
+  set req(Map<int, String> req) {
+    this._req = req;
+  }
+
+  bool isSetReq() => this.req != null;
+
+  unsetReq() {
+    this.req = null;
+  }
+
+  getFieldValue(int fieldID) {
+    switch (fieldID) {
+      case ID:
+        return this.id;
+      case REQ:
+        return this.req;
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  setFieldValue(int fieldID, Object value) {
+    switch (fieldID) {
+      case ID:
+        if (value == null) {
+          unsetId();
+        } else {
+          this.id = value;
+        }
+        break;
+
+      case REQ:
+        if (value == null) {
+          unsetReq();
+        } else {
+          this.req = value;
+        }
+        break;
+
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  // Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise
+  bool isSet(int fieldID) {
+    switch (fieldID) {
+      case ID:
+        return isSetId();
+      case REQ:
+        return isSetReq();
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  read(TProtocol iprot) {
+    TField field;
+    iprot.readStructBegin();
+    while (true) {
+      field = iprot.readFieldBegin();
+      if (field.type == TType.STOP) {
+        break;
+      }
+      switch (field.id) {
+        case ID:
+          if (field.type == TType.I64) {
+            this.id = iprot.readI64();
+            this.__isset_id = true;
+          } else {
+            TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case REQ:
+          if (field.type == TType.MAP) {
+            {
+              TMap _map0 = iprot.readMapBegin();
+              this.req = new Map<int, String>();
+              for (int _i1 = 0; _i1 < _map0.length; ++_i1) {
+                int _key2;
+                String _val3;
+                _key2 = iprot.readI32();
+                _val3 = iprot.readString();
+                this.req[_key2] = _val3;
+              }
+              iprot.readMapEnd();
+            }
+          } else {
+            TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        default:
+          TProtocolUtil.skip(iprot, field.type);
+          break;
+      }
+      iprot.readFieldEnd();
+    }
+    iprot.readStructEnd();
+
+    // check for required fields of primitive type, which can't be checked in the validate method
+    if (!__isset_id) {
+        throw new TProtocolError(TProtocolErrorType.UNKNOWN, "Required field 'id' was not found in serialized data! Struct: " + toString());
+    }
+
+    validate();
+  }
+
+  write(TProtocol oprot) {
+    validate();
+
+    oprot.writeStructBegin(_STRUCT_DESC);
+    oprot.writeFieldBegin(_ID_FIELD_DESC);
+    oprot.writeI64(this.id);
+    oprot.writeFieldEnd();
+    if (this.req != null) {
+      oprot.writeFieldBegin(_REQ_FIELD_DESC);
+      {
+        oprot.writeMapBegin(new TMap(TType.I32, TType.STRING, this.req.length));
+        for (var elem5 in this.req.keys) {
+          oprot.writeI32(elem5);
+          oprot.writeString(this.req[elem5]);
+        }
+        oprot.writeMapEnd();
+      }
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldStop();
+    oprot.writeStructEnd();
+  }
+
+  String toString() {
+    StringBuffer ret = new StringBuffer("oneWay_args(");
+
+    ret.write("id:");
+    ret.write(this.id);
+
+    ret.write(", ");
+    ret.write("req:");
+    if (this.req == null) {
+      ret.write("null");
+    } else {
+      ret.write(this.req);
+    }
+
+    ret.write(")");
+
+    return ret.toString();
+  }
+
+  validate() {
+    // check for required fields
+    // alas, we cannot check 'id' because it's a primitive and you chose the non-beans generator.
+    if (req == null) {
+      throw new TProtocolError(TProtocolErrorType.UNKNOWN, "Required field 'req' was not present! Struct: " + toString());
+    }
     // check that fields of type enum have valid values
   }
 
