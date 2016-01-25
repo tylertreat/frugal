@@ -31,6 +31,12 @@ type Foo interface {
 	//  - Str
 	//  - Event
 	Blah(num int32, Str string, event *Event) (r int64, err error)
+	// oneway methods don't receive a response from the server.
+	//
+	// Parameters:
+	//  - ID
+	//  - Req
+	OneWay(id ID, req Request) (err error)
 }
 
 //This is a thrift service. Frugal will generate bindings that include
@@ -202,9 +208,47 @@ func (p *FooClient) recvBlah() (value int64, err error) {
 	if result.Awe != nil {
 		err = result.Awe
 		return
+	} else if result.API != nil {
+		err = result.API
+		return
 	}
 	value = result.GetSuccess()
 	return
+}
+
+// oneway methods don't receive a response from the server.
+//
+// Parameters:
+//  - ID
+//  - Req
+func (p *FooClient) OneWay(id ID, req Request) (err error) {
+	if err = p.sendOneWay(id, req); err != nil {
+		return
+	}
+	return
+}
+
+func (p *FooClient) sendOneWay(id ID, req Request) (err error) {
+	oprot := p.OutputProtocol
+	if oprot == nil {
+		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
+		p.OutputProtocol = oprot
+	}
+	p.SeqId++
+	if err = oprot.WriteMessageBegin("oneWay", thrift.ONEWAY, p.SeqId); err != nil {
+		return
+	}
+	args := FooOneWayArgs{
+		ID:  id,
+		Req: req,
+	}
+	if err = args.Write(oprot); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	return oprot.Flush()
 }
 
 type FooProcessor struct {
@@ -215,6 +259,7 @@ func NewFooProcessor(handler Foo) *FooProcessor {
 	self4 := &FooProcessor{base.NewBaseFooProcessor(handler)}
 	self4.AddToProcessorMap("ping", &fooProcessorPing{handler: handler})
 	self4.AddToProcessorMap("blah", &fooProcessorBlah{handler: handler})
+	self4.AddToProcessorMap("oneWay", &fooProcessorOneWay{handler: handler})
 	return self4
 }
 
@@ -287,6 +332,8 @@ func (p *fooProcessorBlah) Process(seqId int32, iprot, oprot thrift.TProtocol) (
 		switch v := err2.(type) {
 		case *AwesomeException:
 			result.Awe = v
+		case *base.APIException:
+			result.API = v
 		default:
 			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing blah: "+err2.Error())
 			oprot.WriteMessageBegin("blah", thrift.EXCEPTION, seqId)
@@ -314,6 +361,25 @@ func (p *fooProcessorBlah) Process(seqId int32, iprot, oprot thrift.TProtocol) (
 		return
 	}
 	return true, err
+}
+
+type fooProcessorOneWay struct {
+	handler Foo
+}
+
+func (p *fooProcessorOneWay) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := FooOneWayArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	var err2 error
+	if err2 = p.handler.OneWay(args.ID, args.Req); err2 != nil {
+		return true, err2
+	}
+	return true, nil
 }
 
 // HELPER FUNCTIONS AND STRUCTURES
@@ -614,9 +680,11 @@ func (p *FooBlahArgs) String() string {
 // Attributes:
 //  - Success
 //  - Awe
+//  - API
 type FooBlahResult struct {
-	Success *int64            `thrift:"success,0" db:"success" json:"success,omitempty"`
-	Awe     *AwesomeException `thrift:"awe,1" db:"awe" json:"awe,omitempty"`
+	Success *int64             `thrift:"success,0" db:"success" json:"success,omitempty"`
+	Awe     *AwesomeException  `thrift:"awe,1" db:"awe" json:"awe,omitempty"`
+	API     *base.APIException `thrift:"api,2" db:"api" json:"api,omitempty"`
 }
 
 func NewFooBlahResult() *FooBlahResult {
@@ -640,12 +708,25 @@ func (p *FooBlahResult) GetAwe() *AwesomeException {
 	}
 	return p.Awe
 }
+
+var FooBlahResult_API_DEFAULT *base.APIException
+
+func (p *FooBlahResult) GetAPI() *base.APIException {
+	if !p.IsSetAPI() {
+		return FooBlahResult_API_DEFAULT
+	}
+	return p.API
+}
 func (p *FooBlahResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
 
 func (p *FooBlahResult) IsSetAwe() bool {
 	return p.Awe != nil
+}
+
+func (p *FooBlahResult) IsSetAPI() bool {
+	return p.API != nil
 }
 
 func (p *FooBlahResult) Read(iprot thrift.TProtocol) error {
@@ -668,6 +749,10 @@ func (p *FooBlahResult) Read(iprot thrift.TProtocol) error {
 			}
 		case 1:
 			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+		case 2:
+			if err := p.ReadField2(iprot); err != nil {
 				return err
 			}
 		default:
@@ -702,6 +787,14 @@ func (p *FooBlahResult) ReadField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *FooBlahResult) ReadField2(iprot thrift.TProtocol) error {
+	p.API = &base.APIException{}
+	if err := p.API.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.API), err)
+	}
+	return nil
+}
+
 func (p *FooBlahResult) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("blah_result"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
@@ -710,6 +803,9 @@ func (p *FooBlahResult) Write(oprot thrift.TProtocol) error {
 		return err
 	}
 	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField2(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -751,9 +847,193 @@ func (p *FooBlahResult) writeField1(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *FooBlahResult) writeField2(oprot thrift.TProtocol) (err error) {
+	if p.IsSetAPI() {
+		if err := oprot.WriteFieldBegin("api", thrift.STRUCT, 2); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:api: ", p), err)
+		}
+		if err := p.API.Write(oprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.API), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 2:api: ", p), err)
+		}
+	}
+	return err
+}
+
 func (p *FooBlahResult) String() string {
 	if p == nil {
 		return "<nil>"
 	}
 	return fmt.Sprintf("FooBlahResult(%+v)", *p)
+}
+
+// Attributes:
+//  - ID
+//  - Req
+type FooOneWayArgs struct {
+	ID  ID      `thrift:"id,1,required" db:"id" json:"id"`
+	Req Request `thrift:"req,2,required" db:"req" json:"req"`
+}
+
+func NewFooOneWayArgs() *FooOneWayArgs {
+	return &FooOneWayArgs{}
+}
+
+func (p *FooOneWayArgs) GetID() ID {
+	return p.ID
+}
+
+func (p *FooOneWayArgs) GetReq() Request {
+	return p.Req
+}
+func (p *FooOneWayArgs) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	var issetID bool = false
+	var issetReq bool = false
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 1:
+			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+			issetID = true
+		case 2:
+			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
+			issetReq = true
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	if !issetID {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field ID is not set"))
+	}
+	if !issetReq {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Req is not set"))
+	}
+	return nil
+}
+
+func (p *FooOneWayArgs) ReadField1(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI64(); err != nil {
+		return thrift.PrependError("error reading field 1: ", err)
+	} else {
+		temp := ID(v)
+		p.ID = temp
+	}
+	return nil
+}
+
+func (p *FooOneWayArgs) ReadField2(iprot thrift.TProtocol) error {
+	_, _, size, err := iprot.ReadMapBegin()
+	if err != nil {
+		return thrift.PrependError("error reading map begin: ", err)
+	}
+	tMap := make(Request, size)
+	p.Req = tMap
+	for i := 0; i < size; i++ {
+		var _key5 Int
+		if v, err := iprot.ReadI32(); err != nil {
+			return thrift.PrependError("error reading field 0: ", err)
+		} else {
+			temp := Int(v)
+			_key5 = temp
+		}
+		var _val6 string
+		if v, err := iprot.ReadString(); err != nil {
+			return thrift.PrependError("error reading field 0: ", err)
+		} else {
+			_val6 = v
+		}
+		p.Req[_key5] = _val6
+	}
+	if err := iprot.ReadMapEnd(); err != nil {
+		return thrift.PrependError("error reading map end: ", err)
+	}
+	return nil
+}
+
+func (p *FooOneWayArgs) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("oneWay_args"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *FooOneWayArgs) writeField1(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("id", thrift.I64, 1); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:id: ", p), err)
+	}
+	if err := oprot.WriteI64(int64(p.ID)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.id (1) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:id: ", p), err)
+	}
+	return err
+}
+
+func (p *FooOneWayArgs) writeField2(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("req", thrift.MAP, 2); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:req: ", p), err)
+	}
+	if err := oprot.WriteMapBegin(thrift.I32, thrift.STRING, len(p.Req)); err != nil {
+		return thrift.PrependError("error writing map begin: ", err)
+	}
+	for k, v := range p.Req {
+		if err := oprot.WriteI32(int32(k)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
+		}
+		if err := oprot.WriteString(string(v)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
+		}
+	}
+	if err := oprot.WriteMapEnd(); err != nil {
+		return thrift.PrependError("error writing map end: ", err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:req: ", p), err)
+	}
+	return err
+}
+
+func (p *FooOneWayArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("FooOneWayArgs(%+v)", *p)
 }

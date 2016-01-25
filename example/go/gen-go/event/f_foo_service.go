@@ -26,6 +26,8 @@ type FFoo interface {
 	Ping(*frugal.FContext) (err error)
 	// Blah the server.
 	Blah(*frugal.FContext, int32, string, *Event) (r int64, err error)
+	// oneway methods don't receive a response from the server.
+	OneWay(*frugal.FContext, ID, Request) (err error)
 }
 
 type FFooClient struct {
@@ -242,9 +244,45 @@ func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- int64,
 			errorC <- result.Awe
 			return nil
 		}
+		if result.API != nil {
+			errorC <- result.API
+			return nil
+		}
 		resultC <- result.GetSuccess()
 		return nil
 	}
+}
+
+// oneway methods don't receive a response from the server.
+func (f *FFooClient) OneWay(ctx *frugal.FContext, id ID, req Request) (err error) {
+	f.mu.Lock()
+	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
+		f.mu.Unlock()
+		return
+	}
+	if err = f.oprot.WriteMessageBegin("oneWay", thrift.CALL, 0); err != nil {
+		f.mu.Unlock()
+		return
+	}
+	args := FooOneWayArgs{
+		ID: id,
+		Req: req,
+	}
+	if err = args.Write(f.oprot); err != nil {
+		f.mu.Unlock()
+		return
+	}
+	if err = f.oprot.WriteMessageEnd(); err != nil {
+		f.mu.Unlock()
+		return
+	}
+	if err = f.oprot.Flush(); err != nil {
+		f.mu.Unlock()
+		return
+	}
+	f.mu.Unlock()
+
+	return
 }
 
 type FFooProcessor struct {
@@ -257,6 +295,7 @@ func NewFFooProcessor(handler FFoo) *FFooProcessor {
 	}
 	p.AddToProcessorMap("ping", &fooFPing{handler: handler, writeMu: p.GetWriteMutex()})
 	p.AddToProcessorMap("blah", &fooFBlah{handler: handler, writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("oneWay", &fooFOneWay{handler: handler, writeMu: p.GetWriteMutex()})
 	return p
 }
 
@@ -344,6 +383,8 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 		switch v := err2.(type) {
 		case *AwesomeException:
 			result.Awe = v
+		case *base.APIException:
+			result.API = v
 		default:
 			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing blah: "+err2.Error())
 			p.writeMu.Lock()
@@ -375,6 +416,27 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 		err = err2
 	}
 	p.writeMu.Unlock()
+	return err
+}
+
+type fooFOneWay struct {
+	handler FFoo
+	writeMu *sync.Mutex
+}
+
+func (p *fooFOneWay) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+	args := FooOneWayArgs{}
+	var err error
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		return err
+	}
+
+	iprot.ReadMessageEnd()
+	var err2 error
+	if err2 = p.handler.OneWay(ctx, args.ID, args.Req); err2 != nil {
+		return err2
+	}
 	return err
 }
 

@@ -1,4 +1,7 @@
 
+exception api_exception {}
+
+
 service BaseFoo {
     void basePing()
 }

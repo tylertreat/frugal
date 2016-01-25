@@ -18,6 +18,18 @@ var _ = bytes.Equal
 var _ = base.GoUnusedProtection__
 var GoUnusedProtection__ int
 
+type ID int64
+
+func IDPtr(v ID) *ID { return &v }
+
+type Int int32
+
+func IntPtr(v Int) *Int { return &v }
+
+type Request map[Int]string
+
+func RequestPtr(v Request) *Request { return &v }
+
 // This docstring gets added to the generated code because it has
 // the @ sign.
 //

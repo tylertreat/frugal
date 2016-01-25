@@ -20,17 +20,6 @@ const (
 	structLikeUnion     structLike = "union"
 )
 
-var thriftTypes = map[string]bool{
-	"bool":   true,
-	"byte":   true,
-	"i16":    true,
-	"i32":    true,
-	"i64":    true,
-	"double": true,
-	"string": true,
-	"binary": true,
-}
-
 func generateThriftIDL(dir string, frugal *parser.Frugal) (string, error) {
 	file := filepath.Join(dir, fmt.Sprintf("%s.thrift", frugal.Name))
 	if exists(file) {
@@ -118,7 +107,7 @@ func generateConstants(frugal *parser.Frugal) string {
 	for _, constant := range frugal.Thrift.Constants {
 		value := constant.Value
 		underlyingType := frugal.UnderlyingType(constant.Type)
-		if isThriftPrimitive(underlyingType) {
+		if parser.IsThriftPrimitive(underlyingType) {
 			if underlyingType.Name == "string" {
 				value = fmt.Sprintf(`"%s"`, value)
 			}
@@ -394,9 +383,4 @@ func (e enumValues) Swap(i, j int) {
 
 func (e enumValues) Less(i, j int) bool {
 	return e[i].Value < e[j].Value
-}
-
-func isThriftPrimitive(typ *parser.Type) bool {
-	_, ok := thriftTypes[typ.Name]
-	return ok
 }

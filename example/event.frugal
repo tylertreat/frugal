@@ -4,6 +4,10 @@ namespace java example
 
 include "base.frugal"
 
+typedef i64 id
+typedef i32 int
+typedef map<int, string> request
+
 /**
  * This docstring doesn't get added to the generated code because
  * it doesn't have the @ sign.
@@ -39,7 +43,10 @@ service Foo extends base.BaseFoo {
     void ping(),
 
     /**@ Blah the server. */
-    i64 blah(1:i32 num, 2:string Str, 3:Event event) throws (1:AwesomeException awe),
+    i64 blah(1:i32 num, 2:string Str, 3:Event event) throws (1:AwesomeException awe, 2:base.api_exception api),
+
+    /**@ oneway methods don't receive a response from the server. */
+    oneway void oneWay(1:id id, 2:request req)
 }
 
 /**@

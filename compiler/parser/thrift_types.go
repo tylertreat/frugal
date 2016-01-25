@@ -5,6 +5,22 @@ import (
 	"strings"
 )
 
+var thriftTypes = map[string]bool{
+	"bool":   true,
+	"byte":   true,
+	"i16":    true,
+	"i32":    true,
+	"i64":    true,
+	"double": true,
+	"string": true,
+	"binary": true,
+}
+
+func IsThriftPrimitive(typ *Type) bool {
+	_, ok := thriftTypes[typ.Name]
+	return ok
+}
+
 type Include struct {
 	Name  string
 	Value string

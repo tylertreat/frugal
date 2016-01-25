@@ -149,6 +149,15 @@ func (f *Frugal) UnderlyingType(t *Type) *Type {
 	return t
 }
 
+// IsStruct indicates if the underlying Type is a struct.
+func (f *Frugal) IsStruct(t *Type) bool {
+	t = f.UnderlyingType(t)
+	if _, ok := thriftTypes[t.Name]; ok {
+		return false
+	}
+	return t.KeyType == nil && t.ValueType == nil
+}
+
 func (f *Frugal) assignFrugal() {
 	for _, scope := range f.Scopes {
 		scope.assignScope()

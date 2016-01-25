@@ -86,6 +86,11 @@ func handleClient(client *event.FFooClient) (err error) {
 	} else {
 		fmt.Println("BasePing()")
 	}
+	if err := client.OneWay(frugal.NewFContext(""), 99, event.Request{99: "request"}); err != nil {
+		fmt.Println("OneWay error:", err)
+	} else {
+		fmt.Println("OneWay()")
+	}
 	event := &event.Event{Message: "hello, world!"}
 	ctx := frugal.NewFContext("")
 	result, err := client.Blah(ctx, 100, "awesomesauce", event)
@@ -126,6 +131,11 @@ func (f *FooHandler) Blah(ctx *frugal.FContext, num int32, str string, e *event.
 
 func (f *FooHandler) BasePing(ctx *frugal.FContext) error {
 	fmt.Printf("BasePing(%s)\n", ctx)
+	return nil
+}
+
+func (f *FooHandler) OneWay(ctx *frugal.FContext, id event.ID, req event.Request) error {
+	fmt.Printf("OneWay(%s, %s, %s)\n", ctx, id, req)
 	return nil
 }
 
