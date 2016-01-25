@@ -780,7 +780,11 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	}
 	if method.ReturnType != nil {
 		contents += "\t} else {\n"
-		contents += "\t\tresult.Success = &retval\n"
+		if g.isPrimitive(method.ReturnType) {
+			contents += "\t\tresult.Success = &retval\n"
+		} else {
+			contents += "\t\tresult.Success = retval\n"
+		}
 	}
 	contents += "\t}\n"
 
@@ -908,6 +912,28 @@ func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
 			name = "*" + name
 		}
 		return name
+	}
+}
+
+func (g *Generator) isPrimitive(t *parser.Type) bool {
+	underlyingType := g.Frugal.UnderlyingType(t)
+	switch underlyingType.Name {
+	case "bool":
+		fallthrough
+	case "byte":
+		fallthrough
+	case "i16":
+		fallthrough
+	case "i32":
+		fallthrough
+	case "i64":
+		fallthrough
+	case "double":
+		fallthrough
+	case "string":
+		return true
+	default:
+		return false
 	}
 }
 
