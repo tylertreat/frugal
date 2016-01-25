@@ -10,7 +10,7 @@ import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
 
 import 'package:base/base.dart' as t_base;
-import 'base_foo.dart' as t_base_foo;
+import 'base_foo.dart' as t_base_foo_file;
 
 
 abstract class FBaseFoo {
@@ -38,7 +38,7 @@ class FBaseFooClient implements FBaseFoo {
     try {
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("basePing", thrift.TMessageType.CALL, 0));
-      t_base_foo.basePing_args args = new t_base_foo.basePing_args();
+      t_base_foo_file.basePing_args args = new t_base_foo_file.basePing_args();
       args.write(oprot);
       oprot.writeMessageEnd();
       await oprot.transport.flush();
@@ -60,7 +60,7 @@ class FBaseFooClient implements FBaseFoo {
           throw error;
         }
 
-        t_base_foo.basePing_result result = new t_base_foo.basePing_result();
+        t_base_foo_file.basePing_result result = new t_base_foo_file.basePing_result();
         result.read(iprot);
         iprot.readMessageEnd();
         controller.add(null);

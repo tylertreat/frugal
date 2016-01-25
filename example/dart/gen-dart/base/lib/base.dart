@@ -7,6 +7,7 @@
 
 library base;
 
+export 'src/api_exception.dart' show api_exception;
 export 'src/base_foo.dart' show BaseFoo;
 export 'src/base_foo.dart' show BaseFooClient;
 export 'src/base_foo.dart' show BaseFooProcessor;
