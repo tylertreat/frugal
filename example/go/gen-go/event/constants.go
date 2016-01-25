@@ -16,8 +16,9 @@ var _ = fmt.Printf
 var _ = bytes.Equal
 
 var _ = base.GoUnusedProtection__
-
-const DEFAULT_ID = -1
+var DEFAULT_ID ID
 
 func init() {
+	DEFAULT_ID = -1
+
 }

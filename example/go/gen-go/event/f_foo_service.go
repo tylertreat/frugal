@@ -260,7 +260,7 @@ func (f *FFooClient) OneWay(ctx *frugal.FContext, id ID, req Request) (err error
 		f.mu.Unlock()
 		return
 	}
-	if err = f.oprot.WriteMessageBegin("oneWay", thrift.CALL, 0); err != nil {
+	if err = f.oprot.WriteMessageBegin("oneWay", thrift.ONEWAY, 0); err != nil {
 		f.mu.Unlock()
 		return
 	}

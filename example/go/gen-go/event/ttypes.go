@@ -37,7 +37,7 @@ func RequestPtr(v Request) *Request { return &v }
 //  - ID: ID is a unique identifier for an event.
 //  - Message: Message contains the event payload.
 type Event struct {
-	ID      int64  `thrift:"ID,1,required" db:"ID" json:"ID"`
+	ID      ID     `thrift:"ID,1,required" db:"ID" json:"ID"`
 	Message string `thrift:"Message,2,required" db:"Message" json:"Message"`
 }
 
@@ -47,7 +47,7 @@ func NewEvent() *Event {
 	}
 }
 
-func (p *Event) GetID() int64 {
+func (p *Event) GetID() ID {
 	return p.ID
 }
 
@@ -106,7 +106,8 @@ func (p *Event) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
-		p.ID = v
+		temp := ID(v)
+		p.ID = temp
 	}
 	return nil
 }
@@ -176,7 +177,7 @@ func (p *Event) String() string {
 //  - ID: ID is a unique identifier for an awesome exception.
 //  - Reason: Reason contains the error message.
 type AwesomeException struct {
-	ID     int64  `thrift:"ID,1,required" db:"ID" json:"ID"`
+	ID     ID     `thrift:"ID,1,required" db:"ID" json:"ID"`
 	Reason string `thrift:"Reason,2,required" db:"Reason" json:"Reason"`
 }
 
@@ -184,7 +185,7 @@ func NewAwesomeException() *AwesomeException {
 	return &AwesomeException{}
 }
 
-func (p *AwesomeException) GetID() int64 {
+func (p *AwesomeException) GetID() ID {
 	return p.ID
 }
 
@@ -243,7 +244,8 @@ func (p *AwesomeException) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
-		p.ID = v
+		temp := ID(v)
+		p.ID = temp
 	}
 	return nil
 }

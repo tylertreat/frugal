@@ -6,7 +6,6 @@ package base
 import (
 	"bytes"
 	"fmt"
-
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
 
