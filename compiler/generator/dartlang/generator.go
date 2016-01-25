@@ -168,6 +168,8 @@ func (g *Generator) exportClasses(dir string) error {
 	exports := "\n"
 	for _, service := range g.Frugal.Thrift.Services {
 		servTitle := strings.Title(service.Name)
+		exports += fmt.Sprintf("export 'src/%s%s%s.%s' show F%s;\n",
+			generator.FilePrefix, toFileName(service.Name), serviceSuffix, lang, servTitle)
 		exports += fmt.Sprintf("export 'src/%s%s%s.%s' show F%sClient;\n",
 			generator.FilePrefix, toFileName(service.Name), serviceSuffix, lang, servTitle)
 	}
@@ -476,7 +478,12 @@ func (g *Generator) generateClient(service *parser.Service) string {
 			servTitle, servTitle)
 	}
 	contents += "\n"
-	contents += fmt.Sprintf(tab+"F%sClient(frugal.FServiceProvider provider) {\n", servTitle)
+	if service.Extends != "" {
+		contents += fmt.Sprintf(tab+"F%sClient(frugal.FServiceProvider provider)\n", servTitle)
+		contents += tabtabtab + ": super(provider) {\n"
+	} else {
+		contents += fmt.Sprintf(tab+"F%sClient(frugal.FServiceProvider provider) {\n", servTitle)
+	}
 	contents += tabtab + "_transport = provider.fTransport;\n"
 	contents += tabtab + "_transport.setRegistry(new frugal.FClientRegistry());\n"
 	contents += tabtab + "_protocolFactory = provider.fProtocolFactory;\n"
