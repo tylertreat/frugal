@@ -506,21 +506,34 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	// Generate the calling method
 	contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s) async {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
-	contents += tabtab + "var controller = new StreamController();\n"
-	contents += fmt.Sprintf(tabtab+"_transport.register(ctx, _recv%sHandler(ctx, controller));\n", nameTitle)
-	contents += tabtab + "try {\n"
-	contents += tabtabtab + "oprot.writeRequestHeader(ctx);\n"
-	contents += fmt.Sprintf(tabtabtab+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.CALL, 0));\n",
+
+	// No need to register for oneway
+	indent := tabtab
+	if !method.Oneway {
+		contents += tabtab + "var controller = new StreamController();\n"
+		contents += fmt.Sprintf(tabtab+"_transport.register(ctx, _recv%sHandler(ctx, controller));\n", nameTitle)
+		contents += tabtab + "try {\n"
+		indent = tabtabtab
+	}
+	contents += indent + "oprot.writeRequestHeader(ctx);\n"
+	contents += fmt.Sprintf(indent+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.CALL, 0));\n",
 		nameLower)
-	contents += fmt.Sprintf(tabtabtab+"t_%s_file.%s_args args = new t_%s_file.%s_args();\n",
+	contents += fmt.Sprintf(indent+"t_%s_file.%s_args args = new t_%s_file.%s_args();\n",
 		servSnake, nameLower, servSnake, nameLower)
 	for _, arg := range method.Arguments {
 		argLower := generator.LowercaseFirstLetter(arg.Name)
-		contents += fmt.Sprintf(tabtabtab+"args.%s = %s;\n", argLower, argLower)
+		contents += fmt.Sprintf(indent+"args.%s = %s;\n", argLower, argLower)
 	}
-	contents += tabtabtab + "args.write(oprot);\n"
-	contents += tabtabtab + "oprot.writeMessageEnd();\n"
-	contents += tabtabtab + "await oprot.transport.flush();\n"
+	contents += indent + "args.write(oprot);\n"
+	contents += indent + "oprot.writeMessageEnd();\n"
+	contents += indent + "await oprot.transport.flush();\n"
+
+	// Nothing more to do for oneway
+	if method.Oneway {
+		contents += tab + "}\n\n"
+		return contents
+	}
+
 	contents += tabtabtab + "return await controller.stream.first.timeout(ctx.timeout);\n"
 	contents += tabtab + "} finally {\n"
 	contents += tabtabtab + "_transport.unregister(ctx);\n"
