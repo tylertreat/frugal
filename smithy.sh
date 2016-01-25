@@ -8,7 +8,7 @@ export PATH=$PWD/apache-maven-3.3.9/bin:$PATH
 # Compile the java library code
 ROOT=$PWD
 cd $ROOT/lib/java && mvn verify
-mv target/libfrugal-*.jar $ROOT
+mv target/frugal-*.jar $ROOT
 cd $ROOT
 
 # Run the generator tests
