@@ -12,4 +12,5 @@ export 'src/base_foo.dart' show BaseFoo;
 export 'src/base_foo.dart' show BaseFooClient;
 export 'src/base_foo.dart' show BaseFooProcessor;
 
+export 'src/f_base_foo_service.dart' show FBaseFoo;
 export 'src/f_base_foo_service.dart' show FBaseFooClient;

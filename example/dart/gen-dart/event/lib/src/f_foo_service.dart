@@ -32,7 +32,8 @@ abstract class FFoo extends t_base.FBaseFoo {
 /// a frugal Context for each service call.
 class FFooClient extends t_base.FBaseFooClient implements FFoo {
 
-  FFooClient(frugal.FServiceProvider provider) {
+  FFooClient(frugal.FServiceProvider provider)
+      : super(provider) {
     _transport = provider.fTransport;
     _transport.setRegistry(new frugal.FClientRegistry());
     _protocolFactory = provider.fProtocolFactory;
@@ -147,7 +148,7 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
   /// oneway methods don't receive a response from the server.
   Future oneWay(frugal.FContext ctx, int id, Map<int,String> req) async {
     oprot.writeRequestHeader(ctx);
-    oprot.writeMessageBegin(new thrift.TMessage("oneWay", thrift.TMessageType.CALL, 0));
+    oprot.writeMessageBegin(new thrift.TMessage("oneWay", thrift.TMessageType.ONEWAY, 0));
     t_foo_file.oneWay_args args = new t_foo_file.oneWay_args();
     args.id = id;
     args.req = req;
