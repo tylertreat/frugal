@@ -51,12 +51,10 @@ service Foo extends base.BaseFoo {
 
 /**@
  * This docstring gets added to the generated code because it has
- * the @ sign.
+ * the @ sign. Prefix specifies topic prefix tokens, which can be static or
+ * variable.
  */
-scope Events {
-    /** Prefix specifies topic prefix tokens, which can be static or variable. */
-    prefix "foo.{user}"
-
+scope Events prefix foo.{user} {
     /**@ This is a docstring. */
     EventCreated: Event // Inline comments are also supported
 }

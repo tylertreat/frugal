@@ -64,7 +64,7 @@ class FooClient extends BaseFooClient implements Foo {
     oprot.writeMessageBegin(new TMessage("blah", TMessageType.CALL, nextSeqid()));
     blah_args args = new blah_args();
     args.num = num;
-    args.str = str;
+    args.Str = Str;
     args.event = event;
     args.write(oprot);
     oprot.writeMessageEnd();

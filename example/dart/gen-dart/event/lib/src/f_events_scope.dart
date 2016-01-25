@@ -14,7 +14,8 @@ import 'package:event/event.dart' as t_event;
 const String delimiter = '.';
 
 /// This docstring gets added to the generated code because it has
-/// the @ sign.
+/// the @ sign. Prefix specifies topic prefix tokens, which can be static or
+/// variable.
 class EventsPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
@@ -49,7 +50,8 @@ class EventsPublisher {
 
 
 /// This docstring gets added to the generated code because it has
-/// the @ sign.
+/// the @ sign. Prefix specifies topic prefix tokens, which can be static or
+/// variable.
 class EventsSubscriber {
   final frugal.FScopeProvider provider;
 

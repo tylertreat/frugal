@@ -115,9 +115,7 @@ scope Events {
 Custom topic prefixes can be defined on a per-scope basis:
 
 ```thrift
-scope Events {
-    prefix "foo.bar"
-    
+scope Events prefix foo.bar {
     EventCreated: Event
 }
 ```
@@ -128,9 +126,7 @@ Prefixes can also define variables which are provided at publish and subscribe
 time:
 
 ```thrift
-scope Events {
-    prefix "foo.{user}"
-    
+scope Events prefix foo.{user} {
     EventCreated: Event
 }
 ```

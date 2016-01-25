@@ -14,7 +14,8 @@ import (
 const delimiter = "."
 
 // This docstring gets added to the generated code because it has
-// the @ sign.
+// the @ sign. Prefix specifies topic prefix tokens, which can be static or
+// variable.
 type EventsPublisher interface {
 	Open() error
 	Close() error
@@ -68,7 +69,8 @@ func (l *eventsPublisher) PublishEventCreated(ctx *frugal.FContext, user string,
 }
 
 // This docstring gets added to the generated code because it has
-// the @ sign.
+// the @ sign. Prefix specifies topic prefix tokens, which can be static or
+// variable.
 type EventsSubscriber interface {
 	SubscribeEventCreated(user string, handler func(*frugal.FContext, *Event)) (*frugal.FSubscription, error)
 }
