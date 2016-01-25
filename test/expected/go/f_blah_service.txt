@@ -243,8 +243,24 @@ func (f *FBlahClient) recvBlehHandler(ctx *frugal.FContext, resultC chan<- int64
 
 type FBlahProcessor struct {
 	processorMap map[string]frugal.FProcessorFunction
-	handler      FBlah
 	writeMu      *sync.Mutex
+	handler      FBlah
+}
+
+func NewFBlahProcessor(handler FBlah) *FBlahProcessor {
+	writeMu := &sync.Mutex{}
+	p := &FBlahProcessor{
+		processorMap: make(map[string]frugal.FProcessorFunction),
+		writeMu:      writeMu,
+		handler:      handler,
+	}
+	p.AddToProcessorMap("ping", &blahFPing{handler: handler, writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("bleh", &blahFBleh{handler: handler, writeMu: p.GetWriteMutex()})
+	return p
+}
+
+func (p *FBlahProcessor) AddToProcessorMap(key string, proc frugal.FProcessorFunction) {
+	p.processorMap[key] = proc
 }
 
 func (p *FBlahProcessor) GetProcessorFunction(key string) (processor frugal.FProcessorFunction, ok bool) {
@@ -252,16 +268,8 @@ func (p *FBlahProcessor) GetProcessorFunction(key string) (processor frugal.FPro
 	return
 }
 
-func NewFBlahProcessor(handler FBlah) *FBlahProcessor {
-	writeMu := &sync.Mutex{}
-	p := &FBlahProcessor{
-		handler:      handler,
-		processorMap: make(map[string]frugal.FProcessorFunction),
-		writeMu:      writeMu,
-	}
-	p.processorMap["ping"] = &blahFPing{handler: handler, writeMu: writeMu}
-	p.processorMap["bleh"] = &blahFBleh{handler: handler, writeMu: writeMu}
-	return p
+func (p *FBlahProcessor) GetWriteMutex() *sync.Mutex {
+	return p.writeMu
 }
 
 func (p *FBlahProcessor) Process(iprot, oprot *frugal.FProtocol) error {
