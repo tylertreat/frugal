@@ -229,6 +229,11 @@ func (t *Thrift) Namespace(scope string) (string, bool) {
 	value := ""
 	if ok {
 		value = namespace.Value
+	} else {
+		namespace, ok = t.namespaceIndex["*"]
+		if ok {
+			value = namespace.Value
+		}
 	}
 	return value, ok
 }
@@ -242,7 +247,10 @@ type KeyValue struct {
 func (t *Thrift) NamespaceForInclude(include, lang string) (string, bool) {
 	namespace, ok := t.namespaceIndex[lang]
 	if !ok {
-		return "", ok
+		namespace, ok = t.namespaceIndex["*"]
+		if !ok {
+			return "", ok
+		}
 	}
 	return namespace.Value, ok
 }

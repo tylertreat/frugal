@@ -172,7 +172,7 @@ Include ← "include" _ file:Literal EOS {
     return include(file.(string)), nil
 }
 
-Namespace ← "namespace" _ scope:[a-z.-]+ _ ns:Identifier EOS {
+Namespace ← "namespace" _ scope:[*a-z.-]+ _ ns:Identifier EOS {
     return &Namespace{
         Scope: ifaceSliceToString(scope),
         Value: string(ns.(Identifier)),
