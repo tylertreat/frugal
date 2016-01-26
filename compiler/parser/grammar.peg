@@ -442,9 +442,14 @@ EndOfScopeError ← . {
     return nil, errors.New("parser: expected end of scope")
 }
 
-Prefix ← "prefix" __ name:[^\r\n\t\f ]* {
-    return newScopePrefix(ifaceSliceToString(name)) 
+Prefix ← "prefix" __ PrefixToken ('.' PrefixToken)* {
+    prefix := strings.TrimSpace(strings.TrimPrefix(string(c.text), "prefix"))
+    return newScopePrefix(prefix)
 }
+
+PrefixToken ← ('{' PrefixWord '}') / PrefixWord
+
+PrefixWord ← [^\r\n\t\f .{}]+
 
 Operation ← docstr:(DocString __)? name:Identifier _ ':' __ param:Identifier __ {
     o := &Operation{
