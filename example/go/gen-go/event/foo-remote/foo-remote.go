@@ -4,10 +4,11 @@
 package main
 
 import (
-	"event"
 	"flag"
 	"fmt"
 	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/Workiva/frugal/example/go/gen-go/base"
+	"github.com/Workiva/frugal/example/go/gen-go/event"
 	"math"
 	"net"
 	"net/url"
@@ -22,6 +23,8 @@ func Usage() {
 	fmt.Fprintln(os.Stderr, "\nFunctions:")
 	fmt.Fprintln(os.Stderr, "  void ping()")
 	fmt.Fprintln(os.Stderr, "  i64 blah(i32 num, string Str, Event event)")
+	fmt.Fprintln(os.Stderr, "  void oneWay(id id, request req)")
+	fmt.Fprintln(os.Stderr, "  void basePing()")
 	fmt.Fprintln(os.Stderr)
 	os.Exit(0)
 }
@@ -129,8 +132,8 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Blah requires 3 args")
 			flag.Usage()
 		}
-		tmp0, err6 := (strconv.Atoi(flag.Arg(1)))
-		if err6 != nil {
+		tmp0, err7 := (strconv.Atoi(flag.Arg(1)))
+		if err7 != nil {
 			Usage()
 			return
 		}
@@ -138,24 +141,64 @@ func main() {
 		value0 := argvalue0
 		argvalue1 := flag.Arg(2)
 		value1 := argvalue1
-		arg8 := flag.Arg(3)
-		mbTrans9 := thrift.NewTMemoryBufferLen(len(arg8))
-		defer mbTrans9.Close()
-		_, err10 := mbTrans9.WriteString(arg8)
-		if err10 != nil {
+		arg9 := flag.Arg(3)
+		mbTrans10 := thrift.NewTMemoryBufferLen(len(arg9))
+		defer mbTrans10.Close()
+		_, err11 := mbTrans10.WriteString(arg9)
+		if err11 != nil {
 			Usage()
 			return
 		}
-		factory11 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt12 := factory11.GetProtocol(mbTrans9)
+		factory12 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt13 := factory12.GetProtocol(mbTrans10)
 		argvalue2 := event.NewEvent()
-		err13 := argvalue2.Read(jsProt12)
-		if err13 != nil {
+		err14 := argvalue2.Read(jsProt13)
+		if err14 != nil {
 			Usage()
 			return
 		}
 		value2 := argvalue2
 		fmt.Print(client.Blah(value0, value1, value2))
+		fmt.Print("\n")
+		break
+	case "oneWay":
+		if flag.NArg()-1 != 2 {
+			fmt.Fprintln(os.Stderr, "OneWay requires 2 args")
+			flag.Usage()
+		}
+		argvalue0, err15 := (strconv.ParseInt(flag.Arg(1), 10, 64))
+		if err15 != nil {
+			Usage()
+			return
+		}
+		value0 := event.ID(argvalue0)
+		arg16 := flag.Arg(2)
+		mbTrans17 := thrift.NewTMemoryBufferLen(len(arg16))
+		defer mbTrans17.Close()
+		_, err18 := mbTrans17.WriteString(arg16)
+		if err18 != nil {
+			Usage()
+			return
+		}
+		factory19 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt20 := factory19.GetProtocol(mbTrans17)
+		containerStruct1 := event.NewFooOneWayArgs()
+		err21 := containerStruct1.ReadField2(jsProt20)
+		if err21 != nil {
+			Usage()
+			return
+		}
+		argvalue1 := containerStruct1.Req
+		value1 := event.Request(argvalue1)
+		fmt.Print(client.OneWay(value0, value1))
+		fmt.Print("\n")
+		break
+	case "basePing":
+		if flag.NArg()-1 != 0 {
+			fmt.Fprintln(os.Stderr, "BasePing requires 0 args")
+			flag.Usage()
+		}
+		fmt.Print(client.BasePing())
 		fmt.Print("\n")
 		break
 	case "":

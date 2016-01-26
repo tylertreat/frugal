@@ -5,9 +5,6 @@ import 'package:logging/logging.dart';
 import 'package:thrift/thrift.dart';
 import 'package:event/event.dart' as event;
 import 'package:frugal/frugal.dart' as frugal;
-import 'package:messaging_frontend/messaging_frontend.dart' show Message, MessagingFrontendClient, Nats;
-import 'package:w_transport/w_transport.dart';
-import 'package:w_transport/w_transport_browser.dart' show configureWTransportForBrowser;
 
 frugal.FSubscription sub;
 
@@ -34,30 +31,7 @@ class EventUI {
     _initConnection();
   }
 
-  void _initConnection() {
-    configureWTransportForBrowser(useSockJS: true, sockJSProtocolsWhitelist: ["websocket", "xhr-streaming"]);
-    var client = new MessagingFrontendClient("http://localhost:8100", "some-sweet-client", new Client());
-    var nats = client.nats();
-    nats.connect().then((_) {
-      TProtocolFactory tProtocolFactory = new TBinaryProtocolFactory();
-      var provider = new frugal.FScopeProvider(new frugal.FNatsScopeTransportFactory(nats), new frugal.FProtocolFactory(tProtocolFactory));
-      _eventsPublisher = new event.EventsPublisher(provider);
-      _eventsPublisher.open();
-      _eventsSubscriber = new event.EventsSubscriber(provider);
-
-      var timeout = new Duration(seconds: 1);
-      frugal.TNatsTransportFactory.New(nats, "foo", timeout, timeout).then((TSocketTransport T) {
-        var transport = new frugal.FMultiplexedTransport(T);
-        transport.open().then((_) {
-          var protocolFactory = new frugal.FProtocolFactory(new TBinaryProtocolFactory());
-          frugal.FServiceProvider provider = new frugal.FServiceProvider(transport, protocolFactory);
-          _fFooClient = new event.FFooClient(provider);
-        });
-      }).catchError((e) {
-        window.alert("Could not connect to server! Is it running?. ${e.toString()}");
-      });
-    });
-  }
+  void _initConnection() { }
 
   void _buildInterface() {
     output.children.forEach((e) {

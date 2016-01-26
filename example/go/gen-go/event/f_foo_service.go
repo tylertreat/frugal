@@ -11,6 +11,7 @@ import (
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"
+	"github.com/Workiva/frugal/example/go/gen-go/base"
 )
 
 // (needed to ensure safety because of naive import list construction.)
@@ -19,13 +20,18 @@ var _ = fmt.Printf
 var _ = bytes.Equal
 
 type FFoo interface {
+	base.FBaseFoo
+
 	// Ping the server.
-	Ping(*frugal.FContext) (err error)
+	Ping(ctx *frugal.FContext) (err error)
 	// Blah the server.
-	Blah(*frugal.FContext, int32, string, *Event) (r int64, err error)
+	Blah(ctx *frugal.FContext, num int32, Str string, event *Event) (r int64, err error)
+	// oneway methods don't receive a response from the server.
+	OneWay(ctx *frugal.FContext, id ID, req Request) (err error)
 }
 
 type FFooClient struct {
+	*base.FBaseFooClient
 	transport       frugal.FTransport
 	protocolFactory *frugal.FProtocolFactory
 	oprot           *frugal.FProtocol
@@ -37,6 +43,7 @@ func NewFFooClient(p *frugal.FServiceProvider) *FFooClient {
 	f := p.ProtocolFactory()
 	t.SetRegistry(frugal.NewFClientRegistry())
 	return &FFooClient{
+		FBaseFooClient: base.NewFBaseFooClient(p),
 		transport:       t,
 		protocolFactory: f,
 		oprot:           f.GetProtocol(t),
@@ -237,57 +244,59 @@ func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- int64,
 			errorC <- result.Awe
 			return nil
 		}
+		if result.API != nil {
+			errorC <- result.API
+			return nil
+		}
 		resultC <- result.GetSuccess()
 		return nil
 	}
 }
 
-type FFooProcessor struct {
-	processorMap map[string]frugal.FProcessorFunction
-	handler      FFoo
-	writeMu      *sync.Mutex
-}
+// oneway methods don't receive a response from the server.
+func (f *FFooClient) OneWay(ctx *frugal.FContext, id ID, req Request) (err error) {
+	f.mu.Lock()
+	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
+		f.mu.Unlock()
+		return
+	}
+	if err = f.oprot.WriteMessageBegin("oneWay", thrift.ONEWAY, 0); err != nil {
+		f.mu.Unlock()
+		return
+	}
+	args := FooOneWayArgs{
+		ID: id,
+		Req: req,
+	}
+	if err = args.Write(f.oprot); err != nil {
+		f.mu.Unlock()
+		return
+	}
+	if err = f.oprot.WriteMessageEnd(); err != nil {
+		f.mu.Unlock()
+		return
+	}
+	if err = f.oprot.Flush(); err != nil {
+		f.mu.Unlock()
+		return
+	}
+	f.mu.Unlock()
 
-func (p *FFooProcessor) GetProcessorFunction(key string) (processor frugal.FProcessorFunction, ok bool) {
-	processor, ok = p.processorMap[key]
 	return
 }
 
-func NewFFooProcessor(handler FFoo) *FFooProcessor {
-	writeMu := &sync.Mutex{}
-	p := &FFooProcessor{
-		handler:      handler,
-		processorMap: make(map[string]frugal.FProcessorFunction),
-		writeMu:      writeMu,
-	}
-	p.processorMap["ping"] = &fooFPing{handler: handler, writeMu: writeMu}
-	p.processorMap["blah"] = &fooFBlah{handler: handler, writeMu: writeMu}
-	return p
+type FFooProcessor struct {
+	*base.FBaseFooProcessor
 }
 
-func (p *FFooProcessor) Process(iprot, oprot *frugal.FProtocol) error {
-	ctx, err := iprot.ReadRequestHeader()
-	if err != nil {
-		return err
+func NewFFooProcessor(handler FFoo) *FFooProcessor {
+	p := &FFooProcessor{
+		base.NewFBaseFooProcessor(handler),
 	}
-	name, _, _, err := iprot.ReadMessageBegin()
-	if err != nil {
-		return err
-	}
-	if processor, ok := p.GetProcessorFunction(name); ok {
-		return processor.Process(ctx, iprot, oprot)
-	}
-	iprot.Skip(thrift.STRUCT)
-	iprot.ReadMessageEnd()
-	x3 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
-	p.writeMu.Lock()
-	oprot.WriteResponseHeader(ctx)
-	oprot.WriteMessageBegin(name, thrift.EXCEPTION, 0)
-	x3.Write(oprot)
-	oprot.WriteMessageEnd()
-	oprot.Flush()
-	p.writeMu.Unlock()
-	return x3
+	p.AddToProcessorMap("ping", &fooFPing{handler: handler, writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("blah", &fooFBlah{handler: handler, writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("oneWay", &fooFOneWay{handler: handler, writeMu: p.GetWriteMutex()})
+	return p
 }
 
 type fooFPing struct {
@@ -374,6 +383,8 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 		switch v := err2.(type) {
 		case *AwesomeException:
 			result.Awe = v
+		case *base.APIException:
+			result.API = v
 		default:
 			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing blah: "+err2.Error())
 			p.writeMu.Lock()
@@ -405,6 +416,27 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 		err = err2
 	}
 	p.writeMu.Unlock()
+	return err
+}
+
+type fooFOneWay struct {
+	handler FFoo
+	writeMu *sync.Mutex
+}
+
+func (p *fooFOneWay) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+	args := FooOneWayArgs{}
+	var err error
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		return err
+	}
+
+	iprot.ReadMessageEnd()
+	var err2 error
+	if err2 = p.handler.OneWay(ctx, args.ID, args.Req); err2 != nil {
+		return err2
+	}
 	return err
 }
 

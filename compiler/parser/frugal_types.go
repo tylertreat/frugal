@@ -99,9 +99,9 @@ func (f *Frugal) ContainsFrugalDefinitions() bool {
 	return len(f.Scopes)+len(f.Thrift.Services) > 0
 }
 
-// ReferencedIncludes returns a slice containing the referenced includes which
-// will need to be imported in generated code.
-func (f *Frugal) ReferencedIncludes() []string {
+// ReferencedScopeIncludes returns a slice containing the referenced includes
+// which will need to be imported in generated code for scopes.
+func (f *Frugal) ReferencedScopeIncludes() []string {
 	includes := []string{}
 	includesSet := make(map[string]bool)
 	for _, scope := range f.Scopes {
@@ -112,6 +112,24 @@ func (f *Frugal) ReferencedIncludes() []string {
 			}
 		}
 	}
+	sort.Strings(includes)
+	return includes
+}
+
+// ReferencedServiceIncludes returns a slice containing the referenced includes
+// which will need to be imported in generated code for services.
+func (f *Frugal) ReferencedServiceIncludes() []string {
+	includes := []string{}
+	includesSet := make(map[string]bool)
+	for _, service := range f.Thrift.Services {
+		for _, include := range service.ReferencedIncludes() {
+			if _, ok := includesSet[include]; !ok {
+				includesSet[include] = true
+				includes = append(includes, include)
+			}
+		}
+	}
+	sort.Strings(includes)
 	return includes
 }
 
@@ -131,10 +149,38 @@ func (f *Frugal) UnderlyingType(t *Type) *Type {
 	return t
 }
 
+// IsStruct indicates if the underlying Type is a struct.
+func (f *Frugal) IsStruct(t *Type) bool {
+	t = f.UnderlyingType(t)
+	if _, ok := thriftTypes[t.Name]; ok {
+		return false
+	}
+	return t.KeyType == nil && t.ValueType == nil && !f.IsEnum(t)
+}
+
+// IsEnum indicates if the underlying Type is an enum.
+func (f *Frugal) IsEnum(t *Type) bool {
+	include := t.IncludeName()
+	containingFrugal := f
+	if include != "" {
+		containingFrugal = f.ParsedIncludes[include]
+	}
+	for _, enum := range containingFrugal.Thrift.Enums {
+		if enum.Name == t.ParamName() {
+			return true
+		}
+	}
+	return false
+}
+
 func (f *Frugal) assignFrugal() {
 	for _, scope := range f.Scopes {
 		scope.assignScope()
 	}
+}
+
+func (f *Frugal) validate() error {
+	return f.Thrift.validate()
 }
 
 func (f *Frugal) sort() {

@@ -29,7 +29,7 @@ class BlahPublisher {
     return fTransport.close();
   }
 
-  Future publishDoStuff(frugal.FContext ctx, t_thing.Thing req) async {
+  Future publishDoStuff(frugal.FContext ctx, t_valid.Thing req) async {
     var op = "DoStuff";
     var prefix = "";
     var topic = "${prefix}Blah${delimiter}${op}";
@@ -50,7 +50,7 @@ class BlahSubscriber {
 
   BlahSubscriber(this.provider) {}
 
-  Future<frugal.FSubscription> subscribeDoStuff(dynamic onThing(frugal.FContext ctx, t_thing.Thing req)) async {
+  Future<frugal.FSubscription> subscribeDoStuff(dynamic onThing(frugal.FContext ctx, t_valid.Thing req)) async {
     var op = "DoStuff";
     var prefix = "";
     var topic = "${prefix}Blah${delimiter}${op}";
@@ -59,7 +59,7 @@ class BlahSubscriber {
     return new frugal.FSubscription(topic, transport);
   }
 
-  _recvDoStuff(String op, frugal.FProtocolFactory protocolFactory, dynamic onThing(frugal.FContext ctx, t_thing.Thing req)) {
+  _recvDoStuff(String op, frugal.FProtocolFactory protocolFactory, dynamic onThing(frugal.FContext ctx, t_valid.Thing req)) {
     callbackDoStuff(thrift.TTransport transport) {
       var iprot = protocolFactory.getProtocol(transport);
       var ctx = iprot.readRequestHeader();
@@ -70,7 +70,7 @@ class BlahSubscriber {
         throw new thrift.TApplicationError(
         thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
       }
-      var req = new t_thing.Thing();
+      var req = new t_valid.Thing();
       req.read(iprot);
       iprot.readMessageEnd();
       onThing(ctx, req);

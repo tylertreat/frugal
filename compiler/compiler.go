@@ -52,7 +52,7 @@ func Compile(options Options) error {
 		return err
 	}
 
-	_, err = compile(absFile, false)
+	_, err = compile(absFile, strings.HasSuffix(absFile, ".thrift"))
 	return err
 }
 
@@ -108,7 +108,6 @@ func compile(file string, isThrift bool) (*parser.Frugal, error) {
 		if err != nil {
 			return nil, err
 		}
-		globals.IntermediateIDL = append(globals.IntermediateIDL, idlFile)
 		file = idlFile
 	}
 
@@ -122,10 +121,7 @@ func compile(file string, isThrift bool) (*parser.Frugal, error) {
 	}
 
 	// Generate Frugal code.
-	if frugal.ContainsFrugalDefinitions() {
-		return frugal, g.Generate(frugal, fullOut)
-	}
-	return frugal, nil
+	return frugal, g.Generate(frugal, fullOut)
 }
 
 // exists determines if the file at the given path exists.

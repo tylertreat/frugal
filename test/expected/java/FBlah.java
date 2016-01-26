@@ -7,6 +7,7 @@
 package foo;
 
 import com.workiva.frugal.*;
+import com.workiva.frugal.processor.FBaseProcessor;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFunction;
 import com.workiva.frugal.registry.FAsyncCallback;
@@ -16,8 +17,6 @@ import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TMessage;
 import org.apache.thrift.protocol.TMessageType;
-import org.apache.thrift.protocol.TProtocolUtil;
-import org.apache.thrift.protocol.TType;
 import org.apache.thrift.transport.TTransport;
 
 import javax.annotation.Generated;
@@ -215,36 +214,20 @@ public class FBlah {
 
 	}
 
-	public static class Processor implements FProcessor {
+	public static class Processor extends FBaseProcessor implements FProcessor {
 
-		private static final Object WRITE_LOCK = new Object();
+	public Processor(Iface iface) {
+		super(getProcessMap(iface, new java.util.HashMap<String, FProcessorFunction>()));
+	}
 
-		private java.util.Map<String, FProcessorFunction> processorMap = new java.util.HashMap<>();
+	protected Processor(Iface iface, java.util.Map<String, FProcessorFunction> processMap) {
+		super(getProcessMap(iface, processMap));
+	}
 
-		public Processor(Iface handler) {
-			this.processorMap.put("ping", new Ping(handler));
-			this.processorMap.put("bleh", new Bleh(handler));
-		}
-
-		public void process(FProtocol iprot, FProtocol oprot) throws TException {
-			FContext ctx = iprot.readRequestHeader();
-			TMessage message = iprot.readMessageBegin();
-			FProcessorFunction processor = this.processorMap.get(message.name);
-			if (processor != null) {
-				processor.process(ctx, iprot, oprot);
-				return;
-			}
-			TProtocolUtil.skip(iprot, TType.STRUCT);
-			iprot.readMessageEnd();
-			TApplicationException e = new TApplicationException(TApplicationException.UNKNOWN_METHOD, "Unknown function " + message.name);
-			synchronized (WRITE_LOCK) {
-				oprot.writeResponseHeader(ctx);
-				oprot.writeMessageBegin(new TMessage(message.name, TMessageType.EXCEPTION, 0));
-				e.write(oprot);
-				oprot.writeMessageEnd();
-				oprot.getTransport().flush();
-			}
-			throw e;
+		private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap) {
+			processMap.put("ping", new Ping(handler));
+			processMap.put("bleh", new Bleh(handler));
+			return processMap;
 		}
 
 		private static class Ping implements FProcessorFunction {
@@ -269,7 +252,7 @@ public class FBlah {
 						oprot.writeMessageEnd();
 						oprot.getTransport().flush();
 					}
-					throw x;
+					throw e;
 				}
 
 				iprot.readMessageEnd();
@@ -319,7 +302,7 @@ public class FBlah {
 						oprot.writeMessageEnd();
 						oprot.getTransport().flush();
 					}
-					throw x;
+					throw e;
 				}
 
 				iprot.readMessageEnd();

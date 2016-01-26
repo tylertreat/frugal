@@ -9,26 +9,31 @@ import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
 
+import 'package:base/base.dart' as t_base;
 import 'package:event/event.dart' as t_event;
-import 'foo.dart' as t_foo;
+import 'foo.dart' as t_foo_file;
 
 
 /// This is a thrift service. Frugal will generate bindings that include 
 /// a frugal Context for each service call.
-abstract class FFoo {
+abstract class FFoo extends t_base.FBaseFoo {
 
   /// Ping the server.
   Future ping(frugal.FContext ctx);
 
   /// Blah the server.
   Future<int> blah(frugal.FContext ctx, int num, String str, t_event.Event event);
+
+  /// oneway methods don't receive a response from the server.
+  Future oneWay(frugal.FContext ctx, int id, Map<int,String> req);
 }
 
 /// This is a thrift service. Frugal will generate bindings that include 
 /// a frugal Context for each service call.
-class FFooClient implements FFoo {
+class FFooClient extends t_base.FBaseFooClient implements FFoo {
 
-  FFooClient(frugal.FServiceProvider provider) {
+  FFooClient(frugal.FServiceProvider provider)
+      : super(provider) {
     _transport = provider.fTransport;
     _transport.setRegistry(new frugal.FClientRegistry());
     _protocolFactory = provider.fProtocolFactory;
@@ -47,7 +52,7 @@ class FFooClient implements FFoo {
     try {
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
-      t_foo.ping_args args = new t_foo.ping_args();
+      t_foo_file.ping_args args = new t_foo_file.ping_args();
       args.write(oprot);
       oprot.writeMessageEnd();
       await oprot.transport.flush();
@@ -69,7 +74,7 @@ class FFooClient implements FFoo {
           throw error;
         }
 
-        t_foo.ping_result result = new t_foo.ping_result();
+        t_foo_file.ping_result result = new t_foo_file.ping_result();
         result.read(iprot);
         iprot.readMessageEnd();
         controller.add(null);
@@ -88,7 +93,7 @@ class FFooClient implements FFoo {
     try {
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("blah", thrift.TMessageType.CALL, 0));
-      t_foo.blah_args args = new t_foo.blah_args();
+      t_foo_file.blah_args args = new t_foo_file.blah_args();
       args.num = num;
       args.str = str;
       args.event = event;
@@ -113,7 +118,7 @@ class FFooClient implements FFoo {
           throw error;
         }
 
-        t_foo.blah_result result = new t_foo.blah_result();
+        t_foo_file.blah_result result = new t_foo_file.blah_result();
         result.read(iprot);
         iprot.readMessageEnd();
         if (result.isSetSuccess()) {
@@ -125,6 +130,10 @@ class FFooClient implements FFoo {
           controller.addError(result.awe);
           return;
         }
+        if (result.api != null) {
+          controller.addError(result.api);
+          return;
+        }
         throw new thrift.TApplicationError(
           thrift.TApplicationErrorType.MISSING_RESULT, "blah failed: unknown result"
         );
@@ -134,6 +143,18 @@ class FFooClient implements FFoo {
       }
     }
     return blahCallback;
+  }
+
+  /// oneway methods don't receive a response from the server.
+  Future oneWay(frugal.FContext ctx, int id, Map<int,String> req) async {
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(new thrift.TMessage("oneWay", thrift.TMessageType.ONEWAY, 0));
+    t_foo_file.oneWay_args args = new t_foo_file.oneWay_args();
+    args.id = id;
+    args.req = req;
+    args.write(oprot);
+    oprot.writeMessageEnd();
+    await oprot.transport.flush();
   }
 
 }

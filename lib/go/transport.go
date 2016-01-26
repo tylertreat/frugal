@@ -107,7 +107,7 @@ func (f *fMuxTransport) SetRegistry(registry FRegistry) {
 	f.mu.Lock()
 	if f.registry != nil {
 		f.mu.Unlock()
-		panic("frugal: registry already set")
+		return
 	}
 	f.registry = registry
 	f.mu.Unlock()

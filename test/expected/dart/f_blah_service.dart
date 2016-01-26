@@ -10,7 +10,7 @@ import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
 
 import 'package:valid/valid.dart' as t_valid;
-import 'blah.dart' as t_blah;
+import 'blah.dart' as t_blah_file;
 
 
 abstract class FBlah {
@@ -43,7 +43,7 @@ class FBlahClient implements FBlah {
     try {
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
-      t_blah.ping_args args = new t_blah.ping_args();
+      t_blah_file.ping_args args = new t_blah_file.ping_args();
       args.write(oprot);
       oprot.writeMessageEnd();
       await oprot.transport.flush();
@@ -65,7 +65,7 @@ class FBlahClient implements FBlah {
           throw error;
         }
 
-        t_blah.ping_result result = new t_blah.ping_result();
+        t_blah_file.ping_result result = new t_blah_file.ping_result();
         result.read(iprot);
         iprot.readMessageEnd();
         controller.add(null);
@@ -84,7 +84,7 @@ class FBlahClient implements FBlah {
     try {
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("bleh", thrift.TMessageType.CALL, 0));
-      t_blah.bleh_args args = new t_blah.bleh_args();
+      t_blah_file.bleh_args args = new t_blah_file.bleh_args();
       args.one = one;
       args.two = two;
       args.write(oprot);
@@ -108,7 +108,7 @@ class FBlahClient implements FBlah {
           throw error;
         }
 
-        t_blah.bleh_result result = new t_blah.bleh_result();
+        t_blah_file.bleh_result result = new t_blah_file.bleh_result();
         result.read(iprot);
         iprot.readMessageEnd();
         if (result.isSetSuccess()) {

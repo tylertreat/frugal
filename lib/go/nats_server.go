@@ -194,7 +194,7 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 }
 
 func (n *FNatsServer) accept(listenTo, replyTo, heartbeat string) (FTransport, error) {
-	client := NewNatsServiceTTransportServer(n.conn, listenTo, replyTo)
+	client := newNatsServiceTTransportServer(n.conn, listenTo, replyTo)
 	transport := n.transportFactory.GetTransport(client)
 	if err := transport.Open(); err != nil {
 		return nil, err

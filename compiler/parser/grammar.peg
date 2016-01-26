@@ -172,7 +172,7 @@ Include ← "include" _ file:Literal EOS {
     return include(file.(string)), nil
 }
 
-Namespace ← "namespace" _ scope:[a-z.-]+ _ ns:Identifier EOS {
+Namespace ← "namespace" _ scope:[*a-z.-]+ _ ns:Identifier EOS {
     return &Namespace{
         Scope: ifaceSliceToString(scope),
         Value: string(ns.(Identifier)),
@@ -417,7 +417,7 @@ ConstMap ← '{' __ values:(ConstValue __ ':' __ ConstValue __ (',' / &'}') __)*
 
 FrugalStatement ← Scope / Async
 
-Scope ← docstr:(DocString __)? "scope" __ name:Identifier __ '{' __ prefix:Prefix? __ operations:(Operation __)* ('}' / EndOfScopeError) EOS {
+Scope ← docstr:(DocString __)? "scope" __ name:Identifier __ prefix:Prefix? __ '{' __ operations:(Operation __)* ('}' / EndOfScopeError) EOS {
     ops := operations.([]interface{})
     scope := &Scope{
         Name:       string(name.(Identifier)),
@@ -442,9 +442,14 @@ EndOfScopeError ← . {
     return nil, errors.New("parser: expected end of scope")
 }
 
-Prefix ← "prefix" _ name:Literal __ {
-    return newScopePrefix(name.(string)) 
+Prefix ← "prefix" __ PrefixToken ('.' PrefixToken)* {
+    prefix := strings.TrimSpace(strings.TrimPrefix(string(c.text), "prefix"))
+    return newScopePrefix(prefix)
 }
+
+PrefixToken ← ('{' PrefixWord '}') / PrefixWord
+
+PrefixWord ← [^\r\n\t\f .{}]+
 
 Operation ← docstr:(DocString __)? name:Identifier _ ':' __ param:Identifier __ {
     o := &Operation{

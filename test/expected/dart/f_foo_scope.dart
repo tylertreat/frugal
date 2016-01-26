@@ -31,7 +31,7 @@ class FooPublisher {
   }
 
   /// This is an operation docstring.
-  Future publishFoo(frugal.FContext ctx, String baz, t_thing.Thing req) async {
+  Future publishFoo(frugal.FContext ctx, String baz, t_valid.Thing req) async {
     var op = "Foo";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
@@ -46,7 +46,7 @@ class FooPublisher {
   }
 
 
-  Future publishBar(frugal.FContext ctx, String baz, t_stuff.Stuff req) async {
+  Future publishBar(frugal.FContext ctx, String baz, t_valid.Stuff req) async {
     var op = "Bar";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
@@ -69,7 +69,7 @@ class FooSubscriber {
   FooSubscriber(this.provider) {}
 
   /// This is an operation docstring.
-  Future<frugal.FSubscription> subscribeFoo(String baz, dynamic onThing(frugal.FContext ctx, t_thing.Thing req)) async {
+  Future<frugal.FSubscription> subscribeFoo(String baz, dynamic onThing(frugal.FContext ctx, t_valid.Thing req)) async {
     var op = "Foo";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
@@ -78,7 +78,7 @@ class FooSubscriber {
     return new frugal.FSubscription(topic, transport);
   }
 
-  _recvFoo(String op, frugal.FProtocolFactory protocolFactory, dynamic onThing(frugal.FContext ctx, t_thing.Thing req)) {
+  _recvFoo(String op, frugal.FProtocolFactory protocolFactory, dynamic onThing(frugal.FContext ctx, t_valid.Thing req)) {
     callbackFoo(thrift.TTransport transport) {
       var iprot = protocolFactory.getProtocol(transport);
       var ctx = iprot.readRequestHeader();
@@ -89,7 +89,7 @@ class FooSubscriber {
         throw new thrift.TApplicationError(
         thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
       }
-      var req = new t_thing.Thing();
+      var req = new t_valid.Thing();
       req.read(iprot);
       iprot.readMessageEnd();
       onThing(ctx, req);
@@ -98,7 +98,7 @@ class FooSubscriber {
   }
 
 
-  Future<frugal.FSubscription> subscribeBar(String baz, dynamic onStuff(frugal.FContext ctx, t_stuff.Stuff req)) async {
+  Future<frugal.FSubscription> subscribeBar(String baz, dynamic onStuff(frugal.FContext ctx, t_valid.Stuff req)) async {
     var op = "Bar";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
@@ -107,7 +107,7 @@ class FooSubscriber {
     return new frugal.FSubscription(topic, transport);
   }
 
-  _recvBar(String op, frugal.FProtocolFactory protocolFactory, dynamic onStuff(frugal.FContext ctx, t_stuff.Stuff req)) {
+  _recvBar(String op, frugal.FProtocolFactory protocolFactory, dynamic onStuff(frugal.FContext ctx, t_valid.Stuff req)) {
     callbackBar(thrift.TTransport transport) {
       var iprot = protocolFactory.getProtocol(transport);
       var ctx = iprot.readRequestHeader();
@@ -118,7 +118,7 @@ class FooSubscriber {
         throw new thrift.TApplicationError(
         thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
       }
-      var req = new t_stuff.Stuff();
+      var req = new t_valid.Stuff();
       req.read(iprot);
       iprot.readMessageEnd();
       onStuff(ctx, req);

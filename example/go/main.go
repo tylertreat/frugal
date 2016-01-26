@@ -76,13 +76,23 @@ func main() {
 
 // Client handler
 func handleClient(client *event.FFooClient) (err error) {
-	ctx := frugal.NewFContext("")
-	ctx.SetTimeout(10 * time.Millisecond)
-	if err := client.Ping(ctx); err != nil {
-		fmt.Println("ping error:", err)
+	if err := client.Ping(frugal.NewFContext("")); err != nil {
+		fmt.Println("Ping error:", err)
+	} else {
+		fmt.Println("Ping()")
+	}
+	if err := client.BasePing(frugal.NewFContext("")); err != nil {
+		fmt.Println("BasePing error:", err)
+	} else {
+		fmt.Println("BasePing()")
+	}
+	if err := client.OneWay(frugal.NewFContext(""), 99, event.Request{99: "request"}); err != nil {
+		fmt.Println("OneWay error:", err)
+	} else {
+		fmt.Println("OneWay()")
 	}
 	event := &event.Event{Message: "hello, world!"}
-	ctx = frugal.NewFContext("")
+	ctx := frugal.NewFContext("")
 	result, err := client.Blah(ctx, 100, "awesomesauce", event)
 	fmt.Printf("Blah = %d\n", result)
 	fmt.Println(ctx.ResponseHeader("foo"))
@@ -92,7 +102,7 @@ func handleClient(client *event.FFooClient) (err error) {
 
 // Client runner
 func runClient(conn *nats.Conn, transportFactory frugal.FTransportFactory, protocolFactory *frugal.FProtocolFactory) error {
-	transport, err := frugal.NewNatsServiceTTransportClient(conn, "foo", time.Second)
+	transport, err := frugal.NewNatsServiceTTransport(conn, "foo", time.Second)
 	if err != nil {
 		return err
 	}
@@ -117,6 +127,16 @@ func (f *FooHandler) Blah(ctx *frugal.FContext, num int32, str string, e *event.
 	fmt.Printf("Blah(%s, %d, %s, %v)\n", ctx, num, str, e)
 	ctx.AddResponseHeader("foo", "bar")
 	return 42, nil
+}
+
+func (f *FooHandler) BasePing(ctx *frugal.FContext) error {
+	fmt.Printf("BasePing(%s)\n", ctx)
+	return nil
+}
+
+func (f *FooHandler) OneWay(ctx *frugal.FContext, id event.ID, req event.Request) error {
+	fmt.Printf("OneWay(%s, %s, %s)\n", ctx, id, req)
+	return nil
 }
 
 // Server runner

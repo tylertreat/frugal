@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"syscall"
+	"unicode"
 
 	"gopkg.in/yaml.v2"
 
@@ -72,6 +74,7 @@ type env struct {
 
 type dep struct {
 	Hosted  hostedDep `yaml:"hosted,omitempty"`
+	Git     gitDep    `yaml:"git,omitempty"`
 	Path    string    `yaml:"path,omitempty"`
 	Version string    `yaml:"version,omitempty"`
 }
@@ -81,18 +84,36 @@ type hostedDep struct {
 	URL  string `yaml:"url"`
 }
 
+type gitDep struct {
+	URL string `yaml:"url"`
+	Ref string `yaml:"ref"`
+}
+
 func (g *Generator) addToPubspec(dir string) error {
 	pubFilePath := filepath.Join(dir, "pubspec.yaml")
 
 	deps := map[interface{}]interface{}{
-		"thrift": dep{Hosted: hostedDep{Name: "thrift", URL: "https://pub.workiva.org"}, Version: "^0.0.1"},
+		"thrift": dep{Git: gitDep{URL: "git@github.com:Workiva/thrift-dart.git", Ref: "0.0.1"}},
 	}
 
 	if g.Frugal.ContainsFrugalDefinitions() {
-		deps["frugal"] = dep{Hosted: hostedDep{Name: "frugal", URL: "https://pub.workiva.org"}, Version: "^0.0.1"}
+		deps["frugal"] = dep{Git: gitDep{URL: "git@github.com:Workiva/frugal-dart.git", Ref: "new_stack"}}
 	}
 
-	for _, include := range g.Frugal.ReferencedIncludes() {
+	includesSet := make(map[string]bool)
+	for _, include := range g.Frugal.ReferencedScopeIncludes() {
+		includesSet[include] = true
+	}
+	for _, include := range g.Frugal.ReferencedServiceIncludes() {
+		includesSet[include] = true
+	}
+	includes := make([]string, 0, len(includesSet))
+	for include, _ := range includesSet {
+		includes = append(includes, include)
+	}
+	sort.Strings(includes)
+
+	for _, include := range includes {
 		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
 		if !ok {
 			namespace = include
@@ -132,9 +153,9 @@ func (g *Generator) addToPubspec(dir string) error {
 }
 
 func (g *Generator) exportClasses(dir string) error {
-	filename := strings.ToLower(g.Frugal.Name)
+	filename := generator.LowercaseFirstLetter(g.Frugal.Name)
 	if ns, ok := g.Frugal.Thrift.Namespace(lang); ok {
-		filename = strings.ToLower(toLibraryName(ns))
+		filename = generator.LowercaseFirstLetter(toLibraryName(ns))
 	}
 	dartFile := fmt.Sprintf("%s.%s", filename, lang)
 	mainFilePath := filepath.Join(dir, "lib", dartFile)
@@ -147,13 +168,15 @@ func (g *Generator) exportClasses(dir string) error {
 	exports := "\n"
 	for _, service := range g.Frugal.Thrift.Services {
 		servTitle := strings.Title(service.Name)
+		exports += fmt.Sprintf("export 'src/%s%s%s.%s' show F%s;\n",
+			generator.FilePrefix, toFileName(service.Name), serviceSuffix, lang, servTitle)
 		exports += fmt.Sprintf("export 'src/%s%s%s.%s' show F%sClient;\n",
-			generator.FilePrefix, strings.ToLower(service.Name), serviceSuffix, lang, servTitle)
+			generator.FilePrefix, toFileName(service.Name), serviceSuffix, lang, servTitle)
 	}
 	for _, scope := range g.Frugal.Scopes {
 		scopeTitle := strings.Title(scope.Name)
 		exports += fmt.Sprintf("export 'src/%s%s%s.%s' show %sPublisher, %sSubscriber;\n",
-			generator.FilePrefix, strings.ToLower(scope.Name), scopeSuffix, lang, scopeTitle, scopeTitle)
+			generator.FilePrefix, toFileName(scope.Name), scopeSuffix, lang, scopeTitle, scopeTitle)
 	}
 	stat, err := mainFile.Stat()
 	if err != nil {
@@ -168,9 +191,9 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 	outputDir = filepath.Join(outputDir, "src")
 	switch fileType {
 	case generator.CombinedServiceFile:
-		return g.CreateFile(strings.ToLower(name)+serviceSuffix, outputDir, lang, true)
+		return g.CreateFile(toFileName(name)+serviceSuffix, outputDir, lang, true)
 	case generator.CombinedScopeFile:
-		return g.CreateFile(strings.ToLower(name)+scopeSuffix, outputDir, lang, true)
+		return g.CreateFile(toFileName(name)+scopeSuffix, outputDir, lang, true)
 	default:
 		return nil, fmt.Errorf("Bad file type for dartlang generator: %s", fileType)
 	}
@@ -227,8 +250,8 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += fmt.Sprintf("import 'package:%s/%s.dart' as t_%s;\n", pkgLower, pkgLower, pkgLower)
 
 	// Import thrift package for method args
-	servLower := strings.ToLower(s.Name)
-	imports += fmt.Sprintf("import '%s.dart' as t_%s;\n", servLower, servLower)
+	servSnake := toFileName(s.Name)
+	imports += fmt.Sprintf("import '%s.dart' as t_%s_file;\n", servSnake, servSnake)
 
 	_, err := file.WriteString(imports)
 	return err
@@ -411,17 +434,34 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 	if service.Comment != nil {
 		contents += g.GenerateInlineComment(service.Comment, "/")
 	}
-	contents += fmt.Sprintf("abstract class F%s {\n", strings.Title(service.Name))
+	if service.Extends != "" {
+		contents += fmt.Sprintf("abstract class F%s extends %s {\n",
+			strings.Title(service.Name), g.getServiceExtendsName(service))
+	} else {
+		contents += fmt.Sprintf("abstract class F%s {\n", strings.Title(service.Name))
+	}
 	for _, method := range service.Methods {
 		contents += "\n"
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, tab+"/")
 		}
 		contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s);\n",
-			g.generateReturnArg(method), strings.ToLower(method.Name), g.generateInputArgs(method.Arguments))
+			g.generateReturnArg(method), generator.LowercaseFirstLetter(method.Name), g.generateInputArgs(method.Arguments))
 	}
 	contents += "}\n\n"
 	return contents
+}
+
+func (g *Generator) getServiceExtendsName(service *parser.Service) string {
+	serviceName := "F" + service.ExtendsService()
+	include := service.ExtendsInclude()
+	if include != "" {
+		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
+			include = inc
+		}
+		serviceName = "t_" + include + "." + serviceName
+	}
+	return serviceName
 }
 
 func (g *Generator) generateClient(service *parser.Service) string {
@@ -430,9 +470,20 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	if service.Comment != nil {
 		contents += g.GenerateInlineComment(service.Comment, "/")
 	}
-	contents += fmt.Sprintf("class F%sClient implements F%s {\n", servTitle, servTitle)
+	if service.Extends != "" {
+		contents += fmt.Sprintf("class F%sClient extends %sClient implements F%s {\n",
+			servTitle, g.getServiceExtendsName(service), servTitle)
+	} else {
+		contents += fmt.Sprintf("class F%sClient implements F%s {\n",
+			servTitle, servTitle)
+	}
 	contents += "\n"
-	contents += fmt.Sprintf(tab+"F%sClient(frugal.FServiceProvider provider) {\n", servTitle)
+	if service.Extends != "" {
+		contents += fmt.Sprintf(tab+"F%sClient(frugal.FServiceProvider provider)\n", servTitle)
+		contents += tabtabtab + ": super(provider) {\n"
+	} else {
+		contents += fmt.Sprintf(tab+"F%sClient(frugal.FServiceProvider provider) {\n", servTitle)
+	}
 	contents += tabtab + "_transport = provider.fTransport;\n"
 	contents += tabtab + "_transport.setRegistry(new frugal.FClientRegistry());\n"
 	contents += tabtab + "_protocolFactory = provider.fProtocolFactory;\n"
@@ -451,9 +502,9 @@ func (g *Generator) generateClient(service *parser.Service) string {
 }
 
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
-	servLower := strings.ToLower(service.Name)
+	servSnake := toFileName(service.Name)
 	nameTitle := strings.Title(method.Name)
-	nameLower := strings.ToLower(method.Name)
+	nameLower := generator.LowercaseFirstLetter(method.Name)
 
 	contents := ""
 	if method.Comment != nil {
@@ -462,21 +513,38 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	// Generate the calling method
 	contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s) async {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
-	contents += tabtab + "var controller = new StreamController();\n"
-	contents += fmt.Sprintf(tabtab+"_transport.register(ctx, _recv%sHandler(ctx, controller));\n", nameTitle)
-	contents += tabtab + "try {\n"
-	contents += tabtabtab + "oprot.writeRequestHeader(ctx);\n"
-	contents += fmt.Sprintf(tabtabtab+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.CALL, 0));\n",
-		nameLower)
-	contents += fmt.Sprintf(tabtabtab+"t_%s.%s_args args = new t_%s.%s_args();\n",
-		servLower, nameLower, servLower, nameLower)
-	for _, arg := range method.Arguments {
-		argLower := strings.ToLower(arg.Name)
-		contents += fmt.Sprintf(tabtabtab+"args.%s = %s;\n", argLower, argLower)
+
+	// No need to register for oneway
+	indent := tabtab
+	if !method.Oneway {
+		contents += tabtab + "var controller = new StreamController();\n"
+		contents += fmt.Sprintf(tabtab+"_transport.register(ctx, _recv%sHandler(ctx, controller));\n", nameTitle)
+		contents += tabtab + "try {\n"
+		indent = tabtabtab
 	}
-	contents += tabtabtab + "args.write(oprot);\n"
-	contents += tabtabtab + "oprot.writeMessageEnd();\n"
-	contents += tabtabtab + "await oprot.transport.flush();\n"
+	contents += indent + "oprot.writeRequestHeader(ctx);\n"
+	msgType := "CALL"
+	if method.Oneway {
+		msgType = "ONEWAY"
+	}
+	contents += fmt.Sprintf(indent+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.%s, 0));\n",
+		nameLower, msgType)
+	contents += fmt.Sprintf(indent+"t_%s_file.%s_args args = new t_%s_file.%s_args();\n",
+		servSnake, nameLower, servSnake, nameLower)
+	for _, arg := range method.Arguments {
+		argLower := generator.LowercaseFirstLetter(arg.Name)
+		contents += fmt.Sprintf(indent+"args.%s = %s;\n", argLower, argLower)
+	}
+	contents += indent + "args.write(oprot);\n"
+	contents += indent + "oprot.writeMessageEnd();\n"
+	contents += indent + "await oprot.transport.flush();\n"
+
+	// Nothing more to do for oneway
+	if method.Oneway {
+		contents += tab + "}\n\n"
+		return contents
+	}
+
 	contents += tabtabtab + "return await controller.stream.first.timeout(ctx.timeout);\n"
 	contents += tabtab + "} finally {\n"
 	contents += tabtabtab + "_transport.unregister(ctx);\n"
@@ -496,8 +564,8 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtab + "throw error;\n"
 	contents += tabtabtabtab + "}\n\n"
 
-	contents += fmt.Sprintf(tabtabtabtab+"t_%s.%s_result result = new t_%s.%s_result();\n",
-		servLower, nameLower, servLower, nameLower)
+	contents += fmt.Sprintf(tabtabtabtab+"t_%s_file.%s_result result = new t_%s_file.%s_result();\n",
+		servSnake, nameLower, servSnake, nameLower)
 	contents += tabtabtabtab + "result.read(iprot);\n"
 	contents += tabtabtabtab + "iprot.readMessageEnd();\n"
 	if method.ReturnType == nil {
@@ -536,7 +604,7 @@ func (g *Generator) generateReturnArg(method *parser.Method) string {
 func (g *Generator) generateInputArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += ", " + g.getDartTypeFromThriftType(arg.Type) + " " + strings.ToLower(arg.Name)
+		argStr += ", " + g.getDartTypeFromThriftType(arg.Type) + " " + generator.LowercaseFirstLetter(arg.Name)
 	}
 	return argStr
 }
@@ -544,8 +612,8 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 func (g *Generator) generateErrors(method *parser.Method) string {
 	contents := ""
 	for _, exp := range method.Exceptions {
-		contents += fmt.Sprintf(tabtabtabtab+"if (result.%s != null) {\n", strings.ToLower(exp.Name))
-		contents += fmt.Sprintf(tabtabtabtabtab+"controller.addError(result.%s);\n", strings.ToLower(exp.Name))
+		contents += fmt.Sprintf(tabtabtabtab+"if (result.%s != null) {\n", generator.LowercaseFirstLetter(exp.Name))
+		contents += fmt.Sprintf(tabtabtabtabtab+"controller.addError(result.%s);\n", generator.LowercaseFirstLetter(exp.Name))
 		contents += tabtabtabtabtab + "return;\n"
 		contents += tabtabtabtab + "}\n"
 	}
@@ -618,11 +686,39 @@ func (g *Generator) qualifiedParamName(op *parser.Operation) string {
 		namespace = toLibraryName(namespace)
 		param = fmt.Sprintf("t_%s.%s", strings.ToLower(namespace), param)
 	} else {
-		param = fmt.Sprintf("t_%s.%s", strings.ToLower(param), param)
+		param = fmt.Sprintf("t_%s.%s", strings.ToLower(g.Frugal.Name), param)
 	}
 	return param
 }
 
 func toLibraryName(name string) string {
 	return strings.Replace(name, ".", "_", -1)
+}
+
+// e.g. change APIForFileIO to api_for_file_io
+func toFileName(name string) string {
+	ret := ""
+	tmp := []rune(name)
+	is_prev_lc := true
+	is_current_lc := tmp[0] == unicode.ToLower(tmp[0])
+	is_next_lc := false
+
+	for i, _ := range tmp {
+		lc := unicode.ToLower(tmp[i])
+
+		if i == len(name)-1 {
+			is_next_lc = false
+		} else {
+			is_next_lc = (tmp[i+1] == unicode.ToLower(tmp[i+1]))
+		}
+
+		if i != 0 && !is_current_lc && (is_prev_lc || is_next_lc) {
+			ret += "_"
+		}
+		ret += string(lc)
+
+		is_prev_lc = is_current_lc
+		is_current_lc = is_next_lc
+	}
+	return ret
 }

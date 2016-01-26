@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/Workiva/frugal/example/go/gen-go/base"
 )
 
 // (needed to ensure safety because of naive import list construction.)
@@ -14,7 +15,20 @@ var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
 
+var _ = base.GoUnusedProtection__
 var GoUnusedProtection__ int
+
+type ID int64
+
+func IDPtr(v ID) *ID { return &v }
+
+type Int int32
+
+func IntPtr(v Int) *Int { return &v }
+
+type Request map[Int]string
+
+func RequestPtr(v Request) *Request { return &v }
 
 // This docstring gets added to the generated code because it has
 // the @ sign.
@@ -23,7 +37,7 @@ var GoUnusedProtection__ int
 //  - ID: ID is a unique identifier for an event.
 //  - Message: Message contains the event payload.
 type Event struct {
-	ID      int64  `thrift:"ID,1,required" db:"ID" json:"ID"`
+	ID      ID     `thrift:"ID,1,required" db:"ID" json:"ID"`
 	Message string `thrift:"Message,2,required" db:"Message" json:"Message"`
 }
 
@@ -33,7 +47,7 @@ func NewEvent() *Event {
 	}
 }
 
-func (p *Event) GetID() int64 {
+func (p *Event) GetID() ID {
 	return p.ID
 }
 
@@ -92,7 +106,8 @@ func (p *Event) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
-		p.ID = v
+		temp := ID(v)
+		p.ID = temp
 	}
 	return nil
 }
@@ -162,7 +177,7 @@ func (p *Event) String() string {
 //  - ID: ID is a unique identifier for an awesome exception.
 //  - Reason: Reason contains the error message.
 type AwesomeException struct {
-	ID     int64  `thrift:"ID,1,required" db:"ID" json:"ID"`
+	ID     ID     `thrift:"ID,1,required" db:"ID" json:"ID"`
 	Reason string `thrift:"Reason,2,required" db:"Reason" json:"Reason"`
 }
 
@@ -170,7 +185,7 @@ func NewAwesomeException() *AwesomeException {
 	return &AwesomeException{}
 }
 
-func (p *AwesomeException) GetID() int64 {
+func (p *AwesomeException) GetID() ID {
 	return p.ID
 }
 
@@ -229,7 +244,8 @@ func (p *AwesomeException) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
-		p.ID = v
+		temp := ID(v)
+		p.ID = temp
 	}
 	return nil
 }
