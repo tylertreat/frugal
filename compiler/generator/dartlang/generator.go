@@ -628,7 +628,7 @@ func (g *Generator) getDartTypeFromThriftType(t *parser.Type) string {
 	switch underlyingType.Name {
 	case "bool":
 		return "bool"
-	case "byte":
+	case "byte", "i8":
 		return "int"
 	case "i16":
 		return "int"

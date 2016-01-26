@@ -883,10 +883,8 @@ func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
 	switch t.Name {
 	case "bool":
 		return "bool"
-	case "byte":
-		return "byte"
-    case "i8":
-        return "int8"
+	case "byte", "i8":
+		return "int8"
 	case "i16":
 		return "int16"
 	case "i32":
@@ -930,8 +928,8 @@ func (g *Generator) isPrimitive(t *parser.Type) bool {
 		fallthrough
 	case "byte":
 		fallthrough
-    case "i8":
-        fallthrough
+	case "i8":
+		fallthrough
 	case "i16":
 		fallthrough
 	case "i32":
