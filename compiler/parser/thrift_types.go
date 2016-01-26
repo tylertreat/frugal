@@ -138,6 +138,18 @@ func (s *Service) ExtendsService() string {
 	return s.Extends
 }
 
+// TwowayMethods returns a slice of the non-oneway methods defined in this
+// Service.
+func (s *Service) TwowayMethods() []*Method {
+	methods := make([]*Method, 0, len(s.Methods))
+	for _, method := range s.Methods {
+		if !method.Oneway {
+			methods = append(methods, method)
+		}
+	}
+	return methods
+}
+
 // ReferencedIncludes returns a slice containing the referenced includes which
 // will need to be imported in generated code for this Service.
 func (s *Service) ReferencedIncludes() []string {

@@ -93,7 +93,9 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "\t\"bytes\"\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"sync\"\n"
-	imports += "\t\"time\"\n\n"
+	if len(s.TwowayMethods()) > 0 {
+		imports += "\t\"time\"\n\n"
+	}
 	if g.Options["thrift_import"] != "" {
 		imports += "\t\"" + g.Options["thrift_import"] + "\"\n"
 	} else {
