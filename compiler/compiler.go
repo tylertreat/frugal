@@ -22,6 +22,7 @@ type Options struct {
 	Delim              string // Token delimiter for scope topics
 	RetainIntermediate bool   // Do not clean up generated intermediate IDL
 	DryRun             bool   // Do not generate code
+	Recurse            bool   // Generate includes
 }
 
 // Compile parses the Frugal IDL and generates code for it, returning an error
@@ -31,6 +32,7 @@ func Compile(options Options) error {
 	globals.Gen = options.Gen
 	globals.Out = options.Out
 	globals.DryRun = options.DryRun
+	globals.Recurse = options.Recurse
 	globals.FileDir = filepath.Dir(options.File)
 
 	defer func() {
@@ -52,13 +54,13 @@ func Compile(options Options) error {
 		return err
 	}
 
-	_, err = compile(absFile, strings.HasSuffix(absFile, ".thrift"))
+	_, err = compile(absFile, strings.HasSuffix(absFile, ".thrift"), true)
 	return err
 }
 
 // compile parses the Frugal or Thrift IDL and generates code for it, returning
 // an error if something failed.
-func compile(file string, isThrift bool) (*parser.Frugal, error) {
+func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	var (
 		gen    = globals.Gen
 		out    = globals.Out
@@ -111,7 +113,7 @@ func compile(file string, isThrift bool) (*parser.Frugal, error) {
 		file = idlFile
 	}
 
-	if dryRun {
+	if dryRun || !generate {
 		return frugal, nil
 	}
 

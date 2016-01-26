@@ -155,7 +155,22 @@ func (f *Frugal) IsStruct(t *Type) bool {
 	if _, ok := thriftTypes[t.Name]; ok {
 		return false
 	}
-	return t.KeyType == nil && t.ValueType == nil
+	return t.KeyType == nil && t.ValueType == nil && !f.IsEnum(t)
+}
+
+// IsEnum indicates if the underlying Type is an enum.
+func (f *Frugal) IsEnum(t *Type) bool {
+	include := t.IncludeName()
+	containingFrugal := f
+	if include != "" {
+		containingFrugal = f.ParsedIncludes[include]
+	}
+	for _, enum := range containingFrugal.Thrift.Enums {
+		if enum.Name == t.ParamName() {
+			return true
+		}
+	}
+	return false
 }
 
 func (f *Frugal) assignFrugal() {

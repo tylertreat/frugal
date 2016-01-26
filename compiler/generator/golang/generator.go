@@ -93,7 +93,10 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "\t\"bytes\"\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"sync\"\n"
-	imports += "\t\"time\"\n\n"
+	if len(s.TwowayMethods()) > 0 {
+		// Only non-oneway methods require the time package.
+		imports += "\t\"time\"\n\n"
+	}
 	if g.Options["thrift_import"] != "" {
 		imports += "\t\"" + g.Options["thrift_import"] + "\"\n"
 	} else {
@@ -396,7 +399,7 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, "\t")
 		}
-		contents += fmt.Sprintf("\t%s(*frugal.FContext%s) %s\n",
+		contents += fmt.Sprintf("\t%s(ctx *frugal.FContext%s) %s\n",
 			snakeToCamel(method.Name), g.generateInterfaceArgs(method.Arguments),
 			g.generateReturnArgs(method))
 	}
@@ -839,7 +842,7 @@ func (g *Generator) generateMethodException(prefix string, method *parser.Method
 func (g *Generator) generateInterfaceArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += ", " + g.getGoTypeFromThriftType(arg.Type)
+		argStr += ", " + arg.Name + " " + g.getGoTypeFromThriftType(arg.Type)
 	}
 	return argStr
 }
@@ -897,11 +900,14 @@ func (g *Generator) getGoTypeFromThriftType(t *parser.Type) string {
 	case "binary":
 		return "[]byte"
 	case "list":
+		// TODO: For some reason, Thrift uses underlying types for set and list
+		// generics rather than using the typedef, but it uses the typedef in
+		// maps. Use typedefs once we no longer depend on the Thrift generator.
 		return fmt.Sprintf("[]%s",
-			g.getGoTypeFromThriftType(t.ValueType))
+			g.getGoTypeFromThriftType(g.Frugal.UnderlyingType(t.ValueType)))
 	case "set":
 		return fmt.Sprintf("map[%s]bool",
-			g.getGoTypeFromThriftType(t.ValueType))
+			g.getGoTypeFromThriftType(g.Frugal.UnderlyingType(t.ValueType)))
 	case "map":
 		return fmt.Sprintf("map[%s]%s",
 			g.getGoTypeFromThriftType(t.KeyType),

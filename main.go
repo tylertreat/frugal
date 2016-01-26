@@ -18,6 +18,7 @@ var (
 	out                string
 	delim              string
 	retainIntermediate bool
+	recurse            bool
 )
 
 func main() {
@@ -54,6 +55,11 @@ func main() {
 			Usage:       "retain generated intermediate thrift files",
 			Destination: &retainIntermediate,
 		},
+		cli.BoolFlag{
+			Name:        "recurse, r",
+			Usage:       "generate included files",
+			Destination: &recurse,
+		},
 	}
 
 	app.Action = func(c *cli.Context) {
@@ -82,6 +88,7 @@ func main() {
 			Out:                out,
 			Delim:              delim,
 			RetainIntermediate: retainIntermediate,
+			Recurse:            recurse,
 		}
 
 		if err := compiler.Compile(options); err != nil {

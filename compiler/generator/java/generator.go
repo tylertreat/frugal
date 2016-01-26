@@ -630,7 +630,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 			contents += tabtabtabtabtab + "result.setSuccessIsSet(true);\n"
 		}
 		for _, exception := range method.Exceptions {
-			contents += tabtabtabtab + fmt.Sprintf("} catch (%s %s) {\n", exception.Type, exception.Name)
+			contents += tabtabtabtab + fmt.Sprintf("} catch (%s %s) {\n", g.getJavaTypeFromThriftType(exception.Type), exception.Name)
 			contents += tabtabtabtabtab + fmt.Sprintf("result.%s = %s;\n", exception.Name, exception.Name)
 		}
 		contents += tabtabtabtab + "} catch (TException e) {\n"

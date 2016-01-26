@@ -13,6 +13,6 @@ cd $ROOT
 
 # Run the generator tests
 go get -d ./compiler .
-go build
-go test ./test
-rm -rf ./test/out
+go build -o frugal
+# go test ./test
+# rm -rf ./test/out
