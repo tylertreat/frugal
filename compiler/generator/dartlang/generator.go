@@ -237,7 +237,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
 	// import included packages
 	for _, include := range s.ReferencedIncludes() {
-		namespace, ok := g.Frugal.Thrift.NamespaceForInclude(include, lang)
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
 		if !ok {
 			namespace = include
 		}
