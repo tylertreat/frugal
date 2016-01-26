@@ -10,6 +10,7 @@ var (
 	Out             string
 	FileDir         string
 	DryRun          bool
+	Recurse         bool
 	Now             = time.Now()
 	IntermediateIDL = []string{}
 )
@@ -20,6 +21,7 @@ func Reset() {
 	Out = ""
 	FileDir = ""
 	DryRun = false
+	Recurse = false
 	Now = time.Now()
 	IntermediateIDL = []string{}
 }
