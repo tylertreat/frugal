@@ -19,6 +19,8 @@ var (
 	delim              string
 	retainIntermediate bool
 	recurse            bool
+	verbose            bool
+	version            bool
 )
 
 func main() {
@@ -26,6 +28,7 @@ func main() {
 	app.Name = "frugal"
 	app.Usage = "a tool for code generation"
 	app.Version = globals.Version
+	app.HideVersion = true
 	app.HideHelp = true
 
 	app.Flags = []cli.Flag{
@@ -60,11 +63,26 @@ func main() {
 			Usage:       "generate included files",
 			Destination: &recurse,
 		},
+		cli.BoolFlag{
+			Name:        "verbose, v",
+			Usage:       "verbose mode",
+			Destination: &verbose,
+		},
+		cli.BoolFlag{
+			Name:        "version",
+			Usage:       "print the version",
+			Destination: &version,
+		},
 	}
 
 	app.Action = func(c *cli.Context) {
 		if help {
 			cli.ShowAppHelp(c)
+			os.Exit(0)
+		}
+
+		if version {
+			cli.ShowVersion(c)
 			os.Exit(0)
 		}
 
@@ -89,6 +107,7 @@ func main() {
 			Delim:              delim,
 			RetainIntermediate: retainIntermediate,
 			Recurse:            recurse,
+			Verbose:            verbose,
 		}
 
 		if err := compiler.Compile(options); err != nil {
