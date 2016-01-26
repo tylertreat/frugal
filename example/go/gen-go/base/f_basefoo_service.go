@@ -19,7 +19,7 @@ var _ = fmt.Printf
 var _ = bytes.Equal
 
 type FBaseFoo interface {
-	BasePing(*frugal.FContext) (err error)
+	BasePing(ctx *frugal.FContext) (err error)
 }
 
 type FBaseFooClient struct {

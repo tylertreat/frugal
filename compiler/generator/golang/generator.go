@@ -399,7 +399,7 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, "\t")
 		}
-		contents += fmt.Sprintf("\t%s(*frugal.FContext%s) %s\n",
+		contents += fmt.Sprintf("\t%s(ctx *frugal.FContext%s) %s\n",
 			snakeToCamel(method.Name), g.generateInterfaceArgs(method.Arguments),
 			g.generateReturnArgs(method))
 	}
@@ -842,7 +842,7 @@ func (g *Generator) generateMethodException(prefix string, method *parser.Method
 func (g *Generator) generateInterfaceArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += ", " + g.getGoTypeFromThriftType(arg.Type)
+		argStr += ", " + arg.Name + " " + g.getGoTypeFromThriftType(arg.Type)
 	}
 	return argStr
 }

@@ -23,11 +23,11 @@ type FFoo interface {
 	base.FBaseFoo
 
 	// Ping the server.
-	Ping(*frugal.FContext) (err error)
+	Ping(ctx *frugal.FContext) (err error)
 	// Blah the server.
-	Blah(*frugal.FContext, int32, string, *Event) (r int64, err error)
+	Blah(ctx *frugal.FContext, num int32, Str string, event *Event) (r int64, err error)
 	// oneway methods don't receive a response from the server.
-	OneWay(*frugal.FContext, ID, Request) (err error)
+	OneWay(ctx *frugal.FContext, id ID, req Request) (err error)
 }
 
 type FFooClient struct {
