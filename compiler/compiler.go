@@ -121,10 +121,7 @@ func compile(file string, isThrift bool) (*parser.Frugal, error) {
 	}
 
 	// Generate Frugal code.
-	if frugal.ContainsFrugalDefinitions() {
-		return frugal, g.Generate(frugal, fullOut)
-	}
-	return frugal, nil
+	return frugal, g.Generate(frugal, fullOut)
 }
 
 // exists determines if the file at the given path exists.
