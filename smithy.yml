@@ -9,3 +9,5 @@ script:
 artifacts:
     artifactory:
         - frugal-*.jar
+    docker:
+        - ./frugal
