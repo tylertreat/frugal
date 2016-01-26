@@ -155,6 +155,8 @@ func (s *Service) TwowayMethods() []*Method {
 func (s *Service) ReferencedIncludes() []string {
 	includes := []string{}
 	includesSet := make(map[string]bool)
+
+	// Check extended service.
 	if s.Extends != "" && strings.Contains(s.Extends, ".") {
 		reducedStr := s.Extends[0:strings.Index(s.Extends, ".")]
 		if _, ok := includesSet[reducedStr]; !ok {
@@ -162,25 +164,40 @@ func (s *Service) ReferencedIncludes() []string {
 			includes = append(includes, reducedStr)
 		}
 	}
+
+	// Check methods.
 	for _, method := range s.Methods {
+		// Check arguments.
 		for _, arg := range method.Arguments {
-			if strings.Contains(arg.Type.Name, ".") {
-				reducedStr := arg.Type.Name[0:strings.Index(arg.Type.Name, ".")]
-				if _, ok := includesSet[reducedStr]; !ok {
-					includesSet[reducedStr] = true
-					includes = append(includes, reducedStr)
-				}
-			}
+			includesSet, includes = addInclude(includesSet, includes, arg.Type)
 		}
-		if method.ReturnType != nil && strings.Contains(method.ReturnType.Name, ".") {
-			reducedStr := method.ReturnType.Name[0:strings.Index(method.ReturnType.Name, ".")]
-			if _, ok := includesSet[reducedStr]; !ok {
-				includesSet[reducedStr] = true
-				includes = append(includes, reducedStr)
-			}
+		// Check return type.
+		if method.ReturnType != nil {
+			includesSet, includes = addInclude(includesSet, includes, method.ReturnType)
 		}
 	}
+
 	return includes
+}
+
+// addInclude checks the given Type and adds any includes for it to the given
+// map and slice, returning the new map and slice.
+func addInclude(includesSet map[string]bool, includes []string, t *Type) (map[string]bool, []string) {
+	if strings.Contains(t.Name, ".") {
+		reducedStr := t.Name[0:strings.Index(t.Name, ".")]
+		if _, ok := includesSet[reducedStr]; !ok {
+			includesSet[reducedStr] = true
+			includes = append(includes, reducedStr)
+		}
+	}
+	// Check container types.
+	if t.KeyType != nil {
+		includesSet, includes = addInclude(includesSet, includes, t.KeyType)
+	}
+	if t.ValueType != nil {
+		includesSet, includes = addInclude(includesSet, includes, t.ValueType)
+	}
+	return includesSet, includes
 }
 
 // ReferencedInternals returns a slice containing the referenced internals
