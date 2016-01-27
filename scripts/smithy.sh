@@ -10,13 +10,17 @@ wget http://apache.claz.org/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.
 tar xzvf apache-maven-3.3.9-bin.tar.gz
 export PATH=$PWD/apache-maven-3.3.9/bin:$PATH
 
-# Compile the java library code
 ROOT=$PWD
+
+# Compile the java library code
 cd $ROOT/lib/java && mvn verify
 mv target/frugal-*.jar $ROOT
-cd $ROOT
+
+# Compile the go library code
+cd $ROOT/lib/go && go build
 
 # Run the generator tests
+cd $ROOT
 go get -d ./compiler .
 go build -o frugal
 go test ./test
