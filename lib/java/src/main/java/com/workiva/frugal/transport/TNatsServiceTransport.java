@@ -231,7 +231,7 @@ public class TNatsServiceTransport extends TTransport {
             }
             return bytesRead;
         } catch (IOException e) {
-            throw new TTransportException(TTransportException.UNKNOWN, e);
+            throw new TTransportException(TTransportException.END_OF_FILE, e);
         }
     }
 
