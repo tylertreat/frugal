@@ -749,8 +749,7 @@ func (g *Generator) getImportDeclaration(namespace string) string {
 	if (prefix == "") {
 		prefix += namespace + "/"
 	}
-	declaration := fmt.Sprintf("import 'package:%s%s.dart' as t_%s;\n", prefix, namespace, namespace)
-	return declaration
+	return fmt.Sprintf("import 'package:%s%s.dart' as t_%s;\n", prefix, namespace, namespace)
 }
 
 func (g *Generator) getNamespaceOrName() string {
