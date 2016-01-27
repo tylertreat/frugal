@@ -163,10 +163,13 @@ func (n *FNatsServer) startHeartbeat() {
 
 func (n *FNatsServer) acceptHeartbeat(client *client) {
 	missed := 0
-	recvHeartbeat := make(chan struct{})
+	recvHeartbeat := make(chan struct{}, 1)
 
 	sub, err := n.conn.Subscribe(client.heartbeat, func(msg *nats.Msg) {
-		recvHeartbeat <- struct{}{}
+		select {
+		case recvHeartbeat <- struct{}{}:
+		default:
+		}
 	})
 	if err != nil {
 		log.Println("frugal: error subscribing to heartbeat", client.heartbeat)

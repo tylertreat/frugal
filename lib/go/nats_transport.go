@@ -79,7 +79,7 @@ func NewNatsServiceTTransport(conn *nats.Conn, subject string,
 		heartbeatListen:   heartbeatListen,
 		heartbeatReply:    heartbeatReply,
 		heartbeatInterval: interval,
-		recvHeartbeat:     make(chan struct{}),
+		recvHeartbeat:     make(chan struct{}, 1),
 		listenTo:          msg.Subject,
 		writeTo:           msg.Reply,
 	}, nil
