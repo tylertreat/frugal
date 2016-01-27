@@ -34,7 +34,7 @@ syn keyword frugalStructure map list set struct typedef exception enum throws un
 syn match frugalSpecial "\d\+:"
 
 " Structure
-syn keyword frugalStructure service scope async oneway extends prefix
+syn keyword frugalStructure service scope oneway extends prefix
 
 if version >= 508 || !exists("did_frugal_syn_inits")
   if version < 508
