@@ -23,7 +23,7 @@ const (
 var Languages = map[string][]string{
 	"go":   []string{"thrift_import", "frugal_import", "package_prefix"},
 	"java": nil,
-	"dart": nil,
+	"dart": []string{"library_prefix"},
 }
 
 // ProgramGenerator generates source code in a specified language for a Frugal
