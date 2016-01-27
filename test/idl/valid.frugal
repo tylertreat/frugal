@@ -20,8 +20,7 @@ service Blah {
 
 // This is a scope
 /**@ And this is a scope docstring. */
-scope Foo {
-    prefix "foo.bar.{baz}.qux"
+scope Foo prefix foo.bar.{baz}.qux {
 
     /**@ This is an operation docstring. */
     Foo: Thing // This is an operation.
