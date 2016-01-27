@@ -142,8 +142,8 @@ func (n *fNatsScopeTransport) Close() error {
 }
 
 func (n *fNatsScopeTransport) Read(p []byte) (int, error) {
-	if !n.isOpen() {
-		return thrift.NewTTransportException(thrift.END_OF_FILE, "")
+	if !n.IsOpen() {
+		return 0, thrift.NewTTransportException(thrift.END_OF_FILE, "")
 	}
 	num, err := n.reader.Read(p)
 	return num, thrift.NewTTransportExceptionFromError(err)
@@ -152,8 +152,8 @@ func (n *fNatsScopeTransport) Read(p []byte) (int, error) {
 // Write bytes to publish. If buffered bytes exceeds 1MB, ErrTooLarge is
 // returned.
 func (n *fNatsScopeTransport) Write(p []byte) (int, error) {
-	if !n.isOpen() {
-		return thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
+	if !n.IsOpen() {
+		return 0, thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
 	}
 	if len(p)+n.writeBuffer.Len() > natsMaxMessageSize {
 		n.writeBuffer.Reset() // Clear any existing bytes.
@@ -165,7 +165,7 @@ func (n *fNatsScopeTransport) Write(p []byte) (int, error) {
 
 // Flush publishes the buffered messages.
 func (n *fNatsScopeTransport) Flush() error {
-	if !n.isOpen() {
+	if !n.IsOpen() {
 		return thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
 	}
 	data := n.writeBuffer.Bytes()
