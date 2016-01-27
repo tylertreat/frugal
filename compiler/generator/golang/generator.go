@@ -453,19 +453,17 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf(
-		"func NewF%sClient(p *frugal.FServiceProvider) *F%sClient {\n",
+		"func NewF%sClient(t frugal.FTransport, p *frugal.FProtocolFactory) *F%sClient {\n",
 		servTitle, servTitle)
-	contents += "\tt := p.Transport()\n"
-	contents += "\tf := p.ProtocolFactory()\n"
 	contents += "\tt.SetRegistry(frugal.NewFClientRegistry())\n"
 	contents += fmt.Sprintf("\treturn &F%sClient{\n", servTitle)
 	if service.Extends != "" {
-		contents += fmt.Sprintf("\t\tF%sClient: %sNewF%sClient(p),\n",
+		contents += fmt.Sprintf("\t\tF%sClient: %sNewF%sClient(t, p),\n",
 			service.ExtendsService(), g.getServiceExtendsNamespace(service), service.ExtendsService())
 	}
 	contents += "\t\ttransport:       t,\n"
-	contents += "\t\tprotocolFactory: f,\n"
-	contents += "\t\toprot:           f.GetProtocol(t),\n"
+	contents += "\t\tprotocolFactory: p,\n"
+	contents += "\t\toprot:           p.GetProtocol(t),\n"
 	contents += "\t}\n"
 	contents += "}\n\n"
 

@@ -402,13 +402,13 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += tabtab + "private FProtocol inputProtocol;\n"
 	contents += tabtab + "private FProtocol outputProtocol;\n\n"
 
-	contents += tabtab + "public Client(FServiceProvider provider) {\n"
+	contents += tabtab + "public Client(FTransport transport, FProtocolFactory protocolFactory) {\n"
 	if service.Extends != "" {
-		contents += tabtabtab + "super(provider);\n"
+		contents += tabtabtab + "super(transport, protocolFactory);\n"
 	}
-	contents += tabtabtab + "this.transport = provider.getTransport();\n"
+	contents += tabtabtab + "this.transport = transport;\n"
 	contents += tabtabtab + "this.transport.setRegistry(new FClientRegistry());\n"
-	contents += tabtabtab + "this.protocolFactory = provider.getProtocolFactory();\n"
+	contents += tabtabtab + "this.protocolFactory = protocolFactory;\n"
 	contents += tabtabtab + "this.inputProtocol = this.protocolFactory.getProtocol(this.transport);\n"
 	contents += tabtabtab + "this.outputProtocol = this.protocolFactory.getProtocol(this.transport);\n"
 	contents += tabtab + "}\n\n"

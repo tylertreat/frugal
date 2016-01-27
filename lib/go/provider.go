@@ -21,28 +21,3 @@ func (p *FScopeProvider) New() (FScopeTransport, *FProtocol) {
 	protocol := p.protocolFactory.GetProtocol(transport)
 	return transport, protocol
 }
-
-// FServiceProvider produces a FTransport and FProtocolFactory used by
-// service clients.
-type FServiceProvider struct {
-	transport       FTransport
-	protocolFactory *FProtocolFactory
-}
-
-// NewFServiceProvider creates a new FServiceProvider used by service clients.
-func NewFServiceProvider(t FTransport, p *FProtocolFactory) *FServiceProvider {
-	return &FServiceProvider{
-		transport:       t,
-		protocolFactory: p,
-	}
-}
-
-// Transport returns the FTransport.
-func (f *FServiceProvider) Transport() FTransport {
-	return f.transport
-}
-
-// ProtocolFactory returns the FProtocolFactory.
-func (f *FServiceProvider) ProtocolFactory() *FProtocolFactory {
-	return f.protocolFactory
-}

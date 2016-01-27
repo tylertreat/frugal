@@ -27,7 +27,7 @@
         <dependency>
             <groupId>org.apache.thrift</groupId>
             <artifactId>libthrift</artifactId>
-            <version>0.9.2</version>
+            <version>0.9.3</version>
         </dependency>
         <dependency>
             <groupId>io.nats</groupId>
@@ -35,9 +35,9 @@
             <version>0.3.1</version>
         </dependency>
         <dependency>
-            <groupId>com.workiva.frugal</groupId>
+            <groupId>com.workiva</groupId>
             <artifactId>frugal</artifactId>
-            <version>0.0.3</version>
+            <version>0.0.10</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
