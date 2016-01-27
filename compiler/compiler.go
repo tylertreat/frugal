@@ -22,6 +22,8 @@ type Options struct {
 	Delim              string // Token delimiter for scope topics
 	RetainIntermediate bool   // Do not clean up generated intermediate IDL
 	DryRun             bool   // Do not generate code
+	Recurse            bool   // Generate includes
+	Verbose            bool   // Verbose mode
 }
 
 // Compile parses the Frugal IDL and generates code for it, returning an error
@@ -31,6 +33,8 @@ func Compile(options Options) error {
 	globals.Gen = options.Gen
 	globals.Out = options.Out
 	globals.DryRun = options.DryRun
+	globals.Recurse = options.Recurse
+	globals.Verbose = options.Verbose
 	globals.FileDir = filepath.Dir(options.File)
 
 	defer func() {
@@ -39,6 +43,7 @@ func Compile(options Options) error {
 			for _, file := range globals.IntermediateIDL {
 				// Only try to remove if file still exists.
 				if _, err := os.Stat(file); err == nil {
+					logv(fmt.Sprintf("Removing intermediate Thrift file %s", file))
 					if err := os.Remove(file); err != nil {
 						fmt.Printf("Failed to remove intermediate IDL %s\n", file)
 					}
@@ -52,13 +57,13 @@ func Compile(options Options) error {
 		return err
 	}
 
-	_, err = compile(absFile, strings.HasSuffix(absFile, ".thrift"))
+	_, err = compile(absFile, strings.HasSuffix(absFile, ".thrift"), true)
 	return err
 }
 
 // compile parses the Frugal or Thrift IDL and generates code for it, returning
 // an error if something failed.
-func compile(file string, isThrift bool) (*parser.Frugal, error) {
+func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	var (
 		gen    = globals.Gen
 		out    = globals.Out
@@ -88,6 +93,7 @@ func compile(file string, isThrift bool) (*parser.Frugal, error) {
 	}
 
 	// Parse the Frugal file.
+	logv(fmt.Sprintf("Parsing %s", file))
 	frugal, err := parser.ParseFrugal(file)
 	if err != nil {
 		return nil, err
@@ -104,6 +110,8 @@ func compile(file string, isThrift bool) (*parser.Frugal, error) {
 	// Generate intermediate Thrift IDL for Frugal. If this is already a
 	// .thrift file, do not generate an intermediate IDL.
 	if !isThrift {
+		logv(fmt.Sprintf("Generating intermediate Thrift file %s",
+			filepath.Join(dir, fmt.Sprintf("%s.thrift", frugal.Name))))
 		idlFile, err := generateThriftIDL(dir, frugal)
 		if err != nil {
 			return nil, err
@@ -111,16 +119,18 @@ func compile(file string, isThrift bool) (*parser.Frugal, error) {
 		file = idlFile
 	}
 
-	if dryRun {
+	if dryRun || !generate {
 		return frugal, nil
 	}
 
 	// Generate Thrift code.
+	logv(fmt.Sprintf("Generating \"%s\" Thrift code for %s", lang, file))
 	if err := generateThrift(frugal, dir, file, out, gen); err != nil {
 		return nil, err
 	}
 
 	// Generate Frugal code.
+	logv(fmt.Sprintf("Generating \"%s\" Frugal code for %s", lang, frugal.File))
 	return frugal, g.Generate(frugal, fullOut)
 }
 
@@ -151,4 +161,11 @@ func cleanGenParam(gen string) (lang string, options map[string]string) {
 		}
 	}
 	return
+}
+
+// logv prints the message if in verbose mode.
+func logv(msg string) {
+	if globals.Verbose {
+		fmt.Println(msg)
+	}
 }

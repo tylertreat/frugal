@@ -273,17 +273,6 @@ type KeyValue struct {
 	Key, Value interface{}
 }
 
-func (t *Thrift) NamespaceForInclude(include, lang string) (string, bool) {
-	namespace, ok := t.namespaceIndex[lang]
-	if !ok {
-		namespace, ok = t.namespaceIndex["*"]
-		if !ok {
-			return "", ok
-		}
-	}
-	return namespace.Value, ok
-}
-
 // ReferencedIncludes returns a slice containing the referenced includes which
 // will need to be imported in generated code.
 func (t *Thrift) ReferencedIncludes() []string {

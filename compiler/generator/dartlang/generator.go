@@ -237,7 +237,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
 	// import included packages
 	for _, include := range s.ReferencedIncludes() {
-		namespace, ok := g.Frugal.Thrift.NamespaceForInclude(include, lang)
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
 		if !ok {
 			namespace = include
 		}
@@ -246,7 +246,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	}
 
 	// Import same package.
-	pkgLower := strings.ToLower(g.Frugal.Name)
+	pkgLower := strings.ToLower(g.getNamespaceOrName())
 	imports += fmt.Sprintf("import 'package:%s/%s.dart' as t_%s;\n", pkgLower, pkgLower, pkgLower)
 
 	// Import thrift package for method args
@@ -272,7 +272,7 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	}
 
 	// Import same package.
-	pkgLower := strings.ToLower(g.Frugal.Name)
+	pkgLower := strings.ToLower(g.getNamespaceOrName())
 	imports += fmt.Sprintf("import 'package:%s/%s.dart' as t_%s;\n", pkgLower, pkgLower, pkgLower)
 
 	_, err := file.WriteString(imports)
@@ -454,14 +454,17 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 
 func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 	serviceName := "F" + service.ExtendsService()
+	prefix := ""
 	include := service.ExtendsInclude()
 	if include != "" {
 		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
 			include = inc
 		}
-		serviceName = "t_" + include + "." + serviceName
+		prefix = "t_" + include
+	} else {
+		prefix = "t_" + strings.ToLower(g.getNamespaceOrName())
 	}
-	return serviceName
+	return prefix + "." + serviceName
 }
 
 func (g *Generator) generateClient(service *parser.Service) string {
@@ -625,10 +628,15 @@ func (g *Generator) getDartTypeFromThriftType(t *parser.Type) string {
 		return "void"
 	}
 	underlyingType := g.Frugal.UnderlyingType(t)
+
+	if (g.Frugal.IsEnum(underlyingType)) {
+		return "int"
+	}
+
 	switch underlyingType.Name {
 	case "bool":
 		return "bool"
-	case "byte":
+	case "byte", "i8":
 		return "int"
 	case "i16":
 		return "int"
@@ -670,7 +678,7 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 		namespace = toLibraryName(namespace)
 		param = fmt.Sprintf("t_%s.%s", strings.ToLower(namespace), param)
 	} else {
-		param = fmt.Sprintf("t_%s.%s", strings.ToLower(g.Frugal.Name), param)
+		param = fmt.Sprintf("t_%s.%s", strings.ToLower(g.getNamespaceOrName()), param)
 	}
 	return param
 }
@@ -690,6 +698,15 @@ func (g *Generator) qualifiedParamName(op *parser.Operation) string {
 	}
 	return param
 }
+
+func (g *Generator) getNamespaceOrName() string {
+	name, ok := g.Frugal.Thrift.Namespace(lang)
+	if !ok {
+		name = g.Frugal.Name
+	}
+	return name
+}
+
 
 func toLibraryName(name string) string {
 	return strings.Replace(name, ".", "_", -1)

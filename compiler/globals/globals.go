@@ -2,7 +2,7 @@ package globals
 
 import "time"
 
-const Version = "0.0.1"
+const Version = "1.0.0-RC"
 
 var (
 	TopicDelimiter  string = "."
@@ -10,6 +10,8 @@ var (
 	Out             string
 	FileDir         string
 	DryRun          bool
+	Recurse         bool
+	Verbose         bool
 	Now             = time.Now()
 	IntermediateIDL = []string{}
 )
@@ -20,6 +22,8 @@ func Reset() {
 	Out = ""
 	FileDir = ""
 	DryRun = false
+	Recurse = false
+	Verbose = false
 	Now = time.Now()
 	IntermediateIDL = []string{}
 }

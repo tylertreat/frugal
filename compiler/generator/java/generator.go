@@ -678,7 +678,7 @@ func (g *Generator) getJavaTypeFromThriftType(t *parser.Type) string {
 	switch underlyingType.Name {
 	case "bool":
 		return "boolean"
-	case "byte":
+	case "byte", "i8":
 		return "byte"
 	case "i16":
 		return "short"

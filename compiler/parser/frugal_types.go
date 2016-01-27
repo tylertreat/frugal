@@ -82,6 +82,7 @@ type Async struct {
 
 type Frugal struct {
 	Name           string
+	File           string
 	Dir            string
 	Path           string
 	Scopes         []*Scope
@@ -91,7 +92,11 @@ type Frugal struct {
 }
 
 func (f *Frugal) NamespaceForInclude(include, lang string) (string, bool) {
-	namespace, ok := f.ParsedIncludes[include].Thrift.Namespace(lang)
+	parsed, ok := f.ParsedIncludes[include]
+	if !ok {
+		return "", ok
+	}
+	namespace, ok := parsed.Thrift.Namespace(lang)
 	return namespace, ok
 }
 
@@ -141,7 +146,11 @@ func (f *Frugal) UnderlyingType(t *Type) *Type {
 	typedefIndex := f.Thrift.typedefIndex
 	include := t.IncludeName()
 	if include != "" {
-		typedefIndex = f.ParsedIncludes[include].Thrift.typedefIndex
+		parsed, ok := f.ParsedIncludes[include]
+		if !ok {
+			return t
+		}
+		typedefIndex = parsed.Thrift.typedefIndex
 	}
 	if typedef, ok := typedefIndex[t.ParamName()]; ok {
 		return typedef.Type
@@ -163,7 +172,9 @@ func (f *Frugal) IsEnum(t *Type) bool {
 	include := t.IncludeName()
 	containingFrugal := f
 	if include != "" {
-		containingFrugal = f.ParsedIncludes[include]
+		if containing, ok := f.ParsedIncludes[include]; ok {
+			containingFrugal = containing
+		}
 	}
 	for _, enum := range containingFrugal.Thrift.Enums {
 		if enum.Name == t.ParamName() {
