@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 public class FNatsServer implements FServer {
 
     private static final int MAX_MISSED_HEARTBEATS = 3;
+    private static final long MIN_HEARTBEAT_INTERVAL = 20 * 1000;
     private static final String QUEUE = "rpc";
 
     private Connection conn;
@@ -49,7 +50,8 @@ public class FNatsServer implements FServer {
         this.conn = conn;
         this.subject = subject;
         this.heartbeatSubject = conn.newInbox();
-        this.heartbeatDeadline = heartbeatDeadline;
+        this.heartbeatDeadline = heartbeatDeadline < MIN_HEARTBEAT_INTERVAL ?
+                MIN_HEARTBEAT_INTERVAL : heartbeatDeadline;
         this.clients = new ConcurrentHashMap<>();
         this.processorFactory = new FProcessorFactory(processor);
         this.transportFactory = transportFactory;
@@ -62,7 +64,8 @@ public class FNatsServer implements FServer {
         this.conn = conn;
         this.subject = subject;
         this.heartbeatSubject = conn.newInbox();
-        this.heartbeatDeadline = heartbeatDeadline;
+        this.heartbeatDeadline = heartbeatDeadline < MIN_HEARTBEAT_INTERVAL ?
+                MIN_HEARTBEAT_INTERVAL : heartbeatDeadline;
         this.clients = new ConcurrentHashMap<>();
         this.processorFactory = processorFactory;
         this.transportFactory = transportFactory;

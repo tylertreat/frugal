@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	queue               = "rpc"
-	maxMissedHeartbeats = 3
+	queue                = "rpc"
+	maxMissedHeartbeats  = 3
+	minHeartbeatInterval = 20 * time.Second
 )
 
 type client struct {
@@ -62,6 +63,10 @@ func NewFNatsServerFactory7(
 	processorFactory FProcessorFactory,
 	transportFactory FTransportFactory,
 	protocolFactory *FProtocolFactory) FServer {
+
+	if heartbeatDeadline < minHeartbeatInterval {
+		heartbeatDeadline = minHeartbeatInterval
+	}
 
 	return &FNatsServer{
 		conn:              conn,
@@ -163,10 +168,13 @@ func (n *FNatsServer) startHeartbeat() {
 
 func (n *FNatsServer) acceptHeartbeat(client *client) {
 	missed := 0
-	recvHeartbeat := make(chan struct{})
+	recvHeartbeat := make(chan struct{}, 1)
 
 	sub, err := n.conn.Subscribe(client.heartbeat, func(msg *nats.Msg) {
-		recvHeartbeat <- struct{}{}
+		select {
+		case recvHeartbeat <- struct{}{}:
+		default:
+		}
 	})
 	if err != nil {
 		log.Println("frugal: error subscribing to heartbeat", client.heartbeat)
