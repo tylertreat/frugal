@@ -17,7 +17,9 @@ cd $ROOT/lib/java && mvn verify
 mv target/frugal-*.jar $ROOT
 
 # Compile the go library code
-cd $ROOT/lib/go && go build
+cd $ROOT/lib/go
+go get -d ./go .
+go build
 
 # Run the generator tests
 cd $ROOT
