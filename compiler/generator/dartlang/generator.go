@@ -482,14 +482,14 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	}
 	contents += "\n"
 	if service.Extends != "" {
-		contents += fmt.Sprintf(tab+"F%sClient(frugal.FServiceProvider provider)\n", servTitle)
-		contents += tabtabtab + ": super(provider) {\n"
+		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory)\n", servTitle)
+		contents += tabtabtab + ": super(transport, protocolFactory) {\n"
 	} else {
-		contents += fmt.Sprintf(tab+"F%sClient(frugal.FServiceProvider provider) {\n", servTitle)
+		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory) {\n", servTitle)
 	}
-	contents += tabtab + "_transport = provider.fTransport;\n"
+	contents += tabtab + "_transport = transport;\n"
 	contents += tabtab + "_transport.setRegistry(new frugal.FClientRegistry());\n"
-	contents += tabtab + "_protocolFactory = provider.fProtocolFactory;\n"
+	contents += tabtab + "_protocolFactory = protocolFactory;\n"
 	contents += tabtab + "_oprot = _protocolFactory.getProtocol(_transport);\n"
 	contents += tab + "}\n\n"
 	contents += tab + "frugal.FTransport _transport;\n"
@@ -629,7 +629,7 @@ func (g *Generator) getDartTypeFromThriftType(t *parser.Type) string {
 	}
 	underlyingType := g.Frugal.UnderlyingType(t)
 
-	if (g.Frugal.IsEnum(underlyingType)) {
+	if g.Frugal.IsEnum(underlyingType) {
 		return "int"
 	}
 
@@ -706,7 +706,6 @@ func (g *Generator) getNamespaceOrName() string {
 	}
 	return name
 }
-
 
 func toLibraryName(name string) string {
 	return strings.Replace(name, ".", "_", -1)

@@ -111,7 +111,7 @@ func runClient(conn *nats.Conn, transportFactory frugal.FTransportFactory, proto
 	if err := ftransport.Open(); err != nil {
 		return err
 	}
-	return handleClient(event.NewFFooClient(frugal.NewFServiceProvider(ftransport, protocolFactory)))
+	return handleClient(event.NewFFooClient(ftransport, protocolFactory))
 }
 
 // Sever handler

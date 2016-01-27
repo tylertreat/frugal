@@ -1,16 +1,17 @@
 import com.workiva.frugal.FContext;
 import com.workiva.frugal.FProtocolFactory;
 import com.workiva.frugal.FScopeProvider;
-import com.workiva.frugal.FServiceProvider;
 import com.workiva.frugal.server.FNatsServer;
 import com.workiva.frugal.server.FServer;
 import com.workiva.frugal.transport.*;
+import example.*;
 import io.nats.client.*;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.transport.TTransportException;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 public class Main {
@@ -71,7 +72,7 @@ public class Main {
         FTransport transport = transportFactory.getTransport(TNatsServiceTransport.client(conn, "foo", 60000));
         transport.open();
         try {
-            handleClient(new FFoo.Client(new FServiceProvider(transport, protocolFactory)));
+            handleClient(new FFoo.Client(transport, protocolFactory));
         } finally {
             transport.close();
         }
@@ -112,6 +113,11 @@ public class Main {
         public long blah(FContext ctx, int num, String Str, Event event) throws TException, AwesomeException {
             System.out.format("blah(%s, %d, %s %s)\n", ctx, num, Str, event);
             return 42;
+        }
+
+        @Override
+        public void oneWay(FContext ctx, long id, Map<Integer, String> req) throws TException {
+            System.out.format("oneWay(%s, %d, %s)\n", ctx, id, req);
         }
 
         @Override
