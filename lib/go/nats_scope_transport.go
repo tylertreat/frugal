@@ -36,7 +36,7 @@ type fNatsScopeTransport struct {
 	writeBuffer *bytes.Buffer
 	sub         *nats.Subscription
 	pull        bool
-	mu          sync.Mutex
+	topicMu     sync.Mutex
 	readWriteMu sync.RWMutex
 	isOpen      bool
 }
@@ -54,7 +54,7 @@ func (n *fNatsScopeTransport) LockTopic(topic string) error {
 		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
 			"subscriber cannot lock topic")
 	}
-	n.mu.Lock()
+	n.topicMu.Lock()
 	n.subject = topic
 	return nil
 }
@@ -66,7 +66,7 @@ func (n *fNatsScopeTransport) UnlockTopic() error {
 			"subscriber cannot unlock topic")
 	}
 	n.subject = ""
-	n.mu.Unlock()
+	n.topicMu.Unlock()
 	return nil
 }
 
@@ -126,8 +126,6 @@ func (n *fNatsScopeTransport) IsOpen() bool {
 // Close unsubscribes in the case of a subscriber and clears the buffer in the
 // case of a publisher.
 func (n *fNatsScopeTransport) Close() error {
-	n.readWriteMu.RLock()
-	defer n.readWriteMu.RUnlock()
 	if !n.IsOpen() || !n.pull {
 		return nil
 	}
@@ -144,8 +142,6 @@ func (n *fNatsScopeTransport) Close() error {
 }
 
 func (n *fNatsScopeTransport) Read(p []byte) (int, error) {
-	n.readWriteMu.RLock()
-	defer n.readWriteMu.RUnlock()
 	if !n.isOpen {
 		return thrift.NewTTransportException(thrift.END_OF_FILE, "")
 	}
@@ -156,8 +152,6 @@ func (n *fNatsScopeTransport) Read(p []byte) (int, error) {
 // Write bytes to publish. If buffered bytes exceeds 1MB, ErrTooLarge is
 // returned.
 func (n *fNatsScopeTransport) Write(p []byte) (int, error) {
-	n.readWriteMu.RLock()
-	defer n.readWriteMu.RUnlock()
 	if !n.isOpen {
 		return thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
 	}
@@ -171,8 +165,6 @@ func (n *fNatsScopeTransport) Write(p []byte) (int, error) {
 
 // Flush publishes the buffered messages.
 func (n *fNatsScopeTransport) Flush() error {
-	n.readWriteMu.RLock()
-	defer n.readWriteMu.RUnlock()
 	if !n.isOpen {
 		return thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
 	}
