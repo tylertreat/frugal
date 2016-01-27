@@ -51,8 +51,10 @@ func (g *Generator) DefaultOutputDir() string {
 }
 
 func (g *Generator) GenerateDependencies(dir string) error {
-	if err := g.addToPubspec(dir); err != nil {
-		return err
+	if _, ok := g.Options["library_prefix"]; !ok {
+		if err := g.addToPubspec(dir); err != nil {
+			return err
+		}
 	}
 	if err := g.exportClasses(dir); err != nil {
 		return err
@@ -158,7 +160,13 @@ func (g *Generator) exportClasses(dir string) error {
 		filename = generator.LowercaseFirstLetter(toLibraryName(ns))
 	}
 	dartFile := fmt.Sprintf("%s.%s", filename, lang)
-	mainFilePath := filepath.Join(dir, "lib", dartFile)
+
+	mainFilePath := ""
+	if _, ok := g.Options["library_prefix"]; ok {
+		mainFilePath = filepath.Join(dir, "..", dartFile)
+	} else {
+		mainFilePath = filepath.Join(dir, "lib", dartFile)
+	}
 	mainFile, err := os.OpenFile(mainFilePath, syscall.O_RDWR, 0777)
 	defer mainFile.Close()
 	if err != nil {
@@ -167,16 +175,25 @@ func (g *Generator) exportClasses(dir string) error {
 
 	exports := "\n"
 	for _, service := range g.Frugal.Thrift.Services {
+		servSrcDir := "src"
+		if _, ok := g.Options["library_prefix"]; ok {
+			servSrcDir = filename
+		}
+
 		servTitle := strings.Title(service.Name)
-		exports += fmt.Sprintf("export 'src/%s%s%s.%s' show F%s;\n",
-			generator.FilePrefix, toFileName(service.Name), serviceSuffix, lang, servTitle)
-		exports += fmt.Sprintf("export 'src/%s%s%s.%s' show F%sClient;\n",
-			generator.FilePrefix, toFileName(service.Name), serviceSuffix, lang, servTitle)
+		exports += fmt.Sprintf("export '%s/%s%s%s.%s' show F%s;\n",
+			servSrcDir, generator.FilePrefix, toFileName(service.Name), serviceSuffix, lang, servTitle)
+		exports += fmt.Sprintf("export '%s/%s%s%s.%s' show F%sClient;\n",
+			servSrcDir, generator.FilePrefix, toFileName(service.Name), serviceSuffix, lang, servTitle)
 	}
 	for _, scope := range g.Frugal.Scopes {
+		scopeSrcDir := "src"
+		if _, ok := g.Options["library_prefix"]; ok {
+			scopeSrcDir = filename
+		}
 		scopeTitle := strings.Title(scope.Name)
-		exports += fmt.Sprintf("export 'src/%s%s%s.%s' show %sPublisher, %sSubscriber;\n",
-			generator.FilePrefix, toFileName(scope.Name), scopeSuffix, lang, scopeTitle, scopeTitle)
+		exports += fmt.Sprintf("export '%s/%s%s%s.%s' show %sPublisher, %sSubscriber;\n",
+			scopeSrcDir, generator.FilePrefix, toFileName(scope.Name), scopeSuffix, lang, scopeTitle, scopeTitle)
 	}
 	stat, err := mainFile.Stat()
 	if err != nil {
@@ -187,8 +204,10 @@ func (g *Generator) exportClasses(dir string) error {
 }
 
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
-	outputDir = filepath.Join(outputDir, "lib")
-	outputDir = filepath.Join(outputDir, "src")
+	if _, ok := g.Options["library_prefix"]; !ok {
+		outputDir = filepath.Join(outputDir, "lib")
+		outputDir = filepath.Join(outputDir, "src")
+	}
 	switch fileType {
 	case generator.CombinedServiceFile:
 		return g.CreateFile(toFileName(name)+serviceSuffix, outputDir, lang, true)
@@ -225,7 +244,14 @@ func (g *Generator) generatePackage(file *os.File, name, suffix string) error {
 	} else {
 		pkg = g.Frugal.Name
 	}
-	_, err := file.WriteString(fmt.Sprintf("library %s.src.%s%s%s;", pkg,
+
+	libraryPrefix := g.getLibraryPrefix()
+	libraryDeclaration := "library " + libraryPrefix + pkg
+	if libraryPrefix == "" {
+		libraryDeclaration += ".src"
+	}
+
+	_, err := file.WriteString(fmt.Sprintf("%s.%s%s%s;", libraryDeclaration,
 		generator.FilePrefix, strings.ToLower(name), scopeSuffix))
 	return err
 }
@@ -242,12 +268,12 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 			namespace = include
 		}
 		namespace = strings.ToLower(toLibraryName(namespace))
-		imports += fmt.Sprintf("import 'package:%s/%s.dart' as t_%s;\n", namespace, namespace, namespace)
+		imports += g.getImportDeclaration(namespace)
 	}
 
 	// Import same package.
 	pkgLower := strings.ToLower(g.getNamespaceOrName())
-	imports += fmt.Sprintf("import 'package:%s/%s.dart' as t_%s;\n", pkgLower, pkgLower, pkgLower)
+	imports += g.getImportDeclaration(pkgLower)
 
 	// Import thrift package for method args
 	servSnake := toFileName(s.Name)
@@ -268,12 +294,12 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 			namespace = include
 		}
 		namespace = strings.ToLower(toLibraryName(namespace))
-		imports += fmt.Sprintf("import 'package:%s/%s.dart' as t_%s;\n", namespace, namespace, namespace)
+		imports += g.getImportDeclaration(namespace)
 	}
 
 	// Import same package.
 	pkgLower := strings.ToLower(g.getNamespaceOrName())
-	imports += fmt.Sprintf("import 'package:%s/%s.dart' as t_%s;\n", pkgLower, pkgLower, pkgLower)
+	imports += g.getImportDeclaration(pkgLower)
 
 	_, err := file.WriteString(imports)
 	return err
@@ -699,6 +725,34 @@ func (g *Generator) qualifiedParamName(op *parser.Operation) string {
 	return param
 }
 
+func (g *Generator) getLibraryPrefix() string {
+	prefix := ""
+	if _, ok := g.Options["library_prefix"]; ok {
+		prefix += g.Options["library_prefix"]
+		if !strings.HasSuffix(prefix, ".") {
+			prefix += "."
+		}
+	}
+	return prefix
+}
+
+func (g *Generator) getPackagePrefix() string {
+	prefix := ""
+	if _, ok := g.Options["library_prefix"]; ok {
+		prefix += strings.Replace(g.getLibraryPrefix(), ".", "/", -1)
+	}
+	return prefix
+}
+
+func (g *Generator) getImportDeclaration(namespace string) string {
+	prefix := g.getPackagePrefix()
+	if (prefix == "") {
+		prefix += namespace + "/"
+	}
+	declaration := fmt.Sprintf("import 'package:%s%s.dart' as t_%s;\n", prefix, namespace, namespace)
+	return declaration
+}
+
 func (g *Generator) getNamespaceOrName() string {
 	name, ok := g.Frugal.Thrift.Namespace(lang)
 	if !ok {
@@ -706,7 +760,6 @@ func (g *Generator) getNamespaceOrName() string {
 	}
 	return name
 }
-
 
 func toLibraryName(name string) string {
 	return strings.Replace(name, ".", "_", -1)
