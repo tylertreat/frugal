@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	queue               = "rpc"
-	maxMissedHeartbeats = 3
+	queue                = "rpc"
+	maxMissedHeartbeats  = 3
+	minHeartbeatInterval = 20 * time.Second
 )
 
 type client struct {
@@ -62,6 +63,10 @@ func NewFNatsServerFactory7(
 	processorFactory FProcessorFactory,
 	transportFactory FTransportFactory,
 	protocolFactory *FProtocolFactory) FServer {
+
+	if heartbeatDeadline < minHeartbeatInterval {
+		heartbeatDeadline = minHeartbeatInterval
+	}
 
 	return &FNatsServer{
 		conn:              conn,
