@@ -37,6 +37,8 @@ type fNatsScopeTransport struct {
 	sub         *nats.Subscription
 	pull        bool
 	mu          sync.Mutex
+	readWriteMu sync.RWMutex
+	isOpen      bool
 }
 
 // NewNatsFScopeTransport creates a new FScopeTransport which is used for
@@ -103,11 +105,16 @@ func (n *fNatsScopeTransport) Open() error {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	n.sub = sub
+	n.readWriteMu.Lock()
+	n.isOpen = true
+	n.readWriteMu.Unlock()
 	return nil
 }
 
 func (n *fNatsScopeTransport) IsOpen() bool {
-	if n.conn.Status() != nats.CONNECTED {
+	n.readWriteMu.RLock()
+	defer n.readWriteMu.RUnlock()
+	if n.conn.Status() != nats.CONNECTED || !n.isOpen {
 		return false
 	}
 	if n.pull {
@@ -119,6 +126,8 @@ func (n *fNatsScopeTransport) IsOpen() bool {
 // Close unsubscribes in the case of a subscriber and clears the buffer in the
 // case of a publisher.
 func (n *fNatsScopeTransport) Close() error {
+	n.readWriteMu.RLock()
+	defer n.readWriteMu.RUnlock()
 	if !n.IsOpen() || !n.pull {
 		return nil
 	}
@@ -128,10 +137,18 @@ func (n *fNatsScopeTransport) Close() error {
 	n.sub = nil
 	err := n.writer.Close()
 	n.writer = nil
+	n.readWriteMu.Lock()
+	n.isOpen = false
+	n.readWriteMu.Unlock()
 	return thrift.NewTTransportExceptionFromError(err)
 }
 
 func (n *fNatsScopeTransport) Read(p []byte) (int, error) {
+	n.readWriteMu.RLock()
+	defer n.readWriteMu.RUnlock()
+	if !n.isOpen {
+		return thrift.NewTTransportException(thrift.END_OF_FILE, "")
+	}
 	num, err := n.reader.Read(p)
 	return num, thrift.NewTTransportExceptionFromError(err)
 }
@@ -139,6 +156,11 @@ func (n *fNatsScopeTransport) Read(p []byte) (int, error) {
 // Write bytes to publish. If buffered bytes exceeds 1MB, ErrTooLarge is
 // returned.
 func (n *fNatsScopeTransport) Write(p []byte) (int, error) {
+	n.readWriteMu.RLock()
+	defer n.readWriteMu.RUnlock()
+	if !n.isOpen {
+		return thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
+	}
 	if len(p)+n.writeBuffer.Len() > natsMaxMessageSize {
 		n.writeBuffer.Reset() // Clear any existing bytes.
 		return 0, ErrTooLarge
@@ -149,6 +171,11 @@ func (n *fNatsScopeTransport) Write(p []byte) (int, error) {
 
 // Flush publishes the buffered messages.
 func (n *fNatsScopeTransport) Flush() error {
+	n.readWriteMu.RLock()
+	defer n.readWriteMu.RUnlock()
+	if !n.isOpen {
+		return thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
+	}
 	data := n.writeBuffer.Bytes()
 	if len(data) == 0 {
 		return nil
