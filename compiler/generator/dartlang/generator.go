@@ -628,6 +628,11 @@ func (g *Generator) getDartTypeFromThriftType(t *parser.Type) string {
 		return "void"
 	}
 	underlyingType := g.Frugal.UnderlyingType(t)
+
+	if (g.Frugal.IsEnum(underlyingType)) {
+		return "int"
+	}
+
 	switch underlyingType.Name {
 	case "bool":
 		return "bool"
