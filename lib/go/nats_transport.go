@@ -44,8 +44,8 @@ type natsServiceTTransport struct {
 
 // NewNatsServiceTTransport returns a new thrift TTransport which uses
 // the NATS messaging system as the underlying transport. It performs a
-// handshake with a server listening on the given NATS subject. This TTransport
-// can only be used with FNatsServer.
+// handshake with a server listening on the given NATS subject upon open.
+// This TTransport can only be used with FNatsServer.
 func NewNatsServiceTTransport(conn *nats.Conn, subject string,
 	timeout time.Duration) thrift.TTransport {
 
