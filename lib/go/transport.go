@@ -112,7 +112,7 @@ func (f *fMuxTransport) SetMonitor(config *FTransportMonitor) {
 
 	// Start this new monitor
 	f.monitorStopSignal = make(chan struct{}, 1)
-	go config.monitor(f)
+	go config.monitor(f, f.monitorStopSignal)
 }
 
 // SetRegistry sets the Registry on the FTransport.
