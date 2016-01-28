@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// FTransportMonitorConfig provides configuration options for a monitor that watches and heals an FTransport.
-type FTransportMonitorConfig struct {
+// FTransportMonitor watches and heals an FTransport.
+type FTransportMonitor struct {
 	// ClosedCleanly is called when the transport is closed cleanly by a call to Close()
 	ClosedCleanly func()
 
@@ -29,10 +29,10 @@ type FTransportMonitorConfig struct {
 	MaxReopenWait time.Duration
 }
 
-// NewFTransportMonitorConfig returns a configuration for a transport monitor that logs events,
+// NewFTransportMonitor returns a configuration for a transport monitor that logs events,
 // and attempts to re-open closed transport with exponential backoff behavior.
-func NewFTransportMonitorConfig(maxReopenAttempts uint, initialWait, maxWait time.Duration) *FTransportMonitorConfig {
-	return &FTransportMonitorConfig{
+func NewFTransportMonitor(maxReopenAttempts uint, initialWait, maxWait time.Duration) *FTransportMonitor {
+	return &FTransportMonitor{
 		ClosedUncleanly: func() (bool, time.Duration) {
 			return maxReopenAttempts > 0, initialWait
 		},
@@ -54,7 +54,7 @@ func NewFTransportMonitorConfig(maxReopenAttempts uint, initialWait, maxWait tim
 
 // Asynchronously starts a monitor with the given configuration, returning a channel to be used
 // as a stop signal.
-func (config *FTransportMonitorConfig) monitor(transport FTransport) chan struct{} {
+func (config *FTransportMonitor) monitor(transport FTransport) chan struct{} {
 	prevWait := time.Duration(0)
 	prevAttempts := uint(0)
 	stopSignal := make(chan struct{}, 1)

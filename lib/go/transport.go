@@ -49,7 +49,7 @@ type FTransport interface {
 	Unregister(*FContext)
 
 	// SetMonitor starts a monitor that can watch the health of, and reopen, the transport.
-	SetMonitor(config *FTransportMonitorConfig)
+	SetMonitor(config *FTransportMonitor)
 
 	// Closed channel is closed when the FTransport is closed.
 	Closed() <-chan bool
@@ -103,7 +103,7 @@ func NewFMuxTransport(tr thrift.TTransport, numWorkers uint) FTransport {
 	}
 }
 
-func (f *fMuxTransport) SetMonitor(config *FTransportMonitorConfig) {
+func (f *fMuxTransport) SetMonitor(config *FTransportMonitor) {
 	// Stop the previous monitor, if any
 	select {
 	case f.monitorStopSignal <- struct{}{}:
