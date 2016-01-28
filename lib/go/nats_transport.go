@@ -167,10 +167,7 @@ func (n *natsServiceTTransport) Open() error {
 func (n *natsServiceTTransport) IsOpen() bool {
 	n.mutex.RLock()
 	defer n.mutex.RUnlock()
-	if n.conn.Status() != nats.CONNECTED && n.isOpen {
-		return false
-	}
-	return n.sub != nil
+	return n.conn.Status() == nats.CONNECTED && n.isOpen
 }
 
 // Close unsubscribes, signals the remote peer, and stops heartbeating.
