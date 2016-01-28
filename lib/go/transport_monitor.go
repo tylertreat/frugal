@@ -7,9 +7,9 @@ import (
 
 // FTransportMonitorConfig provides configuration options for a monitor that watches and heals an FTransport.
 type FTransportMonitorConfig struct {
-	// Closed is called when the transport is closed for a reason *other* than a call to Close.
+	// ClosedUncleanly is called when the transport is closed for a reason *other* than an explicit call to Close().
 	// Returns whether to try reopening the transport and, if so, how long to wait before making the attempt.
-	Closed func() (reopen bool, wait time.Duration)
+	ClosedUncleanly func() (reopen bool, wait time.Duration)
 
 	// ReopenFailed is called when an attempt to reopen the transport fails.
 	// Given the number of previous attempts to re-open the transport and the length of the previous wait,
@@ -30,7 +30,7 @@ type FTransportMonitorConfig struct {
 // and attempts to re-open closed transport with exponential backoff behavior.
 func NewFTransportMonitorConfig(maxReopenAttempts uint, initialWait, maxWait time.Duration) *FTransportMonitorConfig {
 	return &FTransportMonitorConfig{
-		Closed: func() (bool, time.Duration) {
+		ClosedUncleanly: func() (bool, time.Duration) {
 			return maxReopenAttempts > 0, initialWait
 		},
 		ReopenFailed: func(prevAttempts uint, prevWait time.Duration) (bool, time.Duration) {
@@ -62,17 +62,17 @@ func (config *FTransportMonitorConfig) monitor(transport FTransport) chan struct
 		for {
 			select {
 			case <-stopSignal:
-				fmt.Println("FTransport Monitor: Explicitly stopped, probably by a call to FTransport.Close(). Terminating...")
+				fmt.Println("FTransport Monitor: FTransport was closed cleanly. Terminating...")
 				break MonitoringLoop
 			case <-transport.Closed():
 				fmt.Println("FTransport Monitor: FTransport was closed uncleanly!")
 
-				if config.Closed == nil {
+				if config.ClosedUncleanly == nil {
 					fmt.Println("FTransport Monitor: Closed callback not defined. Terminating...")
 					break MonitoringLoop
 				}
 
-				if reopen, prevWait = config.Closed(); !reopen {
+				if reopen, prevWait = config.ClosedUncleanly(); !reopen {
 					fmt.Println("FTransport Monitor: Closed callback instructed not to reopen. Terminating...")
 					break MonitoringLoop
 				}
