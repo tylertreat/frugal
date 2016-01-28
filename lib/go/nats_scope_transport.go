@@ -163,17 +163,21 @@ func (n *fNatsScopeTransport) Write(p []byte) (int, error) {
 	return num, thrift.NewTTransportExceptionFromError(err)
 }
 
-// Flush publishes the buffered messages.
+// Flush publishes the buffered message. Returns ErrTooLarge if the buffered
+// message exceeds 1MB.
 func (n *fNatsScopeTransport) Flush() error {
 	if !n.IsOpen() {
 		return thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
 	}
+	defer n.writeBuffer.Reset()
 	data := n.writeBuffer.Bytes()
 	if len(data) == 0 {
 		return nil
 	}
+	if len(data) > natsMaxMessageSize {
+		return ErrTooLarge
+	}
 	err := n.conn.Publish(n.subject, data)
-	n.writeBuffer.Reset()
 	return thrift.NewTTransportExceptionFromError(err)
 }
 
