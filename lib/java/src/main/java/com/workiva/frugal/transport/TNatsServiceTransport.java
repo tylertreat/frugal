@@ -140,8 +140,8 @@ public class TNatsServiceTransport extends TTransport {
                     conn.publish(heartbeatReply, null);
                 }
             });
-
         }
+        isOpen = true;
     }
 
     private void handshake() throws TTransportException {
