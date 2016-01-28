@@ -48,6 +48,9 @@ type FTransport interface {
 	// Unregister a callback for the given Context.
 	Unregister(*FContext)
 
+	// SetMonitor starts a monitor that can watch the health of, and reopen, the transport.
+	SetMonitor(config *FTransportMonitorConfig)
+
 	// Closed channel is closed when the FTransport is closed.
 	Closed() <-chan bool
 }
@@ -74,13 +77,14 @@ func (f *fMuxTransportFactory) GetTransport(tr thrift.TTransport) FTransport {
 
 type fMuxTransport struct {
 	*thrift.TFramedTransport
-	registry   FRegistry
-	numWorkers uint
-	workC      chan []byte
-	open       bool
-	registryC  chan struct{}
-	mu         sync.Mutex
-	closed     chan bool
+	registry          FRegistry
+	numWorkers        uint
+	workC             chan []byte
+	open              bool
+	registryC         chan struct{}
+	mu                sync.Mutex
+	closed            chan bool
+	monitorStopSignal chan struct{}
 }
 
 // NewFMuxTransport wraps the given TTransport in a multiplexed FTransport. The
@@ -97,6 +101,17 @@ func NewFMuxTransport(tr thrift.TTransport, numWorkers uint) FTransport {
 		registryC:        make(chan struct{}),
 		closed:           make(chan bool),
 	}
+}
+
+func (f *fMuxTransport) SetMonitor(config *FTransportMonitorConfig) {
+	// Stop the previous monitor, if any
+	select {
+	case f.monitorStopSignal <- struct{}{}:
+	default:
+	}
+
+	// Start this new monitor
+	f.monitorStopSignal = config.monitor(f)
 }
 
 // SetRegistry sets the Registry on the FTransport.
@@ -168,6 +183,11 @@ func (f *fMuxTransport) Open() error {
 func (f *fMuxTransport) Close() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+
+	select {
+	case f.monitorStopSignal <- struct{}{}:
+	default:
+	}
 
 	if !f.open {
 		return errors.New("frugal: transport not open")
