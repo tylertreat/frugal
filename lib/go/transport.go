@@ -163,7 +163,10 @@ func (f *fMuxTransport) Open() error {
 		for {
 			frame, err := f.readFrame()
 			if err != nil {
-				f.monitorClosedUncleanly <- struct{}{}
+				select {
+				case f.monitorClosedUncleanly <- struct{}{}:
+				default:
+				}
 				defer f.Close()
 				if err, ok := err.(thrift.TTransportException); ok && err.TypeId() == thrift.END_OF_FILE {
 					return
@@ -244,7 +247,7 @@ func (f *fMuxTransport) startWorkers() {
 					if err := f.registry.Execute(frame); err != nil {
 						// An error here indicates an unrecoverable error, teardown transport.
 						log.Println("frugal: transport error, closing transport", err)
-						f.monitorClosedUncleanly <- struct{}{}
+						f.Close()
 						return
 					}
 				}
