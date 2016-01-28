@@ -10,9 +10,6 @@ import (
 	"github.com/nats-io/nats"
 )
 
-var ErrTooLarge = thrift.NewTTransportException(
-	thrift.UNKNOWN_TRANSPORT_EXCEPTION, "Message is too large")
-
 // FNatsScopeTransportFactory creates FNatsScopeTransports.
 type FNatsScopeTransportFactory struct {
 	conn *nats.Conn
@@ -37,7 +34,7 @@ type fNatsScopeTransport struct {
 	sub         *nats.Subscription
 	pull        bool
 	topicMu     sync.Mutex
-	readWriteMu sync.RWMutex
+	openMu      sync.RWMutex
 	isOpen      bool
 }
 
@@ -88,6 +85,9 @@ func (n *fNatsScopeTransport) Open() error {
 
 	if !n.pull {
 		n.writeBuffer = bytes.NewBuffer(make([]byte, 0, natsMaxMessageSize))
+		n.openMu.Lock()
+		n.isOpen = true
+		n.openMu.Unlock()
 		return nil
 	}
 
@@ -105,15 +105,15 @@ func (n *fNatsScopeTransport) Open() error {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	n.sub = sub
-	n.readWriteMu.Lock()
+	n.openMu.Lock()
 	n.isOpen = true
-	n.readWriteMu.Unlock()
+	n.openMu.Unlock()
 	return nil
 }
 
 func (n *fNatsScopeTransport) IsOpen() bool {
-	n.readWriteMu.RLock()
-	defer n.readWriteMu.RUnlock()
+	n.openMu.RLock()
+	defer n.openMu.RUnlock()
 	if n.conn.Status() != nats.CONNECTED || !n.isOpen {
 		return false
 	}
@@ -135,9 +135,9 @@ func (n *fNatsScopeTransport) Close() error {
 	n.sub = nil
 	err := n.writer.Close()
 	n.writer = nil
-	n.readWriteMu.Lock()
+	n.openMu.Lock()
 	n.isOpen = false
-	n.readWriteMu.Unlock()
+	n.openMu.Unlock()
 	return thrift.NewTTransportExceptionFromError(err)
 }
 
