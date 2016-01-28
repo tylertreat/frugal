@@ -26,7 +26,7 @@ type FTransportMonitorConfig struct {
 	MaxReopenWait time.Duration
 }
 
-// NewDefaultFTransportMonitorConfig returns a configuration for a transport monitor that logs events,
+// NewFTransportMonitorConfig returns a configuration for a transport monitor that logs events,
 // and attempts to re-open closed transport with exponential backoff behavior.
 func NewFTransportMonitorConfig(maxReopenAttempts uint, initialWait, maxWait time.Duration) *FTransportMonitorConfig {
 	return &FTransportMonitorConfig{
