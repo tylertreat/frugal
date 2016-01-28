@@ -67,22 +67,31 @@ func newNatsServiceTTransportServer(conn *nats.Conn, listenTo, writeTo string) t
 	}
 }
 
-// Open initializes the write buffer and reader/writer pipe, subscribes to
-// the specified subject, and starts heartbeating.
+// Open handshakes with the server (if this is a client transport) initializes
+// the write buffer and reader/writer pipe, subscribes to the specified
+// subject, and starts heartbeating.
 func (n *natsServiceTTransport) Open() error {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
 	if n.conn.Status() != nats.CONNECTED {
-		return fmt.Errorf("frugal: NATS not connected, has status %d", n.conn.Status())
+		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
+			fmt.Sprintf("frugal: NATS not connected, has status %d", n.conn.Status()))
+	}
+
+	if n.isOpen {
+		return thrift.NewTTransportException(thrift.ALREADY_OPEN, "frugal: NATS transport already open")
 	}
 
 	// Handshake if this is a client.
 	if n.connectSubject != "" {
-		if err := n.hanshake(); err != nil {
-			return err
+		if err := n.handshake(); err != nil {
+			return thrift.NewTTransportExceptionFromError(err)
 		}
 	}
 
 	if n.listenTo == "" || n.writeTo == "" {
-		return errors.New("frugal: listenTo and writeTo cannot be empty")
+		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
+			"frugal: listenTo and writeTo cannot be empty")
 	}
 
 	n.closed = make(chan struct{})
@@ -136,13 +145,11 @@ func (n *natsServiceTTransport) Open() error {
 			}
 		}()
 	}
-	n.mutex.Lock()
 	n.isOpen = true
-	n.mutex.Unlock()
 	return nil
 }
 
-func (n *natsServiceTTransport) hanshake() error {
+func (n *natsServiceTTransport) handshake() error {
 	msg, err := n.conn.Request(n.connectSubject, nil, n.connectTimeout)
 	if err != nil {
 		return err
@@ -170,8 +177,6 @@ func (n *natsServiceTTransport) hanshake() error {
 		interval = time.Millisecond * time.Duration(deadline)
 	}
 
-	n.mutex.Lock()
-	defer n.mutex.Unlock()
 	n.heartbeatListen = heartbeatListen
 	n.heartbeatReply = heartbeatReply
 	n.heartbeatInterval = interval
@@ -189,25 +194,26 @@ func (n *natsServiceTTransport) IsOpen() bool {
 
 // Close unsubscribes, signals the remote peer, and stops heartbeating.
 func (n *natsServiceTTransport) Close() error {
-	if !n.IsOpen() {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+	if !n.isOpen {
 		return nil
 	}
+
 	// Signal remote peer for a graceful disconnect.
 	n.conn.PublishRequest(n.writeTo, disconnect, nil)
 	if err := n.sub.Unsubscribe(); err != nil {
-		return err
+		return thrift.NewTTransportExceptionFromError(err)
 	}
 	if n.heartbeatSub != nil {
 		if err := n.heartbeatSub.Unsubscribe(); err != nil {
-			return err
+			return thrift.NewTTransportExceptionFromError(err)
 		}
 	}
 	n.sub = nil
 	n.heartbeatSub = nil
 	close(n.closed)
-	n.mutex.Lock()
 	n.isOpen = false
-	n.mutex.Unlock()
 	return thrift.NewTTransportExceptionFromError(n.writer.Close())
 }
 
@@ -228,11 +234,13 @@ func (n *natsServiceTTransport) Write(p []byte) (int, error) {
 	if remaining < len(p) {
 		n.writeBuffer.Write(p[0:remaining])
 		if err := n.Flush(); err != nil {
-			return 0, err
+			return 0, thrift.NewTTransportExceptionFromError(err)
 		}
-		return n.Write(p[remaining:])
+		b, err := n.Write(p[remaining:])
+		return b, thrift.NewTTransportExceptionFromError(err)
 	}
-	return n.writeBuffer.Write(p)
+	b, err := n.writeBuffer.Write(p)
+	return b, thrift.NewTTransportExceptionFromError(err)
 }
 
 // Flush sends the buffered bytes over NATS.

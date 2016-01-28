@@ -41,6 +41,7 @@ public class TNatsServiceTransport extends TTransport {
     private AtomicInteger missedHeartbeats;
     private String connectionSubject;
     private long connectionTimeout;
+    private boolean isOpen = false;
 
     private static Logger LOGGER = Logger.getLogger(TNatsServiceTransport.class.getName());
 
@@ -77,15 +78,23 @@ public class TNatsServiceTransport extends TTransport {
     }
 
     @Override
-    public boolean isOpen() {
-        return conn.getState() == Constants.ConnState.CONNECTED && sub != null;
-    }
+    public synchronized boolean isOpen() { return conn.getState() == Constants.ConnState.CONNECTED && isOpen; }
 
+    /**
+     * Opens the transport for reading/writing.
+     * Performs a handshake with the server if this is a client transport.
+     *
+     *
+     * @throws TTransportException if the transport could not be opened
+     */
     @Override
-    public void open() throws TTransportException {
+    public synchronized void open() throws TTransportException {
         if (conn.getState() != Constants.ConnState.CONNECTED) {
             throw new TTransportException(TTransportException.NOT_OPEN,
                     "NATS not connected, has status " + conn.getState());
+        }
+        if (isOpen) {
+            throw new TTransportException(TTransportException.ALREADY_OPEN, "NATS transport already open");
         }
 
         if (connectionSubject != null) {
@@ -135,14 +144,14 @@ public class TNatsServiceTransport extends TTransport {
         }
     }
 
-    private synchronized void handshake() throws TTransportException {
+    private void handshake() throws TTransportException {
         Message message;
         try {
             message = conn.request(this.connectionSubject, null, this.connectionTimeout);
         } catch (IOException e) {
             throw new TTransportException(e);
         } catch (TimeoutException e) {
-            throw new TTransportException(TTransportException.UNKNOWN, "Handshake timed out", e);
+            throw new TTransportException(TTransportException.TIMED_OUT, "Handshake timed out", e);
         }
         String reply = message.getReplyTo();
         if (reply == null || reply.isEmpty() ) {
@@ -202,8 +211,8 @@ public class TNatsServiceTransport extends TTransport {
     }
 
     @Override
-    public void close() {
-        if (!isOpen()) {
+    public synchronized void close() {
+        if (!isOpen) {
             return;
         }
         // Signal remote peer for a graceful disconnect.
