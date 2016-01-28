@@ -68,8 +68,8 @@ public class Main {
         server.serve();
     }
 
-    private static void runClient(Connection conn, FTransportFactory transportFactory, FProtocolFactory protocolFactory) throws TTransportException, TimeoutException {
-        FTransport transport = transportFactory.getTransport(TNatsServiceTransport.client(conn, "foo", 60000));
+    private static void runClient(Connection conn, FTransportFactory transportFactory, FProtocolFactory protocolFactory) throws TTransportException {
+        FTransport transport = transportFactory.getTransport(TNatsServiceTransport.client(conn, "foo", 5000));
         transport.open();
         try {
             handleClient(new FFoo.Client(transport, protocolFactory));
