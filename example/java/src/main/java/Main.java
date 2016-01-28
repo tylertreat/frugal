@@ -68,8 +68,8 @@ public class Main {
         server.serve();
     }
 
-    private static void runClient(Connection conn, FTransportFactory transportFactory, FProtocolFactory protocolFactory) throws TTransportException, TimeoutException {
-        FTransport transport = transportFactory.getTransport(TNatsServiceTransport.client(conn, "foo", 60000));
+    private static void runClient(Connection conn, FTransportFactory transportFactory, FProtocolFactory protocolFactory) throws TTransportException {
+        FTransport transport = transportFactory.getTransport(TNatsServiceTransport.client(conn, "foo", 5000));
         transport.open();
         try {
             handleClient(new FFoo.Client(transport, protocolFactory));
@@ -112,6 +112,7 @@ public class Main {
         @Override
         public long blah(FContext ctx, int num, String Str, Event event) throws TException, AwesomeException {
             System.out.format("blah(%s, %d, %s %s)\n", ctx, num, Str, event);
+            ctx.addResponseHeader("foo", "bar");
             return 42;
         }
 

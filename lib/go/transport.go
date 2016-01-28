@@ -100,7 +100,6 @@ func NewFMuxTransport(tr thrift.TTransport, numWorkers uint) FTransport {
 		numWorkers:       numWorkers,
 		workC:            make(chan []byte, numWorkers),
 		registryC:        make(chan struct{}),
-		closed:           make(chan bool),
 	}
 }
 
@@ -153,6 +152,8 @@ func (f *fMuxTransport) Open() error {
 	if f.open {
 		return errors.New("frugal: transport already open")
 	}
+
+	f.closed = make(chan bool)
 
 	if err := f.TFramedTransport.Open(); err != nil {
 		return err

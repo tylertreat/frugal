@@ -10,9 +10,6 @@ import (
 	"github.com/nats-io/nats"
 )
 
-var ErrTooLarge = thrift.NewTTransportException(
-	thrift.UNKNOWN_TRANSPORT_EXCEPTION, "Message is too large")
-
 // FNatsScopeTransportFactory creates FNatsScopeTransports.
 type FNatsScopeTransportFactory struct {
 	conn *nats.Conn
@@ -37,7 +34,7 @@ type fNatsScopeTransport struct {
 	sub         *nats.Subscription
 	pull        bool
 	topicMu     sync.Mutex
-	readWriteMu sync.RWMutex
+	openMu      sync.RWMutex
 	isOpen      bool
 }
 
@@ -81,13 +78,20 @@ func (n *fNatsScopeTransport) Subscribe(topic string) error {
 // subscriber. If Open is called before Subscribe, the transport is assumed to
 // be a publisher.
 func (n *fNatsScopeTransport) Open() error {
+	n.openMu.Lock()
+	defer n.openMu.Unlock()
 	if n.conn.Status() != nats.CONNECTED {
-		return thrift.NewTTransportException(thrift.NOT_OPEN,
-			fmt.Sprintf("NATS not connected, has status %d", n.conn.Status()))
+		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
+			fmt.Sprintf("frugal: NATS not connected, has status %d", n.conn.Status()))
+	}
+
+	if n.isOpen {
+		return thrift.NewTTransportException(thrift.ALREADY_OPEN, "frugal: NATS transport already open")
 	}
 
 	if !n.pull {
 		n.writeBuffer = bytes.NewBuffer(make([]byte, 0, natsMaxMessageSize))
+		n.isOpen = true
 		return nil
 	}
 
@@ -105,15 +109,13 @@ func (n *fNatsScopeTransport) Open() error {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	n.sub = sub
-	n.readWriteMu.Lock()
 	n.isOpen = true
-	n.readWriteMu.Unlock()
 	return nil
 }
 
 func (n *fNatsScopeTransport) IsOpen() bool {
-	n.readWriteMu.RLock()
-	defer n.readWriteMu.RUnlock()
+	n.openMu.RLock()
+	defer n.openMu.RUnlock()
 	if n.conn.Status() != nats.CONNECTED || !n.isOpen {
 		return false
 	}
@@ -126,18 +128,24 @@ func (n *fNatsScopeTransport) IsOpen() bool {
 // Close unsubscribes in the case of a subscriber and clears the buffer in the
 // case of a publisher.
 func (n *fNatsScopeTransport) Close() error {
-	if !n.IsOpen() || !n.pull {
+	n.openMu.Lock()
+	defer n.openMu.Unlock()
+	if !n.isOpen {
 		return nil
 	}
+
+	if !n.pull {
+		n.isOpen = false
+		return nil
+	}
+
 	if err := n.sub.Unsubscribe(); err != nil {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	n.sub = nil
 	err := n.writer.Close()
 	n.writer = nil
-	n.readWriteMu.Lock()
 	n.isOpen = false
-	n.readWriteMu.Unlock()
 	return thrift.NewTTransportExceptionFromError(err)
 }
 
@@ -163,17 +171,21 @@ func (n *fNatsScopeTransport) Write(p []byte) (int, error) {
 	return num, thrift.NewTTransportExceptionFromError(err)
 }
 
-// Flush publishes the buffered messages.
+// Flush publishes the buffered message. Returns ErrTooLarge if the buffered
+// message exceeds 1MB.
 func (n *fNatsScopeTransport) Flush() error {
 	if !n.IsOpen() {
 		return thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
 	}
+	defer n.writeBuffer.Reset()
 	data := n.writeBuffer.Bytes()
 	if len(data) == 0 {
 		return nil
 	}
+	if len(data) > natsMaxMessageSize {
+		return ErrTooLarge
+	}
 	err := n.conn.Publish(n.subject, data)
-	n.writeBuffer.Reset()
 	return thrift.NewTTransportExceptionFromError(err)
 }
 

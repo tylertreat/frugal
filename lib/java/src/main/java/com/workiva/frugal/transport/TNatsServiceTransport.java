@@ -15,15 +15,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
- * TNatsServiceTransport is an extension of thrift.TTransport exclusively used for
- * services.
+ * TNatsServiceTransport is an extension of thrift.TTransport exclusively used for services which uses NATS as the
+ * underlying transport. Message frames are limited to 1MB in size.
  */
 public class TNatsServiceTransport extends TTransport {
 
+    // NATS limits messages to 1MB.
+    public static final int NATS_MAX_MESSAGE_SIZE = 1024 * 1024;
+
     protected static final int MAX_MISSED_HEARTBEATS = 3;
 
-    // NATS limits messages to 1MB.
-    private static final int NATS_MAX_MESSAGE_SIZE = 1024 * 1024;
     private static final String DISCONNECT = "DISCONNECT";
 
     private Connection conn;
@@ -39,60 +40,34 @@ public class TNatsServiceTransport extends TTransport {
     private long heartbeatInterval;
     private Timer heartbeatTimer;
     private AtomicInteger missedHeartbeats;
+    private String connectionSubject;
+    private long connectionTimeout;
+    private boolean isOpen;
 
     private static Logger LOGGER = Logger.getLogger(TNatsServiceTransport.class.getName());
 
-    private TNatsServiceTransport(Connection conn, String listenTo, String writeTo, String heartbeatListen,
-                                  String heartbeatReply, long heartbeatInterval) {
+    private TNatsServiceTransport(Connection conn, String listenTo, String writeTo) {
         this.conn = conn;
         this.listenTo = listenTo;
         this.writeTo = writeTo;
-        this.heartbeatListen = heartbeatListen;
-        this.heartbeatReply = heartbeatReply;
-        this.heartbeatInterval = heartbeatInterval;
+        this.missedHeartbeats = new AtomicInteger(0);
+    }
+
+    private TNatsServiceTransport(Connection conn, String connectionSubject, long connectionTimeout) {
+        this.conn = conn;
+        this.connectionSubject = connectionSubject;
+        this.connectionTimeout = connectionTimeout;
         this.missedHeartbeats = new AtomicInteger(0);
     }
 
     /**
      * Returns a new thrift TTransport which uses the NATS messaging system as the
      * underlying transport. It performs a handshake with a server listening on the
-     * given NATS subject. This TTransport can only be used with FNatsServer.
+     * given NATS subject upon open. This TTransport can only be used with
+     * FNatsServer.
      */
-    public static TNatsServiceTransport client(Connection conn, String subject, long timeout)
-            throws TTransportException, TimeoutException {
-        Message message;
-        try {
-            message = conn.request(subject, null, timeout);
-        } catch (IOException e) {
-            throw new TTransportException(e);
-        }
-        String reply = message.getReplyTo();
-        if (reply == null || reply.isEmpty() ) {
-            throw new TTransportException("No reply subject on connect.");
-        }
-
-        String[] subjects = new String(message.getData()).split(" ");
-        if (subjects.length != 3 ) {
-            throw new TTransportException("Invalid connect message.");
-        }
-
-        String heartbeatListen = subjects[0];
-        String heartbeatReply = subjects[1];
-        int deadline;
-        try {
-            deadline = Integer.parseInt(subjects[2]);
-        } catch (NumberFormatException e) {
-            throw new TTransportException("Connection deadline not an integer.", e);
-        }
-
-        long heartbeatInterval = 0;
-        if (deadline > 0) {
-            heartbeatInterval = deadline;
-        }
-
-        return new TNatsServiceTransport(
-                conn, message.getSubject(), reply, heartbeatListen, heartbeatReply, heartbeatInterval
-        );
+    public static TNatsServiceTransport client(Connection conn, String subject, long timeout) {
+        return new TNatsServiceTransport(conn, subject, timeout);
     }
 
     /**
@@ -100,19 +75,31 @@ public class TNatsServiceTransport extends TTransport {
      * underlying transport. This TTransport can only be used with FNatsServer.
      */
     public static TNatsServiceTransport server(Connection conn, String listenTo, String writeTo) {
-        return new TNatsServiceTransport(conn, listenTo, writeTo, "", "", 0);
+        return new TNatsServiceTransport(conn, listenTo, writeTo);
     }
 
     @Override
-    public boolean isOpen() {
-        return conn.getState() == Constants.ConnState.CONNECTED && sub != null;
-    }
+    public synchronized boolean isOpen() { return conn.getState() == Constants.ConnState.CONNECTED && isOpen; }
 
+    /**
+     * Opens the transport for reading/writing.
+     * Performs a handshake with the server if this is a client transport.
+     *
+     *
+     * @throws TTransportException if the transport could not be opened
+     */
     @Override
-    public void open() throws TTransportException {
+    public synchronized void open() throws TTransportException {
         if (conn.getState() != Constants.ConnState.CONNECTED) {
             throw new TTransportException(TTransportException.NOT_OPEN,
                     "NATS not connected, has status " + conn.getState());
+        }
+        if (isOpen) {
+            throw new TTransportException(TTransportException.ALREADY_OPEN, "NATS transport already open");
+        }
+
+        if (connectionSubject != null) {
+            handshake();
         }
 
         if (listenTo == null || "".equals(listenTo) || writeTo == null || "".equals(writeTo)) {
@@ -154,8 +141,48 @@ public class TNatsServiceTransport extends TTransport {
                     conn.publish(heartbeatReply, null);
                 }
             });
-
         }
+        isOpen = true;
+    }
+
+    private void handshake() throws TTransportException {
+        Message message;
+        try {
+            message = conn.request(this.connectionSubject, null, this.connectionTimeout);
+        } catch (IOException e) {
+            throw new TTransportException(e);
+        } catch (TimeoutException e) {
+            throw new TTransportException(TTransportException.TIMED_OUT, "Handshake timed out", e);
+        }
+        String reply = message.getReplyTo();
+        if (reply == null || reply.isEmpty() ) {
+            throw new TTransportException("No reply subject on connect.");
+        }
+
+        String[] subjects = new String(message.getData()).split(" ");
+        if (subjects.length != 3 ) {
+            throw new TTransportException("Invalid connect message.");
+        }
+
+        String heartbeatListen = subjects[0];
+        String heartbeatReply = subjects[1];
+        int deadline;
+        try {
+            deadline = Integer.parseInt(subjects[2]);
+        } catch (NumberFormatException e) {
+            throw new TTransportException("Connection deadline not an integer.", e);
+        }
+
+        long heartbeatInterval = 0;
+        if (deadline > 0) {
+            heartbeatInterval = deadline;
+        }
+
+        this.heartbeatListen = heartbeatListen;
+        this.heartbeatReply = heartbeatReply;
+        this.heartbeatInterval = heartbeatInterval;
+        this.listenTo = message.getSubject();
+        this.writeTo = reply;
     }
 
     private void startTimer() {
@@ -185,8 +212,8 @@ public class TNatsServiceTransport extends TTransport {
     }
 
     @Override
-    public void close() {
-        if (!isOpen()) {
+    public synchronized void close() {
+        if (!isOpen) {
             return;
         }
         // Signal remote peer for a graceful disconnect.
@@ -217,12 +244,13 @@ public class TNatsServiceTransport extends TTransport {
         } catch (IOException e) {
             LOGGER.warning("could not close write buffer. " + e.getMessage());
         }
+        isOpen = false;
     }
 
     @Override
     public int read(byte[] bytes, int off, int len) throws TTransportException {
         if (!isOpen()) {
-            throw new TTransportException(TTransportException.NOT_OPEN, "NATS transport not open");
+            throw new TTransportException(TTransportException.END_OF_FILE);
         }
         try {
             int bytesRead = this.reader.read(bytes, off, len);
@@ -241,13 +269,13 @@ public class TNatsServiceTransport extends TTransport {
             throw new TTransportException(TTransportException.NOT_OPEN, "NATS transport not open");
         }
         if (writeBuffer.remaining() < len) {
-            int amountToWrite = writeBuffer.remaining();
-            writeBuffer.put(bytes, off, amountToWrite);
-            flush();
-            write(bytes, off + amountToWrite, len - amountToWrite);
-        } else {
-            writeBuffer.put(bytes, off, len);
+            writeBuffer.clear();
+            throw new FMessageSizeException(
+                    String.format("Message exceeds %d bytes, was %d bytes",
+                            TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE,
+                            len + TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE - writeBuffer.remaining()));
         }
+        writeBuffer.put(bytes, off, len);
     }
 
     @Override
@@ -260,6 +288,11 @@ public class TNatsServiceTransport extends TTransport {
         writeBuffer.get(data);
         if (data.length == 0) {
             return;
+        }
+        if (data.length > TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE) {
+            throw new FMessageSizeException(String.format(
+                    "Message exceeds %d bytes, was %d bytes",
+                    TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE, data.length));
         }
         conn.publish(writeTo, data);
         writeBuffer.clear();

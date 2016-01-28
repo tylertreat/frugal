@@ -9,14 +9,14 @@ import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
+/**
+ * FNatsScopeTransport implements FScopeTransport by using NATS as the pub/sub message broker. Messages are limited to
+ * 1MB in size.
+ */
 public class FNatsScopeTransport extends FScopeTransport {
-
-    // NATS limits messages to 1MB.
-    private static final int NATS_MAX_MESSAGE_SIZE = 1024 * 1024;
 
     private final Connection conn;
     private String subject;
@@ -25,7 +25,7 @@ public class FNatsScopeTransport extends FScopeTransport {
     private ByteBuffer writeBuffer;
     private Subscription sub;
     private boolean pull;
-    private AtomicBoolean isOpen = new AtomicBoolean(false);
+    private boolean isOpen;
     private final ReentrantLock lock;
 
     private static Logger LOGGER = Logger.getLogger(FNatsScopeTransport.class.getName());
@@ -53,6 +53,7 @@ public class FNatsScopeTransport extends FScopeTransport {
         }
     }
 
+    @Override
     public void lockTopic(String topic) throws TException {
         if (pull) {
             throw new FException("subscriber cannot lock topic");
@@ -61,6 +62,7 @@ public class FNatsScopeTransport extends FScopeTransport {
         subject = topic;
     }
 
+    @Override
     public void unlockTopic() throws TException {
         if (pull) {
             throw new FException("subscriber cannot unlock topic");
@@ -69,30 +71,31 @@ public class FNatsScopeTransport extends FScopeTransport {
         subject = "";
     }
 
+    @Override
     public void subscribe(String topic) throws TException {
         pull = true;
         subject = topic;
         open();
     }
 
-    public boolean isOpen() {
-        return conn.getState() == Constants.ConnState.CONNECTED && isOpen.get();
+    @Override
+    public synchronized boolean isOpen() {
+        return conn.getState() == Constants.ConnState.CONNECTED && isOpen;
     }
 
-    public void open() throws TTransportException {
-        if (isOpen()) {
-            return;
-        }
-
-        isOpen.set(true);
-
+    @Override
+    public synchronized void open() throws TTransportException {
         if (conn.getState() != Constants.ConnState.CONNECTED) {
             throw new TTransportException(TTransportException.NOT_OPEN,
                     "NATS not connected, has status " + conn.getState());
         }
+        if (isOpen) {
+            throw new TTransportException(TTransportException.ALREADY_OPEN, "NATS transport already open");
+        }
 
         if (!pull) {
-            writeBuffer = ByteBuffer.allocate(NATS_MAX_MESSAGE_SIZE);
+            writeBuffer = ByteBuffer.allocate(TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE);
+            isOpen = true;
             return;
         }
 
@@ -118,23 +121,17 @@ public class FNatsScopeTransport extends FScopeTransport {
                 }
             }
         });
-
-        // TODO: Remove when subscription bug is resolved.
-        try {
-            conn.flush();
-        } catch (Exception e) {
-            throw new TTransportException(e);
-        }
+        isOpen = true;
     }
 
-    public void close() {
-        if (!isOpen()) {
+    @Override
+    public synchronized void close() {
+        if (!isOpen) {
             return;
         }
 
-        isOpen.set(false);
-
         if (!pull) {
+            isOpen = false;
             return;
         }
         try {
@@ -150,8 +147,10 @@ public class FNatsScopeTransport extends FScopeTransport {
         }
         writer = null;
         reader = null;
+        isOpen = false;
     }
 
+    @Override
     public int read(byte[] bytes, int off, int len) throws TTransportException {
         if (!isOpen()) {
             throw new TTransportException(TTransportException.END_OF_FILE);
@@ -163,17 +162,21 @@ public class FNatsScopeTransport extends FScopeTransport {
             }
             return bytesRead;
         } catch (IOException e) {
-            throw new TTransportException(TTransportException.UNKNOWN, e);
+            throw new TTransportException(TTransportException.END_OF_FILE, e);
         }
     }
 
+    @Override
     public void write(byte[] bytes, int off, int len) throws TTransportException {
         if (!isOpen()) {
             throw new TTransportException(TTransportException.NOT_OPEN, "NATS transport not open");
         }
         if (writeBuffer.remaining() < len) {
             writeBuffer.clear();
-            throw new TTransportException(TTransportException.UNKNOWN, "Message is too large");
+            throw new FMessageSizeException(
+                    String.format("Message exceeds %d bytes, was %d bytes",
+                            TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE,
+                            len + TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE - writeBuffer.remaining()));
         }
         writeBuffer.put(bytes, off, len);
     }
@@ -188,6 +191,11 @@ public class FNatsScopeTransport extends FScopeTransport {
         writeBuffer.get(data);
         if (data.length == 0) {
             return;
+        }
+        if (data.length > TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE) {
+            throw new FMessageSizeException(String.format(
+                    "Message exceeds %d bytes, was %d bytes",
+                    TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE, data.length));
         }
         conn.publish(subject, data);
         writeBuffer.clear();
