@@ -243,6 +243,7 @@ public class TNatsServiceTransport extends TTransport {
         } catch (IOException e) {
             LOGGER.warning("could not close write buffer. " + e.getMessage());
         }
+        isOpen = false;
     }
 
     @Override
