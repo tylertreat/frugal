@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
@@ -26,7 +25,7 @@ public class FNatsScopeTransport extends FScopeTransport {
     private ByteBuffer writeBuffer;
     private Subscription sub;
     private boolean pull;
-    private AtomicBoolean isOpen = new AtomicBoolean(false);
+    private boolean isOpen;
     private final ReentrantLock lock;
 
     private static Logger LOGGER = Logger.getLogger(FNatsScopeTransport.class.getName());
@@ -80,25 +79,23 @@ public class FNatsScopeTransport extends FScopeTransport {
     }
 
     @Override
-    public boolean isOpen() {
-        return conn.getState() == Constants.ConnState.CONNECTED && isOpen.get();
+    public synchronized boolean isOpen() {
+        return conn.getState() == Constants.ConnState.CONNECTED && isOpen;
     }
 
     @Override
-    public void open() throws TTransportException {
-        if (isOpen()) {
-            return;
-        }
-
-        isOpen.set(true);
-
+    public synchronized void open() throws TTransportException {
         if (conn.getState() != Constants.ConnState.CONNECTED) {
             throw new TTransportException(TTransportException.NOT_OPEN,
                     "NATS not connected, has status " + conn.getState());
         }
+        if (isOpen) {
+            throw new TTransportException(TTransportException.ALREADY_OPEN, "NATS transport already open");
+        }
 
         if (!pull) {
             writeBuffer = ByteBuffer.allocate(TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE);
+            isOpen = true;
             return;
         }
 
@@ -124,17 +121,17 @@ public class FNatsScopeTransport extends FScopeTransport {
                 }
             }
         });
+        isOpen = true;
     }
 
     @Override
-    public void close() {
-        if (!isOpen()) {
+    public synchronized void close() {
+        if (!isOpen) {
             return;
         }
 
-        isOpen.set(false);
-
         if (!pull) {
+            isOpen = false;
             return;
         }
         try {
@@ -150,6 +147,7 @@ public class FNatsScopeTransport extends FScopeTransport {
         }
         writer = null;
         reader = null;
+        isOpen = false;
     }
 
     @Override

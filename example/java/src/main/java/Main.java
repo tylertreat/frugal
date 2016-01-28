@@ -112,6 +112,7 @@ public class Main {
         @Override
         public long blah(FContext ctx, int num, String Str, Event event) throws TException, AwesomeException {
             System.out.format("blah(%s, %d, %s %s)\n", ctx, num, Str, event);
+            ctx.addResponseHeader("foo", "bar");
             return 42;
         }
 

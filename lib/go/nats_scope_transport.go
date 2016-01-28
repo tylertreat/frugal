@@ -78,16 +78,20 @@ func (n *fNatsScopeTransport) Subscribe(topic string) error {
 // subscriber. If Open is called before Subscribe, the transport is assumed to
 // be a publisher.
 func (n *fNatsScopeTransport) Open() error {
+	n.openMu.Lock()
+	defer n.openMu.Unlock()
 	if n.conn.Status() != nats.CONNECTED {
-		return thrift.NewTTransportException(thrift.NOT_OPEN,
-			fmt.Sprintf("NATS not connected, has status %d", n.conn.Status()))
+		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
+			fmt.Sprintf("frugal: NATS not connected, has status %d", n.conn.Status()))
+	}
+
+	if n.isOpen {
+		return thrift.NewTTransportException(thrift.ALREADY_OPEN, "frugal: NATS transport already open")
 	}
 
 	if !n.pull {
 		n.writeBuffer = bytes.NewBuffer(make([]byte, 0, natsMaxMessageSize))
-		n.openMu.Lock()
 		n.isOpen = true
-		n.openMu.Unlock()
 		return nil
 	}
 
@@ -105,9 +109,7 @@ func (n *fNatsScopeTransport) Open() error {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	n.sub = sub
-	n.openMu.Lock()
 	n.isOpen = true
-	n.openMu.Unlock()
 	return nil
 }
 
@@ -126,18 +128,24 @@ func (n *fNatsScopeTransport) IsOpen() bool {
 // Close unsubscribes in the case of a subscriber and clears the buffer in the
 // case of a publisher.
 func (n *fNatsScopeTransport) Close() error {
-	if !n.IsOpen() || !n.pull {
+	n.openMu.Lock()
+	defer n.openMu.Unlock()
+	if !n.isOpen {
 		return nil
 	}
+
+	if !n.pull {
+		n.isOpen = false
+		return nil
+	}
+
 	if err := n.sub.Unsubscribe(); err != nil {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	n.sub = nil
 	err := n.writer.Close()
 	n.writer = nil
-	n.openMu.Lock()
 	n.isOpen = false
-	n.openMu.Unlock()
 	return thrift.NewTTransportExceptionFromError(err)
 }
 

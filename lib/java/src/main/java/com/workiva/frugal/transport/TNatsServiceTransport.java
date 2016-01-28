@@ -42,7 +42,7 @@ public class TNatsServiceTransport extends TTransport {
     private AtomicInteger missedHeartbeats;
     private String connectionSubject;
     private long connectionTimeout;
-    private boolean isOpen = false;
+    private boolean isOpen;
 
     private static Logger LOGGER = Logger.getLogger(TNatsServiceTransport.class.getName());
 
