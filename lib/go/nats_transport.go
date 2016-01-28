@@ -38,6 +38,8 @@ type natsServiceTTransport struct {
 	closed            chan struct{}
 	isOpen            bool
 	mutex             sync.RWMutex
+	connectSubject    string
+	connectTimeout    time.Duration
 }
 
 // NewNatsServiceTTransport returns a new thrift TTransport which uses
@@ -45,44 +47,13 @@ type natsServiceTTransport struct {
 // handshake with a server listening on the given NATS subject. This TTransport
 // can only be used with FNatsServer.
 func NewNatsServiceTTransport(conn *nats.Conn, subject string,
-	timeout time.Duration) (thrift.TTransport, error) {
-
-	msg, err := conn.Request(subject, nil, timeout)
-	if err != nil {
-		return nil, err
-	}
-
-	if msg.Reply == "" {
-		return nil, errors.New("frugal: no reply subject on connect")
-	}
-
-	// Connect message consists of "[heartbeat subject] [heartbeat reply subject] [expected interval ms]"
-	subjects := strings.Split(string(msg.Data), " ")
-	if len(subjects) != 3 {
-		return nil, errors.New("frugal: invalid connect message")
-	}
-	var (
-		heartbeatListen = subjects[0]
-		heartbeatReply  = subjects[1]
-		deadline, err2  = strconv.ParseInt(subjects[2], 10, 64)
-	)
-	if err2 != nil {
-		return nil, err2
-	}
-	var interval time.Duration
-	if deadline > 0 {
-		interval = time.Millisecond * time.Duration(deadline)
-	}
+	timeout time.Duration) thrift.TTransport {
 
 	return &natsServiceTTransport{
-		conn:              conn,
-		heartbeatListen:   heartbeatListen,
-		heartbeatReply:    heartbeatReply,
-		heartbeatInterval: interval,
-		recvHeartbeat:     make(chan struct{}, 1),
-		listenTo:          msg.Subject,
-		writeTo:           msg.Reply,
-	}, nil
+		conn:           conn,
+		connectSubject: subject,
+		connectTimeout: timeout,
+	}
 }
 
 // newNatsServiceTTransportServer returns a new thrift TTransport which uses
@@ -101,6 +72,13 @@ func newNatsServiceTTransportServer(conn *nats.Conn, listenTo, writeTo string) t
 func (n *natsServiceTTransport) Open() error {
 	if n.conn.Status() != nats.CONNECTED {
 		return fmt.Errorf("frugal: NATS not connected, has status %d", n.conn.Status())
+	}
+
+	// Handshake if this is a client.
+	if n.connectSubject != "" {
+		if err := n.hanshake(); err != nil {
+			return err
+		}
 	}
 
 	if n.listenTo == "" || n.writeTo == "" {
@@ -161,6 +139,45 @@ func (n *natsServiceTTransport) Open() error {
 	n.mutex.Lock()
 	n.isOpen = true
 	n.mutex.Unlock()
+	return nil
+}
+
+func (n *natsServiceTTransport) hanshake() error {
+	msg, err := n.conn.Request(n.connectSubject, nil, n.connectTimeout)
+	if err != nil {
+		return err
+	}
+
+	if msg.Reply == "" {
+		return errors.New("frugal: no reply subject on connect")
+	}
+
+	// Connect message consists of "[heartbeat subject] [heartbeat reply subject] [expected interval ms]"
+	subjects := strings.Split(string(msg.Data), " ")
+	if len(subjects) != 3 {
+		return errors.New("frugal: invalid connect message")
+	}
+	var (
+		heartbeatListen = subjects[0]
+		heartbeatReply  = subjects[1]
+		deadline, err2  = strconv.ParseInt(subjects[2], 10, 64)
+	)
+	if err2 != nil {
+		return err2
+	}
+	var interval time.Duration
+	if deadline > 0 {
+		interval = time.Millisecond * time.Duration(deadline)
+	}
+
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+	n.heartbeatListen = heartbeatListen
+	n.heartbeatReply = heartbeatReply
+	n.heartbeatInterval = interval
+	n.recvHeartbeat = make(chan struct{}, 1)
+	n.listenTo = msg.Subject
+	n.writeTo = msg.Reply
 	return nil
 }
 
