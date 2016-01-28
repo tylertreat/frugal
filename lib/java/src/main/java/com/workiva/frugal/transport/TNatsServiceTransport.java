@@ -15,15 +15,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
- * TNatsServiceTransport is an extension of thrift.TTransport exclusively used for
- * services.
+ * TNatsServiceTransport is an extension of thrift.TTransport exclusively used for services which uses NATS as the
+ * underlying transport. Message frames are limited to 1MB in size.
  */
 public class TNatsServiceTransport extends TTransport {
 
+    // NATS limits messages to 1MB.
+    public static final int NATS_MAX_MESSAGE_SIZE = 1024 * 1024;
+
     protected static final int MAX_MISSED_HEARTBEATS = 3;
 
-    // NATS limits messages to 1MB.
-    private static final int NATS_MAX_MESSAGE_SIZE = 1024 * 1024;
     private static final String DISCONNECT = "DISCONNECT";
 
     private Connection conn;
@@ -67,12 +68,12 @@ public class TNatsServiceTransport extends TTransport {
             throw new TTransportException(e);
         }
         String reply = message.getReplyTo();
-        if (reply == null || reply.isEmpty() ) {
+        if (reply == null || reply.isEmpty()) {
             throw new TTransportException("No reply subject on connect.");
         }
 
         String[] subjects = new String(message.getData()).split(" ");
-        if (subjects.length != 3 ) {
+        if (subjects.length != 3) {
             throw new TTransportException("Invalid connect message.");
         }
 
@@ -222,7 +223,7 @@ public class TNatsServiceTransport extends TTransport {
     @Override
     public int read(byte[] bytes, int off, int len) throws TTransportException {
         if (!isOpen()) {
-            throw new TTransportException(TTransportException.NOT_OPEN, "NATS transport not open");
+            throw new TTransportException(TTransportException.END_OF_FILE);
         }
         try {
             int bytesRead = this.reader.read(bytes, off, len);
@@ -241,13 +242,13 @@ public class TNatsServiceTransport extends TTransport {
             throw new TTransportException(TTransportException.NOT_OPEN, "NATS transport not open");
         }
         if (writeBuffer.remaining() < len) {
-            int amountToWrite = writeBuffer.remaining();
-            writeBuffer.put(bytes, off, amountToWrite);
-            flush();
-            write(bytes, off + amountToWrite, len - amountToWrite);
-        } else {
-            writeBuffer.put(bytes, off, len);
+            writeBuffer.clear();
+            throw new FMessageSizeException(
+                    String.format("Message exceeds %d bytes, was %d bytes",
+                            TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE,
+                            len + TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE - writeBuffer.remaining()));
         }
+        writeBuffer.put(bytes, off, len);
     }
 
     @Override
@@ -260,6 +261,11 @@ public class TNatsServiceTransport extends TTransport {
         writeBuffer.get(data);
         if (data.length == 0) {
             return;
+        }
+        if (data.length > TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE) {
+            throw new FMessageSizeException(String.format(
+                    "Message exceeds %d bytes, was %d bytes",
+                    TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE, data.length));
         }
         conn.publish(writeTo, data);
         writeBuffer.clear();
