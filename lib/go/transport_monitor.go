@@ -55,6 +55,7 @@ func NewFTransportMonitor(maxReopenAttempts uint, initialWait, maxWait time.Dura
 // Asynchronously starts a monitor with the given configuration, returning a channel to be used
 // as a stop signal.
 func (m *FTransportMonitor) monitor(transport FTransport, closedCleanly, closedUncleanly <-chan struct{}) {
+	fmt.Println("FTransport Monitor: Beginning to monitor transport...")
 MonitoringLoop:
 	for {
 		select {
