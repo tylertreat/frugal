@@ -7,7 +7,10 @@ import (
 
 // FTransportMonitorConfig provides configuration options for a monitor that watches and heals an FTransport.
 type FTransportMonitorConfig struct {
-	// ClosedUncleanly is called when the transport is closed for a reason *other* than an explicit call to Close().
+	// ClosedCleanly is called when the transport is closed cleanly by a call to Close()
+	ClosedCleanly func()
+
+	// ClosedUncleanly is called when the transport is closed for a reason *other* than a call to Close().
 	// Returns whether to try reopening the transport and, if so, how long to wait before making the attempt.
 	ClosedUncleanly func() (reopen bool, wait time.Duration)
 
@@ -63,6 +66,9 @@ func (config *FTransportMonitorConfig) monitor(transport FTransport) chan struct
 			select {
 			case <-stopSignal:
 				fmt.Println("FTransport Monitor: FTransport was closed cleanly. Terminating...")
+				if config.ClosedCleanly != nil {
+					config.ClosedCleanly()
+				}
 				break MonitoringLoop
 			case <-transport.Closed():
 				fmt.Println("FTransport Monitor: FTransport was closed uncleanly!")
