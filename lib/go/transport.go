@@ -163,10 +163,6 @@ func (f *fMuxTransport) Open() error {
 		for {
 			frame, err := f.readFrame()
 			if err != nil {
-				select {
-				case f.monitorClosedUncleanly <- struct{}{}:
-				default:
-				}
 				defer f.Close()
 				if err, ok := err.(thrift.TTransportException); ok && err.TypeId() == thrift.END_OF_FILE {
 					return
