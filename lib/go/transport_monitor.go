@@ -71,34 +71,34 @@ MonitoringLoop:
 }
 
 // Handle a clean close of the transport.
-func (config *FTransportMonitor) handleCleanClose() {
+func (m *FTransportMonitor) handleCleanClose() {
 	fmt.Println("FTransport Monitor: FTransport was closed cleanly. Terminating...")
-	if config.ClosedCleanly != nil {
-		config.ClosedCleanly()
+	if m.ClosedCleanly != nil {
+		m.ClosedCleanly()
 	}
 }
 
 // Handle an unclean close of the transport.
-func (config *FTransportMonitor) handleUncleanClose(transport FTransport) bool {
+func (m *FTransportMonitor) handleUncleanClose(transport FTransport) bool {
 	fmt.Println("FTransport Monitor: FTransport was closed uncleanly!")
 
-	if config.ClosedUncleanly == nil {
+	if m.ClosedUncleanly == nil {
 		fmt.Println("FTransport Monitor: ClosedUncleanly callback not defined. Terminating...")
 		return false
 	}
 
 	var initialWait time.Duration
 	var reopen bool
-	if reopen, initialWait = config.ClosedUncleanly(); !reopen {
+	if reopen, initialWait = m.ClosedUncleanly(); !reopen {
 		fmt.Println("FTransport Monitor: ClosedUncleanly callback instructed not to reopen. Terminating...")
 		return false
 	}
 
-	return config.attemptReopen(initialWait, transport)
+	return m.attemptReopen(initialWait, transport)
 }
 
 // Attempt to reopen the uncleanly closed transport.
-func (config *FTransportMonitor) attemptReopen(wait time.Duration, transport FTransport) bool {
+func (m *FTransportMonitor) attemptReopen(wait time.Duration, transport FTransport) bool {
 	reopen := true
 	prevAttempts := uint(0)
 
@@ -109,17 +109,17 @@ func (config *FTransportMonitor) attemptReopen(wait time.Duration, transport FTr
 		if err := transport.Open(); err != nil {
 			fmt.Printf("FTransport Monitor: Failed to re-open transport due to: %v\n", err)
 			prevAttempts++
-			if config.ReopenFailed == nil {
+			if m.ReopenFailed == nil {
 				fmt.Println("FTransport Monitor: ReopenFailed callback not defined. Terminating...")
 				return false
 			}
 
-			reopen, wait = config.ReopenFailed(prevAttempts, wait)
+			reopen, wait = m.ReopenFailed(prevAttempts, wait)
 			continue
 		}
 		fmt.Printf("FTransport Monitor: Successfully re-opened!")
-		if config.ReopenSucceeded != nil {
-			config.ReopenSucceeded()
+		if m.ReopenSucceeded != nil {
+			m.ReopenSucceeded()
 		}
 		return true
 	}
