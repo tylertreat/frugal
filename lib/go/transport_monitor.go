@@ -74,12 +74,12 @@ func (config *FTransportMonitorConfig) monitor(transport FTransport) chan struct
 				fmt.Println("FTransport Monitor: FTransport was closed uncleanly!")
 
 				if config.ClosedUncleanly == nil {
-					fmt.Println("FTransport Monitor: Closed callback not defined. Terminating...")
+					fmt.Println("FTransport Monitor: ClosedUncleanly callback not defined. Terminating...")
 					break MonitoringLoop
 				}
 
 				if reopen, prevWait = config.ClosedUncleanly(); !reopen {
-					fmt.Println("FTransport Monitor: Closed callback instructed not to reopen. Terminating...")
+					fmt.Println("FTransport Monitor: ClosedUncleanly callback instructed not to reopen. Terminating...")
 					break MonitoringLoop
 				}
 
