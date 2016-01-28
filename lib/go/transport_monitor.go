@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Config provides configuration options for a monitor that watches and heals an FTransport.
+// FTransportMonitorConfig provides configuration options for a monitor that watches and heals an FTransport.
 type FTransportMonitorConfig struct {
 	// Closed is called when the transport is closed for a reason *other* than a call to Close.
 	// Returns whether to try reopening the transport and, if so, how long to wait before making the attempt.
