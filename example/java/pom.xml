@@ -37,7 +37,7 @@
         <dependency>
             <groupId>com.workiva</groupId>
             <artifactId>frugal</artifactId>
-            <version>0.0.10</version>
+            <version>0.0.13</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
