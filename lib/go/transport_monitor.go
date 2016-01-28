@@ -54,7 +54,7 @@ func NewFTransportMonitor(maxReopenAttempts uint, initialWait, maxWait time.Dura
 
 // Asynchronously starts a monitor with the given configuration, returning a channel to be used
 // as a stop signal.
-func (config *FTransportMonitor) monitor(transport FTransport, stopSignal <-chan struct{}) {
+func (config *FTransportMonitor) monitor(transport FTransport, closedCleanly, closedUncleanly <-chan struct{}) {
 	prevWait := time.Duration(0)
 	prevAttempts := uint(0)
 	reopen := true
@@ -62,13 +62,13 @@ func (config *FTransportMonitor) monitor(transport FTransport, stopSignal <-chan
 MonitoringLoop:
 	for {
 		select {
-		case <-stopSignal:
+		case <-closedCleanly:
 			fmt.Println("FTransport Monitor: FTransport was closed cleanly. Terminating...")
 			if config.ClosedCleanly != nil {
 				config.ClosedCleanly()
 			}
 			break MonitoringLoop
-		case <-transport.Closed():
+		case <-closedUncleanly:
 			fmt.Println("FTransport Monitor: FTransport was closed uncleanly!")
 
 			if config.ClosedUncleanly == nil {
