@@ -54,58 +54,76 @@ func NewFTransportMonitor(maxReopenAttempts uint, initialWait, maxWait time.Dura
 
 // Asynchronously starts a monitor with the given configuration, returning a channel to be used
 // as a stop signal.
-func (config *FTransportMonitor) monitor(transport FTransport, closedCleanly, closedUncleanly <-chan struct{}) {
-	prevWait := time.Duration(0)
-	prevAttempts := uint(0)
-	reopen := true
-
+func (m *FTransportMonitor) monitor(transport FTransport, closedCleanly, closedUncleanly <-chan struct{}) {
 MonitoringLoop:
 	for {
 		select {
 		case <-closedCleanly:
-			fmt.Println("FTransport Monitor: FTransport was closed cleanly. Terminating...")
-			if config.ClosedCleanly != nil {
-				config.ClosedCleanly()
-			}
+			m.handleCleanClose()
 			break MonitoringLoop
 		case <-closedUncleanly:
-			fmt.Println("FTransport Monitor: FTransport was closed uncleanly!")
-
-			if config.ClosedUncleanly == nil {
-				fmt.Println("FTransport Monitor: ClosedUncleanly callback not defined. Terminating...")
-				break MonitoringLoop
-			}
-
-			if reopen, prevWait = config.ClosedUncleanly(); !reopen {
-				fmt.Println("FTransport Monitor: ClosedUncleanly callback instructed not to reopen. Terminating...")
-				break MonitoringLoop
-			}
-
-			for reopen {
-				fmt.Printf("FTransport Monitor: Attempting to reopen after %v\n", prevWait)
-				time.Sleep(prevWait)
-
-				if err := transport.Open(); err != nil {
-					fmt.Printf("FTransport Monitor: Failed to re-open transport due to: %v\n", err)
-					prevAttempts++
-					if config.ReopenFailed == nil {
-						fmt.Println("FTransport Monitor: ReopenFailed callback not defined. Terminating...")
-						break MonitoringLoop
-					}
-
-					reopen, prevWait = config.ReopenFailed(prevAttempts, prevWait)
-					continue
-				}
-				fmt.Printf("FTransport Monitor: Successfully re-opened!")
-				prevAttempts = 0
-				if config.ReopenSucceeded != nil {
-					config.ReopenSucceeded()
-				}
+			if shouldContinue := m.handleUncleanClose(transport); shouldContinue {
 				continue MonitoringLoop
 			}
-
-			fmt.Println("FTransport Monitor: ReopenFailed callback instructed not to reopen. Terminating...")
-			break MonitoringLoop
 		}
+		break
 	}
+}
+
+// Handle a clean close of the transport.
+func (config *FTransportMonitor) handleCleanClose() {
+	fmt.Println("FTransport Monitor: FTransport was closed cleanly. Terminating...")
+	if config.ClosedCleanly != nil {
+		config.ClosedCleanly()
+	}
+}
+
+// Handle an unclean close of the transport.
+func (config *FTransportMonitor) handleUncleanClose(transport FTransport) bool {
+	fmt.Println("FTransport Monitor: FTransport was closed uncleanly!")
+
+	if config.ClosedUncleanly == nil {
+		fmt.Println("FTransport Monitor: ClosedUncleanly callback not defined. Terminating...")
+		return false
+	}
+
+	var initialWait time.Duration
+	var reopen bool
+	if reopen, initialWait = config.ClosedUncleanly(); !reopen {
+		fmt.Println("FTransport Monitor: ClosedUncleanly callback instructed not to reopen. Terminating...")
+		return false
+	}
+
+	return config.attemptReopen(initialWait, transport)
+}
+
+// Attempt to reopen the uncleanly closed transport.
+func (config *FTransportMonitor) attemptReopen(wait time.Duration, transport FTransport) bool {
+	reopen := true
+	prevAttempts := uint(0)
+
+	for reopen {
+		fmt.Printf("FTransport Monitor: Attempting to reopen after %v\n", wait)
+		time.Sleep(wait)
+
+		if err := transport.Open(); err != nil {
+			fmt.Printf("FTransport Monitor: Failed to re-open transport due to: %v\n", err)
+			prevAttempts++
+			if config.ReopenFailed == nil {
+				fmt.Println("FTransport Monitor: ReopenFailed callback not defined. Terminating...")
+				return false
+			}
+
+			reopen, wait = config.ReopenFailed(prevAttempts, wait)
+			continue
+		}
+		fmt.Printf("FTransport Monitor: Successfully re-opened!")
+		if config.ReopenSucceeded != nil {
+			config.ReopenSucceeded()
+		}
+		return true
+	}
+
+	fmt.Println("FTransport Monitor: ReopenFailed callback instructed not to reopen. Terminating...")
+	return false
 }
