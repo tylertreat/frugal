@@ -35,8 +35,6 @@ scripts:
   - gnatsd &
 
   # recycle the Godeps (frugal-go) from lib/go
-  - mkdir -p $GOPATH/src/github.com/Workiva/frugal-go
-  - cp -a $testing/lib/go/. $GOPATH/src/github.com/Workiva/frugal-go
   - cd $frugal
   - ./scripts/run_tests_skynet.sh
 
