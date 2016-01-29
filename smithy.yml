@@ -4,7 +4,7 @@ language: golang
 runner_image: docker.webfilings.org/wlayout/smithy-runner-thrift:1.5
 
 script:
-    - ./smithy.sh
+    - ./scripts/smithy.sh
 
 artifacts:
     artifactory:
