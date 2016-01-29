@@ -1,6 +1,7 @@
 package frugal
 
 import (
+	"encoding/json"
 	"log"
 	"strconv"
 	"sync"
@@ -85,7 +86,16 @@ func NewFNatsServerFactory7(
 func (n *FNatsServer) Serve() error {
 	sub, err := n.conn.QueueSubscribe(n.subject, queue, func(msg *nats.Msg) {
 		if msg.Reply == "" {
-			log.Printf("frugal: discarding invalid connect message %+v", msg)
+			log.Printf("frugal: discarding invalid connect message %+v\n", msg)
+			return
+		}
+		hs := &natsConnectionHandshake{}
+		if err := json.Unmarshal(msg.Data, hs); err != nil {
+			log.Printf("frugal: could not deserialize connect message %+v\n", msg)
+			return
+		}
+		if hs.Version != natsV0 {
+			log.Printf("frugal: not a supported connect version %d", hs.Version)
 			return
 		}
 		var (
