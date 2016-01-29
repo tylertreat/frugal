@@ -153,7 +153,6 @@ public class TNatsServiceTransport extends TTransport {
         String serializedVersion = gson.toJson(connectionProtocol);
         Message message;
         try {
-            System.out.println(serializedVersion);
             message = conn.request(this.connectionSubject, serializedVersion.getBytes("UTF-8"), this.connectionTimeout);
         } catch (IOException e) {
             throw new TTransportException(e);
