@@ -12,104 +12,134 @@ import (
 
 const testTimeout = 10 * time.Millisecond
 
-// Ensure that NewFTransportMonitor returns a non-nil monitor with failure callbacks.
+// Ensure that NewFTransportMonitor returns a non-nil monitor with properly set fields.
 func TestNewFTransportMonitor(t *testing.T) {
 	m := NewFTransportMonitor(100, time.Millisecond, time.Minute)
 	require.NotNil(t, m)
-	assert.NotNil(t, m.ClosedUncleanly)
-	assert.NotNil(t, m.ReopenFailed)
+
+	ftm := m.(*fTransportMonitor)
+	require.Equal(t, uint(100), ftm.maxReopenAttempts)
+	require.Equal(t, time.Millisecond, ftm.initialWait)
+	require.Equal(t, time.Minute, ftm.maxWait)
 }
 
-// Ensure that monitor attempts to handle a clean close.
-func TestMonitorCleanClose(t *testing.T) {
-	m := &FTransportMonitor{}
+// Ensure that OnClosedUncleanly returns false if max attempts is 0.
+func TestOnClosedUncleanlyMaxZero(t *testing.T) {
+	m := NewFTransportMonitor(0, time.Millisecond, time.Minute)
+	retry, _ := m.OnClosedUncleanly()
+	require.Equal(t, false, retry)
+}
 
+// Ensure that OnClosedUncleanly returns true if max attempts is > 0.
+func TestOnClosedUncleanly(t *testing.T) {
+	m := NewFTransportMonitor(5, time.Millisecond, time.Minute)
+	retry, wait := m.OnClosedUncleanly()
+	require.Equal(t, true, retry)
+	require.Equal(t, time.Millisecond, wait)
+}
+
+// Ensure that OnReopenFailed returns false if max attempts reached.
+func TestOnReopenFailedMaxAttempts(t *testing.T) {
+	m := NewFTransportMonitor(5, time.Millisecond, time.Minute)
+	retry, _ := m.OnReopenFailed(5, time.Millisecond)
+	require.Equal(t, false, retry)
+}
+
+// Ensure that OnReopenFailed returns true plus double the previous wait.
+func TestOnReopenFailed(t *testing.T) {
+	m := NewFTransportMonitor(10000, time.Millisecond, time.Minute)
+	retry, wait := m.OnReopenFailed(5, time.Millisecond)
+	require.Equal(t, true, retry)
+	require.Equal(t, 2*time.Millisecond, wait)
+}
+
+// Ensure that OnReopenFailed respects the max wait.
+func TestOnReopenMaxWait(t *testing.T) {
+	m := NewFTransportMonitor(10000, time.Millisecond, time.Millisecond)
+	retry, wait := m.OnReopenFailed(5, time.Millisecond)
+	require.Equal(t, true, retry)
+	require.Equal(t, time.Millisecond, wait)
+}
+
+// Ensure that run attempts to handle a clean close.
+func TestRunCleanClose(t *testing.T) {
+	ftm := &mockFTransportMonitor{}
+	ftm.On("OnClosedCleanly").Return()
 	closedChannel := make(chan bool, 1)
 	closedChannel <- true
+	r := monitorRunner{
+		monitor:       ftm,
+		closedChannel: closedChannel,
+	}
 
-	monitorExited := make(chan struct{})
+	runExited := make(chan struct{})
 	go func() {
-		m.monitor(nil, closedChannel)
-		monitorExited <- struct{}{}
+		r.run()
+		runExited <- struct{}{}
 	}()
 
 	select {
-	case <-monitorExited:
+	case <-runExited:
 	case <-time.After(testTimeout):
 		t.Fail()
 	}
+	ftm.AssertExpectations(t)
 }
 
-// Ensure that monitor attempts to handle an unclean close.
-func TestMonitorUncleanClose(t *testing.T) {
-	m := &FTransportMonitor{}
-
+// Ensure that run attempts to handle an unclean close.
+func TestRunUncleanClose(t *testing.T) {
+	ftm := &mockFTransportMonitor{}
+	ftm.On("OnClosedUncleanly").Return(false, time.Duration(0)).Once()
 	closedChannel := make(chan bool, 1)
 	closedChannel <- false
+	r := monitorRunner{
+		monitor:       ftm,
+		closedChannel: closedChannel,
+	}
 
-	monitorExited := make(chan struct{})
+	runExited := make(chan struct{})
 	go func() {
-		m.monitor(nil, closedChannel)
-		monitorExited <- struct{}{}
+		r.run()
+		runExited <- struct{}{}
 	}()
 
 	select {
-	case <-monitorExited:
+	case <-runExited:
 	case <-time.After(testTimeout):
 		t.Fail()
 	}
+	ftm.AssertExpectations(t)
 }
 
-// Ensure that handleCleanClose deals with a nil callback.
-func TestHandleCleanCloseNilCallback(t *testing.T) {
-	m := &FTransportMonitor{}
-
-	handleCleanCloseExited := make(chan struct{})
-	go func() {
-		m.handleCleanClose()
-		handleCleanCloseExited <- struct{}{}
-	}()
-
-	select {
-	case <-handleCleanCloseExited:
-	case <-time.After(testTimeout):
-		t.Fail()
-	}
-}
-
-// Ensure that handleCleanClose invokes a non-nil callback.
+// Ensure that handleCleanClose invokes OnClosedCleanly
 func TestHandleCleanClose(t *testing.T) {
-	closedCleanlyInvoked := make(chan struct{}, 1)
-	m := &FTransportMonitor{
-		ClosedCleanly: func() { closedCleanlyInvoked <- struct{}{} },
-	}
+	ftm := &mockFTransportMonitor{}
+	ftm.On("OnClosedCleanly").Return().Once()
+	r := monitorRunner{monitor: ftm}
 
 	handleCleanCloseExited := make(chan struct{})
 	go func() {
-		m.handleCleanClose()
+		r.handleCleanClose()
 		handleCleanCloseExited <- struct{}{}
 	}()
-
-	select {
-	case <-closedCleanlyInvoked:
-	case <-time.After(testTimeout):
-		t.Fail()
-	}
 
 	select {
 	case <-handleCleanCloseExited:
 	case <-time.After(testTimeout):
 		t.Fail()
 	}
+	ftm.AssertExpectations(t)
 }
 
-// Ensure that handleUncleanClose returns false with a nil callback.
-func TestHandleUncleanCloseNilCallback(t *testing.T) {
-	m := &FTransportMonitor{}
+// Ensure that handleUncleanClose returns false when OnClosedUncleanly instructs not to retry.
+func TestHandleUncleanCloseNoRetry(t *testing.T) {
+	ftm := &mockFTransportMonitor{}
+	ftm.On("OnClosedUncleanly").Return(false, time.Duration(0)).Once()
+	r := monitorRunner{monitor: ftm}
 
 	handleUncleanCloseExited := make(chan struct{})
 	go func() {
-		assert.False(t, m.handleUncleanClose(nil))
+		assert.False(t, r.handleUncleanClose())
 		handleUncleanCloseExited <- struct{}{}
 	}()
 
@@ -118,100 +148,50 @@ func TestHandleUncleanCloseNilCallback(t *testing.T) {
 	case <-time.After(testTimeout):
 		t.Fail()
 	}
+	ftm.AssertExpectations(t)
 }
 
-// Ensure that handleUncleanClose returns false with a non-nil callback that instructs not to retry.
-func TestHandleUncleanCloseCallbackNoRetry(t *testing.T) {
-	closedUncleanlyInvoked := make(chan struct{})
-	m := &FTransportMonitor{
-		ClosedUncleanly: func() (reopen bool, wait time.Duration) {
-			closedUncleanlyInvoked <- struct{}{}
-			return false, 0
-		},
-	}
-
-	handleUncleanCloseExited := make(chan struct{})
-	go func() {
-		assert.False(t, m.handleUncleanClose(nil))
-		handleUncleanCloseExited <- struct{}{}
-	}()
-
-	select {
-	case <-closedUncleanlyInvoked:
-	case <-time.After(testTimeout):
-		t.Fail()
-	}
-
-	select {
-	case <-handleUncleanCloseExited:
-	case <-time.After(testTimeout):
-		t.Fail()
-	}
-}
-
-// Ensure that handleUncleanClose attempts re-open with a non-nil callback that instructs to retry.
-func TestHandleUncleanCloseCallback(t *testing.T) {
-	closedUncleanlyInvoked := make(chan struct{})
-	m := &FTransportMonitor{
-		ClosedUncleanly: func() (reopen bool, wait time.Duration) {
-			closedUncleanlyInvoked <- struct{}{}
-			return true, 0
-		},
-	}
+// Ensure that handleUncleanClose attempts re-open when OnClosedUncleanly instructs so.
+func TestHandleUncleanClose(t *testing.T) {
+	ftm := &mockFTransportMonitor{}
+	ftm.On("OnClosedUncleanly").Return(true, time.Duration(0)).Once()
+	ftm.On("OnReopenSucceeded").Return().Once()
 	mft := &mockFTransport{}
 	mft.On("Open").Return(nil).Once()
+	r := monitorRunner{
+		monitor:   ftm,
+		transport: mft,
+	}
 
 	handleUncleanCloseExited := make(chan struct{})
 	go func() {
-		assert.True(t, m.handleUncleanClose(mft))
+		assert.True(t, r.handleUncleanClose())
 		handleUncleanCloseExited <- struct{}{}
 	}()
-
-	select {
-	case <-closedUncleanlyInvoked:
-	case <-time.After(testTimeout):
-		t.Fail()
-	}
 
 	select {
 	case <-handleUncleanCloseExited:
 	case <-time.After(testTimeout):
 		t.Fail()
 	}
-	mft.AssertExpectations(t)
-}
-
-// Ensure that attemptReopen returns false with an open error and a nil callback
-func TestAttemptReopenNilCallback(t *testing.T) {
-	m := &FTransportMonitor{}
-
-	mft := &mockFTransport{}
-	mft.On("Open").Return(errors.New("Tears of a thousand children")).Once()
-
-	attemptReopenExited := make(chan struct{})
-	go func() {
-		assert.False(t, m.attemptReopen(0, mft))
-		attemptReopenExited <- struct{}{}
-	}()
-
-	select {
-	case <-attemptReopenExited:
-	case <-time.After(testTimeout):
-		t.Fail()
-	}
+	ftm.AssertExpectations(t)
 	mft.AssertExpectations(t)
 }
 
 // Ensure that attemptReopen returns true with an open success.
 func TestAttemptReopenSuccess(t *testing.T) {
-	m := &FTransportMonitor{}
-
+	ftm := &mockFTransportMonitor{}
+	ftm.On("OnReopenSucceeded").Return().Once()
 	mft := &mockFTransport{}
 	mft.On("Open").Return(nil).Once()
+	r := monitorRunner{
+		monitor:   ftm,
+		transport: mft,
+	}
 
 	attemptReopenExited := make(chan struct{})
 	go func() {
-		assert.True(t, m.attemptReopen(0, mft))
+		assert.True(t, r.attemptReopen(0))
 		attemptReopenExited <- struct{}{}
 	}()
 
@@ -220,74 +200,84 @@ func TestAttemptReopenSuccess(t *testing.T) {
 	case <-time.After(testTimeout):
 		t.Fail()
 	}
+	ftm.AssertExpectations(t)
 	mft.AssertExpectations(t)
 }
 
 // Ensure that attemptReopen retries if the callback instructs to do so.
 func TestAttemptReopenFailRetrySucceed(t *testing.T) {
-	reopenFailedInvoked := make(chan struct{})
-	m := &FTransportMonitor{
-		ReopenFailed: func(uint, time.Duration) (bool, time.Duration) {
-			reopenFailedInvoked <- struct{}{}
-			return true, 0
-		},
-	}
-
+	ftm := &mockFTransportMonitor{}
+	ftm.On("OnReopenFailed", uint(1), time.Nanosecond).Return(true, 2*time.Nanosecond).Once()
+	ftm.On("OnReopenSucceeded").Return().Once()
 	mft := &mockFTransport{}
-	mft.On("Open").Return(errors.New("Your potted plant withered and died")).Once()
+	mft.On("Open").Return(errors.New("Tears of a thousand children")).Once()
 	mft.On("Open").Return(nil).Once()
+	r := monitorRunner{
+		monitor:   ftm,
+		transport: mft,
+	}
 
 	attemptReopenExited := make(chan struct{})
 	go func() {
-		assert.True(t, m.attemptReopen(0, mft))
+		assert.True(t, r.attemptReopen(time.Nanosecond))
 		attemptReopenExited <- struct{}{}
 	}()
-
-	select {
-	case <-reopenFailedInvoked:
-	case <-time.After(testTimeout):
-		t.Fail()
-	}
 
 	select {
 	case <-attemptReopenExited:
 	case <-time.After(testTimeout):
 		t.Fail()
 	}
+	ftm.AssertExpectations(t)
 	mft.AssertExpectations(t)
 }
 
 // Ensure that attemptReopen returns false and does not retry if the callback instructs it not to do so.
 func TestAttemptReopenFailNoRetry(t *testing.T) {
-	reopenFailedInvoked := make(chan struct{})
-	m := &FTransportMonitor{
-		ReopenFailed: func(uint, time.Duration) (bool, time.Duration) {
-			reopenFailedInvoked <- struct{}{}
-			return false, 0
-		},
-	}
-
+	ftm := &mockFTransportMonitor{}
+	ftm.On("OnReopenFailed", uint(1), time.Nanosecond).Return(false, time.Duration(0)).Once()
 	mft := &mockFTransport{}
 	mft.On("Open").Return(errors.New("Shattered dreams of a PhD student")).Once()
+	r := monitorRunner{
+		monitor:   ftm,
+		transport: mft,
+	}
 
 	attemptReopenExited := make(chan struct{})
 	go func() {
-		assert.False(t, m.attemptReopen(0, mft))
+		assert.False(t, r.attemptReopen(time.Nanosecond))
 		attemptReopenExited <- struct{}{}
 	}()
-
-	select {
-	case <-reopenFailedInvoked:
-	case <-time.After(testTimeout):
-		t.Fail()
-	}
 
 	select {
 	case <-attemptReopenExited:
 	case <-time.After(testTimeout):
 		t.Fail()
 	}
+	ftm.AssertExpectations(t)
 	mft.AssertExpectations(t)
+}
+
+type mockFTransportMonitor struct {
+	mock.Mock
+}
+
+func (m *mockFTransportMonitor) OnClosedCleanly() {
+	m.Called()
+}
+
+func (m *mockFTransportMonitor) OnClosedUncleanly() (bool, time.Duration) {
+	args := m.Called()
+	return args.Get(0).(bool), args.Get(1).(time.Duration)
+}
+
+func (m *mockFTransportMonitor) OnReopenFailed(prevAttempts uint, prevWait time.Duration) (bool, time.Duration) {
+	args := m.Called(prevAttempts, prevWait)
+	return args.Get(0).(bool), args.Get(1).(time.Duration)
+}
+
+func (m *mockFTransportMonitor) OnReopenSucceeded() {
+	m.Called()
 }
 
 type mockFTransport struct {
@@ -347,6 +337,6 @@ func (m *mockFTransport) Closed() <-chan bool {
 	return args.Get(0).(<-chan bool)
 }
 
-func (m *mockFTransport) SetMonitor(mon *FTransportMonitor) {
+func (m *mockFTransport) SetMonitor(mon FTransportMonitor) {
 	m.Called(mon)
 }

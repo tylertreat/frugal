@@ -6,93 +6,104 @@ import (
 )
 
 // FTransportMonitor watches and heals an FTransport.
-type FTransportMonitor struct {
-	// ClosedCleanly is called when the transport is closed cleanly by a call to Close()
-	ClosedCleanly func()
+type FTransportMonitor interface {
+	// OnClosedCleanly is called when the transport is closed cleanly by a call to Close()
+	OnClosedCleanly()
 
-	// ClosedUncleanly is called when the transport is closed for a reason *other* than a call to Close().
+	// OnClosedUncleanly is called when the transport is closed for a reason *other* than a call to Close().
 	// Returns whether to try reopening the transport and, if so, how long to wait before making the attempt.
-	ClosedUncleanly func() (reopen bool, wait time.Duration)
+	OnClosedUncleanly() (reopen bool, wait time.Duration)
 
-	// ReopenFailed is called when an attempt to reopen the transport fails.
+	// OnReopenFailed is called when an attempt to reopen the transport fails.
 	// Given the number of previous attempts to re-open the transport and the length of the previous wait,
 	// Returns whether to attempt to re-open the transport, and how long to wait before making the attempt.
-	ReopenFailed func(prevAttempts uint, prevWait time.Duration) (reopen bool, wait time.Duration)
+	OnReopenFailed(prevAttempts uint, prevWait time.Duration) (reopen bool, wait time.Duration)
 
 	// ReopenSucceeded is called after the transport has been successfully re-opened.
-	ReopenSucceeded func()
+	OnReopenSucceeded()
 }
 
-// NewFTransportMonitor returns a configuration for a transport monitor that logs events,
-// and attempts to re-open closed transport with exponential backoff behavior.
-func NewFTransportMonitor(maxReopenAttempts uint, initialWait, maxWait time.Duration) *FTransportMonitor {
-	return &FTransportMonitor{
-		ClosedUncleanly: func() (bool, time.Duration) {
-			return maxReopenAttempts > 0, initialWait
-		},
-		ReopenFailed: func(prevAttempts uint, prevWait time.Duration) (bool, time.Duration) {
-			if prevAttempts >= maxReopenAttempts {
-				return false, 0
-			}
+type fTransportMonitor struct {
+	maxReopenAttempts uint
+	initialWait       time.Duration
+	maxWait           time.Duration
+}
 
-			nextWait := prevWait * 2
-			if nextWait > maxWait {
-				nextWait = maxWait
-			}
-			return true, nextWait
-		},
+// NewFTransportMonitor returns an impplementation that attempts to re-open uncleanly-closed
+// transports with exponential backoff behavior.
+func NewFTransportMonitor(maxReopenAttempts uint, initialWait, maxWait time.Duration) FTransportMonitor {
+	return &fTransportMonitor{
+		maxReopenAttempts: maxReopenAttempts,
+		initialWait:       initialWait,
+		maxWait:           maxWait,
 	}
 }
 
-// Asynchronously starts a monitor with the given configuration, returning a channel to be used
-// as a stop signal.
-func (m *FTransportMonitor) monitor(transport FTransport, closedChannel <-chan bool) {
+func (m *fTransportMonitor) OnClosedUncleanly() (bool, time.Duration) {
+	return m.maxReopenAttempts > 0, m.initialWait
+}
+
+func (m *fTransportMonitor) OnReopenFailed(prevAttempts uint, prevWait time.Duration) (bool, time.Duration) {
+	if prevAttempts >= m.maxReopenAttempts {
+		return false, 0
+	}
+
+	nextWait := prevWait * 2
+	if nextWait > m.maxWait {
+		nextWait = m.maxWait
+	}
+	return true, nextWait
+}
+
+func (m *fTransportMonitor) OnClosedCleanly() {}
+
+func (m *fTransportMonitor) OnReopenSucceeded() {}
+
+type monitorRunner struct {
+	monitor       FTransportMonitor
+	transport     FTransport
+	closedChannel <-chan bool
+}
+
+// Starts a monitoring
+func (r *monitorRunner) run() {
 	fmt.Println("FTransport Monitor: Beginning to monitor transport...")
 MonitoringLoop:
 	for {
-		wasClean := <-closedChannel
+		wasClean := <-r.closedChannel
 
 		if wasClean {
-			m.handleCleanClose()
+			r.handleCleanClose()
 			break MonitoringLoop
-		} else {
-			if shouldContinue := m.handleUncleanClose(transport); shouldContinue {
-				continue MonitoringLoop
-			}
+		} else if shouldContinue := r.handleUncleanClose(); shouldContinue {
+			continue MonitoringLoop
 		}
 		break
 	}
 }
 
 // Handle a clean close of the transport.
-func (m *FTransportMonitor) handleCleanClose() {
+func (r *monitorRunner) handleCleanClose() {
 	fmt.Println("FTransport Monitor: FTransport was closed cleanly. Terminating...")
-	if m.ClosedCleanly != nil {
-		m.ClosedCleanly()
-	}
+	r.monitor.OnClosedCleanly()
 }
 
 // Handle an unclean close of the transport.
-func (m *FTransportMonitor) handleUncleanClose(transport FTransport) bool {
+func (r *monitorRunner) handleUncleanClose() bool {
 	fmt.Println("FTransport Monitor: FTransport was closed uncleanly!")
 
-	if m.ClosedUncleanly == nil {
-		fmt.Println("FTransport Monitor: ClosedUncleanly callback not defined. Terminating...")
+	reopen, initialWait := r.monitor.OnClosedUncleanly()
+	if !reopen {
+		fmt.Println("FTransport Monitor: Instructed not to reopen. Terminating...")
 		return false
 	}
 
-	var initialWait time.Duration
-	var reopen bool
-	if reopen, initialWait = m.ClosedUncleanly(); !reopen {
-		fmt.Println("FTransport Monitor: ClosedUncleanly callback instructed not to reopen. Terminating...")
-		return false
-	}
-
-	return m.attemptReopen(initialWait, transport)
+	return r.attemptReopen(initialWait)
 }
 
 // Attempt to reopen the uncleanly closed transport.
-func (m *FTransportMonitor) attemptReopen(wait time.Duration, transport FTransport) bool {
+func (r *monitorRunner) attemptReopen(initialWait time.Duration) bool {
+	wait := initialWait
 	reopen := true
 	prevAttempts := uint(0)
 
@@ -100,21 +111,15 @@ func (m *FTransportMonitor) attemptReopen(wait time.Duration, transport FTranspo
 		fmt.Printf("FTransport Monitor: Attempting to reopen after %v\n", wait)
 		time.Sleep(wait)
 
-		if err := transport.Open(); err != nil {
+		if err := r.transport.Open(); err != nil {
 			fmt.Printf("FTransport Monitor: Failed to re-open transport due to: %v\n", err)
 			prevAttempts++
-			if m.ReopenFailed == nil {
-				fmt.Println("FTransport Monitor: ReopenFailed callback not defined. Terminating...")
-				return false
-			}
 
-			reopen, wait = m.ReopenFailed(prevAttempts, wait)
+			reopen, wait = r.monitor.OnReopenFailed(prevAttempts, wait)
 			continue
 		}
 		fmt.Printf("FTransport Monitor: Successfully re-opened!")
-		if m.ReopenSucceeded != nil {
-			m.ReopenSucceeded()
-		}
+		r.monitor.OnReopenSucceeded()
 		return true
 	}
 
