@@ -1,5 +1,7 @@
 package com.workiva.frugal.transport;
 
+import com.google.gson.Gson;
+import com.workiva.frugal.internal.NatsConnectionProtocol;
 import io.nats.client.*;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -146,9 +148,13 @@ public class TNatsServiceTransport extends TTransport {
     }
 
     private void handshake() throws TTransportException {
+        NatsConnectionProtocol connectionProtocol = new NatsConnectionProtocol(NatsConnectionProtocol.NATS_V0);
+        Gson gson = new Gson();
+        String serializedVersion = gson.toJson(connectionProtocol);
         Message message;
         try {
-            message = conn.request(this.connectionSubject, null, this.connectionTimeout);
+            System.out.println(serializedVersion);
+            message = conn.request(this.connectionSubject, serializedVersion.getBytes("UTF-8"), this.connectionTimeout);
         } catch (IOException e) {
             throw new TTransportException(e);
         } catch (TimeoutException e) {
