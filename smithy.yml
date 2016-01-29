@@ -1,12 +1,13 @@
-project: golang
+project: frugal
 language: golang
 
 runner_image: docker.webfilings.org/wlayout/smithy-runner-thrift:1.5
 
 script:
-    - go get github.com/tools/godep
-    - godep go build
-    - godep go test ./test
+    - ./scripts/smithy.sh
 
 artifacts:
-    - ./frugal
+    artifactory:
+        - frugal-*.jar
+    docker:
+        - ./frugal

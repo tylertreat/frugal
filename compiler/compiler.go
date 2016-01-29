@@ -16,21 +16,25 @@ import (
 
 // Options contains compiler options for code generation.
 type Options struct {
-	File               string
-	Gen                string
-	Out                string
-	Delim              string
-	RetainIntermediate bool
-	DryRun             bool
+	File               string // Frugal file to generate
+	Gen                string // Language to generate
+	Out                string // Output location for generated code
+	Delim              string // Token delimiter for scope topics
+	RetainIntermediate bool   // Do not clean up generated intermediate IDL
+	DryRun             bool   // Do not generate code
+	Recurse            bool   // Generate includes
+	Verbose            bool   // Verbose mode
 }
 
-// Compile parses the respective Frugal and Thrift and generates code for them,
-// returning an error if something failed.
+// Compile parses the Frugal IDL and generates code for it, returning an error
+// if something failed.
 func Compile(options Options) error {
 	globals.TopicDelimiter = options.Delim
 	globals.Gen = options.Gen
 	globals.Out = options.Out
 	globals.DryRun = options.DryRun
+	globals.Recurse = options.Recurse
+	globals.Verbose = options.Verbose
 	globals.FileDir = filepath.Dir(options.File)
 
 	defer func() {
@@ -39,6 +43,7 @@ func Compile(options Options) error {
 			for _, file := range globals.IntermediateIDL {
 				// Only try to remove if file still exists.
 				if _, err := os.Stat(file); err == nil {
+					logv(fmt.Sprintf("Removing intermediate Thrift file %s", file))
 					if err := os.Remove(file); err != nil {
 						fmt.Printf("Failed to remove intermediate IDL %s\n", file)
 					}
@@ -52,11 +57,13 @@ func Compile(options Options) error {
 		return err
 	}
 
-	_, err = compile(absFile)
+	_, err = compile(absFile, strings.HasSuffix(absFile, ".thrift"), true)
 	return err
 }
 
-func compile(file string) (*parser.Frugal, error) {
+// compile parses the Frugal or Thrift IDL and generates code for it, returning
+// an error if something failed.
+func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	var (
 		gen    = globals.Gen
 		out    = globals.Out
@@ -76,16 +83,17 @@ func compile(file string) (*parser.Frugal, error) {
 	var g generator.ProgramGenerator
 	switch lang {
 	case "dart":
-		g = generator.NewMultipleFileProgramGenerator(dartlang.NewGenerator(options), false)
+		g = generator.NewProgramGenerator(dartlang.NewGenerator(options), false)
 	case "go":
-		g = generator.NewSingleFileProgramGenerator(golang.NewGenerator(options))
+		g = generator.NewProgramGenerator(golang.NewGenerator(options), false)
 	case "java":
-		g = generator.NewMultipleFileProgramGenerator(java.NewGenerator(options), true)
+		g = generator.NewProgramGenerator(java.NewGenerator(options), true)
 	default:
 		return nil, fmt.Errorf("Invalid gen value %s", gen)
 	}
 
 	// Parse the Frugal file.
+	logv(fmt.Sprintf("Parsing %s", file))
 	frugal, err := parser.ParseFrugal(file)
 	if err != nil {
 		return nil, err
@@ -99,18 +107,34 @@ func compile(file string) (*parser.Frugal, error) {
 		return nil, err
 	}
 
+	// Generate intermediate Thrift IDL for Frugal. If this is already a
+	// .thrift file, do not generate an intermediate IDL.
+	if !isThrift {
+		logv(fmt.Sprintf("Generating intermediate Thrift file %s",
+			filepath.Join(dir, fmt.Sprintf("%s.thrift", frugal.Name))))
+		idlFile, err := generateThriftIDL(dir, frugal)
+		if err != nil {
+			return nil, err
+		}
+		file = idlFile
+	}
+
+	if dryRun || !generate {
+		return frugal, nil
+	}
+
 	// Generate Thrift code.
-	if err := generateThrift(frugal, dir, out, gen, dryRun); err != nil {
+	logv(fmt.Sprintf("Generating \"%s\" Thrift code for %s", lang, file))
+	if err := generateThrift(frugal, dir, file, out, gen); err != nil {
 		return nil, err
 	}
 
 	// Generate Frugal code.
-	if !dryRun && frugal.ContainsFrugalDefinitions() {
-		return frugal, g.Generate(frugal, fullOut)
-	}
-	return frugal, nil
+	logv(fmt.Sprintf("Generating \"%s\" Frugal code for %s", lang, frugal.File))
+	return frugal, g.Generate(frugal, fullOut)
 }
 
+// exists determines if the file at the given path exists.
 func exists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
@@ -137,4 +161,11 @@ func cleanGenParam(gen string) (lang string, options map[string]string) {
 		}
 	}
 	return
+}
+
+// logv prints the message if in verbose mode.
+func logv(msg string) {
+	if globals.Verbose {
+		fmt.Println(msg)
+	}
 }

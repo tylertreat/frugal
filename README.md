@@ -1,6 +1,13 @@
 # Frugal
 
-Frugal is an extension of [Apache Thrift](https://thrift.apache.org/) which provides a framework and code generation for pub/sub messaging. Specifically, Frugal is a superset of Thrift, meaning it implements the same functionality as Thrift with some additional features.
+Frugal is an extension of [Apache Thrift](https://thrift.apache.org/) which
+provides additional functionality. Specifically, it includes support for
+request headers, request multiplexing, thread safety, and code-generated
+pub/sub APIs. Frugal is intended to act as a superset of Thrift, meaning it
+implements the same functionality as Thrift with some additional
+features.
+
+Currently supported languages are Go, Java, and Dart.
 
 ## Installation
 
@@ -8,12 +15,13 @@ Frugal is an extension of [Apache Thrift](https://thrift.apache.org/) which prov
 $ go get github.com/Workiva/frugal
 ```
 
-If you don't have a Go environment setup or don't want to install Thrift you can
-use Docker. [Check the bottom of the Readme](#docker) for more info.
+If you don't have a Go environment setup or don't want to install Thrift you
+can use Docker. [Check the bottom of the Readme](#docker) for more info.
 
 ## Usage
 
-Define your Frugal file which contains your pub/sub interface, or *scopes*, and Thrift definitions.
+Define your Frugal file which contains your pub/sub interface, or *scopes*, and
+Thrift definitions.
 
 ```thrift
 # event.frugal
@@ -30,32 +38,35 @@ scope Events {
 }
 ```
 
-Generate the code with `frugal`. Currently, only Go, Java, and Dart are supported.
+Generate the code with `frugal`. Currently, only Go, Java, and Dart are
+supported.
 
 ```
 $ frugal -gen=go event.frugal
 ```
 
-By default, generated code is placed in a `gen-*` directory. This code can then be used as such:
+By default, generated code is placed in a `gen-*` directory. This code can then
+be used as such:
 
 ```go
 // publisher.go
 func main() {
-    options := nats.DefaultOptions
-    conn, err := options.Connect()
+    conn, err := nats.Connect(nats.DefaultURL)
     if err != nil {
         panic(err)
     }
 
     var (
-        protocolFactory  = thrift.NewTBinaryProtocolFactoryDefault()
-        transportFactory = thrift.NewTTransportFactory()
-        frugalFactory    = frugal.NewNATSTransportFactory(conn)
-        publisher        = event.NewEventsPublisher(frugalFactory, transportFactory, protocolFactory)
+        protocolFactory  = frugal.NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
+        transportFactory = frugal.NewFNatsScopeTransportFactory(conn)
+        provider         = frugal.NewFScopeProvider(transportFactory, protocolFactory)
+        publisher        = event.NewEventsPublisher(provider)
     )
-    
+    publisher.Open()
+    defer publisher.Close()
+
     event := &event.Event{ID: 42, Message: "Hello, World!"}
-    if err := publisher.PublishEventCreated(event); err != nil {
+    if err := publisher.PublishEventCreated(frugal.NewFContext(""), event); err != nil {
         panic(err)
     }
 }
@@ -64,35 +75,36 @@ func main() {
 ```go
 // subscriber.go
 func main() {
-  options := nats.DefaultOptions
-  conn, err := options.Connect()
-  if err != nil {
-      panic(err)
-  }
-  
-  var (
-      protocolFactory  = thrift.NewTBinaryProtocolFactoryDefault()
-      transportFactory = thrift.NewTTransportFactory()
-      frugalFactory    = frugal.NewNATSTransportFactory(conn)
-      subscriber       = event.NewEventSubscriber(frugalFactory, transportFactory, protocolFactory)
-  )
-  
-  _, err := subscriber.SubscribeEventCreated(func(e *event.Event) {
-          fmt.Println("Received event:", e.Message)
-  })
-  if err != nil {
-      panic(err)
-  }
-  
-  wait := make(chan bool)
-  log.Println("Subscriber started...")
-  <-wait
+    conn, err := nats.Connect(nats.DefaultURL)
+    if err != nil {
+        panic(err)
+    }
+
+    var (
+        protocolFactory  = frugal.NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
+        transportFactory = frugal.NewFNatsScopeTransportFactory(conn)
+        provider         = frugal.NewFScopeProvider(transportFactory, protocolFactory)
+        subscriber       = event.NewEventsSubscriber(provider)
+    )
+
+    _, err = subscriber.SubscribeEventCreated(func(ctx *frugal.FContext, e *event.Event) {
+        fmt.Println("Received event:", e.Message)
+    })
+    if err != nil {
+        panic(err)
+    }
+
+    wait := make(chan bool)
+    log.Println("Subscriber started...")
+    <-wait
 }
 ```
 
 ### Prefixes
 
-By default, Frugal publishes messages on the topic `<scope>.<operation>`. For example, the `EventCreated` operation in the following Frugal definition would be published on `Events.EventCreated`:
+By default, Frugal publishes messages on the topic `<scope>.<operation>`. For
+example, the `EventCreated` operation in the following Frugal definition would
+be published on `Events.EventCreated`:
 
 ```thrift
 scope Events {
@@ -103,21 +115,18 @@ scope Events {
 Custom topic prefixes can be defined on a per-scope basis:
 
 ```thrift
-scope Events {
-    prefix "foo.bar"
-    
+scope Events prefix foo.bar {
     EventCreated: Event
 }
 ```
 
 As a result, `EventCreated` would be published on `foo.bar.Events.EventCreated`.
 
-Prefixes can also define variables which are provided at publish and subscribe time:
+Prefixes can also define variables which are provided at publish and subscribe
+time:
 
 ```thrift
-scope Events {
-    prefix "foo.{user}"
-    
+scope Events prefix foo.{user} {
     EventCreated: Event
 }
 ```
@@ -129,16 +138,18 @@ var (
     event = &event.Event{ID: 42, Message: "hello, world!"}
     user  = "bill"
 )
-publisher.PublishEventCreated(event, user)
+publisher.PublishEventCreated(frugal.NewFContext(""), event, user)
 
-subscriber.SubscribeEventCreated(user, func(e *event.Event) {
+subscriber.SubscribeEventCreated(user, func(ctx *frugal.FContext, e *event.Event) {
     fmt.Printf("Received event for %s: %s\n", user, e.Message)
 })
 ```
 
 ### Generated Comments
 
-In Thrift, comments of the form `/** ... */` are included in generated code. In Frugal, to include comments in generated code, they should be of the form `/**@ ... */`.
+In Thrift, comments of the form `/** ... */` are included in generated code. In
+Frugal, to include comments in generated code, they should be of the form `/**@
+... */`.
 
 ```thrift
 /**@
@@ -154,24 +165,34 @@ service FooService {
 }
 ```
 
+## Thrift Parity
+
+Frugal is intended to be a superset of Thrift, meaning valid Thrift should be
+valid Frugal. However, there are known Thrift features which are not currently
+supported in Frugal, namely annotations. File an issue if you discover an
+inconsistency with the IDL.
+
 ## Docker
 
 ### Via Shipyard
 
-Grab the frugal Docker image id for the image you would like to use from [Shipyard](https://shipyard.workiva.org/repo/Workiva/frugal).
+Grab the frugal Docker image id for the image you would like to use from
+[Shipyard](https://shipyard.workiva.org/repo/Workiva/frugal).
 
 Switch to the directory that has the files you would like to generate.
 
-Then run the docker image. This command will mount your local directory into the
-image. It supports all of the standard Frugal commands.
+Then run the docker image. This command will mount your local directory into
+the image. It supports all of the standard Frugal commands.
 
 ```
 docker run -v "$(pwd):/data" drydock.workiva.org/workiva/frugal:{SHIPYARD_ID} frugal -gen={LANG} {FILE_TO_GEN}
 ```
 
-An example to generate the Go code off the event.frugal definition in the example directory.
+An example to generate the Go code off the event.frugal definition in the
+example directory.
 
 ```
 $ cd example
 $ docker run -v "$(pwd):/data" drydock.workiva.org/workiva/frugal:17352 frugal -gen=go event.frugal
 ```
+

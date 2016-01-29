@@ -52,15 +52,16 @@ type Scope struct {
 // ReferencedIncludes returns a slice containing the referenced includes which
 // will need to be imported in generated code for this Scope.
 func (s *Scope) ReferencedIncludes() []string {
+	includes := []string{}
 	includesSet := make(map[string]bool)
 	for _, op := range s.Operations {
 		if strings.Contains(op.Param, ".") {
-			includesSet[op.Param[0:strings.Index(op.Param, ".")]] = true
+			reducedStr := op.Param[0:strings.Index(op.Param, ".")]
+			if _, ok := includesSet[reducedStr]; !ok {
+				includesSet[reducedStr] = true
+				includes = append(includes, reducedStr)
+			}
 		}
-	}
-	includes := make([]string, 0, len(includesSet))
-	for include, _ := range includesSet {
-		includes = append(includes, include)
 	}
 	return includes
 }
@@ -71,38 +72,116 @@ func (s *Scope) assignScope() {
 	}
 }
 
+type Async struct {
+	Comment []string
+	Name    string
+	Extends string
+	Methods []*Method
+	Frugal  *Frugal // Pointer back to containing Frugal
+}
+
 type Frugal struct {
 	Name           string
+	File           string
 	Dir            string
 	Path           string
 	Scopes         []*Scope
+	Asyncs         []*Async
 	Thrift         *Thrift
 	ParsedIncludes map[string]*Frugal
 }
 
 func (f *Frugal) NamespaceForInclude(include, lang string) (string, bool) {
-	namespace, ok := f.ParsedIncludes[include].Thrift.Namespace(lang)
+	parsed, ok := f.ParsedIncludes[include]
+	if !ok {
+		return "", ok
+	}
+	namespace, ok := parsed.Thrift.Namespace(lang)
 	return namespace, ok
 }
 
 func (f *Frugal) ContainsFrugalDefinitions() bool {
-	return len(f.Scopes) > 0
+	return len(f.Scopes)+len(f.Thrift.Services) > 0
 }
 
-// ReferencedIncludes returns a slice containing the referenced includes which
-// will need to be imported in generated code.
-func (f *Frugal) ReferencedIncludes() []string {
+// ReferencedScopeIncludes returns a slice containing the referenced includes
+// which will need to be imported in generated code for scopes.
+func (f *Frugal) ReferencedScopeIncludes() []string {
+	includes := []string{}
 	includesSet := make(map[string]bool)
 	for _, scope := range f.Scopes {
 		for _, include := range scope.ReferencedIncludes() {
-			includesSet[include] = true
+			if _, ok := includesSet[include]; !ok {
+				includesSet[include] = true
+				includes = append(includes, include)
+			}
 		}
 	}
-	includes := make([]string, 0, len(includesSet))
-	for include, _ := range includesSet {
-		includes = append(includes, include)
-	}
+	sort.Strings(includes)
 	return includes
+}
+
+// ReferencedServiceIncludes returns a slice containing the referenced includes
+// which will need to be imported in generated code for services.
+func (f *Frugal) ReferencedServiceIncludes() []string {
+	includes := []string{}
+	includesSet := make(map[string]bool)
+	for _, service := range f.Thrift.Services {
+		for _, include := range service.ReferencedIncludes() {
+			if _, ok := includesSet[include]; !ok {
+				includesSet[include] = true
+				includes = append(includes, include)
+			}
+		}
+	}
+	sort.Strings(includes)
+	return includes
+}
+
+// UnderlyingType follows any typedefs to get the base IDL type.
+func (f *Frugal) UnderlyingType(t *Type) *Type {
+	if t == nil {
+		panic("Attempted to get underlying type of nil type")
+	}
+	typedefIndex := f.Thrift.typedefIndex
+	include := t.IncludeName()
+	if include != "" {
+		parsed, ok := f.ParsedIncludes[include]
+		if !ok {
+			return t
+		}
+		typedefIndex = parsed.Thrift.typedefIndex
+	}
+	if typedef, ok := typedefIndex[t.ParamName()]; ok {
+		return typedef.Type
+	}
+	return t
+}
+
+// IsStruct indicates if the underlying Type is a struct.
+func (f *Frugal) IsStruct(t *Type) bool {
+	t = f.UnderlyingType(t)
+	if _, ok := thriftTypes[t.Name]; ok {
+		return false
+	}
+	return t.KeyType == nil && t.ValueType == nil && !f.IsEnum(t)
+}
+
+// IsEnum indicates if the underlying Type is an enum.
+func (f *Frugal) IsEnum(t *Type) bool {
+	include := t.IncludeName()
+	containingFrugal := f
+	if include != "" {
+		if containing, ok := f.ParsedIncludes[include]; ok {
+			containingFrugal = containing
+		}
+	}
+	for _, enum := range containingFrugal.Thrift.Enums {
+		if enum.Name == t.ParamName() {
+			return true
+		}
+	}
+	return false
 }
 
 func (f *Frugal) assignFrugal() {
@@ -111,11 +190,12 @@ func (f *Frugal) assignFrugal() {
 	}
 }
 
+func (f *Frugal) validate() error {
+	return f.Thrift.validate()
+}
+
 func (f *Frugal) sort() {
 	sort.Sort(ScopesByName(f.Scopes))
-	for _, scope := range f.Scopes {
-		sort.Sort(OperationsByName(scope.Operations))
-	}
 }
 
 type ScopesByName []*Scope
@@ -129,19 +209,5 @@ func (b ScopesByName) Swap(i, j int) {
 }
 
 func (b ScopesByName) Less(i, j int) bool {
-	return b[i].Name < b[j].Name
-}
-
-type OperationsByName []*Operation
-
-func (b OperationsByName) Len() int {
-	return len(b)
-}
-
-func (b OperationsByName) Swap(i, j int) {
-	b[i], b[j] = b[j], b[i]
-}
-
-func (b OperationsByName) Less(i, j int) bool {
 	return b[i].Name < b[j].Name
 }
