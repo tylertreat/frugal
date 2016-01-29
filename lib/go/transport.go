@@ -77,15 +77,14 @@ func (f *fMuxTransportFactory) GetTransport(tr thrift.TTransport) FTransport {
 
 type fMuxTransport struct {
 	*thrift.TFramedTransport
-	registry               FRegistry
-	numWorkers             uint
-	workC                  chan []byte
-	open                   bool
-	registryC              chan struct{}
-	mu                     sync.Mutex
-	closed                 chan bool
-	monitorClosedCleanly   chan<- struct{}
-	monitorClosedUncleanly chan<- struct{}
+	registry            FRegistry
+	numWorkers          uint
+	workC               chan []byte
+	open                bool
+	registryC           chan struct{}
+	mu                  sync.Mutex
+	closed              chan bool
+	monitorClosedSignal chan<- bool
 }
 
 // NewFMuxTransport wraps the given TTransport in a multiplexed FTransport. The
@@ -106,16 +105,14 @@ func NewFMuxTransport(tr thrift.TTransport, numWorkers uint) FTransport {
 func (f *fMuxTransport) SetMonitor(config *FTransportMonitor) {
 	// Stop the previous monitor, if any
 	select {
-	case f.monitorClosedCleanly <- struct{}{}:
+	case f.monitorClosedSignal <- true:
 	default:
 	}
 
-	// Start this new monitor
-	monitorClosedCleanly := make(chan struct{}, 1)
-	monitorClosedUncleanly := make(chan struct{}, 1)
-	f.monitorClosedCleanly = monitorClosedCleanly
-	f.monitorClosedUncleanly = monitorClosedUncleanly
-	go config.monitor(f, monitorClosedCleanly, monitorClosedUncleanly)
+	// Start the new monitor
+	monitorClosedSignal := make(chan bool, 1)
+	f.monitorClosedSignal = monitorClosedSignal
+	go config.monitor(f, monitorClosedSignal)
 }
 
 // SetRegistry sets the Registry on the FTransport.
@@ -163,11 +160,7 @@ func (f *fMuxTransport) Open() error {
 		for {
 			frame, err := f.readFrame()
 			if err != nil {
-				select {
-				case f.monitorClosedUncleanly <- struct{}{}:
-				default:
-				}
-				defer f.Close()
+				defer f.close(false)
 				if err, ok := err.(thrift.TTransportException); ok && err.TypeId() == thrift.END_OF_FILE {
 					return
 				}
@@ -191,11 +184,17 @@ func (f *fMuxTransport) Open() error {
 
 // Close will close the underlying TTransport and stops all goroutines.
 func (f *fMuxTransport) Close() error {
+	return f.close(true)
+}
+
+// Close will close the underlying TTransport and stops all goroutines.
+// Also will signal the monitor, if any, whether the close was clean.
+func (f *fMuxTransport) close(cleanly bool) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
 	select {
-	case f.monitorClosedCleanly <- struct{}{}:
+	case f.monitorClosedSignal <- cleanly:
 	default:
 	}
 
@@ -247,11 +246,7 @@ func (f *fMuxTransport) startWorkers() {
 					if err := f.registry.Execute(frame); err != nil {
 						// An error here indicates an unrecoverable error, teardown transport.
 						log.Println("frugal: transport error, closing transport", err)
-						select {
-						case f.monitorClosedUncleanly <- struct{}{}:
-						default:
-						}
-						f.Close()
+						f.close(false)
 						return
 					}
 				}
