@@ -19,7 +19,7 @@ type FTransportMonitor interface {
 	// Returns whether to attempt to re-open the transport, and how long to wait before making the attempt.
 	OnReopenFailed(prevAttempts uint, prevWait time.Duration) (reopen bool, wait time.Duration)
 
-	// ReopenSucceeded is called after the transport has been successfully re-opened.
+	// OnReopenSucceeded is called after the transport has been successfully re-opened.
 	OnReopenSucceeded()
 }
 
