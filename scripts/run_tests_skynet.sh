@@ -2,6 +2,8 @@
 
 set -eo pipefail
 
+go get bitbucket.org/tebeka/go2xunit
+
 # Set the outfile
 outfile=$PWD/gotest.out
 
