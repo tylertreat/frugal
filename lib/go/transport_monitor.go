@@ -23,41 +23,41 @@ type FTransportMonitor interface {
 	OnReopenSucceeded()
 }
 
-type fTransportMonitor struct {
-	maxReopenAttempts uint
-	initialWait       time.Duration
-	maxWait           time.Duration
+type BaseFTransportMonitor struct {
+	MaxReopenAttempts uint
+	InitialWait       time.Duration
+	MaxWait           time.Duration
 }
 
 // NewFTransportMonitor returns an impplementation that attempts to re-open uncleanly-closed
 // transports with exponential backoff behavior.
-func NewFTransportMonitor(maxReopenAttempts uint, initialWait, maxWait time.Duration) FTransportMonitor {
-	return &fTransportMonitor{
-		maxReopenAttempts: maxReopenAttempts,
-		initialWait:       initialWait,
-		maxWait:           maxWait,
+func NewFTransportMonitor(MaxReopenAttempts uint, InitialWait, maxWait time.Duration) FTransportMonitor {
+	return &BaseFTransportMonitor{
+		MaxReopenAttempts: MaxReopenAttempts,
+		InitialWait:       InitialWait,
+		MaxWait:           maxWait,
 	}
 }
 
-func (m *fTransportMonitor) OnClosedUncleanly() (bool, time.Duration) {
-	return m.maxReopenAttempts > 0, m.initialWait
+func (m *BaseFTransportMonitor) OnClosedUncleanly() (bool, time.Duration) {
+	return m.MaxReopenAttempts > 0, m.InitialWait
 }
 
-func (m *fTransportMonitor) OnReopenFailed(prevAttempts uint, prevWait time.Duration) (bool, time.Duration) {
-	if prevAttempts >= m.maxReopenAttempts {
+func (m *BaseFTransportMonitor) OnReopenFailed(prevAttempts uint, prevWait time.Duration) (bool, time.Duration) {
+	if prevAttempts >= m.MaxReopenAttempts {
 		return false, 0
 	}
 
 	nextWait := prevWait * 2
-	if nextWait > m.maxWait {
-		nextWait = m.maxWait
+	if nextWait > m.MaxWait {
+		nextWait = m.MaxWait
 	}
 	return true, nextWait
 }
 
-func (m *fTransportMonitor) OnClosedCleanly() {}
+func (m *BaseFTransportMonitor) OnClosedCleanly() {}
 
-func (m *fTransportMonitor) OnReopenSucceeded() {}
+func (m *BaseFTransportMonitor) OnReopenSucceeded() {}
 
 type monitorRunner struct {
 	monitor       FTransportMonitor
@@ -90,18 +90,18 @@ func (r *monitorRunner) handleCleanClose() {
 func (r *monitorRunner) handleUncleanClose() bool {
 	fmt.Println("FTransport Monitor: FTransport was closed uncleanly!")
 
-	reopen, initialWait := r.monitor.OnClosedUncleanly()
+	reopen, InitialWait := r.monitor.OnClosedUncleanly()
 	if !reopen {
 		fmt.Println("FTransport Monitor: Instructed not to reopen. Terminating...")
 		return false
 	}
 
-	return r.attemptReopen(initialWait)
+	return r.attemptReopen(InitialWait)
 }
 
 // Attempt to reopen the uncleanly closed transport.
-func (r *monitorRunner) attemptReopen(initialWait time.Duration) bool {
-	wait := initialWait
+func (r *monitorRunner) attemptReopen(InitialWait time.Duration) bool {
+	wait := InitialWait
 	reopen := true
 	prevAttempts := uint(0)
 

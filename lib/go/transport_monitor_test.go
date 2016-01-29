@@ -17,10 +17,10 @@ func TestNewFTransportMonitor(t *testing.T) {
 	m := NewFTransportMonitor(100, time.Millisecond, time.Minute)
 	require.NotNil(t, m)
 
-	ftm := m.(*fTransportMonitor)
-	require.Equal(t, uint(100), ftm.maxReopenAttempts)
-	require.Equal(t, time.Millisecond, ftm.initialWait)
-	require.Equal(t, time.Minute, ftm.maxWait)
+	ftm := m.(*BaseFTransportMonitor)
+	require.Equal(t, uint(100), ftm.MaxReopenAttempts)
+	require.Equal(t, time.Millisecond, ftm.InitialWait)
+	require.Equal(t, time.Minute, ftm.MaxWait)
 }
 
 // Ensure that OnClosedUncleanly returns false if max attempts is 0.
