@@ -49,7 +49,7 @@ type FTransport interface {
 	Unregister(*FContext)
 
 	// SetMonitor starts a monitor that can watch the health of, and reopen, the transport.
-	SetMonitor(config FTransportMonitor)
+	SetMonitor(FTransportMonitor)
 
 	// Closed channel is closed when the FTransport is closed.
 	Closed() <-chan bool
