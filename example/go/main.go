@@ -102,10 +102,7 @@ func handleClient(client *event.FFooClient) (err error) {
 
 // Client runner
 func runClient(conn *nats.Conn, transportFactory frugal.FTransportFactory, protocolFactory *frugal.FProtocolFactory) error {
-	transport, err := frugal.NewNatsServiceTTransport(conn, "foo", time.Second)
-	if err != nil {
-		return err
-	}
+	transport := frugal.NewNatsServiceTTransport(conn, "foo", time.Second)
 	ftransport := transportFactory.GetTransport(transport)
 	defer ftransport.Close()
 	if err := ftransport.Open(); err != nil {
