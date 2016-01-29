@@ -65,7 +65,7 @@ type monitorRunner struct {
 	closedChannel <-chan bool
 }
 
-// Starts a monitoring
+// Starts a runner to monitor the transport.
 func (r *monitorRunner) run() {
 	fmt.Println("FTransport Monitor: Beginning to monitor transport...")
 	for {
