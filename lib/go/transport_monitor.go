@@ -21,12 +21,6 @@ type FTransportMonitor struct {
 
 	// ReopenSucceeded is called after the transport has been successfully re-opened.
 	ReopenSucceeded func()
-
-	// InitialReopenWait is the initial delay before the first attempt to re-open the transport.
-	InitialReopenWait time.Duration
-
-	// MaxReopenWait is the maximum delay between reopen attempts.
-	MaxReopenWait time.Duration
 }
 
 // NewFTransportMonitor returns a configuration for a transport monitor that logs events,
@@ -47,8 +41,6 @@ func NewFTransportMonitor(maxReopenAttempts uint, initialWait, maxWait time.Dura
 			}
 			return true, nextWait
 		},
-		InitialReopenWait: initialWait,
-		MaxReopenWait:     maxWait,
 	}
 }
 
