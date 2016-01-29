@@ -6,7 +6,7 @@
 
     <groupId>com.workiva</groupId>
     <artifactId>frugal</artifactId>
-    <version>0.0.16</version>
+    <version>0.0.17</version>
 
     <name>frugal</name>
     <url>https://github.com/Workiva/frugal/lib/java</url>
@@ -46,6 +46,11 @@
             <artifactId>mockito-all</artifactId>
             <version>1.10.19</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.5</version>
         </dependency>
     </dependencies>
 
