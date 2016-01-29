@@ -95,11 +95,11 @@ func (g *Generator) addToPubspec(dir string) error {
 	pubFilePath := filepath.Join(dir, "pubspec.yaml")
 
 	deps := map[interface{}]interface{}{
-		"thrift": dep{Git: gitDep{URL: "git@github.com:Workiva/thrift-dart.git", Ref: "0.0.1"}},
+		"thrift": dep{Git: gitDep{URL: "git@github.com:Workiva/thrift-dart.git", Ref: "0.0.3"}},
 	}
 
 	if g.Frugal.ContainsFrugalDefinitions() {
-		deps["frugal"] = dep{Git: gitDep{URL: "git@github.com:Workiva/frugal-dart.git", Ref: "new_stack"}}
+		deps["frugal"] = dep{Git: gitDep{URL: "git@github.com:Workiva/frugal-dart.git", Ref: "master"}}
 	}
 
 	includesSet := make(map[string]bool)
@@ -746,7 +746,7 @@ func (g *Generator) getPackagePrefix() string {
 
 func (g *Generator) getImportDeclaration(namespace string) string {
 	prefix := g.getPackagePrefix()
-	if (prefix == "") {
+	if prefix == "" {
 		prefix += namespace + "/"
 	}
 	return fmt.Sprintf("import 'package:%s%s.dart' as t_%s;\n", prefix, namespace, namespace)
