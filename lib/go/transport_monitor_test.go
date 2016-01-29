@@ -151,7 +151,7 @@ func TestHandleUncleanCloseNoRetry(t *testing.T) {
 	ftm.AssertExpectations(t)
 }
 
-// Ensure that handleUncleanClose attempts re-open when OnClosedUncleanly instructs so.
+// Ensure that handleUncleanClose attempts re-open when OnClosedUncleanly instructs it to do so.
 func TestHandleUncleanClose(t *testing.T) {
 	ftm := &mockFTransportMonitor{}
 	ftm.On("OnClosedUncleanly").Return(true, time.Duration(0)).Once()
@@ -178,7 +178,7 @@ func TestHandleUncleanClose(t *testing.T) {
 	mft.AssertExpectations(t)
 }
 
-// Ensure that attemptReopen returns true with an open success.
+// Ensure that attemptReopen returns true when re-opening succeeds.
 func TestAttemptReopenSuccess(t *testing.T) {
 	ftm := &mockFTransportMonitor{}
 	ftm.On("OnReopenSucceeded").Return().Once()
@@ -204,7 +204,7 @@ func TestAttemptReopenSuccess(t *testing.T) {
 	mft.AssertExpectations(t)
 }
 
-// Ensure that attemptReopen retries if the callback instructs to do so.
+// Ensure that attemptReopen retries when OnReopenFailed instructs to do so.
 func TestAttemptReopenFailRetrySucceed(t *testing.T) {
 	ftm := &mockFTransportMonitor{}
 	ftm.On("OnReopenFailed", uint(1), time.Nanosecond).Return(true, 2*time.Nanosecond).Once()
@@ -232,7 +232,7 @@ func TestAttemptReopenFailRetrySucceed(t *testing.T) {
 	mft.AssertExpectations(t)
 }
 
-// Ensure that attemptReopen returns false and does not retry if the callback instructs it not to do so.
+// Ensure that attemptReopen returns false and does not retry when OnReopenFailed instructs it not to do so.
 func TestAttemptReopenFailNoRetry(t *testing.T) {
 	ftm := &mockFTransportMonitor{}
 	ftm.On("OnReopenFailed", uint(1), time.Nanosecond).Return(false, time.Duration(0)).Once()
