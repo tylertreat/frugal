@@ -1,6 +1,12 @@
 part of frugal;
 
 /// Factory for FProtocol
-abstract class FProtocolFactory {
-  FProtocol getProtocol(TTransport transport);
+class FProtocolFactory {
+  TProtocolFactory _tProtocolFactory;
+
+  FProtocolFactory(this._tProtocolFactory){}
+
+  FProtocol getProtocol(TTransport transport) {
+    return new FProtocol(_tProtocolFactory.getProtocol(transport));
+  }
 }

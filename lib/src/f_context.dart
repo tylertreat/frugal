@@ -1,15 +1,21 @@
 part of frugal;
 
 int _globalOpId = 0;
+String _cid = "_cid";
+String _opid = "_opid";
 
-/// Context for Frugal message
-class Context {
-  static const _cid = "_cid";
-  static const _opid= "_opid";
+/// Context for Frugal request.
+class FContext {
   Map<String, String> _requestHeaders;
   Map<String, String> _responseHeaders;
+  Duration _timeout;
 
-  Context({String correlationId: ""}) {
+  Duration get timeout => _timeout;
+  void set timeout(timeout) {
+    _timeout = timeout;
+  }
+
+  FContext({String correlationId: ""}) {
     if (correlationId == "") {
       correlationId = _generateCorrelationId();
     }
@@ -18,9 +24,12 @@ class Context {
       _opid: _nextOpId(),
     };
     _responseHeaders = {};
+
+    // Default timeout to 1 minute
+    _timeout = new Duration(minutes: 1);
   }
 
-  Context.withRequestHeaders(Map<String, String> headers) {
+  FContext.withRequestHeaders(Map<String, String> headers) {
     if (headers[_cid] == "") {
       headers[_cid] = _generateCorrelationId();
     }
@@ -40,9 +49,22 @@ class Context {
     return int.parse(opIdStr);
   }
 
-  /// Add a request header to the context for the given name
+  /// Add a request header to the context for the given name.
+  /// Will overwrite existing header of the same name.
   void addRequestHeader(String name, value) {
     _requestHeaders[name] = value;
+  }
+
+  /// Add given request headers to the context. Will overwrite
+  /// existing pre-existing headers with the same names as the
+  /// given headers.
+  void addRequestsHeaders(Map<String, String> headers) {
+    if (headers == null || headers.length == 0) {
+      return;
+    }
+    for (var name in headers.keys) {
+      _requestHeaders[name] = headers[name];
+    }
   }
 
   /// Get the named request header
@@ -56,8 +78,21 @@ class Context {
   }
 
   /// Add a response header to the context for the given name
+  /// Will overwrite existing header of the same name.
   void addResponseHeader(String name, value) {
     _responseHeaders[name] = value;
+  }
+
+  /// Add given response headers to the context. Will overwrite
+  /// existing pre-existing headers with the same names as the
+  /// given headers.
+  void addResponseHeaders(Map<String, String> headers) {
+    if (headers == null || headers.length == 0) {
+      return;
+    }
+    for (var name in headers.keys) {
+      _responseHeaders[name] = headers[name];
+    }
   }
 
   /// Get the named response header
