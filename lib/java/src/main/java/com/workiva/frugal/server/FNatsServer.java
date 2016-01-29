@@ -1,6 +1,8 @@
 package com.workiva.frugal.server;
 
+import com.google.gson.Gson;
 import com.workiva.frugal.FException;
+import com.workiva.frugal.internal.NatsConnectionProtocol;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFactory;
 import com.workiva.frugal.FProtocol;
@@ -18,8 +20,8 @@ import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
@@ -103,6 +105,19 @@ public class FNatsServer implements FServer {
                 String reply = message.getReplyTo();
                 if (reply == null || reply.isEmpty()) {
                     LOGGER.warning("Received a bad connection handshake. Discarding.");
+                    return;
+                }
+
+                NatsConnectionProtocol connProtocol;
+                Gson gson = new Gson();
+                try {
+                    connProtocol = gson.fromJson(new String(message.getData(), "UTF-8"), NatsConnectionProtocol.class);
+                    if(connProtocol.getVersion() != NatsConnectionProtocol.NATS_V0){
+                        LOGGER.severe(String.format("%d not a supported connect version", connProtocol.getVersion()));
+                        return;
+                    }
+                } catch (UnsupportedEncodingException e) {
+                    LOGGER.severe("could not deserialize connect message");
                     return;
                 }
 
