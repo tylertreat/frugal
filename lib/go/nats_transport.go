@@ -2,6 +2,7 @@ package frugal
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -19,6 +20,7 @@ const (
 	// NATS limits messages to 1MB.
 	natsMaxMessageSize = 1024 * 1024
 	disconnect         = "DISCONNECT"
+	natsV0             = 0
 )
 
 // ErrTooLarge is returned when attempting to write a message which exceeds the
@@ -157,8 +159,17 @@ func (n *natsServiceTTransport) Open() error {
 	return nil
 }
 
+type natsConnectionHandshake struct {
+	Version uint8 `json:"version"`
+}
+
 func (n *natsServiceTTransport) handshake() error {
-	msg, err := n.conn.Request(n.connectSubject, nil, n.connectTimeout)
+	hs := &natsConnectionHandshake{Version: natsV0}
+	hsBytes, err := json.Marshal(hs)
+	if err != nil {
+		return err
+	}
+	msg, err := n.conn.Request(n.connectSubject, hsBytes, n.connectTimeout)
 	if err != nil {
 		return err
 	}
