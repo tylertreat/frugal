@@ -68,17 +68,15 @@ type monitorRunner struct {
 // Starts a monitoring
 func (r *monitorRunner) run() {
 	fmt.Println("FTransport Monitor: Beginning to monitor transport...")
-MonitoringLoop:
 	for {
 		wasClean := <-r.closedChannel
 
 		if wasClean {
 			r.handleCleanClose()
-			break MonitoringLoop
-		} else if shouldContinue := r.handleUncleanClose(); shouldContinue {
-			continue MonitoringLoop
+			return
+		} else if shouldContinue := r.handleUncleanClose(); !shouldContinue {
+			return
 		}
-		break
 	}
 }
 
