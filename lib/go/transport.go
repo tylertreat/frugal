@@ -155,7 +155,7 @@ func (f *fMuxTransport) Open() error {
 		return errors.New("frugal: transport already open")
 	}
 
-	f.closed = make(chan error)
+	f.closed = make(chan error, 1)
 
 	if err := f.TFramedTransport.Open(); err != nil {
 		return err
@@ -208,6 +208,10 @@ func (f *fMuxTransport) close(cause error) error {
 	err := f.TFramedTransport.Close()
 	if err == nil {
 		f.open = false
+		select {
+		case f.closed <- cause:
+		default:
+		}
 		close(f.closed)
 	}
 	return err
