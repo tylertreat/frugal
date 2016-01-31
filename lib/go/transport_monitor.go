@@ -23,7 +23,7 @@ type FTransportMonitor interface {
 	OnReopenSucceeded()
 }
 
-// BaseFTransportMonitor is a default monitor implementatoin that attempts to re-open a closed transport
+// BaseFTransportMonitor is a default monitor implementation that attempts to re-open a closed transport
 // with exponential backoff behavior and a capped number of retries. Its behavior can be customized
 // by embedding this struct type in a new struct which "overrides" desired callbacks.
 type BaseFTransportMonitor struct {
