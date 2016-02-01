@@ -2,8 +2,10 @@ package frugal
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
 	"sync"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -36,6 +38,7 @@ type fNatsScopeTransport struct {
 	topicMu     sync.Mutex
 	openMu      sync.RWMutex
 	isOpen      bool
+	sizeBuffer  []byte
 }
 
 // NewNatsFScopeTransport creates a new FScopeTransport which is used for
@@ -91,6 +94,7 @@ func (n *fNatsScopeTransport) Open() error {
 
 	if !n.pull {
 		n.writeBuffer = bytes.NewBuffer(make([]byte, 0, natsMaxMessageSize))
+		n.sizeBuffer = make([]byte, 4)
 		n.isOpen = true
 		return nil
 	}
@@ -103,7 +107,12 @@ func (n *fNatsScopeTransport) Open() error {
 	n.reader, n.writer = io.Pipe()
 
 	sub, err := n.conn.Subscribe(n.subject, func(msg *nats.Msg) {
-		n.writer.Write(msg.Data)
+		if len(msg.Data) < 4 {
+			log.Println("frugal: Discarding invalid scope message frame")
+			return
+		}
+		// Discard frame size.
+		n.writer.Write(msg.Data[4:])
 	})
 	if err != nil {
 		return thrift.NewTTransportExceptionFromError(err)
@@ -163,10 +172,13 @@ func (n *fNatsScopeTransport) Write(p []byte) (int, error) {
 	if !n.IsOpen() {
 		return 0, thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
 	}
-	if len(p)+n.writeBuffer.Len() > natsMaxMessageSize {
+
+	// Include 4 bytes for frame size.
+	if len(p)+n.writeBuffer.Len()+4 > natsMaxMessageSize {
 		n.writeBuffer.Reset() // Clear any existing bytes.
 		return 0, ErrTooLarge
 	}
+
 	num, err := n.writeBuffer.Write(p)
 	return num, thrift.NewTTransportExceptionFromError(err)
 }
@@ -182,10 +194,12 @@ func (n *fNatsScopeTransport) Flush() error {
 	if len(data) == 0 {
 		return nil
 	}
-	if len(data) > natsMaxMessageSize {
+	// Include 4 bytes for frame size.
+	if len(data)+4 > natsMaxMessageSize {
 		return ErrTooLarge
 	}
-	err := n.conn.Publish(n.subject, data)
+	binary.BigEndian.PutUint32(n.sizeBuffer, uint32(len(data)))
+	err := n.conn.Publish(n.subject, append(n.sizeBuffer, data...))
 	return thrift.NewTTransportExceptionFromError(err)
 }
 
