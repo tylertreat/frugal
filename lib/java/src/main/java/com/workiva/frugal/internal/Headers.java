@@ -1,6 +1,7 @@
 package com.workiva.frugal.internal;
 
 import com.workiva.frugal.FException;
+import com.workiva.frugal.util.ProtocolUtils;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
@@ -28,29 +29,29 @@ public class Headers {
             size += 8 + pair.getKey().length() + pair.getValue().length();
         }
 
-        byte[] buff = new byte[size+5];
+        byte[] buff = new byte[size + 5];
 
         // Write version
         buff[0] = V0;
 
         // Write size
-        writeInt(size, buff, 1);
+        ProtocolUtils.writeInt(size, buff, 1);
 
         int i = 5;
         // Write headers
         for (Map.Entry<String, String> pair : headers.entrySet()) {
             // Write key
             String key = pair.getKey();
-            writeInt(key.length(), buff, i);
+            ProtocolUtils.writeInt(key.length(), buff, i);
             i += 4;
-            writeString(key, buff, i);
+            ProtocolUtils.writeString(key, buff, i);
             i += key.length();
 
             // Write value
             String value = pair.getValue();
-            writeInt(value.length(), buff, i);
+            ProtocolUtils.writeInt(value.length(), buff, i);
             i += 4;
-            writeString(value, buff, i);
+            ProtocolUtils.writeString(value, buff, i);
             i += value.length();
         }
         return buff;
@@ -77,7 +78,7 @@ public class Headers {
         } catch (TTransportException e) {
             throw new FException("could not read header version", e);
         }
-        int size = readInt(buff, 1);
+        int size = ProtocolUtils.readInt(buff, 1);
         buff = new byte[size];
         try {
             transport.readAll(buff, 0, size);
@@ -98,7 +99,7 @@ public class Headers {
             throw new FException("unsupported header version " + frame[0]);
         }
 
-        return readPairs(frame, 5, readInt(frame, 1)+5);
+        return readPairs(frame, 5, ProtocolUtils.readInt(frame, 1) + 5);
     }
 
     private static Map<String, String> readPairs(byte[] buff, int start, int end) throws FException {
@@ -107,9 +108,9 @@ public class Headers {
         while (i < end) {
             try {
                 // Read header name
-                int nameSize = readInt(buff, i);
+                int nameSize = ProtocolUtils.readInt(buff, i);
                 i += 4;
-                if (i > end || i+nameSize > end) {
+                if (i > end || i + nameSize > end) {
                     throw new FException("invalid protocol header name");
                 }
                 byte[] nameBuff = Arrays.copyOfRange(buff, i, nameSize + i);
@@ -117,9 +118,9 @@ public class Headers {
                 String name = new String(nameBuff, "UTF-8");
 
                 // Read header value
-                int valueSize = readInt(buff, i);
+                int valueSize = ProtocolUtils.readInt(buff, i);
                 i += 4;
-                if (i > end || i+valueSize > end) {
+                if (i > end || i + valueSize > end) {
                     throw new FException("invalid protocol header value");
                 }
                 byte[] valueBuff = Arrays.copyOfRange(buff, i, valueSize + i);
@@ -134,20 +135,4 @@ public class Headers {
         return headers;
     }
 
-    private static int readInt(byte[] buff, int i) {
-        return ((buff[i] & 0xff) << 24) | ((buff[i+1] & 0xff) << 16) |
-                ((buff[i+2] & 0xff) << 8)  | (buff[i+3] & 0xff);
-    }
-
-    private static void writeInt(int i, byte[] buff, int i1) {
-        buff[i1] = (byte)(0xff & (i >> 24));
-        buff[i1+1] = (byte)(0xff & (i >> 16));
-        buff[i1+2] = (byte)(0xff & (i >> 8));
-        buff[i1+3] = (byte)(0xff & (i));
-    }
-
-    private static void writeString(String s, byte[] buff, int i) {
-        byte[] strBytes = Charset.forName("UTF-8").encode(s).array();
-        System.arraycopy(strBytes, 0, buff, i, s.length());
-    }
 }

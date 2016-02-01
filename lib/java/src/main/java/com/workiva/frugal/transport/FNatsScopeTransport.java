@@ -1,6 +1,7 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.FException;
+import com.workiva.frugal.util.ProtocolUtils;
 import io.nats.client.*;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
@@ -113,8 +115,13 @@ public class FNatsScopeTransport extends FScopeTransport {
         sub = conn.subscribe(subject, new MessageHandler() {
             @Override
             public void onMessage(Message msg) {
+                if (msg.getData().length < 4) {
+                    LOGGER.warning("discarding invalid scope message frame");
+                    return;
+                }
                 try {
-                    writer.write(msg.getData());
+                    // Discard frame size.
+                    writer.write(Arrays.copyOfRange(msg.getData(), 4, msg.getData().length));
                     writer.flush();
                 } catch (IOException e) {
                     // pipe is closed, nothing to do.
@@ -171,7 +178,8 @@ public class FNatsScopeTransport extends FScopeTransport {
         if (!isOpen()) {
             throw new TTransportException(TTransportException.NOT_OPEN, "NATS transport not open");
         }
-        if (writeBuffer.remaining() < len) {
+        // Include 4 bytes for frame size.
+        if (writeBuffer.remaining() < len + 4) {
             writeBuffer.clear();
             throw new FMessageSizeException(
                     String.format("Message exceeds %d bytes, was %d bytes",
@@ -192,12 +200,16 @@ public class FNatsScopeTransport extends FScopeTransport {
         if (data.length == 0) {
             return;
         }
-        if (data.length > TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE) {
+        // Include 4 bytes for frame size.
+        if (data.length + 4 > TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE) {
             throw new FMessageSizeException(String.format(
                     "Message exceeds %d bytes, was %d bytes",
                     TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE, data.length));
         }
-        conn.publish(subject, data);
+        byte[] frame = new byte[data.length + 4];
+        ProtocolUtils.writeInt(data.length, frame, 0);
+        System.arraycopy(data, 0, frame, 4, data.length);
+        conn.publish(subject, frame);
         writeBuffer.clear();
     }
 }
