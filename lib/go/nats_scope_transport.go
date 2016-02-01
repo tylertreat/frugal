@@ -125,13 +125,7 @@ func (n *fNatsScopeTransport) Open() error {
 func (n *fNatsScopeTransport) IsOpen() bool {
 	n.openMu.RLock()
 	defer n.openMu.RUnlock()
-	if n.conn.Status() != nats.CONNECTED || !n.isOpen {
-		return false
-	}
-	if n.pull {
-		return n.sub != nil
-	}
-	return n.writeBuffer != nil
+	return n.conn.Status() == nats.CONNECTED && n.isOpen
 }
 
 // Close unsubscribes in the case of a subscriber and clears the buffer in the
