@@ -3,11 +3,10 @@ part of frugal;
 /// Wraps a Thrift TTransport. Used for frugal Scopes.
 abstract class FScopeTransport extends TTransport {
 
-  /// Reads up to [length] bytes into [buffer], starting at [offset].
-  /// Returns the number of bytes actually read.
-  /// Throws [TTransportError] if there was an error reading data
+  @override
   int read(Uint8List buffer, int offset, int length) {
-    throw new FError.withMessage('Cannot read directly from FScopeTransport');
+    throw new TTransportError(TTransportErrorType.UNKNOWN,
+        'Cannot read directly from FScopeTransport');
   }
 
   /// set the publish topic.
