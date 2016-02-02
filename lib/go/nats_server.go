@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	queue                = "rpc"
-	maxMissedHeartbeats  = 3
-	minHeartbeatInterval = 20 * time.Second
+	queue                      = "rpc"
+	defaultMaxMissedHeartbeats = 3
+	minHeartbeatInterval       = 20 * time.Second
 )
 
 type client struct {
@@ -25,16 +25,17 @@ type client struct {
 
 // FNatsServer implements FServer by using NATS as the underlying transport.
 type FNatsServer struct {
-	conn              *nats.Conn
-	subject           string
-	heartbeatSubject  string
-	heartbeatDeadline time.Duration
-	clients           map[string]*client
-	mu                sync.Mutex
-	quit              chan struct{}
-	processorFactory  FProcessorFactory
-	transportFactory  FTransportFactory
-	protocolFactory   *FProtocolFactory
+	conn                *nats.Conn
+	subject             string
+	heartbeatSubject    string
+	heartbeatDeadline   time.Duration
+	maxMissedHeartbeats uint
+	clients             map[string]*client
+	mu                  sync.Mutex
+	quit                chan struct{}
+	processorFactory    FProcessorFactory
+	transportFactory    FTransportFactory
+	protocolFactory     *FProtocolFactory
 }
 
 // NewFNatsServer creates a new FNatsServer which listens for requests on the
@@ -47,20 +48,22 @@ func NewFNatsServer(
 	transportFactory FTransportFactory,
 	protocolFactory *FProtocolFactory) FServer {
 
-	return NewFNatsServerFactory7(
+	return NewFNatsServerFactory(
 		conn,
 		subject,
 		heartbeatDeadline,
+		defaultMaxMissedHeartbeats,
 		NewFProcessorFactory(processor),
 		transportFactory,
 		protocolFactory,
 	)
 }
 
-func NewFNatsServerFactory7(
+func NewFNatsServerFactory(
 	conn *nats.Conn,
 	subject string,
 	heartbeatDeadline time.Duration,
+	maxMissedHeartbeats uint,
 	processorFactory FProcessorFactory,
 	transportFactory FTransportFactory,
 	protocolFactory *FProtocolFactory) FServer {
@@ -70,15 +73,16 @@ func NewFNatsServerFactory7(
 	}
 
 	return &FNatsServer{
-		conn:              conn,
-		subject:           subject,
-		heartbeatSubject:  nats.NewInbox(),
-		heartbeatDeadline: heartbeatDeadline,
-		clients:           make(map[string]*client),
-		processorFactory:  processorFactory,
-		transportFactory:  transportFactory,
-		protocolFactory:   protocolFactory,
-		quit:              make(chan struct{}, 1),
+		conn:                conn,
+		subject:             subject,
+		heartbeatSubject:    nats.NewInbox(),
+		heartbeatDeadline:   heartbeatDeadline,
+		maxMissedHeartbeats: maxMissedHeartbeats,
+		clients:             make(map[string]*client),
+		processorFactory:    processorFactory,
+		transportFactory:    transportFactory,
+		protocolFactory:     protocolFactory,
+		quit:                make(chan struct{}, 1),
 	}
 }
 
@@ -177,7 +181,7 @@ func (n *FNatsServer) startHeartbeat() {
 }
 
 func (n *FNatsServer) acceptHeartbeat(client *client) {
-	missed := 0
+	missed := uint(0)
 	recvHeartbeat := make(chan struct{}, 1)
 
 	sub, err := n.conn.Subscribe(client.heartbeat, func(msg *nats.Msg) {
@@ -196,7 +200,7 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		select {
 		case <-time.After(n.heartbeatDeadline):
 			missed++
-			if missed >= maxMissedHeartbeats {
+			if missed >= n.maxMissedHeartbeats {
 				log.Println("frugal: client heartbeat expired")
 				n.remove(client.heartbeat)
 				return

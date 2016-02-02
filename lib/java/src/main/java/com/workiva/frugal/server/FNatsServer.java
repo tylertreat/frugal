@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 
 public class FNatsServer implements FServer {
 
-    private static final int MAX_MISSED_HEARTBEATS = 3;
+    private static final int DEFAULT_MAX_MISSED_HEARTBEATS = 3;
     private static final long MIN_HEARTBEAT_INTERVAL = 20 * 1000;
     private static final String QUEUE = "rpc";
 
@@ -35,6 +35,7 @@ public class FNatsServer implements FServer {
     private String subject;
     private String heartbeatSubject;
     private long heartbeatDeadline;
+    protected int maxMissedHeartbeats;
     private ConcurrentHashMap<String, Client> clients;
     private FProcessorFactory processorFactory;
     private FTransportFactory transportFactory;
@@ -54,13 +55,14 @@ public class FNatsServer implements FServer {
         this.heartbeatSubject = conn.newInbox();
         this.heartbeatDeadline = heartbeatDeadline < MIN_HEARTBEAT_INTERVAL ?
                 MIN_HEARTBEAT_INTERVAL : heartbeatDeadline;
+        this.maxMissedHeartbeats = DEFAULT_MAX_MISSED_HEARTBEATS;
         this.clients = new ConcurrentHashMap<>();
         this.processorFactory = new FProcessorFactory(processor);
         this.transportFactory = transportFactory;
         this.protocolFactory = protocolFactory;
     }
 
-    public FNatsServer(Connection conn, String subject, long heartbeatDeadline,
+    public FNatsServer(Connection conn, String subject, long heartbeatDeadline, int maxMissedHeartbeats,
                        FProcessorFactory processorFactory, FTransportFactory transportFactory,
                        FProtocolFactory protocolFactory) {
         this.conn = conn;
@@ -68,6 +70,7 @@ public class FNatsServer implements FServer {
         this.heartbeatSubject = conn.newInbox();
         this.heartbeatDeadline = heartbeatDeadline < MIN_HEARTBEAT_INTERVAL ?
                 MIN_HEARTBEAT_INTERVAL : heartbeatDeadline;
+        this.maxMissedHeartbeats = maxMissedHeartbeats;
         this.clients = new ConcurrentHashMap<>();
         this.processorFactory = processorFactory;
         this.transportFactory = transportFactory;
@@ -265,7 +268,7 @@ public class FNatsServer implements FServer {
                 } catch (InterruptedException e) {
                     continue;
                 }
-                if (missed >= MAX_MISSED_HEARTBEATS) {
+                if (missed >= maxMissedHeartbeats) {
                     LOGGER.info("client heartbeat expired");
                     remove(client.heartbeat);
                 }
