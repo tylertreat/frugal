@@ -41,19 +41,28 @@ public class TNatsServiceTransport extends TTransport {
     private Timer heartbeatTimer;
     private AtomicInteger missedHeartbeats;
     private String connectionSubject;
-    private long connectionTimeout;
-    private int maxMissedHeartbeats;
+    private final long connectionTimeout;
+    private final int maxMissedHeartbeats;
     private boolean isOpen;
 
     private static Logger LOGGER = Logger.getLogger(TNatsServiceTransport.class.getName());
 
+    /**
+     * Used for constructing server side of TNatsServiceTransport
+     */
     private TNatsServiceTransport(Connection conn, String listenTo, String writeTo) {
         this.conn = conn;
         this.listenTo = listenTo;
         this.writeTo = writeTo;
         this.missedHeartbeats = new AtomicInteger(0);
+        // Neither of these are needed for the server side of the transport.
+        this.connectionTimeout = 0;
+        this.maxMissedHeartbeats = 0;
     }
 
+    /**
+     * Used for constructing client side of TNatsServiceTransport
+     */
     private TNatsServiceTransport(Connection conn, String connectionSubject, long connectionTimeout, int maxMissedHeartbeats) {
         this.conn = conn;
         this.connectionSubject = connectionSubject;

@@ -34,8 +34,8 @@ public class FNatsServer implements FServer {
     private Connection conn;
     private String subject;
     private String heartbeatSubject;
-    private long heartbeatDeadline;
-    protected int maxMissedHeartbeats;
+    private final long heartbeatDeadline;
+    private final int maxMissedHeartbeats;
     private ConcurrentHashMap<String, Client> clients;
     private FProcessorFactory processorFactory;
     private FTransportFactory transportFactory;
