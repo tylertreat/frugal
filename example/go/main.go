@@ -102,7 +102,7 @@ func handleClient(client *event.FFooClient) (err error) {
 
 // Client runner
 func runClient(conn *nats.Conn, transportFactory frugal.FTransportFactory, protocolFactory *frugal.FProtocolFactory) error {
-	transport := frugal.NewNatsServiceTTransport(conn, "foo", time.Second)
+	transport := frugal.NewNatsServiceTTransport(conn, "foo", 5*time.Second, 2)
 	ftransport := transportFactory.GetTransport(transport)
 	defer ftransport.Close()
 	if err := ftransport.Open(); err != nil {
@@ -141,8 +141,8 @@ func runServer(conn *nats.Conn, transportFactory frugal.FTransportFactory,
 	protocolFactory *frugal.FProtocolFactory) error {
 	handler := &FooHandler{}
 	processor := event.NewFFooProcessor(handler)
-	server := frugal.NewFNatsServer(conn, "foo", time.Minute, processor,
-		transportFactory, protocolFactory)
+	server := frugal.NewFNatsServerFactory(conn, "foo", 20*time.Second, 2,
+		frugal.NewFProcessorFactory(processor), transportFactory, protocolFactory)
 	fmt.Println("Starting the simple nats server... on ", "foo")
 	return server.Serve()
 }

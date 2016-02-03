@@ -32,23 +32,24 @@ var ErrTooLarge = thrift.NewTTransportException(
 
 // natsServiceTTransport implements thrift.TTransport.
 type natsServiceTTransport struct {
-	conn              *nats.Conn
-	listenTo          string
-	writeTo           string
-	reader            *io.PipeReader
-	writer            *io.PipeWriter
-	writeBuffer       *bytes.Buffer
-	sub               *nats.Subscription
-	heartbeatSub      *nats.Subscription
-	heartbeatListen   string
-	heartbeatReply    string
-	heartbeatInterval time.Duration
-	recvHeartbeat     chan struct{}
-	closed            chan struct{}
-	isOpen            bool
-	mutex             sync.RWMutex
-	connectSubject    string
-	connectTimeout    time.Duration
+	conn                *nats.Conn
+	listenTo            string
+	writeTo             string
+	reader              *io.PipeReader
+	writer              *io.PipeWriter
+	writeBuffer         *bytes.Buffer
+	sub                 *nats.Subscription
+	heartbeatSub        *nats.Subscription
+	heartbeatListen     string
+	heartbeatReply      string
+	heartbeatInterval   time.Duration
+	recvHeartbeat       chan struct{}
+	closed              chan struct{}
+	isOpen              bool
+	mutex               sync.RWMutex
+	connectSubject      string
+	connectTimeout      time.Duration
+	maxMissedHeartbeats uint
 }
 
 // NewNatsServiceTTransport returns a new thrift TTransport which uses
@@ -57,12 +58,13 @@ type natsServiceTTransport struct {
 // This TTransport can only be used with FNatsServer. Message frames are
 // limited to 1MB in size.
 func NewNatsServiceTTransport(conn *nats.Conn, subject string,
-	timeout time.Duration) thrift.TTransport {
+	timeout time.Duration, maxMissedHeartbeats uint) thrift.TTransport {
 
 	return &natsServiceTTransport{
-		conn:           conn,
-		connectSubject: subject,
-		connectTimeout: timeout,
+		conn:                conn,
+		connectSubject:      subject,
+		connectTimeout:      timeout,
+		maxMissedHeartbeats: maxMissedHeartbeats,
 	}
 }
 
@@ -137,12 +139,12 @@ func (n *natsServiceTTransport) Open() error {
 		}
 		n.heartbeatSub = hbSub
 		go func() {
-			missed := 0
+			missed := uint(0)
 			for {
 				select {
 				case <-time.After(n.heartbeatInterval):
 					missed++
-					if missed >= maxMissedHeartbeats {
+					if missed >= n.maxMissedHeartbeats {
 						log.Println("frugal: server heartbeat expired")
 						n.Close()
 						return

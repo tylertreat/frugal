@@ -25,8 +25,6 @@ public class TNatsServiceTransport extends TTransport {
     // NATS limits messages to 1MB.
     public static final int NATS_MAX_MESSAGE_SIZE = 1024 * 1024;
 
-    protected static final int MAX_MISSED_HEARTBEATS = 3;
-
     private static final String DISCONNECT = "DISCONNECT";
 
     private Connection conn;
@@ -43,22 +41,33 @@ public class TNatsServiceTransport extends TTransport {
     private Timer heartbeatTimer;
     private AtomicInteger missedHeartbeats;
     private String connectionSubject;
-    private long connectionTimeout;
+    private final long connectionTimeout;
+    private final int maxMissedHeartbeats;
     private boolean isOpen;
 
     private static Logger LOGGER = Logger.getLogger(TNatsServiceTransport.class.getName());
 
+    /**
+     * Used for constructing server side of TNatsServiceTransport
+     */
     private TNatsServiceTransport(Connection conn, String listenTo, String writeTo) {
         this.conn = conn;
         this.listenTo = listenTo;
         this.writeTo = writeTo;
         this.missedHeartbeats = new AtomicInteger(0);
+        // Neither of these are needed for the server side of the transport.
+        this.connectionTimeout = 0;
+        this.maxMissedHeartbeats = 0;
     }
 
-    private TNatsServiceTransport(Connection conn, String connectionSubject, long connectionTimeout) {
+    /**
+     * Used for constructing client side of TNatsServiceTransport
+     */
+    private TNatsServiceTransport(Connection conn, String connectionSubject, long connectionTimeout, int maxMissedHeartbeats) {
         this.conn = conn;
         this.connectionSubject = connectionSubject;
         this.connectionTimeout = connectionTimeout;
+        this.maxMissedHeartbeats = maxMissedHeartbeats;
         this.missedHeartbeats = new AtomicInteger(0);
     }
 
@@ -68,8 +77,8 @@ public class TNatsServiceTransport extends TTransport {
      * given NATS subject upon open. This TTransport can only be used with
      * FNatsServer.
      */
-    public static TNatsServiceTransport client(Connection conn, String subject, long timeout) {
-        return new TNatsServiceTransport(conn, subject, timeout);
+    public static TNatsServiceTransport client(Connection conn, String subject, long timeout, int maxMissedHeartbeats) {
+        return new TNatsServiceTransport(conn, subject, timeout, maxMissedHeartbeats);
     }
 
     /**
@@ -202,7 +211,7 @@ public class TNatsServiceTransport extends TTransport {
 
     private void missedHeartbeat() {
         int missed = missedHeartbeats.getAndIncrement();
-        if (missed >= MAX_MISSED_HEARTBEATS) {
+        if (missed >= maxMissedHeartbeats) {
             LOGGER.warning("missed " + missed + " heartbeats from peer, closing transport");
             close();
             return;
