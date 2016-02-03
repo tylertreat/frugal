@@ -1,6 +1,7 @@
 import com.workiva.frugal.FContext;
 import com.workiva.frugal.FProtocolFactory;
 import com.workiva.frugal.FScopeProvider;
+import com.workiva.frugal.processor.FProcessorFactory;
 import com.workiva.frugal.server.FNatsServer;
 import com.workiva.frugal.server.FServer;
 import com.workiva.frugal.transport.*;
@@ -63,13 +64,13 @@ public class Main {
     private static void runServer(Connection conn, FTransportFactory transportFactory, FProtocolFactory protocolFactory) throws TException {
         FFoo.Iface handler = new FooHandler();
         FFoo.Processor processor = new FFoo.Processor(handler);
-        FServer server = new FNatsServer(conn, "foo", 60000, processor, transportFactory, protocolFactory);
+        FServer server = new FNatsServer(conn, "foo", 20 * 1000, 2, new FProcessorFactory(processor), transportFactory, protocolFactory);
         System.out.println("Starting nats server on 'foo'");
         server.serve();
     }
 
     private static void runClient(Connection conn, FTransportFactory transportFactory, FProtocolFactory protocolFactory) throws TTransportException {
-        FTransport transport = transportFactory.getTransport(TNatsServiceTransport.client(conn, "foo", 5000));
+        FTransport transport = transportFactory.getTransport(TNatsServiceTransport.client(conn, "foo", 5000, 2));
         transport.open();
         try {
             handleClient(new FFoo.Client(transport, protocolFactory));
