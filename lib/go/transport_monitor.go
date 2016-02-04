@@ -109,7 +109,7 @@ func (r *monitorRunner) attemptReopen(InitialWait time.Duration) bool {
 			reopen, wait = r.monitor.OnReopenFailed(prevAttempts, wait)
 			continue
 		}
-		fmt.Printf("FTransport Monitor: Successfully re-opened!")
+		fmt.Println("FTransport Monitor: Successfully re-opened!")
 		r.monitor.OnReopenSucceeded()
 		return true
 	}
