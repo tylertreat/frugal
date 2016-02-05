@@ -13,8 +13,7 @@ func TestPublishSubscribe(t *testing.T) {
 	CheckShort(t)
 
 	protocolFactories := map[string]thrift.TProtocolFactory{
-		"TCompactProtocolFactory": thrift.NewTCompactProtocolFactory(),
-		// "TSimpleJSONProtocolFactory":    thrift.NewTSimpleJSONProtocolFactory(),
+		"TCompactProtocolFactory":       thrift.NewTCompactProtocolFactory(),
 		"TJSONProtocolFactory":          thrift.NewTJSONProtocolFactory(),
 		"TBinaryProtocolFactoryDefault": thrift.NewTBinaryProtocolFactoryDefault(),
 	}

@@ -34,12 +34,10 @@ func PublishSubscribe(
 	expected := new(expectedMessages)
 	expected.messageList = make(map[event.Event]bool)
 
-	// fix this
 	for i := 1; i < 6; i++ {
 		expected.messageList[event.Event{Message: "message" + strconv.Itoa(i)}] = false
 	}
 
-	// fix this
 	go messageHandler(t, subscriber, started, wait, done, expected, name)
 	<-started
 

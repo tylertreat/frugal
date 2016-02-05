@@ -140,6 +140,10 @@ func (n *FNatsServer) Serve() error {
 
 	log.Println("frugal: server running...")
 	<-n.quit
+	if n.conn.Status() != nats.CONNECTED {
+		log.Println("Nats is already disconnected!")
+		return nil
+	}
 	return sub.Unsubscribe()
 }
 
