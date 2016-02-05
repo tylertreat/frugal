@@ -106,7 +106,7 @@ func (n *fNatsScopeTransport) Open() error {
 
 	n.reader, n.writer = io.Pipe()
 
-	sub, err := n.conn.Subscribe(n.subject, func(msg *nats.Msg) {
+	sub, err := n.conn.Subscribe(n.formattedSubject(), func(msg *nats.Msg) {
 		if len(msg.Data) < 4 {
 			log.Println("frugal: Discarding invalid scope message frame")
 			return
@@ -193,10 +193,14 @@ func (n *fNatsScopeTransport) Flush() error {
 		return ErrTooLarge
 	}
 	binary.BigEndian.PutUint32(n.sizeBuffer, uint32(len(data)))
-	err := n.conn.Publish(n.subject, append(n.sizeBuffer, data...))
+	err := n.conn.Publish(n.formattedSubject(), append(n.sizeBuffer, data...))
 	return thrift.NewTTransportExceptionFromError(err)
 }
 
 func (n *fNatsScopeTransport) RemainingBytes() uint64 {
 	return ^uint64(0) // We don't know unless framed is used.
+}
+
+func (n *fNatsScopeTransport) formattedSubject() string {
+	return fmt.Sprintf("%s%s", frugalPrefix, n.subject)
 }

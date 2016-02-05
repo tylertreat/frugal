@@ -125,7 +125,7 @@ public class FNatsServer implements FServer {
                 }
 
                 String heartbeat = conn.newInbox();
-                String listenTo = conn.newInbox();
+                String listenTo = newFrugalInbox();
                 TTransport transport;
                 try {
                     transport = accept(listenTo, reply, heartbeat);
@@ -189,6 +189,9 @@ public class FNatsServer implements FServer {
         }
     }
 
+    private String newFrugalInbox() {
+        return TNatsServiceTransport.FRUGAL_PREFIX + conn.newInbox();
+    }
 
     private TTransport accept(String listenTo, String replyTo, String heartbeatSubject) throws TException {
         TTransport client = TNatsServiceTransport.server(conn, listenTo, replyTo);

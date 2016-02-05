@@ -112,7 +112,7 @@ public class FNatsScopeTransport extends FScopeTransport {
             throw new TTransportException(e);
         }
 
-        sub = conn.subscribe(subject, new MessageHandler() {
+        sub = conn.subscribe(getFormattedSubject(), new MessageHandler() {
             @Override
             public void onMessage(Message msg) {
                 if (msg.getData().length < 4) {
@@ -209,7 +209,11 @@ public class FNatsScopeTransport extends FScopeTransport {
         byte[] frame = new byte[data.length + 4];
         ProtocolUtils.writeInt(data.length, frame, 0);
         System.arraycopy(data, 0, frame, 4, data.length);
-        conn.publish(subject, frame);
+        conn.publish(getFormattedSubject(), frame);
         writeBuffer.clear();
+    }
+
+    private String getFormattedSubject() {
+        return TNatsServiceTransport.FRUGAL_PREFIX + this.subject;
     }
 }
