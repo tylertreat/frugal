@@ -210,8 +210,6 @@ public class TNatsServiceTransport extends TTransport {
             m = s.nextMessage(this.connectionTimeout, TimeUnit.MILLISECONDS);
         } catch (IOException | TimeoutException e) {
             throw(e);
-        } finally {
-            sub.unsubscribe();
         }
         return m;
     }
