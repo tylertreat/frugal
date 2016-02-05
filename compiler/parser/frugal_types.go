@@ -1,9 +1,6 @@
 package parser
 
-import (
-	"sort"
-	"strings"
-)
+import "sort"
 
 //go:generate pigeon -o grammar.peg.go ./grammar.peg
 //go:generate goimports -w ./grammar.peg.go
@@ -11,25 +8,8 @@ import (
 type Operation struct {
 	Comment []string
 	Name    string
-	Param   string
+	Type    *Type
 	Scope   *Scope // Pointer back to containing Scope
-}
-
-// IncludeName returns the base include name of the parameter, if any.
-func (o *Operation) IncludeName() string {
-	if strings.Contains(o.Param, ".") {
-		return o.Param[0:strings.Index(o.Param, ".")]
-	}
-	return ""
-}
-
-// ParamName returns the base parameter name with any include prefix removed.
-func (o *Operation) ParamName() string {
-	name := o.Param
-	if strings.Contains(name, ".") {
-		name = name[strings.Index(name, ".")+1:]
-	}
-	return name
 }
 
 type ScopePrefix struct {
@@ -55,13 +35,7 @@ func (s *Scope) ReferencedIncludes() []string {
 	includes := []string{}
 	includesSet := make(map[string]bool)
 	for _, op := range s.Operations {
-		if strings.Contains(op.Param, ".") {
-			reducedStr := op.Param[0:strings.Index(op.Param, ".")]
-			if _, ok := includesSet[reducedStr]; !ok {
-				includesSet[reducedStr] = true
-				includes = append(includes, reducedStr)
-			}
-		}
+		includesSet, includes = addInclude(includesSet, includes, op.Type)
 	}
 	return includes
 }

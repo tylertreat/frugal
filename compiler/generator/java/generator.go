@@ -184,7 +184,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		if op.Comment != nil {
 			publisher += g.GenerateBlockComment(op.Comment, tab)
 		}
-		publisher += fmt.Sprintf(tab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.qualifiedParamName(op))
+		publisher += fmt.Sprintf(tab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 		publisher += fmt.Sprintf(tabtab+"String op = \"%s\";\n", op.Name)
 		publisher += fmt.Sprintf(tabtab+"String prefix = %s;\n", generatePrefixStringTemplate(scope))
 		publisher += tabtab + "String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, DELIMITER, op);\n"
@@ -259,7 +259,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	prefix := ""
 	for _, op := range scope.Operations {
 		subscriber += fmt.Sprintf(tab+"public interface %sHandler {\n", op.Name)
-		subscriber += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s req);\n", op.Name, g.qualifiedParamName(op))
+		subscriber += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s req);\n", op.Name, g.qualifiedTypeName(op.Type))
 		subscriber += tab + "}\n\n"
 
 		subscriber += prefix
@@ -283,7 +283,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += tabtabtabtabtab + "try {\n"
 		subscriber += tabtabtabtabtabtab + "FContext ctx = client.getProtocol().readRequestHeader();\n"
 		subscriber += tabtabtabtabtabtab + fmt.Sprintf("%s received = recv%s(op, client.getProtocol());\n",
-			g.qualifiedParamName(op), op.Name)
+			g.qualifiedTypeName(op.Type), op.Name)
 		subscriber += tabtabtabtabtabtab + fmt.Sprintf("handler.on%s(ctx, received);\n", op.Name)
 		subscriber += tabtabtabtabtab + "} catch (TException e) {\n"
 		subscriber += tabtabtabtabtabtab + "if (e instanceof TTransportException) {\n"
@@ -304,14 +304,14 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += tabtab + "return sub;\n"
 		subscriber += tab + "}\n\n"
 
-		subscriber += tab + fmt.Sprintf("private %s recv%s(String op, FProtocol iprot) throws TException {\n", g.qualifiedParamName(op), op.Name)
+		subscriber += tab + fmt.Sprintf("private %s recv%s(String op, FProtocol iprot) throws TException {\n", g.qualifiedTypeName(op.Type), op.Name)
 		subscriber += tabtab + "TMessage msg = iprot.readMessageBegin();\n"
 		subscriber += tabtab + "if (!msg.name.equals(op)) {\n"
 		subscriber += tabtabtab + "TProtocolUtil.skip(iprot, TType.STRUCT);\n"
 		subscriber += tabtabtab + "iprot.readMessageEnd();\n"
 		subscriber += tabtabtab + "throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);\n"
 		subscriber += tabtab + "}\n"
-		subscriber += tabtab + fmt.Sprintf("%s req = new %s();\n", g.qualifiedParamName(op), g.qualifiedParamName(op))
+		subscriber += tabtab + fmt.Sprintf("%s req = new %s();\n", g.qualifiedTypeName(op.Type), g.qualifiedTypeName(op.Type))
 		subscriber += tabtab + "req.read(iprot);\n"
 		subscriber += tabtab + "iprot.readMessageEnd();\n"
 		subscriber += tabtab + "return req;\n"
@@ -726,18 +726,6 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
 		if ok {
 			return fmt.Sprintf("%s.%s", namespace, param)
-		}
-	}
-	return param
-}
-
-func (g *Generator) qualifiedParamName(op *parser.Operation) string {
-	param := op.ParamName()
-	include := op.IncludeName()
-	if include != "" {
-		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-		if ok {
-			param = fmt.Sprintf("%s.%s", namespace, param)
 		}
 	}
 	return param
