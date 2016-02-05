@@ -11,6 +11,14 @@ Currently supported languages are Go, Java, and Dart.
 
 ## Installation
 
+Install Thrift. Dart support has not yet been released for Thrift, so we must
+install from `HEAD` for the time being.
+```
+brew update
+brew install thrift --with-java --with-python --HEAD
+```
+
+Install Frugal
 ```
 $ go get github.com/Workiva/frugal
 ```
@@ -195,4 +203,3 @@ example directory.
 $ cd example
 $ docker run -v "$(pwd):/data" drydock.workiva.org/workiva/frugal:17352 frugal -gen=go event.frugal
 ```
-
