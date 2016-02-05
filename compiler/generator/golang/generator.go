@@ -109,7 +109,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	}
 
 	pkgPrefix := g.Options["package_prefix"]
-	for _, include := range g.Frugal.ReferencedServiceIncludes() {
+	for _, include := range s.ReferencedIncludes() {
 		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
 		if !ok {
 			namespace = include
