@@ -10,6 +10,9 @@ class FMultiplexedTransport extends FTransport {
   FMultiplexedTransport(TSocketTransport transport)
   : _transport = new _TFramedTransport(transport.socket) {
     super.transport = _transport;
+    // If there is an error on the socket, close the transport pessimistically.
+    // This error is already logged upstream in TSocketTransport.
+    transport.socket.onError.listen((_) => close() );
   }
 
   @override
