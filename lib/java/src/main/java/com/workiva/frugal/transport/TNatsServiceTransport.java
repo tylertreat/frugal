@@ -24,6 +24,7 @@ public class TNatsServiceTransport extends TTransport {
 
     // NATS limits messages to 1MB.
     public static final int NATS_MAX_MESSAGE_SIZE = 1024 * 1024;
+    public static final String FRUGAL_PREFIX = "frugal.";
 
     private static final String DISCONNECT = "DISCONNECT";
 
@@ -162,7 +163,7 @@ public class TNatsServiceTransport extends TTransport {
         String serializedVersion = gson.toJson(connectionProtocol);
         Message message;
         try {
-            message = conn.request(this.connectionSubject, serializedVersion.getBytes("UTF-8"), this.connectionTimeout);
+            message = handshakeRequest(serializedVersion.getBytes("UTF-8"));
         } catch (IOException e) {
             throw new TTransportException(e);
         } catch (TimeoutException e) {
@@ -197,6 +198,25 @@ public class TNatsServiceTransport extends TTransport {
         this.heartbeatInterval = heartbeatInterval;
         this.listenTo = message.getSubject();
         this.writeTo = reply;
+    }
+
+    private Message handshakeRequest(byte[] handshakeBytes) throws TimeoutException, IOException {
+        String inbox = newFrugalInbox();
+        Message m = null;
+        try (SyncSubscription s = conn.subscribeSync(inbox, null))
+        {
+            s.autoUnsubscribe(1);
+            conn.publish(this.connectionSubject, inbox, handshakeBytes);
+            m = s.nextMessage(this.connectionTimeout, TimeUnit.MILLISECONDS);
+        } catch (IOException | TimeoutException e) {
+            throw(e);
+        }
+        return m;
+    }
+
+
+    private String newFrugalInbox() {
+        return TNatsServiceTransport.FRUGAL_PREFIX + conn.newInbox();
     }
 
     private void startTimer() {

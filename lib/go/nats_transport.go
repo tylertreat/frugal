@@ -171,7 +171,7 @@ func (n *natsServiceTTransport) handshake() error {
 	if err != nil {
 		return err
 	}
-	msg, err := n.conn.Request(n.connectSubject, hsBytes, n.connectTimeout)
+	msg, err := n.handshakeRequest(hsBytes)
 	if err != nil {
 		return err
 	}
@@ -205,6 +205,22 @@ func (n *natsServiceTTransport) handshake() error {
 	n.listenTo = msg.Subject
 	n.writeTo = msg.Reply
 	return nil
+}
+
+func (n *natsServiceTTransport) handshakeRequest(hsBytes []byte) (m *nats.Msg, err error) {
+	inbox := newFrugalInbox()
+	var s *nats.Subscription
+	s, err = n.conn.SubscribeSync(inbox)
+	if err != nil {
+		return
+	}
+	s.AutoUnsubscribe(1)
+	err = n.conn.PublishRequest(n.connectSubject, inbox, hsBytes)
+	if err == nil {
+		m, err = s.NextMsg(n.connectTimeout)
+	}
+	s.Unsubscribe()
+	return
 }
 
 func (n *natsServiceTTransport) IsOpen() bool {
