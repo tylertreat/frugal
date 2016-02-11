@@ -24,7 +24,7 @@ func Usage() {
 	flag.PrintDefaults()
 	fmt.Fprintln(os.Stderr, "\nFunctions:")
 	fmt.Fprintln(os.Stderr, "  void ping()")
-	fmt.Fprintln(os.Stderr, "  i64 blah(i32 num, string Str, Event event)")
+	fmt.Fprintln(os.Stderr, "  string blah(i32 num, string Str, Event event)")
 	fmt.Fprintln(os.Stderr, "  void oneWay(id id, request req)")
 	fmt.Fprintln(os.Stderr, "  void basePing()")
 	fmt.Fprintln(os.Stderr)

@@ -30,7 +30,7 @@ type Foo interface {
 	//  - Num
 	//  - Str
 	//  - Event
-	Blah(num int32, Str string, event *Event) (r int64, err error)
+	Blah(num int32, Str string, event *Event) (r []byte, err error)
 	// oneway methods don't receive a response from the server.
 	//
 	// Parameters:
@@ -132,7 +132,7 @@ func (p *FooClient) recvPing() (err error) {
 //  - Num
 //  - Str
 //  - Event
-func (p *FooClient) Blah(num int32, Str string, event *Event) (r int64, err error) {
+func (p *FooClient) Blah(num int32, Str string, event *Event) (r []byte, err error) {
 	if err = p.sendBlah(num, Str, event); err != nil {
 		return
 	}
@@ -163,7 +163,7 @@ func (p *FooClient) sendBlah(num int32, Str string, event *Event) (err error) {
 	return oprot.Flush()
 }
 
-func (p *FooClient) recvBlah() (value int64, err error) {
+func (p *FooClient) recvBlah() (value []byte, err error) {
 	iprot := p.InputProtocol
 	if iprot == nil {
 		iprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -326,7 +326,7 @@ func (p *fooProcessorBlah) Process(seqId int32, iprot, oprot thrift.TProtocol) (
 
 	iprot.ReadMessageEnd()
 	result := FooBlahResult{}
-	var retval int64
+	var retval []byte
 	var err2 error
 	if retval, err2 = p.handler.Blah(args.Num, args.Str, args.Event); err2 != nil {
 		switch v := err2.(type) {
@@ -343,7 +343,7 @@ func (p *fooProcessorBlah) Process(seqId int32, iprot, oprot thrift.TProtocol) (
 			return true, err2
 		}
 	} else {
-		result.Success = &retval
+		result.Success = retval
 	}
 	if err2 = oprot.WriteMessageBegin("blah", thrift.REPLY, seqId); err2 != nil {
 		err = err2
@@ -682,7 +682,7 @@ func (p *FooBlahArgs) String() string {
 //  - Awe
 //  - API
 type FooBlahResult struct {
-	Success *int64             `thrift:"success,0" db:"success" json:"success,omitempty"`
+	Success []byte             `thrift:"success,0" db:"success" json:"success,omitempty"`
 	Awe     *AwesomeException  `thrift:"awe,1" db:"awe" json:"awe,omitempty"`
 	API     *base.APIException `thrift:"api,2" db:"api" json:"api,omitempty"`
 }
@@ -691,13 +691,10 @@ func NewFooBlahResult() *FooBlahResult {
 	return &FooBlahResult{}
 }
 
-var FooBlahResult_Success_DEFAULT int64
+var FooBlahResult_Success_DEFAULT []byte
 
-func (p *FooBlahResult) GetSuccess() int64 {
-	if !p.IsSetSuccess() {
-		return FooBlahResult_Success_DEFAULT
-	}
-	return *p.Success
+func (p *FooBlahResult) GetSuccess() []byte {
+	return p.Success
 }
 
 var FooBlahResult_Awe_DEFAULT *AwesomeException
@@ -771,10 +768,10 @@ func (p *FooBlahResult) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *FooBlahResult) ReadField0(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadI64(); err != nil {
+	if v, err := iprot.ReadBinary(); err != nil {
 		return thrift.PrependError("error reading field 0: ", err)
 	} else {
-		p.Success = &v
+		p.Success = v
 	}
 	return nil
 }
@@ -819,10 +816,10 @@ func (p *FooBlahResult) Write(oprot thrift.TProtocol) error {
 
 func (p *FooBlahResult) writeField0(oprot thrift.TProtocol) (err error) {
 	if p.IsSetSuccess() {
-		if err := oprot.WriteFieldBegin("success", thrift.I64, 0); err != nil {
+		if err := oprot.WriteFieldBegin("success", thrift.STRING, 0); err != nil {
 			return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err)
 		}
-		if err := oprot.WriteI64(int64(*p.Success)); err != nil {
+		if err := oprot.WriteBinary(p.Success); err != nil {
 			return thrift.PrependError(fmt.Sprintf("%T.success (0) field write error: ", p), err)
 		}
 		if err := oprot.WriteFieldEnd(); err != nil {
