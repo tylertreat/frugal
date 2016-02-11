@@ -7,6 +7,7 @@
 package foo;
 
 import com.workiva.frugal.*;
+import com.workiva.frugal.exception.FTimeoutException;
 import com.workiva.frugal.processor.FBaseProcessor;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFunction;
