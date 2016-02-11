@@ -12,6 +12,9 @@ import org.apache.thrift.transport.TTransport;
  */
 public abstract class FTransport extends TTransport {
 
+    public static final int REQUEST_TOO_LARGE = 100;
+    public static final int RESPONSE_TOO_LARGE = 101;
+
     protected volatile FClosedCallback closedCallback;
     protected FRegistry registry;
 
