@@ -1,4 +1,4 @@
-package com.workiva.frugal;
+package com.workiva.frugal.exception;
 
 import org.apache.thrift.TException;
 

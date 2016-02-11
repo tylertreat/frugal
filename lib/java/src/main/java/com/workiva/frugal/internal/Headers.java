@@ -1,12 +1,11 @@
 package com.workiva.frugal.internal;
 
-import com.workiva.frugal.FException;
+import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.util.ProtocolUtils;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;

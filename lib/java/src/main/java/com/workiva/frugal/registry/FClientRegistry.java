@@ -1,13 +1,11 @@
 package com.workiva.frugal.registry;
 
 import com.workiva.frugal.FContext;
-import com.workiva.frugal.FException;
+import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.internal.Headers;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
-import org.apache.thrift.transport.TTransport;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;

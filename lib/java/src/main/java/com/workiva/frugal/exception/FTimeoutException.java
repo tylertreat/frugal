@@ -1,4 +1,6 @@
-package com.workiva.frugal;
+package com.workiva.frugal.exception;
+
+import com.workiva.frugal.exception.FException;
 
 public class FTimeoutException extends FException {
 
