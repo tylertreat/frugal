@@ -1,7 +1,7 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.FContext;
-import com.workiva.frugal.FException;
+import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.registry.FAsyncCallback;
 import com.workiva.frugal.registry.FRegistry;
 import org.apache.thrift.TException;

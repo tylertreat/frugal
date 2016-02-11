@@ -1,6 +1,6 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.FException;
+import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.util.ProtocolUtils;
 import io.nats.client.*;
 import org.apache.thrift.TException;

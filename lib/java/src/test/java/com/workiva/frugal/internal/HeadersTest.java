@@ -2,7 +2,7 @@ package com.workiva.frugal.internal;
 
 import static org.junit.Assert.*;
 
-import com.workiva.frugal.FException;
+import com.workiva.frugal.exception.FException;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.apache.thrift.transport.TTransport;
 import org.junit.Rule;

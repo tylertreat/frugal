@@ -98,6 +98,7 @@ func (g *Generator) generatePackage(file *os.File) error {
 
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
 	imports := "import com.workiva.frugal.*;\n"
+	imports += "import com.workiva.frugal.exception.FTimeoutException;\n"
 	imports += "import com.workiva.frugal.processor.FBaseProcessor;\n"
 	imports += "import com.workiva.frugal.processor.FProcessor;\n"
 	imports += "import com.workiva.frugal.processor.FProcessorFunction;\n"
