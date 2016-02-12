@@ -1,6 +1,7 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.FException;
+import com.workiva.frugal.exception.FException;
+import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.util.ProtocolUtils;
 import io.nats.client.*;
 import org.apache.thrift.TException;
@@ -160,7 +161,7 @@ public class FNatsScopeTransport extends FScopeTransport {
     @Override
     public int read(byte[] bytes, int off, int len) throws TTransportException {
         if (!isOpen()) {
-            throw new TTransportException(TTransportException.END_OF_FILE);
+            throw TNatsServiceTransport.getClosedConditionException(conn, "read:");
         }
         try {
             int bytesRead = reader.read(bytes, off, len);
@@ -176,7 +177,7 @@ public class FNatsScopeTransport extends FScopeTransport {
     @Override
     public void write(byte[] bytes, int off, int len) throws TTransportException {
         if (!isOpen()) {
-            throw new TTransportException(TTransportException.NOT_OPEN, "NATS transport not open");
+            throw TNatsServiceTransport.getClosedConditionException(conn, "write:");
         }
         // Include 4 bytes for frame size.
         if (writeBuffer.remaining() < len + 4) {
@@ -192,7 +193,7 @@ public class FNatsScopeTransport extends FScopeTransport {
     @Override
     public void flush() throws TTransportException {
         if (!isOpen()) {
-            throw new TTransportException(TTransportException.NOT_OPEN, "NATS transport not open");
+            throw TNatsServiceTransport.getClosedConditionException(conn, "flush:");
         }
         byte[] data = new byte[writeBuffer.position()];
         writeBuffer.flip();
@@ -216,4 +217,5 @@ public class FNatsScopeTransport extends FScopeTransport {
     private String getFormattedSubject() {
         return TNatsServiceTransport.FRUGAL_PREFIX + this.subject;
     }
+
 }

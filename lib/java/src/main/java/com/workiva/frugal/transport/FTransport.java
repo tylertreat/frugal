@@ -1,7 +1,7 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.FContext;
-import com.workiva.frugal.FException;
+import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.registry.FAsyncCallback;
 import com.workiva.frugal.registry.FRegistry;
 import org.apache.thrift.TException;
@@ -11,6 +11,9 @@ import org.apache.thrift.transport.TTransport;
  * FTransport is a Thrift TTransport for services.
  */
 public abstract class FTransport extends TTransport {
+
+    public static final int REQUEST_TOO_LARGE = 100;
+    public static final int RESPONSE_TOO_LARGE = 101;
 
     protected volatile FClosedCallback closedCallback;
     protected FRegistry registry;

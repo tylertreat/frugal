@@ -1,7 +1,7 @@
 package com.workiva.frugal.server;
 
 import com.google.gson.Gson;
-import com.workiva.frugal.FException;
+import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.internal.NatsConnectionProtocol;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFactory;
