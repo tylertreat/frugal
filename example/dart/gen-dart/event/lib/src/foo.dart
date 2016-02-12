@@ -25,7 +25,7 @@ abstract class Foo extends BaseFoo {
   /// @param num
   /// @param str
   /// @param event
-  Future<Uint8List> blah(int num, String str, Event event);
+  Future<int> blah(int num, String str, Event event);
 
   /// oneway methods don't receive a response from the server.
   /// 
@@ -60,11 +60,11 @@ class FooClient extends BaseFooClient implements Foo {
     return;
   }
 
-  Future<Uint8List> blah(int num, String str, Event event) async {
+  Future<int> blah(int num, String str, Event event) async {
     oprot.writeMessageBegin(new TMessage("blah", TMessageType.CALL, nextSeqid()));
     blah_args args = new blah_args();
     args.num = num;
-    args.str = str;
+    args.Str = Str;
     args.event = event;
     args.write(oprot);
     oprot.writeMessageEnd();
@@ -561,32 +561,34 @@ class blah_args implements TBase {
 
 class blah_result implements TBase {
   static final TStruct _STRUCT_DESC = new TStruct("blah_result");
-  static final TField _SUCCESS_FIELD_DESC = new TField("success", TType.STRING, 0);
+  static final TField _SUCCESS_FIELD_DESC = new TField("success", TType.I64, 0);
   static final TField _AWE_FIELD_DESC = new TField("awe", TType.STRUCT, 1);
   static final TField _API_FIELD_DESC = new TField("api", TType.STRUCT, 2);
 
-  Uint8List _success;
+  int _success;
   static const int SUCCESS = 0;
   AwesomeException _awe;
   static const int AWE = 1;
   api_exception _api;
   static const int API = 2;
 
+  bool __isset_success = false;
 
   blah_result() {
   }
 
   // success
-  Uint8List get success => this._success;
+  int get success => this._success;
 
-  set success(Uint8List success) {
+  set success(int success) {
     this._success = success;
+    this.__isset_success = true;
   }
 
-  bool isSetSuccess() => this.success != null;
+  bool isSetSuccess() => this.__isset_success;
 
   unsetSuccess() {
-    this.success = null;
+    this.__isset_success = false;
   }
 
   // awe
@@ -683,8 +685,9 @@ class blah_result implements TBase {
       }
       switch (field.id) {
         case SUCCESS:
-          if (field.type == TType.STRING) {
-            this.success = iprot.readBinary();
+          if (field.type == TType.I64) {
+            this.success = iprot.readI64();
+            this.__isset_success = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
@@ -722,7 +725,7 @@ class blah_result implements TBase {
 
     if (this.isSetSuccess()) {
       oprot.writeFieldBegin(_SUCCESS_FIELD_DESC);
-      oprot.writeBinary(this.success);
+      oprot.writeI64(this.success);
       oprot.writeFieldEnd();
     } else if (this.isSetAwe()) {
       oprot.writeFieldBegin(_AWE_FIELD_DESC);
@@ -741,11 +744,7 @@ class blah_result implements TBase {
     StringBuffer ret = new StringBuffer("blah_result(");
 
     ret.write("success:");
-    if (this.success == null) {
-      ret.write("null");
-    } else {
-      ret.write("BINARY");
-    }
+    ret.write(this.success);
 
     ret.write(", ");
     ret.write("awe:");

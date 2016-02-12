@@ -25,7 +25,7 @@ type FFoo interface {
 	// Ping the server.
 	Ping(ctx *frugal.FContext) (err error)
 	// Blah the server.
-	Blah(ctx *frugal.FContext, num int32, Str string, event *Event) (r []byte, err error)
+	Blah(ctx *frugal.FContext, num int32, Str string, event *Event) (r int64, err error)
 	// oneway methods don't receive a response from the server.
 	OneWay(ctx *frugal.FContext, id ID, req Request) (err error)
 }
@@ -150,9 +150,9 @@ func (f *FFooClient) recvPingHandler(ctx *frugal.FContext, resultC chan<- struct
 }
 
 // Blah the server.
-func (f *FFooClient) Blah(ctx *frugal.FContext, num int32, str string, event *Event) (r []byte, err error) {
+func (f *FFooClient) Blah(ctx *frugal.FContext, num int32, str string, event *Event) (r int64, err error) {
 	errorC := make(chan error, 1)
-	resultC := make(chan []byte, 1)
+	resultC := make(chan int64, 1)
 	if err = f.transport.Register(ctx, f.recvBlahHandler(ctx, resultC, errorC)); err != nil {
 		return
 	}
@@ -196,7 +196,7 @@ func (f *FFooClient) Blah(ctx *frugal.FContext, num int32, str string, event *Ev
 	return
 }
 
-func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- []byte, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- int64, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -386,7 +386,7 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	iprot.ReadMessageEnd()
 	result := FooBlahResult{}
 	var err2 error
-	var retval []byte
+	var retval int64
 	if retval, err2 = p.handler.Blah(ctx, args.Num, args.Str, args.Event); err2 != nil {
 		switch v := err2.(type) {
 		case *AwesomeException:
@@ -400,7 +400,7 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 			return err2
 		}
 	} else {
-		result.Success = retval
+		result.Success = &retval
 	}
 	p.writeMu.Lock()
 	defer p.writeMu.Unlock()

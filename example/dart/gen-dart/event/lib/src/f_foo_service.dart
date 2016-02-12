@@ -22,7 +22,7 @@ abstract class FFoo extends t_base.FBaseFoo {
   Future ping(frugal.FContext ctx);
 
   /// Blah the server.
-  Future<Uint8List> blah(frugal.FContext ctx, int num, String str, t_event.Event event);
+  Future<int> blah(frugal.FContext ctx, int num, String str, t_event.Event event);
 
   /// oneway methods don't receive a response from the server.
   Future oneWay(frugal.FContext ctx, int id, Map<int,String> req);
@@ -91,7 +91,7 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
   }
 
   /// Blah the server.
-  Future<Uint8List> blah(frugal.FContext ctx, int num, String str, t_event.Event event) async {
+  Future<int> blah(frugal.FContext ctx, int num, String str, t_event.Event event) async {
     var controller = new StreamController();
     _transport.register(ctx, _recvBlahHandler(ctx, controller));
     try {

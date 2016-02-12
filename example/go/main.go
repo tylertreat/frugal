@@ -91,55 +91,13 @@ func handleClient(client *event.FFooClient) (err error) {
 	} else {
 		fmt.Println("OneWay()")
 	}
-	e := &event.Event{Message: "hello, world!"}
+	event := &event.Event{Message: "hello, world!"}
 	ctx := frugal.NewFContext("")
-	result, err := client.Blah(ctx, 100, "awesomesauce", e)
-	if err != nil {
-		fmt.Printf("Blah error: err")
-	} else {
-		fmt.Printf("Blah = %d\n", result)
-		fmt.Println(ctx.ResponseHeader("foo"))
-		fmt.Printf("%+v\n", ctx)
-	}
-
-	// Try to send too much data
-	msg := make([]byte, 1024*1024*2)
-	e = &event.Event{Message: string(msg)}
-	ctx = frugal.NewFContext("")
-	_, err = client.Blah(ctx, 100, "awesomesauce", e)
-	if err == nil {
-		return fmt.Errorf("expected an error!")
-	}
-	switch t := err.(type) {
-	case thrift.TTransportException:
-		if t.TypeId() == frugal.REQUEST_TOO_LARGE {
-			fmt.Printf("Blah got expected error: %s\n", err)
-			break
-		}
-		return err
-	default:
-		return err
-	}
-
-	// Try to request too much data
-	msg = make([]byte, 16)
-	e = &event.Event{Message: string(msg)}
-	ctx = frugal.NewFContext("")
-	_, err = client.Blah(ctx, 1024*1024*2, "awesomesauce", e)
-	if err == nil {
-		return fmt.Errorf("expected an error!")
-	}
-	switch t := err.(type) {
-	case thrift.TTransportException:
-		if t.TypeId() == frugal.RESPONSE_TOO_LARGE {
-			fmt.Printf("Blah got expected error: %s\n", err)
-			break
-		}
-		return err
-	default:
-		return err
-	}
-	return nil
+	result, err := client.Blah(ctx, 100, "awesomesauce", event)
+	fmt.Printf("Blah = %d\n", result)
+	fmt.Println(ctx.ResponseHeader("foo"))
+	fmt.Printf("%+v\n", ctx)
+	return err
 }
 
 // Client runner
@@ -162,11 +120,10 @@ func (f *FooHandler) Ping(ctx *frugal.FContext) error {
 	return nil
 }
 
-func (f *FooHandler) Blah(ctx *frugal.FContext, num int32, str string, e *event.Event) ([]byte, error) {
+func (f *FooHandler) Blah(ctx *frugal.FContext, num int32, str string, e *event.Event) (int64, error) {
 	fmt.Printf("Blah(%s, %d, %s, %v)\n", ctx, num, str, e)
 	ctx.AddResponseHeader("foo", "bar")
-	ret := make([]byte, num)
-	return ret, nil
+	return 42, nil
 }
 
 func (f *FooHandler) BasePing(ctx *frugal.FContext) error {
