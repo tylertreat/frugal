@@ -17,6 +17,10 @@ public class FMessageSizeException extends TTransportException {
         super(FTransport.REQUEST_TOO_LARGE, message);
     }
 
+    public FMessageSizeException(int type, String message) {
+        super(type, message);
+    }
+
     public FMessageSizeException(Throwable cause) {
         super(FTransport.REQUEST_TOO_LARGE, cause);
     }
