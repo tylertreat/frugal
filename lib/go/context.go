@@ -41,16 +41,15 @@ func NewFContext(correlationID string) *FContext {
 	if correlationID == "" {
 		correlationID = generateCorrelationID()
 	}
+	opIDInt := atomic.AddUint64(&nextOpID, 1)
 	ctx := &FContext{
 		requestHeaders: map[string]string{
 			cid:  correlationID,
-			opID: strconv.FormatUint(atomic.LoadUint64(&nextOpID), 10),
+			opID: strconv.FormatUint(opIDInt, 10),
 		},
 		responseHeaders: make(map[string]string),
 		timeout:         defaultTimeout,
 	}
-
-	atomic.AddUint64(&nextOpID, 1)
 	return ctx
 }
 
