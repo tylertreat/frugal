@@ -2,6 +2,9 @@ part of frugal;
 
 /// FTransport is a TTransport for services.
 abstract class FTransport extends TTransport {
+  static const REQUEST_TOO_LARGE = 100;
+  static const RESPONSE_TOO_LARGE = 101;
+
   TTransport _transport;
 
   void set transport(TTransport transport) {

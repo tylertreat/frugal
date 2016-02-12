@@ -11,3 +11,15 @@ class FError extends TError {
   FError.withType(int type, String message)
     : super(type, message);
 }
+
+class FMessageSizeError extends TTransportError {
+
+  FMessageSizeError(int type, String message)
+    : super(type, message);
+
+  FMessageSizeError.request()
+    : super(FTransport.REQUEST_TOO_LARGE, "request was too large for the transport");
+
+  FMessageSizeError.response()
+      : super(FTransport.RESPONSE_TOO_LARGE, "response was too large for the transport");
+}
