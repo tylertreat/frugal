@@ -1,4 +1,4 @@
-package com.workiva.frugal;
+package com.workiva.frugal.protocol;
 
 import com.workiva.frugal.internal.Headers;
 import org.apache.thrift.TException;

@@ -1,4 +1,4 @@
-package com.workiva.frugal;
+package com.workiva.frugal.protocol;
 
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.transport.TTransport;

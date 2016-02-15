@@ -1,4 +1,4 @@
-package com.workiva.frugal.registry;
+package com.workiva.frugal.protocol;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
