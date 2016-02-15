@@ -128,6 +128,15 @@ func (n *fNatsScopeTransport) IsOpen() bool {
 	return n.conn.Status() == nats.CONNECTED && n.isOpen
 }
 
+func (n *fNatsScopeTransport) getClosedConditionError(prefix string) error {
+	if n.conn.Status() != nats.CONNECTED {
+		return thrift.NewTTransportException(thrift.NOT_OPEN,
+			fmt.Sprintf("%s NATS client not connected (has status code %d)", prefix, n.conn.Status()))
+	}
+	return thrift.NewTTransportException(thrift.NOT_OPEN,
+		fmt.Sprintf("%s NATS FScopeTransport not open", prefix))
+}
+
 // Close unsubscribes in the case of a subscriber and clears the buffer in the
 // case of a publisher.
 func (n *fNatsScopeTransport) Close() error {
@@ -154,7 +163,7 @@ func (n *fNatsScopeTransport) Close() error {
 
 func (n *fNatsScopeTransport) Read(p []byte) (int, error) {
 	if !n.IsOpen() {
-		return 0, thrift.NewTTransportException(thrift.END_OF_FILE, "")
+		return 0, n.getClosedConditionError("read:")
 	}
 	num, err := n.reader.Read(p)
 	return num, thrift.NewTTransportExceptionFromError(err)
@@ -164,7 +173,7 @@ func (n *fNatsScopeTransport) Read(p []byte) (int, error) {
 // returned.
 func (n *fNatsScopeTransport) Write(p []byte) (int, error) {
 	if !n.IsOpen() {
-		return 0, thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
+		return 0, n.getClosedConditionError("write:")
 	}
 
 	// Include 4 bytes for frame size.
@@ -181,7 +190,7 @@ func (n *fNatsScopeTransport) Write(p []byte) (int, error) {
 // message exceeds 1MB.
 func (n *fNatsScopeTransport) Flush() error {
 	if !n.IsOpen() {
-		return thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
+		return n.getClosedConditionError("flush:")
 	}
 	defer n.writeBuffer.Reset()
 	data := n.writeBuffer.Bytes()

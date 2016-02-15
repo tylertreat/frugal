@@ -23,13 +23,6 @@ const (
 	natsV0             = 0
 )
 
-// ErrTooLarge is returned when attempting to write a message which exceeds the
-// message size limit of 1MB.
-var ErrTooLarge = thrift.NewTTransportException(
-	thrift.UNKNOWN_TRANSPORT_EXCEPTION,
-	fmt.Sprintf("Message exceeds %d bytes", natsMaxMessageSize),
-)
-
 // natsServiceTTransport implements thrift.TTransport.
 type natsServiceTTransport struct {
 	conn                *nats.Conn
@@ -229,6 +222,15 @@ func (n *natsServiceTTransport) IsOpen() bool {
 	return n.conn.Status() == nats.CONNECTED && n.isOpen
 }
 
+func (n *natsServiceTTransport) getClosedConditionError(prefix string) error {
+	if n.conn.Status() != nats.CONNECTED {
+		return thrift.NewTTransportException(thrift.NOT_OPEN,
+			fmt.Sprintf("%s NATS client not connected (has status code %d)", prefix, n.conn.Status()))
+	}
+	return thrift.NewTTransportException(thrift.NOT_OPEN,
+		fmt.Sprintf("%s NATS service TTransport not open", prefix))
+}
+
 // Close unsubscribes, signals the remote peer, and stops heartbeating.
 func (n *natsServiceTTransport) Close() error {
 	n.mutex.Lock()
@@ -256,7 +258,7 @@ func (n *natsServiceTTransport) Close() error {
 
 func (n *natsServiceTTransport) Read(p []byte) (int, error) {
 	if !n.IsOpen() {
-		return 0, thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
+		return 0, n.getClosedConditionError("read:")
 	}
 	num, err := n.reader.Read(p)
 	return num, thrift.NewTTransportExceptionFromError(err)
@@ -265,7 +267,7 @@ func (n *natsServiceTTransport) Read(p []byte) (int, error) {
 // Write the bytes to a buffer. Returns ErrTooLarge if the buffer exceeds 1MB.
 func (n *natsServiceTTransport) Write(p []byte) (int, error) {
 	if !n.IsOpen() {
-		return 0, thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
+		return 0, n.getClosedConditionError("write:")
 	}
 	if len(p)+n.writeBuffer.Len() > natsMaxMessageSize {
 		n.writeBuffer.Reset() // Clear any existing bytes.
@@ -279,7 +281,7 @@ func (n *natsServiceTTransport) Write(p []byte) (int, error) {
 // of bytes exceed 1MB.
 func (n *natsServiceTTransport) Flush() error {
 	if !n.IsOpen() {
-		return thrift.NewTTransportException(thrift.NOT_OPEN, "NATS transport not open")
+		return n.getClosedConditionError("flush:")
 	}
 	defer n.writeBuffer.Reset()
 	data := n.writeBuffer.Bytes()

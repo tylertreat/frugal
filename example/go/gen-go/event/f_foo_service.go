@@ -111,7 +111,7 @@ func (f *FFooClient) recvPingHandler(ctx *frugal.FContext, resultC chan<- struct
 		}
 		if mTypeId == thrift.EXCEPTION {
 			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-			var error1 error
+			var error1 thrift.TApplicationException
 			error1, err = error0.Read(iprot)
 			if err != nil {
 				errorC <- err
@@ -120,6 +120,11 @@ func (f *FFooClient) recvPingHandler(ctx *frugal.FContext, resultC chan<- struct
 			if err = iprot.ReadMessageEnd(); err != nil {
 				errorC <- err
 				return err
+			}
+			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+				errorC <- err
+				return nil
 			}
 			err = error1
 			errorC <- err
@@ -210,7 +215,7 @@ func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- int64,
 		}
 		if mTypeId == thrift.EXCEPTION {
 			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-			var error1 error
+			var error1 thrift.TApplicationException
 			error1, err = error0.Read(iprot)
 			if err != nil {
 				errorC <- err
@@ -219,6 +224,11 @@ func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- int64,
 			if err = iprot.ReadMessageEnd(); err != nil {
 				errorC <- err
 				return err
+			}
+			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+				errorC <- err
+				return nil
 			}
 			err = error1
 			errorC <- err
@@ -307,13 +317,8 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
 		p.writeMu.Lock()
-		oprot.WriteResponseHeader(ctx)
-		oprot.WriteMessageBegin("ping", thrift.EXCEPTION, 0)
-		x.Write(oprot)
-		oprot.WriteMessageEnd()
-		oprot.Flush()
+		fooWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "ping", err.Error())
 		p.writeMu.Unlock()
 		return err
 	}
@@ -322,33 +327,43 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	result := FooPingResult{}
 	var err2 error
 	if err2 = p.handler.Ping(ctx); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing ping: "+err2.Error())
 		p.writeMu.Lock()
-		oprot.WriteResponseHeader(ctx)
-		oprot.WriteMessageBegin("ping", thrift.EXCEPTION, 0)
-		x.Write(oprot)
-		oprot.WriteMessageEnd()
-		oprot.Flush()
+		fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "ping", "Internal error processing ping: "+err2.Error())
 		p.writeMu.Unlock()
 		return err2
 	}
 	p.writeMu.Lock()
+	defer p.writeMu.Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
-		err = err2
-	}
+		if err2 == frugal.ErrTooLarge {
+			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			return nil
+		}
+		err = err2	}
 	if err2 = oprot.WriteMessageBegin("ping", thrift.REPLY, 0); err2 != nil {
-		err = err2
-	}
+		if err2 == frugal.ErrTooLarge {
+			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			return nil
+		}
+		err = err2	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
-		err = err2
-	}
+		if err2 == frugal.ErrTooLarge {
+			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			return nil
+		}
+		err = err2	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
-		err = err2
-	}
+		if err2 == frugal.ErrTooLarge {
+			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			return nil
+		}
+		err = err2	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
-		err = err2
-	}
-	p.writeMu.Unlock()
+		if err2 == frugal.ErrTooLarge {
+			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			return nil
+		}
+		err = err2	}
 	return err
 }
 
@@ -362,13 +377,8 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
 		p.writeMu.Lock()
-		oprot.WriteResponseHeader(ctx)
-		oprot.WriteMessageBegin("blah", thrift.EXCEPTION, 0)
-		x.Write(oprot)
-		oprot.WriteMessageEnd()
-		oprot.Flush()
+		fooWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "blah", err.Error())
 		p.writeMu.Unlock()
 		return err
 	}
@@ -384,13 +394,8 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 		case *base.APIException:
 			result.API = v
 		default:
-			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing blah: "+err2.Error())
 			p.writeMu.Lock()
-			oprot.WriteResponseHeader(ctx)
-			oprot.WriteMessageBegin("blah", thrift.EXCEPTION, 0)
-			x.Write(oprot)
-			oprot.WriteMessageEnd()
-			oprot.Flush()
+			fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "blah", "Internal error processing blah: "+err2.Error())
 			p.writeMu.Unlock()
 			return err2
 		}
@@ -398,22 +403,37 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 		result.Success = &retval
 	}
 	p.writeMu.Lock()
+	defer p.writeMu.Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
-		err = err2
-	}
+		if err2 == frugal.ErrTooLarge {
+			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			return nil
+		}
+		err = err2	}
 	if err2 = oprot.WriteMessageBegin("blah", thrift.REPLY, 0); err2 != nil {
-		err = err2
-	}
+		if err2 == frugal.ErrTooLarge {
+			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			return nil
+		}
+		err = err2	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
-		err = err2
-	}
+		if err2 == frugal.ErrTooLarge {
+			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			return nil
+		}
+		err = err2	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
-		err = err2
-	}
+		if err2 == frugal.ErrTooLarge {
+			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			return nil
+		}
+		err = err2	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
-		err = err2
-	}
-	p.writeMu.Unlock()
+		if err2 == frugal.ErrTooLarge {
+			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			return nil
+		}
+		err = err2	}
 	return err
 }
 
@@ -436,5 +456,14 @@ func (p *fooFOneWay) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtoco
 		return err2
 	}
 	return err
+}
+
+func fooWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) {
+	x := thrift.NewTApplicationException(type_, message)
+	oprot.WriteResponseHeader(ctx)
+	oprot.WriteMessageBegin(method, thrift.EXCEPTION, 0)
+	x.Write(oprot)
+	oprot.WriteMessageEnd()
+	oprot.Flush()
 }
 

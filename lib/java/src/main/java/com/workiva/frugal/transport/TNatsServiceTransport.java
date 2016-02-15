@@ -1,6 +1,7 @@
 package com.workiva.frugal.transport;
 
 import com.google.gson.Gson;
+import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.internal.NatsConnectionProtocol;
 import io.nats.client.*;
 import org.apache.thrift.transport.TTransport;
@@ -284,7 +285,7 @@ public class TNatsServiceTransport extends TTransport {
     @Override
     public int read(byte[] bytes, int off, int len) throws TTransportException {
         if (!isOpen()) {
-            throw new TTransportException(TTransportException.END_OF_FILE);
+            throw getClosedConditionException(conn, "read:");
         }
         try {
             int bytesRead = this.reader.read(bytes, off, len);
@@ -300,7 +301,7 @@ public class TNatsServiceTransport extends TTransport {
     @Override
     public void write(byte[] bytes, int off, int len) throws TTransportException {
         if (!isOpen()) {
-            throw new TTransportException(TTransportException.NOT_OPEN, "NATS transport not open");
+            throw getClosedConditionException(conn, "write:");
         }
         if (writeBuffer.remaining() < len) {
             writeBuffer.clear();
@@ -315,7 +316,7 @@ public class TNatsServiceTransport extends TTransport {
     @Override
     public void flush() throws TTransportException {
         if (!isOpen()) {
-            throw new TTransportException(TTransportException.NOT_OPEN, "NATS transport not open");
+            throw getClosedConditionException(conn, "flush:");
         }
         byte[] data = new byte[writeBuffer.position()];
         writeBuffer.flip();
@@ -330,5 +331,14 @@ public class TNatsServiceTransport extends TTransport {
         }
         conn.publish(writeTo, data);
         writeBuffer.clear();
+    }
+
+    static TTransportException getClosedConditionException(Connection conn, String prefix) {
+        if (conn.getState() != Constants.ConnState.CONNECTED) {
+            return new TTransportException(TTransportException.NOT_OPEN,
+                    String.format("%s NATS client not connected (has status %s)", prefix, conn.getState().name()));
+        }
+        return new TTransportException(TTransportException.NOT_OPEN,
+                String.format("%s NATS FScopeTransport not open", prefix));
     }
 }

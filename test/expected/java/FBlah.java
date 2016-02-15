@@ -6,6 +6,7 @@
 
 package foo;
 
+import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.exception.FTimeoutException;
 import com.workiva.frugal.processor.FBaseProcessor;
 import com.workiva.frugal.processor.FProcessor;
@@ -106,7 +107,20 @@ public class FBlah {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							throw e;
+							if (e.getType() == FTransport.RESPONSE_TOO_LARGE) {
+								FMessageSizeException ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
+								try {
+									result.put(ex);
+									return;
+								} catch (InterruptedException ie) {
+									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "ping interrupted: " + ie.getMessage());
+								}
+							}
+							try {
+								result.put(e);
+							} finally {
+								throw e;
+							}
 						}
 						if (message.type != TMessageType.REPLY) {
 							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "ping failed: invalid message type");
@@ -187,7 +201,20 @@ public class FBlah {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							throw e;
+							if (e.getType() == FTransport.RESPONSE_TOO_LARGE) {
+								FMessageSizeException ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
+								try {
+									result.put(ex);
+									return;
+								} catch (InterruptedException ie) {
+									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "bleh interrupted: " + ie.getMessage());
+								}
+							}
+							try {
+								result.put(e);
+							} finally {
+								throw e;
+							}
 						}
 						if (message.type != TMessageType.REPLY) {
 							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "bleh failed: invalid message type");
@@ -215,13 +242,13 @@ public class FBlah {
 
 	public static class Processor extends FBaseProcessor implements FProcessor {
 
-	public Processor(Iface iface) {
-		super(getProcessMap(iface, new java.util.HashMap<String, FProcessorFunction>()));
-	}
+		public Processor(Iface iface) {
+			super(getProcessMap(iface, new java.util.HashMap<String, FProcessorFunction>()));
+		}
 
-	protected Processor(Iface iface, java.util.Map<String, FProcessorFunction> processMap) {
-		super(getProcessMap(iface, processMap));
-	}
+		protected Processor(Iface iface, java.util.Map<String, FProcessorFunction> processMap) {
+			super(getProcessMap(iface, processMap));
+		}
 
 		private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap) {
 			processMap.put("ping", new Ping(handler));
@@ -243,13 +270,8 @@ public class FBlah {
 					args.read(iprot);
 				} catch (TException e) {
 					iprot.readMessageEnd();
-					TApplicationException x = new TApplicationException(TApplicationException.PROTOCOL_ERROR, e.getMessage());
 					synchronized (WRITE_LOCK) {
-						oprot.writeResponseHeader(ctx);
-						oprot.writeMessageBegin(new TMessage("ping", TMessageType.EXCEPTION, 0));
-						x.write(oprot);
-						oprot.writeMessageEnd();
-						oprot.getTransport().flush();
+						writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "ping", e.getMessage());
 					}
 					throw e;
 				}
@@ -259,22 +281,25 @@ public class FBlah {
 				try {
 					this.handler.ping(ctx);
 				} catch (TException e) {
-					TApplicationException x = new TApplicationException(TApplicationException.INTERNAL_ERROR, "Internal error processing ping: " + e.getMessage());
 					synchronized (WRITE_LOCK) {
-						oprot.writeResponseHeader(ctx);
-						oprot.writeMessageBegin(new TMessage("ping", TMessageType.EXCEPTION, 0));
-						x.write(oprot);
-						oprot.writeMessageEnd();
-						oprot.getTransport().flush();
+						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "ping", "Internal error processing ping: " + e.getMessage());
 					}
 					throw e;
 				}
 				synchronized (WRITE_LOCK) {
-					oprot.writeResponseHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("ping", TMessageType.REPLY, 0));
-					result.write(oprot);
-					oprot.writeMessageEnd();
-					oprot.getTransport().flush();
+					try {
+						oprot.writeResponseHeader(ctx);
+						oprot.writeMessageBegin(new TMessage("ping", TMessageType.REPLY, 0));
+						result.write(oprot);
+						oprot.writeMessageEnd();
+						oprot.getTransport().flush();
+					} catch (TException e) {
+						if (e instanceof FMessageSizeException) {
+							writeApplicationException(ctx, oprot, FTransport.RESPONSE_TOO_LARGE, "ping", "response too large: " + e.getMessage());
+						} else {
+							throw e;
+						}
+					}
 				}
 			}
 		}
@@ -293,13 +318,8 @@ public class FBlah {
 					args.read(iprot);
 				} catch (TException e) {
 					iprot.readMessageEnd();
-					TApplicationException x = new TApplicationException(TApplicationException.PROTOCOL_ERROR, e.getMessage());
 					synchronized (WRITE_LOCK) {
-						oprot.writeResponseHeader(ctx);
-						oprot.writeMessageBegin(new TMessage("bleh", TMessageType.EXCEPTION, 0));
-						x.write(oprot);
-						oprot.writeMessageEnd();
-						oprot.getTransport().flush();
+						writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "bleh", e.getMessage());
 					}
 					throw e;
 				}
@@ -312,24 +332,36 @@ public class FBlah {
 				} catch (InvalidOperation oops) {
 					result.oops = oops;
 				} catch (TException e) {
-					TApplicationException x = new TApplicationException(TApplicationException.INTERNAL_ERROR, "Internal error processing bleh: " + e.getMessage());
 					synchronized (WRITE_LOCK) {
-						oprot.writeResponseHeader(ctx);
-						oprot.writeMessageBegin(new TMessage("bleh", TMessageType.EXCEPTION, 0));
-						x.write(oprot);
-						oprot.writeMessageEnd();
-						oprot.getTransport().flush();
+						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "bleh", "Internal error processing bleh: " + e.getMessage());
 					}
 					throw e;
 				}
 				synchronized (WRITE_LOCK) {
-					oprot.writeResponseHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("bleh", TMessageType.REPLY, 0));
-					result.write(oprot);
-					oprot.writeMessageEnd();
-					oprot.getTransport().flush();
+					try {
+						oprot.writeResponseHeader(ctx);
+						oprot.writeMessageBegin(new TMessage("bleh", TMessageType.REPLY, 0));
+						result.write(oprot);
+						oprot.writeMessageEnd();
+						oprot.getTransport().flush();
+					} catch (TException e) {
+						if (e instanceof FMessageSizeException) {
+							writeApplicationException(ctx, oprot, FTransport.RESPONSE_TOO_LARGE, "bleh", "response too large: " + e.getMessage());
+						} else {
+							throw e;
+						}
+					}
 				}
 			}
+		}
+
+		private static void writeApplicationException(FContext ctx, FProtocol oprot, int type, String method, String message) throws TException {
+			TApplicationException x = new TApplicationException(type, message);
+			oprot.writeResponseHeader(ctx);
+			oprot.writeMessageBegin(new TMessage(method, TMessageType.EXCEPTION, 0));
+			x.write(oprot);
+			oprot.writeMessageEnd();
+			oprot.getTransport().flush();
 		}
 
 	}

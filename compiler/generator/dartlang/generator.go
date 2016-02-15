@@ -27,6 +27,7 @@ const (
 	tabtabtab          = tab + tab + tab
 	tabtabtabtab       = tab + tab + tab + tab
 	tabtabtabtabtab    = tab + tab + tab + tab + tab
+	tabtabtabtabtabtab = tab + tab + tab + tab + tab + tab
 )
 
 type Generator struct {
@@ -590,6 +591,10 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtab + "if (msg.type == thrift.TMessageType.EXCEPTION) {\n"
 	contents += tabtabtabtabtab + "thrift.TApplicationError error = thrift.TApplicationError.read(iprot);\n"
 	contents += tabtabtabtabtab + "iprot.readMessageEnd();\n"
+	contents += tabtabtabtabtab + "if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {\n"
+	contents += tabtabtabtabtabtab + "controller.addError(new frugal.FMessageSizeError.response());\n"
+	contents += tabtabtabtabtabtab + "return;\n"
+	contents += tabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtab + "throw error;\n"
 	contents += tabtabtabtab + "}\n\n"
 

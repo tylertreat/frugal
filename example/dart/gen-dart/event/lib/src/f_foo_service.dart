@@ -71,6 +71,10 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
         if (msg.type == thrift.TMessageType.EXCEPTION) {
           thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
           iprot.readMessageEnd();
+          if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
+            controller.addError(new frugal.FMessageSizeError.response());
+            return;
+          }
           throw error;
         }
 
@@ -115,6 +119,10 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
         if (msg.type == thrift.TMessageType.EXCEPTION) {
           thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
           iprot.readMessageEnd();
+          if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
+            controller.addError(new frugal.FMessageSizeError.response());
+            return;
+          }
           throw error;
         }
 

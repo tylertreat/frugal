@@ -9,10 +9,20 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
 
+const (
+	REQUEST_TOO_LARGE  = 100
+	RESPONSE_TOO_LARGE = 101
+)
+
 // ErrTransportClosed is returned by service calls when the transport is
 // unexpectedly closed, perhaps as a result of the transport entering an
 // invalid state. If this is returned, the transport should be reinitialized.
 var ErrTransportClosed = errors.New("frugal: transport was unexpectedly closed")
+
+// ErrTooLarge is returned when attempting to write a message which exceeds the
+// transport's message size limit.
+var ErrTooLarge = thrift.NewTTransportException(REQUEST_TOO_LARGE,
+	"request was too large for the transport")
 
 // FScopeTransportFactory produces FScopeTransports which are used by pub/sub
 // scopes.
@@ -76,7 +86,7 @@ func (f *fMuxTransportFactory) GetTransport(tr thrift.TTransport) FTransport {
 }
 
 type fMuxTransport struct {
-	*thrift.TFramedTransport
+	*TFramedTransport
 	registry            FRegistry
 	numWorkers          uint
 	workC               chan []byte
@@ -95,7 +105,7 @@ func NewFMuxTransport(tr thrift.TTransport, numWorkers uint) FTransport {
 		numWorkers = 1
 	}
 	return &fMuxTransport{
-		TFramedTransport: thrift.NewTFramedTransport(tr),
+		TFramedTransport: NewTFramedTransport(tr),
 		numWorkers:       numWorkers,
 		workC:            make(chan []byte, numWorkers),
 		registryC:        make(chan struct{}),
