@@ -1,4 +1,4 @@
-package com.workiva.frugal;
+package com.workiva.frugal.protocol;
 
 import java.util.HashMap;
 import java.util.Map;
