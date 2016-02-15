@@ -1,5 +1,6 @@
-package com.workiva.frugal;
+package com.workiva.frugal.provider;
 
+import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.transport.FTransport;
 
 /**

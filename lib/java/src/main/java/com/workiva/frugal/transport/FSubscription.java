@@ -1,4 +1,4 @@
-package com.workiva.frugal;
+package com.workiva.frugal.transport;
 
 import com.workiva.frugal.transport.FScopeTransport;
 

@@ -97,13 +97,11 @@ func (g *Generator) generatePackage(file *os.File) error {
 }
 
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
-	imports := "import com.workiva.frugal.*;\n"
-	imports += "import com.workiva.frugal.exception.FTimeoutException;\n"
+	imports := "import com.workiva.frugal.exception.FTimeoutException;\n"
 	imports += "import com.workiva.frugal.processor.FBaseProcessor;\n"
 	imports += "import com.workiva.frugal.processor.FProcessor;\n"
 	imports += "import com.workiva.frugal.processor.FProcessorFunction;\n"
-	imports += "import com.workiva.frugal.registry.FAsyncCallback;\n"
-	imports += "import com.workiva.frugal.registry.FClientRegistry;\n"
+	imports += "import com.workiva.frugal.protocol.*;\n"
 	imports += "import com.workiva.frugal.transport.FTransport;\n"
 	imports += "import org.apache.thrift.TApplicationException;\n"
 	imports += "import org.apache.thrift.TException;\n"
@@ -121,11 +119,10 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 }
 
 func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
-	imports := "import com.workiva.frugal.FContext;\n"
-	imports += "import com.workiva.frugal.FScopeProvider;\n"
-	imports += "import com.workiva.frugal.FSubscription;\n"
-	imports += "import com.workiva.frugal.FProtocol;\n"
+	imports := "import com.workiva.frugal.protocol.*;\n"
+	imports += "import com.workiva.frugal.provider.FScopeProvider;\n"
 	imports += "import com.workiva.frugal.transport.FScopeTransport;\n"
+	imports += "import com.workiva.frugal.transport.FSubscription;\n"
 	imports += "import org.apache.thrift.TException;\n"
 	imports += "import org.apache.thrift.TApplicationException;\n"
 	imports += "import org.apache.thrift.transport.TTransportException;\n"

@@ -6,13 +6,11 @@
 
 package base;
 
-import com.workiva.frugal.*;
 import com.workiva.frugal.exception.FTimeoutException;
 import com.workiva.frugal.processor.FBaseProcessor;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFunction;
-import com.workiva.frugal.registry.FAsyncCallback;
-import com.workiva.frugal.registry.FClientRegistry;
+import com.workiva.frugal.protocol.*;
 import com.workiva.frugal.transport.FTransport;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;

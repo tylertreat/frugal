@@ -1,7 +1,7 @@
-import com.workiva.frugal.FContext;
-import com.workiva.frugal.FProtocolFactory;
-import com.workiva.frugal.FScopeProvider;
+
 import com.workiva.frugal.processor.FProcessorFactory;
+import com.workiva.frugal.protocol.*;
+import com.workiva.frugal.provider.FScopeProvider;
 import com.workiva.frugal.server.FNatsServer;
 import com.workiva.frugal.server.FServer;
 import com.workiva.frugal.transport.*;

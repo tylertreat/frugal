@@ -6,11 +6,10 @@
 
 package foo;
 
-import com.workiva.frugal.FContext;
-import com.workiva.frugal.FScopeProvider;
-import com.workiva.frugal.FSubscription;
-import com.workiva.frugal.FProtocol;
+import com.workiva.frugal.protocol.*;
+import com.workiva.frugal.provider.FScopeProvider;
 import com.workiva.frugal.transport.FScopeTransport;
+import com.workiva.frugal.transport.FSubscription;
 import org.apache.thrift.TException;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.transport.TTransportException;

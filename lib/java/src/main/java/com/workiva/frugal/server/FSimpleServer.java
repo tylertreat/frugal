@@ -2,8 +2,8 @@ package com.workiva.frugal.server;
 
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFactory;
-import com.workiva.frugal.FProtocol;
-import com.workiva.frugal.FProtocolFactory;
+import com.workiva.frugal.protocol.FProtocol;
+import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.transport.FServerTransport;
 import com.workiva.frugal.transport.FTransport;
 import com.workiva.frugal.transport.FTransportFactory;

@@ -1,6 +1,5 @@
-package com.workiva.frugal.registry;
+package com.workiva.frugal.protocol;
 
-import com.workiva.frugal.FContext;
 import org.apache.thrift.TException;
 
 /**
