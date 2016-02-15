@@ -634,7 +634,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	for _, method := range service.Methods {
 		contents += g.generateMethodProcessor(service, method)
 	}
-	contents += g.generateWriteApplicationError()
+	contents += g.generateWriteApplicationError(service)
 	return contents
 }
 
@@ -749,7 +749,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\t\tiprot.ReadMessageEnd()\n"
 	if !method.Oneway {
 		contents += "\t\tp.writeMu.Lock()\n"
-		contents += fmt.Sprintf("\t\twriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, \"%s\", err.Error())\n", nameLower)
+		contents += fmt.Sprintf("\t\t%sWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, \"%s\", err.Error())\n", servLower, nameLower)
 		contents += "\t\tp.writeMu.Unlock()\n"
 	}
 	contents += "\t\treturn err\n"
@@ -775,10 +775,10 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 			contents += fmt.Sprintf("\t\t\tresult.%s = v\n", snakeToCamel(err.Name))
 		}
 		contents += "\t\tdefault:\n"
-		contents += g.generateMethodException("\t\t\t", method)
+		contents += g.generateMethodException("\t\t\t", service, method)
 		contents += "\t\t}\n"
 	} else {
-		contents += g.generateMethodException("\t\t", method)
+		contents += g.generateMethodException("\t\t", service, method)
 	}
 	if method.ReturnType != nil {
 		contents += "\t} else {\n"
@@ -799,20 +799,20 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\tp.writeMu.Lock()\n"
 	contents += "\tdefer p.writeMu.Unlock()\n"
 	contents += "\tif err2 = oprot.WriteResponseHeader(ctx); err2 != nil {\n"
-	contents += g.generateErrTooLarge(method)
+	contents += g.generateErrTooLarge(service, method)
 	contents += "\t}\n"
 	contents += fmt.Sprintf("\tif err2 = oprot.WriteMessageBegin(\"%s\", "+
 		"thrift.REPLY, 0); err2 != nil {\n", nameLower)
-	contents += g.generateErrTooLarge(method)
+	contents += g.generateErrTooLarge(service, method)
 	contents += "\t}\n"
 	contents += "\tif err2 = result.Write(oprot); err == nil && err2 != nil {\n"
-	contents += g.generateErrTooLarge(method)
+	contents += g.generateErrTooLarge(service, method)
 	contents += "\t}\n"
 	contents += "\tif err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {\n"
-	contents += g.generateErrTooLarge(method)
+	contents += g.generateErrTooLarge(service, method)
 	contents += "\t}\n"
 	contents += "\tif err2 = oprot.Flush(); err == nil && err2 != nil {\n"
-	contents += g.generateErrTooLarge(method)
+	contents += g.generateErrTooLarge(service, method)
 	contents += "\t}\n"
 	contents += "\treturn err\n"
 	contents += "}\n\n"
@@ -820,34 +820,38 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	return contents
 }
 
-func (g *Generator) generateErrTooLarge(method *parser.Method) string {
+func (g *Generator) generateErrTooLarge(service *parser.Service, method *parser.Method) string {
+	servLower := strings.ToLower(service.Name)
 	nameLower := generator.LowercaseFirstLetter(method.Name)
 	contents := "\t\tif err2 == frugal.ErrTooLarge {\n"
 	contents += fmt.Sprintf(
-		"\t\t\twriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \"+err2.Error())\n",
-		nameLower)
+		"\t\t\t%sWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \"+err2.Error())\n",
+		servLower, nameLower)
 	contents += "\t\t\treturn nil\n"
 	contents += "\t\t}\n"
 	contents += "\t\terr = err2"
 	return contents
 }
 
-func (g *Generator) generateMethodException(prefix string, method *parser.Method) string {
+func (g *Generator) generateMethodException(prefix string, service *parser.Service, method *parser.Method) string {
 	contents := ""
+	servLower := strings.ToLower(service.Name)
 	nameLower := generator.LowercaseFirstLetter(method.Name)
 	if !method.Oneway {
 		contents += prefix + "p.writeMu.Lock()\n"
 		msg := fmt.Sprintf("\"Internal error processing %s: \"+err2.Error()", nameLower)
 		contents += fmt.Sprintf(
-			prefix+"writeApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, \"%s\", %s)\n", nameLower, msg)
+			prefix+"%sWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, \"%s\", %s)\n", servLower, nameLower, msg)
 		contents += prefix + "p.writeMu.Unlock()\n"
 	}
 	contents += prefix + "return err2\n"
 	return contents
 }
 
-func (g *Generator) generateWriteApplicationError() string {
-	contents := "func writeApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) {\n"
+func (g *Generator) generateWriteApplicationError(service *parser.Service) string {
+	servLower := strings.ToLower(service.Name)
+	contents := fmt.Sprintf("func %sWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, "+
+		"type_ int32, method, message string) {\n", servLower)
 	contents += "\tx := thrift.NewTApplicationException(type_, message)\n"
 	contents += "\toprot.WriteResponseHeader(ctx)\n"
 	contents += "\toprot.WriteMessageBegin(method, thrift.EXCEPTION, 0)\n"
