@@ -74,7 +74,7 @@ public class FContext {
     protected long getOpId() {
         String opIdStr = requestHeaders.get(OP_ID);
         if (opIdStr == null) {
-            throw new RuntimeException("opId is null!");
+            return 0;
         }
         return Long.valueOf(opIdStr);
     }
