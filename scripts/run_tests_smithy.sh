@@ -1,1 +1,3 @@
-echo "pass"
+#!/usr/bin/env bash
+
+pub get
