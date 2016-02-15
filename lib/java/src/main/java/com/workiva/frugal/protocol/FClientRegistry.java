@@ -33,11 +33,11 @@ public class FClientRegistry implements FRegistry {
      * @param callback the callback to register.
      */
     public void register(FContext context, FAsyncCallback callback) throws TException {
-        long opId = context.getOpId();
-        if (handlers.containsKey(opId)) {
+        if (handlers.containsKey(context.getOpId())) {
             throw new FException("context already registered");
         }
-        context.setOpId(NEXT_OP_ID.incrementAndGet());
+        long opId = NEXT_OP_ID.incrementAndGet();
+        context.setOpId(opId);
         handlers.put(opId, new Pair<>(callback, Thread.currentThread()));
     }
 
