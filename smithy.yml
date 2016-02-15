@@ -9,8 +9,8 @@ env:
 
 script:
   - pub get
-  - xvfb-run -s '-screen 0 1024x768x24' pub run dart_dev test
-  - xvfb-run -s '-screen 0 1024x768x24' pub run dart_dev coverage --no-html
+  - pub run dart_dev test
+  - pub run dart_dev coverage --no-html
   - ./tool/codecov.sh
   - pub run dart_dev format --check
   - pub run dart_dev analyze
