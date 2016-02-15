@@ -196,7 +196,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += "\tOpen() error\n"
 	publisher += "\tClose() error\n"
 	for _, op := range scope.Operations {
-		publisher += fmt.Sprintf("\tPublish%s(ctx *frugal.FContext, %sreq *%s) error\n", op.Name, args, g.qualifiedParamName(op))
+		publisher += fmt.Sprintf("\tPublish%s(ctx *frugal.FContext, %sreq *%s) error\n", op.Name, args, g.qualifiedTypeName(op.Type))
 	}
 	publisher += "}\n\n"
 
@@ -230,7 +230,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 			publisher += g.GenerateInlineComment(op.Comment, "")
 		}
 		publisher += fmt.Sprintf("func (l *%sPublisher) Publish%s(ctx *frugal.FContext, %sreq *%s) error {\n",
-			scopeLower, op.Name, args, g.qualifiedParamName(op))
+			scopeLower, op.Name, args, g.qualifiedTypeName(op.Type))
 		publisher += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		publisher += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 		publisher += "\ttopic := fmt.Sprintf(\"%s" + scopeTitle + "%s%s\", prefix, delimiter, op)\n"
@@ -303,7 +303,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	subscriber += fmt.Sprintf("type %sSubscriber interface {\n", scopeCamel)
 	for _, op := range scope.Operations {
 		subscriber += fmt.Sprintf("\tSubscribe%s(%shandler func(*frugal.FContext, *%s)) (*frugal.FSubscription, error)\n",
-			op.Name, args, g.qualifiedParamName(op))
+			op.Name, args, g.qualifiedTypeName(op.Type))
 	}
 	subscriber += "}\n\n"
 
@@ -324,7 +324,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 			subscriber += g.GenerateInlineComment(op.Comment, "")
 		}
 		subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*frugal.FContext, *%s)) (*frugal.FSubscription, error) {\n",
-			scopeLower, op.Name, args, g.qualifiedParamName(op))
+			scopeLower, op.Name, args, g.qualifiedTypeName(op.Type))
 		subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 		subscriber += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 		subscriber += "\ttopic := fmt.Sprintf(\"%s" + scopeTitle + "%s%s\", prefix, delimiter, op)\n"
@@ -352,7 +352,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += "}\n\n"
 
 		subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, iprot *frugal.FProtocol) (*frugal.FContext, *%s, error) {\n",
-			scopeLower, op.Name, g.qualifiedParamName(op))
+			scopeLower, op.Name, g.qualifiedTypeName(op.Type))
 		subscriber += "\tctx, err := iprot.ReadRequestHeader()\n"
 		subscriber += "\tif err != nil {\n"
 		subscriber += "\t\treturn nil, nil, err\n"
@@ -367,7 +367,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += "\t\tx9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
 		subscriber += "\t\treturn nil, nil, x9\n"
 		subscriber += "\t}\n"
-		subscriber += fmt.Sprintf("\treq := &%s{}\n", g.qualifiedParamName(op))
+		subscriber += fmt.Sprintf("\treq := &%s{}\n", g.qualifiedTypeName(op.Type))
 		subscriber += "\tif err := req.Read(iprot); err != nil {\n"
 		subscriber += "\t\treturn nil, nil, err\n"
 		subscriber += "\t}\n\n"
@@ -971,19 +971,6 @@ func (g *Generator) isPrimitive(t *parser.Type) bool {
 func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 	param := snakeToCamel(t.ParamName())
 	include := t.IncludeName()
-	if include != "" {
-		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-		if !ok {
-			namespace = include
-		}
-		param = fmt.Sprintf("%s.%s", namespace, param)
-	}
-	return param
-}
-
-func (g *Generator) qualifiedParamName(op *parser.Operation) string {
-	param := op.ParamName()
-	include := op.IncludeName()
 	if include != "" {
 		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
 		if !ok {

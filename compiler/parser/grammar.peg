@@ -451,10 +451,10 @@ PrefixToken ← ('{' PrefixWord '}') / PrefixWord
 
 PrefixWord ← [^\r\n\t\f .{}]+
 
-Operation ← docstr:(DocString __)? name:Identifier _ ':' __ param:Identifier __ {
+Operation ← docstr:(DocString __)? name:Identifier _ ':' __ typ:Identifier __ {
     o := &Operation{
-        Name:  string(name.(Identifier)),
-        Param: string(param.(Identifier)),
+        Name: string(name.(Identifier)),
+        Type: &Type{Name: string(typ.(Identifier))},
     }
     if docstr != nil {
         raw := docstr.([]interface{})[0].(string)

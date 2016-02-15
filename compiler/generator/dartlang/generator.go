@@ -347,7 +347,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		if op.Comment != nil {
 			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
-		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedParamName(op))
+		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
@@ -410,18 +410,18 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 			subscribers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
 		subscribers += fmt.Sprintf(tab+"Future<frugal.FSubscription> subscribe%s(%sdynamic on%s(frugal.FContext ctx, %s req)) async {\n",
-			op.Name, args, op.ParamName(), g.qualifiedParamName(op))
+			op.Name, args, op.Type.ParamName(), g.qualifiedTypeName(op.Type))
 		subscribers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		subscribers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		subscribers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
 		subscribers += tabtab + "var transport = provider.fTransportFactory.getTransport();\n"
 		subscribers += fmt.Sprintf(tabtab+"await transport.subscribe(topic, _recv%s(op, provider.fProtocolFactory, on%s));\n",
-			op.Name, op.ParamName())
+			op.Name, op.Type.ParamName())
 		subscribers += tabtab + "return new frugal.FSubscription(topic, transport);\n"
 		subscribers += tab + "}\n\n"
 
 		subscribers += fmt.Sprintf(tab+"_recv%s(String op, frugal.FProtocolFactory protocolFactory, dynamic on%s(frugal.FContext ctx, %s req)) {\n",
-			op.Name, op.ParamName(), g.qualifiedParamName(op))
+			op.Name, op.Type.ParamName(), g.qualifiedTypeName(op.Type))
 		subscribers += fmt.Sprintf(tabtab+"callback%s(thrift.TTransport transport) {\n", op.Name)
 		subscribers += tabtabtab + "var iprot = protocolFactory.getProtocol(transport);\n"
 		subscribers += tabtabtab + "var ctx = iprot.readRequestHeader();\n"
@@ -432,10 +432,10 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += tabtabtabtab + "throw new thrift.TApplicationError(\n"
 		subscribers += tabtabtabtab + "thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);\n"
 		subscribers += tabtabtab + "}\n"
-		subscribers += fmt.Sprintf(tabtabtab+"var req = new %s();\n", g.qualifiedParamName(op))
+		subscribers += fmt.Sprintf(tabtabtab+"var req = new %s();\n", g.qualifiedTypeName(op.Type))
 		subscribers += tabtabtab + "req.read(iprot);\n"
 		subscribers += tabtabtab + "iprot.readMessageEnd();\n"
-		subscribers += fmt.Sprintf(tabtabtab+"on%s(ctx, req);\n", op.ParamName())
+		subscribers += fmt.Sprintf(tabtabtab+"on%s(ctx, req);\n", op.Type.ParamName())
 		subscribers += tabtab + "}\n"
 		subscribers += fmt.Sprintf(tabtab+"return callback%s;\n", op.Name)
 		subscribers += tab + "}\n"
@@ -710,22 +710,6 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 		param = fmt.Sprintf("t_%s.%s", strings.ToLower(namespace), param)
 	} else {
 		param = fmt.Sprintf("t_%s.%s", strings.ToLower(g.getNamespaceOrName()), param)
-	}
-	return param
-}
-
-func (g *Generator) qualifiedParamName(op *parser.Operation) string {
-	param := op.ParamName()
-	include := op.IncludeName()
-	if include != "" {
-		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-		if !ok {
-			namespace = include
-		}
-		namespace = toLibraryName(namespace)
-		param = fmt.Sprintf("t_%s.%s", strings.ToLower(namespace), param)
-	} else {
-		param = fmt.Sprintf("t_%s.%s", strings.ToLower(g.Frugal.Name), param)
 	}
 	return param
 }
