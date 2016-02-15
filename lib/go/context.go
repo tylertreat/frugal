@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/mattrobenolt/gocql/uuid"
@@ -19,8 +18,6 @@ const (
 	opID           = "_opid"
 	defaultTimeout = time.Minute
 )
-
-var nextOpID uint64 = 0
 
 // FContext is the message context for a frugal message. A FContext should
 // belong to a single request for the lifetime of the request. It can be reused
@@ -44,13 +41,11 @@ func NewFContext(correlationID string) *FContext {
 	ctx := &FContext{
 		requestHeaders: map[string]string{
 			cid:  correlationID,
-			opID: strconv.FormatUint(atomic.LoadUint64(&nextOpID), 10),
+			opID: "0",
 		},
 		responseHeaders: make(map[string]string),
 		timeout:         defaultTimeout,
 	}
-
-	atomic.AddUint64(&nextOpID, 1)
 	return ctx
 }
 
@@ -61,8 +56,16 @@ func (c *FContext) CorrelationID() string {
 	return c.requestHeaders[cid]
 }
 
-// OpID returns the operation id for the context
-func (c *FContext) OpID() uint64 {
+// setOpID returns the operation id for the context
+func (c *FContext) setOpID(id uint64) {
+	opIDStr := strconv.FormatUint(id, 10)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.requestHeaders[opID] = opIDStr
+}
+
+// opID returns the operation id for the context
+func (c *FContext) opID() uint64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	opIDStr := c.requestHeaders[opID]

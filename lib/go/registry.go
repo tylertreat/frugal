@@ -6,9 +6,12 @@ import (
 	"log"
 	"strconv"
 	"sync"
+	"sync/atomic"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
+
+var nextOpID uint64 = 0
 
 // AsyncCallback is invoked when a message frame is received. It returns an
 // error if an unrecoverable error occurred and the transport needs to be
@@ -39,20 +42,22 @@ func NewFClientRegistry() FRegistry {
 
 // Register a callback for the given Context.
 func (c *clientRegistry) Register(ctx *FContext, callback FAsyncCallback) error {
-	opID := ctx.OpID()
+	opID := ctx.opID()
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	_, ok := c.handlers[opID]
 	if ok {
 		return errors.New("frugal: context already registered")
 	}
+	opID = atomic.AddUint64(&nextOpID, 1)
+	ctx.setOpID(opID)
 	c.handlers[opID] = callback
 	return nil
 }
 
 // Unregister a callback for the given Context.
 func (c *clientRegistry) Unregister(ctx *FContext) {
-	opID := ctx.OpID()
+	opID := ctx.opID()
 	c.mu.Lock()
 	delete(c.handlers, opID)
 	c.mu.Unlock()
