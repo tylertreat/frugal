@@ -1,6 +1,5 @@
 part of frugal;
 
-int _globalOpId = 0;
 String _cid = "_cid";
 String _opid = "_opid";
 
@@ -21,7 +20,7 @@ class FContext {
     }
     _requestHeaders = {
       _cid: correlationId,
-      _opid: _nextOpId(),
+      _opid: "0",
     };
     _responseHeaders = {};
 
@@ -34,7 +33,7 @@ class FContext {
       headers[_cid] = _generateCorrelationId();
     }
     if (headers[_opid] == "") {
-      headers[_opid] = _nextOpId();
+      headers[_opid] = "0";
     }
     _requestHeaders = headers;
     _responseHeaders = {};
@@ -43,10 +42,15 @@ class FContext {
   /// Correlation Id for the context
   String correlationId() => _requestHeaders[_cid];
 
-  /// Operation id for the context
-  int opId() {
+  /// Get the operation id for the context
+  int _opId() {
     var opIdStr = _requestHeaders[_opid];
     return int.parse(opIdStr);
+  }
+
+  /// Set the operation id for the context
+  void _setOpId(int id) {
+    _requestHeaders[_opid] = "$id";
   }
 
   /// Add a request header to the context for the given name.
@@ -106,10 +110,4 @@ class FContext {
   }
 
   static String _generateCorrelationId() => new Uuid().v4().toString().replaceAll('-', '');
-
-  static String _nextOpId(){
-    var id = _globalOpId.toString();
-    _globalOpId++;
-    return id;
-  }
 }
