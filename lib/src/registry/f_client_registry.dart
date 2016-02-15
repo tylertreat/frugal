@@ -1,5 +1,7 @@
 part of frugal;
 
+int _globalOpId = 0;
+
 /// Responsible for multiplexing received client messages to the
 /// appropriate callback.
 class FClientRegistry implements FRegistry {
@@ -12,16 +14,17 @@ class FClientRegistry implements FRegistry {
 
   /// Register a callback for the given Context.
   void register(FContext ctx, FAsyncCallback callback) {
-    var opId = ctx.opId();
-    if (_handlers.containsKey(opId)) {
+    if (_handlers.containsKey(ctx._opId())) {
       throw new StateError("frugal: context already registered");
     }
+    var opId = _incrementAndGetOpId();
+    ctx._setOpId(opId);
     _handlers[opId] = callback;
   }
 
   /// Unregister a callback for the given Context.
   void unregister(FContext ctx) {
-    _handlers.remove(ctx.opId());
+    _handlers.remove(ctx._opId());
   }
 
   /// Dispatch a single Frugal message frame.
@@ -30,7 +33,7 @@ class FClientRegistry implements FRegistry {
     var opId;
     try {
       opId = int.parse(headers[_opid]);
-    } catch(e) {
+    } catch (e) {
       log.warning("Frame headers does not have an opId");
       return;
     }
@@ -40,5 +43,10 @@ class FClientRegistry implements FRegistry {
       return;
     }
     _handlers[opId](new TMemoryTransport.fromUnt8List(frame));
+  }
+
+  static int _incrementAndGetOpId() {
+    _globalOpId++;
+    return _globalOpId;
   }
 }
