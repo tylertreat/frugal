@@ -10,6 +10,9 @@ build/
 packages
 .packages
 
+# Or the files created by test coverage
+coverage/
+
 # Or the files created by dart2js.
 *.dart.js
 *.js_
