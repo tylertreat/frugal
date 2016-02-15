@@ -40,7 +40,8 @@ func NewFContext(correlationID string) *FContext {
 	}
 	ctx := &FContext{
 		requestHeaders: map[string]string{
-			cid: correlationID,
+			cid:  correlationID,
+			opID: "0",
 		},
 		responseHeaders: make(map[string]string),
 		timeout:         defaultTimeout,
@@ -67,10 +68,7 @@ func (c *FContext) setOpID(id uint64) {
 func (c *FContext) opID() uint64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	opIDStr, ok := c.requestHeaders[opID]
-	if !ok {
-		return 0
-	}
+	opIDStr := c.requestHeaders[opID]
 	id, err := strconv.ParseUint(opIDStr, 10, 64)
 	if err != nil {
 		// Should not happen.
