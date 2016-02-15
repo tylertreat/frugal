@@ -1,8 +1,13 @@
 project: dart
 language: dart
 
+runner_image: docker.webfilings.org/devops/smithy-runner-dart1.13.2:3.2.6
+
 script:
    - ./scripts/run_tests_smithy.sh
 
 test_reports:
    - unit_tests.xml
+
+artifacts:
+    - ./pubspec.lock
