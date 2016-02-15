@@ -45,11 +45,9 @@ func (c *clientRegistry) Register(ctx *FContext, callback FAsyncCallback) error 
 	opID := ctx.opID()
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if opID != 0 {
-		_, ok := c.handlers[opID]
-		if ok {
-			return errors.New("frugal: context already registered")
-		}
+	_, ok := c.handlers[opID]
+	if ok {
+		return errors.New("frugal: context already registered")
 	}
 	opID = atomic.AddUint64(&nextOpID, 1)
 	ctx.setOpID(opID)
