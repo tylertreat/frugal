@@ -12,6 +12,9 @@ class FError extends TError {
     : super(type, message);
 }
 
+/**
+ * This exception indicates a message was too large for a transport to handle.
+ */
 class FMessageSizeError extends TTransportError {
 
   FMessageSizeError(int type, String message)
