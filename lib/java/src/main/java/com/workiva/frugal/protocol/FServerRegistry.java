@@ -1,12 +1,8 @@
-package com.workiva.frugal.registry;
+package com.workiva.frugal.protocol;
 
-import com.workiva.frugal.FContext;
 import com.workiva.frugal.processor.FProcessor;
-import com.workiva.frugal.FProtocol;
-import com.workiva.frugal.FProtocolFactory;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
-import org.apache.thrift.transport.TTransport;
 
 /**
  * FServerRegistry is intended for use only by Frugal servers.

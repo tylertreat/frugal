@@ -1,6 +1,6 @@
 package com.workiva.frugal.processor;
 
-import com.workiva.frugal.FProtocol;
+import com.workiva.frugal.protocol.FProtocol;
 import org.apache.thrift.TException;
 
 /**
