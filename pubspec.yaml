@@ -15,7 +15,7 @@ dependencies:
 dev_dependencies:
   coverage: ^0.7.2
   dart_dev: ^1.0.6
-  dartdoc: ^0.4.0
   dart_style: ^0.2.0
+  dartdoc: ^0.4.0
   mockito: ^0.11.0
   test: ^0.12.6
