@@ -7,10 +7,10 @@ class TMemoryTransport extends TTransport {
   final FByteBuffer _buff;
 
   TMemoryTransport([int capacity])
-    : _buff = new FByteBuffer(capacity ?? _DEFAULT_BUFFER_LENGTH);
+      : _buff = new FByteBuffer(capacity ?? _DEFAULT_BUFFER_LENGTH);
 
   TMemoryTransport.fromUnt8List(Uint8List buffer)
-    : _buff = new FByteBuffer.fromUint8List(buffer);
+      : _buff = new FByteBuffer.fromUint8List(buffer);
 
   @override
   bool get isOpen => true;

@@ -10,8 +10,10 @@ typedef void FAsyncCallback(TTransport);
 abstract class FRegistry {
   /// Register a callback for the given Context.
   void register(FContext ctx, FAsyncCallback callback);
+
   /// Unregister a callback for the given Context.
   void unregister(Context);
+
   /// Dispatch a single Frugal message frame.
   void execute(Uint8List);
 }

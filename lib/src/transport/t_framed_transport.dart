@@ -62,8 +62,8 @@ class _TFramedTransport extends TTransport {
   /// Direct reading is not allowed. To consume read data listen
   /// to onFrame.
   int read(Uint8List buffer, int offset, int length) {
-    throw new TTransportError(
-        TTransportErrorType.UNKNOWN, "frugal: cannot read directly from _TFramedSocket.");
+    throw new TTransportError(TTransportErrorType.UNKNOWN,
+        "frugal: cannot read directly from _TFramedSocket.");
   }
 
   /// Handler for messages received on the TSocket.
@@ -87,8 +87,8 @@ class _TFramedTransport extends TTransport {
 
     if (_frameSize < 0) {
       // TODO: Put this error on an error stream and bubble it up.
-      throw new TTransportError(
-          TTransportErrorType.UNKNOWN, "Read a negative frame size: $_frameSize");
+      throw new TTransportError(TTransportErrorType.UNKNOWN,
+          "Read a negative frame size: $_frameSize");
     }
 
     // Grab up to the frame size in bytes

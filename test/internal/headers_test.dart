@@ -3,8 +3,42 @@ import "package:test/test.dart";
 import "package:frugal/frugal.dart";
 
 var headers = {"foo": "bar", "blah": "baz"};
-var list = [0, 0, 0, 0, 29, 0, 0, 0, 3, 102, 111, 111, 0, 0, 0, 3, 98, 97,
-114, 0, 0, 0, 4, 98, 108, 97, 104, 0, 0, 0, 3, 98, 97, 122];
+var list = [
+  0,
+  0,
+  0,
+  0,
+  29,
+  0,
+  0,
+  0,
+  3,
+  102,
+  111,
+  111,
+  0,
+  0,
+  0,
+  3,
+  98,
+  97,
+  114,
+  0,
+  0,
+  0,
+  4,
+  98,
+  108,
+  97,
+  104,
+  0,
+  0,
+  0,
+  3,
+  98,
+  97,
+  122
+];
 
 void main() {
   test("read reads the headers out of the transport", () {
@@ -45,11 +79,13 @@ void main() {
   });
 
   test("decodFromFrame throws error for bad frame", () {
-    expect(() => Headers.decodeFromFrame(new Uint8List(3)), throwsA(new isInstanceOf<FError>()));
+    expect(() => Headers.decodeFromFrame(new Uint8List(3)),
+        throwsA(new isInstanceOf<FError>()));
   });
 
   test("decodeHeadersFromeFrame throws error for unsupported version", () {
     var encodedHeaders = new Uint8List.fromList([0x01, 0, 0, 0, 0]);
-    expect(() => Headers.decodeFromFrame(encodedHeaders), throwsA(new isInstanceOf<FError>()));
+    expect(() => Headers.decodeFromFrame(encodedHeaders),
+        throwsA(new isInstanceOf<FError>()));
   });
 }

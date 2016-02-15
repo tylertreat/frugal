@@ -8,11 +8,9 @@ class FByteBuffer {
   int _writeIndex = 0;
   int _readIndex = 0;
 
-  FByteBuffer(int capacity)
-  : this._buff = new Uint8List(capacity);
+  FByteBuffer(int capacity) : this._buff = new Uint8List(capacity);
 
-  FByteBuffer.fromUint8List(Uint8List buff)
-  : this._buff = buff;
+  FByteBuffer.fromUint8List(Uint8List buff) : this._buff = buff;
 
   int get writeRemaining => _buff.length - _writeIndex;
   int get readRemaining => _buff.length - _readIndex;
@@ -29,7 +27,8 @@ class FByteBuffer {
     return n;
   }
 
-  int _transfer(Uint8List source, Uint8List dest, int sourceOffset, int destOffset, int length) {
+  int _transfer(Uint8List source, Uint8List dest, int sourceOffset,
+      int destOffset, int length) {
     // Can write at most what's left destination buffer
     var bytesInDest = dest.length - destOffset;
     var amtToCopy = length > bytesInDest ? bytesInDest : length;

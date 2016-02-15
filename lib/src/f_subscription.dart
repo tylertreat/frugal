@@ -10,7 +10,8 @@ class FSubscription {
   FSubscription(this.subject, this._transport) {
     // Listen for transport errors and signal them on
     // the subscription.
-    _transport.error.listen((Error e) {;
+    _transport.error.listen((Error e) {
+      ;
       _errorControler.add(e);
     });
   }

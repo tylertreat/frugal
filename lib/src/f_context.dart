@@ -18,10 +18,7 @@ class FContext {
     if (correlationId == "") {
       correlationId = _generateCorrelationId();
     }
-    _requestHeaders = {
-      _cid: correlationId,
-      _opid: "0",
-    };
+    _requestHeaders = {_cid: correlationId, _opid: "0",};
     _responseHeaders = {};
 
     // Default timeout to 1 minute
@@ -109,5 +106,6 @@ class FContext {
     return new UnmodifiableMapView(_responseHeaders);
   }
 
-  static String _generateCorrelationId() => new Uuid().v4().toString().replaceAll('-', '');
+  static String _generateCorrelationId() =>
+      new Uuid().v4().toString().replaceAll('-', '');
 }
