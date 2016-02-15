@@ -40,6 +40,7 @@ public class FContext {
      */
     public FContext(String correlationId) {
         requestHeaders.put(CID, correlationId);
+        requestHeaders.put(OP_ID, "0");
 
     }
 
