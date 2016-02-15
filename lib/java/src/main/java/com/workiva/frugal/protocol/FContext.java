@@ -12,10 +12,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class FContext {
 
-    private static final String CID = "_cid";
-    private static final String OP_ID = "_opid";
-    private static final AtomicLong NEXT_OP_ID = new AtomicLong();
-    private static final long DEFAULT_TIMEOUT = 60 * 1000;
+    protected static final String CID = "_cid";
+    protected static final String OP_ID = "_opid";
+    protected static final long DEFAULT_TIMEOUT = 60 * 1000;
 
     private Map<String, String> requestHeaders = new ConcurrentHashMap<>();
     private Map<String, String> responseHeaders = new ConcurrentHashMap<>();
@@ -41,7 +40,8 @@ public class FContext {
      */
     public FContext(String correlationId) {
         requestHeaders.put(CID, correlationId);
-        requestHeaders.put(OP_ID, Long.toString(NEXT_OP_ID.getAndIncrement()));
+        requestHeaders.put(OP_ID, "0");
+
     }
 
     /**
@@ -53,9 +53,6 @@ public class FContext {
     protected static FContext withRequestHeaders(Map<String, String> headers) {
         if (headers.get(CID) == null) {
             headers.put(CID, generateCorrelationId());
-        }
-        if (headers.get(OP_ID) == null) {
-            headers.put(OP_ID, Long.toString(NEXT_OP_ID.getAndIncrement()));
         }
         return new FContext(headers, new HashMap<String, String>());
     }
@@ -70,16 +67,27 @@ public class FContext {
     }
 
     /**
-     * Returns the operation id for the FContext. This is a unique long per operation.
+     * Returns the operation id for the FContext. This is a unique long per operation. This is protected as operation
+     * ids are an internal implementation detail.
      *
      * @return operation id
      */
-    public long getOpId() {
+    protected long getOpId() {
         String opIdStr = requestHeaders.get(OP_ID);
         if (opIdStr == null) {
-            throw new RuntimeException("opId is null!");
+            return 0;
         }
         return Long.valueOf(opIdStr);
+    }
+
+    /**
+     * Sets the operation id on the FContext. The operation id is used to map responses to requests. This is protected
+     * as operation ids are an internal implementation detail.
+     *
+     * @param opId the operation id to set
+     */
+    protected void setOpId(long opId) {
+        requestHeaders.put(OP_ID, Long.toString(opId));
     }
 
     /**

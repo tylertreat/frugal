@@ -7,6 +7,7 @@ import org.apache.thrift.transport.TMemoryInputTransport;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 
@@ -15,11 +16,11 @@ import java.util.logging.Logger;
  * This is only to be used by generated code.
  */
 public class FClientRegistry implements FRegistry {
-    private static final String OP_ID = "_opid";
+
+    private static final Logger LOGGER = Logger.getLogger(FClientRegistry.class.getName());
+    private static final AtomicLong NEXT_OP_ID = new AtomicLong(0);
 
     private Map<Long, Pair<FAsyncCallback, Thread>> handlers;
-
-    private static Logger LOGGER = Logger.getLogger(FClientRegistry.class.getName());
 
     public FClientRegistry() {
         handlers = new ConcurrentHashMap<>();
@@ -28,14 +29,15 @@ public class FClientRegistry implements FRegistry {
     /**
      * Register a callback for the given FContext.
      *
-     * @param context the FContext to register.
+     * @param context  the FContext to register.
      * @param callback the callback to register.
      */
     public void register(FContext context, FAsyncCallback callback) throws TException {
-        long opId = context.getOpId();
-        if (handlers.containsKey(opId)) {
+        if (handlers.containsKey(context.getOpId())) {
             throw new FException("context already registered");
         }
+        long opId = NEXT_OP_ID.incrementAndGet();
+        context.setOpId(opId);
         handlers.put(opId, new Pair<>(callback, Thread.currentThread()));
     }
 
@@ -59,7 +61,7 @@ public class FClientRegistry implements FRegistry {
 
         long opId;
         try {
-            opId = Long.parseLong(headers.get(OP_ID));
+            opId = Long.parseLong(headers.get(FContext.OP_ID));
         } catch (NumberFormatException e) {
             throw new FException("frame missing opId");
         }
@@ -84,6 +86,7 @@ public class FClientRegistry implements FRegistry {
     private static class Pair<K, V> {
         K first;
         V second;
+
         Pair(K first, V second) {
             this.first = first;
             this.second = second;

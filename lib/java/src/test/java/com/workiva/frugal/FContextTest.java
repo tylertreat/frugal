@@ -23,15 +23,6 @@ public class FContextTest {
     }
 
     @Test
-    public void testOpId() {
-        FContext ctx1 = new FContext();
-        FContext ctx2 = new FContext();
-        FContext ctx3 = new FContext();
-        assertEquals(1, ctx2.getOpId() - ctx1.getOpId());
-        assertEquals(2, ctx3.getOpId() - ctx1.getOpId());
-    }
-
-    @Test
     public void testRequestHeader() {
         FContext ctx = new FContext();
         ctx.addRequestHeader("foo", "bar");
