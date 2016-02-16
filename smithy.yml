@@ -4,7 +4,6 @@ language: dart
 runner_image: docker.webfilings.org/devops/smithy-runner-dart1.13.2:3.2.6
 
 env:
-  - DARTIUM_EXPIRATION_TIME=1577836800
   - CODECOV_TOKEN='bQ4MgjJ0G2Y73v8JNX6L7yMK9679nbYB'
 
 script:
