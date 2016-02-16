@@ -309,7 +309,6 @@ func (t *Thrift) ReferencedInternals() []string {
 }
 
 func (t *Thrift) validate() error {
-
 	if err := t.validateIncludes(); err != nil {
 		return err
 	}
@@ -319,12 +318,8 @@ func (t *Thrift) validate() error {
 	if err := t.validateVersion(); err != nil {
 		return err
 	}
-
 	return nil
-	
 }
-
-
 
 func (t *Thrift) validateVersion() error {
 	
@@ -341,11 +336,8 @@ func (t *Thrift) validateVersion() error {
 
 	if (string(thriftVersion[0]) == "0"){
 		return fmt.Errorf("Your current version of thrift does not support dart bindings. Current version: %s. Supported version: 1.0.0+", thriftVersion)
-
 	}
-	
 	return nil
-	
 }
 
 
