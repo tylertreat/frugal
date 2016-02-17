@@ -7,7 +7,9 @@ String _opid = "_opid";
 class FContext {
   Map<String, String> _requestHeaders;
   Map<String, String> _responseHeaders;
-  Duration _timeout;
+  
+  // Default timeout to 1 minute
+  Duration _timeout = new Duration(minutes: 1);
 
   Duration get timeout => _timeout;
   void set timeout(timeout) {
@@ -23,16 +25,13 @@ class FContext {
       _opid: "0",
     };
     _responseHeaders = {};
-
-    // Default timeout to 1 minute
-    _timeout = new Duration(minutes: 1);
   }
 
   FContext.withRequestHeaders(Map<String, String> headers) {
-    if (headers[_cid] == "") {
+    if (!headers.containsKey(_cid) || headers[_cid] == "") {
       headers[_cid] = _generateCorrelationId();
     }
-    if (headers[_opid] == "") {
+    if (!headers.containsKey(_opid) || headers[_opid] == "") {
       headers[_opid] = "0";
     }
     _requestHeaders = headers;
