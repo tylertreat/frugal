@@ -115,14 +115,17 @@ class Headers {
   }
 
   static int _readInt(Uint8List buff, int i) {
-    return ((buff[i] & 0xff) << 24) | ((buff[i+1] & 0xff) << 16) | ((buff[i+2] & 0xff) << 8)  | (buff[i+3] & 0xff);
+    return ((buff[i] & 0xff) << 24) |
+        ((buff[i + 1] & 0xff) << 16) |
+        ((buff[i + 2] & 0xff) << 8) |
+        (buff[i + 3] & 0xff);
   }
 
   static void _writeInt(int i, Uint8List buff, int i1) {
     buff[i1] = (0xff & (i >> 24));
-    buff[i1+1] = (0xff & (i >> 16));
-    buff[i1+2] = (0xff & (i >> 8));
-    buff[i1+3] = (0xff & (i));
+    buff[i1 + 1] = (0xff & (i >> 16));
+    buff[i1 + 2] = (0xff & (i >> 8));
+    buff[i1 + 3] = (0xff & (i));
   }
 
   static void _writeString(String s, Uint8List buff, int i) {

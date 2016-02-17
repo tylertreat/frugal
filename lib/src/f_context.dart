@@ -7,7 +7,7 @@ String _opid = "_opid";
 class FContext {
   Map<String, String> _requestHeaders;
   Map<String, String> _responseHeaders;
-  
+
   // Default timeout to 1 minute
   Duration _timeout = new Duration(minutes: 1);
 
@@ -20,10 +20,7 @@ class FContext {
     if (correlationId == "") {
       correlationId = _generateCorrelationId();
     }
-    _requestHeaders = {
-      _cid: correlationId,
-      _opid: "0",
-    };
+    _requestHeaders = {_cid: correlationId, _opid: "0",};
     _responseHeaders = {};
   }
 
@@ -108,5 +105,6 @@ class FContext {
     return new UnmodifiableMapView(_responseHeaders);
   }
 
-  static String _generateCorrelationId() => new Uuid().v4().toString().replaceAll('-', '');
+  static String _generateCorrelationId() =>
+      new Uuid().v4().toString().replaceAll('-', '');
 }

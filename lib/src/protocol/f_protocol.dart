@@ -5,8 +5,8 @@ class FProtocol extends TProtocolDecorator {
   final TTransport _transport;
 
   FProtocol(TProtocol protocol)
-    : this._transport = protocol.transport,
-      super(protocol);
+      : this._transport = protocol.transport,
+        super(protocol);
 
   /// write the request headers on the given Context
   void writeRequestHeader(FContext ctx) {

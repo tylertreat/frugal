@@ -8,11 +8,11 @@ class FMultiplexedTransport extends FTransport {
   FRegistry _registry;
 
   FMultiplexedTransport(TSocketTransport transport)
-  : _transport = new _TFramedTransport(transport.socket) {
+      : _transport = new _TFramedTransport(transport.socket) {
     super.transport = _transport;
     // If there is an error on the socket, close the transport pessimistically.
     // This error is already logged upstream in TSocketTransport.
-    transport.socket.onError.listen((_) => close() );
+    transport.socket.onError.listen((_) => close());
   }
 
   @override
@@ -33,11 +33,11 @@ class FMultiplexedTransport extends FTransport {
     _transport.onFrame.listen((Uint8List frame) {
       try {
         _registry.execute(frame);
-      } catch(e) {
+      } catch (e) {
         // TODO: Log the stacktrace
         // Fatal error. Close the transport.
         log.severe("FAsyncCallback had a fatal error ${e.toString()}." +
-        "Closing transport.");
+            "Closing transport.");
         close();
       }
     });

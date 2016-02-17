@@ -2,7 +2,6 @@ part of frugal;
 
 /// Wraps a Thrift TTransport. Used for frugal Scopes.
 abstract class FScopeTransport extends TTransport {
-
   @override
   int read(Uint8List buffer, int offset, int length) {
     throw new TTransportError(TTransportErrorType.UNKNOWN,
