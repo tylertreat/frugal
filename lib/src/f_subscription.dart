@@ -11,7 +11,6 @@ class FSubscription {
     // Listen for transport errors and signal them on
     // the subscription.
     _transport.error.listen((Error e) {
-      ;
       _errorControler.add(e);
     });
   }
