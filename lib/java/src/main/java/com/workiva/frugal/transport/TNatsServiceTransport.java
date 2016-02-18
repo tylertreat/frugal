@@ -28,6 +28,7 @@ public class TNatsServiceTransport extends TTransport {
     public static final String FRUGAL_PREFIX = "frugal.";
 
     private static final String DISCONNECT = "DISCONNECT";
+    private static final long HEARTBEAT_GRACE_PERIOD = 5 * 1000;
 
     private Connection conn;
     private PipedOutputStream writer;
@@ -340,7 +341,7 @@ public class TNatsServiceTransport extends TTransport {
 
     private long heartbeatTimeoutPeriod() {
         // The server is expected to heartbeat at every heartbeatInterval. Add an additional grace period.
-        return heartbeatInterval + heartbeatInterval / 5;
+        return heartbeatInterval + HEARTBEAT_GRACE_PERIOD;
     }
 
     static TTransportException getClosedConditionException(Connection conn, String prefix) {

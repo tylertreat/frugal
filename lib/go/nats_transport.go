@@ -18,9 +18,10 @@ import (
 
 const (
 	// NATS limits messages to 1MB.
-	natsMaxMessageSize = 1024 * 1024
-	disconnect         = "DISCONNECT"
-	natsV0             = 0
+	natsMaxMessageSize   = 1024 * 1024
+	disconnect           = "DISCONNECT"
+	natsV0               = 0
+	heartbeatGracePeriod = 5 * time.Second
 )
 
 // natsServiceTTransport implements thrift.TTransport.
@@ -309,5 +310,5 @@ func (n *natsServiceTTransport) RemainingBytes() uint64 {
 func (n *natsServiceTTransport) heartbeatTimeoutPeriod() time.Duration {
 	// The server is expected to heartbeat at every heartbeatInterval. Add an
 	// additional grace period.
-	return n.heartbeatInterval + n.heartbeatInterval/5
+	return n.heartbeatInterval + heartbeatGracePeriod
 }
