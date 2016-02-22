@@ -213,7 +213,7 @@ public class FNatsScopeTransport extends FScopeTransport {
         try{
             conn.publish(getFormattedSubject(), frame);
         }catch(IOException e){
-            LOGGER.warning("flush: unable to publish data: " + e.getMessage());
+            throw new TTransportException("flush: unable to publish data: " + e.getMessage());
         }
         writeBuffer.clear();
     }

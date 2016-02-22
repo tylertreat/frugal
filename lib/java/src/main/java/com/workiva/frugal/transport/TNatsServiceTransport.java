@@ -156,7 +156,7 @@ public class TNatsServiceTransport extends TTransport {
                     try{
                         conn.publish(heartbeatReply, null);
                     }catch(IOException e){
-                        LOGGER.warning("could not publish heartbeat");
+                        LOGGER.warning("could not publish heartbeat: " + e.getMessage());
                     }
                 }
             });
@@ -256,7 +256,7 @@ public class TNatsServiceTransport extends TTransport {
         try{
             conn.publish(writeTo, DISCONNECT, null);
         }catch(IOException e){
-            LOGGER.warning("close: could not signal remote peer for disconnect");
+            LOGGER.warning("close: could not signal remote peer for disconnect: " + e.getMessage());
         }
 
         if (heartbeatSub != null) {
