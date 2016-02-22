@@ -129,6 +129,9 @@ func (f *FProtocol) writeHeader(headers map[string]string) error {
 func readHeader(reader io.Reader) (map[string]string, error) {
 	buff := make([]byte, 5)
 	if _, err := io.ReadFull(reader, buff); err != nil {
+		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
+			return nil, err
+		}
 		return nil, fmt.Errorf("frugal: error reading protocol headers: %s", err.Error())
 	}
 
@@ -153,6 +156,9 @@ func getHeadersFromFrame(frame []byte) (map[string]string, error) {
 func readHeadersFromReader(reader io.Reader, size int32) (map[string]string, error) {
 	buff := make([]byte, size)
 	if _, err := io.ReadFull(reader, buff); err != nil {
+		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
+			return nil, err
+		}
 		return nil, fmt.Errorf("frugal: error reading protocol headers: %s", err.Error())
 	}
 
