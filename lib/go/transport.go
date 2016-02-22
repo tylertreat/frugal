@@ -211,15 +211,16 @@ func (f *fMuxTransport) close(cause error) error {
 		return errors.New("frugal: transport not open")
 	}
 
-	err := f.TFramedTransport.Close()
-	if err == nil {
-		f.open = false
-		select {
-		case f.closed <- cause:
-		default:
-		}
-		close(f.closed)
+	if err := f.TFramedTransport.Close(); err != nil {
+		return err
 	}
+
+	f.open = false
+	select {
+	case f.closed <- cause:
+	default:
+	}
+	close(f.closed)
 
 	// Signal transport monitor of close.
 	select {
@@ -227,7 +228,7 @@ func (f *fMuxTransport) close(cause error) error {
 	default:
 	}
 
-	return err
+	return nil
 }
 
 // Closed channel is closed when the FTransport is closed.
