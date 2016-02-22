@@ -153,9 +153,9 @@ public class TNatsServiceTransport extends TTransport {
                 @Override
                 public void onMessage(Message message) {
                     receiveHeartbeat();
-                    try{
+                    try {
                         conn.publish(heartbeatReply, null);
-                    }catch(IOException e){
+                    } catch (IOException e) {
                         LOGGER.warning("could not publish heartbeat: " + e.getMessage());
                     }
                 }
@@ -253,9 +253,9 @@ public class TNatsServiceTransport extends TTransport {
             return;
         }
         // Signal remote peer for a graceful disconnect.
-        try{
+        try {
             conn.publish(writeTo, DISCONNECT, null);
-        }catch(IOException e){
+        } catch (IOException e) {
             LOGGER.warning("close: could not signal remote peer for disconnect: " + e.getMessage());
         }
 
@@ -343,9 +343,9 @@ public class TNatsServiceTransport extends TTransport {
                     "Message exceeds %d bytes, was %d bytes",
                     TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE, data.length));
         }
-        try{
+        try {
             conn.publish(writeTo, data);
-        }catch(IOException e){
+        } catch (IOException e) {
             LOGGER.warning("flush: could not publish data: " + e.getMessage());
         }
         writeBuffer.clear();
