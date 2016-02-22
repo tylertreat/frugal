@@ -175,12 +175,11 @@ func (f *fMuxTransport) Open() error {
 		for {
 			frame, err := f.readFrame()
 			if err != nil {
+				defer f.close(err)
 				if err, ok := err.(thrift.TTransportException); ok && err.TypeId() == thrift.END_OF_FILE {
-					f.close(nil)
 					return
 				}
 				log.Println("frugal: error reading protocol frame, closing transport:", err)
-				f.close(err)
 				return
 			}
 
