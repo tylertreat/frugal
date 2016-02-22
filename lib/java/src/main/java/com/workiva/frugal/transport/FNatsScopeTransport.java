@@ -210,7 +210,11 @@ public class FNatsScopeTransport extends FScopeTransport {
         byte[] frame = new byte[data.length + 4];
         ProtocolUtils.writeInt(data.length, frame, 0);
         System.arraycopy(data, 0, frame, 4, data.length);
-        conn.publish(getFormattedSubject(), frame);
+        try{
+            conn.publish(getFormattedSubject(), frame);
+        }catch(IOException e){
+            LOGGER.warning("flush: unable to publish data: " + e.getMessage());
+        }
         writeBuffer.clear();
     }
 
