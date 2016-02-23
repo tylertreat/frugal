@@ -346,7 +346,7 @@ public class TNatsServiceTransport extends TTransport {
         try {
             conn.publish(writeTo, data);
         } catch (IOException e) {
-            LOGGER.warning("flush: could not publish data: " + e.getMessage());
+            throw new TTransportException("flush: could not publish data: " + e.getMessage());
         }
         writeBuffer.clear();
     }
