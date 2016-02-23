@@ -161,7 +161,7 @@ public class FNatsScopeTransport extends FScopeTransport {
     @Override
     public int read(byte[] bytes, int off, int len) throws TTransportException {
         if (!isOpen()) {
-            throw TNatsServiceTransport.getClosedConditionException(conn, "read:");
+            throw new TTransportException(TTransportException.END_OF_FILE);
         }
         try {
             int bytesRead = reader.read(bytes, off, len);
