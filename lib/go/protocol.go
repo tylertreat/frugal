@@ -118,7 +118,7 @@ func (f *FProtocol) writeHeader(headers map[string]string) error {
 	}
 
 	if n, err := f.Transport().Write(buff); err != nil {
-		return fmt.Errorf("frugal: error writing protocol headers: %s", err.Error())
+		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error writing protocol headers: %s", err.Error()))
 	} else if n != len(buff) {
 		return errors.New("frugal: failed to write complete protocol headers")
 	}
@@ -129,7 +129,10 @@ func (f *FProtocol) writeHeader(headers map[string]string) error {
 func readHeader(reader io.Reader) (map[string]string, error) {
 	buff := make([]byte, 5)
 	if _, err := io.ReadFull(reader, buff); err != nil {
-		return nil, fmt.Errorf("frugal: error reading protocol headers: %s", err.Error())
+		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
+			return nil, err
+		}
+		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers: %s", err.Error()))
 	}
 
 	if buff[0] != protocolV0 {
@@ -153,7 +156,10 @@ func getHeadersFromFrame(frame []byte) (map[string]string, error) {
 func readHeadersFromReader(reader io.Reader, size int32) (map[string]string, error) {
 	buff := make([]byte, size)
 	if _, err := io.ReadFull(reader, buff); err != nil {
-		return nil, fmt.Errorf("frugal: error reading protocol headers: %s", err.Error())
+		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
+			return nil, err
+		}
+		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers: %s", err.Error()))
 	}
 
 	headers := make(map[string]string)

@@ -3,6 +3,7 @@ package com.workiva.frugal.internal;
 import static org.junit.Assert.*;
 
 import com.workiva.frugal.exception.FException;
+import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.apache.thrift.transport.TTransport;
 import org.junit.Rule;
@@ -15,20 +16,21 @@ import java.util.Map;
 public class HeadersTest {
 
     private static final Map<String, String> HEADERS;
+
     static {
         HEADERS = new HashMap<>();
         HEADERS.put("foo", "bar");
         HEADERS.put("blah", "baz");
     }
 
-    private static final byte[] LIST = new byte[] { 0, 0, 0, 0, 29, 0, 0, 0, 3, 102, 111, 111, 0, 0, 0, 3, 98, 97,
-            114, 0, 0, 0, 4, 98, 108, 97, 104, 0, 0, 0, 3, 98, 97, 122 };
+    private static final byte[] LIST = new byte[]{0, 0, 0, 0, 29, 0, 0, 0, 3, 102, 111, 111, 0, 0, 0, 3, 98, 97,
+            114, 0, 0, 0, 4, 98, 108, 97, 104, 0, 0, 0, 3, 98, 97, 122};
 
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
     @Test
-    public void testReadOutOfTransport() throws FException {
+    public void testReadOutOfTransport() throws TException {
         TTransport transport = new TMemoryInputTransport(LIST);
 
         Map<String, String> decodedHeaders = Headers.read(transport);
@@ -36,20 +38,20 @@ public class HeadersTest {
     }
 
     @Test
-    public void testReadThrowsFExceptionForUnsupportedVersion() throws FException {
-        TTransport transport = new TMemoryInputTransport(new byte[] {1});
+    public void testReadThrowsFExceptionForUnsupportedVersion() throws TException {
+        TTransport transport = new TMemoryInputTransport(new byte[]{1});
 
-        thrown.expect(FException.class);
+        thrown.expect(TException.class);
         thrown.expectMessage("unsupported header version 1");
         Headers.read(transport);
     }
 
     @Test
-    public void testReadThrowsFExceptionForTTransportException() throws FException {
-        TTransport transport = new TMemoryInputTransport(new byte[] {0, 0, 0});
+    public void testReadThrowsTExceptionForTTransportException() throws TException {
+        TTransport transport = new TMemoryInputTransport(new byte[]{0, 0, 0});
 
-        thrown.expect(FException.class);
-        thrown.expectMessage("could not read header version");
+        thrown.expect(TException.class);
+        thrown.expectMessage("Cannot read. Remote side has closed. Tried to read 4 bytes, but only got 2 bytes. (This is often indicative of an internal error on the server side. Please check your server logs.");
         Headers.read(transport);
     }
 
@@ -93,7 +95,7 @@ public class HeadersTest {
     public void testDecodeHeadersFromFrameThrowsFExceptionForUnsupportedVersion() throws FException {
         thrown.expect(FException.class);
         thrown.expectMessage("unsupported header version 1");
-        Headers.decodeFromFrame(new byte[] {1, 0, 0, 0, 0});
+        Headers.decodeFromFrame(new byte[]{1, 0, 0, 0, 0});
     }
 
 }

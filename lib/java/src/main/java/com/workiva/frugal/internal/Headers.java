@@ -2,6 +2,7 @@ package com.workiva.frugal.internal;
 
 import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.util.ProtocolUtils;
+import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
@@ -56,15 +57,11 @@ public class Headers {
         return buff;
     }
 
-    public static Map<String, String> read(TTransport transport) throws FException {
+    public static Map<String, String> read(TTransport transport) throws TException {
         byte[] buff = new byte[5];
 
         // Read version
-        try {
-            transport.readAll(buff, 0, 1);
-        } catch (TTransportException e) {
-            throw new FException("could not read header version", e);
-        }
+        transport.readAll(buff, 0, 1);
 
         // Support more versions when available
         if (buff[0] != V0) {
@@ -72,18 +69,10 @@ public class Headers {
         }
 
         // Read size
-        try {
-            transport.readAll(buff, 1, 4);
-        } catch (TTransportException e) {
-            throw new FException("could not read header version", e);
-        }
+        transport.readAll(buff, 1, 4);
         int size = ProtocolUtils.readInt(buff, 1);
         buff = new byte[size];
-        try {
-            transport.readAll(buff, 0, size);
-        } catch (TTransportException e) {
-            throw new FException("could not read headers from transport ", e);
-        }
+        transport.readAll(buff, 0, size);
 
         return readPairs(buff, 0, size);
     }
