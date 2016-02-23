@@ -221,7 +221,7 @@ public class TNatsServiceTransport extends TTransport {
         return TNatsServiceTransport.FRUGAL_PREFIX + conn.newInbox();
     }
 
-    private void startTimer() {
+    private synchronized void startTimer() {
         heartbeatTimer = new Timer();
         heartbeatTimer.schedule(new TimerTask() {
             @Override
@@ -231,7 +231,7 @@ public class TNatsServiceTransport extends TTransport {
         }, heartbeatTimeoutPeriod());
     }
 
-    private void missedHeartbeat() {
+    private synchronized void missedHeartbeat() {
         int missed = missedHeartbeats.getAndIncrement();
         if (missed >= maxMissedHeartbeats) {
             LOGGER.warning("missed " + missed + " heartbeats from peer, closing transport");
@@ -241,7 +241,7 @@ public class TNatsServiceTransport extends TTransport {
         startTimer();
     }
 
-    private void receiveHeartbeat() {
+    private synchronized void receiveHeartbeat() {
         heartbeatTimer.cancel();
         missedHeartbeats.set(0);
         startTimer();
@@ -283,7 +283,7 @@ public class TNatsServiceTransport extends TTransport {
         // because NATS asynchronously flushes in the background, so explicitly flushing prevents us from losing
         // anything buffered when we exit.
         try {
-            conn.flush();
+            conn.flush(1000);
         } catch (Exception e) {
             LOGGER.warning("close: could not flush NATS connection. " + e.getMessage());
         }
@@ -351,7 +351,7 @@ public class TNatsServiceTransport extends TTransport {
         writeBuffer.clear();
     }
 
-    private long heartbeatTimeoutPeriod() {
+    private synchronized long heartbeatTimeoutPeriod() {
         // The server is expected to heartbeat at every heartbeatInterval. Add an additional grace period.
         return heartbeatInterval + HEARTBEAT_GRACE_PERIOD;
     }
