@@ -5,6 +5,7 @@ import com.workiva.frugal.util.ProtocolUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TProtocolException;
 import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.transport.TTransportException;
 
 import java.io.*;
 import java.util.Arrays;
@@ -117,7 +118,7 @@ public class Headers {
 
                 headers.put(name, value);
             } catch (IOException e) {
-                throw new FProtocolException(FProtocolException.UNKNOWN, "could not read header bytes", e);
+                throw new TTransportException(FProtocolException.UNKNOWN, "could not read header bytes", e);
             }
         }
         return headers;
