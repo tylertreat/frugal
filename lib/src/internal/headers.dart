@@ -57,11 +57,7 @@ class Headers {
     var buff = new Uint8List(5);
     transport.readAll(buff, 0, 1);
 
-    // Support more versions when available
-    if (buff[0] != _V0) {
-      throw new FProtocolError(TProtocolErrorType.BAD_VERSION,
-          "unsupported header version ${buff[0]}");
-    }
+    _checkVersion(buff[0]);
 
     // Read size
     transport.readAll(buff, 1, 4);
@@ -81,11 +77,7 @@ class Headers {
           "invalid frame size ${frame.length}");
     }
 
-    // Support more versions when available
-    if (frame[0] != _V0) {
-      throw new FProtocolError(TProtocolErrorType.BAD_VERSION,
-          "unsupported header version ${frame[0]}");
-    }
+    _checkVersion(frame[0]);
 
     return _readPairs(frame, 5, _readInt(frame, 1) + 5);
   }
@@ -136,5 +128,14 @@ class Headers {
   static void _writeString(String s, Uint8List buff, int i) {
     var strBytes = _encoder.convert(s);
     buff.setRange(i, i + strBytes.length, strBytes);
+  }
+
+  // Evaluates the version and throws a TProtocolError if the version is unsupported
+  // Support more versions when available
+  static void _checkVersion(int version) {
+    if (frame[0] != _V0) {
+      throw new FProtocolError(TProtocolErrorType.BAD_VERSION,
+      "unsupported header version ${frame[0]}");
+    }
   }
 }
