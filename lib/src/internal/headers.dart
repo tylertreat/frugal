@@ -57,7 +57,7 @@ class Headers {
     var buff = new Uint8List(5);
     transport.readAll(buff, 0, 1);
 
-    _checkVersion(buff[0]);
+    _checkVersion(buff);
 
     // Read size
     transport.readAll(buff, 1, 4);
@@ -77,7 +77,7 @@ class Headers {
           "invalid frame size ${frame.length}");
     }
 
-    _checkVersion(frame[0]);
+    _checkVersion(frame);
 
     return _readPairs(frame, 5, _readInt(frame, 1) + 5);
   }
@@ -132,7 +132,7 @@ class Headers {
 
   // Evaluates the version and throws a TProtocolError if the version is unsupported
   // Support more versions when available
-  static void _checkVersion(int version) {
+  static void _checkVersion(Uint8List frame) {
     if (frame[0] != _V0) {
       throw new FProtocolError(TProtocolErrorType.BAD_VERSION,
       "unsupported header version ${frame[0]}");
