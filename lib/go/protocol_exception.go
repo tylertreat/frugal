@@ -11,7 +11,6 @@ type FProtocolException interface {
 }
 
 type fProtocolException struct {
-	thrift.TProtocolException
 	typeId  int
 	message string
 }
