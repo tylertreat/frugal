@@ -135,7 +135,7 @@ class Headers {
   static void _checkVersion(Uint8List frame) {
     if (frame[0] != _V0) {
       throw new FProtocolError(TProtocolErrorType.BAD_VERSION,
-      "unsupported header version ${frame[0]}");
+          "unsupported header version ${frame[0]}");
     }
   }
 }
