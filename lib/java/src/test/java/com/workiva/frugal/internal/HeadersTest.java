@@ -3,6 +3,7 @@ package com.workiva.frugal.internal;
 import static org.junit.Assert.*;
 
 import com.workiva.frugal.exception.FException;
+import com.workiva.frugal.exception.FProtocolException;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.apache.thrift.transport.TTransport;
@@ -56,20 +57,20 @@ public class HeadersTest {
     }
 
     @Test
-    public void testDecodeFromFrame() throws FException {
+    public void testDecodeFromFrame() throws TException {
         Map<String, String> decodedHeaders = Headers.decodeFromFrame(LIST);
         assertEquals(HEADERS, decodedHeaders);
     }
 
     @Test
-    public void testEncodeDecode() throws FException {
+    public void testEncodeDecode() throws TException {
         byte[] encodedHeaders = Headers.encode(HEADERS);
         Map<String, String> decodedHeaders = Headers.decodeFromFrame(encodedHeaders);
         assertEquals(HEADERS, decodedHeaders);
     }
 
     @Test
-    public void testEncodeDecodeNull() throws FException {
+    public void testEncodeDecodeNull() throws TException {
         Map<String, String> empty = new HashMap<>();
         byte[] encodedHeaders = Headers.encode(null);
         Map<String, String> decodedHeaders = Headers.decodeFromFrame(encodedHeaders);
@@ -77,7 +78,7 @@ public class HeadersTest {
     }
 
     @Test
-    public void testEncodeDecodeEmpty() throws FException {
+    public void testEncodeDecodeEmpty() throws TException {
         Map<String, String> empty = new HashMap<>();
         byte[] encodedHeaders = Headers.encode(empty);
         Map<String, String> decodedHeaders = Headers.decodeFromFrame(encodedHeaders);
@@ -85,15 +86,15 @@ public class HeadersTest {
     }
 
     @Test
-    public void testDecodeHeadersFromFrameThrowsFExceptionForBadFrame() throws FException {
-        thrown.expect(FException.class);
+    public void testDecodeHeadersFromFrameThrowsFExceptionForBadFrame() throws TException {
+        thrown.expect(FProtocolException.class);
         thrown.expectMessage("invalid frame size 3");
         Headers.decodeFromFrame(new byte[3]);
     }
 
     @Test
-    public void testDecodeHeadersFromFrameThrowsFExceptionForUnsupportedVersion() throws FException {
-        thrown.expect(FException.class);
+    public void testDecodeHeadersFromFrameThrowsFExceptionForUnsupportedVersion() throws TException {
+        thrown.expect(FProtocolException.class);
         thrown.expectMessage("unsupported header version 1");
         Headers.decodeFromFrame(new byte[]{1, 0, 0, 0, 0});
     }
