@@ -40,9 +40,6 @@ func NewFProtocolException(err error) FProtocolException {
 	return &fProtocolException{thrift.UNKNOWN_PROTOCOL_EXCEPTION, err.Error()}
 }
 
-func NewFProtocolExceptionWithType(errType int, err error) FProtocolException {
-	if err == nil {
-		return nil
-	}
-	return &fProtocolException{errType, err.Error()}
+func NewFProtocolExceptionWithType(errType int, message string) FProtocolException {
+	return &fProtocolException{errType, message}
 }
