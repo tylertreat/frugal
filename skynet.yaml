@@ -3,7 +3,9 @@ run:
     - .+
 
 also-run:
-  Workiva/messaging-sdk:
+  Workiva/messaging-sdk:go-tests:
+    on-pull-request: true
+  Workiva/messaging-sdk:java-tests:
     on-pull-request: true
 
 image: "docker.webfilings.org/wlayout/smithy-runner-thrift:1.5"
