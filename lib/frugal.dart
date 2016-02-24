@@ -12,6 +12,7 @@ import "package:uuid/uuid.dart";
 
 part 'src/f_context.dart';
 part 'src/f_error.dart';
+part 'src/f_protocol_error.dart';
 part 'src/f_provider.dart';
 part 'src/f_subscription.dart';
 part 'src/internal/f_byte_buffer.dart';

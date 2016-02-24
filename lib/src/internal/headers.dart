@@ -51,7 +51,7 @@ class Headers {
     return buff;
   }
 
-  /// Reads the headers from a TTransort
+  /// Reads the headers from a TTransport
   static Map<String, String> read(TTransport transport) {
     // Buffer version
     var buff = new Uint8List(5);
@@ -59,7 +59,7 @@ class Headers {
 
     // Support more versions when available
     if (buff[0] != _V0) {
-      throw new FError.withMessage("unsupported header version ${buff[0]}");
+      throw new FProtocolError(TProtocolErrorType.BAD_VERSION, "unsupported header version ${buff[0]}");
     }
 
     // Read size
@@ -76,12 +76,12 @@ class Headers {
   /// Returns the headers from Frugal frame
   static Map<String, String> decodeFromFrame(Uint8List frame) {
     if (frame.length < 5) {
-      throw new FError.withMessage("invalid frame size ${frame.length}");
+      throw new FProtocolError(TProtocolErrorType.INVALID_DATA, "invalid frame size ${frame.length}");
     }
 
     // Support more versions when available
     if (frame[0] != _V0) {
-      throw new FError.withMessage("unsupported header version ${frame[0]}");
+      throw new FProtocolError(TProtocolErrorType.BAD_VERSION, "unsupported header version ${frame[0]}");
     }
 
     return _readPairs(frame, 5, _readInt(frame, 1) + 5);
@@ -94,7 +94,7 @@ class Headers {
       var nameSize = _readInt(buff, i);
       i += 4;
       if (i > end || i + nameSize > end) {
-        throw new FError.withMessage("invalid protocol header name");
+        throw new FProtocolError(TProtocolErrorType.INVALID_DATA, "invalid protocol header name");
       }
       var name = _decoder.convert(buff, i, i + nameSize);
       i += nameSize;
@@ -103,7 +103,7 @@ class Headers {
       var valueSize = _readInt(buff, i);
       i += 4;
       if (i > end || i + valueSize > end) {
-        throw new FError.withMessage("invalid protocol header value");
+        throw new FProtocolError(TProtocolErrorType.INVALID_DATA, "invalid protocol header value");
       }
       var value = _decoder.convert(buff, i, i + valueSize);
       i += valueSize;
