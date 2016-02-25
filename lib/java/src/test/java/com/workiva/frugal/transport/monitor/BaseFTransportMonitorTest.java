@@ -67,12 +67,13 @@ public class BaseFTransportMonitorTest {
      * Ensure that the monitor handles a clean close.
      */
     @Test
-    public void testCleanClose() {
+    public void testCleanClose() throws InterruptedException {
         FTransport transport = new MockFTransport();
         FTransportMonitor monitor = mock(FTransportMonitor.class);
         transport.setMonitor(monitor);
 
         transport.close();
+        Thread.sleep(5);
 
         verify(monitor).onClosedCleanly();
     }
@@ -81,7 +82,7 @@ public class BaseFTransportMonitorTest {
      * Ensure that the monitor handles an unclean close.
      */
     @Test
-    public void testUncleanClose() {
+    public void testUncleanClose() throws InterruptedException {
         MockFTransport transport = new MockFTransport();
         FTransportMonitor monitor = mock(FTransportMonitor.class);
         Exception cause = new Exception("error");
@@ -89,6 +90,7 @@ public class BaseFTransportMonitorTest {
         transport.setMonitor(monitor);
 
         transport.close(cause);
+        Thread.sleep(5);
 
         verify(monitor).onClosedUncleanly(cause);
     }
@@ -97,7 +99,7 @@ public class BaseFTransportMonitorTest {
      * Ensure that handleUncleanClose attempts to reopen when onClosedUncleanly instructs it to do so.
      */
     @Test
-    public void testHandleUncleanClose() {
+    public void testHandleUncleanClose() throws InterruptedException {
         MockFTransport transport = new MockFTransport();
         FTransportMonitor monitor = mock(FTransportMonitor.class);
         Exception cause = new Exception("error");
@@ -105,6 +107,7 @@ public class BaseFTransportMonitorTest {
         transport.setMonitor(monitor);
 
         transport.close(cause);
+        Thread.sleep(5);
 
         verify(monitor).onClosedUncleanly(cause);
         verify(monitor).onReopenSucceeded();
@@ -114,7 +117,7 @@ public class BaseFTransportMonitorTest {
      * Ensure that attemptReopen retries when OnReopenFailed instructs to do so.
      */
     @Test
-    public void testAttemptReopenFailRetrySucceed() {
+    public void testAttemptReopenFailRetrySucceed() throws InterruptedException {
         MockFTransport transport = new MockFTransport(1);
         FTransportMonitor monitor = mock(FTransportMonitor.class);
         Exception cause = new Exception("error");
@@ -123,6 +126,7 @@ public class BaseFTransportMonitorTest {
         transport.setMonitor(monitor);
 
         transport.close(cause);
+        Thread.sleep(10);
 
         verify(monitor).onClosedUncleanly(cause);
         verify(monitor).onReopenFailed(1, 1);
@@ -133,7 +137,7 @@ public class BaseFTransportMonitorTest {
      * Ensure that attemptReopen does not retry when onReopenFailed instructs it not to do so.
      */
     @Test
-    public void testAttemptReopenFailNoRetry() {
+    public void testAttemptReopenFailNoRetry() throws InterruptedException {
         MockFTransport transport = new MockFTransport(1);
         FTransportMonitor monitor = mock(FTransportMonitor.class);
         Exception cause = new Exception("error");
@@ -142,6 +146,7 @@ public class BaseFTransportMonitorTest {
         transport.setMonitor(monitor);
 
         transport.close(cause);
+        Thread.sleep(5);
 
         verify(monitor).onClosedUncleanly(cause);
         verify(monitor).onReopenFailed(1, 1);
