@@ -111,9 +111,21 @@ public class FMuxTransport extends FTransport {
         framedTransport.flush();
     }
 
+    private void startWorkers() {
+        for (int i = 0; i < workerThreads.length; i++) {
+            WorkerThread workerThread = new WorkerThread();
+            workerThread.start();
+            workerThreads[i] = workerThread;
+        }
+    }
+
     private class ProcessorThread extends Thread {
 
         private volatile boolean running;
+
+        public ProcessorThread() {
+            setName("processor");
+        }
 
         public void kill() {
             if (this != Thread.currentThread()) {
@@ -148,6 +160,10 @@ public class FMuxTransport extends FTransport {
     private class WorkerThread extends Thread {
 
         private volatile boolean running;
+
+        public WorkerThread() {
+            setName("worker");
+        }
 
         public void kill() {
             if (this != Thread.currentThread()) {
