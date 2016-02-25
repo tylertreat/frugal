@@ -83,6 +83,10 @@ public class FMuxTransport extends FTransport {
     }
 
     public synchronized void close() {
+        close(null);
+    }
+
+    private synchronized void close(Exception cause) {
         if (registry == null) {
             return;
         }
@@ -91,9 +95,7 @@ public class FMuxTransport extends FTransport {
         for (WorkerThread workerThread : workerThreads) {
             workerThread.kill();
         }
-        if (closedCallback != null) {
-            closedCallback.onClose();
-        }
+        signalClose(cause);
         registry.close();
     }
 
@@ -130,7 +132,7 @@ public class FMuxTransport extends FTransport {
                     if (e.getType() != TTransportException.END_OF_FILE) {
                         LOGGER.warning("error reading frame, closing transport " + e.getMessage());
                     }
-                    close();
+                    close(e);
                     return;
                 }
 
@@ -170,7 +172,7 @@ public class FMuxTransport extends FTransport {
                     // An exception here indicates an unrecoverable exception,
                     // tear down transport.
                     LOGGER.severe("closing transport due to unrecoverable error processing frame: " + e.getMessage());
-                    close();
+                    close(e);
                     return;
                 }
             }
