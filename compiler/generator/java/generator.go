@@ -301,7 +301,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += tabtabtabtabtab + "}\n"
 		subscriber += tabtabtabtab + "}\n"
 		subscriber += tabtabtab + "}\n"
-		subscriber += tabtab + "}).start();\n\n"
+		subscriber += tabtab + "}, \"subscription\").start();\n\n"
 
 		subscriber += tabtab + "return sub;\n"
 		subscriber += tab + "}\n\n"
