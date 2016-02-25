@@ -9,7 +9,7 @@ public class BaseFTransportMonitor implements FTransportMonitor {
 
     private static final long DEFAULT_MAX_REOPEN_ATTEMPTS = 60;
     private static final long DEFAULT_INITIAL_WAIT = 2 * 1000;
-    private static final long DEFAULT_MAX_WAIT = 2 * 2000;
+    private static final long DEFAULT_MAX_WAIT = 2 * 1000;
 
     protected long maxReopenAttempts;
     protected long initialWait;
