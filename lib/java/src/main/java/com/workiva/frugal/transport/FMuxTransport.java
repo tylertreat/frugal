@@ -62,11 +62,6 @@ public class FMuxTransport extends FTransport {
             return;
         }
         this.registry = registry;
-        for (int i = 0; i < workerThreads.length; i++) {
-            WorkerThread workerThread = new WorkerThread();
-            workerThread.start();
-            workerThreads[i] = workerThread;
-        }
     }
 
     public synchronized boolean isOpen() {
@@ -80,6 +75,7 @@ public class FMuxTransport extends FTransport {
         framedTransport.open();
         processorThread = new ProcessorThread();
         processorThread.start();
+        startWorkers();
     }
 
     public synchronized void close() {
