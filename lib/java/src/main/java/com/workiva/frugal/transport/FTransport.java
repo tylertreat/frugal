@@ -88,7 +88,7 @@ public abstract class FTransport extends TTransport {
         this.monitor = new MonitorRunner(monitor, this);
     }
 
-    protected synchronized void signalClose(Exception cause) {
+    protected synchronized void signalClose(final Exception cause) {
         // TODO: Remove deprecated callback in future release.
         if (_closedCallback != null) {
             _closedCallback.onClose();
@@ -97,7 +97,12 @@ public abstract class FTransport extends TTransport {
             closedCallback.onClose(cause);
         }
         if (monitor != null) {
-            monitor.onClose(cause);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    monitor.onClose(cause);
+                }
+            }, "transport-monitor").start();
         }
     }
 }
