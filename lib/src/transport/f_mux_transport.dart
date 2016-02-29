@@ -46,7 +46,7 @@ class FMultiplexedTransport extends FTransport {
         // Fatal error. Close the transport.
         log.severe("FAsyncCallback had a fatal error ${e.toString()}." +
             "Closing transport.");
-        close();
+        closeWithException(e);
       }
     });
   }
