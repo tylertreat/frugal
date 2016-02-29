@@ -1,7 +1,6 @@
 import "dart:typed_data";
 import "package:test/test.dart";
 import "package:frugal/frugal.dart";
-import "package:thrift/thrift.dart";
 
 void main() {
   test('onClosedUncleanly should return -1 if max attempts is 0', () {

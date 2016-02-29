@@ -1,6 +1,6 @@
 part of frugal;
 
-
+/// MonitorRunner runs an FTransportMonitor when a transport is closed.
 class MonitorRunner {
   final Logger log = new Logger('FTransportMonitor');
   FTransportMonitor _monitor;
@@ -37,7 +37,7 @@ class MonitorRunner {
 
     while(wait >= 0) {
       log.info('attemptying to reopen after $wait ms');
-      await new Future.delayed(const Duration(milliseconds: wait));
+      await new Future.delayed(new Duration(milliseconds: wait));
 
       try {
         await _transport.open();
