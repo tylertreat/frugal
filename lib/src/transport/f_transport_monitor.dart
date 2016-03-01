@@ -7,4 +7,3 @@ abstract class FTransportMonitor {
   int onReopenFailed(int prevAttempts, int prevWait);
   void onReopenSucceeded();
 }
-

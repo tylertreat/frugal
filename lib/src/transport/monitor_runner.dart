@@ -9,7 +9,7 @@ class MonitorRunner {
   MonitorRunner(this._monitor, this._transport);
 
   Future onClose(Exception cause) async {
-    if(cause == null) {
+    if (cause == null) {
       _handleCleanClose();
     } else {
       await _handleUncleanClose(cause);
@@ -24,7 +24,7 @@ class MonitorRunner {
   Future _handleUncleanClose(Exception cause) async {
     log.warning('transport was closed uncleanly because: $cause');
     int wait = _monitor.onClosedUncleanly(cause);
-    if(wait < 0) {
+    if (wait < 0) {
       log.warning('instructed not to repopen');
       return;
     }
@@ -35,7 +35,7 @@ class MonitorRunner {
     int wait = initialWait;
     int prevAttempts = 0;
 
-    while(wait >= 0) {
+    while (wait >= 0) {
       log.info('attemptying to reopen after $wait ms');
       await new Future.delayed(new Duration(milliseconds: wait));
 

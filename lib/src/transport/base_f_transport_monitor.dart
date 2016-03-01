@@ -13,9 +13,10 @@ class BaseFTransportMonitor extends FTransportMonitor {
   int _initialWait;
   int _maxWait;
 
-  BaseFTransportMonitor({maxReopenAttempts: DEFAULT_MAX_REOPEN_ATTEMPTS,
-                        initialWait: DEFAULT_INITIAL_WAIT,
-                        maxWait: DEFAULT_MAX_WAIT}) {
+  BaseFTransportMonitor(
+      {maxReopenAttempts: DEFAULT_MAX_REOPEN_ATTEMPTS,
+      initialWait: DEFAULT_INITIAL_WAIT,
+      maxWait: DEFAULT_MAX_WAIT}) {
     this._maxReopenAttempts = maxReopenAttempts;
     this._initialWait = initialWait;
     this._maxWait = maxWait;
@@ -31,7 +32,7 @@ class BaseFTransportMonitor extends FTransportMonitor {
 
   @override
   int onReopenFailed(int prevAttempts, int prevWait) {
-    if(prevAttempts >= _maxReopenAttempts) {
+    if (prevAttempts >= _maxReopenAttempts) {
       return -1;
     }
 
