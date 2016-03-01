@@ -50,6 +50,7 @@ class MonitorRunner {
 
       log.info('successfully reopened transport');
       _monitor.onReopenSucceeded();
+      return;
     }
 
     log.warning('ReopenFailed callback instructed not to repoen, terminating');
