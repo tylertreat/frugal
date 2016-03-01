@@ -25,7 +25,7 @@ class FMultiplexedTransport extends FTransport {
 
   Future closeWithException(cause) async {
     await _transport.close();
-    await signalClose(cause);
+    await _signalClose(cause);
   }
 
   @override

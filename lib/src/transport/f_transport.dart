@@ -44,7 +44,7 @@ abstract class FTransport extends TTransport {
   /// Unregister a callback for the given Context.
   void unregister(FContext ctx);
 
-  Future signalClose(cause) async {
+  Future _signalClose(cause) async {
     if (_monitor != null) await _monitor.onClose(cause);
   }
 }
