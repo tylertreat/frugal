@@ -25,7 +25,7 @@ class MonitorRunner {
     log.warning('transport was closed uncleanly because: $cause');
     int wait = _monitor.onClosedUncleanly(cause);
     if (wait < 0) {
-      log.warning('instructed not to repopen');
+      log.warning('instructed not to reopen');
       return;
     }
     await _attemptReopen(wait);
@@ -53,6 +53,6 @@ class MonitorRunner {
       return;
     }
 
-    log.warning('ReopenFailed callback instructed not to repoen, terminating');
+    log.warning('ReopenFailed callback instructed not to reopen, terminating');
   }
 }
