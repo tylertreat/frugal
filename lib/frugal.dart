@@ -27,3 +27,6 @@ part 'src/transport/f_transport.dart';
 part 'src/transport/t_framed_transport.dart';
 part 'src/transport/f_mux_transport.dart';
 part 'src/transport/t_memory_transport.dart';
+part 'src/transport/f_transport_monitor.dart';
+part 'src/transport/base_f_transport_monitor.dart';
+part 'src/transport/monitor_runner.dart';

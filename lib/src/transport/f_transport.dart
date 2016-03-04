@@ -6,9 +6,14 @@ abstract class FTransport extends TTransport {
   static const RESPONSE_TOO_LARGE = 101;
 
   TTransport _transport;
+  MonitorRunner _monitor;
 
   void set transport(TTransport transport) {
     _transport = transport;
+  }
+
+  void set monitor(FTransportMonitor monitor) {
+    _monitor = new MonitorRunner(monitor, _transport);
   }
 
   @override
@@ -16,9 +21,6 @@ abstract class FTransport extends TTransport {
 
   @override
   Future open() => _transport.open();
-
-  @override
-  Future close() => _transport.close();
 
   @override
   int read(Uint8List buffer, int offset, int length) {
@@ -41,4 +43,8 @@ abstract class FTransport extends TTransport {
 
   /// Unregister a callback for the given Context.
   void unregister(FContext ctx);
+
+  Future _signalClose(cause) async {
+    if (_monitor != null) await _monitor.onClose(cause);
+  }
 }

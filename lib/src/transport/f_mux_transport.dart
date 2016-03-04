@@ -12,13 +12,21 @@ class FMultiplexedTransport extends FTransport {
     super.transport = _transport;
     // If there is an error on the socket, close the transport pessimistically.
     // This error is already logged upstream in TSocketTransport.
-    transport.socket.onError.listen((_) => close());
+    transport.socket.onError.listen((e) => closeWithException(e));
   }
 
   @override
   bool get isOpen => _transport.isOpen && _registry != null;
 
+  @override
+  Future close() => closeWithException(null);
+
   // TODO: Throw error if direct read
+
+  Future closeWithException(cause) async {
+    await _transport.close();
+    await _signalClose(cause);
+  }
 
   @override
   void setRegistry(FRegistry registry) {
@@ -38,7 +46,7 @@ class FMultiplexedTransport extends FTransport {
         // Fatal error. Close the transport.
         log.severe("FAsyncCallback had a fatal error ${e.toString()}." +
             "Closing transport.");
-        close();
+        closeWithException(e);
       }
     });
   }
