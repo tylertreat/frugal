@@ -8,10 +8,7 @@ import com.workiva.frugal.processor.FProcessorFactory;
 import com.workiva.frugal.protocol.FProtocol;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.protocol.FServerRegistry;
-import com.workiva.frugal.transport.FClosedCallback;
-import com.workiva.frugal.transport.FTransport;
-import com.workiva.frugal.transport.FTransportFactory;
-import com.workiva.frugal.transport.TNatsServiceTransport;
+import com.workiva.frugal.transport.*;
 import io.nats.client.Connection;
 import io.nats.client.Message;
 import io.nats.client.MessageHandler;
@@ -152,13 +149,6 @@ public class FNatsServer implements FServer {
             }
         });
 
-        // TODO: Remove when subscription bug is resolved.
-        try {
-            conn.flush();
-        } catch (Exception e) {
-            throw new TException(e);
-        }
-
         if (isHeartbeating()) {
             heartbeatExecutor.scheduleAtFixedRate(new MakeHeartbeatRunnable(), heartbeatInterval,
                     heartbeatInterval, TimeUnit.MILLISECONDS);
@@ -198,10 +188,10 @@ public class FNatsServer implements FServer {
         TTransport client = TNatsServiceTransport.server(conn, listenTo, replyTo);
         FTransport transport = transportFactory.getTransport(client);
         transport.setClosedCallback(new ClientRemover(heartbeatSubject));
-        transport.open();
         FProcessor processor = processorFactory.getProcessor(transport);
         FProtocol protocol = protocolFactory.getProtocol(transport);
         transport.setRegistry(new FServerRegistry(processor, protocolFactory, protocol));
+        transport.open();
         return client;
     }
 
@@ -254,13 +244,6 @@ public class FNatsServer implements FServer {
                 }
             });
 
-            // TODO: Remove when subscription bug is resolved.
-            try {
-                conn.flush();
-            } catch (Exception e) {
-                LOGGER.warning("error flushing in AcceptHeartbeatThread " + e.getMessage());
-            }
-
             running = true;
             while (running) {
                 try {
@@ -290,14 +273,14 @@ public class FNatsServer implements FServer {
         return (heartbeatInterval > 0);
     }
 
-    private class ClientRemover implements FClosedCallback {
+    private class ClientRemover implements FTransportClosedCallback {
         private String heartbeat;
 
         ClientRemover(String heartbeat) {
             this.heartbeat = heartbeat;
         }
 
-        public void onClose() {
+        public void onClose(Exception cause) {
             remove(this.heartbeat);
         }
     }
