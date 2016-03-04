@@ -228,13 +228,12 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 func (n *FNatsServer) accept(listenTo, replyTo, heartbeat string) (FTransport, error) {
 	client := newNatsServiceTTransportServer(n.conn, listenTo, replyTo)
 	transport := n.transportFactory.GetTransport(client)
-	if err := transport.Open(); err != nil {
-		return nil, err
-	}
-
 	processor := n.processorFactory.GetProcessor(transport)
 	protocol := n.protocolFactory.GetProtocol(transport)
 	transport.SetRegistry(NewServerRegistry(processor, n.protocolFactory, protocol))
+	if err := transport.Open(); err != nil {
+		return nil, err
+	}
 
 	// Cleanup heartbeat when client disconnects.
 	go func() {
