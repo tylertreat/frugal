@@ -46,21 +46,12 @@ func (s *Scope) assignScope() {
 	}
 }
 
-type Async struct {
-	Comment []string
-	Name    string
-	Extends string
-	Methods []*Method
-	Frugal  *Frugal // Pointer back to containing Frugal
-}
-
 type Frugal struct {
 	Name           string
 	File           string
 	Dir            string
 	Path           string
 	Scopes         []*Scope
-	Asyncs         []*Async
 	Thrift         *Thrift
 	ParsedIncludes map[string]*Frugal
 }
