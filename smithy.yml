@@ -1,7 +1,7 @@
 project: dart
 language: dart
 
-runner_image: docker.webfilings.org/devops/smithy-runner-dart1.13.2:3.2.6
+runner_image: docker.webfilings.org/devops/smithy-runner-dart1.13.2:3.2.6-libc
 
 env:
   - CODECOV_TOKEN='bQ4MgjJ0G2Y73v8JNX6L7yMK9679nbYB'
