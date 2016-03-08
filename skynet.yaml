@@ -2,7 +2,7 @@ run:
   when-branch-name-is:
     - .+
 
-image: "docker.webfilings.org/wlayout/smithy-runner-thrift:1.5"
+image: "docker.webfilings.org/messaging/thrift_py_go_dart:0.0.2"
 
 env:
   - GORACE="halt_on_errors=1"
