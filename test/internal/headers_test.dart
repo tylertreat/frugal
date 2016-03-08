@@ -43,14 +43,14 @@ var list = [
 void main() {
   test("read reads the headers out of the transport", () {
     var encodedHeaders = new Uint8List.fromList(list);
-    var transport = new TMemoryTransport.fromUnt8List(encodedHeaders);
+    var transport = new TMemoryTransport.fromUint8List(encodedHeaders);
     var decodedHeaders = Headers.read(transport);
     expect(decodedHeaders, headers);
   });
 
   test("read throws error for unsupported version", () {
     var encodedHeaders = new Uint8List.fromList([0x01]);
-    var transport = new TMemoryTransport.fromUnt8List(encodedHeaders);
+    var transport = new TMemoryTransport.fromUint8List(encodedHeaders);
     expect(() => Headers.read(transport),
         throwsA(new isInstanceOf<FProtocolError>()));
   });
