@@ -13,6 +13,15 @@ class BaseFTransportMonitor extends FTransportMonitor {
   int _initialWait;
   int _maxWait;
 
+  StreamController _onConnectController = new StreamController.broadcast();
+  StreamController _onDisconnectController = new StreamController.broadcast();
+
+  Stream get onConnect => _onConnectController.stream;
+  Stream get onDisconnect => _onDisconnectController.stream;
+
+  bool _isConnected = true;
+  bool get isConnected => _isConnected;
+
   BaseFTransportMonitor(
       {maxReopenAttempts: DEFAULT_MAX_REOPEN_ATTEMPTS,
       initialWait: DEFAULT_INITIAL_WAIT,
@@ -23,10 +32,16 @@ class BaseFTransportMonitor extends FTransportMonitor {
   }
 
   @override
-  void onClosedCleanly() {}
+  void onClosedCleanly() {
+    _isConnected = false;
+    _onDisconnectController.add(null);
+  }
 
   @override
   int onClosedUncleanly(Exception cause) {
+    _isConnected = false;
+    _onDisconnectController.add(null);
+
     return _maxReopenAttempts > 0 ? _initialWait : -1;
   }
 
@@ -40,5 +55,8 @@ class BaseFTransportMonitor extends FTransportMonitor {
   }
 
   @override
-  void onReopenSucceeded() {}
+  void onReopenSucceeded() {
+    _isConnected = true;
+    _onConnectController.add(null);
+  }
 }

@@ -1,4 +1,4 @@
-import "dart:typed_data";
+import "dart:async";
 import "package:test/test.dart";
 import "package:frugal/frugal.dart";
 
@@ -7,6 +7,30 @@ void main() {
     FTransportMonitor monitor = new BaseFTransportMonitor(
         maxReopenAttempts: 0, initialWait: 0, maxWait: 0);
     expect(-1, monitor.onClosedUncleanly(new Exception('error')));
+  });
+
+  test('isConnected', () {
+    var futures = [];
+
+    var monitor = new BaseFTransportMonitor();
+    expect(monitor.isConnected, equals(true));
+
+    futures.add(monitor.onDisconnect.first);
+    monitor.onClosedCleanly();
+    expect(monitor.isConnected, isFalse);
+
+    monitor.onReopenFailed(1, 1);
+    expect(monitor.isConnected, isFalse);
+
+    futures.add(monitor.onConnect.first);
+    monitor.onReopenSucceeded();
+    expect(monitor.isConnected, isTrue);
+
+    futures.add(monitor.onDisconnect.first);
+    monitor.onClosedUncleanly(new Exception('error'));
+    expect(monitor.isConnected, isFalse);
+
+    return Future.wait(futures);
   });
 
   test(
