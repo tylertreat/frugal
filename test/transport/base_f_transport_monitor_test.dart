@@ -11,14 +11,14 @@ void main() {
 
   test('isConnected', () {
     var futures = [];
-    
+
     var monitor = new BaseFTransportMonitor();
     expect(monitor.isConnected, equals(true));
 
     futures.add(monitor.onDisconnect.first);
     monitor.onClosedCleanly();
     expect(monitor.isConnected, isFalse);
-    
+
     monitor.onReopenFailed(1, 1);
     expect(monitor.isConnected, isFalse);
 
@@ -29,10 +29,10 @@ void main() {
     futures.add(monitor.onDisconnect.first);
     monitor.onClosedUncleanly(new Exception('error'));
     expect(monitor.isConnected, isFalse);
-    
+
     return Future.wait(futures);
   });
-  
+
   test(
       'onClosedUncleanly should return expected wait period if max attempts > 0',
       () {
