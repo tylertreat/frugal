@@ -9,7 +9,7 @@ class TMemoryTransport extends TTransport {
   TMemoryTransport([int capacity])
       : _buff = new FByteBuffer(capacity ?? _DEFAULT_BUFFER_LENGTH);
 
-  TMemoryTransport.fromUnt8List(Uint8List buffer)
+  TMemoryTransport.fromUint8List(Uint8List buffer)
       : _buff = new FByteBuffer.fromUint8List(buffer);
 
   @override
