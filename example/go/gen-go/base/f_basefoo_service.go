@@ -54,8 +54,7 @@ func (f *FBaseFooClient) BasePing(ctx *frugal.FContext) (err error) {
 		f.mu.Unlock()
 		return
 	}
-	args := BaseFooBasePingArgs{
-	}
+	args := BaseFooBasePingArgs{}
 	if err = args.Write(f.oprot); err != nil {
 		f.mu.Unlock()
 		return
@@ -225,31 +224,36 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 			basefooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "basePing", "response too large: "+err2.Error())
 			return nil
 		}
-		err = err2	}
+		err = err2
+	}
 	if err2 = oprot.WriteMessageBegin("basePing", thrift.REPLY, 0); err2 != nil {
 		if err2 == frugal.ErrTooLarge {
 			basefooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "basePing", "response too large: "+err2.Error())
 			return nil
 		}
-		err = err2	}
+		err = err2
+	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if err2 == frugal.ErrTooLarge {
 			basefooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "basePing", "response too large: "+err2.Error())
 			return nil
 		}
-		err = err2	}
+		err = err2
+	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if err2 == frugal.ErrTooLarge {
 			basefooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "basePing", "response too large: "+err2.Error())
 			return nil
 		}
-		err = err2	}
+		err = err2
+	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if err2 == frugal.ErrTooLarge {
 			basefooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "basePing", "response too large: "+err2.Error())
 			return nil
 		}
-		err = err2	}
+		err = err2
+	}
 	return err
 }
 
@@ -261,4 +265,3 @@ func basefooWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol,
 	oprot.WriteMessageEnd()
 	oprot.Flush()
 }
-

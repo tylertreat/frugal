@@ -23,8 +23,6 @@
 
     type union *Struct
 
-    type include string
-
     func newScopePrefix(prefix string) (*ScopePrefix, error) {
         variables := []string{}
         for _, variable := range prefixVariable.FindAllString(prefix, -1) {
@@ -90,15 +88,17 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
         typedefIndex:   make(map[string]*TypeDef),
         namespaceIndex: make(map[string]*Namespace),
     }
+    stmts := toIfaceSlice(statements)
     frugal := &Frugal{
-        Thrift:         thrift,
-        Scopes:         []*Scope{},
-        ParsedIncludes: make(map[string]*Frugal),
+        Thrift:             thrift,
+        Scopes:             []*Scope{},
+        ParsedIncludes:     make(map[string]*Frugal),
+        OrderedDefinitions: make([]interface{}, len(stmts)),
     }
 
-    stmts := toIfaceSlice(statements)
-    for _, st := range stmts {
+    for i, st := range stmts {
         wrapper := st.([]interface{})[0].(*statementWrapper)
+        frugal.OrderedDefinitions[i] = wrapper.statement
         switch v := wrapper.statement.(type) {
         case *Namespace:
             thrift.Namespaces = append(thrift.Namespaces, v)
@@ -114,25 +114,26 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
             thrift.Typedefs = append(thrift.Typedefs, v)
             thrift.typedefIndex[v.Name] = v
         case *Struct:
+            v.Type = StructTypeStruct
             v.Comment = wrapper.comment
             thrift.Structs = append(thrift.Structs, v)
         case exception:
             strct := (*Struct)(v)
+            strct.Type = StructTypeException
             strct.Comment = wrapper.comment
             thrift.Exceptions = append(thrift.Exceptions, strct)
+            frugal.OrderedDefinitions[i] = strct
         case union:
             strct := unionToStruct(v)
+            strct.Type = StructTypeUnion
             strct.Comment = wrapper.comment
             thrift.Unions = append(thrift.Unions, strct)
+            frugal.OrderedDefinitions[i] = strct
         case *Service:
             v.Comment = wrapper.comment
             thrift.Services = append(thrift.Services, v)
-        case include:
-            name := string(v)
-            if ix := strings.LastIndex(name, "."); ix > 0 {
-                name = name[:ix]
-            }
-            thrift.Includes = append(thrift.Includes, &Include{Name: name, Value: string(v)})
+        case *Include:
+            thrift.Includes = append(thrift.Includes, v)
         case *Scope:
             v.Comment = wrapper.comment
             v.Frugal = frugal
@@ -164,7 +165,11 @@ Statement ← docstr:(DocString __)? statement:(ThriftStatement / FrugalStatemen
 ThriftStatement ← Include / Namespace / Const / Enum / TypeDef / Struct / Exception / Union / Service
 
 Include ← "include" _ file:Literal EOS {
-    return include(file.(string)), nil
+    name := file.(string)
+    if ix := strings.LastIndex(name, "."); ix > 0 {
+        name = name[:ix]
+    }
+    return &Include{Name: name, Value: file.(string)}, nil
 }
 
 Namespace ← "namespace" _ scope:[*a-z.-]+ _ ns:Identifier EOS {
