@@ -2,13 +2,14 @@ run:
   when-branch-name-is:
     - .+
 
+image: "docker.webfilings.org/messaging/thrift_py_go_dart:0.0.2"
+
 also-run:
   Workiva/messaging-sdk:go-tests:
     on-pull-request: true
   Workiva/messaging-sdk:java-tests:
     on-pull-request: true
 
-image: "docker.webfilings.org/wlayout/smithy-runner-thrift:1.5"
 
 env:
   - GORACE="halt_on_errors=1"
