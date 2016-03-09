@@ -122,7 +122,7 @@ func (n *FNatsServer) Serve() error {
 
 		// Connect message consists of "[heartbeat subject] [heartbeat reply subject] [expected interval ms]"
 		connectMsg := n.heartbeatSubject + " " + heartbeatReply + " " +
-			strconv.FormatInt(int64(n.heartbeatInterval.Seconds())*1000, 10)
+			strconv.FormatInt(int64(n.heartbeatInterval/time.Millisecond), 10)
 		if err := n.conn.PublishRequest(msg.Reply, listenTo, []byte(connectMsg)); err != nil {
 			log.Println("frugal: error publishing transport inbox:", err)
 			tr.Close()
