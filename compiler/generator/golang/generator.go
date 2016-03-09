@@ -20,7 +20,6 @@ const (
 	defaultOutputDir = "gen-go"
 	serviceSuffix    = "_service"
 	scopeSuffix      = "_scope"
-	asyncSuffix      = "_async"
 )
 
 type Generator struct {
