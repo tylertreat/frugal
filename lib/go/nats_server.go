@@ -15,7 +15,6 @@ import (
 const (
 	queue                      = "rpc"
 	defaultMaxMissedHeartbeats = 3
-	minHeartbeatInterval       = 20 * time.Second
 	frugalPrefix               = "frugal."
 )
 
@@ -73,10 +72,6 @@ func NewFNatsServerFactory(
 	processorFactory FProcessorFactory,
 	transportFactory FTransportFactory,
 	protocolFactory *FProtocolFactory) FServer {
-
-	if heartbeatInterval < minHeartbeatInterval {
-		heartbeatInterval = minHeartbeatInterval
-	}
 
 	return &FNatsServer{
 		conn:                conn,
@@ -206,9 +201,15 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 	}
 	defer sub.Unsubscribe()
 
+	var wait <-chan time.Time
 	for {
+		if n.maxMissedHeartbeats > 1 {
+			wait = time.After(n.heartbeatInterval)
+		} else {
+			wait = time.After(n.heartbeatInterval + n.heartbeatInterval/4)
+		}
 		select {
-		case <-time.After(n.heartbeatInterval + heartbeatGracePeriod):
+		case <-wait:
 			missed++
 			if missed >= n.maxMissedHeartbeats {
 				log.Println("frugal: client heartbeat expired")
