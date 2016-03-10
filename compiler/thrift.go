@@ -216,7 +216,7 @@ func generateEnum(enum *parser.Enum) string {
 		if value.Comment != nil {
 			contents += generateThriftDocString(value.Comment, "\t")
 		}
-		contents += fmt.Sprintf("\t%s,\n", value.Name)
+		contents += fmt.Sprintf("\t%s = %d,\n", value.Name, value.Value)
 	}
 	contents += "}\n\n"
 	return contents
