@@ -113,3 +113,19 @@ const set<string> SIMPLE_SET_STRING = [
 	"baz",
 ]
 
+enum Status {
+	STARTING = 1,
+	STOPPING = 2,
+	HEALTHY = 3,
+	DEPENDENCY_DOWN = 4,
+	ERROR = 5,
+}
+
+enum Status2 {
+	STARTING = 0,
+	STOPPING = 1,
+	HEALTHY = 2,
+	DEPENDENCY_DOWN = 3,
+	ERROR = 4,
+}
+
