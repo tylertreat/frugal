@@ -9,7 +9,7 @@ dependencies:
   thrift:
     git:
       url: git@github.com:Workiva/thrift-dart.git
-      ref: 0.0.3
+      ref: 0.0.4
   uuid: any
 
 dev_dependencies:
