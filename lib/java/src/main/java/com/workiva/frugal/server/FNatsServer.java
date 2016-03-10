@@ -25,8 +25,6 @@ import java.util.logging.Logger;
 public class FNatsServer implements FServer {
 
     private static final int DEFAULT_MAX_MISSED_HEARTBEATS = 3;
-    private static final long MIN_HEARTBEAT_INTERVAL = 20 * 1000;
-    private static final long HEARTBEAT_GRACE_PERIOD = 5 * 1000;
     private static final String QUEUE = "rpc";
 
     private Connection conn;
@@ -48,16 +46,8 @@ public class FNatsServer implements FServer {
     public FNatsServer(Connection conn, String subject, long heartbeatInterval,
                        FProcessor processor, FTransportFactory transportFactory,
                        FProtocolFactory protocolFactory) {
-        this.conn = conn;
-        this.subject = subject;
-        this.heartbeatSubject = conn.newInbox();
-        this.heartbeatInterval = heartbeatInterval < MIN_HEARTBEAT_INTERVAL ?
-                MIN_HEARTBEAT_INTERVAL : heartbeatInterval;
-        this.maxMissedHeartbeats = DEFAULT_MAX_MISSED_HEARTBEATS;
-        this.clients = new ConcurrentHashMap<>();
-        this.processorFactory = new FProcessorFactory(processor);
-        this.transportFactory = transportFactory;
-        this.protocolFactory = protocolFactory;
+        this(conn, subject, heartbeatInterval, DEFAULT_MAX_MISSED_HEARTBEATS,
+                new FProcessorFactory(processor), transportFactory, protocolFactory);
     }
 
     public FNatsServer(Connection conn, String subject, long heartbeatInterval, int maxMissedHeartbeats,
@@ -66,8 +56,7 @@ public class FNatsServer implements FServer {
         this.conn = conn;
         this.subject = subject;
         this.heartbeatSubject = conn.newInbox();
-        this.heartbeatInterval = heartbeatInterval < MIN_HEARTBEAT_INTERVAL ?
-                MIN_HEARTBEAT_INTERVAL : heartbeatInterval;
+        this.heartbeatInterval = heartbeatInterval;
         this.maxMissedHeartbeats = maxMissedHeartbeats;
         this.clients = new ConcurrentHashMap<>();
         this.processorFactory = processorFactory;
@@ -113,7 +102,7 @@ public class FNatsServer implements FServer {
                 Gson gson = new Gson();
                 try {
                     connProtocol = gson.fromJson(new String(message.getData(), "UTF-8"), NatsConnectionProtocol.class);
-                    if(connProtocol.getVersion() != NatsConnectionProtocol.NATS_V0){
+                    if (connProtocol.getVersion() != NatsConnectionProtocol.NATS_V0) {
                         LOGGER.severe(String.format("%d not a supported connect version", connProtocol.getVersion()));
                         return;
                     }
@@ -246,8 +235,9 @@ public class FNatsServer implements FServer {
 
             running = true;
             while (running) {
+                long wait = maxMissedHeartbeats > 1 ? heartbeatInterval : heartbeatInterval + heartbeatInterval / 4;
                 try {
-                    Object ret = heartbeatQueue.poll(heartbeatInterval + HEARTBEAT_GRACE_PERIOD, TimeUnit.MILLISECONDS);
+                    Object ret = heartbeatQueue.poll(wait, TimeUnit.MILLISECONDS);
                     if (ret == null) {
                         missed++;
                     } else {
