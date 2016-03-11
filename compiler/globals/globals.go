@@ -2,7 +2,7 @@ package globals
 
 import "time"
 
-const Version = "1.0.4"
+const Version = "1.0.5"
 
 var (
 	TopicDelimiter  string = "."
