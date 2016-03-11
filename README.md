@@ -19,7 +19,7 @@ Clone the fork
 ```bash
 git clone git@github.com:stevenosborne-wf/thrift.git
 cd thrift
-git checkout 0.9.3-wk-1
+git checkout 0.9.3-wk-2
 ```
 
 Configure the install (Note: you make need to install build dependencies)
