@@ -10,9 +10,13 @@ import org.apache.thrift.protocol.TProtocolUtil;
 import org.apache.thrift.protocol.TType;
 
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class FBaseProcessor implements FProcessor {
 
+    private static final Logger logger =
+            Logger.getLogger(FBaseProcessor.class.getName());
     protected static final Object WRITE_LOCK = new Object();
 
     private final Map<String, FProcessorFunction> processMap;
@@ -30,7 +34,7 @@ public class FBaseProcessor implements FProcessor {
             try {
                 processor.process(ctx, iprot, oprot);
             } catch (Exception e) {
-                System.err.println("frugal: Error processing request with correlationID " + ctx.getCorrelationId() + ": " + e.getMessage());
+                logger.log(Level.WARNING, "Error processing request with correlationID " + ctx.getCorrelationId() + ": " + e.getMessage());
                 throw e;
             }
             return;
