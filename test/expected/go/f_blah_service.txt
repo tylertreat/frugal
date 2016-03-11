@@ -6,6 +6,7 @@ package valid
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -289,7 +290,11 @@ func (p *FBlahProcessor) Process(iprot, oprot *frugal.FProtocol) error {
 		return err
 	}
 	if processor, ok := p.GetProcessorFunction(name); ok {
-		return processor.Process(ctx, iprot, oprot)
+		err := processor.Process(ctx, iprot, oprot)
+		if err != nil {
+			log.Printf("frugal: Error processing request with correlationID %s: %s\n", ctx.CorrelationID(), err.Error())
+		}
+		return err
 	}
 	iprot.Skip(thrift.STRUCT)
 	iprot.ReadMessageEnd()
