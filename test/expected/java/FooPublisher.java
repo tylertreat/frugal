@@ -62,9 +62,6 @@ public class FooPublisher {
 			req.write(protocol);
 			protocol.writeMessageEnd();
 			transport.flush();
-		} catch (TException e) {
-			close();
-			throw e;
 		} finally {
 			transport.unlockTopic();
 		}
@@ -82,9 +79,6 @@ public class FooPublisher {
 			req.write(protocol);
 			protocol.writeMessageEnd();
 			transport.flush();
-		} catch (TException e) {
-			close();
-			throw e;
 		} finally {
 			transport.unlockTopic();
 		}
