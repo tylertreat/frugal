@@ -20,8 +20,13 @@ const (
 	// NATS limits messages to 1MB.
 	natsMaxMessageSize = 1024 * 1024
 	disconnect         = "DISCONNECT"
+	frugalPrefix       = "frugal."
 	natsV0             = 0
 )
+
+func newFrugalInbox() string {
+	return fmt.Sprintf("%s%s", frugalPrefix, nats.NewInbox())
+}
 
 // natsServiceTTransport implements thrift.TTransport.
 type natsServiceTTransport struct {
