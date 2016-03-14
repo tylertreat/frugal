@@ -216,6 +216,9 @@ func (n *natsServiceTTransport) handshakeRequest(hsBytes []byte) (m *nats.Msg, e
 	err = n.conn.PublishRequest(n.connectSubject, inbox, hsBytes)
 	if err == nil {
 		m, err = s.NextMsg(n.connectTimeout)
+		if err == nats.ErrTimeout {
+			err = thrift.NewTTransportException(thrift.TIMED_OUT, err.Error())
+		}
 	}
 	s.Unsubscribe()
 	return
