@@ -140,8 +140,16 @@ public class FNatsServer implements FServer {
         }
     }
 
-    private String newFrugalInbox() {
-        return TNatsServiceTransport.FRUGAL_PREFIX + conn.newInbox();
+    private String newFrugalInbox(String prefix) {
+        String[] tokens = prefix.split("\\.");
+        tokens[tokens.length-1] = conn.newInbox(); // Always at least 1 token
+        String inbox = "";
+        String pre = "";
+        for (String token : tokens) {
+            inbox += pre + token;
+            pre = ".";
+        }
+        return inbox;
     }
 
     private TTransport accept(String listenTo, String replyTo, String heartbeatSubject) throws TException {
@@ -191,7 +199,7 @@ public class FNatsServer implements FServer {
             }
 
             String heartbeat = conn.newInbox();
-            String listenTo = newFrugalInbox();
+            String listenTo = newFrugalInbox(message.getReplyTo());
             TTransport transport;
             try {
                 transport = accept(listenTo, reply, heartbeat);

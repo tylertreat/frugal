@@ -2,9 +2,9 @@ package frugal
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,7 +15,6 @@ import (
 const (
 	queue                      = "rpc"
 	defaultMaxMissedHeartbeats = 3
-	frugalPrefix               = "frugal."
 )
 
 type client struct {
@@ -24,8 +23,16 @@ type client struct {
 	heartbeat     string
 }
 
-func newFrugalInbox() string {
-	return fmt.Sprintf("%s%s", frugalPrefix, nats.NewInbox())
+func newInbox(prefix string) string {
+	tokens := strings.Split(prefix, ".")
+	tokens[len(tokens)-1] = nats.NewInbox() // Always at least 1 token
+	inbox := ""
+	pre := ""
+	for _, token := range tokens {
+		inbox += pre + token
+		pre = "."
+	}
+	return inbox
 }
 
 // FNatsServer implements FServer by using NATS as the underlying transport.
@@ -186,7 +193,7 @@ func (n *FNatsServer) handleConnection(msg *nats.Msg) {
 	}
 	var (
 		heartbeatReply = nats.NewInbox()
-		listenTo       = newFrugalInbox()
+		listenTo       = newInbox(msg.Reply)
 		tr, err        = n.accept(listenTo, msg.Reply, heartbeatReply)
 	)
 	if err != nil {
