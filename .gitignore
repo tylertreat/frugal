@@ -20,3 +20,8 @@ packages
 pubspec.lock
 
 skynet.Dockerfile
+
+# Ignore generated code and cross results
+test/integration/log/*
+test/integration/results.json
+test/integration/*/gen*
