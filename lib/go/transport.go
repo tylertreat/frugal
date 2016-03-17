@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"sync"
+	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
@@ -12,6 +13,8 @@ import (
 const (
 	REQUEST_TOO_LARGE  = 100
 	RESPONSE_TOO_LARGE = 101
+
+	defaultWatermark = 5 * time.Second
 )
 
 // ErrTransportClosed is returned by service calls when the transport is
@@ -58,11 +61,17 @@ type FTransport interface {
 	// Unregister a callback for the given Context.
 	Unregister(*FContext)
 
-	// SetMonitor starts a monitor that can watch the health of, and reopen, the transport.
+	// SetMonitor starts a monitor that can watch the health of, and reopen,
+	// the transport.
 	SetMonitor(FTransportMonitor)
 
-	// Closed channel receives the cause of an FTransport close (nil if clean close).
+	// Closed channel receives the cause of an FTransport close (nil if clean
+	// close).
 	Closed() <-chan error
+
+	// SetLoggingWatermark sets the miniumum amount of time a frame may await
+	// processing before triggering a warning log.
+	SetLoggingWatermark(watermark time.Duration)
 }
 
 // FTransportFactory produces FTransports which are used by services.
@@ -85,15 +94,22 @@ func (f *fMuxTransportFactory) GetTransport(tr thrift.TTransport) FTransport {
 	return NewFMuxTransport(tr, f.numWorkers)
 }
 
+type frameWrapper struct {
+	frameBytes []byte
+	timestamp  time.Time
+}
+
 type fMuxTransport struct {
 	*TFramedTransport
 	registry            FRegistry
 	numWorkers          uint
-	workC               chan []byte
+	workC               chan *frameWrapper
 	open                bool
 	mu                  sync.Mutex
 	closed              chan error
 	monitorClosedSignal chan<- error
+	loggingWatermark    time.Duration
+	waterMu             sync.RWMutex
 }
 
 // NewFMuxTransport wraps the given TTransport in a multiplexed FTransport. The
@@ -106,8 +122,18 @@ func NewFMuxTransport(tr thrift.TTransport, numWorkers uint) FTransport {
 	return &fMuxTransport{
 		TFramedTransport: NewTFramedTransport(tr),
 		numWorkers:       numWorkers,
-		workC:            make(chan []byte, numWorkers),
+		workC:            make(chan *frameWrapper, numWorkers),
+		loggingWatermark: defaultWatermark,
 	}
+}
+
+// SetLoggingWatermark sets the miniumum amount of time a frame may sit in the
+// internal frame buffer before a logging message is emmitted upon frame
+// processing. If not set, the default is 5 seconds.
+func (f *fMuxTransport) SetLoggingWatermark(watermark time.Duration) {
+	f.waterMu.Lock()
+	f.loggingWatermark = watermark
+	f.waterMu.Unlock()
 }
 
 func (f *fMuxTransport) SetMonitor(monitor FTransportMonitor) {
@@ -189,7 +215,7 @@ func (f *fMuxTransport) Open() error {
 			}
 
 			select {
-			case f.workC <- frame:
+			case f.workC <- &frameWrapper{frameBytes: frame, timestamp: time.Now()}:
 			case <-f.closedChan():
 				return
 			}
@@ -261,7 +287,13 @@ func (f *fMuxTransport) startWorkers() {
 				case <-f.closedChan():
 					return
 				case frame := <-f.workC:
-					if err := f.registry.Execute(frame); err != nil {
+					dur := time.Since(frame.timestamp)
+					f.waterMu.RLock()
+					if dur > f.loggingWatermark {
+						log.Printf("frugal: frame spent %+v in the transport buffer, your consumer might be backed up\n", dur)
+					}
+					f.waterMu.RUnlock()
+					if err := f.registry.Execute(frame.frameBytes); err != nil {
 						// An error here indicates an unrecoverable error, teardown transport.
 						log.Println("frugal: closing transport due to unrecoverable error processing frame:", err)
 						f.close(err)
