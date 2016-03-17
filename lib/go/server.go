@@ -11,7 +11,7 @@ type FServer interface {
 	// servers are required to be cleanly stoppable.
 	Stop() error
 
-	// SetLoggingWatermark sets the miniumum amount of time a frame may await
-	// processing before triggering a warning log.
-	SetLoggingWatermark(watermark time.Duration)
+	// SetHighWatermark sets the maximum amount of time a frame is allowed to
+	// await processing before triggering server overload logic.
+	SetHighWatermark(watermark time.Duration)
 }

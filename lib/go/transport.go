@@ -69,9 +69,9 @@ type FTransport interface {
 	// close).
 	Closed() <-chan error
 
-	// SetLoggingWatermark sets the miniumum amount of time a frame may await
-	// processing before triggering a warning log.
-	SetLoggingWatermark(watermark time.Duration)
+	// SetHighWatermark sets the maximum amount of time a frame is allowed to
+	// await processing before triggering transport overload logic.
+	SetHighWatermark(watermark time.Duration)
 }
 
 // FTransportFactory produces FTransports which are used by services.
@@ -108,7 +108,7 @@ type fMuxTransport struct {
 	mu                  sync.Mutex
 	closed              chan error
 	monitorClosedSignal chan<- error
-	loggingWatermark    time.Duration
+	highWatermark       time.Duration
 	waterMu             sync.RWMutex
 }
 
@@ -123,16 +123,16 @@ func NewFMuxTransport(tr thrift.TTransport, numWorkers uint) FTransport {
 		TFramedTransport: NewTFramedTransport(tr),
 		numWorkers:       numWorkers,
 		workC:            make(chan *frameWrapper, numWorkers),
-		loggingWatermark: defaultWatermark,
+		highWatermark:    defaultWatermark,
 	}
 }
 
-// SetLoggingWatermark sets the miniumum amount of time a frame may sit in the
-// internal frame buffer before a logging message is emmitted upon frame
-// processing. If not set, the default is 5 seconds.
-func (f *fMuxTransport) SetLoggingWatermark(watermark time.Duration) {
+// SetHighWatermark sets the maximum amount of time a frame is allowed to await
+// processing before triggering transport overload logic. For now, this just
+// consists of logging a warning. If not set, default is 5 seconds.
+func (f *fMuxTransport) SetHighWatermark(watermark time.Duration) {
 	f.waterMu.Lock()
-	f.loggingWatermark = watermark
+	f.highWatermark = watermark
 	f.waterMu.Unlock()
 }
 
@@ -289,7 +289,7 @@ func (f *fMuxTransport) startWorkers() {
 				case frame := <-f.workC:
 					dur := time.Since(frame.timestamp)
 					f.waterMu.RLock()
-					if dur > f.loggingWatermark {
+					if dur > f.highWatermark {
 						log.Printf("frugal: frame spent %+v in the transport buffer, your consumer might be backed up\n", dur)
 					}
 					f.waterMu.RUnlock()
