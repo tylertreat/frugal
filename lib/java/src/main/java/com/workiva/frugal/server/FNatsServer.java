@@ -37,7 +37,7 @@ public class FNatsServer implements FServer {
     private FTransportFactory transportFactory;
     private FProtocolFactory protocolFactory;
     private final BlockingQueue<Object> shutdown = new ArrayBlockingQueue<>(1);
-    private volatile long highWatermark = FTransport.DEFAULT_WATERMARK;
+    private long highWatermark = FTransport.DEFAULT_WATERMARK;
 
     private final ScheduledExecutorService heartbeatExecutor = Executors.newScheduledThreadPool(1);
 

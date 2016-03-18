@@ -206,7 +206,7 @@ public class FMuxTransport extends FTransport {
                 }
                 long duration = System.currentTimeMillis() - frame.getTimestamp();
                 if (duration > getHighWatermark()) {
-                    LOGGER.warning("frame spend " + duration + "ms in the transport buffer, your consumer might be backed up");
+                    LOGGER.warning("frame spent " + duration + "ms in the transport buffer, your consumer might be backed up");
                 }
                 try {
                     registry.execute(frame.getFrameBytes());

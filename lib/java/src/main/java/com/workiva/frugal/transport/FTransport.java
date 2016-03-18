@@ -25,7 +25,7 @@ public abstract class FTransport extends TTransport {
     private volatile FClosedCallback _closedCallback;
     private volatile FTransportClosedCallback closedCallback;
     private volatile FTransportClosedCallback monitor;
-    protected volatile long highWatermark = DEFAULT_WATERMARK;
+    protected long highWatermark = DEFAULT_WATERMARK;
     protected FRegistry registry;
 
     /**

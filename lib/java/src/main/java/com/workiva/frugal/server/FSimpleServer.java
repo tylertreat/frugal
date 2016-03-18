@@ -24,7 +24,7 @@ public class FSimpleServer implements FServer {
     private FTransportFactory fTransportFactory;
     private FProtocolFactory fProtocolFactory;
     private volatile boolean stopped;
-    private volatile long highWatermark = FTransport.DEFAULT_WATERMARK;
+    private long highWatermark = FTransport.DEFAULT_WATERMARK;
 
     private static Logger LOGGER = Logger.getLogger(FSimpleServer.class.getName());
 
