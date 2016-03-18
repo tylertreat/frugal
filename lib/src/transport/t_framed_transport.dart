@@ -12,7 +12,7 @@ class _TFramedTransport extends TTransport {
   final List<int> _readHeaderBytes = [];
   int _frameSize;
 
-  StreamController<Uint8List> _frameStream = new StreamController();
+  StreamController<_FrameWrapper> _frameStream = new StreamController();
 
   bool _isOpen;
 
@@ -33,7 +33,7 @@ class _TFramedTransport extends TTransport {
   }
 
   /// Stream for getting frame data.
-  Stream<Uint8List> get onFrame => _frameStream.stream;
+  Stream<_FrameWrapper> get onFrame => _frameStream.stream;
 
   @override
   bool get isOpen => _isOpen;
@@ -97,7 +97,8 @@ class _TFramedTransport extends TTransport {
 
     // Have an entire frame. Fire it off and reset.
     if (_readBuffer.length == _frameSize) {
-      _frameStream.add(new Uint8List.fromList(_readBuffer));
+      _frameStream.add(new _FrameWrapper(
+          new Uint8List.fromList(_readBuffer), new DateTime.now()));
       _readBuffer.clear();
       _frameSize = null;
     }
@@ -131,4 +132,13 @@ class _TFramedTransport extends TTransport {
     _writeBuffer.clear();
     return new Future.value(socket.send(buff));
   }
+}
+
+/// _FrameWrapper wraps a _TFramedTransport frame with a timestamp indicating
+/// when it was placed in the frame buffer.
+class _FrameWrapper {
+  Uint8List frameBytes;
+  DateTime timestamp;
+
+  _FrameWrapper(this.frameBytes, this.timestamp) {}
 }
