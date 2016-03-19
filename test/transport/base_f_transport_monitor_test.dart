@@ -68,7 +68,8 @@ void main() {
   });
 
   test('closeUncleanly provides a cause', () async {
-    var monitor = new BaseFTransportMonitor(initialWait: 1, maxReopenAttempts: 0);
+    var monitor =
+        new BaseFTransportMonitor(initialWait: 1, maxReopenAttempts: 0);
     var error = new StateError("fake error");
     monitor.onDisconnect.listen(expectAsync((cause) {
       expect(cause, error);
