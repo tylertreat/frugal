@@ -8,7 +8,7 @@ class MonitorRunner {
 
   MonitorRunner(this._monitor, this._transport);
 
-  Future onClose(Exception cause) async {
+  Future onClose(cause) async {
     if (cause == null) {
       _handleCleanClose();
     } else {
@@ -21,7 +21,7 @@ class MonitorRunner {
     _monitor.onClosedCleanly();
   }
 
-  Future _handleUncleanClose(Exception cause) async {
+  Future _handleUncleanClose(cause) async {
     log.warning('transport was closed uncleanly because: $cause');
     int wait = _monitor.onClosedUncleanly(cause);
     if (wait < 0) {
