@@ -58,4 +58,22 @@ void main() {
         maxReopenAttempts: 6, initialWait: 1, maxWait: 1);
     expect(1, monitor.onReopenFailed(0, 1));
   });
+
+  test('close cleanly provides no cause', () async {
+    var monitor = new BaseFTransportMonitor();
+    monitor.onDisconnect.listen(expectAsync((cause) {
+      expect(cause, isNull);
+    }));
+    monitor.onClosedCleanly();
+  });
+
+  test('closeUncleanly provides a cause', () async {
+    var monitor =
+        new BaseFTransportMonitor(initialWait: 1, maxReopenAttempts: 0);
+    var error = new StateError("fake error");
+    monitor.onDisconnect.listen(expectAsync((cause) {
+      expect(cause, error);
+    }));
+    monitor.onClosedUncleanly(error);
+  });
 }

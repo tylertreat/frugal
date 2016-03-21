@@ -8,7 +8,7 @@ abstract class FTransportMonitor {
   /// Called when the transport is closed for a reason other than a call
   /// to close(). Returns the number of milliseconds to wait before attempting
   /// to reopen the transport or a negative number indicating not to reopen.
-  int onClosedUncleanly(Exception cause);
+  int onClosedUncleanly(cause);
 
   /// Called when an attempt to reopen the transport fails. Returns the number
   /// of milliseconds to wait before attempting to reopen the transport. A
