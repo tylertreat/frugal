@@ -3,7 +3,7 @@ part of frugal;
 /// FMultiplexedTransport is a multiplexed Transport that routes frames to the
 /// correct callbacks.
 class FMultiplexedTransport extends FTransport {
-  final Logger log = new Logger('FTransport');
+  final Logger log = new Logger('FMultiplexedTransport');
   _TFramedTransport _transport;
   FRegistry _registry;
 
@@ -38,9 +38,14 @@ class FMultiplexedTransport extends FTransport {
     }
 
     _registry = registry;
-    _transport.onFrame.listen((Uint8List frame) {
+    _transport.onFrame.listen((_FrameWrapper frame) {
       try {
-        _registry.execute(frame);
+        var dur = new DateTime.now().difference(frame.timestamp);
+        if (dur > _highWatermark) {
+          log.warning(
+              "frame spent ${dur} in the transport buffer, your consumer might be backed up");
+        }
+        _registry.execute(frame.frameBytes);
       } catch (e) {
         // TODO: Log the stacktrace
         // Fatal error. Close the transport.
