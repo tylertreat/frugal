@@ -356,10 +356,9 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += "\t\t\t\tif e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {\n"
 		subscriber += "\t\t\t\t\treturn\n"
 		subscriber += "\t\t\t\t}\n"
-		subscriber += "\t\t\t\tlog.Printf(\"frugal: error receiving %s: %s\\n\", topic, err.Error())\n"
-		subscriber += "\t\t\t\tsub.Signal(err)\n"
-		subscriber += "\t\t\t\tsub.Unsubscribe()\n"
-		subscriber += "\t\t\t\treturn\n"
+		subscriber += "\t\t\t\tlog.Printf(\"frugal: error receiving %s, discarding frame: %s\\n\", topic, err.Error())\n"
+		subscriber += "\t\t\t\ttransport.DiscardFrame()\n"
+		subscriber += "\t\t\t\tcontinue\n"
 		subscriber += "\t\t\t}\n"
 		subscriber += "\t\t\thandler(ctx, received)\n"
 		subscriber += "\t\t}\n"
@@ -802,7 +801,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	}
 	if method.ReturnType != nil {
 		contents += "\t} else {\n"
-		if g.isPrimitive(method.ReturnType) {
+		if g.isPrimitive(method.ReturnType) || g.Frugal.IsEnum(method.ReturnType) {
 			contents += "\t\tresult.Success = &retval\n"
 		} else {
 			contents += "\t\tresult.Success = retval\n"
