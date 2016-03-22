@@ -10,5 +10,5 @@ artifacts:
         - frugal-*.jar
     release:
         - ./frugal
-    library:
+    go_library:
         - goLib.tar.gz
