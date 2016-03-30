@@ -255,7 +255,7 @@ func (f *fMuxTransport) close(cause error) error {
 	select {
 	case f.closed <- cause:
 	default:
-		log.Println("frugal: unable to put close error '%s' on fMuxTransport closed channel")
+		log.Println("frugal: unable to put close error '%s' on fMuxTransport closed channel", cause)
 	}
 	close(f.closed)
 
@@ -264,7 +264,7 @@ func (f *fMuxTransport) close(cause error) error {
 	case f.monitorClosedSignal <- cause:
 	default:
 		if f.monitorClosedSignal != nil {
-			log.Println("frugal: unable to put close error '%s' on fMuxTransport monitor channel")
+			log.Println("frugal: unable to put close error '%s' on fMuxTransport monitor channel", cause)
 		}
 	}
 
