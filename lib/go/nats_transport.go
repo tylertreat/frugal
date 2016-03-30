@@ -6,13 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
+	log "github.com/Sirupsen/logrus"
 	"github.com/nats-io/nats"
 )
 
@@ -138,7 +138,7 @@ func (n *natsServiceTTransport) Open() error {
 				case <-time.After(n.heartbeatTimeoutPeriod()):
 					missed++
 					if missed >= n.maxMissedHeartbeats {
-						log.Println("frugal: server heartbeat expired")
+						log.Warn("frugal: server heartbeat expired")
 						n.Close()
 						return
 					}
