@@ -15,6 +15,7 @@ import static org.junit.Assert.assertEquals;
 
 import static org.junit.Assert.assertFalse;
 
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
@@ -47,6 +48,7 @@ public class TNatsServiceTransportTest {
 
         try {
             client.open();
+            fail();
         } catch(TTransportException ex) {
             assertEquals(TTransportException.NOT_OPEN, ex.getType());
             assertEquals("NATS not connected, has status DISCONNECTED", ex.getMessage());
@@ -60,6 +62,7 @@ public class TNatsServiceTransportTest {
 
         try {
             client.open();
+            fail();
         } catch(TTransportException ex) {
             assertEquals(TTransportException.ALREADY_OPEN, ex.getType());
             assertEquals("NATS transport already open", ex.getMessage());
