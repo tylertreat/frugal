@@ -1,8 +1,9 @@
 package frugal
 
 import (
-	"log"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // FTransportMonitor watches and heals an FTransport.
@@ -71,7 +72,7 @@ type monitorRunner struct {
 
 // Starts a runner to monitor the transport.
 func (r *monitorRunner) run() {
-	log.Println("FTransport Monitor: Beginning to monitor transport...")
+	log.Info("FTransport Monitor: Beginning to monitor transport...")
 	for {
 		if cause := <-r.closedChannel; cause != nil {
 			if shouldContinue := r.handleUncleanClose(cause); !shouldContinue {
@@ -86,17 +87,17 @@ func (r *monitorRunner) run() {
 
 // Handle a clean close of the transport.
 func (r *monitorRunner) handleCleanClose() {
-	log.Println("FTransport Monitor: FTransport was closed cleanly. Terminating...")
+	log.Info("FTransport Monitor: FTransport was closed cleanly. Terminating...")
 	r.monitor.OnClosedCleanly()
 }
 
 // Handle an unclean close of the transport.
 func (r *monitorRunner) handleUncleanClose(cause error) bool {
-	log.Printf("FTransport Monitor: FTransport was closed uncleanly because: %v\n", cause)
+	log.Warnf("FTransport Monitor: FTransport was closed uncleanly because: %v\n", cause)
 
 	reopen, InitialWait := r.monitor.OnClosedUncleanly(cause)
 	if !reopen {
-		log.Println("FTransport Monitor: Instructed not to reopen. Terminating...")
+		log.Warn("FTransport Monitor: Instructed not to reopen. Terminating...")
 		return false
 	}
 
@@ -110,21 +111,21 @@ func (r *monitorRunner) attemptReopen(InitialWait time.Duration) bool {
 	prevAttempts := uint(0)
 
 	for reopen {
-		log.Printf("FTransport Monitor: Attempting to reopen after %v\n", wait)
+		log.Infof("FTransport Monitor: Attempting to reopen after %v\n", wait)
 		time.Sleep(wait)
 
 		if err := r.transport.Open(); err != nil {
-			log.Printf("FTransport Monitor: Failed to re-open transport due to: %v\n", err)
+			log.Errorf("FTransport Monitor: Failed to re-open transport due to: %v\n", err)
 			prevAttempts++
 
 			reopen, wait = r.monitor.OnReopenFailed(prevAttempts, wait)
 			continue
 		}
-		log.Println("FTransport Monitor: Successfully re-opened!")
+		log.Info("FTransport Monitor: Successfully re-opened!")
 		r.monitor.OnReopenSucceeded()
 		return true
 	}
 
-	log.Println("FTransport Monitor: ReopenFailed callback instructed not to reopen. Terminating...")
+	log.Warn("FTransport Monitor: ReopenFailed callback instructed not to reopen. Terminating...")
 	return false
 }

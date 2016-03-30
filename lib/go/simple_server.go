@@ -1,11 +1,11 @@
 package frugal
 
 import (
-	"log"
 	"sync"
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
+	log "github.com/Sirupsen/logrus"
 )
 
 // FSimpleServer is a simple, single-threaded FServer.
@@ -53,7 +53,7 @@ func (p *FSimpleServer) AcceptLoop() error {
 		if client != nil {
 			go func() {
 				if err := p.accept(client); err != nil {
-					log.Println("frugal: error accepting client transport:", err)
+					log.Error("frugal: error accepting client transport:", err)
 				}
 			}()
 		}
