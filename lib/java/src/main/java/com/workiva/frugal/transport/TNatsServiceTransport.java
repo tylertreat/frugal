@@ -34,18 +34,20 @@ public class TNatsServiceTransport extends TTransport {
     private PipedInputStream reader;
     private ByteBuffer writeBuffer;
     private Subscription sub;
-    private String listenTo;
-    private String writeTo;
+    protected String listenTo;
+    protected String writeTo;
+
     private AsyncSubscription heartbeatSub;
-    private String heartbeatListen;
-    private String heartbeatReply;
-    private long heartbeatInterval;
+    protected String heartbeatListen;
+    protected String heartbeatReply;
+    protected long heartbeatInterval;
     private Timer heartbeatTimer;
     private AtomicInteger missedHeartbeats;
+
     private String connectionSubject;
     private final long connectionTimeout;
     private final int maxMissedHeartbeats;
-    private boolean isOpen;
+    protected boolean isOpen;
 
     private static Logger LOGGER = Logger.getLogger(TNatsServiceTransport.class.getName());
 

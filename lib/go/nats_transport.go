@@ -132,6 +132,7 @@ func (n *natsServiceTTransport) Open() error {
 			select {
 			case n.recvHeartbeatChan() <- struct{}{}:
 			default:
+				log.Println("frugal: natsServiceTTransport received heartbeat dropped")
 			}
 			n.conn.Publish(n.heartbeatReply, nil)
 		})
@@ -283,8 +284,9 @@ func (n *natsServiceTTransport) Close() error {
 	n.heartbeatSub = nil
 	close(n.closed)
 	n.isOpen = false
+	n.writer.Close()
 	n.fieldsMu.Unlock()
-	return thrift.NewTTransportExceptionFromError(n.writer.Close())
+	return nil
 }
 
 func (n *natsServiceTTransport) Read(p []byte) (int, error) {
