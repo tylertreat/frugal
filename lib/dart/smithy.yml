@@ -1,0 +1,21 @@
+project: dart
+language: dart
+
+runner_image: docker.webfilings.org/devops/smithy-runner-dart1.13.2:3.2.6-libc
+
+env:
+  - CODECOV_TOKEN='bQ4MgjJ0G2Y73v8JNX6L7yMK9679nbYB'
+
+script:
+  - pub get
+  - pub run dart_dev test
+  - pub run dart_dev coverage --no-html
+  - ./tool/codecov.sh
+  - pub run dart_dev format --check
+  - pub run dart_dev analyze
+  - git clean -xdf .
+  - zip -r frugal-dart.zip .
+
+artifacts:
+  - ./frugal-dart.zip
+  - ./pubspec.lock
