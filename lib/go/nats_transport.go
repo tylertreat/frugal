@@ -78,6 +78,10 @@ func newNatsServiceTTransportServer(conn *nats.Conn, listenTo, writeTo string) t
 	}
 }
 
+func (n *natsServiceTTransport) isClient() bool {
+	return n.connectSubject != ""
+}
+
 // Open handshakes with the server (if this is a client transport) initializes
 // the write buffer and reader/writer pipe, subscribes to the specified
 // subject, and starts heartbeating.
@@ -94,7 +98,7 @@ func (n *natsServiceTTransport) Open() error {
 	}
 
 	// Handshake if this is a client.
-	if n.connectSubject != "" {
+	if n.isClient() {
 		if err := n.handshake(); err != nil {
 			return thrift.NewTTransportExceptionFromError(err)
 		}
@@ -108,6 +112,11 @@ func (n *natsServiceTTransport) Open() error {
 	sub, err := n.conn.Subscribe(n.listenTo, func(msg *nats.Msg) {
 		if msg.Reply == disconnect {
 			// Remote client is disconnecting.
+			if n.isClient() {
+				log.Println("frugal: error - received unexpected disconnect from the server")
+			} else {
+				log.Println("frugal: client closed cleanly")
+			}
 			n.Close()
 			return
 		}
