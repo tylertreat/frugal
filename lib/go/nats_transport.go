@@ -113,9 +113,9 @@ func (n *natsServiceTTransport) Open() error {
 		if msg.Reply == disconnect {
 			// Remote client is disconnecting.
 			if n.isClient() {
-				log.Println("frugal: error - received unexpected disconnect from the server")
+				log.Error("frugal: transport received unexpected disconnect from the server")
 			} else {
-				log.Println("frugal: client closed cleanly")
+				log.Debug("frugal: client transport closed cleanly")
 			}
 			n.Close()
 			return
