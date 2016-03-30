@@ -132,6 +132,7 @@ func (n *natsServiceTTransport) Open() error {
 			select {
 			case n.recvHeartbeatChan() <- struct{}{}:
 			default:
+				log.Println("frugal: natsServiceTTransport received heartbeat dropped")
 			}
 			n.conn.Publish(n.heartbeatReply, nil)
 		})
