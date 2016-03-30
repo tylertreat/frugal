@@ -91,6 +91,8 @@ public class TNatsServiceTransport extends TTransport {
         return new TNatsServiceTransport(conn, listenTo, writeTo);
     }
 
+    private boolean isClient() {return connectionSubject != null;}
+
     @Override
     public synchronized boolean isOpen() {
         return conn.getState() == Constants.ConnState.CONNECTED && isOpen;
@@ -112,7 +114,7 @@ public class TNatsServiceTransport extends TTransport {
             throw new TTransportException(TTransportException.ALREADY_OPEN, "NATS transport already open");
         }
 
-        if (connectionSubject != null) {
+        if (isClient()) {
             handshake();
         }
 
@@ -133,6 +135,11 @@ public class TNatsServiceTransport extends TTransport {
             @Override
             public void onMessage(Message msg) {
                 if (DISCONNECT.equals(msg.getReplyTo())) {
+                    if (isClient()) {
+                        LOGGER.severe("received unexpected disconnect from the server");
+                    } else {
+                        LOGGER.info("client closed cleanly");
+                    }
                     close();
                     return;
                 }
