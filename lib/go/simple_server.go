@@ -98,5 +98,6 @@ func (p *FSimpleServer) accept(client thrift.TTransport) error {
 		return err
 	}
 
+	log.Debug("frugal: client connection accepted")
 	return nil
 }

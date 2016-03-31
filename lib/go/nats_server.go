@@ -328,6 +328,7 @@ func (n *FNatsServer) accept(listenTo, replyTo, heartbeat string) (FTransport, e
 		n.remove(heartbeat)
 	}()
 
+	log.Debug("frugal: client connection accepted")
 	return transport, nil
 }
 
