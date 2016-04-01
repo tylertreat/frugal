@@ -1,5 +1,5 @@
 name: frugal
-version: 1.0.10
+version: 1.1.0
 description: A frugal client for Dart
 homepage: https://github.com/Workiva/frugal-dart
 publish_to: https://pub.workiva.org
