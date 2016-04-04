@@ -30,9 +30,6 @@ go get -d -t ./go .
 go build
 # Run the tests
 go test
-# tar the library
-cd $ROOT
-tar -czf goLib.tar.gz $ROOT/lib/go
 
 # DART
 # Compile library code
