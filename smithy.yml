@@ -1,7 +1,7 @@
 project: frugal
 language: golang
 
-runner_image: docker.webfilings.org/messaging/smithy-runner:1
+runner_image: docker.webfilings.org/messaging/smithy-runner:2
 
 script:
     - ./scripts/smithy.sh
