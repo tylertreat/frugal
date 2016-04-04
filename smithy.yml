@@ -5,7 +5,6 @@ runner_image: docker.webfilings.org/messaging/smithy-runner:2
 
 script:
     - ./scripts/smithy.sh
-    - tar -czf goLib.tar.gz ./lib/go
 
 artifacts:
     artifactory:
