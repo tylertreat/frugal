@@ -1,17 +1,35 @@
 package frugal
 
 import (
+	"bytes"
 	"testing"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestClientRegistryRegisterUnregister(t *testing.T) {
+// Ensures Execute returns an error if a bad frugal frame is passed.
+func TestClientRegistryBadFrame(t *testing.T) {
 	assert := assert.New(t)
-	called := false
+	registry := NewFClientRegistry()
+	assert.Error(registry.Execute([]byte{0}))
+}
+
+// Ensures Execute returns an error if the frame fruagl headers are missing an
+// opID.
+func TestClientRegistryMissingOpID(t *testing.T) {
+	assert := assert.New(t)
+	registry := NewFClientRegistry()
+	assert.Error(registry.Execute(basicFrame))
+}
+
+// Ensures context Register, Execute, and Unregister work as intended with
+// a valid frugal frame.
+func TestClientRegistry(t *testing.T) {
+	assert := assert.New(t)
+	called := 0
 	cb := func(tr thrift.TTransport) error {
-		called = true
+		called++
 		return nil
 	}
 	registry := NewFClientRegistry()
@@ -19,51 +37,33 @@ func TestClientRegistryRegisterUnregister(t *testing.T) {
 
 	// Register the context for the first time
 	assert.Nil(registry.Register(ctx, cb))
-	handler, ok := registry.(*clientRegistry).handlers[ctx.opID()]
-	assert.True(ok)
-	assert.Nil(handler(&mockFTransport{}))
-	assert.True(called)
+	opID := ctx.opID()
+	assert.True(opID > 0)
+	// Encode a frame with this context
+	transport := &thrift.TMemoryBuffer{Buffer: new(bytes.Buffer)}
+	proto := &FProtocol{tProtocolFactory.GetProtocol(transport)}
+	err := proto.writeHeader(ctx.RequestHeaders())
+	assert.Nil(err)
+	// Pass the frame to execute
+	frame := transport.Bytes()
+	assert.Nil(registry.Execute(frame))
+	assert.Equal(1, called)
 
 	// Reregister the same context
 	assert.Error(registry.Register(ctx, cb))
 
 	// Unregister the context
 	registry.Unregister(ctx)
-	_, ok = registry.(*clientRegistry).handlers[ctx.opID()]
+	_, ok := registry.(*clientRegistry).handlers[ctx.opID()]
 	assert.False(ok)
-}
+	// But make sure execute sill returns nil when executing a frame with the
+	// same opID (it will just drop the frame)
+	assert.Nil(registry.Execute(frame))
+	assert.Equal(1, called)
 
-func TestClientRegistryBadFrame(t *testing.T) {
-	assert := assert.New(t)
-	registry := NewFClientRegistry()
-	assert.Error(registry.Execute([]byte{0}))
-}
-
-func TestClientRegistryMissingOpID(t *testing.T) {
-	assert := assert.New(t)
-	registry := NewFClientRegistry()
-	assert.Error(registry.Execute(basicFrame))
-}
-
-func TestClientRegistryExecute(t *testing.T) {
-	assert := assert.New(t)
-	called := false
-	cb := func(tr thrift.TTransport) error {
-		called = true
-		mem := tr.(*thrift.TMemoryBuffer).Bytes()
-		assert.Equal(frugalFrame, mem)
-		return nil
-	}
-	registry := NewFClientRegistry()
-
-	// Try executing without registering first
-	assert.Nil(registry.Execute(frugalFrame))
-	assert.False(called)
-
-	// Register and execute for real
-	registry.(*clientRegistry).handlers[0] = cb
-	assert.Nil(registry.Execute(frugalFrame))
-	assert.True(called)
+	// Now, register the same context again and ensure the opID is increased.
+	assert.Nil(registry.Register(ctx, cb))
+	assert.True(ctx.opID() > opID)
 }
 
 type mockProcessor struct {
@@ -77,6 +77,8 @@ func (p *mockProcessor) Process(in, out *FProtocol) error {
 	return nil
 }
 
+// Ensures registry Execute properly hands off frugal frames to the registry
+// Processor.
 func TestServerRegistry(t *testing.T) {
 	assert := assert.New(t)
 	processor := &mockProcessor{}

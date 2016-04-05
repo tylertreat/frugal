@@ -10,17 +10,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var basicFrame = []byte{0, 0, 0, 0, 14, 0, 0, 0, 3, 102, 111, 111, 0, 0, 0, 3, 98, 97, 114}
-var basicHeaders = map[string]string{"foo": "bar"}
+var (
+	basicFrame   = []byte{0, 0, 0, 0, 14, 0, 0, 0, 3, 102, 111, 111, 0, 0, 0, 3, 98, 97, 114}
+	basicHeaders = map[string]string{"foo": "bar"}
 
-var frugalFrame = []byte{0, 0, 0, 0, 65, 0, 0, 0, 5, 104, 101, 108, 108, 111, 0, 0, 0, 5,
-	119, 111, 114, 108, 100, 0, 0, 0, 5, 95, 111, 112, 105, 100, 0, 0, 0, 1, 48, 0, 0, 0,
-	4, 95, 99, 105, 100, 0, 0, 0, 21, 105, 89, 65, 71, 67, 74, 72, 66, 87, 67, 75, 76, 74,
-	66, 115, 106, 107, 100, 111, 104, 98}
-var frugalHeaders = map[string]string{opID: "0", cid: "iYAGCJHBWCKLJBsjkdohb", "hello": "world"}
+	frugalFrame = []byte{0, 0, 0, 0, 65, 0, 0, 0, 5, 104, 101, 108, 108, 111, 0, 0, 0, 5,
+		119, 111, 114, 108, 100, 0, 0, 0, 5, 95, 111, 112, 105, 100, 0, 0, 0, 1, 48, 0, 0, 0,
+		4, 95, 99, 105, 100, 0, 0, 0, 21, 105, 89, 65, 71, 67, 74, 72, 66, 87, 67, 75, 76, 74,
+		66, 115, 106, 107, 100, 111, 104, 98}
+	frugalHeaders = map[string]string{opID: "0", cid: "iYAGCJHBWCKLJBsjkdohb", "hello": "world"}
 
-var tProtocolFactory = thrift.NewTBinaryProtocolFactoryDefault()
+	tProtocolFactory = thrift.NewTBinaryProtocolFactoryDefault()
+)
 
+// Ensures ReadRequestHeader returns a error when the headers do not contain
+// an opID.
 func TestReadRequestHeaderMissingOpID(t *testing.T) {
 	assert := assert.New(t)
 	transport := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(basicFrame)}
@@ -31,6 +35,8 @@ func TestReadRequestHeaderMissingOpID(t *testing.T) {
 	assert.Equal(expectedErr, err)
 }
 
+// Ensures ReadRequestHeader correctly reads frugal request headers from the
+// protocol.
 func TestReadRequestHeader(t *testing.T) {
 	assert := assert.New(t)
 	transport := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(frugalFrame)}
@@ -45,6 +51,8 @@ func TestReadRequestHeader(t *testing.T) {
 	assert.Equal(frugalHeaders["hello"], val)
 }
 
+// Ensures ReadRequestHeader correctly reads frugal response headers from the
+// protocol.
 func TestReadResponseHeader(t *testing.T) {
 	assert := assert.New(t)
 	transport := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(basicFrame)}
@@ -57,6 +65,7 @@ func TestReadResponseHeader(t *testing.T) {
 	assert.Equal(val, "bar")
 }
 
+// Ensures writeHeader bubbles up transport Write error.
 func TestWriteHeaderErroredWrite(t *testing.T) {
 	assert := assert.New(t)
 	mft := &mockFTransport{}
@@ -67,6 +76,8 @@ func TestWriteHeaderErroredWrite(t *testing.T) {
 	assert.Equal(expectedErr, proto.writeHeader(basicHeaders))
 }
 
+// Ensures writeHeader returns an error if transport Write fails to write all
+// the header bytes.
 func TestWriteHeaderBadWrite(t *testing.T) {
 	assert := assert.New(t)
 	mft := &mockFTransport{}
@@ -76,6 +87,7 @@ func TestWriteHeaderBadWrite(t *testing.T) {
 	assert.Equal(expectedErr, proto.writeHeader(basicHeaders))
 }
 
+// Ensures writeHeader properly encodes header bytes.
 func TestWriteHeader(t *testing.T) {
 	assert := assert.New(t)
 	mft := &mockFTransport{}
@@ -84,6 +96,8 @@ func TestWriteHeader(t *testing.T) {
 	assert.Nil(proto.writeHeader(basicHeaders))
 }
 
+// Ensures readHeader returns an error if there are not enough frame bytes to
+// read from the transport.
 func TestReadHeaderTransportError(t *testing.T) {
 	assert := assert.New(t)
 	transport := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer([]byte{0})}
@@ -91,6 +105,8 @@ func TestReadHeaderTransportError(t *testing.T) {
 	assert.Error(err)
 }
 
+// Ensures readHeader returns an error for an unsupported frugal frame
+// encoding version.
 func TestReadHeaderUnsupportedVersion(t *testing.T) {
 	assert := assert.New(t)
 	transport := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer([]byte{0x01, 0, 0, 0, 0})}
@@ -99,6 +115,8 @@ func TestReadHeaderUnsupportedVersion(t *testing.T) {
 	assert.Equal(expectedErr, err)
 }
 
+// Ensures readHeader returns an error for a frugal frame with an incorrectly
+// encoded length.
 func TestReadHeaderBadLength(t *testing.T) {
 	assert := assert.New(t)
 	transport := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer([]byte{protocolV0, 0, 0, 0, 1})}
@@ -106,6 +124,7 @@ func TestReadHeaderBadLength(t *testing.T) {
 	assert.Error(err)
 }
 
+// Ensures readHeader correctly reads properly encoded frugal headers.
 func TestReadHeader(t *testing.T) {
 	assert := assert.New(t)
 	transport := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(basicFrame)}
@@ -115,6 +134,7 @@ func TestReadHeader(t *testing.T) {
 	assert.Equal(basicHeaders, headers)
 }
 
+// Ensures getHeadersFromFrame returns an error for frames with invalid size.
 func TestGetHeadersFromFrameInvalidSize(t *testing.T) {
 	assert := assert.New(t)
 	expectedErr := NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: invalid frame size 1")
@@ -122,6 +142,8 @@ func TestGetHeadersFromFrameInvalidSize(t *testing.T) {
 	assert.Equal(expectedErr, err)
 }
 
+// Ensures getHeadersFromeFrame returns an error for an unsupported frugal
+// frame encoding version.
 func TestGetHeadersFromFrameUnsupportedVersion(t *testing.T) {
 	assert := assert.New(t)
 	expectedErr := NewFProtocolExceptionWithType(thrift.BAD_VERSION, "frugal: unsupported protocol version 1")
@@ -129,6 +151,7 @@ func TestGetHeadersFromFrameUnsupportedVersion(t *testing.T) {
 	assert.Equal(expectedErr, err)
 }
 
+// Ensures getHeadersFromFrame properly decodes frugal headers from frame.
 func TestGetHeadersFromFrame(t *testing.T) {
 	assert := assert.New(t)
 	headers, err := getHeadersFromFrame(basicFrame)
