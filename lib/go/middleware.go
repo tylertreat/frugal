@@ -4,7 +4,8 @@ import "reflect"
 
 type (
 	// InvocationHandler processes a service method invocation on a proxy
-	// instance and returns the result.
+	// instance and returns the result. The args and return value should match
+	// the arity of the proxied method and have the same types.
 	InvocationHandler func(service, method string, args []interface{}) []interface{}
 
 	// ServiceMiddleware returns an InvocationHandler which proxies the given
