@@ -24,7 +24,7 @@ func ComposeMiddleware(method interface{}, middleware []ServiceMiddleware) Invoc
 }
 
 func newInvocationHandler(method interface{}) InvocationHandler {
-	return func(serviceName, methodName string, args []interface{}) []interface{} {
+	return func(_, _ string, args []interface{}) []interface{} {
 		argValues := make([]reflect.Value, len(args))
 		for i, arg := range args {
 			argValues[i] = reflect.ValueOf(arg)
