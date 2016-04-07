@@ -8,7 +8,8 @@ type (
 	InvocationHandler func(service, method string, args []interface{}) []interface{}
 
 	// ServiceMiddleware returns an InvocationHandler which proxies the given
-	// InvocationHandler.
+	// InvocationHandler. This can be used to apply middleware logic around a
+	// service call.
 	ServiceMiddleware func(InvocationHandler) InvocationHandler
 )
 
