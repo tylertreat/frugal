@@ -255,15 +255,15 @@ type FBlahProcessor struct {
 	handler      FBlah
 }
 
-func NewFBlahProcessor(handler FBlah) *FBlahProcessor {
+func NewFBlahProcessor(handler FBlah, middleware ...frugal.ServiceMiddleware) *FBlahProcessor {
 	writeMu := &sync.Mutex{}
 	p := &FBlahProcessor{
 		processorMap: make(map[string]frugal.FProcessorFunction),
 		writeMu:      writeMu,
 		handler:      handler,
 	}
-	p.AddToProcessorMap("ping", &blahFPing{handler: handler, writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("bleh", &blahFBleh{handler: handler, writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("ping", &blahFPing{handler: frugal.ComposeMiddleware(handler.Ping, middleware), writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("bleh", &blahFBleh{handler: frugal.ComposeMiddleware(handler.Bleh, middleware), writeMu: p.GetWriteMutex()})
 	return p
 }
 
@@ -310,7 +310,7 @@ func (p *FBlahProcessor) Process(iprot, oprot *frugal.FProtocol) error {
 }
 
 type blahFPing struct {
-	handler FBlah
+	handler frugal.InvocationHandler
 	writeMu *sync.Mutex
 }
 
@@ -328,7 +328,17 @@ func (p *blahFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol
 	iprot.ReadMessageEnd()
 	result := BlahPingResult{}
 	var err2 error
-	if err2 = p.handler.Ping(ctx); err2 != nil {
+	ret := p.handler("Blah", "Ping", []interface{}{ctx})
+	if len(ret) != 1 {
+		p.writeMu.Lock()
+		blahWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "ping", fmt.Sprintf("Internal error processing ping: middleware returned %d arguments, expected 1", len(ret)))
+		p.writeMu.Unlock()
+		return nil
+	}
+	if ret[0] != nil {
+		err2 = ret[0].(error)
+	}
+	if err2 != nil {
 		p.writeMu.Lock()
 		blahWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "ping", "Internal error processing ping: "+err2.Error())
 		p.writeMu.Unlock()
@@ -375,7 +385,7 @@ func (p *blahFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol
 }
 
 type blahFBleh struct {
-	handler FBlah
+	handler frugal.InvocationHandler
 	writeMu *sync.Mutex
 }
 
@@ -394,7 +404,18 @@ func (p *blahFBleh) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol
 	result := BlahBlehResult{}
 	var err2 error
 	var retval int64
-	if retval, err2 = p.handler.Bleh(ctx, args.One, args.Two); err2 != nil {
+	ret := p.handler("Blah", "Bleh", []interface{}{ctx, args.One, args.Two})
+	if len(ret) != 2 {
+		p.writeMu.Lock()
+		blahWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "bleh", fmt.Sprintf("Internal error processing bleh: middleware returned %d arguments, expected 2", len(ret)))
+		p.writeMu.Unlock()
+		return nil
+	}
+	retval = ret[0].(int64)
+	if ret[1] != nil {
+		err2 = ret[1].(error)
+	}
+	if err2 != nil {
 		switch v := err2.(type) {
 		case *InvalidOperation:
 			result.Oops = v
