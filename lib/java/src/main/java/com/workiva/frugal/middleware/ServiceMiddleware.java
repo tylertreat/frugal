@@ -15,7 +15,14 @@ public interface ServiceMiddleware {
         protected String service;
         protected T target;
 
-        public Handler(String service, T target) {
+        /**
+         * Handler shouldn't be constructed by user code. User code should just pass through the Handler provided by
+         * {@link ServiceMiddleware#apply(Handler)}.
+         *
+         * @param service the service name.
+         * @param target  the service handler.
+         */
+        protected Handler(String service, T target) {
             this.service = service;
             this.target = target;
         }

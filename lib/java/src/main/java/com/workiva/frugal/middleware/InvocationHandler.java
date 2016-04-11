@@ -36,10 +36,11 @@ public abstract class InvocationHandler<T> implements java.lang.reflect.Invocati
      * @return the method return value.
      * @throws Throwable thrown by the wrapped method.
      */
-    public abstract Object invoke(String service, Method method, Object receiver, Object[] args) throws Throwable;
+    public abstract Object invoke(String service, Method method, T receiver, Object[] args) throws Throwable;
 
     /**
-     * Applies ServiceMiddleware to the provided target object by constructing a dynamic proxy.
+     * Applies ServiceMiddleware to the provided target object by constructing a dynamic proxy. This should only be
+     * called by generated code.
      *
      * @param service    the name of the service.
      * @param target     the service handler.
@@ -52,7 +53,7 @@ public abstract class InvocationHandler<T> implements java.lang.reflect.Invocati
     public static <T> T composeMiddleware(String service, T target, Class iface, ServiceMiddleware[] middleware) {
         InvocationHandler<T> handler = new InvocationHandler<T>(new ServiceMiddleware.Handler<>(service, target)) {
             @Override
-            public Object invoke(String service, Method method, Object receiver, Object[] args) throws Throwable {
+            public Object invoke(String service, Method method, T receiver, Object[] args) throws Throwable {
                 return method.invoke(receiver, args);
             }
         };
