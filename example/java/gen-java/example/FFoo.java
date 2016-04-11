@@ -8,7 +8,8 @@ package example;
 
 import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.exception.FTimeoutException;
-import com.workiva.frugal.processor.FBaseProcessor;
+import com.workiva.frugal.middleware.InvocationHandler;
+import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFunction;
 import com.workiva.frugal.protocol.*;
@@ -29,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 public class FFoo {
 
 	/**
-	 * This is a thrift service. Frugal will generate bindings that include 
+	 * This is a thrift service. Frugal will generate bindings that include
 	 * a frugal Context for each service call.
 	 */
 	public interface Iface extends base.FBaseFoo.Iface {
@@ -272,15 +273,16 @@ public class FFoo {
 
 	public static class Processor extends base.FBaseFoo.Processor implements FProcessor {
 
-		public Processor(Iface iface) {
-			super(iface, getProcessMap(iface, new java.util.HashMap<String, FProcessorFunction>()));
+		public Processor(Iface iface, ServiceMiddleware... middleware) {
+			super(iface, getProcessMap(iface, new java.util.HashMap<String, FProcessorFunction>(), middleware), middleware);
 		}
 
-		protected Processor(Iface iface, java.util.Map<String, FProcessorFunction> processMap) {
-			super(iface, getProcessMap(iface, processMap));
+		protected Processor(Iface iface, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {
+			super(iface, getProcessMap(iface, processMap, middleware), middleware);
 		}
 
-		private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap) {
+		private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {
+            handler = InvocationHandler.composeMiddleware("Foo", handler, Iface.class, middleware);
 			processMap.put("ping", new Ping(handler));
 			processMap.put("blah", new Blah(handler));
 			processMap.put("oneWay", new OneWay(handler));
