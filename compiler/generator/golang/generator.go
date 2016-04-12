@@ -671,14 +671,14 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	}
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func NewF%sProcessor(handler F%s) *F%sProcessor {\n",
+	contents += fmt.Sprintf("func NewF%sProcessor(handler F%s, middleware ...frugal.ServiceMiddleware) *F%sProcessor {\n",
 		servTitle, servTitle, servTitle)
 	if service.Extends == "" {
 		contents += "\twriteMu := &sync.Mutex{}\n"
 	}
 	contents += fmt.Sprintf("\tp := &F%sProcessor{\n", servTitle)
 	if service.Extends != "" {
-		contents += fmt.Sprintf("\t\t%sNewF%sProcessor(handler),\n",
+		contents += fmt.Sprintf("\t\t%sNewF%sProcessor(handler, middleware...),\n",
 			g.getServiceExtendsNamespace(service), service.ExtendsService())
 	} else {
 		contents += "\t\tprocessorMap: make(map[string]frugal.FProcessorFunction),\n"
@@ -688,8 +688,8 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	contents += "\t}\n"
 	for _, method := range service.Methods {
 		contents += fmt.Sprintf(
-			"\tp.AddToProcessorMap(\"%s\", &%sF%s{handler: handler, writeMu: p.GetWriteMutex()})\n",
-			generator.LowercaseFirstLetter(method.Name), servLower, snakeToCamel(method.Name))
+			"\tp.AddToProcessorMap(\"%s\", &%sF%s{handler: frugal.ComposeMiddleware(handler.%s, middleware), writeMu: p.GetWriteMutex()})\n",
+			generator.LowercaseFirstLetter(method.Name), servLower, snakeToCamel(method.Name), snakeToCamel(method.Name))
 	}
 
 	contents += "\treturn p\n"
@@ -757,7 +757,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	)
 
 	contents := fmt.Sprintf("type %sF%s struct {\n", servLower, nameTitle)
-	contents += fmt.Sprintf("\thandler F%s\n", servTitle)
+	contents += "\thandler frugal.InvocationHandler\n"
 	contents += "\twriteMu *sync.Mutex\n"
 	contents += "}\n\n"
 
@@ -781,12 +781,26 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\tvar err2 error\n"
 	if method.ReturnType != nil {
 		contents += fmt.Sprintf("\tvar retval %s\n", g.getGoTypeFromThriftType(method.ReturnType))
-		contents += fmt.Sprintf("\tif retval, err2 = p.handler.%s(%s); err2 != nil {\n",
-			nameTitle, g.generateServerOutputArgs(method.Arguments))
-	} else {
-		contents += fmt.Sprintf("\tif err2 = p.handler.%s(%s); err2 != nil {\n",
-			nameTitle, g.generateServerOutputArgs(method.Arguments))
 	}
+	contents += fmt.Sprintf("\tret := p.handler(\"%s\", \"%s\", %s)\n", servTitle, nameTitle, g.generateHandlerArgs(method))
+	numReturn := "2"
+	if method.ReturnType == nil {
+		numReturn = "1"
+	}
+	contents += fmt.Sprintf("\tif len(ret) != %s {\n", numReturn)
+	contents += fmt.Sprintf("\t\tpanic(fmt.Sprintf(\"Middleware returned %%d arguments, expected %s\", len(ret)))\n", numReturn)
+	contents += "\t}\n"
+	if method.ReturnType != nil {
+		contents += fmt.Sprintf("\tretval = ret[0].(%s)\n", g.getGoTypeFromThriftType(method.ReturnType))
+		contents += "\tif ret[1] != nil {\n"
+		contents += "\t\terr2 = ret[1].(error)\n"
+		contents += "\t}\n"
+	} else {
+		contents += "\tif ret[0] != nil {\n"
+		contents += "\t\terr2 = ret[0].(error)\n"
+		contents += "\t}\n"
+	}
+	contents += "\tif err2 != nil {\n"
 	if len(method.Exceptions) > 0 {
 		contents += "\t\tswitch v := err2.(type) {\n"
 		for _, err := range method.Exceptions {
@@ -837,6 +851,15 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "}\n\n"
 
 	return contents
+}
+
+func (g *Generator) generateHandlerArgs(method *parser.Method) string {
+	args := "[]interface{}{ctx"
+	for _, arg := range method.Arguments {
+		args += ", args." + snakeToCamel(arg.Name)
+	}
+	args += "}"
+	return args
 }
 
 func (g *Generator) generateErrTooLarge(service *parser.Service, method *parser.Method) string {
@@ -909,14 +932,6 @@ func (g *Generator) generateStructArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
 		argStr += "\t\t" + snakeToCamel(arg.Name) + ": " + strings.ToLower(arg.Name) + ",\n"
-	}
-	return argStr
-}
-
-func (g *Generator) generateServerOutputArgs(args []*parser.Field) string {
-	argStr := "ctx"
-	for _, arg := range args {
-		argStr += fmt.Sprintf(", args.%s", snakeToCamel(arg.Name))
 	}
 	return argStr
 }

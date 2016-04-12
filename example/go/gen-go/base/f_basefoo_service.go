@@ -144,14 +144,14 @@ type FBaseFooProcessor struct {
 	handler      FBaseFoo
 }
 
-func NewFBaseFooProcessor(handler FBaseFoo) *FBaseFooProcessor {
+func NewFBaseFooProcessor(handler FBaseFoo, middleware ...frugal.ServiceMiddleware) *FBaseFooProcessor {
 	writeMu := &sync.Mutex{}
 	p := &FBaseFooProcessor{
 		processorMap: make(map[string]frugal.FProcessorFunction),
 		writeMu:      writeMu,
 		handler:      handler,
 	}
-	p.AddToProcessorMap("basePing", &basefooFBasePing{handler: handler, writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("basePing", &basefooFBasePing{handler: frugal.ComposeMiddleware(handler.BasePing, middleware), writeMu: p.GetWriteMutex()})
 	return p
 }
 
@@ -198,7 +198,7 @@ func (p *FBaseFooProcessor) Process(iprot, oprot *frugal.FProtocol) error {
 }
 
 type basefooFBasePing struct {
-	handler FBaseFoo
+	handler frugal.InvocationHandler
 	writeMu *sync.Mutex
 }
 
@@ -216,7 +216,17 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 	iprot.ReadMessageEnd()
 	result := BaseFooBasePingResult{}
 	var err2 error
-	if err2 = p.handler.BasePing(ctx); err2 != nil {
+	ret := p.handler("BaseFoo", "BasePing", []interface{}{ctx})
+	if len(ret) != 1 {
+		p.writeMu.Lock()
+		basefooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "basePing", fmt.Sprintf("Internal error processing basePing: middleware returned %d arguments, expected 1", len(ret)))
+		p.writeMu.Unlock()
+		return nil
+	}
+	if ret[0] != nil {
+		err2 = ret[0].(error)
+	}
+	if err2 != nil {
 		p.writeMu.Lock()
 		basefooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "basePing", "Internal error processing basePing: "+err2.Error())
 		p.writeMu.Unlock()

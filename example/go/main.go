@@ -140,7 +140,7 @@ func (f *FooHandler) OneWay(ctx *frugal.FContext, id event.ID, req event.Request
 func runServer(conn *nats.Conn, transportFactory frugal.FTransportFactory,
 	protocolFactory *frugal.FProtocolFactory) error {
 	handler := &FooHandler{}
-	processor := event.NewFFooProcessor(handler)
+	processor := event.NewFFooProcessor(handler, newLoggingMiddleware())
 	server := frugal.NewFNatsServerFactory(conn, "foo", 20*time.Second, 2,
 		frugal.NewFProcessorFactory(processor), transportFactory, protocolFactory)
 	fmt.Println("Starting the simple nats server... on ", "foo")
@@ -178,4 +178,15 @@ func runPublisher(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory) err
 	}
 	fmt.Println("EventCreated()")
 	return nil
+}
+
+func newLoggingMiddleware() frugal.ServiceMiddleware {
+	return func(next frugal.InvocationHandler) frugal.InvocationHandler {
+		return func(service, method string, args []interface{}) []interface{} {
+			fmt.Printf("==== CALLING %s.%s ====\n", service, method)
+			ret := next(service, method, args)
+			fmt.Printf("==== CALLED  %s.%s ====\n", service, method)
+			return ret
+		}
+	}
 }

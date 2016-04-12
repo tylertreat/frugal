@@ -296,18 +296,18 @@ type FFooProcessor struct {
 	*base.FBaseFooProcessor
 }
 
-func NewFFooProcessor(handler FFoo) *FFooProcessor {
+func NewFFooProcessor(handler FFoo, middleware ...frugal.ServiceMiddleware) *FFooProcessor {
 	p := &FFooProcessor{
-		base.NewFBaseFooProcessor(handler),
+		base.NewFBaseFooProcessor(handler, middleware...),
 	}
-	p.AddToProcessorMap("ping", &fooFPing{handler: handler, writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("blah", &fooFBlah{handler: handler, writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("oneWay", &fooFOneWay{handler: handler, writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("ping", &fooFPing{handler: frugal.ComposeMiddleware(handler.Ping, middleware), writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("blah", &fooFBlah{handler: frugal.ComposeMiddleware(handler.Blah, middleware), writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("oneWay", &fooFOneWay{handler: frugal.ComposeMiddleware(handler.OneWay, middleware), writeMu: p.GetWriteMutex()})
 	return p
 }
 
 type fooFPing struct {
-	handler FFoo
+	handler frugal.InvocationHandler
 	writeMu *sync.Mutex
 }
 
@@ -325,7 +325,14 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	iprot.ReadMessageEnd()
 	result := FooPingResult{}
 	var err2 error
-	if err2 = p.handler.Ping(ctx); err2 != nil {
+	ret := p.handler("Foo", "Ping", []interface{}{ctx})
+	if len(ret) != 1 {
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
+	}
+	if ret[0] != nil {
+		err2 = ret[0].(error)
+	}
+	if err2 != nil {
 		p.writeMu.Lock()
 		fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "ping", "Internal error processing ping: "+err2.Error())
 		p.writeMu.Unlock()
@@ -372,7 +379,7 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 }
 
 type fooFBlah struct {
-	handler FFoo
+	handler frugal.InvocationHandler
 	writeMu *sync.Mutex
 }
 
@@ -391,7 +398,15 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	result := FooBlahResult{}
 	var err2 error
 	var retval int64
-	if retval, err2 = p.handler.Blah(ctx, args.Num, args.Str, args.Event); err2 != nil {
+	ret := p.handler("Foo", "Blah", []interface{}{ctx, args.Num, args.Str, args.Event})
+	if len(ret) != 2 {
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
+	}
+	retval = ret[0].(int64)
+	if ret[1] != nil {
+		err2 = ret[1].(error)
+	}
+	if err2 != nil {
 		switch v := err2.(type) {
 		case *AwesomeException:
 			result.Awe = v
@@ -447,7 +462,7 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 }
 
 type fooFOneWay struct {
-	handler FFoo
+	handler frugal.InvocationHandler
 	writeMu *sync.Mutex
 }
 
@@ -461,7 +476,14 @@ func (p *fooFOneWay) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtoco
 
 	iprot.ReadMessageEnd()
 	var err2 error
-	if err2 = p.handler.OneWay(ctx, args.ID, args.Req); err2 != nil {
+	ret := p.handler("Foo", "OneWay", []interface{}{ctx, args.ID, args.Req})
+	if len(ret) != 1 {
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
+	}
+	if ret[0] != nil {
+		err2 = ret[0].(error)
+	}
+	if err2 != nil {
 		return err2
 	}
 	return err
