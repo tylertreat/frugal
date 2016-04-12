@@ -788,12 +788,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 		numReturn = "1"
 	}
 	contents += fmt.Sprintf("\tif len(ret) != %s {\n", numReturn)
-	contents += "\t\tp.writeMu.Lock()\n"
-	contents += fmt.Sprintf("\t\t%sWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, \"%s\", "+
-		"fmt.Sprintf(\"Internal error processing %s: middleware returned %%d arguments, expected %s\", len(ret)))\n",
-		servLower, nameLower, nameLower, numReturn)
-	contents += "\t\tp.writeMu.Unlock()\n"
-	contents += "\t\treturn nil\n"
+	contents += fmt.Sprintf("\t\tpanic(fmt.Sprintf(\"Middleware returned %%d arguments, expected %s\", len(ret)))\n", numReturn)
 	contents += "\t}\n"
 	if method.ReturnType != nil {
 		contents += fmt.Sprintf("\tretval = ret[0].(%s)\n", g.getGoTypeFromThriftType(method.ReturnType))

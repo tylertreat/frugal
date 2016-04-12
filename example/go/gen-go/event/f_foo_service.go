@@ -327,10 +327,7 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	var err2 error
 	ret := p.handler("Foo", "Ping", []interface{}{ctx})
 	if len(ret) != 1 {
-		p.writeMu.Lock()
-		fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "ping", fmt.Sprintf("Internal error processing ping: middleware returned %d arguments, expected 1", len(ret)))
-		p.writeMu.Unlock()
-		return nil
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
 	}
 	if ret[0] != nil {
 		err2 = ret[0].(error)
@@ -403,10 +400,7 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	var retval int64
 	ret := p.handler("Foo", "Blah", []interface{}{ctx, args.Num, args.Str, args.Event})
 	if len(ret) != 2 {
-		p.writeMu.Lock()
-		fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "blah", fmt.Sprintf("Internal error processing blah: middleware returned %d arguments, expected 2", len(ret)))
-		p.writeMu.Unlock()
-		return nil
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
 	}
 	retval = ret[0].(int64)
 	if ret[1] != nil {
@@ -484,10 +478,7 @@ func (p *fooFOneWay) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtoco
 	var err2 error
 	ret := p.handler("Foo", "OneWay", []interface{}{ctx, args.ID, args.Req})
 	if len(ret) != 1 {
-		p.writeMu.Lock()
-		fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "oneWay", fmt.Sprintf("Internal error processing oneWay: middleware returned %d arguments, expected 1", len(ret)))
-		p.writeMu.Unlock()
-		return nil
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
 	}
 	if ret[0] != nil {
 		err2 = ret[0].(error)
