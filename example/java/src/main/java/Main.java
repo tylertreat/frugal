@@ -1,4 +1,5 @@
 
+import com.workiva.frugal.middleware.InvocationContext;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.processor.FProcessorFactory;
@@ -135,7 +136,7 @@ public class Main {
     private static class LoggingMiddleware implements ServiceMiddleware {
 
         @Override
-        public <T> InvocationHandler<T> apply(Handler<T> next) {
+        public <T> InvocationHandler<T> apply(InvocationContext<T> next) {
             return new InvocationHandler<T>(next) {
                 @Override
                 public Object invoke(String service, Method method, Object receiver, Object[] args) throws Throwable {

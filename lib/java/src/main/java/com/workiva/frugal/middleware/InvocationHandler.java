@@ -10,20 +10,20 @@ import java.lang.reflect.Proxy;
  */
 public abstract class InvocationHandler<T> implements java.lang.reflect.InvocationHandler {
 
-    private final ServiceMiddleware.Handler<T> handler;
+    private final InvocationContext<T> context;
 
     /**
-     * Creates a new InvocationHandler wrapping the given Handler.
+     * Creates a new InvocationHandler wrapping the given InvocationContext.
      *
-     * @param next the wrapped service handler.
+     * @param next the next InvocationContext in the call chain.
      */
-    public InvocationHandler(ServiceMiddleware.Handler<T> next) {
-        handler = next;
+    public InvocationHandler(InvocationContext<T> next) {
+        context = next;
     }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        return invoke(handler.service, method, handler.target, args);
+        return invoke(context.service, method, context.target, args);
     }
 
     /**
@@ -51,7 +51,7 @@ public abstract class InvocationHandler<T> implements java.lang.reflect.Invocati
      */
     @SuppressWarnings("unchecked")
     public static <T> T composeMiddleware(String service, T target, Class iface, ServiceMiddleware[] middleware) {
-        InvocationHandler<T> handler = new InvocationHandler<T>(new ServiceMiddleware.Handler<>(service, target)) {
+        InvocationHandler<T> handler = new InvocationHandler<T>(new InvocationContext<>(service, target)) {
             @Override
             public Object invoke(String service, Method method, T receiver, Object[] args) throws Throwable {
                 return method.invoke(receiver, args);
@@ -62,7 +62,7 @@ public abstract class InvocationHandler<T> implements java.lang.reflect.Invocati
         Class[] ifaces = new Class[]{iface};
         T proxy = (T) Proxy.newProxyInstance(classLoader, ifaces, handler);
         for (ServiceMiddleware m : middleware) {
-            handler = m.apply(new ServiceMiddleware.Handler<>(service, proxy));
+            handler = m.apply(new InvocationContext<>(service, proxy));
             proxy = (T) Proxy.newProxyInstance(classLoader, ifaces, handler);
         }
         return proxy;

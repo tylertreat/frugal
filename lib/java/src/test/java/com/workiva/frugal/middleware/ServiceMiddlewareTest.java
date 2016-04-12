@@ -70,7 +70,7 @@ public class ServiceMiddlewareTest {
         private String serviceName;
 
         @Override
-        public <T> InvocationHandler<T> apply(Handler<T> next) {
+        public <T> InvocationHandler<T> apply(InvocationContext<T> next) {
             return new InvocationHandler<T>(next) {
                 @Override
                 public Object invoke(String service, Method method, T receiver, Object[] args) throws Throwable {
