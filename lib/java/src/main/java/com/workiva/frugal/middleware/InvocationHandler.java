@@ -32,7 +32,7 @@ public abstract class InvocationHandler<T> implements java.lang.reflect.Invocati
      * @param service  the name of the service being invoked.
      * @param method   the method being invoked.
      * @param receiver the method receiver being invoked.
-     * @param args     the method arguments.
+     * @param args     the method arguments. The first argument will always be the FContext.
      * @return the method return value.
      * @throws Throwable thrown by the wrapped method.
      */
