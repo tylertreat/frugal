@@ -1,5 +1,6 @@
 package com.workiva.frugal.middleware;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
@@ -23,7 +24,11 @@ public abstract class InvocationHandler<T> implements java.lang.reflect.Invocati
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        return invoke(context.service, method, context.target, args);
+        try {
+            return invoke(context.service, method, context.target, args);
+        } catch (InvocationTargetException e) {
+            throw e.getCause();
+        }
     }
 
     /**

@@ -42,9 +42,34 @@ public class FBlah {
 		 */
 		public long bleh(FContext ctx, Thing one, Stuff Two) throws TException, InvalidOperation;
 
-}
+	}
 
 	public static class Client implements Iface {
+
+		private Iface proxy;
+
+		public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {
+			Iface client = new InternalClient(transport, protocolFactory);
+			proxy = InvocationHandler.composeMiddleware("Blah", client, Iface.class, middleware);
+		}
+
+		/**
+		 * Use this to ping the server.
+		 */
+		public void ping(FContext ctx) throws TException {
+			proxy.ping(ctx);
+		}
+
+		/**
+		 * Use this to tell the sever how you feel.
+		 */
+		public long bleh(FContext ctx, Thing one, Stuff Two) throws TException, InvalidOperation {
+			return proxy.bleh(ctx, one, Two);
+		}
+
+	}
+
+	private static class InternalClient implements Iface {
 
 		private static final Object WRITE_LOCK = new Object();
 
@@ -53,7 +78,7 @@ public class FBlah {
 		private FProtocol inputProtocol;
 		private FProtocol outputProtocol;
 
-		public Client(FTransport transport, FProtocolFactory protocolFactory) {
+		public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {
 			this.transport = transport;
 			this.transport.setRegistry(new FClientRegistry());
 			this.protocolFactory = protocolFactory;
@@ -99,7 +124,7 @@ public class FBlah {
 		private FAsyncCallback recvPingHandler(final FContext ctx, final BlockingQueue<Object> result) {
 			return new FAsyncCallback() {
 				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = Client.this.protocolFactory.getProtocol(tr);
+					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
 					try {
 						iprot.readResponseHeader(ctx);
 						TMessage message = iprot.readMessageBegin();
@@ -193,7 +218,7 @@ public class FBlah {
 		private FAsyncCallback recvBlehHandler(final FContext ctx, final BlockingQueue<Object> result) {
 			return new FAsyncCallback() {
 				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = Client.this.protocolFactory.getProtocol(tr);
+					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
 					try {
 						iprot.readResponseHeader(ctx);
 						TMessage message = iprot.readMessageBegin();

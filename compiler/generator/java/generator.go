@@ -357,7 +357,7 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 		contents += fmt.Sprintf(tabtab+"public %s %s(FContext ctx%s) %s;\n\n",
 			g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments), g.generateExceptions(method.Exceptions))
 	}
-	contents += "}\n\n"
+	contents += tab + "}\n\n"
 	return contents
 }
 
@@ -398,6 +398,42 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	} else {
 		contents += tab + "public static class Client implements Iface {\n\n"
 	}
+	contents += tabtab + "private Iface proxy;\n\n"
+
+	contents += tabtab + "public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {\n"
+	if service.Extends != "" {
+		contents += tabtabtab + "super(transport, protocolFactory, middleware);\n"
+	}
+	contents += tabtabtab + "Iface client = new InternalClient(transport, protocolFactory);\n"
+	contents += tabtabtab + fmt.Sprintf("proxy = InvocationHandler.composeMiddleware(\"%s\", client, Iface.class, middleware);\n", service.Name)
+	contents += tabtab + "}\n\n"
+
+	for _, method := range service.Methods {
+		if method.Comment != nil {
+			contents += g.GenerateBlockComment(method.Comment, tabtab)
+		}
+		contents += tabtab + fmt.Sprintf("public %s %s(FContext ctx%s) %s {\n",
+			g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments), g.generateExceptions(method.Exceptions))
+		if method.ReturnType != nil {
+			contents += tabtabtab + fmt.Sprintf("return proxy.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments, false))
+		} else {
+			contents += tabtabtab + fmt.Sprintf("proxy.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments, false))
+		}
+		contents += tabtab + "}\n\n"
+	}
+	contents += tab + "}\n\n"
+	contents += g.generateInternalClient(service)
+	return contents
+}
+
+func (g *Generator) generateInternalClient(service *parser.Service) string {
+	contents := ""
+	if service.Extends != "" {
+		contents += tab + fmt.Sprintf("private static class InternalClient extends %s.Client implements Iface {\n\n",
+			g.getServiceExtendsName(service))
+	} else {
+		contents += tab + "private static class InternalClient implements Iface {\n\n"
+	}
 	contents += tabtab + "private static final Object WRITE_LOCK = new Object();\n\n"
 
 	contents += tabtab + "private FTransport transport;\n"
@@ -405,7 +441,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += tabtab + "private FProtocol inputProtocol;\n"
 	contents += tabtab + "private FProtocol outputProtocol;\n\n"
 
-	contents += tabtab + "public Client(FTransport transport, FProtocolFactory protocolFactory) {\n"
+	contents += tabtab + "public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {\n"
 	if service.Extends != "" {
 		contents += tabtabtab + "super(transport, protocolFactory);\n"
 	}
@@ -503,7 +539,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		strings.Title(method.Name))
 	contents += tabtabtab + "return new FAsyncCallback() {\n"
 	contents += tabtabtabtab + "public void onMessage(TTransport tr) throws TException {\n"
-	contents += tabtabtabtabtab + "FProtocol iprot = Client.this.protocolFactory.getProtocol(tr);\n"
+	contents += tabtabtabtabtab + "FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);\n"
 	contents += tabtabtabtabtab + "try {\n"
 	contents += tabtabtabtabtabtab + "iprot.readResponseHeader(ctx);\n"
 	contents += tabtabtabtabtabtab + "TMessage message = iprot.readMessageBegin();\n"
@@ -596,7 +632,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	contents += tabtab + "}\n\n"
 
 	contents += tabtab + "private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {\n"
-	contents += tabtabtab + fmt.Sprintf("handler = InvocationHandler.composeMiddleware(\"%s\", handler, Iface.class, middleware);\n", servTitle)
+	contents += tabtabtab + fmt.Sprintf("handler = InvocationHandler.composeMiddleware(\"%s\", handler, Iface.class, middleware);\n", service.Name)
 	for _, method := range service.Methods {
 		contents += tabtabtab + fmt.Sprintf("processMap.put(\"%s\", new %s(handler));\n", method.Name, strings.Title(method.Name))
 	}
@@ -629,7 +665,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtab + "iprot.readMessageEnd();\n"
 
 		if method.Oneway {
-			contents += tabtabtabtab + fmt.Sprintf("this.handler.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments))
+			contents += tabtabtabtab + fmt.Sprintf("this.handler.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments, true))
 			contents += tabtabtab + "}\n"
 			contents += tabtab + "}\n\n"
 			continue
@@ -638,9 +674,9 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtab + fmt.Sprintf("%s.%s_result result = new %s.%s_result();\n", servTitle, method.Name, servTitle, method.Name)
 		contents += tabtabtabtab + "try {\n"
 		if method.ReturnType == nil {
-			contents += tabtabtabtabtab + fmt.Sprintf("this.handler.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments))
+			contents += tabtabtabtabtab + fmt.Sprintf("this.handler.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments, true))
 		} else {
-			contents += tabtabtabtabtab + fmt.Sprintf("result.success = this.handler.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments))
+			contents += tabtabtabtabtab + fmt.Sprintf("result.success = this.handler.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments, true))
 			contents += tabtabtabtabtab + "result.setSuccessIsSet(true);\n"
 		}
 		for _, exception := range method.Exceptions {
@@ -692,10 +728,14 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	return contents
 }
 
-func (g *Generator) generateCallArgs(args []*parser.Field) string {
+func (g *Generator) generateCallArgs(args []*parser.Field, server bool) string {
 	contents := "ctx"
+	prefix := ", "
+	if server {
+		prefix = ", args."
+	}
 	for _, arg := range args {
-		contents += ", args." + arg.Name
+		contents += prefix + arg.Name
 	}
 	return contents
 }
