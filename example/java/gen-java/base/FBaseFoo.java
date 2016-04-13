@@ -42,7 +42,7 @@ public class FBaseFoo {
 
 		public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {
 			Iface client = new InternalClient(transport, protocolFactory);
-			proxy = InvocationHandler.composeMiddleware("BaseFoo", client, Iface.class, middleware);
+			proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);
 		}
 
 		public void basePing(FContext ctx) throws TException {
@@ -163,7 +163,7 @@ public class FBaseFoo {
 		}
 
 		private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {
-			handler = InvocationHandler.composeMiddleware("BaseFoo", handler, Iface.class, middleware);
+			handler = InvocationHandler.composeMiddleware(handler, Iface.class, middleware);
 			processMap.put("basePing", new BasePing(handler));
 			return processMap;
 		}

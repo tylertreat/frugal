@@ -405,7 +405,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += tabtabtab + "super(transport, protocolFactory, middleware);\n"
 	}
 	contents += tabtabtab + "Iface client = new InternalClient(transport, protocolFactory);\n"
-	contents += tabtabtab + fmt.Sprintf("proxy = InvocationHandler.composeMiddleware(\"%s\", client, Iface.class, middleware);\n", service.Name)
+	contents += tabtabtab + "proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);\n"
 	contents += tabtab + "}\n\n"
 
 	for _, method := range service.Methods {
@@ -632,7 +632,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	contents += tabtab + "}\n\n"
 
 	contents += tabtab + "private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {\n"
-	contents += tabtabtab + fmt.Sprintf("handler = InvocationHandler.composeMiddleware(\"%s\", handler, Iface.class, middleware);\n", service.Name)
+	contents += tabtabtab + "handler = InvocationHandler.composeMiddleware(handler, Iface.class, middleware);\n"
 	for _, method := range service.Methods {
 		contents += tabtabtab + fmt.Sprintf("processMap.put(\"%s\", new %s(handler));\n", method.Name, strings.Title(method.Name))
 	}

@@ -50,7 +50,7 @@ public class FBlah {
 
 		public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {
 			Iface client = new InternalClient(transport, protocolFactory);
-			proxy = InvocationHandler.composeMiddleware("Blah", client, Iface.class, middleware);
+			proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);
 		}
 
 		/**
@@ -278,7 +278,7 @@ public class FBlah {
 		}
 
 		private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {
-			handler = InvocationHandler.composeMiddleware("Blah", handler, Iface.class, middleware);
+			handler = InvocationHandler.composeMiddleware(handler, Iface.class, middleware);
 			processMap.put("ping", new Ping(handler));
 			processMap.put("bleh", new Bleh(handler));
 			return processMap;
