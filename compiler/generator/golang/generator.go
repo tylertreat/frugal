@@ -465,21 +465,29 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += "\tprotocolFactory *frugal.FProtocolFactory\n"
 	contents += "\toprot           *frugal.FProtocol\n"
 	contents += "\tmu              sync.Mutex\n"
+	contents += "\tmethods         map[string]frugal.InvocationHandler\n"
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf(
-		"func NewF%sClient(t frugal.FTransport, p *frugal.FProtocolFactory) *F%sClient {\n",
+		"func NewF%sClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *F%sClient {\n",
 		servTitle, servTitle)
 	contents += "\tt.SetRegistry(frugal.NewFClientRegistry())\n"
-	contents += fmt.Sprintf("\treturn &F%sClient{\n", servTitle)
+	contents += "\tmethods := make(map[string]frugal.InvocationHandler)\n"
+	contents += fmt.Sprintf("\tclient := &F%sClient{\n", servTitle)
 	if service.Extends != "" {
-		contents += fmt.Sprintf("\t\tF%sClient: %sNewF%sClient(t, p),\n",
+		contents += fmt.Sprintf("\t\tF%sClient: %sNewF%sClient(t, p, middleware...),\n",
 			service.ExtendsService(), g.getServiceExtendsNamespace(service), service.ExtendsService())
 	}
 	contents += "\t\ttransport:       t,\n"
 	contents += "\t\tprotocolFactory: p,\n"
 	contents += "\t\toprot:           p.GetProtocol(t),\n"
+	contents += "\t\tmethods:         methods,\n"
 	contents += "\t}\n"
+	for _, method := range service.Methods {
+		name := generator.LowercaseFirstLetter(method.Name)
+		contents += fmt.Sprintf("\tmethods[\"%s\"] = frugal.ComposeMiddleware(client.%s, middleware)\n", name, name)
+	}
+	contents += "\treturn client\n"
 	contents += "}\n\n"
 
 	for _, method := range service.Methods {
@@ -500,8 +508,43 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += g.GenerateInlineComment(method.Comment, "")
 	}
 	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx *frugal.FContext%s) %s {\n",
-		servTitle, nameTitle, g.generateInputArgs(method.Arguments),
-		g.generateReturnArgs(method))
+		servTitle, nameTitle, g.generateInputArgs(method.Arguments), g.generateReturnArgs(method))
+	contents += fmt.Sprintf("\tret := f.methods[\"%s\"](\"%s\", \"%s\", %s)\n",
+		nameLower, servTitle, nameTitle, g.generateClientArgs(method))
+	numReturn := "2"
+	if method.ReturnType == nil {
+		numReturn = "1"
+	}
+	contents += fmt.Sprintf("\tif len(ret) != %s {\n", numReturn)
+	contents += fmt.Sprintf("\t\tpanic(fmt.Sprintf(\"Middleware returned %%d arguments, expected %s\", len(ret)))\n", numReturn)
+	contents += "\t}\n"
+	if method.ReturnType != nil {
+		contents += fmt.Sprintf("\tr = ret[0].(%s)\n", g.getGoTypeFromThriftType(method.ReturnType))
+		contents += "\tif ret[1] != nil {\n"
+		contents += "\t\terr = ret[1].(error)\n"
+		contents += "\t}\n"
+		contents += "\treturn r, err\n"
+	} else {
+		contents += "\tif ret[0] != nil {\n"
+		contents += "\t\terr = ret[0].(error)\n"
+		contents += "\t}\n"
+		contents += "\treturn err\n"
+	}
+	contents += "}\n\n"
+	contents += g.generateInternalClientMethod(service, method)
+	return contents
+}
+
+func (g *Generator) generateInternalClientMethod(service *parser.Service, method *parser.Method) string {
+	var (
+		servTitle = snakeToCamel(service.Name)
+		nameTitle = snakeToCamel(method.Name)
+		nameLower = generator.LowercaseFirstLetter(method.Name)
+	)
+
+	contents := ""
+	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx *frugal.FContext%s) %s {\n",
+		servTitle, nameLower, g.generateInputArgs(method.Arguments), g.generateReturnArgs(method))
 	var returnType string
 	if !method.Oneway {
 		contents += "\terrorC := make(chan error, 1)\n"
@@ -851,6 +894,15 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "}\n\n"
 
 	return contents
+}
+
+func (g *Generator) generateClientArgs(method *parser.Method) string {
+	args := "[]interface{}{ctx"
+	for _, arg := range method.Arguments {
+		args += ", " + strings.ToLower(arg.Name)
+	}
+	args += "}"
+	return args
 }
 
 func (g *Generator) generateHandlerArgs(method *parser.Method) string {

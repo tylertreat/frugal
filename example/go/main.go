@@ -108,12 +108,11 @@ func runClient(conn *nats.Conn, transportFactory frugal.FTransportFactory, proto
 	if err := ftransport.Open(); err != nil {
 		return err
 	}
-	return handleClient(event.NewFFooClient(ftransport, protocolFactory))
+	return handleClient(event.NewFFooClient(ftransport, protocolFactory, newRetryMiddleware()))
 }
 
 // Sever handler
-type FooHandler struct {
-}
+type FooHandler struct{}
 
 func (f *FooHandler) Ping(ctx *frugal.FContext) error {
 	fmt.Printf("Ping(%s)\n", ctx)
@@ -182,10 +181,28 @@ func runPublisher(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory) err
 
 func newLoggingMiddleware() frugal.ServiceMiddleware {
 	return func(next frugal.InvocationHandler) frugal.InvocationHandler {
-		return func(service, method string, args []interface{}) []interface{} {
+		return func(service, method string, args frugal.Arguments) frugal.Results {
 			fmt.Printf("==== CALLING %s.%s ====\n", service, method)
 			ret := next(service, method, args)
 			fmt.Printf("==== CALLED  %s.%s ====\n", service, method)
+			return ret
+		}
+	}
+}
+
+func newRetryMiddleware() frugal.ServiceMiddleware {
+	return func(next frugal.InvocationHandler) frugal.InvocationHandler {
+		return func(service, method string, args frugal.Arguments) frugal.Results {
+			var ret frugal.Results
+			for i := 0; i < 5; i++ {
+				ret = next(service, method, args)
+				if ret.Error() != nil {
+					fmt.Printf("%s.%s failed (%s), retrying...\n", service, method, ret.Error())
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				return ret
+			}
 			return ret
 		}
 	}
