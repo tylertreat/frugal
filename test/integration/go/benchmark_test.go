@@ -10,37 +10,49 @@ import (
 
 func newBenchmarkMiddleware() frugal.ServiceMiddleware {
 	return func(next frugal.InvocationHandler) frugal.InvocationHandler {
-		return func(service, method string, args []interface{}) []interface{} {
+		return func(service, method string, args frugal.Arguments) frugal.Results {
 			return next(service, method, args)
 		}
 	}
 }
 
 func BenchmarkBinary(b *testing.B) {
-	benchmarkBasic(b, thrift.NewTBinaryProtocolFactoryDefault(), 0)
+	benchmarkBasic(b, thrift.NewTBinaryProtocolFactoryDefault(), 0, false)
 }
 
 func BenchmarkCompact(b *testing.B) {
-	benchmarkBasic(b, thrift.NewTCompactProtocolFactory(), 0)
+	benchmarkBasic(b, thrift.NewTCompactProtocolFactory(), 0, false)
 }
 
 func BenchmarkJSON(b *testing.B) {
-	benchmarkBasic(b, thrift.NewTJSONProtocolFactory(), 0)
+	benchmarkBasic(b, thrift.NewTJSONProtocolFactory(), 0, false)
 }
 
-func BenchmarkBinaryMiddleware1(b *testing.B) {
-	benchmarkBasic(b, thrift.NewTBinaryProtocolFactoryDefault(), 1)
+func BenchmarkBinaryServerMiddleware1(b *testing.B) {
+	benchmarkBasic(b, thrift.NewTBinaryProtocolFactoryDefault(), 1, false)
 }
 
-func BenchmarkBinaryMiddleware5(b *testing.B) {
-	benchmarkBasic(b, thrift.NewTBinaryProtocolFactoryDefault(), 5)
+func BenchmarkBinaryServerMiddleware5(b *testing.B) {
+	benchmarkBasic(b, thrift.NewTBinaryProtocolFactoryDefault(), 5, false)
 }
 
-func BenchmarkBinaryMiddleware10(b *testing.B) {
-	benchmarkBasic(b, thrift.NewTBinaryProtocolFactoryDefault(), 10)
+func BenchmarkBinaryServerMiddleware10(b *testing.B) {
+	benchmarkBasic(b, thrift.NewTBinaryProtocolFactoryDefault(), 10, true)
 }
 
-func benchmarkBasic(b *testing.B, protoFactory thrift.TProtocolFactory, numMiddleware int) {
+func BenchmarkBinaryClientServerMiddleware1(b *testing.B) {
+	benchmarkBasic(b, thrift.NewTBinaryProtocolFactoryDefault(), 1, true)
+}
+
+func BenchmarkBinaryClientServerMiddleware5(b *testing.B) {
+	benchmarkBasic(b, thrift.NewTBinaryProtocolFactoryDefault(), 5, true)
+}
+
+func BenchmarkBinaryClientServerMiddleware10(b *testing.B) {
+	benchmarkBasic(b, thrift.NewTBinaryProtocolFactoryDefault(), 10, true)
+}
+
+func benchmarkBasic(b *testing.B, protoFactory thrift.TProtocolFactory, numMiddleware int, clientMiddleware bool) {
 	b.ReportAllocs()
 
 	middleware := make([]frugal.ServiceMiddleware, numMiddleware)
@@ -82,7 +94,13 @@ func benchmarkBasic(b *testing.B, protoFactory thrift.TProtocolFactory, numMiddl
 	if err := fTransport.Open(); err != nil {
 		b.Fatal(err)
 	}
-	client := event.NewFFooClient(fTransport, frugal.NewFProtocolFactory(protoFactory))
+	middleware = []frugal.ServiceMiddleware{}
+	if clientMiddleware {
+		for i := 0; i < numMiddleware; i++ {
+			middleware = append(middleware, newBenchmarkMiddleware())
+		}
+	}
+	client := event.NewFFooClient(fTransport, frugal.NewFProtocolFactory(protoFactory), middleware...)
 
 	runBenchmarkClient(b, client)
 

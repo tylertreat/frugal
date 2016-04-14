@@ -28,18 +28,34 @@ type FBaseFooClient struct {
 	protocolFactory *frugal.FProtocolFactory
 	oprot           *frugal.FProtocol
 	mu              sync.Mutex
+	methods         map[string]frugal.InvocationHandler
 }
 
-func NewFBaseFooClient(t frugal.FTransport, p *frugal.FProtocolFactory) *FBaseFooClient {
+func NewFBaseFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FBaseFooClient {
 	t.SetRegistry(frugal.NewFClientRegistry())
-	return &FBaseFooClient{
+	methods := make(map[string]frugal.InvocationHandler)
+	client := &FBaseFooClient{
 		transport:       t,
 		protocolFactory: p,
 		oprot:           p.GetProtocol(t),
+		methods:         methods,
 	}
+	methods["basePing"] = frugal.ComposeMiddleware(client.basePing, middleware)
+	return client
 }
 
 func (f *FBaseFooClient) BasePing(ctx *frugal.FContext) (err error) {
+	ret := f.methods["basePing"]("BaseFoo", "BasePing", []interface{}{ctx})
+	if len(ret) != 1 {
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
+	}
+	if ret[0] != nil {
+		err = ret[0].(error)
+	}
+	return err
+}
+
+func (f *FBaseFooClient) basePing(ctx *frugal.FContext) (err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan struct{}, 1)
 	if err = f.transport.Register(ctx, f.recvBasePingHandler(ctx, resultC, errorC)); err != nil {
@@ -218,10 +234,7 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 	var err2 error
 	ret := p.handler("BaseFoo", "BasePing", []interface{}{ctx})
 	if len(ret) != 1 {
-		p.writeMu.Lock()
-		basefooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "basePing", fmt.Sprintf("Internal error processing basePing: middleware returned %d arguments, expected 1", len(ret)))
-		p.writeMu.Unlock()
-		return nil
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
 	}
 	if ret[0] != nil {
 		err2 = ret[0].(error)
