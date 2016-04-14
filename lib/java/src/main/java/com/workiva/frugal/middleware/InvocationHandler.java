@@ -54,21 +54,13 @@ public abstract class InvocationHandler<T> implements java.lang.reflect.Invocati
      */
     @SuppressWarnings("unchecked")
     public static <T> T composeMiddleware(T target, Class iface, ServiceMiddleware[] middleware) {
-        InvocationHandler<T> handler = new InvocationHandler<T>(target) {
-            @Override
-            public Object invoke(Method method, T receiver, Object[] args) throws Throwable {
-                return method.invoke(receiver, args);
-            }
-        };
-
         ClassLoader classLoader = target.getClass().getClassLoader();
         Class[] ifaces = new Class[]{iface};
-        T proxy = (T) Proxy.newProxyInstance(classLoader, ifaces, handler);
         for (ServiceMiddleware m : middleware) {
-            handler = m.apply(proxy);
-            proxy = (T) Proxy.newProxyInstance(classLoader, ifaces, handler);
+            InvocationHandler handler = m.apply(target);
+            target = (T) Proxy.newProxyInstance(classLoader, ifaces, handler);
         }
-        return proxy;
+        return target;
     }
 
 }
