@@ -51,9 +51,42 @@ public class FFoo {
 		 */
 		public void oneWay(FContext ctx, long id, java.util.Map<Integer, String> req) throws TException;
 
-}
+	}
 
 	public static class Client extends base.FBaseFoo.Client implements Iface {
+
+		private Iface proxy;
+
+		public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {
+			super(transport, protocolFactory, middleware);
+			Iface client = new InternalClient(transport, protocolFactory);
+			proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);
+		}
+
+		/**
+		 * Ping the server.
+		 */
+		public void ping(FContext ctx) throws TException {
+			proxy.ping(ctx);
+		}
+
+		/**
+		 * Blah the server.
+		 */
+		public long blah(FContext ctx, int num, String Str, Event event) throws TException, AwesomeException, base.api_exception {
+			return proxy.blah(ctx, num, Str, event);
+		}
+
+		/**
+		 * oneway methods don't receive a response from the server.
+		 */
+		public void oneWay(FContext ctx, long id, java.util.Map<Integer, String> req) throws TException {
+			proxy.oneWay(ctx, id, req);
+		}
+
+	}
+
+	private static class InternalClient extends base.FBaseFoo.Client implements Iface {
 
 		private static final Object WRITE_LOCK = new Object();
 
@@ -62,7 +95,7 @@ public class FFoo {
 		private FProtocol inputProtocol;
 		private FProtocol outputProtocol;
 
-		public Client(FTransport transport, FProtocolFactory protocolFactory) {
+		public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {
 			super(transport, protocolFactory);
 			this.transport = transport;
 			this.transport.setRegistry(new FClientRegistry());
@@ -109,7 +142,7 @@ public class FFoo {
 		private FAsyncCallback recvPingHandler(final FContext ctx, final BlockingQueue<Object> result) {
 			return new FAsyncCallback() {
 				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = Client.this.protocolFactory.getProtocol(tr);
+					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
 					try {
 						iprot.readResponseHeader(ctx);
 						TMessage message = iprot.readMessageBegin();
@@ -207,7 +240,7 @@ public class FFoo {
 		private FAsyncCallback recvBlahHandler(final FContext ctx, final BlockingQueue<Object> result) {
 			return new FAsyncCallback() {
 				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = Client.this.protocolFactory.getProtocol(tr);
+					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
 					try {
 						iprot.readResponseHeader(ctx);
 						TMessage message = iprot.readMessageBegin();
@@ -283,7 +316,7 @@ public class FFoo {
 		}
 
 		private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {
-			handler = InvocationHandler.composeMiddleware("Foo", handler, Iface.class, middleware);
+			handler = InvocationHandler.composeMiddleware(handler, Iface.class, middleware);
 			processMap.put("ping", new Ping(handler));
 			processMap.put("blah", new Blah(handler));
 			processMap.put("oneWay", new OneWay(handler));

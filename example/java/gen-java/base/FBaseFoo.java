@@ -34,9 +34,24 @@ public class FBaseFoo {
 
 		public void basePing(FContext ctx) throws TException;
 
-}
+	}
 
 	public static class Client implements Iface {
+
+		private Iface proxy;
+
+		public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {
+			Iface client = new InternalClient(transport, protocolFactory);
+			proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);
+		}
+
+		public void basePing(FContext ctx) throws TException {
+			proxy.basePing(ctx);
+		}
+
+	}
+
+	private static class InternalClient implements Iface {
 
 		private static final Object WRITE_LOCK = new Object();
 
@@ -45,7 +60,7 @@ public class FBaseFoo {
 		private FProtocol inputProtocol;
 		private FProtocol outputProtocol;
 
-		public Client(FTransport transport, FProtocolFactory protocolFactory) {
+		public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {
 			this.transport = transport;
 			this.transport.setRegistry(new FClientRegistry());
 			this.protocolFactory = protocolFactory;
@@ -88,7 +103,7 @@ public class FBaseFoo {
 		private FAsyncCallback recvBasePingHandler(final FContext ctx, final BlockingQueue<Object> result) {
 			return new FAsyncCallback() {
 				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = Client.this.protocolFactory.getProtocol(tr);
+					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
 					try {
 						iprot.readResponseHeader(ctx);
 						TMessage message = iprot.readMessageBegin();
@@ -148,7 +163,7 @@ public class FBaseFoo {
 		}
 
 		private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {
-			handler = InvocationHandler.composeMiddleware("BaseFoo", handler, Iface.class, middleware);
+			handler = InvocationHandler.composeMiddleware(handler, Iface.class, middleware);
 			processMap.put("basePing", new BasePing(handler));
 			return processMap;
 		}
