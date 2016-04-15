@@ -31,26 +31,26 @@ type FBlahClient struct {
 	protocolFactory *frugal.FProtocolFactory
 	oprot           *frugal.FProtocol
 	mu              sync.Mutex
-	methods         map[string]frugal.InvocationHandler
+	methods         map[string]*frugal.Method
 }
 
 func NewFBlahClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FBlahClient {
 	t.SetRegistry(frugal.NewFClientRegistry())
-	methods := make(map[string]frugal.InvocationHandler)
+	methods := make(map[string]*frugal.Method)
 	client := &FBlahClient{
 		transport:       t,
 		protocolFactory: p,
 		oprot:           p.GetProtocol(t),
 		methods:         methods,
 	}
-	methods["ping"] = frugal.ComposeMiddleware(client.ping, middleware)
-	methods["bleh"] = frugal.ComposeMiddleware(client.bleh, middleware)
+	methods["ping"] = frugal.NewMethod(client, client.ping, "ping", middleware)
+	methods["bleh"] = frugal.NewMethod(client, client.bleh, "bleh", middleware)
 	return client
 }
 
 // Use this to ping the server.
 func (f *FBlahClient) Ping(ctx *frugal.FContext) (err error) {
-	ret := f.methods["ping"]("Blah", "Ping", []interface{}{ctx})
+	ret := f.methods["ping"].Invoke([]interface{}{ctx})
 	if len(ret) != 1 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
 	}
@@ -161,7 +161,7 @@ func (f *FBlahClient) recvPingHandler(ctx *frugal.FContext, resultC chan<- struc
 
 // Use this to tell the sever how you feel.
 func (f *FBlahClient) Bleh(ctx *frugal.FContext, one *Thing, two *Stuff) (r int64, err error) {
-	ret := f.methods["bleh"]("Blah", "Bleh", []interface{}{ctx, one, two})
+	ret := f.methods["bleh"].Invoke([]interface{}{ctx, one, two})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
 	}
@@ -291,8 +291,8 @@ func NewFBlahProcessor(handler FBlah, middleware ...frugal.ServiceMiddleware) *F
 		writeMu:      writeMu,
 		handler:      handler,
 	}
-	p.AddToProcessorMap("ping", &blahFPing{handler: frugal.ComposeMiddleware(handler.Ping, middleware), writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("bleh", &blahFBleh{handler: frugal.ComposeMiddleware(handler.Bleh, middleware), writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("ping", &blahFPing{handler: frugal.NewMethod(handler, handler.Ping, "Ping", middleware), writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("bleh", &blahFBleh{handler: frugal.NewMethod(handler, handler.Bleh, "Bleh", middleware), writeMu: p.GetWriteMutex()})
 	return p
 }
 
@@ -339,7 +339,7 @@ func (p *FBlahProcessor) Process(iprot, oprot *frugal.FProtocol) error {
 }
 
 type blahFPing struct {
-	handler frugal.InvocationHandler
+	handler *frugal.Method
 	writeMu *sync.Mutex
 }
 
@@ -357,7 +357,7 @@ func (p *blahFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol
 	iprot.ReadMessageEnd()
 	result := BlahPingResult{}
 	var err2 error
-	ret := p.handler("Blah", "Ping", []interface{}{ctx})
+	ret := p.handler.Invoke([]interface{}{ctx})
 	if len(ret) != 1 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
 	}
@@ -411,7 +411,7 @@ func (p *blahFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol
 }
 
 type blahFBleh struct {
-	handler frugal.InvocationHandler
+	handler *frugal.Method
 	writeMu *sync.Mutex
 }
 
@@ -430,7 +430,7 @@ func (p *blahFBleh) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol
 	result := BlahBlehResult{}
 	var err2 error
 	var retval int64
-	ret := p.handler("Blah", "Bleh", []interface{}{ctx, args.One, args.Two})
+	ret := p.handler.Invoke([]interface{}{ctx, args.One, args.Two})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
 	}

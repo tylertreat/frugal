@@ -86,6 +86,8 @@ func composeMiddleware(method reflect.Value, middleware []ServiceMiddleware) Inv
 	return handler
 }
 
+// newInvocationHandler returns the base InvocationHandler which calls the
+// actual handler function.
 func newInvocationHandler(method reflect.Value) InvocationHandler {
 	return func(_ reflect.Value, _ reflect.Method, args Arguments) Results {
 		argValues := make([]reflect.Value, len(args))
