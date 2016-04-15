@@ -134,11 +134,17 @@ func (g *Generator) addToPubspec(dir string) error {
 	pubFilePath := filepath.Join(dir, "pubspec.yaml")
 
 	deps := map[interface{}]interface{}{
-		"thrift": dep{Hosted: hostedDep{Name: "thrift", URL: "https://pub.workiva.org"}, Version: "^0.0.5"},
+		"thrift": dep{
+			Hosted:  hostedDep{Name: "thrift", URL: "https://pub.workiva.org"},
+			Version: "^0.0.6",
+		},
 	}
 
 	if g.Frugal.ContainsFrugalDefinitions() {
-		deps["frugal"] = dep{Hosted: hostedDep{Name: "frugal", URL: "https://pub.workiva.org"}, Version: "^1.1.1"}
+		deps["frugal"] = dep{
+			Hosted:  hostedDep{Name: "frugal", URL: "https://pub.workiva.org"},
+			Version: fmt.Sprintf("^%s", globals.Version),
+		}
 	}
 
 	includesSet := make(map[string]bool)
