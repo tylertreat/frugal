@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -108,12 +109,11 @@ func runClient(conn *nats.Conn, transportFactory frugal.FTransportFactory, proto
 	if err := ftransport.Open(); err != nil {
 		return err
 	}
-	return handleClient(event.NewFFooClient(ftransport, protocolFactory))
+	return handleClient(event.NewFFooClient(ftransport, protocolFactory, newRetryMiddleware()))
 }
 
 // Sever handler
-type FooHandler struct {
-}
+type FooHandler struct{}
 
 func (f *FooHandler) Ping(ctx *frugal.FContext) error {
 	fmt.Printf("Ping(%s)\n", ctx)
@@ -182,10 +182,28 @@ func runPublisher(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory) err
 
 func newLoggingMiddleware() frugal.ServiceMiddleware {
 	return func(next frugal.InvocationHandler) frugal.InvocationHandler {
-		return func(service, method string, args []interface{}) []interface{} {
-			fmt.Printf("==== CALLING %s.%s ====\n", service, method)
+		return func(service reflect.Value, method reflect.Method, args frugal.Arguments) frugal.Results {
+			fmt.Printf("==== CALLING %s.%s ====\n", service.Type(), method.Name)
 			ret := next(service, method, args)
-			fmt.Printf("==== CALLED  %s.%s ====\n", service, method)
+			fmt.Printf("==== CALLED  %s.%s ====\n", service.Type(), method.Name)
+			return ret
+		}
+	}
+}
+
+func newRetryMiddleware() frugal.ServiceMiddleware {
+	return func(next frugal.InvocationHandler) frugal.InvocationHandler {
+		return func(service reflect.Value, method reflect.Method, args frugal.Arguments) frugal.Results {
+			var ret frugal.Results
+			for i := 0; i < 5; i++ {
+				ret = next(service, method, args)
+				if ret.Error() != nil {
+					fmt.Printf("%s.%s failed (%s), retrying...\n", service.Type(), method.Name, ret.Error())
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				return ret
+			}
 			return ret
 		}
 	}
