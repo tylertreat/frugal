@@ -36,12 +36,12 @@ type FFooClient struct {
 	protocolFactory *frugal.FProtocolFactory
 	oprot           *frugal.FProtocol
 	mu              sync.Mutex
-	methods         map[string]frugal.InvocationHandler
+	methods         map[string]*frugal.Method
 }
 
 func NewFFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FFooClient {
 	t.SetRegistry(frugal.NewFClientRegistry())
-	methods := make(map[string]frugal.InvocationHandler)
+	methods := make(map[string]*frugal.Method)
 	client := &FFooClient{
 		FBaseFooClient:  base.NewFBaseFooClient(t, p, middleware...),
 		transport:       t,
@@ -49,15 +49,15 @@ func NewFFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware .
 		oprot:           p.GetProtocol(t),
 		methods:         methods,
 	}
-	methods["ping"] = frugal.ComposeMiddleware(client.ping, middleware)
-	methods["blah"] = frugal.ComposeMiddleware(client.blah, middleware)
-	methods["oneWay"] = frugal.ComposeMiddleware(client.oneWay, middleware)
+	methods["ping"] = frugal.NewMethod(client, client.ping, "ping", middleware)
+	methods["blah"] = frugal.NewMethod(client, client.blah, "blah", middleware)
+	methods["oneWay"] = frugal.NewMethod(client, client.oneWay, "oneWay", middleware)
 	return client
 }
 
 // Ping the server.
 func (f *FFooClient) Ping(ctx *frugal.FContext) (err error) {
-	ret := f.methods["ping"]("Foo", "Ping", []interface{}{ctx})
+	ret := f.methods["ping"].Invoke([]interface{}{ctx})
 	if len(ret) != 1 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
 	}
@@ -168,7 +168,7 @@ func (f *FFooClient) recvPingHandler(ctx *frugal.FContext, resultC chan<- struct
 
 // Blah the server.
 func (f *FFooClient) Blah(ctx *frugal.FContext, num int32, str string, event *Event) (r int64, err error) {
-	ret := f.methods["blah"]("Foo", "Blah", []interface{}{ctx, num, str, event})
+	ret := f.methods["blah"].Invoke([]interface{}{ctx, num, str, event})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
 	}
@@ -292,7 +292,7 @@ func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- int64,
 
 // oneway methods don't receive a response from the server.
 func (f *FFooClient) OneWay(ctx *frugal.FContext, id ID, req Request) (err error) {
-	ret := f.methods["oneWay"]("Foo", "OneWay", []interface{}{ctx, id, req})
+	ret := f.methods["oneWay"].Invoke([]interface{}{ctx, id, req})
 	if len(ret) != 1 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
 	}
@@ -341,14 +341,14 @@ func NewFFooProcessor(handler FFoo, middleware ...frugal.ServiceMiddleware) *FFo
 	p := &FFooProcessor{
 		base.NewFBaseFooProcessor(handler, middleware...),
 	}
-	p.AddToProcessorMap("ping", &fooFPing{handler: frugal.ComposeMiddleware(handler.Ping, middleware), writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("blah", &fooFBlah{handler: frugal.ComposeMiddleware(handler.Blah, middleware), writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("oneWay", &fooFOneWay{handler: frugal.ComposeMiddleware(handler.OneWay, middleware), writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("ping", &fooFPing{handler: frugal.NewMethod(handler, handler.Ping, "Ping", middleware), writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("blah", &fooFBlah{handler: frugal.NewMethod(handler, handler.Blah, "Blah", middleware), writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("oneWay", &fooFOneWay{handler: frugal.NewMethod(handler, handler.OneWay, "OneWay", middleware), writeMu: p.GetWriteMutex()})
 	return p
 }
 
 type fooFPing struct {
-	handler frugal.InvocationHandler
+	handler *frugal.Method
 	writeMu *sync.Mutex
 }
 
@@ -366,7 +366,7 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	iprot.ReadMessageEnd()
 	result := FooPingResult{}
 	var err2 error
-	ret := p.handler("Foo", "Ping", []interface{}{ctx})
+	ret := p.handler.Invoke([]interface{}{ctx})
 	if len(ret) != 1 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
 	}
@@ -420,7 +420,7 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 }
 
 type fooFBlah struct {
-	handler frugal.InvocationHandler
+	handler *frugal.Method
 	writeMu *sync.Mutex
 }
 
@@ -439,7 +439,7 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	result := FooBlahResult{}
 	var err2 error
 	var retval int64
-	ret := p.handler("Foo", "Blah", []interface{}{ctx, args.Num, args.Str, args.Event})
+	ret := p.handler.Invoke([]interface{}{ctx, args.Num, args.Str, args.Event})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
 	}
@@ -503,7 +503,7 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 }
 
 type fooFOneWay struct {
-	handler frugal.InvocationHandler
+	handler *frugal.Method
 	writeMu *sync.Mutex
 }
 
@@ -517,7 +517,7 @@ func (p *fooFOneWay) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtoco
 
 	iprot.ReadMessageEnd()
 	var err2 error
-	ret := p.handler("Foo", "OneWay", []interface{}{ctx, args.ID, args.Req})
+	ret := p.handler.Invoke([]interface{}{ctx, args.ID, args.Req})
 	if len(ret) != 1 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
 	}

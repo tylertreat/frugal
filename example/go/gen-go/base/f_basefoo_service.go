@@ -28,24 +28,24 @@ type FBaseFooClient struct {
 	protocolFactory *frugal.FProtocolFactory
 	oprot           *frugal.FProtocol
 	mu              sync.Mutex
-	methods         map[string]frugal.InvocationHandler
+	methods         map[string]*frugal.Method
 }
 
 func NewFBaseFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FBaseFooClient {
 	t.SetRegistry(frugal.NewFClientRegistry())
-	methods := make(map[string]frugal.InvocationHandler)
+	methods := make(map[string]*frugal.Method)
 	client := &FBaseFooClient{
 		transport:       t,
 		protocolFactory: p,
 		oprot:           p.GetProtocol(t),
 		methods:         methods,
 	}
-	methods["basePing"] = frugal.ComposeMiddleware(client.basePing, middleware)
+	methods["basePing"] = frugal.NewMethod(client, client.basePing, "basePing", middleware)
 	return client
 }
 
 func (f *FBaseFooClient) BasePing(ctx *frugal.FContext) (err error) {
-	ret := f.methods["basePing"]("BaseFoo", "BasePing", []interface{}{ctx})
+	ret := f.methods["basePing"].Invoke([]interface{}{ctx})
 	if len(ret) != 1 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
 	}
@@ -167,7 +167,7 @@ func NewFBaseFooProcessor(handler FBaseFoo, middleware ...frugal.ServiceMiddlewa
 		writeMu:      writeMu,
 		handler:      handler,
 	}
-	p.AddToProcessorMap("basePing", &basefooFBasePing{handler: frugal.ComposeMiddleware(handler.BasePing, middleware), writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("basePing", &basefooFBasePing{handler: frugal.NewMethod(handler, handler.BasePing, "BasePing", middleware), writeMu: p.GetWriteMutex()})
 	return p
 }
 
@@ -214,7 +214,7 @@ func (p *FBaseFooProcessor) Process(iprot, oprot *frugal.FProtocol) error {
 }
 
 type basefooFBasePing struct {
-	handler frugal.InvocationHandler
+	handler *frugal.Method
 	writeMu *sync.Mutex
 }
 
@@ -232,7 +232,7 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 	iprot.ReadMessageEnd()
 	result := BaseFooBasePingResult{}
 	var err2 error
-	ret := p.handler("BaseFoo", "BasePing", []interface{}{ctx})
+	ret := p.handler.Invoke([]interface{}{ctx})
 	if len(ret) != 1 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
 	}

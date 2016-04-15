@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -15,7 +16,7 @@ const addr = "localhost:4535"
 
 func newMiddleware(called *bool) frugal.ServiceMiddleware {
 	return func(next frugal.InvocationHandler) frugal.InvocationHandler {
-		return func(service, method string, args frugal.Arguments) frugal.Results {
+		return func(service reflect.Value, method reflect.Method, args frugal.Arguments) frugal.Results {
 			*called = true
 			return next(service, method, args)
 		}
