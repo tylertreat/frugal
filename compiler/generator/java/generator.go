@@ -39,7 +39,7 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	}
 }
 
-// TODO Unimplmented methods
+// TODO Unimplemented methods
 func (g *Generator) SetupGenerator(outputDir string) error {
 	return nil
 }
@@ -451,9 +451,9 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += tabtab + fmt.Sprintf("public %s %s(FContext ctx%s) %s {\n",
 			g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments), g.generateExceptions(method.Exceptions))
 		if method.ReturnType != nil {
-			contents += tabtabtab + fmt.Sprintf("return proxy.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments, false))
+			contents += tabtabtab + fmt.Sprintf("return proxy.%s(%s);\n", method.Name, g.generateClientCallArgs(method.Arguments))
 		} else {
-			contents += tabtabtab + fmt.Sprintf("proxy.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments, false))
+			contents += tabtabtab + fmt.Sprintf("proxy.%s(%s);\n", method.Name, g.generateClientCallArgs(method.Arguments))
 		}
 		contents += tabtab + "}\n\n"
 	}
@@ -701,7 +701,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtab + "iprot.readMessageEnd();\n"
 
 		if method.Oneway {
-			contents += tabtabtabtab + fmt.Sprintf("this.handler.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments, true))
+			contents += tabtabtabtab + fmt.Sprintf("this.handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
 			contents += tabtabtab + "}\n"
 			contents += tabtab + "}\n\n"
 			continue
@@ -710,9 +710,9 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtab + fmt.Sprintf("%s.%s_result result = new %s.%s_result();\n", servTitle, method.Name, servTitle, method.Name)
 		contents += tabtabtabtab + "try {\n"
 		if method.ReturnType == nil {
-			contents += tabtabtabtabtab + fmt.Sprintf("this.handler.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments, true))
+			contents += tabtabtabtabtab + fmt.Sprintf("this.handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
 		} else {
-			contents += tabtabtabtabtab + fmt.Sprintf("result.success = this.handler.%s(%s);\n", method.Name, g.generateCallArgs(method.Arguments, true))
+			contents += tabtabtabtabtab + fmt.Sprintf("result.success = this.handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
 			contents += tabtabtabtabtab + "result.setSuccessIsSet(true);\n"
 		}
 		for _, exception := range method.Exceptions {
@@ -764,12 +764,17 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	return contents
 }
 
-func (g *Generator) generateCallArgs(args []*parser.Field, server bool) string {
+func (g *Generator) generateClientCallArgs(args []*parser.Field) string {
+	return g.generateCallArgs(args, "")
+}
+
+func (g *Generator) generateServerCallArgs(args []*parser.Field) string {
+	return g.generateCallArgs(args, "args.")
+}
+
+func (g *Generator) generateCallArgs(args []*parser.Field, prefix string) string {
 	contents := "ctx"
-	prefix := ", "
-	if server {
-		prefix = ", args."
-	}
+	prefix = ", " + prefix
 	for _, arg := range args {
 		contents += prefix + arg.Name
 	}
