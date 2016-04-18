@@ -79,13 +79,15 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	// Process options for specific generators.
 	lang, options := cleanGenParam(gen)
 
+	_, genWithFrugal := options["gen_with_frugal"]
+
 	// Resolve Frugal generator.
 	var g generator.ProgramGenerator
 	switch lang {
 	case "dart":
 		g = generator.NewProgramGenerator(dartlang.NewGenerator(options), false)
 	case "go":
-		g = generator.NewProgramGenerator(golang.NewGenerator(options), false)
+		g = generator.NewProgramGenerator(golang.NewGenerator(options, genWithFrugal), false)
 	case "java":
 		g = generator.NewProgramGenerator(java.NewGenerator(options), true)
 	default:
@@ -106,8 +108,6 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	if err := os.MkdirAll(out, 0777); err != nil {
 		return nil, err
 	}
-
-	_, genWithFrugal := options["gen_with_frugal"]
 
 	if genWithFrugal {
 		// If not using frugal, add parsed includes here
