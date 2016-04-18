@@ -24,6 +24,7 @@ const (
 
 type Generator struct {
 	*generator.BaseGenerator
+	// TODO remove this once you can only generate with frugal
 	withFrugal        bool
 	generateConstants bool
 	typesFile         *os.File
