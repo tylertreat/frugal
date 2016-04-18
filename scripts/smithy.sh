@@ -29,7 +29,7 @@ cd $ROOT/lib/go
 go get -d -t ./go .
 go build
 # Run the tests
-go test
+go test -race
 
 # DART
 # Compile library code
@@ -49,5 +49,5 @@ zip -r frugal-dart.zip $ROOT
 cd $ROOT
 go get -d ./compiler .
 go build -o frugal
-go test ./test
+go test -race ./test
 rm -rf ./test/out
