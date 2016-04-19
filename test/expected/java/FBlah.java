@@ -40,7 +40,7 @@ public class FBlah {
 		/**
 		 * Use this to tell the sever how you feel.
 		 */
-		public long bleh(FContext ctx, Thing one, Stuff Two) throws TException, InvalidOperation;
+		public long bleh(FContext ctx, Thing one, Stuff Two, java.util.List<Integer> custom_ints) throws TException, InvalidOperation;
 
 	}
 
@@ -63,8 +63,8 @@ public class FBlah {
 		/**
 		 * Use this to tell the sever how you feel.
 		 */
-		public long bleh(FContext ctx, Thing one, Stuff Two) throws TException, InvalidOperation {
-			return proxy.bleh(ctx, one, Two);
+		public long bleh(FContext ctx, Thing one, Stuff Two, java.util.List<Integer> custom_ints) throws TException, InvalidOperation {
+			return proxy.bleh(ctx, one, Two, custom_ints);
 		}
 
 	}
@@ -174,7 +174,7 @@ public class FBlah {
 		/**
 		 * Use this to tell the sever how you feel.
 		 */
-		public long bleh(FContext ctx, Thing one, Stuff Two) throws TException, InvalidOperation {
+		public long bleh(FContext ctx, Thing one, Stuff Two, java.util.List<Integer> custom_ints) throws TException, InvalidOperation {
 			FProtocol oprot = this.outputProtocol;
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
 			this.transport.register(ctx, recvBlehHandler(ctx, result));
@@ -185,6 +185,7 @@ public class FBlah {
 					Blah.bleh_args args = new Blah.bleh_args();
 					args.setOne(one);
 					args.setTwo(Two);
+					args.setCustom_ints(custom_ints);
 					args.write(oprot);
 					oprot.writeMessageEnd();
 					oprot.getTransport().flush();
@@ -355,7 +356,7 @@ public class FBlah {
 				iprot.readMessageEnd();
 				Blah.bleh_result result = new Blah.bleh_result();
 				try {
-					result.success = this.handler.bleh(ctx, args.one, args.Two);
+					result.success = this.handler.bleh(ctx, args.one, args.Two, args.custom_ints);
 					result.setSuccessIsSet(true);
 				} catch (InvalidOperation oops) {
 					result.oops = oops;

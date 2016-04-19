@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"github.com/Workiva/frugal/compiler/globals"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,6 +26,10 @@ func ParseFrugal(filePath string) (*Frugal, error) {
 	}
 
 	frugal := parsed.(*Frugal)
+	frugal.Name = name
+	frugal.File = filePath
+	frugal.Dir = filepath.Dir(file.Name())
+	frugal.Path = filePath
 	for _, incl := range frugal.Thrift.Includes {
 		// parse all the includes before validating.
 		// TODO when this isn't experimental this should be the only place things
@@ -36,7 +39,7 @@ func ParseFrugal(filePath string) (*Frugal, error) {
 			return nil, fmt.Errorf("Bad include name: %s", include)
 		}
 
-		parsedIncl, err := ParseFrugal(filepath.Join(globals.FileDir, include))
+		parsedIncl, err := ParseFrugal(filepath.Join(frugal.Dir, include))
 		if err != nil {
 			return nil, err
 		}
@@ -49,13 +52,11 @@ func ParseFrugal(filePath string) (*Frugal, error) {
 
 		frugal.ParsedIncludes[includeName] = parsedIncl
 	}
+
 	if err := frugal.validate(); err != nil {
 		return nil, err
 	}
-	frugal.Name = name
-	frugal.File = filePath
-	frugal.Dir = filepath.Dir(file.Name())
-	frugal.Path = filePath
+
 	frugal.sort() // For determinism in generated code
 	frugal.assignFrugal()
 
