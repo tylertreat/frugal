@@ -6,6 +6,7 @@ runner_image: docker.webfilings.org/messaging/smithy-runner:2
 script:
     - ./scripts/smithy.sh
     - tar -czf goLib.tar.gz ./lib/go
+    - tar -czf dartLib.tar.gz ./lib/dart
 
 artifacts:
     artifactory:
@@ -15,6 +16,6 @@ artifacts:
     go_library:
         - goLib.tar.gz
     dart_library:
-        - frugal-dart.zip
+        - dartLib.tar.gz
     dart_library_pubspec:
         - pubspec.lock
