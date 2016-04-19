@@ -6,7 +6,7 @@ class Go(LanguageBase):
     Go implementation of LanguageBase.
     """
 
-    def update_frugal(self, version, root, dry_run=False):
+    def update_frugal(self, version, root):
         """
         Update the go version. Go versioning is controlled by git tags, so
         there is nothing to do here.

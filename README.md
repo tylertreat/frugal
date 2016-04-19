@@ -244,9 +244,6 @@ To update the frugal version for release, use the python script provided in the 
 # Get PyYAML
 pip install pyyaml
 
-# Update sdk
+# Update frugal
 python scripts/update.py --version 1.2.0
-
-# There is also a dry-run flag (still in development)
-python scripts/update.py --version 1.2.1 --dry-run
 ```
