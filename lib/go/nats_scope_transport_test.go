@@ -84,6 +84,7 @@ func TestNatsScopeLockTopicSubscriberError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 
 	tr.Subscribe("foo")
@@ -99,6 +100,7 @@ func TestNatsScopeUnlockTopicSubscriberError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 
 	tr.Subscribe("foo")
@@ -115,6 +117,7 @@ func TestNatsScopeSubscribeRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 
 	assert.Nil(t, tr.Subscribe("foo"))
@@ -141,6 +144,7 @@ func TestNatsScopeReadNotOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 
 	n, err := tr.Read(make([]byte, 5))
@@ -171,6 +175,7 @@ func TestNatsScopeOpenPublisherWriteFlush(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 
 	assert.Nil(t, tr.Open())
@@ -203,6 +208,7 @@ func TestNatsScopeOpenAlreadyOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 
 	assert.Nil(t, tr.Open())
@@ -221,6 +227,7 @@ func TestNatsScopeOpenSubscriberNoSubject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 	tr.(*fNatsScopeTransport).pull = true
 
@@ -235,6 +242,7 @@ func TestNatsScopeDiscardInvalidFrame(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 	assert.Nil(t, tr.Subscribe("blah"))
 
@@ -267,6 +275,7 @@ func TestNatsScopeCloseNotOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 	assert.Nil(t, tr.Close())
 	assert.False(t, tr.IsOpen())
@@ -280,6 +289,7 @@ func TestNatsScopeClosePublisher(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 	assert.Nil(t, tr.LockTopic("foo"))
 	assert.Nil(t, tr.Open())
@@ -310,6 +320,7 @@ func TestNatsScopeWriteNotOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 
 	n, err := tr.Write(make([]byte, 10))
@@ -345,6 +356,7 @@ func TestNatsScopeWriteTooLarge(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 	assert.Nil(t, tr.Open())
 
@@ -365,6 +377,7 @@ func TestNatsScopeFlushNotOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 
 	err = tr.Flush()
@@ -381,6 +394,7 @@ func TestNatsScopeFlushNoData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 	assert.Nil(t, tr.Open())
 	assert.Nil(t, tr.LockTopic("foo"))
@@ -401,6 +415,7 @@ func TestNatsScopeFlushTooLarge(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	tr := NewNatsFScopeTransport(conn)
 	assert.Nil(t, tr.Open())
 	tr.(*fNatsScopeTransport).writeBuffer.Write(make([]byte, 10204*1024+10))

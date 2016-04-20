@@ -209,7 +209,7 @@ func (n *FNatsServer) handleConnection(msg *nats.Msg) {
 		tr, err        = n.accept(listenTo, msg.Reply, heartbeatReply)
 	)
 	if err != nil {
-		log.Errorf("frugal: error accepting client transport:", err)
+		log.Errorf("frugal: error accepting client transport: %s", err)
 		return
 	}
 
