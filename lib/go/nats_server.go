@@ -224,7 +224,7 @@ func (n *FNatsServer) handleConnection(msg *nats.Msg) {
 	connectMsg := n.heartbeatSubject + " " + heartbeatReply + " " +
 		strconv.FormatInt(int64(n.heartbeatInterval/time.Millisecond), 10)
 	if err := n.conn.PublishRequest(msg.Reply, listenTo, []byte(connectMsg)); err != nil {
-		log.Errorf("frugal: error publishing transport inbox:", err)
+		log.Errorf("frugal: error publishing transport inbox: %s", err)
 		tr.Close()
 	} else if n.isHeartbeating() {
 		go n.acceptHeartbeat(client)
