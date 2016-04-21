@@ -23,7 +23,7 @@ type FBlah interface {
 	// Use this to ping the server.
 	Ping(ctx *frugal.FContext) (err error)
 	// Use this to tell the sever how you feel.
-	Bleh(ctx *frugal.FContext, one *Thing, Two *Stuff) (r int64, err error)
+	Bleh(ctx *frugal.FContext, one *Thing, Two *Stuff, custom_ints []int32) (r int64, err error)
 }
 
 type FBlahClient struct {
@@ -160,8 +160,8 @@ func (f *FBlahClient) recvPingHandler(ctx *frugal.FContext, resultC chan<- struc
 }
 
 // Use this to tell the sever how you feel.
-func (f *FBlahClient) Bleh(ctx *frugal.FContext, one *Thing, two *Stuff) (r int64, err error) {
-	ret := f.methods["bleh"].Invoke([]interface{}{ctx, one, two})
+func (f *FBlahClient) Bleh(ctx *frugal.FContext, one *Thing, two *Stuff, custom_ints []int32) (r int64, err error) {
+	ret := f.methods["bleh"].Invoke([]interface{}{ctx, one, two, custom_ints})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
 	}
@@ -172,7 +172,7 @@ func (f *FBlahClient) Bleh(ctx *frugal.FContext, one *Thing, two *Stuff) (r int6
 	return r, err
 }
 
-func (f *FBlahClient) bleh(ctx *frugal.FContext, one *Thing, two *Stuff) (r int64, err error) {
+func (f *FBlahClient) bleh(ctx *frugal.FContext, one *Thing, two *Stuff, custom_ints []int32) (r int64, err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan int64, 1)
 	if err = f.transport.Register(ctx, f.recvBlehHandler(ctx, resultC, errorC)); err != nil {
@@ -189,8 +189,9 @@ func (f *FBlahClient) bleh(ctx *frugal.FContext, one *Thing, two *Stuff) (r int6
 		return
 	}
 	args := BlahBlehArgs{
-		One: one,
-		Two: two,
+		One:        one,
+		Two:        two,
+		CustomInts: custom_ints,
 	}
 	if err = args.Write(f.oprot); err != nil {
 		f.mu.Unlock()
@@ -430,7 +431,7 @@ func (p *blahFBleh) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol
 	result := BlahBlehResult{}
 	var err2 error
 	var retval int64
-	ret := p.handler.Invoke([]interface{}{ctx, args.One, args.Two})
+	ret := p.handler.Invoke([]interface{}{ctx, args.One, args.Two, args.CustomInts})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
 	}

@@ -42,8 +42,6 @@ pub run dart_dev coverage --no-html
 ./tool/codecov.sh
 pub run dart_dev format --check
 pub run dart_dev analyze
-# zip the library
-zip -r frugal-dart.zip $ROOT
 
 # Run the generator tests
 cd $ROOT
