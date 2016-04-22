@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode"
 
-	//"golang.org/x/tools/imports"
+	"golang.org/x/tools/imports"
 
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/globals"
@@ -89,10 +89,10 @@ func (g *Generator) PostProcess(f *os.File) error {
 	if err != nil {
 		return err
 	}
-//	contents, err = imports.Process(f.Name(), contents, nil)
-//	if err != nil {
-//		return err
-//	}
+	contents, err = imports.Process(f.Name(), contents, nil)
+	if err != nil {
+		return err
+	}
 	return ioutil.WriteFile(f.Name(), contents, 0)
 }
 
@@ -185,7 +185,8 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 	if ok {
 		name := string(identifier)
 		if name == "true" || name == "false" {
-			// TODO change parser or what?
+			// TODO change parser or what? investigate
+			// TODO also change this
 			goto newplace
 		}
 		// split based on '.', if present, it should be from an include
@@ -944,8 +945,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, prefix string) st
 }
 
 func (g *Generator) GenerateTypesImports(file *os.File) error {
-	contents := "// in func\n"
-	contents += "import (\n"
+	contents := "import (\n"
 	contents += "\t\"bytes\"\n"
 	contents += "\t\"fmt\"\n"
 	// Enums need these for some reason
@@ -971,7 +971,6 @@ func (g *Generator) GenerateTypesImports(file *os.File) error {
 	}
 
 	contents += ")\n\n"
-	contents += "// leaving func"
 	contents += "// (needed to ensure safety because of naive import list construction.)\n"
 	contents += "var _ = thrift.ZERO\n"
 	contents += "var _ = fmt.Printf\n"
