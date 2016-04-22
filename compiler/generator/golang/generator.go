@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode"
 
-	"golang.org/x/tools/imports"
+	//"golang.org/x/tools/imports"
 
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/globals"
@@ -89,10 +89,10 @@ func (g *Generator) PostProcess(f *os.File) error {
 	if err != nil {
 		return err
 	}
-	contents, err = imports.Process(f.Name(), contents, nil)
-	if err != nil {
-		return err
-	}
+//	contents, err = imports.Process(f.Name(), contents, nil)
+//	if err != nil {
+//		return err
+//	}
 	return ioutil.WriteFile(f.Name(), contents, 0)
 }
 
@@ -184,6 +184,10 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 	identifier, ok := value.(parser.Identifier)
 	if ok {
 		name := string(identifier)
+		if name == "true" || name == "false" {
+			// TODO change parser or what?
+			goto newplace
+		}
 		// split based on '.', if present, it should be from an include
 		pieces := strings.Split(name, ".")
 		if len(pieces) == 1 {
@@ -208,6 +212,8 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 
 		panic("referenced constant doesn't exist: " + name)
 	}
+
+	newplace:
 
 	if parser.IsThriftPrimitive(underlyingType) || parser.IsThriftContainer(underlyingType) {
 		switch underlyingType.Name {
@@ -260,7 +266,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 		contents += fmt.Sprintf("&%s{\n", title(s.Name))
 
 		for _, pair := range value.([]parser.KeyValue) {
-			name := pair.Key.(string)
+			name := title(pair.Key.(string))
 			for _, field := range s.Fields {
 				if name == field.Name {
 					val := g.generateConstantValue(field.Type, pair.Value)
@@ -938,7 +944,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, prefix string) st
 }
 
 func (g *Generator) GenerateTypesImports(file *os.File) error {
-	contents := ""
+	contents := "// in func\n"
 	contents += "import (\n"
 	contents += "\t\"bytes\"\n"
 	contents += "\t\"fmt\"\n"
@@ -956,18 +962,22 @@ func (g *Generator) GenerateTypesImports(file *os.File) error {
 	protections := ""
 	pkgPrefix := g.Options["package_prefix"]
 	for _, include := range g.Frugal.Thrift.Includes {
-		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, include.Name)
-		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", include.Name)
+		includeName, ok := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
+		if !ok {
+			includeName = include.Name
+		}
+		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeName)
+		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", includeName)
 	}
 
 	contents += ")\n\n"
+	contents += "// leaving func"
 	contents += "// (needed to ensure safety because of naive import list construction.)\n"
 	contents += "var _ = thrift.ZERO\n"
 	contents += "var _ = fmt.Printf\n"
 	contents += "var _ = bytes.Equal\n\n"
 	contents += protections
 	contents += "var GoUnusedProtection__ int\n"
-
 	_, err := file.WriteString(contents)
 	return err
 }
@@ -986,8 +996,12 @@ func (g *Generator) GenerateServiceResultArgsImports(file *os.File) error {
 	protections := ""
 	pkgPrefix := g.Options["package_prefix"]
 	for _, include := range g.Frugal.Thrift.Includes {
-		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, include.Name)
-		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", include.Name)
+		includeName, ok := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
+		if !ok {
+			includeName = include.Name
+		}
+		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeName)
+		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", includeName)
 	}
 
 	contents += ")\n\n"
