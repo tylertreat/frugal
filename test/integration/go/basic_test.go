@@ -14,10 +14,13 @@ import (
 
 const addr = "localhost:4535"
 
-func newMiddleware(called *bool) frugal.ServiceMiddleware {
+func newMiddleware(called chan<- bool) frugal.ServiceMiddleware {
 	return func(next frugal.InvocationHandler) frugal.InvocationHandler {
 		return func(service reflect.Value, method reflect.Method, args frugal.Arguments) frugal.Results {
-			*called = true
+			select {
+			case called <- true:
+			default:
+			}
 			return next(service, method, args)
 		}
 	}
@@ -38,8 +41,8 @@ func TestBasic(t *testing.T) {
 
 func testBasic(t *testing.T, protoFactory thrift.TProtocolFactory, fTransportFactory frugal.FTransportFactory) {
 	// Setup server.
-	serverMiddlewareCalled := false
-	processor := event.NewFFooProcessor(&FooHandler{}, newMiddleware(&serverMiddlewareCalled))
+	serverMiddlewareCalled := make(chan bool, 1)
+	processor := event.NewFFooProcessor(&FooHandler{}, newMiddleware(serverMiddlewareCalled))
 	serverTr, err := thrift.NewTServerSocket(addr)
 	if err != nil {
 		t.Fatal(err)
@@ -71,15 +74,20 @@ func testBasic(t *testing.T, protoFactory thrift.TProtocolFactory, fTransportFac
 	if err := fTransport.Open(); err != nil {
 		t.Fatal(err)
 	}
-	clientMiddlewareCalled := false
-	client := event.NewFFooClient(fTransport, frugal.NewFProtocolFactory(protoFactory), newMiddleware(&clientMiddlewareCalled))
+	clientMiddlewareCalled := make(chan bool, 1)
+	client := event.NewFFooClient(fTransport, frugal.NewFProtocolFactory(protoFactory), newMiddleware(clientMiddlewareCalled))
 
 	runClient(t, client)
 
-	if !serverMiddlewareCalled {
+	select {
+	case <-serverMiddlewareCalled:
+	default:
 		t.Fatal("Server middleware not invoked")
 	}
-	if !clientMiddlewareCalled {
+
+	select {
+	case <-clientMiddlewareCalled:
+	default:
 		t.Fatal("Client middleware not invoked")
 	}
 
