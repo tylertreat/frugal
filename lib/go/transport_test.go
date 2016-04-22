@@ -1,7 +1,6 @@
 package frugal
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -17,10 +16,10 @@ func TestFMuxTransportSetMonitor(t *testing.T) {
 	mockMonitor := new(mockFTransportMonitor)
 	tr := NewFMuxTransport(mockTTransport, 0)
 	mockTTransport.On("Open").Return(nil)
-	mockTTransport.On("Read", mock.Anything).Return(0, errors.New("error"))
+	mockTTransport.On("Read", mock.Anything).Return(0, nil)
 	mockTTransport.On("Close").Return(nil)
 	mockTTransport.On("IsOpen").Return(false)
-	mockTTransport.readError = errors.New("error")
+	mockTTransport.reads = make(chan []byte)
 	mockMonitor.On("OnClosedCleanly").Return(nil)
 
 	tr.SetMonitor(mockMonitor)

@@ -1,6 +1,7 @@
 package frugal
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -13,10 +14,19 @@ const simpleServerAddr = "localhost:5535"
 
 type mockFProcessorFactory struct {
 	mock.Mock
+	sync.Mutex
 }
 
 func (m *mockFProcessorFactory) GetProcessor(tr thrift.TTransport) FProcessor {
+	m.Lock()
+	defer m.Unlock()
 	return m.Called(tr).Get(0).(FProcessor)
+}
+
+func (m *mockFProcessorFactory) AssertExpectations(t *testing.T) {
+	m.Lock()
+	defer m.Unlock()
+	m.Mock.AssertExpectations(t)
 }
 
 // Ensures FSimpleServer accepts connections.
@@ -41,7 +51,9 @@ func TestSimpleServer(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	mockFProcessor := new(mockFProcessor)
+	mockFProcessorFactory.Lock() // IDK why this is needed to prevent races...
 	mockFProcessorFactory.On("GetProcessor", mock.AnythingOfType("*thrift.TSocket")).Return(mockFProcessor)
+	mockFProcessorFactory.Unlock()
 	mockFProcessor.On("Process", mock.AnythingOfType("*frugal.FProtocol"),
 		mock.AnythingOfType("*frugal.FProtocol")).Return(nil)
 

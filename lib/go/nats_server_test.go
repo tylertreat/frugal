@@ -3,6 +3,7 @@ package frugal
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -14,10 +15,19 @@ import (
 
 type mockFProcessor struct {
 	mock.Mock
+	sync.Mutex
 }
 
 func (m *mockFProcessor) Process(in, out *FProtocol) error {
+	m.Lock()
+	defer m.Unlock()
 	return m.Called(in, out).Error(0)
+}
+
+func (m *mockFProcessor) AssertExpectations(t *testing.T) {
+	m.Lock()
+	defer m.Unlock()
+	m.Mock.AssertExpectations(t)
 }
 
 type mockFTransportFactory struct {
@@ -30,10 +40,19 @@ func (m *mockFTransportFactory) GetTransport(tr thrift.TTransport) FTransport {
 
 type mockTProtocolFactory struct {
 	mock.Mock
+	sync.Mutex
 }
 
 func (m *mockTProtocolFactory) GetProtocol(tr thrift.TTransport) thrift.TProtocol {
+	m.Lock()
+	defer m.Unlock()
 	return m.Called(tr).Get(0).(thrift.TProtocol)
+}
+
+func (m *mockTProtocolFactory) AssertExpectations(t *testing.T) {
+	m.Lock()
+	defer m.Unlock()
+	m.Mock.AssertExpectations(t)
 }
 
 // Ensures FNatsServer accepts connections.
@@ -144,7 +163,7 @@ func TestNatsServerHappyPathMultiSubjects(t *testing.T) {
 	mockTransport.On("Close").Return(nil)
 	mockTransportFactory.On("GetTransport", mock.AnythingOfType("*frugal.natsServiceTTransport")).Return(mockTransport)
 	proto := thrift.NewTJSONProtocol(mockTransport)
-	mockTProtocolFactory.On("GetProtocol", mockTransport).Return(proto)
+	mockTProtocolFactory.On("GetProtocol", mock.AnythingOfType("*frugal.mockFTransport")).Return(proto)
 
 	go func() {
 		assert.Nil(t, server.Serve())
@@ -336,7 +355,7 @@ func TestNatsServerExpiredConnections(t *testing.T) {
 
 	conn.PublishRequest("foo", "reply", []byte(`{"version": 0}`))
 	conn.Flush()
-	time.Sleep(5 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	assert.Equal(t, 0, len(server.(*FNatsServer).clients))
 
 	assert.Nil(t, server.Stop())

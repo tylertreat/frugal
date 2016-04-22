@@ -18,8 +18,7 @@ var frame = []byte{
 
 type mockTTransport struct {
 	mock.Mock
-	reads     [][]byte
-	readCount int
+	reads     chan []byte
 	readError error
 }
 
@@ -40,8 +39,7 @@ func (m *mockTTransport) Read(b []byte) (int, error) {
 	if m.readError != nil {
 		return 0, m.readError
 	}
-	read := m.reads[m.readCount]
-	m.readCount++
+	read := <-m.reads
 	copy(b, read)
 	num := len(b)
 	if len(read) < num {
@@ -165,7 +163,11 @@ func TestIsOpen(t *testing.T) {
 // underlying transport.
 func TestRead(t *testing.T) {
 	mockTr := new(mockTTransport)
-	mockTr.reads = [][]byte{frame[0:4], frame[4:]}
+	reads := make(chan []byte, 2)
+	reads <- frame[0:4]
+	reads <- frame[4:]
+	close(reads)
+	mockTr.reads = reads
 	tr := NewTFramedTransport(mockTr)
 	mockTr.On("Read", make([]byte, 4096)).Return(4, nil).Once()
 	mockTr.On("Read", append(frame[0:4], make([]byte, 4092)...)).Return(len(frame), nil).Once()
@@ -182,7 +184,11 @@ func TestRead(t *testing.T) {
 // frame.
 func TestReadLargeBuffer(t *testing.T) {
 	mockTr := new(mockTTransport)
-	mockTr.reads = [][]byte{frame[0:4], frame[4:]}
+	reads := make(chan []byte, 2)
+	reads <- frame[0:4]
+	reads <- frame[4:]
+	close(reads)
+	mockTr.reads = reads
 	tr := NewTFramedTransport(mockTr)
 	mockTr.On("Read", make([]byte, 4096)).Return(4, nil).Once()
 	mockTr.On("Read", append(frame[0:4], make([]byte, 4092)...)).Return(len(frame), nil).Once()
@@ -286,7 +292,11 @@ func TestFlushError(t *testing.T) {
 // Ensures RemainingBytes returns the remaining frame size.
 func TestRemainingBytes(t *testing.T) {
 	mockTr := new(mockTTransport)
-	mockTr.reads = [][]byte{frame[0:4], frame[4:]}
+	reads := make(chan []byte, 2)
+	reads <- frame[0:4]
+	reads <- frame[4:]
+	close(reads)
+	mockTr.reads = reads
 	tr := NewTFramedTransport(mockTr)
 	mockTr.On("Read", make([]byte, 4096)).Return(4, nil).Once()
 	mockTr.On("Read", append(frame[0:4], make([]byte, 4092)...)).Return(len(frame), nil).Once()
