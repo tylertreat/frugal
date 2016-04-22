@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/Workiva/frugal/test/out/base"
+	"github.com/Workiva/frugal/test/out/actual_base"
 )
 
 // (needed to ensure safety because of naive import list construction.)
@@ -16,7 +16,7 @@ var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
 
-var _ = base.GoUnusedProtection__
+var _ = actual_base.GoUnusedProtection__
 
 type FooPingArgs struct {
 }
@@ -291,9 +291,9 @@ func (p *FooBlahArgs) String() string {
 }
 
 type FooBlahResult struct {
-	Success *int64             `thrift:"success,0" db:"success" json:"success,omitempty"`
-	Awe     *AwesomeException  `thrift:"awe,1" db:"awe" json:"awe,omitempty"`
-	API     *base.APIException `thrift:"api,2" db:"api" json:"api,omitempty"`
+	Success *int64                    `thrift:"success,0" db:"success" json:"success,omitempty"`
+	Awe     *AwesomeException         `thrift:"awe,1" db:"awe" json:"awe,omitempty"`
+	API     *actual_base.APIException `thrift:"api,2" db:"api" json:"api,omitempty"`
 }
 
 func NewFooBlahResult() *FooBlahResult {
@@ -326,13 +326,13 @@ func (p *FooBlahResult) GetAwe() *AwesomeException {
 	return p.Awe
 }
 
-var FooBlahResult_API_DEFAULT *base.APIException
+var FooBlahResult_API_DEFAULT *actual_base.APIException
 
 func (p *FooBlahResult) IsSetAPI() bool {
 	return p.API != nil
 }
 
-func (p *FooBlahResult) GetAPI() *base.APIException {
+func (p *FooBlahResult) GetAPI() *actual_base.APIException {
 	if !p.IsSetAPI() {
 		return FooBlahResult_API_DEFAULT
 	}
@@ -398,7 +398,7 @@ func (p *FooBlahResult) ReadField1(iprot thrift.TProtocol) error {
 }
 
 func (p *FooBlahResult) ReadField2(iprot thrift.TProtocol) error {
-	p.API = base.NewAPIException()
+	p.API = actual_base.NewAPIException()
 	if err := p.API.Read(iprot); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.API), err)
 	}
@@ -759,8 +759,8 @@ func (p *FooBinMethodArgs) String() string {
 }
 
 type FooBinMethodResult struct {
-	Success []byte             `thrift:"success,0" db:"success" json:"success,omitempty"`
-	API     *base.APIException `thrift:"api,1" db:"api" json:"api,omitempty"`
+	Success []byte                    `thrift:"success,0" db:"success" json:"success,omitempty"`
+	API     *actual_base.APIException `thrift:"api,1" db:"api" json:"api,omitempty"`
 }
 
 func NewFooBinMethodResult() *FooBinMethodResult {
@@ -777,13 +777,13 @@ func (p *FooBinMethodResult) GetSuccess() []byte {
 	return p.Success
 }
 
-var FooBinMethodResult_API_DEFAULT *base.APIException
+var FooBinMethodResult_API_DEFAULT *actual_base.APIException
 
 func (p *FooBinMethodResult) IsSetAPI() bool {
 	return p.API != nil
 }
 
-func (p *FooBinMethodResult) GetAPI() *base.APIException {
+func (p *FooBinMethodResult) GetAPI() *actual_base.APIException {
 	if !p.IsSetAPI() {
 		return FooBinMethodResult_API_DEFAULT
 	}
@@ -837,7 +837,7 @@ func (p *FooBinMethodResult) ReadField0(iprot thrift.TProtocol) error {
 }
 
 func (p *FooBinMethodResult) ReadField1(iprot thrift.TProtocol) error {
-	p.API = base.NewAPIException()
+	p.API = actual_base.NewAPIException()
 	if err := p.API.Read(iprot); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.API), err)
 	}

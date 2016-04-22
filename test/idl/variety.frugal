@@ -30,6 +30,9 @@ const map<string,Event> MAPCONSTANT2 = {'hello':{"ID": -2, "Message": "first her
 
 const binary bin_const = "hello"
 
+const bool true_constant = true
+const bool false_constant = false
+
 struct TestBase {
     1: base.thing base_struct,
 }
