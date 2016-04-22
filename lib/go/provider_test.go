@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/Workiva/stretchr/mock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 type mockFScopeTransportFactory struct {

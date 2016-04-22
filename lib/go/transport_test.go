@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Workiva/stretchr/assert"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 

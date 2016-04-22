@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/Workiva/stretchr/assert"
 	"github.com/nats-io/gnatsd/server"
 	"github.com/nats-io/nats"
+	"github.com/stretchr/testify/assert"
 )
 
 var defaultOptions = server.Options{

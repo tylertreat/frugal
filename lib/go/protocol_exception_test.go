@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/Workiva/stretchr/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 // Ensures NewFProtocolException returns nil if the provided error is nil.
