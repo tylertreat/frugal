@@ -194,10 +194,12 @@ func (o *programGenerator) generateServiceMethodTypes(service *parser.Service) [
 			Type:   parser.StructTypeStruct,
 		}
 
-		// This creates code like thrift does, though I'm not sure why they
-		// do this
+		// This creates code like thrift does, though I'm not sure why
+		// it's necessary
 		for _, field := range arg.Fields {
-			field.Modifier = parser.Default
+			if field.Modifier == parser.Optional {
+				field.Modifier = parser.Default
+			}
 		}
 		structs = append(structs, arg)
 
