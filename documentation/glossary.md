@@ -25,8 +25,8 @@ The default timeout is one minute. An FContext is also sent with every publish
 message which is then received by subscribers.
 
 In addition to headers, the FContext also contains a correlation ID which can
-be used for distributed tracing purposes. A random correlation ID is generated
-for each FContext if one is not provided.
+consumed by the user and used for distributed tracing purposes. A random
+correlation ID is generated for each FContext if one is not provided.
 
 FContext also plays a key role in Frugal's multiplexing support. A unique,
 per-request operation ID is set on every FContext before a request is made.
@@ -77,17 +77,17 @@ and protocols in a composable manner.
 
 ## FScopeProvider
 
-FScopeProvider produces FScopeTransports and FProtocols for use by pub/sub
-scopes. It does this by wrapping an FScopeTransportFactory and
-FProtocolFactory.
+FScopeProvider is used exclusively for pub/sub and produces FScopeTransports
+and FProtocols for use by pub/sub scopes. It does this by wrapping an
+FScopeTransportFactory and FProtocolFactory.
 
-## FScopeTransport
+## FScopeTransport*
 
 FScopeTransport extends Thrift's TTransport and is used exclusively for pub/sub
 scopes. Subscribers use an FScopeTransport to subscribe to a pub/sub topic.
 Publishers use it to publish to a topic.
 
-## FScopeTransportFactory
+## FScopeTransportFactory*
 
 FScopeTransportFactory produces FScopeTransports and is typically used by an
 FScopeProvider.
