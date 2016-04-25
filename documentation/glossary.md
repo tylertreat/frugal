@@ -34,12 +34,28 @@ This operation ID is sent in the request and included in the response, which is
 then used to correlate a response to a request. The operation ID is an internal
 implementation detail and is not exposed to the user.
 
+An FContext should belong to a single request for the lifetime of that request.
+It can be reused once the request has completed, though they should generally
+not be reused.
+
 ## FProcessor
 
 FProcessor is Frugal's equivalent of Thrift's TProcessor. It's a generic object
 which operates upon an input stream and writes to an output stream.
 Specifically, an FProcessor is provided to an FServer in order to wire up a
 service handler to process requests.
+
+## FProcessorFactory
+
+FProcessorFactory produces FProcessors and is used by an FServer. It takes a
+TTransport and returns an FProcessor wrapping it.
+
+## FProcessorFunction*
+
+FProcessorFunction is used internally by generated code. An FProcessor
+registers an FProcessorFunction for each service method. Like FProcessor, an
+FProcessorFunction exposes a single process call, which is used to handle a
+method invocation.
 
 ## FProtocol
 
@@ -162,3 +178,10 @@ important concept. A service is defined in a Frugal IDL file, and it specifies
 a RPC API. Each service has one or more methods which can be invoked remotely.
 Frugal takes this definition and generates the corresponding client and server
 interface.
+
+## ServiceMiddleware
+
+ServiceMiddleware is used to implement interceptor logic around API calls. This
+can be used, for example, to implement retry policies on service calls,
+logging, telemetry, or authentication and authorization. ServiceMiddleware can
+be applied to both RPC services and pub/sub scopes.
