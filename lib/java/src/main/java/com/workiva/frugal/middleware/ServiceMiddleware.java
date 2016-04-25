@@ -1,7 +1,10 @@
 package com.workiva.frugal.middleware;
 
 /**
- * ServiceMiddleware is used to apply middleware logic around service handlers.
+ * ServiceMiddleware is used to implement interceptor logic around API calls. This
+ * can be used, for example, to implement retry policies on service calls,
+ * logging, telemetry, or authentication and authorization. ServiceMiddleware can
+ * be applied to both RPC services and pub/sub scopes.
  */
 public interface ServiceMiddleware {
 
