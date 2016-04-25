@@ -63,7 +63,6 @@ class TestProgram(object):
 
   def _socket_args(self, socket, port):
     return {
-      'ip-ssl': ['--ssl'],
       'domain': ['--domain-socket=%s' % domain_socket_path(port)],
       'abstract': ['--abstract-namespace', '--domain-socket=%s' % domain_socket_path(port)],
     }.get(socket, None)

@@ -1,7 +1,7 @@
 package common
 
 import (
-	"crypto/tls"
+	//"crypto/tls"
 	"flag"
 	"fmt"
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -24,7 +24,6 @@ func StartServer(
 	domain_socket string,
 	transport string,
 	protocol string,
-	ssl bool,
 	certPath string,
 	handler frugaltest.FFrugalTest) (srv *frugal.FSimpleServer, err error) {
 
@@ -42,32 +41,21 @@ func StartServer(
 		return nil, fmt.Errorf("Invalid protocol specified %s", protocol)
 	}
 
-	// Not sure if this section will work, leaving it in for now.
 	if debugServerProtocol {
 		protocolFactory = thrift.NewTDebugProtocolFactory(protocolFactory, "server:")
 	}
 
 	var serverTransport thrift.TServerTransport
-	if ssl {
-		cfg := new(tls.Config)
-		if cert, err := tls.LoadX509KeyPair(certPath+"/server.crt", certPath+"/server.key"); err != nil {
-			return nil, err
-		} else {
-			cfg.Certificates = append(cfg.Certificates, cert)
-		}
+	if domain_socket != "" {
+		serverTransport, err = thrift.NewTServerSocket(domain_socket)
 	} else {
-		if domain_socket != "" {
-			serverTransport, err = thrift.NewTServerSocket(domain_socket)
-		} else {
-			serverTransport, err = thrift.NewTServerSocket(hostPort)
-		}
+		serverTransport, err = thrift.NewTServerSocket(hostPort)
 	}
 	if err != nil {
 		return nil, err
 	}
 
 	fTransportFactory := frugal.NewFMuxTransportFactory(2)
-	// processor := frugaltest.NewFProcessor
 	processor := frugaltest.NewFFrugalTestProcessor(handler)
 	server := frugal.NewFSimpleServerFactory5(
 		frugal.NewFProcessorFactory(processor),

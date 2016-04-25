@@ -69,14 +69,6 @@ def run_cross_tests(server_match, client_match, jobs,  retry_count, regex):
     return False
 
 
-def default_concurrenty():
-  try:
-    return int(os.environ.get('FRUGAL_CROSSTEST_CONCURRENCY'))
-  except (TypeError, ValueError):
-    # Since much time is spent sleeping, use many threads
-    return int(multiprocessing.cpu_count() * 1.25) + 1
-
-
 def main(argv):
   parser = argparse.ArgumentParser()
   parser.add_argument('--server', default='', nargs='*',
@@ -86,9 +78,6 @@ def main(argv):
   parser.add_argument('-R', '--regex', help='test name pattern to run')
   parser.add_argument('-r', '--retry-count', type=int,
                       default=0, help='maximum retry on failure')
-  parser.add_argument('-j', '--jobs', type=int,
-                      default=default_concurrenty(),
-                      help='number of concurrent test executions')
 
   g = parser.add_argument_group(title='Advanced')
   g.add_argument('-v', '--verbose', action='store_const',
@@ -101,6 +90,8 @@ def main(argv):
 
   server_match = list(chain(*[x.split(',') for x in options.server]))
   client_match = list(chain(*[x.split(',') for x in options.client]))
+
+  options.jobs = int(multiprocessing.cpu_count() * 1.25) + 1
 
   res = run_cross_tests(server_match, client_match, options.jobs, options.retry_count, options.regex)
   return 0 if res else 1

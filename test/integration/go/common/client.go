@@ -1,7 +1,7 @@
 package common
 
 import (
-	"crypto/tls"
+	//"crypto/tls"
 	"flag"
 	"fmt"
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -21,8 +21,7 @@ func StartClient(
 	port int64,
 	domain_socket string,
 	transport string,
-	protocol string,
-	ssl bool) (client *frugaltest.FFrugalTestClient, err error) {
+	protocol string) (client *frugaltest.FFrugalTestClient, err error) {
 
 	hostPort := fmt.Sprintf("%s:%d", host, port)
 
@@ -44,14 +43,10 @@ func StartClient(
 	}
 
 	var trans thrift.TTransport
-	if ssl {
-		trans, err = thrift.NewTSSLSocket(hostPort, &tls.Config{InsecureSkipVerify: true})
+	if domain_socket != "" {
+		trans, err = thrift.NewTSocket(domain_socket)
 	} else {
-		if domain_socket != "" {
-			trans, err = thrift.NewTSocket(domain_socket)
-		} else {
-			trans, err = thrift.NewTSocket(hostPort)
-		}
+		trans, err = thrift.NewTSocket(hostPort)
 	}
 	if err != nil {
 		return nil, err
@@ -72,12 +67,9 @@ func StartClient(
 		return nil, fmt.Errorf("Invalid transport specified %s", transport)
 	}
 
-	// Transport is wrapped in fTransport
-	// Protocol is wrapped in FProtocolFactory
-
 	fTransportFactory := frugal.NewFMuxTransportFactory(2)
 	fTransport := fTransportFactory.GetTransport(trans)
-	// defer fTransport.Close()  // TODO: Close this after all the tests are run
+
 	if err := fTransport.Open(); err != nil {
 		log.Fatal(err)
 	}

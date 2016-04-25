@@ -2,7 +2,7 @@
 
 set -ex
 
-# Clear old logs
+# Start with clean log folder
 rm -rf test/integration/log/*
 
 # RM and Generate Go Code
@@ -18,7 +18,6 @@ go build -o test/integration/go/bin/testserver test/integration/go/src/bin/tests
 rm -rf test/integration/dart/gen-dart/
 frugal --gen dart -r --out='test/integration/dart/gen-dart' test/integration/frugalTest.frugal
 
-# Pub get hackery.  This can be fixed when skynet has pub credentials.
 cd test/integration/dart/test_client
 pub get
 cd ../gen-dart/frugal_test
@@ -31,4 +30,8 @@ echo $PWD
 # --server for specific server languages (only go supported currently)
 # --client for specific client languages (go and dart supported currently)
 # Example: python test/integration/test.py --server go --client go
+
 python test/integration/test.py --retry-count=0
+
+# After running this script once, you can just run:     python test/integration/test.py --retry-count=0
+# to run all cross language tests. Be sure to re-run the entire script if you make changes between test runs.

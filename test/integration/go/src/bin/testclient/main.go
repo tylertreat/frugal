@@ -15,12 +15,11 @@ var port = flag.Int64("port", 9090, "Port number to connect")
 var domain_socket = flag.String("domain-socket", "", "Domain Socket (e.g. /tmp/frugaltest.frugal), instead of host and port")
 var transport = flag.String("transport", "buffered", "Transport: buffered, framed, http, zlib")
 var protocol = flag.String("protocol", "binary", "Protocol: binary, compact, json")
-var ssl = flag.Bool("ssl", false, "Encrypted Transport using SSL")
 var testloops = flag.Int("testloops", 1, "Number of Tests")
 
 func main() {
 	flag.Parse()
-	client, err := common.StartClient(*host, *port, *domain_socket, *transport, *protocol, *ssl)
+	client, err := common.StartClient(*host, *port, *domain_socket, *transport, *protocol)
 	if err != nil {
 		t.Fatalf("Unable to start client: ", err)
 	}
@@ -46,7 +45,7 @@ var xcept = &frugaltest.Xception{ErrorCode: 1001, Message: "Xception"}
 
 func callEverything(client *frugaltest.FFrugalTestClient) {
 	ctx := frugal.NewFContext("")
-	ctx.SetTimeout(2 * time.Millisecond)
+	ctx.SetTimeout(5 * time.Second)
 	var err error
 	if err = client.TestVoid(ctx); err != nil {
 		t.Fatalf("Unexpected error in TestVoid() call: ", err)
@@ -246,7 +245,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		t.Fatalf("Unexpected TestException() result expected %#v, got %#v ", xcept, err)
 	}
 
-	// Need to handle the test case where an untyped exception is thrown. Handle reopening the transport after frugal freaks out.
+	// TODO: Need to handle the test case where an untyped exception is thrown. Handle reopening the transport after frugal freaks out.
 	// err = client.TestException(ctx, "TException") // This is closing the transport
 	// _, ok := err.(thrift.TApplicationException)
 	// if err == nil || !ok {

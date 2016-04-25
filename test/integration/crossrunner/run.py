@@ -131,8 +131,8 @@ def run_test(testdir, logdir, test_dict, max_retry, async=True):
   logger = multiprocessing.get_logger()
 
   def ensure_socket_open(proc, port, max_delay):
-    sleeped = 0.1
-    time.sleep(sleeped)
+    slept = 0.1
+    time.sleep(slept)
     sleep_step = 0.2
     while True:
       # Create sockets every iteration because refused sockets cannot be
@@ -146,15 +146,15 @@ def run_test(testdir, logdir, test_dict, max_retry, async=True):
         if proc.poll() is not None:
           logger.warn('server process is exited')
           return False
-        if sleeped > max_delay:
-          logger.warn('sleeped for %f seconds but server port is not open' % sleeped)
+        if slept > max_delay:
+          logger.warn('slept for %f seconds but server port is not open' % slept)
           return False
         time.sleep(sleep_step)
-        sleeped += sleep_step
+        slept += sleep_step
       finally:
         sock4.close()
         sock6.close()
-    logger.debug('waited %f sec for server port open' % sleeped)
+    logger.debug('waited %f sec for server port open' % slept)
     return True
 
   try:
@@ -272,7 +272,7 @@ class PortAllocator(object):
     else:
       return self._get_tcp_port()
 
-  # static method for inter-process invokation
+  # static method for inter-process invocation
   @staticmethod
   @contextlib.contextmanager
   def alloc_port_scoped(allocator, socket_type):
