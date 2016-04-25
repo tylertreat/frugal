@@ -1,7 +1,6 @@
 package common
 
 import (
-	//"crypto/tls"
 	"flag"
 	"fmt"
 	"git.apache.org/thrift.git/lib/go/thrift"

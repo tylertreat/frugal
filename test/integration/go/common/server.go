@@ -1,7 +1,6 @@
 package common
 
 import (
-	//"crypto/tls"
 	"flag"
 	"fmt"
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -11,7 +10,6 @@ import (
 
 var (
 	debugServerProtocol bool
-	certPath            string
 )
 
 func init() {
