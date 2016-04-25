@@ -9,6 +9,7 @@ ROOT=$PWD
 CODECOV_TOKEN='bQ4MgjJ0G2Y73v8JNX6L7yMK9679nbYB'
 THRIFT_TAG=0.9.3-wk-2
 THRIFT=thrift-$THRIFT_TAG-linux-amd64
+GORACE="halt_on_error=1"
 
 
 # Retrieve the thrift binary
@@ -29,7 +30,7 @@ cd $ROOT/lib/go
 go get -d -t ./go .
 go build
 # Run the tests
-go test
+go test -race
 
 # DART
 # Compile library code
@@ -47,5 +48,5 @@ pub run dart_dev analyze
 cd $ROOT
 go get -d ./compiler .
 go build -o frugal
-go test ./test
+go test -race ./test
 rm -rf ./test/out

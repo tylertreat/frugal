@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"sync"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
@@ -20,6 +21,7 @@ type TFramedTransport struct {
 	maxLength   uint32
 	readBuffer  [4]byte
 	writeBuffer [4]byte
+	mu          sync.Mutex
 }
 
 type tFramedTransportFactory struct {
@@ -48,14 +50,20 @@ func NewTFramedTransportMaxLength(transport thrift.TTransport, maxLength uint32)
 }
 
 func (p *TFramedTransport) Open() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	return p.transport.Open()
 }
 
 func (p *TFramedTransport) IsOpen() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	return p.transport.IsOpen()
 }
 
 func (p *TFramedTransport) Close() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	return p.transport.Close()
 }
 
