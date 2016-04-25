@@ -18,9 +18,9 @@
 # under the License.
 #
 
-# Apache Thrift - integration test suite
+# Frugal - integration test suite
 #
-# tests different server-client, protocol and transport combinations
+# tests various server-client, protocol and transport combinations
 #
 # This script supports python 2.7 and later.
 # python 3.x is recommended for better stability.
@@ -41,7 +41,6 @@ from crossrunner.compat import path_join
 ROOT_DIR = os.path.dirname(os.path.realpath(os.path.dirname(__file__)))
 TEST_DIR_RELATIVE = 'integration'
 TEST_DIR = path_join(ROOT_DIR, TEST_DIR_RELATIVE)
-FEATURE_DIR_RELATIVE = path_join(TEST_DIR_RELATIVE, 'features')
 CONFIG_FILE = 'tests.json'
 
 def run_cross_tests(server_match, client_match, jobs,  retry_count, regex):
