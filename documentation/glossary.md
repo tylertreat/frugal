@@ -105,6 +105,11 @@ is a basic, accept-loop based server that supports traditional Thrift
 TServerTransports, and FNatsServer, which is an implementation that uses NATS
 as the underlying transport.
 
+## FServiceProvider
+
+FServiceProvider is the service equivalent of FScopeProvider. It produces
+FTransports and FProtocols for use by RPC service clients.
+
 ## FSubscription
 
 FSubscription is a subscription to a pub/sub topic created by a scope. The
