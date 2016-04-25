@@ -9,7 +9,13 @@ internal components may vary between language implementations.
 
 ## FAsyncCallback*
 
-// TODO
+FAsyncCallback is an internal callback which is constructed by generated code
+and invoked by an FRegistry when a RPC response is received. In other words,
+it's used to complete RPCs. The operation ID on FContext is used to look up the
+appropriate callback. FAsyncCallback is passed an in-memory TTransport which
+wraps the complete message. The callback returns an error or throws an
+exception if an unrecoverable error occurs and the transport needs to be
+shutdown.
 
 ## FContext
 
@@ -47,7 +53,11 @@ message using a simple binary protocol. See the
 
 ## FProtocolFactory
 
-// TODO
+FProtocolFactory creates new FProtocol instances. It takes a TProtocolFactory
+and a TTransport and returns an FProtocol which wraps a TProtocol produced by
+the TProtocolFactory. The TProtocol itself wraps the provided TTransport. This
+makes it easy to produce an FProtocol which uses any existing Thrift transports
+and protocols in a composable manner.
 
 ## FScopeProvider
 
@@ -63,28 +73,92 @@ Publishers use it to publish to a topic.
 
 ## FScopeTransportFactory
 
-// TODO
+FScopeTransportFactory produces FScopeTransports and is typically used by an
+FScopeProvider.
 
 ## FServer
 
-// TODO
+FServer is Frugal's equivalent of Thrift's TServer. It's used to run a Frugal
+RPC service by executing an FProcessor on client connections. FServer can
+optionally support a high-water mark which is the maximum amount of time a
+request is allowed to be enqueued before triggering server overload logic (e.g.
+load shedding).
+
+Currently, Frugal includes two implementations of FServer: FSimpleServer, which
+is a basic, accept-loop based server that supports traditional Thrift
+TServerTransports, and FNatsServer, which is an implementation that uses NATS
+as the underlying transport.
 
 ## FSubscription
 
-// TODO
+FSubscription is a subscription to a pub/sub topic created by a scope. The
+topic subscription is actually handled by an FScopeTransport, which the
+FSubscription wraps. Each FSubscription should have its own FScopeTransport.
+The FSubscription is used to unsubscribe from the topic.
 
 ## FRegistry*
 
-// TODO
+FRegistry is responsible for multiplexing and handling received messages.
+Typically there is a client implementation and a server implementation. An
+FRegistry is used by an FTransport.
+
+The client implementation is used on the client side, which is making RPCs.
+When a request is made, an FAsyncCallback is registered to an FContext. When a
+response for the FContext is received, the FAsyncCallback is looked up,
+executed, and unregistered.
+
+The server implementation is used on the server side, which is handling RPCs.
+It does not actually register FAsyncCallbacks but rather has an FProcessor
+registered with it. When a message is received, it's buffered and passed to
+the FProcessor to be handled.
 
 ## FTransport
 
-// TODO
+FTransport is Frugal's equivalent of Thrift's TTransport. FTransport extends
+TTransport and exposes some additional methods. An FTransport typically has an
+FRegistry, so it provides methods for setting the FRegistry and registering and
+unregistering an FAsyncCallback to an FContext. It also allows a way for
+setting an FTransportMonitor and a high-water mark provided by an FServer.
+
+FTransport wraps a TTransport, meaning all existing TTransport implementations
+will work in Frugal. However, all FTransports must used a framed protocol,
+typically implemented by wrapping a TFramedTransport.
+
+Most Frugal language libraries include an FMuxTransport implementation, which
+uses a worker pool to handle messages in parallel.
 
 ## FTransportFactory
 
-// TODO
+FTransportFactory produces FTransports by wrapping a provided TTransport.
 
 ## FTransportMonitor
 
-// TODO
+FTransportMonitor watches and heals an FTransport. It exposes a number of hooks
+which can be used to add logic around FTransport events, such as unexpected
+disconnects, expected disconnects, failed reconnects, and successful
+reconnects.
+
+Most Frugal implementations include a base FTransportMonitor which implements
+basic reconnect logic with backoffs and max attempts. This can be extended or
+reimplemented to provide custom logic.
+
+## Scope
+
+Scopes do not map directly to an actual object but are an important concept
+within Frugal. A scope is defined in a Frugal IDL file, and it specifies a
+pub/sub API. Each scope has one or more operations, each of which define a
+pub/sub event. Frugal takes this definition and generates the corresponding
+publisher and subscriber code.
+
+The pub/sub topic, which is an implementation detail of the scope, is
+constructed by Frugal and consists of the scope and operation names. However, a
+scope prefix can be specified, which is prepended to the topic. This prefix can
+have user-defined variables, allowing runtime subscription matching.
+
+## Service
+
+Services do not map directly to an actual object but, like scopes, are an
+important concept. A service is defined in a Frugal IDL file, and it specifies
+a RPC API. Each service has one or more methods which can be invoked remotely.
+Frugal takes this definition and generates the corresponding client and server
+interface.
