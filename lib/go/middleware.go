@@ -20,6 +20,12 @@ type (
 	// argument will always be the FContext.
 	InvocationHandler func(service reflect.Value, method reflect.Method, args Arguments) Results
 
+	// ServiceMiddleware is used to implement interceptor logic around API
+	// calls. This can be used, for example, to implement retry policies on
+	// service calls, logging, telemetry, or authentication and authorization.
+	// ServiceMiddleware can be applied to both RPC services and pub/sub
+	// scopes.
+	//
 	// ServiceMiddleware returns an InvocationHandler which proxies the given
 	// InvocationHandler. This can be used to apply middleware logic around a
 	// service call.
