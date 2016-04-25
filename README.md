@@ -235,3 +235,15 @@ example directory.
 $ cd example
 $ docker run -v "$(pwd):/data" drydock.workiva.org/workiva/frugal:17352 frugal -gen=go event.frugal
 ```
+
+## Release
+
+To update the frugal version for release, use the python script provided in the `scripts` directory. Note: You must be in the root directory of frugal.
+
+```bash
+# Get PyYAML
+pip install pyyaml
+
+# Update frugal
+python scripts/update.py --version 1.2.0
+```
