@@ -10,6 +10,8 @@ transports. This means most of the components that ship with Thrift "just work"
 out of the box. Frugal wraps many of these components to extend their
 functionality.
 
+See the [glossary](glossary.md) for definitions of Frugal concepts.
+
 # Why does Frugal exist?
 
 Frugal was created to address many of Thrift's shortcomings without completely
