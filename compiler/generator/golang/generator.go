@@ -185,33 +185,29 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 	if ok {
 		name := string(identifier)
 
-		// TODO true and false are parsed as identifiers, remove this check when
-		// that isn't the case
-		if name != "true" && name != "false" {
-			// split based on '.', if present, it should be from an include
-			pieces := strings.Split(name, ".")
-			if len(pieces) == 1 {
-				// From this file
-				for _, constant := range g.Frugal.Thrift.Constants {
-					if name == constant.Name {
-						return g.generateConstantValue(t, constant.Value)
-					}
-				}
-			} else if len(pieces) == 2 {
-				// From an include
-				include, ok := g.Frugal.ParsedIncludes[pieces[0]]
-				if !ok {
-					panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
-				}
-				for _, constant := range include.Thrift.Constants {
-					if pieces[1] == constant.Name {
-						return g.generateConstantValue(t, constant.Value)
-					}
+		// split based on '.', if present, it should be from an include
+		pieces := strings.Split(name, ".")
+		if len(pieces) == 1 {
+			// From this file
+			for _, constant := range g.Frugal.Thrift.Constants {
+				if name == constant.Name {
+					return g.generateConstantValue(t, constant.Value)
 				}
 			}
-
-			panic("referenced constant doesn't exist: " + name)
+		} else if len(pieces) == 2 {
+			// From an include
+			include, ok := g.Frugal.ParsedIncludes[pieces[0]]
+			if !ok {
+				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
+			}
+			for _, constant := range include.Thrift.Constants {
+				if pieces[1] == constant.Name {
+					return g.generateConstantValue(t, constant.Value)
+				}
+			}
 		}
+
+		panic("referenced constant doesn't exist: " + name)
 	}
 
 	if parser.IsThriftPrimitive(underlyingType) || parser.IsThriftContainer(underlyingType) {

@@ -417,12 +417,6 @@ func (t *Thrift) validateConstant(constant *Constant, includes map[string]*Fruga
 	// make sure it exists
 	name := string(identifier)
 
-	// TODO true and false are parsed as identifiers, remove this when that is
-	// no longer the case
-	if name == "true" || name == "false" {
-		return nil
-	}
-
 	// split based on '.', if present, it should be from an include
 	pieces := strings.Split(name, ".")
 	if len(pieces) == 1 {
