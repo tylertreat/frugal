@@ -3,6 +3,7 @@ test/idl/constants.thrift
 target/
 *.iml
 .idea
+.pyc
 
 # Don’t commit the following directories created by pub.
 .buildlog
