@@ -6,11 +6,11 @@ part of frugal;
 /// FRegistry and registering and unregistering an FAsyncCallback to an
 /// FContext. It also allows a way for setting an FTransportMonitor and a
 /// high-water mark provided by an FServer.
-/// 
+///
 /// FTransport wraps a TTransport, meaning all existing TTransport
 /// implementations will work in Frugal. However, all FTransports must used a
 /// framed protocol, typically implemented by wrapping a TFramedTransport.
-/// 
+///
 /// Most Frugal language libraries include an FMuxTransport implementation,
 /// which uses a worker pool to handle messages in parallel.
 abstract class FTransport extends TTransport {

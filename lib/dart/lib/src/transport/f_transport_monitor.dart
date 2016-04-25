@@ -4,7 +4,7 @@ part of frugal;
 /// hooks which can be used to add logic around FTransport events, such as
 /// unexpected disconnects, expected disconnects, failed reconnects, and
 /// successful reconnects.
-/// 
+///
 /// Most Frugal implementations include a base FTransportMonitor which
 /// implements basic reconnect logic with backoffs and max attempts. This can
 /// be extended or reimplemented to provide custom logic.
