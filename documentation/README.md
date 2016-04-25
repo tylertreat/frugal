@@ -16,7 +16,9 @@ See the [glossary](glossary.md) for definitions of Frugal concepts.
 
 Frugal was created to address many of Thrift's shortcomings without completely
 reinventing the wheel. Thrift is a solid, mature RPC framework used widely in
-production systems. However, it has several key problems:
+production systems. However, it has several key problems.
+
+## Problems with Thrift
 
 - Head-of-line blocking: a single, slow request will block any following
   requests for a client.
@@ -49,8 +51,10 @@ production systems. However, it has several key problems:
   even asynchronous RPC is largely language-dependent and susceptible to the
   head-of-line blocking and out-of-order response problems. 
 
+## Frugal Features
+
 Frugal was built to address these concerns. Below are some of the things it
-provides:
+provides.
 
 - Request multiplexing: client requests are fully multiplexed, allowing them to
   be issued concurrently while simultaneously avoiding the head-of-line
