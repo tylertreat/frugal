@@ -102,8 +102,8 @@ load shedding).
 
 Currently, Frugal includes two implementations of FServer: FSimpleServer, which
 is a basic, accept-loop based server that supports traditional Thrift
-TServerTransports, and FNatsServer, which is an implementation that uses NATS
-as the underlying transport.
+TServerTransports, and FNatsServer, which is an implementation that uses
+[NATS](https://nats.io/) as the underlying transport.
 
 ## FServiceProvider
 

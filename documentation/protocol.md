@@ -28,19 +28,19 @@ assumed.
 +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+...+-----+-----+-----+-----+-----+-----+-----+...+-----+...+-----+-----+...+-----+
 |     frame size n      | ver |    headers size m     |  header name size k   |  0  |  1  |...| k-1 |  header value size v  |  0  |  1  |...| v-1 |...|  0  |  1  |...| t-1 |
 +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+...+-----+-----+-----+-----+-----+-----|-----+...+-----+...+-----+-----+...+-----+
-|<-------32 bits------->|<----------40 bits---------->|<-------32 bits------->|<------k bytes------>|<-------32 bits------->|<------v bytes------>|   |<------t bytes------>|
+|<-------4 bytes------->|<----------5 bytes---------->|<-------4 bytes------->|<------k bytes------>|<-------4 bytes------->|<------v bytes------>|   |<------t bytes------>|
                                                       |<-------------------------------------------m bytes------------------------------------------->|
 |<------------------------------------------------------------------------------n bytes--------------------------------------------------------------------------------->|
 ```
 
 | Name                | Size    | Definition                                                   |
 |---------------------|---------|--------------------------------------------------------------|
-| frame size n        | 32 bits | unsigned integer representing length of entire frame         |
-| ver                 | 8 bits  | unsigned integer representing header protocol version        |
-| headers size m      | 32 bits | unsigned integer representing length of header data          |
-| header name size k  | 32 bits | unsigned integer representing the length of the header name  |
+| frame size n        | 4 bytes | unsigned integer representing length of entire frame         |
+| ver                 | 1 byte  | unsigned integer representing header protocol version        |
+| headers size m      | 4 bytes | unsigned integer representing length of header data          |
+| header name size k  | 4 bytes | unsigned integer representing the length of the header name  |
 | header name         | k bytes | the header name                                              |
-| header value size v | 32 bits | unsigned integer representing the length of the header value |
+| header value size v | 4 bytes | unsigned integer representing the length of the header value |
 | header value        | v bytes | the header value                                             |
 | Thrift message      | t bytes | the TProtocol-serialized message                             |
 Header key-value pairs are repeated
