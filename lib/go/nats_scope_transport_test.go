@@ -109,7 +109,8 @@ func TestNatsScopeUnlockTopicSubscriberError(t *testing.T) {
 }
 
 // Ensures Subscribe subscribes to the topic on NATS and puts received frames
-// on the read buffer and received in Read calls.
+// on the read buffer and received in Read calls. All subscribers receive the
+// message when they aren't subscribed to a queue.
 func TestNatsScopeSubscribeRead(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
@@ -118,22 +119,76 @@ func TestNatsScopeSubscribeRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer conn.Close()
-	tr := NewNatsFScopeTransport(conn)
+	tr1 := NewNatsFScopeTransport(conn)
+	tr2 := NewNatsFScopeTransport(conn)
 
-	assert.Nil(t, tr.Subscribe("foo"))
+	assert.Nil(t, tr1.Subscribe("foo"))
+	assert.Nil(t, tr2.Subscribe("foo"))
 
 	frame := make([]byte, 50)
 	assert.Nil(t, conn.Publish("frugal.foo", append(make([]byte, 4), frame...))) // Add 4 bytes for frame size
 
+	// Both transports should receive the frame.
 	frameBuff := []byte{}
 	buff := make([]byte, 10)
 	for i := 0; i < 5; i++ {
-		n, err := tr.Read(buff)
+		n, err := tr1.Read(buff)
 		assert.Nil(t, err)
 		assert.Equal(t, 10, n)
 		frameBuff = append(frameBuff, buff...)
 	}
 	assert.Equal(t, frame, frameBuff)
+
+	frameBuff = []byte{}
+	buff = make([]byte, 10)
+	for i := 0; i < 5; i++ {
+		n, err := tr2.Read(buff)
+		assert.Nil(t, err)
+		assert.Equal(t, 10, n)
+		frameBuff = append(frameBuff, buff...)
+	}
+	assert.Equal(t, frame, frameBuff)
+}
+
+// Ensures Subscribe subscribes to the topic on NATS and puts received frames
+// on the read buffer. If the transport specifies a queue, only one member of
+// the queue group receives the message.
+func TestNatsScopeSubscribeQueue(t *testing.T) {
+	s := runServer(nil)
+	defer s.Shutdown()
+	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	tr1 := NewNatsFScopeTransportWithQueue(conn, "fooqueue")
+	tr2 := NewNatsFScopeTransportWithQueue(conn, "fooqueue")
+
+	assert.Nil(t, tr1.Subscribe("foo"))
+	assert.Nil(t, tr2.Subscribe("foo"))
+
+	frame := make([]byte, 50)
+	assert.Nil(t, conn.Publish("frugal.foo", append(make([]byte, 4), frame...))) // Add 4 bytes for frame size
+	conn.Flush()
+	time.Sleep(10 * time.Millisecond)
+
+	// Only one of the two transports should have received the frame.
+	received := false
+	select {
+	case fr := <-tr1.(*fNatsScopeTransport).frameBuffer:
+		assert.Equal(t, frame, fr)
+		received = true
+	default:
+	}
+	select {
+	case fr := <-tr2.(*fNatsScopeTransport).frameBuffer:
+		assert.False(t, received)
+		assert.Equal(t, frame, fr)
+		received = true
+	default:
+	}
+
+	assert.True(t, received)
 }
 
 // Ensures Read returns an EOF if the transport is not open.
