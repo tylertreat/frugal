@@ -35,7 +35,6 @@ func (m *mockTTransport) IsOpen() bool {
 }
 
 func (m *mockTTransport) Read(b []byte) (int, error) {
-	m.Called(b)
 	if m.readError != nil {
 		return 0, m.readError
 	}
@@ -190,8 +189,6 @@ func TestReadLargeBuffer(t *testing.T) {
 	close(reads)
 	mockTr.reads = reads
 	tr := NewTFramedTransport(mockTr)
-	mockTr.On("Read", make([]byte, 4096)).Return(4, nil).Once()
-	mockTr.On("Read", append(frame[0:4], make([]byte, 4092)...)).Return(len(frame), nil).Once()
 
 	buff := make([]byte, len(frame)+10)
 	n, err := tr.Read(buff)
@@ -207,14 +204,12 @@ func TestReadHeaderError(t *testing.T) {
 	mockTr := new(mockTTransport)
 	mockTr.readError = errors.New("error")
 	tr := NewTFramedTransport(mockTr)
-	mockTr.On("Read", make([]byte, 4096)).Return(4, nil).Once()
 
 	buff := make([]byte, len(frame)-4)
 	n, err := tr.Read(buff)
 
 	assert.Equal(t, mockTr.readError, err)
 	assert.Equal(t, 0, n)
-	mockTr.AssertExpectations(t)
 }
 
 // Ensures Write writes the bytes to the transport buffer.

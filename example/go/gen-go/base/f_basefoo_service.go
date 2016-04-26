@@ -6,7 +6,6 @@ package base
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -155,62 +154,13 @@ func (f *FBaseFooClient) recvBasePingHandler(ctx *frugal.FContext, resultC chan<
 }
 
 type FBaseFooProcessor struct {
-	processorMap map[string]frugal.FProcessorFunction
-	writeMu      *sync.Mutex
-	handler      FBaseFoo
+	*frugal.FBaseProcessor
 }
 
 func NewFBaseFooProcessor(handler FBaseFoo, middleware ...frugal.ServiceMiddleware) *FBaseFooProcessor {
-	writeMu := &sync.Mutex{}
-	p := &FBaseFooProcessor{
-		processorMap: make(map[string]frugal.FProcessorFunction),
-		writeMu:      writeMu,
-		handler:      handler,
-	}
+	p := &FBaseFooProcessor{frugal.NewFBaseProcessor()}
 	p.AddToProcessorMap("basePing", &basefooFBasePing{handler: frugal.NewMethod(handler, handler.BasePing, "BasePing", middleware), writeMu: p.GetWriteMutex()})
 	return p
-}
-
-func (p *FBaseFooProcessor) AddToProcessorMap(key string, proc frugal.FProcessorFunction) {
-	p.processorMap[key] = proc
-}
-
-func (p *FBaseFooProcessor) GetProcessorFunction(key string) (processor frugal.FProcessorFunction, ok bool) {
-	processor, ok = p.processorMap[key]
-	return
-}
-
-func (p *FBaseFooProcessor) GetWriteMutex() *sync.Mutex {
-	return p.writeMu
-}
-
-func (p *FBaseFooProcessor) Process(iprot, oprot *frugal.FProtocol) error {
-	ctx, err := iprot.ReadRequestHeader()
-	if err != nil {
-		return err
-	}
-	name, _, _, err := iprot.ReadMessageBegin()
-	if err != nil {
-		return err
-	}
-	if processor, ok := p.GetProcessorFunction(name); ok {
-		err := processor.Process(ctx, iprot, oprot)
-		if err != nil {
-			log.Printf("frugal: Error processing request with correlationID %s: %s\n", ctx.CorrelationID(), err.Error())
-		}
-		return err
-	}
-	iprot.Skip(thrift.STRUCT)
-	iprot.ReadMessageEnd()
-	x3 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
-	p.writeMu.Lock()
-	oprot.WriteResponseHeader(ctx)
-	oprot.WriteMessageBegin(name, thrift.EXCEPTION, 0)
-	x3.Write(oprot)
-	oprot.WriteMessageEnd()
-	oprot.Flush()
-	p.writeMu.Unlock()
-	return x3
 }
 
 type basefooFBasePing struct {
