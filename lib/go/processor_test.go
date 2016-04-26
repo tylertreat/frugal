@@ -79,7 +79,7 @@ func TestFBaseProcessorReadError(t *testing.T) {
 	err = processor.Process(proto, proto)
 	assert.Error(t, err)
 	trErr := err.(thrift.TTransportException)
-	assert.Equal(t, thrift.UNKNOWN_TRANSPORT_EXCEPTION, trErr.TypeId())
+	assert.Equal(t, int(thrift.UNKNOWN_TRANSPORT_EXCEPTION), int(trErr.TypeId()))
 }
 
 // Ensures FBaseProcessor writes and returns an UNKNOWN_METHOD
@@ -110,7 +110,7 @@ func TestFBaseProcessorNoProcessorFunction(t *testing.T) {
 	err := processor.Process(proto, proto)
 	assert.Error(t, err)
 	appErr := err.(thrift.TApplicationException)
-	assert.Equal(t, thrift.UNKNOWN_METHOD, appErr.TypeId())
+	assert.Equal(t, int(thrift.UNKNOWN_METHOD), int(appErr.TypeId()))
 	assert.Equal(t, "Unknown function ping", appErr.Error())
 	mockTransport.AssertExpectations(t)
 }
