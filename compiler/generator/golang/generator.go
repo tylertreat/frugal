@@ -1012,7 +1012,6 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports := "import (\n"
 	imports += "\t\"bytes\"\n"
 	imports += "\t\"fmt\"\n"
-	imports += "\t\"log\"\n"
 	imports += "\t\"sync\"\n"
 	if len(s.TwowayMethods()) > 0 {
 		// Only non-oneway methods require the time package.
