@@ -3,7 +3,8 @@ test/idl/constants.thrift
 target/
 *.iml
 .idea
-.pyc
+*.pyc
+
 
 # Don’t commit the following directories created by pub.
 .buildlog
@@ -20,4 +21,9 @@ packages
 
 pubspec.lock
 
+# Ignore generated code and cross results
 skynet.Dockerfile
+test/integration/log/*
+test/integration/results.json
+test/integration/*/gen*
+test/integration/go/bin/*
