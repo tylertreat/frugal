@@ -20,6 +20,7 @@ const (
 
 	TypeFile               FileType = "types"
 	ServiceArgsResultsFile FileType = "service_args_results"
+	ObjectFile             FileType = "object"
 )
 
 // Options contains language generator options. The map key is the option name,
@@ -48,6 +49,7 @@ var Languages = LanguageOptions{
 	"dart": Options{
 		"library_prefix": "Generate code that can be used within an existing library. " +
 			"Use a dot-separated string, e.g. \"my_parent_lib.src.gen\"",
+		"gen_with_frugal": "Whether to generate thrift files with frugal (experimental)",
 	},
 	"py": Options{
 		"tornado": "Generate code for use with Tornado",
@@ -123,7 +125,9 @@ func (o *programGenerator) Generate(frugal *parser.Frugal, outputDir string, gen
 	if genWithFrugal {
 		o.SetupGenerator(outputDir)
 	}
+
 	if err := o.GenerateDependencies(outputDir); err != nil {
+		println("err! " + err.Error())
 		return err
 	}
 
