@@ -203,36 +203,37 @@ func (f *fMuxTransport) Open() error {
 		}
 	}
 
-	go func() {
-		for {
-			frame, err := f.readFrame()
-			if err != nil {
-				defer f.close(err)
-				if err, ok := err.(thrift.TTransportException); ok && err.TypeId() == thrift.END_OF_FILE {
-					// EOF indicates remote peer disconnected.
-					return
-				}
-				if !f.IsOpen() {
-					// Indicates the transport was closed.
-					return
-				}
-				log.Error("frugal: error reading protocol frame, closing transport:", err)
-				return
-			}
-
-			select {
-			case f.workC <- &frameWrapper{frameBytes: frame, timestamp: time.Now()}:
-			case <-f.closedChan():
-				return
-			}
-		}
-	}()
-
+	go f.readLoop()
 	f.startWorkers()
 
 	f.open = true
 	log.Debug("frugal: transport opened")
 	return nil
+}
+
+func (f *fMuxTransport) readLoop() {
+	for {
+		frame, err := f.readFrame()
+		if err != nil {
+			defer f.close(err)
+			if err, ok := err.(thrift.TTransportException); ok && err.TypeId() == thrift.END_OF_FILE {
+				// EOF indicates remote peer disconnected.
+				return
+			}
+			if !f.IsOpen() {
+				// Indicates the transport was closed.
+				return
+			}
+			log.Error("frugal: error reading protocol frame, closing transport:", err)
+			return
+		}
+
+		select {
+		case f.workC <- &frameWrapper{frameBytes: frame, timestamp: time.Now()}:
+		case <-f.closedChan():
+			return
+		}
+	}
 }
 
 // Close will close the underlying TTransport and stops all goroutines.

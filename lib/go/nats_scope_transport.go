@@ -111,23 +111,25 @@ func (n *fNatsScopeTransport) Open() error {
 	n.closeChan = make(chan struct{})
 	n.frameBuffer = make(chan []byte, frameBufferSize)
 
-	sub, err := n.conn.Subscribe(n.formattedSubject(), func(msg *nats.Msg) {
-		if len(msg.Data) < 4 {
-			log.Warn("frugal: Discarding invalid scope message frame")
-			return
-		}
-		// Discard frame size.
-		select {
-		case n.frameBuffer <- msg.Data[4:]:
-		case <-n.closeChan:
-		}
-	})
+	sub, err := n.conn.Subscribe(n.formattedSubject(), n.handleMessage)
 	if err != nil {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	n.sub = sub
 	n.isOpen = true
 	return nil
+}
+
+func (n *fNatsScopeTransport) handleMessage(msg *nats.Msg) {
+	if len(msg.Data) < 4 {
+		log.Warn("frugal: Discarding invalid scope message frame")
+		return
+	}
+	// Discard frame size.
+	select {
+	case n.frameBuffer <- msg.Data[4:]:
+	case <-n.closeChan:
+	}
 }
 
 func (n *fNatsScopeTransport) IsOpen() bool {
@@ -187,7 +189,7 @@ func (n *fNatsScopeTransport) Read(p []byte) (int, error) {
 	n.currentFrame = n.currentFrame[num:]
 	if len(n.currentFrame) == 0 {
 		// The entire frame was copied, clear it.
-		n.currentFrame = nil
+		n.DiscardFrame()
 	}
 	return num, nil
 }
