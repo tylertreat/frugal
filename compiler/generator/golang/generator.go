@@ -1609,9 +1609,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 
 	contents += fmt.Sprintf("type F%sProcessor struct {\n", servTitle)
 	if service.Extends == "" {
-		contents += "\tprocessorMap map[string]frugal.FProcessorFunction\n"
-		contents += "\twriteMu      *sync.Mutex\n"
-		contents += fmt.Sprintf("\thandler      F%s\n", servTitle)
+		contents += "\t*frugal.FBaseProcessor\n"
 	} else {
 		contents += fmt.Sprintf("\t*%sF%sProcessor\n",
 			g.getServiceExtendsNamespace(service), service.ExtendsService())
@@ -1620,19 +1618,12 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 
 	contents += fmt.Sprintf("func NewF%sProcessor(handler F%s, middleware ...frugal.ServiceMiddleware) *F%sProcessor {\n",
 		servTitle, servTitle, servTitle)
-	if service.Extends == "" {
-		contents += "\twriteMu := &sync.Mutex{}\n"
-	}
-	contents += fmt.Sprintf("\tp := &F%sProcessor{\n", servTitle)
 	if service.Extends != "" {
-		contents += fmt.Sprintf("\t\t%sNewF%sProcessor(handler, middleware...),\n",
-			g.getServiceExtendsNamespace(service), service.ExtendsService())
+		contents += fmt.Sprintf("\tp := &F%sProcessor{%sNewF%sProcessor(handler, middleware...)}\n",
+			servTitle, g.getServiceExtendsNamespace(service), service.ExtendsService())
 	} else {
-		contents += "\t\tprocessorMap: make(map[string]frugal.FProcessorFunction),\n"
-		contents += "\t\twriteMu:      writeMu,\n"
-		contents += "\t\thandler:      handler,\n"
+		contents += fmt.Sprintf("\tp := &F%sProcessor{frugal.NewFBaseProcessor()}\n", servTitle)
 	}
-	contents += "\t}\n"
 	for _, method := range service.Methods {
 		contents += fmt.Sprintf(
 			"\tp.AddToProcessorMap(\"%s\", &%sF%s{handler: frugal.NewMethod(handler, handler.%s, \"%s\", middleware), writeMu: p.GetWriteMutex()})\n",
@@ -1640,56 +1631,6 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	}
 
 	contents += "\treturn p\n"
-	contents += "}\n\n"
-
-	if service.Extends != "" {
-		return contents
-	}
-
-	contents += fmt.Sprintf(
-		"func (p *F%sProcessor) AddToProcessorMap(key string, proc frugal.FProcessorFunction) {\n",
-		servTitle)
-	contents += "\tp.processorMap[key] = proc\n"
-	contents += "}\n\n"
-
-	contents += fmt.Sprintf("func (p *F%sProcessor) GetProcessorFunction(key string) "+
-		"(processor frugal.FProcessorFunction, ok bool) {\n", servTitle)
-	contents += "\tprocessor, ok = p.processorMap[key]\n"
-	contents += "\treturn\n"
-	contents += "}\n\n"
-
-	contents += fmt.Sprintf("func (p *F%sProcessor) GetWriteMutex() *sync.Mutex {\n", servTitle)
-	contents += "\treturn p.writeMu\n"
-	contents += "}\n\n"
-
-	contents += fmt.Sprintf(
-		"func (p *F%sProcessor) Process(iprot, oprot *frugal.FProtocol) error {\n", servTitle)
-	contents += "\tctx, err := iprot.ReadRequestHeader()\n"
-	contents += "\tif err != nil {\n"
-	contents += "\t\treturn err\n"
-	contents += "\t}\n"
-	contents += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
-	contents += "\tif err != nil {\n"
-	contents += "\t\treturn err\n"
-	contents += "\t}\n"
-	contents += "\tif processor, ok := p.GetProcessorFunction(name); ok {\n"
-	contents += "\t\terr := processor.Process(ctx, iprot, oprot)\n"
-	contents += "\t\tif err != nil {\n"
-	contents += "\t\t\tlog.Printf(\"frugal: Error processing request with correlationID %s: %s\\n\", ctx.CorrelationID(), err.Error())\n"
-	contents += "\t\t}\n"
-	contents += "\t\treturn err\n"
-	contents += "\t}\n"
-	contents += "\tiprot.Skip(thrift.STRUCT)\n"
-	contents += "\tiprot.ReadMessageEnd()\n"
-	contents += "\tx3 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
-	contents += "\tp.writeMu.Lock()\n"
-	contents += "\toprot.WriteResponseHeader(ctx)\n"
-	contents += "\toprot.WriteMessageBegin(name, thrift.EXCEPTION, 0)\n"
-	contents += "\tx3.Write(oprot)\n"
-	contents += "\toprot.WriteMessageEnd()\n"
-	contents += "\toprot.Flush()\n"
-	contents += "\tp.writeMu.Unlock()\n"
-	contents += "\treturn x3\n"
 	contents += "}\n\n"
 
 	return contents
