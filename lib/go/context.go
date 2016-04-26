@@ -169,7 +169,8 @@ func (c *FContext) addResponseHeader(name, value string) {
 	c.mu.Unlock()
 }
 
-// generateCorrelationID returns a random string id
-func generateCorrelationID() string {
+// generateCorrelationID returns a random string id. It's assigned to a var for
+// testability purposes.
+var generateCorrelationID = func() string {
 	return strings.Replace(uuid.RandomUUID().String(), "-", "", -1)
 }
