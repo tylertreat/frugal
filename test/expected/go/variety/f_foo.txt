@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/Workiva/frugal/test/out/base"
+	"github.com/Workiva/frugal/test/out/actual_base"
 )
 
 // (needed to ensure safety because of naive import list construction.)
@@ -16,7 +16,7 @@ var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
 
-var _ = base.GoUnusedProtection__
+var _ = actual_base.GoUnusedProtection__
 
 type FooPingArgs struct {
 }
@@ -291,9 +291,9 @@ func (p *FooBlahArgs) String() string {
 }
 
 type FooBlahResult struct {
-	Success *int64             `thrift:"success,0" db:"success" json:"success,omitempty"`
-	Awe     *AwesomeException  `thrift:"awe,1" db:"awe" json:"awe,omitempty"`
-	API     *base.APIException `thrift:"api,2" db:"api" json:"api,omitempty"`
+	Success *int64                    `thrift:"success,0" db:"success" json:"success,omitempty"`
+	Awe     *AwesomeException         `thrift:"awe,1" db:"awe" json:"awe,omitempty"`
+	API     *actual_base.APIException `thrift:"api,2" db:"api" json:"api,omitempty"`
 }
 
 func NewFooBlahResult() *FooBlahResult {
@@ -326,13 +326,13 @@ func (p *FooBlahResult) GetAwe() *AwesomeException {
 	return p.Awe
 }
 
-var FooBlahResult_API_DEFAULT *base.APIException
+var FooBlahResult_API_DEFAULT *actual_base.APIException
 
 func (p *FooBlahResult) IsSetAPI() bool {
 	return p.API != nil
 }
 
-func (p *FooBlahResult) GetAPI() *base.APIException {
+func (p *FooBlahResult) GetAPI() *actual_base.APIException {
 	if !p.IsSetAPI() {
 		return FooBlahResult_API_DEFAULT
 	}
@@ -398,7 +398,7 @@ func (p *FooBlahResult) ReadField1(iprot thrift.TProtocol) error {
 }
 
 func (p *FooBlahResult) ReadField2(iprot thrift.TProtocol) error {
-	p.API = base.NewAPIException()
+	p.API = actual_base.NewAPIException()
 	if err := p.API.Read(iprot); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.API), err)
 	}
@@ -759,8 +759,8 @@ func (p *FooBinMethodArgs) String() string {
 }
 
 type FooBinMethodResult struct {
-	Success []byte             `thrift:"success,0" db:"success" json:"success,omitempty"`
-	API     *base.APIException `thrift:"api,1" db:"api" json:"api,omitempty"`
+	Success []byte                    `thrift:"success,0" db:"success" json:"success,omitempty"`
+	API     *actual_base.APIException `thrift:"api,1" db:"api" json:"api,omitempty"`
 }
 
 func NewFooBinMethodResult() *FooBinMethodResult {
@@ -777,13 +777,13 @@ func (p *FooBinMethodResult) GetSuccess() []byte {
 	return p.Success
 }
 
-var FooBinMethodResult_API_DEFAULT *base.APIException
+var FooBinMethodResult_API_DEFAULT *actual_base.APIException
 
 func (p *FooBinMethodResult) IsSetAPI() bool {
 	return p.API != nil
 }
 
-func (p *FooBinMethodResult) GetAPI() *base.APIException {
+func (p *FooBinMethodResult) GetAPI() *actual_base.APIException {
 	if !p.IsSetAPI() {
 		return FooBinMethodResult_API_DEFAULT
 	}
@@ -837,7 +837,7 @@ func (p *FooBinMethodResult) ReadField0(iprot thrift.TProtocol) error {
 }
 
 func (p *FooBinMethodResult) ReadField1(iprot thrift.TProtocol) error {
-	p.API = base.NewAPIException()
+	p.API = actual_base.NewAPIException()
 	if err := p.API.Read(iprot); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.API), err)
 	}
@@ -898,4 +898,269 @@ func (p *FooBinMethodResult) String() string {
 		return "<nil>"
 	}
 	return fmt.Sprintf("FooBinMethodResult(%+v)", *p)
+}
+
+type FooParamModifiersArgs struct {
+	OptNum     int32 `thrift:"opt_num,1" db:"opt_num" json:"opt_num"`
+	DefaultNum int32 `thrift:"default_num,2" db:"default_num" json:"default_num"`
+	ReqNum     int32 `thrift:"req_num,3,required" db:"req_num" json:"req_num"`
+}
+
+func NewFooParamModifiersArgs() *FooParamModifiersArgs {
+	return &FooParamModifiersArgs{}
+}
+
+func (p *FooParamModifiersArgs) GetOptNum() int32 {
+	return p.OptNum
+}
+
+func (p *FooParamModifiersArgs) GetDefaultNum() int32 {
+	return p.DefaultNum
+}
+
+func (p *FooParamModifiersArgs) GetReqNum() int32 {
+	return p.ReqNum
+}
+
+func (p *FooParamModifiersArgs) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	issetReqNum := false
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 1:
+			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+		case 2:
+			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
+		case 3:
+			if err := p.ReadField3(iprot); err != nil {
+				return err
+			}
+			issetReqNum = true
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	if !issetReqNum {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field ReqNum is not set"))
+	}
+	return nil
+}
+
+func (p *FooParamModifiersArgs) ReadField1(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI32(); err != nil {
+		return thrift.PrependError("error reading field 1: ", err)
+	} else {
+		p.OptNum = v
+	}
+	return nil
+}
+
+func (p *FooParamModifiersArgs) ReadField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI32(); err != nil {
+		return thrift.PrependError("error reading field 2: ", err)
+	} else {
+		p.DefaultNum = v
+	}
+	return nil
+}
+
+func (p *FooParamModifiersArgs) ReadField3(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI32(); err != nil {
+		return thrift.PrependError("error reading field 3: ", err)
+	} else {
+		p.ReqNum = v
+	}
+	return nil
+}
+
+func (p *FooParamModifiersArgs) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("param_modifiers_args"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField3(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *FooParamModifiersArgs) writeField1(oprot thrift.TProtocol) error {
+	if err := oprot.WriteFieldBegin("opt_num", thrift.I32, 1); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:opt_num: ", p), err)
+	}
+	if err := oprot.WriteI32(int32(p.OptNum)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.opt_num (1) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:opt_num: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooParamModifiersArgs) writeField2(oprot thrift.TProtocol) error {
+	if err := oprot.WriteFieldBegin("default_num", thrift.I32, 2); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:default_num: ", p), err)
+	}
+	if err := oprot.WriteI32(int32(p.DefaultNum)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.default_num (2) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:default_num: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooParamModifiersArgs) writeField3(oprot thrift.TProtocol) error {
+	if err := oprot.WriteFieldBegin("req_num", thrift.I32, 3); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:req_num: ", p), err)
+	}
+	if err := oprot.WriteI32(int32(p.ReqNum)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.req_num (3) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 3:req_num: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooParamModifiersArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("FooParamModifiersArgs(%+v)", *p)
+}
+
+type FooParamModifiersResult struct {
+	Success *int64 `thrift:"success,0" db:"success" json:"success,omitempty"`
+}
+
+func NewFooParamModifiersResult() *FooParamModifiersResult {
+	return &FooParamModifiersResult{}
+}
+
+var FooParamModifiersResult_Success_DEFAULT int64
+
+func (p *FooParamModifiersResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *FooParamModifiersResult) GetSuccess() int64 {
+	if !p.IsSetSuccess() {
+		return FooParamModifiersResult_Success_DEFAULT
+	}
+	return *p.Success
+}
+
+func (p *FooParamModifiersResult) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 0:
+			if err := p.ReadField0(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooParamModifiersResult) ReadField0(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI64(); err != nil {
+		return thrift.PrependError("error reading field 0: ", err)
+	} else {
+		p.Success = &v
+	}
+	return nil
+}
+
+func (p *FooParamModifiersResult) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("param_modifiers_result"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField0(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *FooParamModifiersResult) writeField0(oprot thrift.TProtocol) error {
+	if p.IsSetSuccess() {
+		if err := oprot.WriteFieldBegin("success", thrift.I64, 0); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err)
+		}
+		if err := oprot.WriteI64(int64(*p.Success)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T.success (0) field write error: ", p), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err)
+		}
+	}
+	return nil
+}
+
+func (p *FooParamModifiersResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("FooParamModifiersResult(%+v)", *p)
 }

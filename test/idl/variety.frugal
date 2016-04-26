@@ -30,6 +30,9 @@ const map<string,Event> MAPCONSTANT2 = {'hello':{"ID": -2, "Message": "first her
 
 const binary bin_const = "hello"
 
+const bool true_constant = true
+const bool false_constant = false
+
 struct TestBase {
     1: base.thing base_struct,
 }
@@ -111,7 +114,9 @@ service Foo extends base.BaseFoo {
     /**@ oneway methods don't receive a response from the server. */
     oneway void oneWay(1:id id, 2:request req),
 
-    binary bin_method(1:binary bin, 2:string Str) throws (1:base.api_exception api)
+    binary bin_method(1:binary bin, 2:string Str) throws (1:base.api_exception api),
+
+    i64 param_modifiers(1:i32 opt_num, 2: optional i32 default_num, 3: required i32 req_num),
 }
 
 /**@

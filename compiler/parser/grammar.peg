@@ -383,7 +383,11 @@ CppType ← "cpp_type" cppType:Literal {
     return cppType, nil
 }
 
-ConstValue ← Literal / DoubleConstant / IntConstant / ConstMap / ConstList / Identifier
+ConstValue ← Literal / BoolConstant / DoubleConstant / IntConstant / ConstMap / ConstList / Identifier
+
+BoolConstant ← ("true" / "false") {
+    return string(c.text) == "true", nil
+}
 
 IntConstant ← [-+]? Digit+ {
     return strconv.ParseInt(string(c.text), 10, 64)

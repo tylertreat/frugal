@@ -180,10 +180,11 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 	underlyingType := g.Frugal.UnderlyingType(t)
 
 	// If the value being referenced is of type Identifier, it's referencing
-	// another constant. Need to recurse to get that value
+	// another constant. Need to recurse to get that value.
 	identifier, ok := value.(parser.Identifier)
 	if ok {
 		name := string(identifier)
+
 		// split based on '.', if present, it should be from an include
 		pieces := strings.Split(name, ".")
 		if len(pieces) == 1 {
@@ -260,7 +261,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 		contents += fmt.Sprintf("&%s{\n", title(s.Name))
 
 		for _, pair := range value.([]parser.KeyValue) {
-			name := pair.Key.(string)
+			name := title(pair.Key.(string))
 			for _, field := range s.Fields {
 				if name == field.Name {
 					val := g.generateConstantValue(field.Type, pair.Value)
@@ -938,8 +939,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, prefix string) st
 }
 
 func (g *Generator) GenerateTypesImports(file *os.File) error {
-	contents := ""
-	contents += "import (\n"
+	contents := "import (\n"
 	contents += "\t\"bytes\"\n"
 	contents += "\t\"fmt\"\n"
 	// Enums need these for some reason
@@ -956,8 +956,12 @@ func (g *Generator) GenerateTypesImports(file *os.File) error {
 	protections := ""
 	pkgPrefix := g.Options["package_prefix"]
 	for _, include := range g.Frugal.Thrift.Includes {
-		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, include.Name)
-		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", include.Name)
+		includeName, ok := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
+		if !ok {
+			includeName = include.Name
+		}
+		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeName)
+		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", includeName)
 	}
 
 	contents += ")\n\n"
@@ -967,7 +971,6 @@ func (g *Generator) GenerateTypesImports(file *os.File) error {
 	contents += "var _ = bytes.Equal\n\n"
 	contents += protections
 	contents += "var GoUnusedProtection__ int\n"
-
 	_, err := file.WriteString(contents)
 	return err
 }
@@ -986,8 +989,12 @@ func (g *Generator) GenerateServiceResultArgsImports(file *os.File) error {
 	protections := ""
 	pkgPrefix := g.Options["package_prefix"]
 	for _, include := range g.Frugal.Thrift.Includes {
-		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, include.Name)
-		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", include.Name)
+		includeName, ok := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
+		if !ok {
+			includeName = include.Name
+		}
+		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeName)
+		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", includeName)
 	}
 
 	contents += ")\n\n"

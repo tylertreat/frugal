@@ -416,6 +416,7 @@ func (t *Thrift) validateConstant(constant *Constant, includes map[string]*Fruga
 	// The value of a constant is the name of another constant,
 	// make sure it exists
 	name := string(identifier)
+
 	// split based on '.', if present, it should be from an include
 	pieces := strings.Split(name, ".")
 	if len(pieces) == 1 {

@@ -193,6 +193,15 @@ func (o *programGenerator) generateServiceMethodTypes(service *parser.Service) [
 			Fields: method.Arguments,
 			Type:   parser.StructTypeStruct,
 		}
+
+		// TODO thrift doesn't support optional parameters in service methods
+		// we should see if this is feasible, but it will require changes to
+		// service methods, so would be a breaking change
+		for _, field := range arg.Fields {
+			if field.Modifier == parser.Optional {
+				field.Modifier = parser.Default
+			}
+		}
 		structs = append(structs, arg)
 
 		if !method.Oneway {

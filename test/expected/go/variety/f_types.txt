@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/Workiva/frugal/test/out/base"
+	"github.com/Workiva/frugal/test/out/actual_base"
 )
 
 // (needed to ensure safety because of naive import list construction.)
@@ -18,7 +18,7 @@ var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
 
-var _ = base.GoUnusedProtection__
+var _ = actual_base.GoUnusedProtection__
 var GoUnusedProtection__ int
 
 const RedefConst = 582
@@ -42,6 +42,10 @@ var NumsSet map[Int]bool
 var MAPCONSTANT2 map[string]*Event
 
 var BinConst []byte
+
+const TrueConstant = true
+
+const FalseConstant = false
 
 func init() {
 	DEFAULT_ID = -1
@@ -144,20 +148,20 @@ func (p *ItsAnEnum) Value() (driver.Value, error) {
 }
 
 type TestBase struct {
-	BaseStruct *base.Thing `thrift:"base_struct,1" db:"base_struct" json:"base_struct"`
+	BaseStruct *actual_base.Thing `thrift:"base_struct,1" db:"base_struct" json:"base_struct"`
 }
 
 func NewTestBase() *TestBase {
 	return &TestBase{}
 }
 
-var TestBase_BaseStruct_DEFAULT *base.Thing
+var TestBase_BaseStruct_DEFAULT *actual_base.Thing
 
 func (p *TestBase) IsSetBaseStruct() bool {
 	return p.BaseStruct != nil
 }
 
-func (p *TestBase) GetBaseStruct() *base.Thing {
+func (p *TestBase) GetBaseStruct() *actual_base.Thing {
 	if !p.IsSetBaseStruct() {
 		return TestBase_BaseStruct_DEFAULT
 	}
@@ -198,7 +202,7 @@ func (p *TestBase) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *TestBase) ReadField1(iprot thrift.TProtocol) error {
-	p.BaseStruct = base.NewThing()
+	p.BaseStruct = actual_base.NewThing()
 	if err := p.BaseStruct.Read(iprot); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.BaseStruct), err)
 	}
