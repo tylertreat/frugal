@@ -22,7 +22,7 @@ go build -o test/integration/go/bin/testserver test/integration/go/src/bin/tests
 rm -rf test/integration/dart/gen-dart/
 frugal --gen dart -r --out='test/integration/dart/gen-dart' test/integration/frugalTest.frugal
 
-# Pub get hackery.  This can be fixed when skynet has pub credentials.
+# Pub get hackery.  This can be fixed when Skynet has pub credentials.
 tar xzf $SKYNET_APPLICATION_FRUGAL_LOCAL_CACHE -C .
 rm -rf test/intgration/dart/gen-dart/frugal_test/pubspec.yaml
 cp -r local_cache/pubspec.yaml test/integration/dart/gen-dart/frugal_test/pubspec.yaml
