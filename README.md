@@ -5,7 +5,8 @@ provides additional functionality. Specifically, it includes support for
 request headers, request multiplexing, thread safety, and code-generated
 pub/sub APIs. Frugal is intended to act as a superset of Thrift, meaning it
 implements the same functionality as Thrift with some additional
-features.
+features. For a more detailed explanation, see the
+[documentation](documentation).
 
 Currently supported languages are Go, Java, and Dart.
 
