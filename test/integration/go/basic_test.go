@@ -27,6 +27,8 @@ func newMiddleware(called chan<- bool) frugal.ServiceMiddleware {
 }
 
 func TestBasic(t *testing.T) {
+	CheckShort(t)
+
 	protoFactories := []thrift.TProtocolFactory{
 		thrift.NewTCompactProtocolFactory(),
 		thrift.NewTJSONProtocolFactory(),

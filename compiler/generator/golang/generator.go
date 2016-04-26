@@ -1095,7 +1095,6 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
 	var (
 		scopeLower = generator.LowercaseFirstLetter(scope.Name)
-		scopeTitle = strings.Title(scope.Name)
 		scopeCamel = snakeToCamel(scope.Name)
 		publisher  = ""
 	)
@@ -1124,15 +1123,23 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += fmt.Sprintf("type %sPublisher struct {\n", scopeLower)
 	publisher += "\ttransport frugal.FScopeTransport\n"
 	publisher += "\tprotocol  *frugal.FProtocol\n"
+	publisher += "\tmethods   map[string]*frugal.Method\n"
 	publisher += "}\n\n"
 
-	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.FScopeProvider) %sPublisher {\n",
+	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) %sPublisher {\n",
 		scopeCamel, scopeCamel)
 	publisher += "\ttransport, protocol := provider.New()\n"
-	publisher += fmt.Sprintf("\treturn &%sPublisher{\n", scopeLower)
+	publisher += "\tmethods := make(map[string]*frugal.Method)\n"
+	publisher += fmt.Sprintf("\tpublisher := &%sPublisher{\n", scopeLower)
 	publisher += "\t\ttransport: transport,\n"
 	publisher += "\t\tprotocol:  protocol,\n"
+	publisher += "\t\tmethods:   methods,\n"
 	publisher += "\t}\n"
+	for _, op := range scope.Operations {
+		publisher += fmt.Sprintf("\tmethods[\"publish%s\"] = frugal.NewMethod(publisher, publisher.publish%s, \"publish%s\", middleware)\n",
+			op.Name, op.Name, op.Name)
+	}
+	publisher += "\treturn publisher\n"
 	publisher += "}\n\n"
 
 	publisher += fmt.Sprintf("func (l *%sPublisher) Open() error {\n", scopeLower)
@@ -1147,37 +1154,68 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	for _, op := range scope.Operations {
 		publisher += prefix
 		prefix = "\n\n"
-		if op.Comment != nil {
-			publisher += g.GenerateInlineComment(op.Comment, "")
-		}
-		publisher += fmt.Sprintf("func (l *%sPublisher) Publish%s(ctx *frugal.FContext, %sreq *%s) error {\n",
-			scopeLower, op.Name, args, g.qualifiedTypeName(op.Type))
-		publisher += fmt.Sprintf("\top := \"%s\"\n", op.Name)
-		publisher += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
-		publisher += "\ttopic := fmt.Sprintf(\"%s" + scopeTitle + "%s%s\", prefix, delimiter, op)\n"
-		publisher += "\tif err := l.transport.LockTopic(topic); err != nil {\n"
-		publisher += "\t\treturn err\n"
-		publisher += "\t}\n"
-		publisher += "\tdefer l.transport.UnlockTopic()\n"
-		publisher += "\toprot := l.protocol\n"
-		publisher += "\tif err := oprot.WriteRequestHeader(ctx); err != nil {\n"
-		publisher += "\t\treturn err\n"
-		publisher += "\t}\n"
-		publisher += "\tif err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {\n"
-		publisher += "\t\treturn err\n"
-		publisher += "\t}\n"
-		publisher += "\tif err := req.Write(oprot); err != nil {\n"
-		publisher += "\t\treturn err\n"
-		publisher += "\t}\n"
-		publisher += "\tif err := oprot.WriteMessageEnd(); err != nil {\n"
-		publisher += "\t\treturn err\n"
-		publisher += "\t}\n"
-		publisher += "\treturn oprot.Flush()\n"
-		publisher += "}"
+		publisher += g.generatePublishMethod(scope, op, args)
 	}
 
 	_, err := file.WriteString(publisher)
 	return err
+}
+
+func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operation, args string) string {
+	var (
+		scopeLower = generator.LowercaseFirstLetter(scope.Name)
+		publisher  = ""
+	)
+
+	if op.Comment != nil {
+		publisher += g.GenerateInlineComment(op.Comment, "")
+	}
+	publisher += fmt.Sprintf("func (l *%sPublisher) Publish%s(ctx *frugal.FContext, %sreq *%s) error {\n",
+		scopeLower, op.Name, args, g.qualifiedTypeName(op.Type))
+	publisher += fmt.Sprintf("\tret := l.methods[\"publish%s\"].Invoke(%s)\n", op.Name, g.generateScopeArgs(scope))
+	publisher += "\tif ret[0] != nil {\n"
+	publisher += "\t\treturn ret[0].(error)\n"
+	publisher += "\t}\n"
+	publisher += "\treturn nil\n"
+	publisher += "}\n\n"
+
+	publisher += g.generateInternalPublishMethod(scope, op, args)
+
+	return publisher
+}
+
+func (g *Generator) generateInternalPublishMethod(scope *parser.Scope, op *parser.Operation, args string) string {
+	var (
+		scopeLower = generator.LowercaseFirstLetter(scope.Name)
+		scopeTitle = strings.Title(scope.Name)
+		publisher  = ""
+	)
+
+	publisher += fmt.Sprintf("func (l *%sPublisher) publish%s(ctx *frugal.FContext, %sreq *%s) error {\n",
+		scopeLower, op.Name, args, g.qualifiedTypeName(op.Type))
+	publisher += fmt.Sprintf("\top := \"%s\"\n", op.Name)
+	publisher += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
+	publisher += "\ttopic := fmt.Sprintf(\"%s" + scopeTitle + "%s%s\", prefix, delimiter, op)\n"
+	publisher += "\tif err := l.transport.LockTopic(topic); err != nil {\n"
+	publisher += "\t\treturn err\n"
+	publisher += "\t}\n"
+	publisher += "\tdefer l.transport.UnlockTopic()\n"
+	publisher += "\toprot := l.protocol\n"
+	publisher += "\tif err := oprot.WriteRequestHeader(ctx); err != nil {\n"
+	publisher += "\t\treturn err\n"
+	publisher += "\t}\n"
+	publisher += "\tif err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {\n"
+	publisher += "\t\treturn err\n"
+	publisher += "\t}\n"
+	publisher += "\tif err := req.Write(oprot); err != nil {\n"
+	publisher += "\t\treturn err\n"
+	publisher += "\t}\n"
+	publisher += "\tif err := oprot.WriteMessageEnd(); err != nil {\n"
+	publisher += "\t\treturn err\n"
+	publisher += "\t}\n"
+	publisher += "\treturn oprot.Flush()\n"
+	publisher += "}"
+	return publisher
 }
 
 func generatePrefixStringTemplate(scope *parser.Scope) string {
@@ -1202,7 +1240,6 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	var (
 		scopeLower = generator.LowercaseFirstLetter(scope.Name)
-		scopeTitle = strings.Title(scope.Name)
 		scopeCamel = snakeToCamel(scope.Name)
 		subscriber = ""
 	)
@@ -1229,75 +1266,88 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	subscriber += "}\n\n"
 
 	subscriber += fmt.Sprintf("type %sSubscriber struct {\n", scopeLower)
-	subscriber += "\tprovider *frugal.FScopeProvider\n"
+	subscriber += "\tprovider   *frugal.FScopeProvider\n"
+	subscriber += "\tmiddleware []frugal.ServiceMiddleware\n"
 	subscriber += "}\n\n"
 
-	subscriber += fmt.Sprintf("func New%sSubscriber(provider *frugal.FScopeProvider) %sSubscriber {\n",
+	subscriber += fmt.Sprintf("func New%sSubscriber(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) %sSubscriber {\n",
 		scopeCamel, scopeCamel)
-	subscriber += fmt.Sprintf("\treturn &%sSubscriber{provider: provider}\n", scopeLower)
+	subscriber += fmt.Sprintf("\treturn &%sSubscriber{provider: provider, middleware: middleware}\n", scopeLower)
 	subscriber += "}\n\n"
 
 	prefix = ""
 	for _, op := range scope.Operations {
 		subscriber += prefix
 		prefix = "\n\n"
-		if op.Comment != nil {
-			subscriber += g.GenerateInlineComment(op.Comment, "")
-		}
-		subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*frugal.FContext, *%s)) (*frugal.FSubscription, error) {\n",
-			scopeLower, op.Name, args, g.qualifiedTypeName(op.Type))
-		subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
-		subscriber += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
-		subscriber += "\ttopic := fmt.Sprintf(\"%s" + scopeTitle + "%s%s\", prefix, delimiter, op)\n"
-		subscriber += "\ttransport, protocol := l.provider.New()\n"
-		subscriber += "\tif err := transport.Subscribe(topic); err != nil {\n"
-		subscriber += "\t\treturn nil, err\n"
-		subscriber += "\t}\n\n"
-		subscriber += "\tsub := frugal.NewFSubscription(topic, transport)\n"
-		subscriber += "\tgo func() {\n"
-		subscriber += "\t\tfor {\n"
-		subscriber += fmt.Sprintf("\t\t\tctx, received, err := l.recv%s(op, protocol)\n", op.Name)
-		subscriber += "\t\t\tif err != nil {\n"
-		subscriber += "\t\t\t\tif e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {\n"
-		subscriber += "\t\t\t\t\treturn\n"
-		subscriber += "\t\t\t\t}\n"
-		subscriber += "\t\t\t\tlog.Printf(\"frugal: error receiving %s, discarding frame: %s\\n\", topic, err.Error())\n"
-		subscriber += "\t\t\t\ttransport.DiscardFrame()\n"
-		subscriber += "\t\t\t\tcontinue\n"
-		subscriber += "\t\t\t}\n"
-		subscriber += "\t\t\thandler(ctx, received)\n"
-		subscriber += "\t\t}\n"
-		subscriber += "\t}()\n\n"
-		subscriber += "\treturn sub, nil\n"
-		subscriber += "}\n\n"
-
-		subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, iprot *frugal.FProtocol) (*frugal.FContext, *%s, error) {\n",
-			scopeLower, op.Name, g.qualifiedTypeName(op.Type))
-		subscriber += "\tctx, err := iprot.ReadRequestHeader()\n"
-		subscriber += "\tif err != nil {\n"
-		subscriber += "\t\treturn nil, nil, err\n"
-		subscriber += "\t}\n"
-		subscriber += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
-		subscriber += "\tif err != nil {\n"
-		subscriber += "\t\treturn nil, nil, err\n"
-		subscriber += "\t}\n"
-		subscriber += "\tif name != op {\n"
-		subscriber += "\t\tiprot.Skip(thrift.STRUCT)\n"
-		subscriber += "\t\tiprot.ReadMessageEnd()\n"
-		subscriber += "\t\tx9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
-		subscriber += "\t\treturn nil, nil, x9\n"
-		subscriber += "\t}\n"
-		subscriber += fmt.Sprintf("\treq := &%s{}\n", g.qualifiedTypeName(op.Type))
-		subscriber += "\tif err := req.Read(iprot); err != nil {\n"
-		subscriber += "\t\treturn nil, nil, err\n"
-		subscriber += "\t}\n\n"
-		subscriber += "\tiprot.ReadMessageEnd()\n"
-		subscriber += "\treturn ctx, req, nil\n"
-		subscriber += "}"
+		subscriber += g.generateSubscribeMethod(scope, op, args)
 	}
 
 	_, err := file.WriteString(subscriber)
 	return err
+}
+
+func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Operation, args string) string {
+	var (
+		scopeLower = generator.LowercaseFirstLetter(scope.Name)
+		scopeTitle = strings.Title(scope.Name)
+		subscriber = ""
+	)
+	if op.Comment != nil {
+		subscriber += g.GenerateInlineComment(op.Comment, "")
+	}
+	subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*frugal.FContext, *%s)) (*frugal.FSubscription, error) {\n",
+		scopeLower, op.Name, args, g.qualifiedTypeName(op.Type))
+	subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
+	subscriber += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
+	subscriber += "\ttopic := fmt.Sprintf(\"%s" + scopeTitle + "%s%s\", prefix, delimiter, op)\n"
+	subscriber += "\ttransport, protocol := l.provider.New()\n"
+	subscriber += "\tif err := transport.Subscribe(topic); err != nil {\n"
+	subscriber += "\t\treturn nil, err\n"
+	subscriber += "\t}\n\n"
+
+	subscriber += fmt.Sprintf("\tmethod := frugal.NewMethod(l, handler, \"Subscribe%s\", l.middleware)\n", op.Name)
+	subscriber += "\tsub := frugal.NewFSubscription(topic, transport)\n"
+	subscriber += "\tgo func() {\n"
+	subscriber += "\t\tfor {\n"
+	subscriber += fmt.Sprintf("\t\t\tctx, received, err := l.recv%s(op, protocol)\n", op.Name)
+	subscriber += "\t\t\tif err != nil {\n"
+	subscriber += "\t\t\t\tif e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {\n"
+	subscriber += "\t\t\t\t\treturn\n"
+	subscriber += "\t\t\t\t}\n"
+	subscriber += "\t\t\t\tlog.Printf(\"frugal: error receiving %s, discarding frame: %s\\n\", topic, err.Error())\n"
+	subscriber += "\t\t\t\ttransport.DiscardFrame()\n"
+	subscriber += "\t\t\t\tcontinue\n"
+	subscriber += "\t\t\t}\n"
+	subscriber += "\t\t\tmethod.Invoke([]interface{}{ctx, received})\n"
+	subscriber += "\t\t}\n"
+	subscriber += "\t}()\n\n"
+	subscriber += "\treturn sub, nil\n"
+	subscriber += "}\n\n"
+
+	subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, iprot *frugal.FProtocol) (*frugal.FContext, *%s, error) {\n",
+		scopeLower, op.Name, g.qualifiedTypeName(op.Type))
+	subscriber += "\tctx, err := iprot.ReadRequestHeader()\n"
+	subscriber += "\tif err != nil {\n"
+	subscriber += "\t\treturn nil, nil, err\n"
+	subscriber += "\t}\n"
+	subscriber += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
+	subscriber += "\tif err != nil {\n"
+	subscriber += "\t\treturn nil, nil, err\n"
+	subscriber += "\t}\n"
+	subscriber += "\tif name != op {\n"
+	subscriber += "\t\tiprot.Skip(thrift.STRUCT)\n"
+	subscriber += "\t\tiprot.ReadMessageEnd()\n"
+	subscriber += "\t\tx9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
+	subscriber += "\t\treturn nil, nil, x9\n"
+	subscriber += "\t}\n"
+	subscriber += fmt.Sprintf("\treq := &%s{}\n", g.qualifiedTypeName(op.Type))
+	subscriber += "\tif err := req.Read(iprot); err != nil {\n"
+	subscriber += "\t\treturn nil, nil, err\n"
+	subscriber += "\t}\n\n"
+	subscriber += "\tiprot.ReadMessageEnd()\n"
+	subscriber += "\treturn ctx, req, nil\n"
+	subscriber += "}"
+	return subscriber
 }
 
 func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
@@ -1805,6 +1855,16 @@ func (g *Generator) generateClientArgs(method *parser.Method) string {
 	for _, arg := range method.Arguments {
 		args += ", " + strings.ToLower(arg.Name)
 	}
+	args += "}"
+	return args
+}
+
+func (g *Generator) generateScopeArgs(scope *parser.Scope) string {
+	args := "[]interface{}{ctx"
+	for _, v := range scope.Prefix.Variables {
+		args += ", " + v
+	}
+	args += ", req"
 	args += "}"
 	return args
 }
