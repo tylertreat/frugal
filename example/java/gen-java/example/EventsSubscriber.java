@@ -6,6 +6,8 @@
 
 package example;
 
+import com.workiva.frugal.middleware.InvocationHandler;
+import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.*;
 import com.workiva.frugal.provider.FScopeProvider;
 import com.workiva.frugal.transport.FScopeTransport;
@@ -30,12 +32,14 @@ import java.util.logging.Logger;
 public class EventsSubscriber {
 
 	private static final String DELIMITER = ".";
-	private static Logger LOGGER = Logger.getLogger(EventsSubscriber.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(EventsSubscriber.class.getName());
 
 	private final FScopeProvider provider;
+	private final ServiceMiddleware[] middleware;
 
-	public EventsSubscriber(FScopeProvider provider) {
+	public EventsSubscriber(FScopeProvider provider, ServiceMiddleware... middleware) {
 		this.provider = provider;
+		this.middleware = middleware;
 	}
 
 	public interface EventCreatedHandler {
@@ -53,6 +57,7 @@ public class EventsSubscriber {
 		final FScopeTransport transport = client.getTransport();
 		transport.subscribe(topic);
 
+		final EventCreatedHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, EventCreatedHandler.class, middleware);
 		final FSubscription sub = new FSubscription(topic, transport);
 		new Thread(new Runnable() {
 			public void run() {
@@ -60,7 +65,7 @@ public class EventsSubscriber {
 					try {
 						FContext ctx = client.getProtocol().readRequestHeader();
 						Event received = recvEventCreated(op, client.getProtocol());
-						handler.onEventCreated(ctx, received);
+						proxiedHandler.onEventCreated(ctx, received);
 					} catch (TException e) {
 						if (e instanceof TTransportException) {
 							TTransportException transportException = (TTransportException) e;
