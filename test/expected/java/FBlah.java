@@ -46,10 +46,11 @@ public class FBlah {
 
 	public static class Client implements Iface {
 
+		protected final Object writeLock = new Object();
 		private Iface proxy;
 
 		public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {
-			Iface client = new InternalClient(transport, protocolFactory);
+			Iface client = new InternalClient(transport, protocolFactory, writeLock);
 			proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);
 		}
 
@@ -71,19 +72,19 @@ public class FBlah {
 
 	private static class InternalClient implements Iface {
 
-		private static final Object WRITE_LOCK = new Object();
-
 		private FTransport transport;
 		private FProtocolFactory protocolFactory;
 		private FProtocol inputProtocol;
 		private FProtocol outputProtocol;
+		private final Object writeLock;
 
-		public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {
+		public InternalClient(FTransport transport, FProtocolFactory protocolFactory, Object writeLock) {
 			this.transport = transport;
 			this.transport.setRegistry(new FClientRegistry());
 			this.protocolFactory = protocolFactory;
 			this.inputProtocol = this.protocolFactory.getProtocol(this.transport);
 			this.outputProtocol = this.protocolFactory.getProtocol(this.transport);
+			this.writeLock = writeLock;
 		}
 
 		/**
@@ -94,7 +95,7 @@ public class FBlah {
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
 			this.transport.register(ctx, recvPingHandler(ctx, result));
 			try {
-				synchronized (WRITE_LOCK) {
+				synchronized (writeLock) {
 					oprot.writeRequestHeader(ctx);
 					oprot.writeMessageBegin(new TMessage("ping", TMessageType.CALL, 0));
 					Blah.ping_args args = new Blah.ping_args();
@@ -179,7 +180,7 @@ public class FBlah {
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
 			this.transport.register(ctx, recvBlehHandler(ctx, result));
 			try {
-				synchronized (WRITE_LOCK) {
+				synchronized (writeLock) {
 					oprot.writeRequestHeader(ctx);
 					oprot.writeMessageBegin(new TMessage("bleh", TMessageType.CALL, 0));
 					Blah.bleh_args args = new Blah.bleh_args();
