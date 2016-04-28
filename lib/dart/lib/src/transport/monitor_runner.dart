@@ -5,6 +5,7 @@ class MonitorRunner {
   final Logger log = new Logger('FTransportMonitor');
   FTransportMonitor _monitor;
   TTransport _transport;
+  bool _failed;
 
   MonitorRunner(this._monitor, this._transport);
 
@@ -13,6 +14,12 @@ class MonitorRunner {
       _handleCleanClose();
     } else {
       await _handleUncleanClose(cause);
+    }
+  }
+
+  void signalOpen() {
+    if (_failed) {
+      _monitor.onReopenSucceeded();
     }
   }
 
@@ -26,6 +33,7 @@ class MonitorRunner {
     int wait = _monitor.onClosedUncleanly(cause);
     if (wait < 0) {
       log.warning('instructed not to reopen');
+      _failed = true;
       return;
     }
     await _attemptReopen(wait);
@@ -49,10 +57,12 @@ class MonitorRunner {
       }
 
       log.info('successfully reopened transport');
+      _failed = false;
       _monitor.onReopenSucceeded();
       return;
     }
 
+    _failed = true;
     log.warning('ReopenFailed callback instructed not to reopen, terminating');
   }
 }

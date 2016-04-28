@@ -13,6 +13,9 @@ class FMultiplexedTransport extends FTransport {
     // If there is an error on the socket, close the transport pessimistically.
     // This error is already logged upstream in TSocketTransport.
     transport.socket.onError.listen((e) => closeWithException(e));
+    transport.socket.onState
+        .where((state) => state == TSocketState.OPEN)
+        .listen((_) => _monitor?.signalOpen());
   }
 
   @override
