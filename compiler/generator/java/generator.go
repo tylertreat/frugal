@@ -434,13 +434,16 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	} else {
 		contents += tab + "public static class Client implements Iface {\n\n"
 	}
+	if service.Extends == "" {
+		contents += tabtab + "protected final Object writeLock = new Object();\n"
+	}
 	contents += tabtab + "private Iface proxy;\n\n"
 
 	contents += tabtab + "public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {\n"
 	if service.Extends != "" {
 		contents += tabtabtab + "super(transport, protocolFactory, middleware);\n"
 	}
-	contents += tabtabtab + "Iface client = new InternalClient(transport, protocolFactory);\n"
+	contents += tabtabtab + "Iface client = new InternalClient(transport, protocolFactory, writeLock);\n"
 	contents += tabtabtab + "proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);\n"
 	contents += tabtab + "}\n\n"
 
@@ -470,14 +473,14 @@ func (g *Generator) generateInternalClient(service *parser.Service) string {
 	} else {
 		contents += tab + "private static class InternalClient implements Iface {\n\n"
 	}
-	contents += tabtab + "private static final Object WRITE_LOCK = new Object();\n\n"
 
 	contents += tabtab + "private FTransport transport;\n"
 	contents += tabtab + "private FProtocolFactory protocolFactory;\n"
 	contents += tabtab + "private FProtocol inputProtocol;\n"
-	contents += tabtab + "private FProtocol outputProtocol;\n\n"
+	contents += tabtab + "private FProtocol outputProtocol;\n"
+	contents += tabtab + "private final Object writeLock;\n\n"
 
-	contents += tabtab + "public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {\n"
+	contents += tabtab + "public InternalClient(FTransport transport, FProtocolFactory protocolFactory, Object writeLock) {\n"
 	if service.Extends != "" {
 		contents += tabtabtab + "super(transport, protocolFactory);\n"
 	}
@@ -486,6 +489,7 @@ func (g *Generator) generateInternalClient(service *parser.Service) string {
 	contents += tabtabtab + "this.protocolFactory = protocolFactory;\n"
 	contents += tabtabtab + "this.inputProtocol = this.protocolFactory.getProtocol(this.transport);\n"
 	contents += tabtabtab + "this.outputProtocol = this.protocolFactory.getProtocol(this.transport);\n"
+	contents += tabtabtab + "this.writeLock = writeLock;\n"
 	contents += tabtab + "}\n\n"
 
 	for _, method := range service.Methods {
@@ -513,7 +517,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += tabtabtab + "try {\n"
 		indent += tab
 	}
-	contents += indent + "synchronized (WRITE_LOCK) {\n"
+	contents += indent + "synchronized (writeLock) {\n"
 	contents += indent + tab + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
