@@ -36,7 +36,7 @@ class MonitorRunner {
     int prevAttempts = 0;
 
     while (wait >= 0) {
-      log.info('attemptying to reopen after $wait ms');
+      log.info('attempting to reopen after $wait ms');
       await new Future.delayed(new Duration(milliseconds: wait));
 
       try {
