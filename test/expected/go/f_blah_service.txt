@@ -47,6 +47,11 @@ func NewFBlahClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware 
 	return client
 }
 
+// Do Not Use. To be called only by generated code.
+func (f *FBlahClient) GetWriteMutex() *sync.Mutex {
+	return &f.mu
+}
+
 // Use this to ping the server.
 func (f *FBlahClient) Ping(ctx *frugal.FContext) (err error) {
 	ret := f.methods["ping"].Invoke([]interface{}{ctx})
@@ -66,29 +71,29 @@ func (f *FBlahClient) ping(ctx *frugal.FContext) (err error) {
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.mu.Lock()
+	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("ping", thrift.CALL, 0); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	args := BlahPingArgs{}
 	if err = args.Write(f.oprot); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
-	f.mu.Unlock()
+	f.GetWriteMutex().Unlock()
 
 	select {
 	case err = <-errorC:
@@ -178,13 +183,13 @@ func (f *FBlahClient) bleh(ctx *frugal.FContext, one *Thing, two *Stuff, custom_
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.mu.Lock()
+	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("bleh", thrift.CALL, 0); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	args := BlahBlehArgs{
@@ -193,18 +198,18 @@ func (f *FBlahClient) bleh(ctx *frugal.FContext, one *Thing, two *Stuff, custom_
 		CustomInts: custom_ints,
 	}
 	if err = args.Write(f.oprot); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
-	f.mu.Unlock()
+	f.GetWriteMutex().Unlock()
 
 	select {
 	case err = <-errorC:

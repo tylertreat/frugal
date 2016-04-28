@@ -50,7 +50,7 @@ public class FSubscription {
      * subscription has been closed.
      *
      * @return The Exception queue.
-     * @deprecated TODO: remove in a future release.
+     * @deprecated TODO 2.0.0: remove in a future release.
      */
     @Deprecated
     public BlockingQueue<Exception> onError() {
