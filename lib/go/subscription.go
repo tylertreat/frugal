@@ -35,7 +35,7 @@ func (s *FSubscription) Topic() string {
 // subscription. If an error is returned on this channel, the Subscription has
 // been closed.
 //
-// DEPRECATED. TODO: Remove in a future release.
+// DEPRECATED. TODO 2.0.0: Remove in a future release.
 func (s *FSubscription) Error() <-chan error {
 	return s.errorC
 }
