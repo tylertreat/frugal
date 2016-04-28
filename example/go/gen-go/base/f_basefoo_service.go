@@ -44,6 +44,7 @@ func NewFBaseFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middlewa
 	return client
 }
 
+// Do Not Use. To be called only by generated code.
 func (f *FBaseFooClient) GetWriteMutex() *sync.Mutex {
 	return &f.mu
 }

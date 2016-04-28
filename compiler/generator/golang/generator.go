@@ -1448,6 +1448,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += "}\n\n"
 
 	if service.Extends == "" {
+		contents += fmt.Sprintf("// Do Not Use. To be called only by generated code.\n")
 		contents += fmt.Sprintf("func (f *F%sClient) GetWriteMutex() *sync.Mutex {\n", servTitle)
 		contents += "\treturn &f.mu\n"
 		contents += "}\n\n"
