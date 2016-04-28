@@ -14,6 +14,9 @@ var (
 	Verbose         bool
 	Now             = time.Now()
 	IntermediateIDL = []string{}
+
+	// TODO: Remove once gen_with_frugal is the default.
+	GenWithFrugalWarn bool
 )
 
 func Reset() {
@@ -26,4 +29,5 @@ func Reset() {
 	Verbose = false
 	Now = time.Now()
 	IntermediateIDL = []string{}
+	GenWithFrugalWarn = false
 }
