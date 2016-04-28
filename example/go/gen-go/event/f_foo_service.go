@@ -35,7 +35,6 @@ type FFooClient struct {
 	transport       frugal.FTransport
 	protocolFactory *frugal.FProtocolFactory
 	oprot           *frugal.FProtocol
-	mu              sync.Mutex
 	methods         map[string]*frugal.Method
 }
 
@@ -74,29 +73,29 @@ func (f *FFooClient) ping(ctx *frugal.FContext) (err error) {
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.mu.Lock()
+	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("ping", thrift.CALL, 0); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	args := FooPingArgs{}
 	if err = args.Write(f.oprot); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
-	f.mu.Unlock()
+	f.GetWriteMutex().Unlock()
 
 	select {
 	case err = <-errorC:
@@ -186,13 +185,13 @@ func (f *FFooClient) blah(ctx *frugal.FContext, num int32, str string, event *Ev
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.mu.Lock()
+	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("blah", thrift.CALL, 0); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	args := FooBlahArgs{
@@ -201,18 +200,18 @@ func (f *FFooClient) blah(ctx *frugal.FContext, num int32, str string, event *Ev
 		Event: event,
 	}
 	if err = args.Write(f.oprot); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
-	f.mu.Unlock()
+	f.GetWriteMutex().Unlock()
 
 	select {
 	case err = <-errorC:
@@ -303,13 +302,13 @@ func (f *FFooClient) OneWay(ctx *frugal.FContext, id ID, req Request) (err error
 }
 
 func (f *FFooClient) oneWay(ctx *frugal.FContext, id ID, req Request) (err error) {
-	f.mu.Lock()
+	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("oneWay", thrift.ONEWAY, 0); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	args := FooOneWayArgs{
@@ -317,18 +316,18 @@ func (f *FFooClient) oneWay(ctx *frugal.FContext, id ID, req Request) (err error
 		Req: req,
 	}
 	if err = args.Write(f.oprot); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
-		f.mu.Unlock()
+		f.GetWriteMutex().Unlock()
 		return
 	}
-	f.mu.Unlock()
+	f.GetWriteMutex().Unlock()
 
 	return
 }

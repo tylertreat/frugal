@@ -23,7 +23,7 @@ type FSimpleServer struct {
 // NewFSimpleServerFactory5 creates a new FSimpleServer which is a simple
 // FServer that starts a goroutine for each connection.
 //
-// TODO: Rename this to NewFSimpleServerFactory4 in a major release.
+// TODO 2.0.0: Rename this to NewFSimpleServerFactory4 in a major release.
 func NewFSimpleServerFactory5(
 	processorFactory FProcessorFactory,
 	serverTransport thrift.TServerTransport,
@@ -40,12 +40,16 @@ func NewFSimpleServerFactory5(
 	}
 }
 
-// TODO: Unexport this in a major release.
+// Listen should not be called directly.
+//
+// TODO 2.0.0: Unexport this in a major release.
 func (p *FSimpleServer) Listen() error {
 	return p.serverTransport.Listen()
 }
 
-// TODO: Unexport this in a major release.
+// AcceptLoop should not be called directly.
+//
+// TODO 2.0.0: Unexport this in a major release.
 func (p *FSimpleServer) AcceptLoop() error {
 	for {
 		client, err := p.serverTransport.Accept()

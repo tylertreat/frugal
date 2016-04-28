@@ -1419,7 +1419,9 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += "\ttransport       frugal.FTransport\n"
 	contents += "\tprotocolFactory *frugal.FProtocolFactory\n"
 	contents += "\toprot           *frugal.FProtocol\n"
-	contents += "\tmu              sync.Mutex\n"
+	if service.Extends == "" {
+		contents += "\tmu              sync.Mutex\n"
+	}
 	contents += "\tmethods         map[string]*frugal.Method\n"
 	contents += "}\n\n"
 
@@ -1444,6 +1446,13 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	}
 	contents += "\treturn client\n"
 	contents += "}\n\n"
+
+	if service.Extends == "" {
+		contents += fmt.Sprintf("// Do Not Use. To be called only by generated code.\n")
+		contents += fmt.Sprintf("func (f *F%sClient) GetWriteMutex() *sync.Mutex {\n", servTitle)
+		contents += "\treturn &f.mu\n"
+		contents += "}\n\n"
+	}
 
 	for _, method := range service.Methods {
 		contents += g.generateClientMethod(service, method)
@@ -1513,9 +1522,9 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 		contents += "\t}\n"
 		contents += "\tdefer f.transport.Unregister(ctx)\n"
 	}
-	contents += "\tf.mu.Lock()\n"
+	contents += "\tf.GetWriteMutex().Lock()\n"
 	contents += fmt.Sprintf("\tif err = f.oprot.WriteRequestHeader(ctx); err != nil {\n")
-	contents += "\t\tf.mu.Unlock()\n"
+	contents += "\t\tf.GetWriteMutex().Unlock()\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	msgType := "CALL"
@@ -1524,25 +1533,25 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	}
 	contents += fmt.Sprintf(
 		"\tif err = f.oprot.WriteMessageBegin(\"%s\", thrift.%s, 0); err != nil {\n", nameLower, msgType)
-	contents += "\t\tf.mu.Unlock()\n"
+	contents += "\t\tf.GetWriteMutex().Unlock()\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += fmt.Sprintf("\targs := %s%sArgs{\n", servTitle, nameTitle)
 	contents += g.generateStructArgs(method.Arguments)
 	contents += "\t}\n"
 	contents += "\tif err = args.Write(f.oprot); err != nil {\n"
-	contents += "\t\tf.mu.Unlock()\n"
+	contents += "\t\tf.GetWriteMutex().Unlock()\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += "\tif err = f.oprot.WriteMessageEnd(); err != nil {\n"
-	contents += "\t\tf.mu.Unlock()\n"
+	contents += "\t\tf.GetWriteMutex().Unlock()\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += "\tif err = f.oprot.Flush(); err != nil {\n"
-	contents += "\t\tf.mu.Unlock()\n"
+	contents += "\t\tf.GetWriteMutex().Unlock()\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
-	contents += "\tf.mu.Unlock()\n\n"
+	contents += "\tf.GetWriteMutex().Unlock()\n\n"
 
 	if method.Oneway {
 		contents += "\treturn\n"
@@ -1660,7 +1669,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	contents += fmt.Sprintf("type F%sProcessor struct {\n", servTitle)
 	if service.Extends == "" {
 		contents += "\tprocessorMap map[string]frugal.FProcessorFunction\n"
-		contents += "\twriteMu      *sync.Mutex\n"
+		contents += "\twriteMu			sync.Mutex\n"
 		contents += fmt.Sprintf("\thandler      F%s\n", servTitle)
 	} else {
 		contents += fmt.Sprintf("\t*%sF%sProcessor\n",
@@ -1670,16 +1679,12 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 
 	contents += fmt.Sprintf("func NewF%sProcessor(handler F%s, middleware ...frugal.ServiceMiddleware) *F%sProcessor {\n",
 		servTitle, servTitle, servTitle)
-	if service.Extends == "" {
-		contents += "\twriteMu := &sync.Mutex{}\n"
-	}
 	contents += fmt.Sprintf("\tp := &F%sProcessor{\n", servTitle)
 	if service.Extends != "" {
 		contents += fmt.Sprintf("\t\t%sNewF%sProcessor(handler, middleware...),\n",
 			g.getServiceExtendsNamespace(service), service.ExtendsService())
 	} else {
 		contents += "\t\tprocessorMap: make(map[string]frugal.FProcessorFunction),\n"
-		contents += "\t\twriteMu:      writeMu,\n"
 		contents += "\t\thandler:      handler,\n"
 	}
 	contents += "\t}\n"
@@ -1709,7 +1714,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf("func (p *F%sProcessor) GetWriteMutex() *sync.Mutex {\n", servTitle)
-	contents += "\treturn p.writeMu\n"
+	contents += "\treturn &p.writeMu\n"
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf(
