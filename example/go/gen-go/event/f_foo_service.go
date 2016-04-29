@@ -337,9 +337,7 @@ type FFooProcessor struct {
 }
 
 func NewFFooProcessor(handler FFoo, middleware ...frugal.ServiceMiddleware) *FFooProcessor {
-	p := &FFooProcessor{
-		base.NewFBaseFooProcessor(handler, middleware...),
-	}
+	p := &FFooProcessor{base.NewFBaseFooProcessor(handler, middleware...)}
 	p.AddToProcessorMap("ping", &fooFPing{handler: frugal.NewMethod(handler, handler.Ping, "Ping", middleware), writeMu: p.GetWriteMutex()})
 	p.AddToProcessorMap("blah", &fooFBlah{handler: frugal.NewMethod(handler, handler.Blah, "Blah", middleware), writeMu: p.GetWriteMutex()})
 	p.AddToProcessorMap("oneWay", &fooFOneWay{handler: frugal.NewMethod(handler, handler.OneWay, "OneWay", middleware), writeMu: p.GetWriteMutex()})
