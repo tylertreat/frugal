@@ -66,6 +66,6 @@ abstract class FTransport extends TTransport {
   }
 
   Future _signalClose(cause) async {
-    if (_monitor != null) await _monitor.onClose(cause);
+    await _monitor?.onClose(cause);
   }
 }
