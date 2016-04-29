@@ -87,6 +87,17 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	case "dart":
 		g = generator.NewProgramGenerator(dartlang.NewGenerator(options), false)
 	case "go":
+		// TODO: Remove this once gen_with frugal is no longer experimental
+		// and is the default.
+		if !genWithFrugal && !globals.GenWithFrugalWarn {
+			fmt.Println("\x1b[33m" +
+				"Consider using the \"gen_with_frugal\" language option " +
+				"to have Frugal generate code in place of Thrift.\nThis is an " +
+				"experimental feature. Please file a GitHub issue if you encounter " +
+				"problems." +
+				"\x1b[0m")
+			globals.GenWithFrugalWarn = true
+		}
 		g = generator.NewProgramGenerator(golang.NewGenerator(options, genWithFrugal), false)
 	case "java":
 		g = generator.NewProgramGenerator(java.NewGenerator(options), true)
