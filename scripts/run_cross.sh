@@ -27,16 +27,28 @@ tar xzf $SKYNET_APPLICATION_FRUGAL_LOCAL_CACHE -C .
 rm -rf test/intgration/dart/gen-dart/frugal_test/pubspec.yaml
 cp -r local_cache/pubspec.yaml test/integration/dart/gen-dart/frugal_test/pubspec.yaml
 cd test/integration/dart/test_client
-PUB_CACHE=$frugal/local_cache/ pub upgrade --offline
-PUB_CACHE=$frugal/local_cache/ pub get --offline
+PUB_CACHE=${frugal}/local_cache/ pub upgrade --offline
+PUB_CACHE=${frugal}/local_cache/ pub get --offline
 cd ../gen-dart/frugal_test
-PUB_CACHE=$frugal/local_cache/ pub upgrade --offline
-PUB_CACHE=$frugal/local_cache/ pub get --offline
-cd $frugal
+PUB_CACHE=${frugal}/local_cache/ pub upgrade --offline
+PUB_CACHE=${frugal}/local_cache/ pub get --offline
+cd ${frugal}
 
-# RM and Generate Java Code  -  This will be added in a future PR
-#rm -rf lib/java/gen-java/frugal
-#frugal --gen java -r --out='lib/java/gen-java' test/integration/frugalTest.frugal
+# RM and Generate Java Code
+rm -rf test/integration/java/frugal-integration-test/gen-java/
+frugal --gen java -r --out='test/integration/java/frugal-integration-test/gen-java' test/integration/frugalTest.frugal
+
+mv $SKYNET_APPLICATION_FRUGAL_ARTIFACTORY ${frugal}/test/integration/java/frugal.jar
+cd ${frugal}/test/integration/java/frugal-integration-test
+mvn compile
+cd ${frugal}/test/integration/java
+mvn install:install-file \
+    -Dfile=frugal.jar \
+    -DgroupId=com.workiva.frugal \
+    -DartifactId=frugal \
+    -Dpackaging=jar \
+    -Dversion=1.3.0
+cd ${frugal}
 
 # Run tests
 python test/integration/test.py --retry-count=0
