@@ -39,6 +39,11 @@ class FBlahClient implements FBlah {
   /// Use this to ping the server.
   Future ping(frugal.FContext ctx) async {
     var controller = new StreamController();
+    var closeSubscription = _transport.onClose.listen((_) {
+      controller.addError(new thrift.TTransportError(
+        thrift.TTransportErrorType.NOT_OPEN,
+        "Transport closed before request completed."));
+      });
     _transport.register(ctx, _recvPingHandler(ctx, controller));
     try {
       oprot.writeRequestHeader(ctx);
@@ -49,6 +54,7 @@ class FBlahClient implements FBlah {
       await oprot.transport.flush();
       return await controller.stream.first.timeout(ctx.timeout);
     } finally {
+      closeSubscription.cancel();
       _transport.unregister(ctx);
     }
   }
@@ -84,6 +90,11 @@ class FBlahClient implements FBlah {
   /// Use this to tell the sever how you feel.
   Future<int> bleh(frugal.FContext ctx, t_valid.Thing one, t_valid.Stuff two, List<int> custom_ints) async {
     var controller = new StreamController();
+    var closeSubscription = _transport.onClose.listen((_) {
+      controller.addError(new thrift.TTransportError(
+        thrift.TTransportErrorType.NOT_OPEN,
+        "Transport closed before request completed."));
+      });
     _transport.register(ctx, _recvBlehHandler(ctx, controller));
     try {
       oprot.writeRequestHeader(ctx);
@@ -97,6 +108,7 @@ class FBlahClient implements FBlah {
       await oprot.transport.flush();
       return await controller.stream.first.timeout(ctx.timeout);
     } finally {
+      closeSubscription.cancel();
       _transport.unregister(ctx);
     }
   }

@@ -592,6 +592,11 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	indent := tabtab
 	if !method.Oneway {
 		contents += tabtab + "var controller = new StreamController();\n"
+		contents += tabtab + "var closeSubscription = _transport.onClose.listen((_) {\n"
+		contents += tabtabtab + "controller.addError(new thrift.TTransportError(\n"
+		contents += tabtabtabtab + "thrift.TTransportErrorType.NOT_OPEN,\n"
+		contents += tabtabtabtab + "\"Transport closed before request completed.\"));\n"
+		contents += tabtabtab + "});\n"
 		contents += fmt.Sprintf(tabtab+"_transport.register(ctx, _recv%sHandler(ctx, controller));\n", nameTitle)
 		contents += tabtab + "try {\n"
 		indent = tabtabtab
@@ -623,6 +628,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	// This should happen in a major release since it's an API change.
 	contents += tabtabtab + "return await controller.stream.first.timeout(ctx.timeout);\n"
 	contents += tabtab + "} finally {\n"
+	contents += tabtabtab + "closeSubscription.cancel();\n"
 	contents += tabtabtab + "_transport.unregister(ctx);\n"
 	contents += tabtab + "}\n"
 	contents += tab + "}\n\n"
