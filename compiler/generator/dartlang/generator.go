@@ -317,8 +317,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	}
 
 	// Import same package.
-	pkgLower := strings.ToLower(g.getNamespaceOrName())
-	imports += g.getImportDeclaration(pkgLower)
+	imports += g.getImportDeclaration(g.getNamespaceOrName())
 
 	// Import thrift package for method args
 	servSnake := toFileName(s.Name)
