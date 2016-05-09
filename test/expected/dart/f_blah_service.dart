@@ -9,6 +9,8 @@ import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
 
+import 'package:validStructs/validStructs.dart' as t_validStructs;
+import 'package:ValidTypes/ValidTypes.dart' as t_ValidTypes;
 import 'package:valid/valid.dart' as t_valid;
 import 'blah.dart' as t_blah_file;
 
@@ -20,6 +22,10 @@ abstract class FBlah {
 
   /// Use this to tell the sever how you feel.
   Future<int> bleh(frugal.FContext ctx, t_valid.Thing one, t_valid.Stuff two, List<int> custom_ints);
+
+  Future<t_validStructs.Thing> getThing(frugal.FContext ctx);
+
+  Future<int> getMyInt(frugal.FContext ctx);
 }
 
 class FBlahClient implements FBlah {
@@ -138,6 +144,108 @@ class FBlahClient implements FBlah {
       }
     }
     return blehCallback;
+  }
+
+  Future<t_validStructs.Thing> getThing(frugal.FContext ctx) async {
+    var controller = new StreamController();
+    _transport.register(ctx, _recvGetThingHandler(ctx, controller));
+    try {
+      oprot.writeRequestHeader(ctx);
+      oprot.writeMessageBegin(new thrift.TMessage("getThing", thrift.TMessageType.CALL, 0));
+      t_blah_file.getThing_args args = new t_blah_file.getThing_args();
+      args.write(oprot);
+      oprot.writeMessageEnd();
+      await oprot.transport.flush();
+      return await controller.stream.first.timeout(ctx.timeout);
+    } finally {
+      _transport.unregister(ctx);
+    }
+  }
+
+  _recvGetThingHandler(frugal.FContext ctx, StreamController controller) {
+    getThingCallback(thrift.TTransport transport) {
+      try {
+        var iprot = _protocolFactory.getProtocol(transport);
+        iprot.readResponseHeader(ctx);
+        thrift.TMessage msg = iprot.readMessageBegin();
+        if (msg.type == thrift.TMessageType.EXCEPTION) {
+          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+          iprot.readMessageEnd();
+          if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
+            controller.addError(new frugal.FMessageSizeError.response());
+            return;
+          }
+          throw error;
+        }
+
+        t_blah_file.getThing_result result = new t_blah_file.getThing_result();
+        result.read(iprot);
+        iprot.readMessageEnd();
+        if (result.isSetSuccess()) {
+          controller.add(result.success);
+          return;
+        }
+
+        throw new thrift.TApplicationError(
+          thrift.TApplicationErrorType.MISSING_RESULT, "getThing failed: unknown result"
+        );
+      } catch(e) {
+        controller.addError(e);
+        rethrow;
+      }
+    }
+    return getThingCallback;
+  }
+
+  Future<int> getMyInt(frugal.FContext ctx) async {
+    var controller = new StreamController();
+    _transport.register(ctx, _recvGetMyIntHandler(ctx, controller));
+    try {
+      oprot.writeRequestHeader(ctx);
+      oprot.writeMessageBegin(new thrift.TMessage("getMyInt", thrift.TMessageType.CALL, 0));
+      t_blah_file.getMyInt_args args = new t_blah_file.getMyInt_args();
+      args.write(oprot);
+      oprot.writeMessageEnd();
+      await oprot.transport.flush();
+      return await controller.stream.first.timeout(ctx.timeout);
+    } finally {
+      _transport.unregister(ctx);
+    }
+  }
+
+  _recvGetMyIntHandler(frugal.FContext ctx, StreamController controller) {
+    getMyIntCallback(thrift.TTransport transport) {
+      try {
+        var iprot = _protocolFactory.getProtocol(transport);
+        iprot.readResponseHeader(ctx);
+        thrift.TMessage msg = iprot.readMessageBegin();
+        if (msg.type == thrift.TMessageType.EXCEPTION) {
+          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+          iprot.readMessageEnd();
+          if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
+            controller.addError(new frugal.FMessageSizeError.response());
+            return;
+          }
+          throw error;
+        }
+
+        t_blah_file.getMyInt_result result = new t_blah_file.getMyInt_result();
+        result.read(iprot);
+        iprot.readMessageEnd();
+        if (result.isSetSuccess()) {
+          controller.add(result.success);
+          return;
+        }
+
+        throw new thrift.TApplicationError(
+          thrift.TApplicationErrorType.MISSING_RESULT, "getMyInt failed: unknown result"
+        );
+      } catch(e) {
+        controller.addError(e);
+        rethrow;
+      }
+    }
+    return getMyIntCallback;
   }
 
 }
