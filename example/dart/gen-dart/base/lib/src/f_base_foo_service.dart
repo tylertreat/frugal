@@ -34,6 +34,11 @@ class FBaseFooClient implements FBaseFoo {
 
   Future basePing(frugal.FContext ctx) async {
     var controller = new StreamController();
+    var closeSubscription = _transport.onClose.listen((_) {
+      controller.addError(new thrift.TTransportError(
+        thrift.TTransportErrorType.NOT_OPEN,
+        "Transport closed before request completed."));
+      });
     _transport.register(ctx, _recvBasePingHandler(ctx, controller));
     try {
       oprot.writeRequestHeader(ctx);
@@ -44,6 +49,7 @@ class FBaseFooClient implements FBaseFoo {
       await oprot.transport.flush();
       return await controller.stream.first.timeout(ctx.timeout);
     } finally {
+      closeSubscription.cancel();
       _transport.unregister(ctx);
     }
   }
