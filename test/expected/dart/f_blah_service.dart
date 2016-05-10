@@ -160,6 +160,11 @@ class FBlahClient implements FBlah {
 
   Future<t_validStructs.Thing> getThing(frugal.FContext ctx) async {
     var controller = new StreamController();
+    var closeSubscription = _transport.onClose.listen((_) {
+      controller.addError(new thrift.TTransportError(
+        thrift.TTransportErrorType.NOT_OPEN,
+        "Transport closed before request completed."));
+      });
     _transport.register(ctx, _recvGetThingHandler(ctx, controller));
     try {
       oprot.writeRequestHeader(ctx);
@@ -170,6 +175,7 @@ class FBlahClient implements FBlah {
       await oprot.transport.flush();
       return await controller.stream.first.timeout(ctx.timeout);
     } finally {
+      closeSubscription.cancel();
       _transport.unregister(ctx);
     }
   }
@@ -211,6 +217,11 @@ class FBlahClient implements FBlah {
 
   Future<int> getMyInt(frugal.FContext ctx) async {
     var controller = new StreamController();
+    var closeSubscription = _transport.onClose.listen((_) {
+      controller.addError(new thrift.TTransportError(
+        thrift.TTransportErrorType.NOT_OPEN,
+        "Transport closed before request completed."));
+      });
     _transport.register(ctx, _recvGetMyIntHandler(ctx, controller));
     try {
       oprot.writeRequestHeader(ctx);
@@ -221,6 +232,7 @@ class FBlahClient implements FBlah {
       await oprot.transport.flush();
       return await controller.stream.first.timeout(ctx.timeout);
     } finally {
+      closeSubscription.cancel();
       _transport.unregister(ctx);
     }
   }
