@@ -55,7 +55,7 @@ public class FSimpleServer implements FServer {
                 try {
                     accept(client);
                 } catch (TException e) {
-                    LOGGER.warning("error accepting client connection: " + e.getMessage());
+                    LOGGER.warning("frugal: error accepting client connection: " + e.getMessage());
                 }
             }
         }
