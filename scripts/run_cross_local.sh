@@ -2,7 +2,7 @@
 
 set -ex
 
-frugal=$PWD
+frugalDir=$PWD
 
 # Start with clean log folder
 rm -rf test/integration/log/*
@@ -24,7 +24,7 @@ cd test/integration/dart/test_client
 pub upgrade
 cd ../gen-dart/frugal_test
 pub upgrade
-cd ${frugal}
+cd ${frugalDir}
 
 # RM and Generate Java Code
 rm -rf test/integration/java/frugal-integration-test/gen-java/
@@ -32,18 +32,12 @@ frugal --gen java -r --out='test/integration/java/frugal-integration-test/gen-ja
 
 cd lib/java
 mvn clean verify
-mv target/frugal-*.jar ${frugal}/test/integration/java/frugal.jar
-cd ${frugal}/test/integration/java/frugal-integration-test
-mvn compile
-cd ${frugal}/test/integration/java
-mvn install:install-file \
-    -Dfile=frugal.jar \
-    -DgroupId=com.workiva.frugal \
-    -DartifactId=frugal \
-    -Dpackaging=jar \
-    -Dversion=1.2.0
+mv target/frugal-*.jar ${frugalDir}/test/integration/java/frugal-integration-test/frugal.jar
+cd ${frugalDir}/test/integration/java/frugal-integration-test
+mvn clean install:install-file -Dfile=frugal.jar -U
+mvn clean compile -U
 
-cd ${frugal}
+cd ${frugalDir}
 # Run tests
 # -v flag for verbose output
 # --server for specific server languages (only go supported currently)
