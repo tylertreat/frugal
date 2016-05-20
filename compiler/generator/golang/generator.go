@@ -1408,6 +1408,13 @@ func (g *Generator) generateReturnArgs(method *parser.Method) string {
 	return fmt.Sprintf("(r %s, err error)", g.getGoTypeFromThriftType(method.ReturnType))
 }
 
+func (g *Generator) generateAsyncReturnArgs(method *parser.Method) string {
+	if method.ReturnType == nil {
+		return "(err <-chan error)"
+	}
+	return fmt.Sprintf("(r <-chan %s, err <-chan error)", g.getGoTypeFromThriftType(method.ReturnType))
+}
+
 func (g *Generator) generateClient(service *parser.Service) string {
 	servTitle := snakeToCamel(service.Name)
 
@@ -1455,7 +1462,47 @@ func (g *Generator) generateClient(service *parser.Service) string {
 
 	for _, method := range service.Methods {
 		contents += g.generateClientMethod(service, method)
+		if g.generateAsync() {
+			contents += g.generateAsyncClientMethod(service, method)
+		}
 	}
+	return contents
+}
+
+func (g *Generator) generateAsyncClientMethod(service *parser.Service, method *parser.Method) string {
+	var (
+		servTitle = snakeToCamel(service.Name)
+		nameTitle = snakeToCamel(method.Name)
+	)
+
+	contents := ""
+	if method.Comment != nil {
+		contents += g.GenerateInlineComment(method.Comment, "")
+	}
+	contents += fmt.Sprintf("func (f *F%sClient) %sAsync(ctx *frugal.FContext%s) %s {\n",
+		servTitle, nameTitle, g.generateInputArgs(method.Arguments), g.generateAsyncReturnArgs(method))
+	contents += "\terrC := make(chan error, 1)\n"
+	if method.ReturnType != nil {
+		contents += fmt.Sprintf("\tresultC := make(chan %s, 1)\n", g.getGoTypeFromThriftType(method.ReturnType))
+	}
+	contents += "\tgo func() {\n"
+	if method.ReturnType == nil {
+		contents += fmt.Sprintf("\t\terrC <- f.%s(%s)\n", nameTitle, g.generateCallArgs(method))
+	} else {
+		contents += fmt.Sprintf("\t\tresult, err := f.%s(%s)\n", nameTitle, g.generateCallArgs(method))
+		contents += "\t\tif err != nil {\n"
+		contents += "\t\t\terrC <- err\n"
+		contents += "\t\t} else {\n"
+		contents += "\t\t\tresultC <- result\n"
+		contents += "\t\t}\n"
+	}
+	contents += "\t}()\n"
+	if method.ReturnType == nil {
+		contents += "\treturn errC\n"
+	} else {
+		contents += "\treturn resultC, errC\n"
+	}
+	contents += "}\n\n"
 	return contents
 }
 
@@ -1826,6 +1873,13 @@ func (g *Generator) generateHandlerArgs(method *parser.Method) string {
 	args += "}"
 	return args
 }
+func (g *Generator) generateCallArgs(method *parser.Method) string {
+	args := "ctx"
+	for _, arg := range method.Arguments {
+		args += ", " + strings.ToLower(arg.Name)
+	}
+	return args
+}
 
 func (g *Generator) generateErrTooLarge(service *parser.Service, method *parser.Method) string {
 	servLower := strings.ToLower(service.Name)
@@ -2067,6 +2121,11 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 		param += "_"
 	}
 	return param
+}
+
+func (g *Generator) generateAsync() bool {
+	_, ok := g.Options["async"]
+	return ok
 }
 
 // snakeToCamel returns a string converted from snake case to uppercase.
