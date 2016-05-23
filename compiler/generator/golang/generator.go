@@ -24,14 +24,12 @@ const (
 
 type Generator struct {
 	*generator.BaseGenerator
-	// TODO remove this once you can only generate with frugal
-	withFrugal        bool
 	generateConstants bool
 	typesFile         *os.File
 }
 
-func NewGenerator(options map[string]string, withFrugal bool) generator.LanguageGenerator {
-	return &Generator{&generator.BaseGenerator{Options: options}, withFrugal, true, nil}
+func NewGenerator(options map[string]string) generator.LanguageGenerator {
+	return &Generator{&generator.BaseGenerator{Options: options}, true, nil}
 }
 
 // SetupGenerator initializes globals the generator needs, like the types file.
@@ -1928,17 +1926,13 @@ func (g *Generator) getGoTypeFromThriftTypePtr(t *parser.Type, pointer bool) str
 	case "binary":
 		return maybePointer + "[]byte"
 	case "list":
-		typ := t.ValueType
-		if !g.withFrugal {
-			typ = g.Frugal.UnderlyingType(t.ValueType)
-		}
+		// TODO 2.0: don't use the underlying type
+		typ := g.Frugal.UnderlyingType(t.ValueType)
 		return fmt.Sprintf("%s[]%s", maybePointer,
 			g.getGoTypeFromThriftTypePtr(typ, false))
 	case "set":
-		typ := t.ValueType
-		if !g.withFrugal {
-			typ = g.Frugal.UnderlyingType(t.ValueType)
-		}
+		// TODO 2.0: dont' use the underlying type
+		typ := g.Frugal.UnderlyingType(t.ValueType)
 		return fmt.Sprintf("%smap[%s]bool", maybePointer,
 			g.getGoTypeFromThriftTypePtr(typ, false))
 	case "map":
