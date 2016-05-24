@@ -296,7 +296,7 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	}
 
 	eName := title(enum.Name)
-	contents += fmt.Sprintf("type %s int32\n\n", eName)
+	contents += fmt.Sprintf("type %s int64\n\n", eName)
 	contents += "const (\n"
 	for _, field := range enum.Values {
 		contents += fmt.Sprintf("\t%s_%s %s = %d\n", eName, title(field.Name), eName, field.Value)
@@ -746,9 +746,11 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool) string
 		if isPointerField {
 			maybePointer = "*"
 		}
-		valElem := getElem()
-		valField := parser.FieldFromType(underlyingType.ValueType, valElem)
-		valContents := g.generateReadFieldRec(valField, false)
+		// TODO 2.0 use this to get the value reading code, respecting the type,
+		// instead of the current code for list and set
+		//valElem := getElem()
+		//valField := parser.FieldFromType(underlyingType.ValueType, valElem)
+		//valContents := g.generateReadFieldRec(valField, false)
 		switch underlyingType.Name {
 		case "list":
 			contents += "\t_, size, err := iprot.ReadListBegin()\n"
@@ -762,6 +764,11 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool) string
 				contents += fmt.Sprintf("\t%s%s %s &temp\n", prefix, fName, eq)
 			}
 			contents += "\tfor i := 0; i < size; i++ {\n"
+			// TODO 2.0 don't use the underlying type for the value type of the list
+			underlyingValueType := g.Frugal.UnderlyingType(underlyingType.ValueType)
+			valElem := getElem()
+			valField := parser.FieldFromType(underlyingValueType, valElem)
+			valContents := g.generateReadFieldRec(valField, false)
 			contents += valContents
 			contents += fmt.Sprintf("\t\t%s%s%s = append(%s%s%s, %s)\n", maybePointer, prefix, fName, maybePointer, prefix, fName, valElem)
 			contents += "\t}\n"
@@ -780,6 +787,11 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool) string
 				contents += fmt.Sprintf("\t%s%s %s &temp\n", prefix, fName, eq)
 			}
 			contents += "\tfor i := 0; i < size; i++ {\n"
+			// TODO 2.0 don't use the underlying type for the value type of the set
+			underlyingValueType := g.Frugal.UnderlyingType(underlyingType.ValueType)
+			valElem := getElem()
+			valField := parser.FieldFromType(underlyingValueType, valElem)
+			valContents := g.generateReadFieldRec(valField, false)
 			contents += valContents
 			contents += fmt.Sprintf("\t\t(%s%s%s)[%s] = true\n", maybePointer, prefix, fName, valElem)
 			contents += "\t}\n"
@@ -801,6 +813,10 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool) string
 			keyElem := getElem()
 			keyField := parser.FieldFromType(underlyingType.KeyType, keyElem)
 			contents += g.generateReadFieldRec(keyField, false)
+			// TODO 2.0 use the valContents for all the collections
+			valElem := getElem()
+			valField := parser.FieldFromType(underlyingType.ValueType, valElem)
+			valContents := g.generateReadFieldRec(valField, false)
 			contents += valContents
 			contents += fmt.Sprintf("\t\t(%s%s%s)[%s] = %s\n", maybePointer, prefix, fName, keyElem, valElem)
 			contents += "\t}\n"
