@@ -261,7 +261,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 		for _, pair := range value.([]parser.KeyValue) {
 			name := title(pair.Key.(string))
 			for _, field := range s.Fields {
-				if name == field.Name {
+				if name == title(field.Name) {
 					val := g.generateConstantValue(field.Type, pair.Value)
 					contents += fmt.Sprintf("\t%s: %s,\n", name, val)
 				}
