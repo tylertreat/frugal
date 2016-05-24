@@ -61,7 +61,7 @@ name: cross
 requires:
   Workiva/frugal:
     - local_cache
-
+    - artifactory
 run:
   when-branch-name-is:
     - .+
@@ -95,7 +95,7 @@ scripts:
   # If applicable, fail here
   - if [ $code > 0 ]; then exit $code; fi
 
-timeout: moderate
+timeout: long
 
 artifacts:
   - /testing/artifacts
