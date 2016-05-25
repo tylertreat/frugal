@@ -350,8 +350,8 @@ List<TTest> _createTests() {
     stdout.write("testException(Xception)");
     try {
       await client.testException(ctx, 'Xception');
-    } on Xception catch (_) {
-      stdout.write(" = ${_} \n");
+    } on Xception catch (exception) {
+      stdout.write(" = ${exception} \n");
       return;
     }
 
@@ -362,8 +362,8 @@ List<TTest> _createTests() {
     stdout.write("testMultiException(Xception2, foo)");
     try {
       await client.testMultiException(ctx, 'Xception2', 'foo');
-    } on Xception2 catch (_) {
-      stdout.write(" = ${_} \n");
+    } on Xception2 catch (exception2) {
+      stdout.write(" = ${exception2} \n");
       return;
     }
 
