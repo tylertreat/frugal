@@ -11,7 +11,11 @@ rm -rf test/integration/log/*
 
 # RM and Generate Go Code
 rm -rf test/integration/go/gen/*
-frugal --gen go:package_prefix=github.com/Workiva/frugal/ -r --out='test/integration/go/gen' test/integration/frugalTest.frugal
+if [ $# -eq 1 ] && [ "$1" == "-gen_with_frugal" ]; then
+    frugal --gen go:package_prefix=github.com/Workiva/frugal/,gen_with_frugal -r --out='test/integration/go/gen' test/integration/frugalTest.frugal
+else
+    frugal --gen go:package_prefix=github.com/Workiva/frugal/ -r --out='test/integration/go/gen' test/integration/frugalTest.frugal
+fi
 
 # Create Go binaries
 rm -rf test/integration/go/bin/*
