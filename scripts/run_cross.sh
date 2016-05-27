@@ -4,6 +4,7 @@
 # Non-zero exit code is caught in the skynet.yaml
 set -x
 
+cd $GOPATH/src/github.com/Workiva/frugal
 frugalDir=$PWD
 
 # Clear old logs
@@ -51,3 +52,7 @@ mvn clean compile -U
 # Run tests
 cd ${frugalDir}
 python test/integration/test.py --retry-count=0
+
+if [ -f ${frugalDir}/test/integration/log/unexpected_failures.log ]; then cp -r ${frugalDir}/test/integration/log/unexpected_failures.log /testing/artifacts/unexpected_failures.log; fi
+tar -czf successful_tests.tar.gz test/integration/log
+mv successful_tests.tar.gz /testing/artifacts/

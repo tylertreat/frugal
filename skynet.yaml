@@ -16,23 +16,11 @@ env:
   - GORACE="halt_on_errors=1"
 
 scripts:
-  # Grab thrift binary
-  - mkdir -p $PWD/bin
-  - wget -O $PWD/bin/thrift https://github.com/stevenosborne-wf/thrift/releases/download/0.9.3-wk-2/thrift-0.9.3-wk-2-linux-amd64 
-  - chmod 0755 $PWD/bin/thrift
-  - export PATH=$PATH:$PWD/bin
-
   - testing=$PWD
-  - mkdir -p $GOPATH/src/github.com/Workiva
-  - cp -r $testing $GOPATH/src/github.com/Workiva/frugal
+  - ./scripts/skynet_setup.sh
 
-  - cd $GOPATH/src/github.com/Workiva/frugal
-  - export GOPATH=$GOPATH:$PWD
-  - godep go install
-
-  - frugal=$PWD
-  - go get -d -t ./lib/go .
-  - go build ./lib/go
+  - export PATH=$PATH:$PWD/bin
+  - frugal=$GOPATH/src/github.com/Workiva/frugal
   - rm -rf $frugal/example/go/gen-go
   - cd $frugal/example
   - frugal --gen go:package_prefix=github.com/Workiva/frugal/example/go/gen-go/ -r --out='go/gen-go' event.frugal
@@ -69,29 +57,13 @@ run:
 image: "docker.webfilings.org/messaging/smithy-runner:2"  #TODO: Update this to the fourHorsemen once it is built
 
 scripts:
-  # Grab thrift binary
-  - mkdir -p $PWD/bin
-  - wget -O $PWD/bin/thrift https://github.com/stevenosborne-wf/thrift/releases/download/0.9.3-wk-2/thrift-0.9.3-wk-2-linux-amd64
-  - chmod 0755 $PWD/bin/thrift
-  - export PATH=$PATH:$PWD/bin
   - testing=$PWD
+  - ./scripts/skynet_setup.sh
 
-  - mkdir -p $GOPATH/src/github.com/Workiva
-  - cp -r $testing $GOPATH/src/github.com/Workiva/frugal
-
-  - cd $GOPATH/src/github.com/Workiva/frugal
-  - frugal=$PWD
-  - export GOPATH=$GOPATH:$PWD
-  - go get -d ./compiler .
-  - go install
-  - go get -d -t ./lib/go .
-  - go build ./lib/go
+  - export PATH=$PATH:$testing/bin
 
   # Catch non-zero exit code and fail after results are uploaded
   - ./scripts/run_cross.sh || code=$?
-  - if [ -f $frugal/test/integration/log/unexpected_failures.log ]; then cp -r $frugal/test/integration/log/unexpected_failures.log /testing/artifacts/unexpected_failures.log; fi
-  - tar -czf successful_tests.tar.gz test/integration/log
-  - mv successful_tests.tar.gz /testing/artifacts/
 
   # If applicable, fail here
   - if [ $code > 0 ]; then exit $code; fi
@@ -116,29 +88,13 @@ run:
 image: "docker.webfilings.org/messaging/smithy-runner:2"  #TODO: Update this to the fourHorsemen once it is built
 
 scripts:
-  # Grab thrift binary
-  - mkdir -p $PWD/bin
-  - wget -O $PWD/bin/thrift https://github.com/stevenosborne-wf/thrift/releases/download/0.9.3-wk-2/thrift-0.9.3-wk-2-linux-amd64
-  - chmod 0755 $PWD/bin/thrift
-  - export PATH=$PATH:$PWD/bin
   - testing=$PWD
+  - ./scripts/skynet_setup.sh
 
-  - mkdir -p $GOPATH/src/github.com/Workiva
-  - cp -r $testing $GOPATH/src/github.com/Workiva/frugal
-
-  - cd $GOPATH/src/github.com/Workiva/frugal
-  - frugal=$PWD
-  - export GOPATH=$GOPATH:$PWD
-  - go get -d ./compiler .
-  - go install
-  - go get -d -t ./lib/go .
-  - go build ./lib/go
+  - export PATH=$PATH:$testing/bin
 
   # Catch non-zero exit code and fail after results are uploaded
   - ./scripts/run_cross.sh -gen_with_frugal || code=$?
-  - if [ -f $frugal/test/integration/log/unexpected_failures.log ]; then cp -r $frugal/test/integration/log/unexpected_failures.log /testing/artifacts/unexpected_failures.log; fi
-  - tar -czf successful_tests.tar.gz test/integration/log
-  - mv successful_tests.tar.gz /testing/artifacts/
 
   # If applicable, fail here
   - if [ $code > 0 ]; then exit $code; fi
