@@ -62,7 +62,7 @@
         "\"-Dexec.mainClass=com.workiva.TestClient\""
       ],
       "extra_args": [
-        "-f=\"java/frugal-integration-test\""
+        "-f=\"java/frugal-integration-test/pom.xml\""
       ]
     },
     "transports": [
