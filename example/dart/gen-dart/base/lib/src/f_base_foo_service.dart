@@ -19,12 +19,16 @@ abstract class FBaseFoo {
 }
 
 class FBaseFooClient implements FBaseFoo {
+  Map<String, frugal.FMethod> methods;
 
-  FBaseFooClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory) {
+  FBaseFooClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware]) {
     _transport = transport;
     _transport.setRegistry(new frugal.FClientRegistry());
     _protocolFactory = protocolFactory;
     _oprot = _protocolFactory.getProtocol(_transport);
+
+    this.methods = {};
+    this.methods['basePing'] = new frugal.FMethod(this._basePing, middleware);
   }
 
   frugal.FTransport _transport;
@@ -33,6 +37,10 @@ class FBaseFooClient implements FBaseFoo {
   frugal.FProtocol get oprot => _oprot;
 
   Future basePing(frugal.FContext ctx) async {
+    return await this.methods['basePing']([ctx]);
+  }
+
+  Future _basePing(frugal.FContext ctx) async {
     var controller = new StreamController();
     var closeSubscription = _transport.onClose.listen((_) {
       controller.addError(new thrift.TTransportError(

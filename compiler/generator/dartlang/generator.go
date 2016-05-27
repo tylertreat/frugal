@@ -550,17 +550,22 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += fmt.Sprintf("class F%sClient implements F%s {\n",
 			servTitle, servTitle)
 	}
-	contents += "\n"
+	contents += tab + "Map<String, frugal.FMethod> methods;\n\n"
 	if service.Extends != "" {
-		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory)\n", servTitle)
+		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware])\n", servTitle)
 		contents += tabtabtab + ": super(transport, protocolFactory) {\n"
 	} else {
-		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory) {\n", servTitle)
+		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware]) {\n", servTitle)
 	}
 	contents += tabtab + "_transport = transport;\n"
 	contents += tabtab + "_transport.setRegistry(new frugal.FClientRegistry());\n"
 	contents += tabtab + "_protocolFactory = protocolFactory;\n"
-	contents += tabtab + "_oprot = _protocolFactory.getProtocol(_transport);\n"
+	contents += tabtab + "_oprot = _protocolFactory.getProtocol(_transport);\n\n"
+	contents += tabtab + "this.methods = {};\n"
+	for _, method := range service.Methods {
+		nameLower := generator.LowercaseFirstLetter(method.Name)
+		contents += fmt.Sprintf(tabtab+"this.methods['%s'] = new frugal.FMethod(this._%s, middleware);\n", nameLower, nameLower)
+	}
 	contents += tab + "}\n\n"
 	contents += tab + "frugal.FTransport _transport;\n"
 	contents += tab + "frugal.FProtocolFactory _protocolFactory;\n"
@@ -583,8 +588,14 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	if method.Comment != nil {
 		contents += g.GenerateInlineComment(method.Comment, tab+"/")
 	}
-	// Generate the calling method
+	// Generate wrapper method
 	contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s) async {\n",
+		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
+	contents += fmt.Sprintf(tabtab+"return await this.methods['%s']([ctx%s]);\n", nameLower, g.generateInputArgsWithoutTypes(method.Arguments))
+	contents += fmt.Sprintf(tab+"}\n\n")
+
+	// Generate the calling method
+	contents += fmt.Sprintf(tab+"Future%s _%s(frugal.FContext ctx%s) async {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
 
 	// No need to register for oneway
@@ -690,6 +701,14 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
 		argStr += ", " + g.getDartTypeFromThriftType(arg.Type) + " " + generator.LowercaseFirstLetter(arg.Name)
+	}
+	return argStr
+}
+
+func (g *Generator) generateInputArgsWithoutTypes(args []*parser.Field) string {
+	argStr := ""
+	for _, arg := range args {
+		argStr += ", " + generator.LowercaseFirstLetter(arg.Name)
 	}
 	return argStr
 }

@@ -7,10 +7,11 @@ dependencies:
   base:
     path: ../base
   frugal:
-    hosted:
-      name: frugal
-      url: https://pub.workiva.org
-    version: ^1.4.1
+    path: ../../../../lib/dart
+#    hosted:
+#      name: frugal
+#      url: https://pub.workiva.org
+#    version: ^1.4.1
   thrift:
     hosted:
       name: thrift

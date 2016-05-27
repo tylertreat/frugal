@@ -11,6 +11,7 @@ import "package:thrift/thrift.dart";
 import "package:uuid/uuid.dart";
 
 part 'src/f_context.dart';
+part 'src/f_middleware.dart';
 part 'src/f_error.dart';
 part 'src/f_protocol_error.dart';
 part 'src/f_provider.dart';

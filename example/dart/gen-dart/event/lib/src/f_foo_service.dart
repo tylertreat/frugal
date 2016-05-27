@@ -31,13 +31,19 @@ abstract class FFoo extends t_base.FBaseFoo {
 /// This is a thrift service. Frugal will generate bindings that include 
 /// a frugal Context for each service call.
 class FFooClient extends t_base.FBaseFooClient implements FFoo {
+  Map<String, frugal.FMethod> methods;
 
-  FFooClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory)
+  FFooClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware])
       : super(transport, protocolFactory) {
     _transport = transport;
     _transport.setRegistry(new frugal.FClientRegistry());
     _protocolFactory = protocolFactory;
     _oprot = _protocolFactory.getProtocol(_transport);
+
+    this.methods = {};
+    this.methods['ping'] = new frugal.FMethod(this._ping, middleware);
+    this.methods['blah'] = new frugal.FMethod(this._blah, middleware);
+    this.methods['oneWay'] = new frugal.FMethod(this._oneWay, middleware);
   }
 
   frugal.FTransport _transport;
@@ -47,6 +53,10 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
 
   /// Ping the server.
   Future ping(frugal.FContext ctx) async {
+    return await this.methods['ping']([ctx]);
+  }
+
+  Future _ping(frugal.FContext ctx) async {
     var controller = new StreamController();
     var closeSubscription = _transport.onClose.listen((_) {
       controller.addError(new thrift.TTransportError(
@@ -98,6 +108,10 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
 
   /// Blah the server.
   Future<int> blah(frugal.FContext ctx, int num, String str, t_event.Event event) async {
+    return await this.methods['blah']([ctx, num, str, event]);
+  }
+
+  Future<int> _blah(frugal.FContext ctx, int num, String str, t_event.Event event) async {
     var controller = new StreamController();
     var closeSubscription = _transport.onClose.listen((_) {
       controller.addError(new thrift.TTransportError(
@@ -167,6 +181,10 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
 
   /// oneway methods don't receive a response from the server.
   Future oneWay(frugal.FContext ctx, int id, Map<int,String> req) async {
+    return await this.methods['oneWay']([ctx, id, req]);
+  }
+
+  Future _oneWay(frugal.FContext ctx, int id, Map<int,String> req) async {
     oprot.writeRequestHeader(ctx);
     oprot.writeMessageBegin(new thrift.TMessage("oneWay", thrift.TMessageType.ONEWAY, 0));
     t_foo_file.oneWay_args args = new t_foo_file.oneWay_args();
