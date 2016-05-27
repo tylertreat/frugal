@@ -10,14 +10,14 @@ class FMethod {
     this._handler = _compose_middleware(f, middleware);
   }
 
-  call(List<Object> args) {
-    Function.apply(this._handler, args);
+  Object call(List<Object> args) {
+    return this._handler(args);
   }
 
   InvocationHandler _compose_middleware(f, List<Middleware> middleware) {
     // TODO create the initial handler
     InvocationHandler handler = (args) {
-      return f(args);
+      return Function.apply(f, args);
     };
 
     if(middleware == null) {
