@@ -363,10 +363,15 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
 	publishers += tab + "frugal.FScopeTransport fTransport;\n"
 	publishers += tab + "frugal.FProtocol fProtocol;\n"
+	publishers += tab + "Map<String, frugal.FMethod> methods;\n"
 
-	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider) {\n", strings.Title(scope.Name))
+	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "fTransport = provider.fTransportFactory.getTransport();\n"
 	publishers += tabtab + "fProtocol = provider.fProtocolFactory.getProtocol(fTransport);\n"
+	publishers += tabtab + "this.methods = new Map();\n"
+	for _, operation := range scope.Operations {
+		publishers += fmt.Sprintf(tabtab+"this.methods['%s'] = new frugal.FMethod(this._publish%s, middleware);\n", operation.Name, operation.Name)
+	}
 	publishers += tab + "}\n\n"
 
 	publishers += tab + "Future open() {\n"
@@ -378,9 +383,11 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += tab + "}\n\n"
 
 	args := ""
+	argsWithoutTypes := ""
 	if len(scope.Prefix.Variables) > 0 {
 		for _, variable := range scope.Prefix.Variables {
 			args = fmt.Sprintf("%sString %s, ", args, variable)
+			argsWithoutTypes = fmt.Sprintf("%s%s, ", argsWithoutTypes, variable)
 		}
 	}
 	prefix := ""
@@ -391,6 +398,10 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
 		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
+		publishers += fmt.Sprintf(tabtab+"return await this.methods['%s']([ctx, %sreq]);\n", op.Name, argsWithoutTypes)
+		publishers += tab + "}\n"
+
+		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
@@ -435,9 +446,10 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += g.GenerateInlineComment(scope.Comment, "/")
 	}
 	subscribers += fmt.Sprintf("class %sSubscriber {\n", strings.Title(scope.Name))
-	subscribers += tab + "final frugal.FScopeProvider provider;\n\n"
+	subscribers += tab + "final frugal.FScopeProvider provider;\n"
+	subscribers += tab + "final List<frugal.Middleware> middleware;\n\n"
 
-	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider) {}\n\n", strings.Title(scope.Name))
+	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider, [this.middleware]) {}\n\n", strings.Title(scope.Name))
 
 	args := ""
 	if len(scope.Prefix.Variables) > 0 {
@@ -465,6 +477,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 		subscribers += fmt.Sprintf(tab+"_recv%s(String op, frugal.FProtocolFactory protocolFactory, dynamic on%s(frugal.FContext ctx, %s req)) {\n",
 			op.Name, op.Type.ParamName(), g.qualifiedTypeName(op.Type))
+		subscribers += fmt.Sprintf(tabtab+"frugal.FMethod method = new frugal.FMethod(on%s, this.middleware);\n", op.Type.ParamName())
 		subscribers += fmt.Sprintf(tabtab+"callback%s(thrift.TTransport transport) {\n", op.Name)
 		subscribers += tabtabtab + "var iprot = protocolFactory.getProtocol(transport);\n"
 		subscribers += tabtabtab + "var ctx = iprot.readRequestHeader();\n"
@@ -478,7 +491,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += fmt.Sprintf(tabtabtab+"var req = new %s();\n", g.qualifiedTypeName(op.Type))
 		subscribers += tabtabtab + "req.read(iprot);\n"
 		subscribers += tabtabtab + "iprot.readMessageEnd();\n"
-		subscribers += fmt.Sprintf(tabtabtab+"on%s(ctx, req);\n", op.Type.ParamName())
+		subscribers += tabtabtab + "method([ctx, req]);\n"
 		subscribers += tabtab + "}\n"
 		subscribers += fmt.Sprintf(tabtab+"return callback%s;\n", op.Name)
 		subscribers += tab + "}\n"

@@ -15,7 +15,6 @@ class FMethod {
   }
 
   InvocationHandler _compose_middleware(f, List<Middleware> middleware) {
-    // TODO create the initial handler
     InvocationHandler handler = (args) {
       return Function.apply(f, args);
     };

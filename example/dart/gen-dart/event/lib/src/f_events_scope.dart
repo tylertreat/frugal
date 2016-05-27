@@ -54,8 +54,9 @@ class EventsPublisher {
 /// variable.
 class EventsSubscriber {
   final frugal.FScopeProvider provider;
+  final List<frugal.Middleware> middleware;
 
-  EventsSubscriber(this.provider) {}
+  EventsSubscriber(this.provider, [this.middleware]) {}
 
   /// This is a docstring.
   Future<frugal.FSubscription> subscribeEventCreated(String user, dynamic onEvent(frugal.FContext ctx, t_event.Event req)) async {
@@ -68,6 +69,7 @@ class EventsSubscriber {
   }
 
   _recvEventCreated(String op, frugal.FProtocolFactory protocolFactory, dynamic onEvent(frugal.FContext ctx, t_event.Event req)) {
+    frugal.FMethod method = new frugal.FMethod(onEvent, []);
     callbackEventCreated(thrift.TTransport transport) {
       var iprot = protocolFactory.getProtocol(transport);
       var ctx = iprot.readRequestHeader();
@@ -81,6 +83,7 @@ class EventsSubscriber {
       var req = new t_event.Event();
       req.read(iprot);
       iprot.readMessageEnd();
+      method([ctx, req]);
       onEvent(ctx, req);
     }
     return callbackEventCreated;
