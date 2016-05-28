@@ -57,7 +57,7 @@
       "exec:java"
     ],
     "client": {
-      "timeout": 13,
+      "timeout": 17,
       "command": [
         "\"-Dexec.mainClass=com.workiva.TestClient\""
       ],

@@ -2026,7 +2026,7 @@ func (g *Generator) getEnumFromThriftType(t *parser.Type) string {
 	case "bool":
 		return "thrift.BOOL"
 	case "byte", "i8":
-		return "thift.BYTE"
+		return "thrift.BYTE"
 	case "i16":
 		return "thrift.I16"
 	case "i32":

@@ -4,6 +4,7 @@
 # Non-zero exit code is caught in the skynet.yaml
 set -x
 
+cd $GOPATH/src/github.com/Workiva/frugal
 frugalDir=$PWD
 
 # Clear old logs
@@ -11,7 +12,11 @@ rm -rf test/integration/log/*
 
 # RM and Generate Go Code
 rm -rf test/integration/go/gen/*
-frugal --gen go:package_prefix=github.com/Workiva/frugal/ -r --out='test/integration/go/gen' test/integration/frugalTest.frugal
+if [ $# -eq 1 ] && [ "$1" == "-gen_with_frugal" ]; then
+    frugal --gen go:package_prefix=github.com/Workiva/frugal/,gen_with_frugal -r --out='test/integration/go/gen' test/integration/frugalTest.frugal
+else
+    frugal --gen go:package_prefix=github.com/Workiva/frugal/ -r --out='test/integration/go/gen' test/integration/frugalTest.frugal
+fi
 
 # Create Go binaries
 rm -rf test/integration/go/bin/*
@@ -47,3 +52,7 @@ mvn clean compile -U
 # Run tests
 cd ${frugalDir}
 python test/integration/test.py --retry-count=0
+
+if [ -f ${frugalDir}/test/integration/log/unexpected_failures.log ]; then cp -r ${frugalDir}/test/integration/log/unexpected_failures.log /testing/artifacts/unexpected_failures.log; fi
+tar -czf successful_tests.tar.gz test/integration/log
+mv successful_tests.tar.gz /testing/artifacts/
