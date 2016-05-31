@@ -55,6 +55,8 @@ source /tmp/frugal/bin/activate
 cd $ROOT/lib/python
 make deps
 make xunit
+make install
+mv dist/frugal-*.whl $ROOT
 
 # Run the generator tests
 cd $ROOT

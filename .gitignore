@@ -33,6 +33,7 @@ skynet.Dockerfile
 unit_tests.xml
 lib/python/frugal.egg-info/
 lib/python/frugalc
+lib/python/dist
 
 # Integration tests
 test/integration/log/*

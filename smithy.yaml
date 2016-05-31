@@ -20,3 +20,5 @@ artifacts:
         - local_cache.tar.gz
     dart_library_pubspec:
         - pubspec.lock
+    pypi:
+        - frugal-*.whl

@@ -37,11 +37,8 @@ unit:
 xunit:
 	nosetests --logging-level=ERROR --with-coverage --cover-package=frugal --with-xunit --xunit-file=unit_tests.xml
 
+install:
+	$(PYTHON) setup.py sdist
+
 test_local:
 	./run_tests_local.sh
-
-setup_example:
-	echo $(HOME)
-	deactivate
-	cd ../../example/python && rmvirtualenv frugal-example && mkvirtualenv frugal-example -a $PWD && pip install -Ur requirements_dev.txt
-	cd $(HOME) && pip install -e .
