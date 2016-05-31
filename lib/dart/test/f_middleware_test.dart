@@ -30,7 +30,8 @@ void main() {
 
   test('no middleware', () {
     MiddlewareTestingService service = new MiddlewareTestingService();
-    FMethod method = new FMethod(service.handleSomething, 'MiddlewareTestingService', 'handleSomething', null);
+    FMethod method = new FMethod(service.handleSomething,
+        'MiddlewareTestingService', 'handleSomething', null);
     expect(method([3, 64, 'foo']), equals(67));
     expect(service.str, equals('foo'));
   });
@@ -42,7 +43,11 @@ void main() {
     MiddlewareTestingService service = new MiddlewareTestingService();
     Middleware middleware1 = newMiddleware(mds1);
     Middleware middleware2 = newMiddleware(mds2);
-    FMethod method = new FMethod(service.handleSomething, 'MiddlewareTestingService', 'handleSomething', [middleware1, middleware2]);
+    FMethod method = new FMethod(
+        service.handleSomething,
+        'MiddlewareTestingService',
+        'handleSomething',
+        [middleware1, middleware2]);
     expect(method([3, 64, 'foo']), equals(69));
     expect(mds1.arg, equals(4));
     expect(mds2.arg, equals(3));

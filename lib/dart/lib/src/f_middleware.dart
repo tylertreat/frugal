@@ -1,6 +1,7 @@
 part of frugal;
 
-typedef Object InvocationHandler(String serviceName, String methodName, List<Object> args);
+typedef Object InvocationHandler(
+    String serviceName, String methodName, List<Object> args);
 typedef InvocationHandler Middleware(InvocationHandler);
 
 class FMethod {
@@ -8,7 +9,8 @@ class FMethod {
   String _methodName;
   InvocationHandler _handler;
 
-  FMethod(dynamic f, String serviceName, String methodName, List<Middleware> middleware) {
+  FMethod(dynamic f, String serviceName, String methodName,
+      List<Middleware> middleware) {
     this._serviceName = serviceName;
     this._methodName = methodName;
     this._handler = _composeMiddleware(f, middleware);
@@ -23,7 +25,7 @@ class FMethod {
       return Function.apply(f, args);
     };
 
-    if(middleware == null) {
+    if (middleware == null) {
       return handler;
     }
     return middleware.fold(handler, (prev, element) => element(prev));
