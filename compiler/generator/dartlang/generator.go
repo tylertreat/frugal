@@ -370,7 +370,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += tabtab + "fProtocol = provider.fProtocolFactory.getProtocol(fTransport);\n"
 	publishers += tabtab + "this.methods = new Map();\n"
 	for _, operation := range scope.Operations {
-		publishers += fmt.Sprintf(tabtab+"this.methods['%s'] = new frugal.FMethod(this._publish%s, middleware);\n", operation.Name, operation.Name)
+		publishers += fmt.Sprintf(tabtab+"this.methods['%s'] = new frugal.FMethod(this._publish%s, '%s', 'publish%s', middleware);\n", operation.Name, operation.Name, strings.Title(scope.Name), operation.Name)
 	}
 	publishers += tab + "}\n\n"
 
@@ -477,7 +477,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 		subscribers += fmt.Sprintf(tab+"_recv%s(String op, frugal.FProtocolFactory protocolFactory, dynamic on%s(frugal.FContext ctx, %s req)) {\n",
 			op.Name, op.Type.ParamName(), g.qualifiedTypeName(op.Type))
-		subscribers += fmt.Sprintf(tabtab+"frugal.FMethod method = new frugal.FMethod(on%s, this.middleware);\n", op.Type.ParamName())
+		subscribers += fmt.Sprintf(tabtab+"frugal.FMethod method = new frugal.FMethod(on%s, '%s', 'subscribe%s', this.middleware);\n", op.Type.ParamName(), strings.Title(scope.Name), op.Type.ParamName())
 		subscribers += fmt.Sprintf(tabtab+"callback%s(thrift.TTransport transport) {\n", op.Name)
 		subscribers += tabtabtab + "var iprot = protocolFactory.getProtocol(transport);\n"
 		subscribers += tabtabtab + "var ctx = iprot.readRequestHeader();\n"
@@ -577,7 +577,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += tabtab + "this.methods = {};\n"
 	for _, method := range service.Methods {
 		nameLower := generator.LowercaseFirstLetter(method.Name)
-		contents += fmt.Sprintf(tabtab+"this.methods['%s'] = new frugal.FMethod(this._%s, middleware);\n", nameLower, nameLower)
+		contents += fmt.Sprintf(tabtab+"this.methods['%s'] = new frugal.FMethod(this._%s, '%s', '%s', middleware);\n", nameLower, nameLower, servTitle, nameLower)
 	}
 	contents += tab + "}\n\n"
 	contents += tab + "frugal.FTransport _transport;\n"

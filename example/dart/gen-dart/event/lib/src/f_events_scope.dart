@@ -84,7 +84,6 @@ class EventsSubscriber {
       req.read(iprot);
       iprot.readMessageEnd();
       method([ctx, req]);
-      onEvent(ctx, req);
     }
     return callbackEventCreated;
   }
