@@ -37,6 +37,21 @@ struct TestBase {
     1: base.thing base_struct,
 }
 
+enum HealthCondition {
+    PASS = 1,
+    WARN = 2,
+    FAIL = 3,
+    UNKNOWN = 4
+}
+
+struct ServiceHealthStatus {
+    1: required string version = "1.0",
+    2: required HealthCondition status = HealthCondition.PASS,
+    3: required base.base_health_condition base_status = base.base_health_condition.FAIL,
+    4: required string message,
+    5: optional map<string,string> metadata,
+}
+
 union TestingUnions {
 	1: id AnID,
 	2: string aString,

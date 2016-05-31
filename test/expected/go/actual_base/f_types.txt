@@ -5,6 +5,8 @@ package actual_base
 
 import (
 	"bytes"
+	"database/sql/driver"
+	"errors"
 	"fmt"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -20,6 +22,72 @@ var GoUnusedProtection__ int
 const ConstI32FromBase = 582
 
 func init() {
+}
+
+type BaseHealthCondition int64
+
+const (
+	BaseHealthCondition_PASS    BaseHealthCondition = 1
+	BaseHealthCondition_WARN    BaseHealthCondition = 2
+	BaseHealthCondition_FAIL    BaseHealthCondition = 3
+	BaseHealthCondition_UNKNOWN BaseHealthCondition = 4
+)
+
+func (p BaseHealthCondition) String() string {
+	switch p {
+	case BaseHealthCondition_PASS:
+		return "PASS"
+	case BaseHealthCondition_WARN:
+		return "WARN"
+	case BaseHealthCondition_FAIL:
+		return "FAIL"
+	case BaseHealthCondition_UNKNOWN:
+		return "UNKNOWN"
+	}
+	return "<UNSET>"
+}
+
+func BaseHealthConditionFromString(s string) (BaseHealthCondition, error) {
+	switch s {
+	case "PASS":
+		return BaseHealthCondition_PASS, nil
+	case "WARN":
+		return BaseHealthCondition_WARN, nil
+	case "FAIL":
+		return BaseHealthCondition_FAIL, nil
+	case "UNKNOWN":
+		return BaseHealthCondition_UNKNOWN, nil
+	}
+	return BaseHealthCondition(0), fmt.Errorf("not a valid BaseHealthCondition string")
+}
+
+func (p BaseHealthCondition) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
+}
+
+func (p *BaseHealthCondition) UnmarshalText(text []byte) error {
+	q, err := BaseHealthConditionFromString(string(text))
+	if err != nil {
+		return err
+	}
+	*p = q
+	return nil
+}
+
+func (p *BaseHealthCondition) Scan(value interface{}) error {
+	v, ok := value.(int64)
+	if !ok {
+		return errors.New("Scan value is not int64")
+	}
+	*p = BaseHealthCondition(v)
+	return nil
+}
+
+func (p *BaseHealthCondition) Value() (driver.Value, error) {
+	if p == nil {
+		return nil, nil
+	}
+	return int64(*p), nil
 }
 
 type Thing struct {
