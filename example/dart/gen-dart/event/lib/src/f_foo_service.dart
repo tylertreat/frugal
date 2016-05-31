@@ -31,7 +31,7 @@ abstract class FFoo extends t_base.FBaseFoo {
 /// This is a thrift service. Frugal will generate bindings that include 
 /// a frugal Context for each service call.
 class FFooClient extends t_base.FBaseFooClient implements FFoo {
-  Map<String, frugal.FMethod> methods;
+  Map<String, frugal.FMethod> _methods;
 
   FFooClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware])
       : super(transport, protocolFactory) {
@@ -40,10 +40,10 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
     _protocolFactory = protocolFactory;
     _oprot = _protocolFactory.getProtocol(_transport);
 
-    this.methods = {};
-    this.methods['ping'] = new frugal.FMethod(this._ping, 'Foo', 'ping', middleware);
-    this.methods['blah'] = new frugal.FMethod(this._blah, 'Foo', 'blah', middleware);
-    this.methods['oneWay'] = new frugal.FMethod(this._oneWay, 'Foo', 'oneWay', middleware);
+    this._methods = {};
+    this._methods['ping'] = new frugal.FMethod(this._ping, 'Foo', 'ping', middleware);
+    this._methods['blah'] = new frugal.FMethod(this._blah, 'Foo', 'blah', middleware);
+    this._methods['oneWay'] = new frugal.FMethod(this._oneWay, 'Foo', 'oneWay', middleware);
   }
 
   frugal.FTransport _transport;
@@ -52,8 +52,8 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
   frugal.FProtocol get oprot => _oprot;
 
   /// Ping the server.
-  Future ping(frugal.FContext ctx) async {
-    return await this.methods['ping']([ctx]);
+  Future ping(frugal.FContext ctx) {
+    return this._methods['ping']([ctx]);
   }
 
   Future _ping(frugal.FContext ctx) async {
@@ -107,8 +107,8 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
   }
 
   /// Blah the server.
-  Future<int> blah(frugal.FContext ctx, int num, String str, t_event.Event event) async {
-    return await this.methods['blah']([ctx, num, str, event]);
+  Future<int> blah(frugal.FContext ctx, int num, String str, t_event.Event event) {
+    return this._methods['blah']([ctx, num, str, event]);
   }
 
   Future<int> _blah(frugal.FContext ctx, int num, String str, t_event.Event event) async {
@@ -180,8 +180,8 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
   }
 
   /// oneway methods don't receive a response from the server.
-  Future oneWay(frugal.FContext ctx, int id, Map<int,String> req) async {
-    return await this.methods['oneWay']([ctx, id, req]);
+  Future oneWay(frugal.FContext ctx, int id, Map<int,String> req) {
+    return this._methods['oneWay']([ctx, id, req]);
   }
 
   Future _oneWay(frugal.FContext ctx, int id, Map<int,String> req) async {

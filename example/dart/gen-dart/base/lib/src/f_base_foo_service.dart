@@ -19,7 +19,7 @@ abstract class FBaseFoo {
 }
 
 class FBaseFooClient implements FBaseFoo {
-  Map<String, frugal.FMethod> methods;
+  Map<String, frugal.FMethod> _methods;
 
   FBaseFooClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware]) {
     _transport = transport;
@@ -27,8 +27,8 @@ class FBaseFooClient implements FBaseFoo {
     _protocolFactory = protocolFactory;
     _oprot = _protocolFactory.getProtocol(_transport);
 
-    this.methods = {};
-    this.methods['basePing'] = new frugal.FMethod(this._basePing, 'BaseFoo', 'basePing', middleware);
+    this._methods = {};
+    this._methods['basePing'] = new frugal.FMethod(this._basePing, 'BaseFoo', 'basePing', middleware);
   }
 
   frugal.FTransport _transport;
@@ -36,8 +36,8 @@ class FBaseFooClient implements FBaseFoo {
   frugal.FProtocol _oprot;
   frugal.FProtocol get oprot => _oprot;
 
-  Future basePing(frugal.FContext ctx) async {
-    return await this.methods['basePing']([ctx]);
+  Future basePing(frugal.FContext ctx) {
+    return this._methods['basePing']([ctx]);
   }
 
   Future _basePing(frugal.FContext ctx) async {

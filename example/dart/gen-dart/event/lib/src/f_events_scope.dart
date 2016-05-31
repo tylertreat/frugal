@@ -19,13 +19,13 @@ const String delimiter = '.';
 class EventsPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
-  Map<String, frugal.FMethod> methods;
+  Map<String, frugal.FMethod> _methods;
 
   EventsPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
     fTransport = provider.fTransportFactory.getTransport();
     fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
-    this.methods = {};
-    this.methods['EventCreated'] = new frugal.FMethod(this._publishEventCreated, 'Events', 'publishEventCreated', middleware);
+    this._methods = {};
+    this._methods['EventCreated'] = new frugal.FMethod(this._publishEventCreated, 'Events', 'publishEventCreated', middleware);
   }
 
   Future open() {
@@ -37,8 +37,8 @@ class EventsPublisher {
   }
 
   /// This is a docstring.
-  Future publishEventCreated(frugal.FContext ctx, String user, t_event.Event req) async {
-    return await this.methods['EventCreated']([ctx, user, req]);
+  Future publishEventCreated(frugal.FContext ctx, String user, t_event.Event req) {
+    return this._methods['EventCreated']([ctx, user, req]);
   }
 
   Future _publishEventCreated(frugal.FContext ctx, String user, t_event.Event req) async {
