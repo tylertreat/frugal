@@ -28,7 +28,7 @@ class FBaseFooClient implements FBaseFoo {
     _oprot = _protocolFactory.getProtocol(_transport);
 
     this.methods = {};
-    this.methods['basePing'] = new frugal.FMethod(this._basePing, middleware);
+    this.methods['basePing'] = new frugal.FMethod(this._basePing, 'BaseFoo', 'basePing', middleware);
   }
 
   frugal.FTransport _transport;

@@ -41,9 +41,9 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
     _oprot = _protocolFactory.getProtocol(_transport);
 
     this.methods = {};
-    this.methods['ping'] = new frugal.FMethod(this._ping, middleware);
-    this.methods['blah'] = new frugal.FMethod(this._blah, middleware);
-    this.methods['oneWay'] = new frugal.FMethod(this._oneWay, middleware);
+    this.methods['ping'] = new frugal.FMethod(this._ping, 'Foo', 'ping', middleware);
+    this.methods['blah'] = new frugal.FMethod(this._blah, 'Foo', 'blah', middleware);
+    this.methods['oneWay'] = new frugal.FMethod(this._oneWay, 'Foo', 'oneWay', middleware);
   }
 
   frugal.FTransport _transport;

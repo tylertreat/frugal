@@ -19,9 +19,12 @@ const String delimiter = '.';
 class EventsPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
-  EventsPublisher(frugal.FScopeProvider provider) {
+  Map<String, frugal.FMethod> methods;
+  EventsPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
     fTransport = provider.fTransportFactory.getTransport();
     fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
+    this.methods = new Map();
+    this.methods['EventCreated'] = new frugal.FMethod(this._publishEventCreated, 'Events', 'publishEventCreated', middleware);
   }
 
   Future open() {
@@ -34,6 +37,9 @@ class EventsPublisher {
 
   /// This is a docstring.
   Future publishEventCreated(frugal.FContext ctx, String user, t_event.Event req) async {
+    return await this.methods['EventCreated']([ctx, user, req]);
+  }
+  Future _publishEventCreated(frugal.FContext ctx, String user, t_event.Event req) async {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
@@ -54,9 +60,9 @@ class EventsPublisher {
 /// variable.
 class EventsSubscriber {
   final frugal.FScopeProvider provider;
-  final List<frugal.Middleware> middleware;
+  final List<frugal.Middleware> _middleware;
 
-  EventsSubscriber(this.provider, [this.middleware]) {}
+  EventsSubscriber(this.provider, [this._middleware]) {}
 
   /// This is a docstring.
   Future<frugal.FSubscription> subscribeEventCreated(String user, dynamic onEvent(frugal.FContext ctx, t_event.Event req)) async {
@@ -69,7 +75,7 @@ class EventsSubscriber {
   }
 
   _recvEventCreated(String op, frugal.FProtocolFactory protocolFactory, dynamic onEvent(frugal.FContext ctx, t_event.Event req)) {
-    frugal.FMethod method = new frugal.FMethod(onEvent, []);
+    frugal.FMethod method = new frugal.FMethod(onEvent, 'Events', 'subscribeEvent', this._middleware);
     callbackEventCreated(thrift.TTransport transport) {
       var iprot = protocolFactory.getProtocol(transport);
       var ctx = iprot.readRequestHeader();
