@@ -56,7 +56,7 @@ cd $ROOT/lib/python
 make deps
 make xunit
 make install
-mv dist/frugal-*.whl $ROOT
+mv dist/frugal-*.tar.gz $ROOT
 
 # Run the generator tests
 cd $ROOT

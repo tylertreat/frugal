@@ -21,4 +21,4 @@ artifacts:
     dart_library_pubspec:
         - pubspec.lock
     pypi:
-        - frugal-*.whl
+        - frugal-*.tar.gz
