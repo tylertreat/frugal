@@ -57,12 +57,12 @@
       "exec:java"
     ],
     "client": {
-      "timeout": 13,
+      "timeout": 17,
       "command": [
         "\"-Dexec.mainClass=com.workiva.TestClient\""
       ],
       "extra_args": [
-        "-f=\"java/frugal-integration-test\""
+        "-f=\"java/frugal-integration-test/pom.xml\""
       ]
     },
     "transports": [
