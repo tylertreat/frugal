@@ -363,12 +363,12 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
 	publishers += tab + "frugal.FScopeTransport fTransport;\n"
 	publishers += tab + "frugal.FProtocol fProtocol;\n"
-	publishers += tab + "Map<String, frugal.FMethod> methods;\n"
+	publishers += tab + "Map<String, frugal.FMethod> methods;\n\n"
 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "fTransport = provider.fTransportFactory.getTransport();\n"
 	publishers += tabtab + "fProtocol = provider.fProtocolFactory.getProtocol(fTransport);\n"
-	publishers += tabtab + "this.methods = new Map();\n"
+	publishers += tabtab + "this.methods = {};\n"
 	for _, operation := range scope.Operations {
 		publishers += fmt.Sprintf(tabtab+"this.methods['%s'] = new frugal.FMethod(this._publish%s, '%s', 'publish%s', middleware);\n",
 			operation.Name, operation.Name, strings.Title(scope.Name), operation.Name)
@@ -400,7 +400,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		}
 		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 		publishers += fmt.Sprintf(tabtab+"return await this.methods['%s']([ctx, %sreq]);\n", op.Name, argsWithoutTypes)
-		publishers += tab + "}\n"
+		publishers += tab + "}\n\n"
 
 		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
