@@ -16,13 +16,13 @@ const String delimiter = '.';
 class BlahPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
-  Map<String, frugal.FMethod> methods;
+  Map<String, frugal.FMethod> _methods;
 
   BlahPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
     fTransport = provider.fTransportFactory.getTransport();
     fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
-    this.methods = {};
-    this.methods['DoStuff'] = new frugal.FMethod(this._publishDoStuff, 'Blah', 'publishDoStuff', middleware);
+    this._methods = {};
+    this._methods['DoStuff'] = new frugal.FMethod(this._publishDoStuff, 'Blah', 'publishDoStuff', middleware);
   }
 
   Future open() {
@@ -33,8 +33,8 @@ class BlahPublisher {
     return fTransport.close();
   }
 
-  Future publishDoStuff(frugal.FContext ctx, t_valid.Thing req) async {
-    return await this.methods['DoStuff']([ctx, req]);
+  Future publishDoStuff(frugal.FContext ctx, t_valid.Thing req) {
+    return this._methods['DoStuff']([ctx, req]);
   }
 
   Future _publishDoStuff(frugal.FContext ctx, t_valid.Thing req) async {

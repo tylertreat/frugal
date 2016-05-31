@@ -29,7 +29,7 @@ abstract class FBlah {
 }
 
 class FBlahClient implements FBlah {
-  Map<String, frugal.FMethod> methods;
+  Map<String, frugal.FMethod> _methods;
 
   FBlahClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware]) {
     _transport = transport;
@@ -37,11 +37,11 @@ class FBlahClient implements FBlah {
     _protocolFactory = protocolFactory;
     _oprot = _protocolFactory.getProtocol(_transport);
 
-    this.methods = {};
-    this.methods['ping'] = new frugal.FMethod(this._ping, 'Blah', 'ping', middleware);
-    this.methods['bleh'] = new frugal.FMethod(this._bleh, 'Blah', 'bleh', middleware);
-    this.methods['getThing'] = new frugal.FMethod(this._getThing, 'Blah', 'getThing', middleware);
-    this.methods['getMyInt'] = new frugal.FMethod(this._getMyInt, 'Blah', 'getMyInt', middleware);
+    this._methods = {};
+    this._methods['ping'] = new frugal.FMethod(this._ping, 'Blah', 'ping', middleware);
+    this._methods['bleh'] = new frugal.FMethod(this._bleh, 'Blah', 'bleh', middleware);
+    this._methods['getThing'] = new frugal.FMethod(this._getThing, 'Blah', 'getThing', middleware);
+    this._methods['getMyInt'] = new frugal.FMethod(this._getMyInt, 'Blah', 'getMyInt', middleware);
   }
 
   frugal.FTransport _transport;
@@ -50,8 +50,8 @@ class FBlahClient implements FBlah {
   frugal.FProtocol get oprot => _oprot;
 
   /// Use this to ping the server.
-  Future ping(frugal.FContext ctx) async {
-    return await this.methods['ping']([ctx]);
+  Future ping(frugal.FContext ctx) {
+    return this._methods['ping']([ctx]);
   }
 
   Future _ping(frugal.FContext ctx) async {
@@ -105,8 +105,8 @@ class FBlahClient implements FBlah {
   }
 
   /// Use this to tell the sever how you feel.
-  Future<int> bleh(frugal.FContext ctx, t_valid.Thing one, t_valid.Stuff two, List<int> custom_ints) async {
-    return await this.methods['bleh']([ctx, one, two, custom_ints]);
+  Future<int> bleh(frugal.FContext ctx, t_valid.Thing one, t_valid.Stuff two, List<int> custom_ints) {
+    return this._methods['bleh']([ctx, one, two, custom_ints]);
   }
 
   Future<int> _bleh(frugal.FContext ctx, t_valid.Thing one, t_valid.Stuff two, List<int> custom_ints) async {
@@ -173,8 +173,8 @@ class FBlahClient implements FBlah {
     return blehCallback;
   }
 
-  Future<t_validStructs.Thing> getThing(frugal.FContext ctx) async {
-    return await this.methods['getThing']([ctx]);
+  Future<t_validStructs.Thing> getThing(frugal.FContext ctx) {
+    return this._methods['getThing']([ctx]);
   }
 
   Future<t_validStructs.Thing> _getThing(frugal.FContext ctx) async {
@@ -234,8 +234,8 @@ class FBlahClient implements FBlah {
     return getThingCallback;
   }
 
-  Future<int> getMyInt(frugal.FContext ctx) async {
-    return await this.methods['getMyInt']([ctx]);
+  Future<int> getMyInt(frugal.FContext ctx) {
+    return this._methods['getMyInt']([ctx]);
   }
 
   Future<int> _getMyInt(frugal.FContext ctx) async {

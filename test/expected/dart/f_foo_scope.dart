@@ -17,14 +17,14 @@ const String delimiter = '.';
 class FooPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
-  Map<String, frugal.FMethod> methods;
+  Map<String, frugal.FMethod> _methods;
 
   FooPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
     fTransport = provider.fTransportFactory.getTransport();
     fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
-    this.methods = {};
-    this.methods['Foo'] = new frugal.FMethod(this._publishFoo, 'Foo', 'publishFoo', middleware);
-    this.methods['Bar'] = new frugal.FMethod(this._publishBar, 'Foo', 'publishBar', middleware);
+    this._methods = {};
+    this._methods['Foo'] = new frugal.FMethod(this._publishFoo, 'Foo', 'publishFoo', middleware);
+    this._methods['Bar'] = new frugal.FMethod(this._publishBar, 'Foo', 'publishBar', middleware);
   }
 
   Future open() {
@@ -36,8 +36,8 @@ class FooPublisher {
   }
 
   /// This is an operation docstring.
-  Future publishFoo(frugal.FContext ctx, String baz, t_valid.Thing req) async {
-    return await this.methods['Foo']([ctx, baz, req]);
+  Future publishFoo(frugal.FContext ctx, String baz, t_valid.Thing req) {
+    return this._methods['Foo']([ctx, baz, req]);
   }
 
   Future _publishFoo(frugal.FContext ctx, String baz, t_valid.Thing req) async {
@@ -55,8 +55,8 @@ class FooPublisher {
   }
 
 
-  Future publishBar(frugal.FContext ctx, String baz, t_valid.Stuff req) async {
-    return await this.methods['Bar']([ctx, baz, req]);
+  Future publishBar(frugal.FContext ctx, String baz, t_valid.Stuff req) {
+    return this._methods['Bar']([ctx, baz, req]);
   }
 
   Future _publishBar(frugal.FContext ctx, String baz, t_valid.Stuff req) async {

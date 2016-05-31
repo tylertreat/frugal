@@ -363,14 +363,14 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
 	publishers += tab + "frugal.FScopeTransport fTransport;\n"
 	publishers += tab + "frugal.FProtocol fProtocol;\n"
-	publishers += tab + "Map<String, frugal.FMethod> methods;\n\n"
+	publishers += tab + "Map<String, frugal.FMethod> _methods;\n\n"
 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "fTransport = provider.fTransportFactory.getTransport();\n"
 	publishers += tabtab + "fProtocol = provider.fProtocolFactory.getProtocol(fTransport);\n"
-	publishers += tabtab + "this.methods = {};\n"
+	publishers += tabtab + "this._methods = {};\n"
 	for _, operation := range scope.Operations {
-		publishers += fmt.Sprintf(tabtab+"this.methods['%s'] = new frugal.FMethod(this._publish%s, '%s', 'publish%s', middleware);\n",
+		publishers += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._publish%s, '%s', 'publish%s', middleware);\n",
 			operation.Name, operation.Name, strings.Title(scope.Name), operation.Name)
 	}
 	publishers += tab + "}\n\n"
@@ -398,8 +398,8 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		if op.Comment != nil {
 			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
-		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
-		publishers += fmt.Sprintf(tabtab+"return await this.methods['%s']([ctx, %sreq]);\n", op.Name, argsWithoutTypes)
+		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) {\n", op.Name, args, g.qualifiedTypeName(op.Type))
+		publishers += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx, %sreq]);\n", op.Name, argsWithoutTypes)
 		publishers += tab + "}\n\n"
 
 		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
@@ -565,7 +565,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += fmt.Sprintf("class F%sClient implements F%s {\n",
 			servTitle, servTitle)
 	}
-	contents += tab + "Map<String, frugal.FMethod> methods;\n\n"
+	contents += tab + "Map<String, frugal.FMethod> _methods;\n\n"
 	if service.Extends != "" {
 		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware])\n", servTitle)
 		contents += tabtabtab + ": super(transport, protocolFactory) {\n"
@@ -576,10 +576,10 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += tabtab + "_transport.setRegistry(new frugal.FClientRegistry());\n"
 	contents += tabtab + "_protocolFactory = protocolFactory;\n"
 	contents += tabtab + "_oprot = _protocolFactory.getProtocol(_transport);\n\n"
-	contents += tabtab + "this.methods = {};\n"
+	contents += tabtab + "this._methods = {};\n"
 	for _, method := range service.Methods {
 		nameLower := generator.LowercaseFirstLetter(method.Name)
-		contents += fmt.Sprintf(tabtab+"this.methods['%s'] = new frugal.FMethod(this._%s, '%s', '%s', middleware);\n",
+		contents += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._%s, '%s', '%s', middleware);\n",
 			nameLower, nameLower, servTitle, nameLower)
 	}
 	contents += tab + "}\n\n"
@@ -605,9 +605,9 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += g.GenerateInlineComment(method.Comment, tab+"/")
 	}
 	// Generate wrapper method
-	contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s) async {\n",
+	contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s) {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
-	contents += fmt.Sprintf(tabtab+"return await this.methods['%s']([ctx%s]);\n", nameLower, g.generateInputArgsWithoutTypes(method.Arguments))
+	contents += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx%s]);\n", nameLower, g.generateInputArgsWithoutTypes(method.Arguments))
 	contents += fmt.Sprintf(tab+"}\n\n")
 
 	// Generate the calling method
