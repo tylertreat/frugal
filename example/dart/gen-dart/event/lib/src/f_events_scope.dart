@@ -20,10 +20,11 @@ class EventsPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
   Map<String, frugal.FMethod> methods;
+
   EventsPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
     fTransport = provider.fTransportFactory.getTransport();
     fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
-    this.methods = new Map();
+    this.methods = {};
     this.methods['EventCreated'] = new frugal.FMethod(this._publishEventCreated, 'Events', 'publishEventCreated', middleware);
   }
 
@@ -39,6 +40,7 @@ class EventsPublisher {
   Future publishEventCreated(frugal.FContext ctx, String user, t_event.Event req) async {
     return await this.methods['EventCreated']([ctx, user, req]);
   }
+
   Future _publishEventCreated(frugal.FContext ctx, String user, t_event.Event req) async {
     var op = "EventCreated";
     var prefix = "foo.${user}.";

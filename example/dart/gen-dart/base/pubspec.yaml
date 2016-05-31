@@ -5,11 +5,10 @@ environment:
   sdk: ^1.12.0
 dependencies:
   frugal:
-    path: ../../../../lib/dart
-#    hosted:
-#      name: frugal
-#      url: https://pub.workiva.org
-#    version: ^1.4.1
+    hosted:
+      name: frugal
+      url: https://pub.workiva.org
+    version: ^1.4.1
   thrift:
     hosted:
       name: thrift
