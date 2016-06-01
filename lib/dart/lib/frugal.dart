@@ -7,6 +7,7 @@ import "dart:math";
 import "dart:typed_data";
 
 import "package:logging/logging.dart";
+import "package:http/http.dart" as http;
 import "package:thrift/thrift.dart";
 import "package:uuid/uuid.dart";
 
@@ -25,6 +26,7 @@ part 'src/transport/f_scope_transport.dart';
 part 'src/transport/f_scope_transport_factory.dart';
 part 'src/transport/f_transport.dart';
 part 'src/transport/t_framed_transport.dart';
+part 'src/transport/f_http_transport.dart';
 part 'src/transport/f_mux_transport.dart';
 part 'src/transport/t_memory_transport.dart';
 part 'src/transport/f_transport_monitor.dart';
