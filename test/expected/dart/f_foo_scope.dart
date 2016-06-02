@@ -17,9 +17,14 @@ const String delimiter = '.';
 class FooPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
-  FooPublisher(frugal.FScopeProvider provider) {
+  Map<String, frugal.FMethod> _methods;
+
+  FooPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
     fTransport = provider.fTransportFactory.getTransport();
     fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
+    this._methods = {};
+    this._methods['Foo'] = new frugal.FMethod(this._publishFoo, 'Foo', 'publishFoo', middleware);
+    this._methods['Bar'] = new frugal.FMethod(this._publishBar, 'Foo', 'publishBar', middleware);
   }
 
   Future open() {
@@ -31,7 +36,11 @@ class FooPublisher {
   }
 
   /// This is an operation docstring.
-  Future publishFoo(frugal.FContext ctx, String baz, t_valid.Thing req) async {
+  Future publishFoo(frugal.FContext ctx, String baz, t_valid.Thing req) {
+    return this._methods['Foo']([ctx, baz, req]);
+  }
+
+  Future _publishFoo(frugal.FContext ctx, String baz, t_valid.Thing req) async {
     var op = "Foo";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
@@ -46,7 +55,11 @@ class FooPublisher {
   }
 
 
-  Future publishBar(frugal.FContext ctx, String baz, t_valid.Stuff req) async {
+  Future publishBar(frugal.FContext ctx, String baz, t_valid.Stuff req) {
+    return this._methods['Bar']([ctx, baz, req]);
+  }
+
+  Future _publishBar(frugal.FContext ctx, String baz, t_valid.Stuff req) async {
     var op = "Bar";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
@@ -65,8 +78,9 @@ class FooPublisher {
 /// And this is a scope docstring.
 class FooSubscriber {
   final frugal.FScopeProvider provider;
+  final List<frugal.Middleware> _middleware;
 
-  FooSubscriber(this.provider) {}
+  FooSubscriber(this.provider, [this._middleware]) {}
 
   /// This is an operation docstring.
   Future<frugal.FSubscription> subscribeFoo(String baz, dynamic onThing(frugal.FContext ctx, t_valid.Thing req)) async {
@@ -79,6 +93,7 @@ class FooSubscriber {
   }
 
   _recvFoo(String op, frugal.FProtocolFactory protocolFactory, dynamic onThing(frugal.FContext ctx, t_valid.Thing req)) {
+    frugal.FMethod method = new frugal.FMethod(onThing, 'Foo', 'subscribeThing', this._middleware);
     callbackFoo(thrift.TTransport transport) {
       var iprot = protocolFactory.getProtocol(transport);
       var ctx = iprot.readRequestHeader();
@@ -92,7 +107,7 @@ class FooSubscriber {
       var req = new t_valid.Thing();
       req.read(iprot);
       iprot.readMessageEnd();
-      onThing(ctx, req);
+      method([ctx, req]);
     }
     return callbackFoo;
   }
@@ -108,6 +123,7 @@ class FooSubscriber {
   }
 
   _recvBar(String op, frugal.FProtocolFactory protocolFactory, dynamic onStuff(frugal.FContext ctx, t_valid.Stuff req)) {
+    frugal.FMethod method = new frugal.FMethod(onStuff, 'Foo', 'subscribeStuff', this._middleware);
     callbackBar(thrift.TTransport transport) {
       var iprot = protocolFactory.getProtocol(transport);
       var ctx = iprot.readRequestHeader();
@@ -121,7 +137,7 @@ class FooSubscriber {
       var req = new t_valid.Stuff();
       req.read(iprot);
       iprot.readMessageEnd();
-      onStuff(ctx, req);
+      method([ctx, req]);
     }
     return callbackBar;
   }

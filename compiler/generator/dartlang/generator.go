@@ -363,10 +363,16 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
 	publishers += tab + "frugal.FScopeTransport fTransport;\n"
 	publishers += tab + "frugal.FProtocol fProtocol;\n"
+	publishers += tab + "Map<String, frugal.FMethod> _methods;\n\n"
 
-	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider) {\n", strings.Title(scope.Name))
+	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "fTransport = provider.fTransportFactory.getTransport();\n"
 	publishers += tabtab + "fProtocol = provider.fProtocolFactory.getProtocol(fTransport);\n"
+	publishers += tabtab + "this._methods = {};\n"
+	for _, operation := range scope.Operations {
+		publishers += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._publish%s, '%s', 'publish%s', middleware);\n",
+			operation.Name, operation.Name, strings.Title(scope.Name), operation.Name)
+	}
 	publishers += tab + "}\n\n"
 
 	publishers += tab + "Future open() {\n"
@@ -378,9 +384,11 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += tab + "}\n\n"
 
 	args := ""
+	argsWithoutTypes := ""
 	if len(scope.Prefix.Variables) > 0 {
 		for _, variable := range scope.Prefix.Variables {
 			args = fmt.Sprintf("%sString %s, ", args, variable)
+			argsWithoutTypes = fmt.Sprintf("%s%s, ", argsWithoutTypes, variable)
 		}
 	}
 	prefix := ""
@@ -390,7 +398,11 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		if op.Comment != nil {
 			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
-		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
+		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) {\n", op.Name, args, g.qualifiedTypeName(op.Type))
+		publishers += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx, %sreq]);\n", op.Name, argsWithoutTypes)
+		publishers += tab + "}\n\n"
+
+		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
@@ -435,9 +447,10 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += g.GenerateInlineComment(scope.Comment, "/")
 	}
 	subscribers += fmt.Sprintf("class %sSubscriber {\n", strings.Title(scope.Name))
-	subscribers += tab + "final frugal.FScopeProvider provider;\n\n"
+	subscribers += tab + "final frugal.FScopeProvider provider;\n"
+	subscribers += tab + "final List<frugal.Middleware> _middleware;\n\n"
 
-	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider) {}\n\n", strings.Title(scope.Name))
+	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider, [this._middleware]) {}\n\n", strings.Title(scope.Name))
 
 	args := ""
 	if len(scope.Prefix.Variables) > 0 {
@@ -465,6 +478,8 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 		subscribers += fmt.Sprintf(tab+"_recv%s(String op, frugal.FProtocolFactory protocolFactory, dynamic on%s(frugal.FContext ctx, %s req)) {\n",
 			op.Name, op.Type.ParamName(), g.qualifiedTypeName(op.Type))
+		subscribers += fmt.Sprintf(tabtab+"frugal.FMethod method = new frugal.FMethod(on%s, '%s', 'subscribe%s', this._middleware);\n",
+			op.Type.ParamName(), strings.Title(scope.Name), op.Type.ParamName())
 		subscribers += fmt.Sprintf(tabtab+"callback%s(thrift.TTransport transport) {\n", op.Name)
 		subscribers += tabtabtab + "var iprot = protocolFactory.getProtocol(transport);\n"
 		subscribers += tabtabtab + "var ctx = iprot.readRequestHeader();\n"
@@ -478,7 +493,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += fmt.Sprintf(tabtabtab+"var req = new %s();\n", g.qualifiedTypeName(op.Type))
 		subscribers += tabtabtab + "req.read(iprot);\n"
 		subscribers += tabtabtab + "iprot.readMessageEnd();\n"
-		subscribers += fmt.Sprintf(tabtabtab+"on%s(ctx, req);\n", op.Type.ParamName())
+		subscribers += tabtabtab + "method([ctx, req]);\n"
 		subscribers += tabtab + "}\n"
 		subscribers += fmt.Sprintf(tabtab+"return callback%s;\n", op.Name)
 		subscribers += tab + "}\n"
@@ -550,17 +565,23 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += fmt.Sprintf("class F%sClient implements F%s {\n",
 			servTitle, servTitle)
 	}
-	contents += "\n"
+	contents += tab + "Map<String, frugal.FMethod> _methods;\n\n"
 	if service.Extends != "" {
-		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory)\n", servTitle)
+		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware])\n", servTitle)
 		contents += tabtabtab + ": super(transport, protocolFactory) {\n"
 	} else {
-		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory) {\n", servTitle)
+		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware]) {\n", servTitle)
 	}
 	contents += tabtab + "_transport = transport;\n"
 	contents += tabtab + "_transport.setRegistry(new frugal.FClientRegistry());\n"
 	contents += tabtab + "_protocolFactory = protocolFactory;\n"
-	contents += tabtab + "_oprot = _protocolFactory.getProtocol(_transport);\n"
+	contents += tabtab + "_oprot = _protocolFactory.getProtocol(_transport);\n\n"
+	contents += tabtab + "this._methods = {};\n"
+	for _, method := range service.Methods {
+		nameLower := generator.LowercaseFirstLetter(method.Name)
+		contents += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._%s, '%s', '%s', middleware);\n",
+			nameLower, nameLower, servTitle, nameLower)
+	}
 	contents += tab + "}\n\n"
 	contents += tab + "frugal.FTransport _transport;\n"
 	contents += tab + "frugal.FProtocolFactory _protocolFactory;\n"
@@ -583,8 +604,14 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	if method.Comment != nil {
 		contents += g.GenerateInlineComment(method.Comment, tab+"/")
 	}
+	// Generate wrapper method
+	contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s) {\n",
+		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
+	contents += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx%s]);\n", nameLower, g.generateInputArgsWithoutTypes(method.Arguments))
+	contents += fmt.Sprintf(tab+"}\n\n")
+
 	// Generate the calling method
-	contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s) async {\n",
+	contents += fmt.Sprintf(tab+"Future%s _%s(frugal.FContext ctx%s) async {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
 
 	// No need to register for oneway
@@ -690,6 +717,14 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
 		argStr += ", " + g.getDartTypeFromThriftType(arg.Type) + " " + generator.LowercaseFirstLetter(arg.Name)
+	}
+	return argStr
+}
+
+func (g *Generator) generateInputArgsWithoutTypes(args []*parser.Field) string {
+	argStr := ""
+	for _, arg := range args {
+		argStr += ", " + generator.LowercaseFirstLetter(arg.Name)
 	}
 	return argStr
 }

@@ -26,6 +26,17 @@ class EventUI {
 
   event.FFooClient _fFooClient;
 
+  frugal.Middleware loggingMiddleware() {
+    return (frugal.InvocationHandler next) {
+      return (String serviceName, String methodName, List<Object> args) {
+        print("==== CALLING $serviceName.$methodName ====");
+        var ret = next(serviceName, methodName, args);
+        print("==== CALLED  $serviceName.$methodName ====");
+        return ret;
+      };
+    };
+  }
+
   void start() {
     _buildInterface();
     _initConnection();
