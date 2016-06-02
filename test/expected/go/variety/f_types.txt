@@ -86,6 +86,72 @@ func init() {
 type ID int64
 type Int int32
 type Request map[Int]string
+type HealthCondition int64
+
+const (
+	HealthCondition_PASS    HealthCondition = 1
+	HealthCondition_WARN    HealthCondition = 2
+	HealthCondition_FAIL    HealthCondition = 3
+	HealthCondition_UNKNOWN HealthCondition = 4
+)
+
+func (p HealthCondition) String() string {
+	switch p {
+	case HealthCondition_PASS:
+		return "PASS"
+	case HealthCondition_WARN:
+		return "WARN"
+	case HealthCondition_FAIL:
+		return "FAIL"
+	case HealthCondition_UNKNOWN:
+		return "UNKNOWN"
+	}
+	return "<UNSET>"
+}
+
+func HealthConditionFromString(s string) (HealthCondition, error) {
+	switch s {
+	case "PASS":
+		return HealthCondition_PASS, nil
+	case "WARN":
+		return HealthCondition_WARN, nil
+	case "FAIL":
+		return HealthCondition_FAIL, nil
+	case "UNKNOWN":
+		return HealthCondition_UNKNOWN, nil
+	}
+	return HealthCondition(0), fmt.Errorf("not a valid HealthCondition string")
+}
+
+func (p HealthCondition) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
+}
+
+func (p *HealthCondition) UnmarshalText(text []byte) error {
+	q, err := HealthConditionFromString(string(text))
+	if err != nil {
+		return err
+	}
+	*p = q
+	return nil
+}
+
+func (p *HealthCondition) Scan(value interface{}) error {
+	v, ok := value.(int64)
+	if !ok {
+		return errors.New("Scan value is not int64")
+	}
+	*p = HealthCondition(v)
+	return nil
+}
+
+func (p *HealthCondition) Value() (driver.Value, error) {
+	if p == nil {
+		return nil, nil
+	}
+	return int64(*p), nil
+}
+
 type ItsAnEnum int64
 
 const (
@@ -377,22 +443,24 @@ func (p *Event) String() string {
 }
 
 type TestingDefaults struct {
-	ID2       ID                 `thrift:"ID2,1" db:"ID2" json:"ID2,omitempty"`
-	Ev1       *Event             `thrift:"ev1,2" db:"ev1" json:"ev1"`
-	Ev2       *Event             `thrift:"ev2,3" db:"ev2" json:"ev2"`
-	ID        ID                 `thrift:"ID,4" db:"ID" json:"ID"`
-	Thing     string             `thrift:"thing,5" db:"thing" json:"thing"`
-	Thing2    string             `thrift:"thing2,6" db:"thing2" json:"thing2,omitempty"`
-	Listfield []int32            `thrift:"listfield,7" db:"listfield" json:"listfield"`
-	ID3       ID                 `thrift:"ID3,8" db:"ID3" json:"ID3"`
-	BinField  []byte             `thrift:"bin_field,9" db:"bin_field" json:"bin_field"`
-	BinField2 []byte             `thrift:"bin_field2,10" db:"bin_field2" json:"bin_field2,omitempty"`
-	BinField3 []byte             `thrift:"bin_field3,11" db:"bin_field3" json:"bin_field3"`
-	BinField4 []byte             `thrift:"bin_field4,12" db:"bin_field4" json:"bin_field4,omitempty"`
-	List2     *[]int32           `thrift:"list2,13" db:"list2" json:"list2,omitempty"`
-	List3     []int32            `thrift:"list3,14" db:"list3" json:"list3,omitempty"`
-	List4     []int32            `thrift:"list4,15" db:"list4" json:"list4"`
-	AMap      *map[string]string `thrift:"a_map,16" db:"a_map" json:"a_map,omitempty"`
+	ID2        ID                              `thrift:"ID2,1" db:"ID2" json:"ID2,omitempty"`
+	Ev1        *Event                          `thrift:"ev1,2" db:"ev1" json:"ev1"`
+	Ev2        *Event                          `thrift:"ev2,3" db:"ev2" json:"ev2"`
+	ID         ID                              `thrift:"ID,4" db:"ID" json:"ID"`
+	Thing      string                          `thrift:"thing,5" db:"thing" json:"thing"`
+	Thing2     string                          `thrift:"thing2,6" db:"thing2" json:"thing2,omitempty"`
+	Listfield  []int32                         `thrift:"listfield,7" db:"listfield" json:"listfield"`
+	ID3        ID                              `thrift:"ID3,8" db:"ID3" json:"ID3"`
+	BinField   []byte                          `thrift:"bin_field,9" db:"bin_field" json:"bin_field"`
+	BinField2  []byte                          `thrift:"bin_field2,10" db:"bin_field2" json:"bin_field2,omitempty"`
+	BinField3  []byte                          `thrift:"bin_field3,11" db:"bin_field3" json:"bin_field3"`
+	BinField4  []byte                          `thrift:"bin_field4,12" db:"bin_field4" json:"bin_field4,omitempty"`
+	List2      *[]int32                        `thrift:"list2,13" db:"list2" json:"list2,omitempty"`
+	List3      []int32                         `thrift:"list3,14" db:"list3" json:"list3,omitempty"`
+	List4      []int32                         `thrift:"list4,15" db:"list4" json:"list4"`
+	AMap       *map[string]string              `thrift:"a_map,16" db:"a_map" json:"a_map,omitempty"`
+	Status     HealthCondition                 `thrift:"status,17,required" db:"status" json:"status"`
+	BaseStatus actual_base.BaseHealthCondition `thrift:"base_status,18,required" db:"base_status" json:"base_status"`
 }
 
 func NewTestingDefaults() *TestingDefaults {
@@ -416,6 +484,8 @@ func NewTestingDefaults() *TestingDefaults {
 			3,
 			6,
 		},
+		Status:     1,
+		BaseStatus: 3,
 	}
 }
 
@@ -564,10 +634,21 @@ func (p *TestingDefaults) GetAMap() map[string]string {
 	return *p.AMap
 }
 
+func (p *TestingDefaults) GetStatus() HealthCondition {
+	return p.Status
+}
+
+func (p *TestingDefaults) GetBaseStatus() actual_base.BaseHealthCondition {
+	return p.BaseStatus
+}
+
 func (p *TestingDefaults) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
 	}
+
+	issetStatus := false
+	issetBaseStatus := false
 
 	for {
 		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
@@ -642,6 +723,16 @@ func (p *TestingDefaults) Read(iprot thrift.TProtocol) error {
 			if err := p.ReadField16(iprot); err != nil {
 				return err
 			}
+		case 17:
+			if err := p.ReadField17(iprot); err != nil {
+				return err
+			}
+			issetStatus = true
+		case 18:
+			if err := p.ReadField18(iprot); err != nil {
+				return err
+			}
+			issetBaseStatus = true
 		default:
 			if err := iprot.Skip(fieldTypeId); err != nil {
 				return err
@@ -653,6 +744,12 @@ func (p *TestingDefaults) Read(iprot thrift.TProtocol) error {
 	}
 	if err := iprot.ReadStructEnd(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	if !issetStatus {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Status is not set"))
+	}
+	if !issetBaseStatus {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field BaseStatus is not set"))
 	}
 	return nil
 }
@@ -870,6 +967,26 @@ func (p *TestingDefaults) ReadField16(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *TestingDefaults) ReadField17(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI32(); err != nil {
+		return thrift.PrependError("error reading field 17: ", err)
+	} else {
+		temp := HealthCondition(v)
+		p.Status = temp
+	}
+	return nil
+}
+
+func (p *TestingDefaults) ReadField18(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI32(); err != nil {
+		return thrift.PrependError("error reading field 18: ", err)
+	} else {
+		temp := actual_base.BaseHealthCondition(v)
+		p.BaseStatus = temp
+	}
+	return nil
+}
+
 func (p *TestingDefaults) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("TestingDefaults"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
@@ -920,6 +1037,12 @@ func (p *TestingDefaults) Write(oprot thrift.TProtocol) error {
 		return err
 	}
 	if err := p.writeField16(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField17(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField18(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -1192,6 +1315,32 @@ func (p *TestingDefaults) writeField16(oprot thrift.TProtocol) error {
 		if err := oprot.WriteFieldEnd(); err != nil {
 			return thrift.PrependError(fmt.Sprintf("%T write field end error 16:a_map: ", p), err)
 		}
+	}
+	return nil
+}
+
+func (p *TestingDefaults) writeField17(oprot thrift.TProtocol) error {
+	if err := oprot.WriteFieldBegin("status", thrift.I32, 17); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 17:status: ", p), err)
+	}
+	if err := oprot.WriteI32(int32(p.Status)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.status (17) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 17:status: ", p), err)
+	}
+	return nil
+}
+
+func (p *TestingDefaults) writeField18(oprot thrift.TProtocol) error {
+	if err := oprot.WriteFieldBegin("base_status", thrift.I32, 18); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 18:base_status: ", p), err)
+	}
+	if err := oprot.WriteI32(int32(p.BaseStatus)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.base_status (18) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 18:base_status: ", p), err)
 	}
 	return nil
 }

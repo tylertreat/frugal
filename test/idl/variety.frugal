@@ -37,6 +37,13 @@ struct TestBase {
     1: base.thing base_struct,
 }
 
+enum HealthCondition {
+    PASS = 1,
+    WARN = 2,
+    FAIL = 3,
+    UNKNOWN = 4
+}
+
 union TestingUnions {
 	1: id AnID,
 	2: string aString,
@@ -74,6 +81,8 @@ struct TestingDefaults {
     14: optional list<int> list3,
     15: list<int> list4 = [1,2,3,6],
     16: optional map<string, string> a_map = {"k1": "v1", "k2": "v2"},
+    17: required HealthCondition status = HealthCondition.PASS,
+    18: required base.base_health_condition base_status = base.base_health_condition.FAIL,
 }
 
 enum ItsAnEnum {
