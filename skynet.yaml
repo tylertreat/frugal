@@ -4,7 +4,7 @@ run:
   when-branch-name-is:
     - .+
 
-image: "drydock.workiva.org/workiva/skynet-images:47305"
+image: "drydock.workiva.org/workiva/skynet-images:48052"
 
 also-run:
   Workiva/messaging-sdk:go-tests:
@@ -54,7 +54,7 @@ run:
   when-branch-name-is:
     - .+
 
-image: "drydock.workiva.org/workiva/skynet-images:47305"
+image: "drydock.workiva.org/workiva/skynet-images:48052"
 
 scripts:
   - testing=$PWD
@@ -85,7 +85,7 @@ run:
   when-branch-name-is:
     - .+
 
-image: "drydock.workiva.org/workiva/skynet-images:47305"
+image: "drydock.workiva.org/workiva/skynet-images:48052"
 
 scripts:
   - testing=$PWD
