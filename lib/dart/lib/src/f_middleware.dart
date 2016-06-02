@@ -15,6 +15,7 @@ typedef Object InvocationHandler(
 typedef InvocationHandler Middleware(InvocationHandler);
 
 /// FMethod contains an InvocationHandler used to proxy the given service method
+/// This should only be used by generated code.
 class FMethod {
   String _serviceName;
   String _methodName;
