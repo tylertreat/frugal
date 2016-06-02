@@ -3,7 +3,7 @@ package frugal
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/binary"
+	"fmt"
 	"net/http"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -13,45 +13,30 @@ import (
 func NewFrugalHandlerFunc(processor FProcessor, inPfactory, outPfactory *FProtocolFactory) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/x-thrift")
-		buf := make([]byte, 4)
-		decoder := base64.NewDecoder(base64.StdEncoding, r.Body)
-
-		// Read and discard frame size
-		n := 0
-		for n < 4 {
-			if p, err := decoder.Read(buf[n:]); err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			} else {
-				n += p
-			}
-		}
+		w.Header().Add("Content-Type", "application/x-frugal")
 
 		// Read and process frame
+		decoder := base64.NewDecoder(base64.StdEncoding, r.Body)
 		input := thrift.NewStreamTransportR(decoder)
 		outBuf := new(bytes.Buffer)
 		output := &thrift.TMemoryBuffer{Buffer: outBuf}
 		if err := processor.Process(inPfactory.GetProtocol(input), outPfactory.GetProtocol(output)); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Frugal request failed %s", err)))
 			return
 		}
 
 		// Encode and send response
-		outBytes := outBuf.Bytes()
-		binary.BigEndian.PutUint32(buf, uint32(len(outBytes)))
 		encoded := new(bytes.Buffer)
 		encoder := base64.NewEncoder(base64.StdEncoding, encoded)
-		if _, err := encoder.Write(buf); err != nil {
+		if _, err := encoder.Write(outBuf.Bytes()); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if _, err := encoder.Write(outBytes); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("Problem encoding frugal bytes to base64 %s", err)))
 			return
 		}
 		if err := encoder.Close(); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("Problem encoding frugal bytes to base64 %s", err)))
 			return
 		}
 		w.Write(encoded.Bytes())

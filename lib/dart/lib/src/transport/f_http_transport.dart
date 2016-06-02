@@ -1,31 +1,23 @@
 part of frugal;
 
-/// FMultiplexedTransport is a multiplexed Transport that routes frames to the
-/// correct callbacks.
+/// FHttpTransport is a FTransport that makes frugal requests via http.
 class FHttpTransport extends FTransport {
   final Logger log = new Logger('FHttpTransport');
   final List<int> _writeBuffer = [];
   final http.Client httpClient;
-  final THttpConfig config;
+  final FHttpConfig config;
   FRegistry _registry;
 
   FHttpTransport(this.httpClient, this.config) {}
 
   @override
-  bool get isOpen => _transport.isOpen && _registry != null;
+  bool get isOpen => _registry != null;
 
   @override
   Future open() => new Future.value();
 
   @override
-  Future close() => closeWithException(null);
-
-  // TODO: Throw error if direct read
-
-  Future closeWithException(cause) async {
-    await _transport.close();
-    await _signalClose(cause);
-  }
+  Future close() => new Future.value();
 
   @override
   void setRegistry(FRegistry registry) {
@@ -67,31 +59,51 @@ class FHttpTransport extends FTransport {
 
   @override
   Future flush() async {
-    Uint8List bytes = new Uint8List(4 + _writeBuffer.length);
-    bytes.buffer.asByteData().setUint32(0, _writeBuffer.length);
-    bytes.setAll(4, _writeBuffer);
+    var requestBody = BASE64.encode(_writeBuffer);
     _writeBuffer.clear();
-    var requestBody = BASE64.encode(bytes);
 
-    // Use a sync completer to ensure that the buffer can be read immediately
-    // after the read buffer is set, and avoid a race condition where another
-    // response could overwrite the read buffer.
-    var completer = new Completer.sync();
+    http.Response response;
+    response = await httpClient.post(config.url,
+        headers: config.headers, body: requestBody);
+    if (response.statusCode >= 300) {
+      throw new TTransportError(TTransportErrorType.UNKNOWN, response.body);
+    }
 
-    httpClient
-        .post(config.url, headers: config.headers, body: requestBody)
-        .then((response) {
-      Uint8List data;
-      try {
-        data = new Uint8List.fromList(BASE64.decode(response.body));
-      } on FormatException catch (_) {
-        throw new TProtocolError(TProtocolErrorType.INVALID_DATA,
-            "Expected a Base 64 encoded string.");
-      }
-      completer.complete();
-      _registry.execute(data.sublist(4));
-    });
+    Uint8List data;
+    try {
+      data = new Uint8List.fromList(BASE64.decode(response.body));
+    } on FormatException catch (_) {
+      throw new TProtocolError(TProtocolErrorType.INVALID_DATA,
+          "Expected a Base 64 encoded string.");
+    }
+    _registry.execute(data);
+  }
+}
 
-    return completer.future;
+class FHttpConfig {
+  final Uri url;
+
+  Map<String, String> _headers;
+  get headers => _headers;
+
+  FHttpConfig(this.url, Map<String, String> headers) {
+    if (url == null || !url.hasAuthority) {
+      throw new ArgumentError("Invalid url");
+    }
+
+    _initHeaders(headers);
+  }
+
+  void _initHeaders(Map<String, String> initial) {
+    var h = {};
+
+    if (initial != null) {
+      h.addAll(initial);
+    }
+
+    h['Content-Type'] = 'application/x-frugal';
+    h['Accept'] = 'application/x-frugal';
+
+    _headers = new Map.unmodifiable(h);
   }
 }
