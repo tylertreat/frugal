@@ -21,8 +21,10 @@ func NewFrugalHandlerFunc(processor FProcessor, inPfactory, outPfactory *FProtoc
 		outBuf := new(bytes.Buffer)
 		output := &thrift.TMemoryBuffer{Buffer: outBuf}
 		if err := processor.Process(inPfactory.GetProtocol(input), outPfactory.GetProtocol(output)); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(fmt.Sprintf("Frugal request failed %s", err)))
+			http.Error(w,
+				fmt.Sprintf("Frugal request failed %s", err),
+				http.StatusBadRequest,
+			)
 			return
 		}
 
@@ -30,13 +32,17 @@ func NewFrugalHandlerFunc(processor FProcessor, inPfactory, outPfactory *FProtoc
 		encoded := new(bytes.Buffer)
 		encoder := base64.NewEncoder(base64.StdEncoding, encoded)
 		if _, err := encoder.Write(outBuf.Bytes()); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(fmt.Sprintf("Problem encoding frugal bytes to base64 %s", err)))
+			http.Error(w,
+				fmt.Sprintf("Problem encoding frugal bytes to base64 %s", err),
+				http.StatusInternalServerError,
+			)
 			return
 		}
 		if err := encoder.Close(); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(fmt.Sprintf("Problem encoding frugal bytes to base64 %s", err)))
+			http.Error(w,
+				fmt.Sprintf("Problem encoding frugal bytes to base64 %s", err),
+				http.StatusInternalServerError,
+			)
 			return
 		}
 		w.Write(encoded.Bytes())

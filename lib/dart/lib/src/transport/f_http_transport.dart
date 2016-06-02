@@ -80,6 +80,8 @@ class FHttpTransport extends FTransport {
   }
 }
 
+/// FHttpConfig wraps request configuration information,
+/// such as server URL and request headers.
 class FHttpConfig {
   final Uri url;
 
