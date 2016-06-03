@@ -257,7 +257,7 @@ func (n *FNatsServer) startHeartbeat() {
 			if err := n.conn.Publish(n.heartbeatSubject, nil); err != nil {
 				log.Errorf("frugal: error publishing heartbeat:", err.Error())
 			}
-			if err := n.conn.FlushTimeout(n.heartbeatInterval * 3/ 4); err != nil {
+			if err := n.conn.FlushTimeout(n.heartbeatInterval * 3 / 4); err != nil {
 				log.Errorf("frugal: error flushing heartbeat:", err.Error())
 			}
 		case <-n.quit:
