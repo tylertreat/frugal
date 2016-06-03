@@ -27,7 +27,7 @@ abstract class FRegistry {
   void register(FContext ctx, FAsyncCallback callback);
 
   /// Unregister a callback for the given Context.
-  void unregister(Context);
+  void unregister(FContext);
 
   /// Dispatch a single Frugal message frame.
   void execute(Uint8List);

@@ -1,14 +1,14 @@
 part of frugal;
 
-/// FHttpTransport is a FTransport that makes frugal requests via http.
-class FHttpTransport extends FTransport {
+/// FHttpClientTransport is a client FTransport that makes frugal requests via http.
+class FHttpClientTransport extends FTransport {
   final Logger log = new Logger('FHttpTransport');
   final List<int> _writeBuffer = [];
   final http.Client httpClient;
   final FHttpConfig config;
   FRegistry _registry;
 
-  FHttpTransport(this.httpClient, this.config) {}
+  FHttpClientTransport(this.httpClient, this.config) {}
 
   @override
   bool get isOpen => _registry != null;
