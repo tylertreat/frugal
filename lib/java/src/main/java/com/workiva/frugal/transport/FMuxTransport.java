@@ -105,8 +105,8 @@ public class FMuxTransport extends FTransport {
         close(null);
     }
 
-    private synchronized void close(Exception cause) {
-        if (!isOpen()) {
+    protected synchronized void close(Exception cause) {
+        if (isCleanClose(cause) && !isOpen()) {
             return;
         }
         framedTransport.close();
