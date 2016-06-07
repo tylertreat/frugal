@@ -17,6 +17,7 @@ class BlahPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
   Map<String, frugal.FMethod> _methods;
+  Completer _completer = null;
 
   BlahPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
     fTransport = provider.fTransportFactory.getTransport();
@@ -38,6 +39,10 @@ class BlahPublisher {
   }
 
   Future _publishDoStuff(frugal.FContext ctx, t_valid.Thing req) async {
+    if (_completer != null) {
+      await _completer.future;
+    }
+    _completer = new Completer();
     var op = "DoStuff";
     var prefix = "";
     var topic = "${prefix}Blah${delimiter}${op}";
@@ -49,6 +54,7 @@ class BlahPublisher {
     req.write(oprot);
     oprot.writeMessageEnd();
     await oprot.transport.flush();
+    _completer.complete();
   }
 }
 
