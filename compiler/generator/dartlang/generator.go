@@ -363,7 +363,8 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
 	publishers += tab + "frugal.FScopeTransport fTransport;\n"
 	publishers += tab + "frugal.FProtocol fProtocol;\n"
-	publishers += tab + "Map<String, frugal.FMethod> _methods;\n\n"
+	publishers += tab + "Map<String, frugal.FMethod> _methods;\n"
+	publishers += tab + "Completer _completer = null;\n\n"
 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "fTransport = provider.fTransportFactory.getTransport();\n"
@@ -403,6 +404,11 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += tab + "}\n\n"
 
 		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
+
+		publishers += tabtab + "if (_completer != null) {\n"
+		publishers += tabtabtab + "await _completer.future;\n"
+		publishers += tabtab + "}\n"
+		publishers += tabtab + "_completer = new Completer();\n"
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
@@ -414,6 +420,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += tabtab + "req.write(oprot);\n"
 		publishers += tabtab + "oprot.writeMessageEnd();\n"
 		publishers += tabtab + "await oprot.transport.flush();\n"
+		publishers += tabtab + "_completer.complete();\n"
 		publishers += tab + "}\n"
 	}
 
