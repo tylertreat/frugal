@@ -244,9 +244,10 @@ func (n *FNatsServer) remove(heartbeat string) {
 }
 
 func (n *FNatsServer) startHeartbeat() {
+	hbTicker := time.NewTicker(n.heartbeatInterval)
 	for {
 		select {
-		case <-time.After(n.heartbeatInterval):
+		case <-hbTicker.C:
 			n.mu.Lock()
 			clients := len(n.clients)
 			n.mu.Unlock()
@@ -255,6 +256,9 @@ func (n *FNatsServer) startHeartbeat() {
 			}
 			if err := n.conn.Publish(n.heartbeatSubject, nil); err != nil {
 				log.Errorf("frugal: error publishing heartbeat:", err.Error())
+			}
+			if err := n.conn.FlushTimeout(n.heartbeatInterval * 3 / 4); err != nil {
+				log.Errorf("frugal: error flushing heartbeat:", err.Error())
 			}
 		case <-n.quit:
 			return
