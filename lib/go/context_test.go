@@ -41,7 +41,8 @@ func TestOpID(t *testing.T) {
 func TestRequestHeader(t *testing.T) {
 	corid := "fooid"
 	ctx := NewFContext(corid)
-	ctx.AddRequestHeader("foo", "bar")
+	assert.Equal(t, ctx, ctx.AddRequestHeader("foo", "bar"))
+	assert.Equal(t, ctx, ctx.AddRequestHeader("_cid", "123"))
 	val, ok := ctx.RequestHeader("foo")
 	assert.True(t, ok)
 	assert.Equal(t, "bar", val)
@@ -55,7 +56,8 @@ func TestRequestHeader(t *testing.T) {
 func TestResponseHeader(t *testing.T) {
 	corid := "fooid"
 	ctx := NewFContext(corid)
-	ctx.AddResponseHeader("foo", "bar")
+	assert.Equal(t, ctx, ctx.AddResponseHeader("foo", "bar"))
+	assert.Equal(t, ctx, ctx.AddResponseHeader("_opid", "1"))
 	val, ok := ctx.ResponseHeader("foo")
 	assert.True(t, ok)
 	assert.Equal(t, "bar", val)

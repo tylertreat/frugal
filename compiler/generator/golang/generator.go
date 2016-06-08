@@ -193,7 +193,19 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 				}
 			}
 		} else if len(pieces) == 2 {
-			// From an include
+			// Either from an include, or part of an enum
+			for _, enum := range g.Frugal.Thrift.Enums {
+				if pieces[0] == enum.Name {
+					for _, value := range enum.Values {
+						if pieces[1] == value.Name {
+							return fmt.Sprintf("%d", value.Value)
+						}
+					}
+					panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))
+				}
+			}
+
+			// If not part of an enum, it's from an include
 			include, ok := g.Frugal.ParsedIncludes[pieces[0]]
 			if !ok {
 				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
@@ -201,6 +213,22 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 			for _, constant := range include.Thrift.Constants {
 				if pieces[1] == constant.Name {
 					return g.generateConstantValue(t, constant.Value)
+				}
+			}
+		} else if len(pieces) == 3 {
+			// enum from an include
+			include, ok := g.Frugal.ParsedIncludes[pieces[0]]
+			if !ok {
+				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
+			}
+			for _, enum := range include.Thrift.Enums {
+				if pieces[1] == enum.Name {
+					for _, value := range enum.Values {
+						if pieces[2] == value.Name {
+							return fmt.Sprintf("%d", value.Value)
+						}
+					}
+					panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))
 				}
 			}
 		}

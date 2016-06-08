@@ -105,8 +105,8 @@ public class FMuxTransport extends FTransport {
         close(null);
     }
 
-    private synchronized void close(Exception cause) {
-        if (registry == null) {
+    protected synchronized void close(Exception cause) {
+        if (isCleanClose(cause) && !isOpen()) {
             return;
         }
         framedTransport.close();
@@ -114,13 +114,30 @@ public class FMuxTransport extends FTransport {
         for (WorkerThread workerThread : workerThreads) {
             workerThread.kill();
         }
-        if (cause == null) {
+        if (isCleanClose(cause)) {
             LOGGER.info("transport closed");
         } else {
             LOGGER.info("transport closed with cause: " + cause.getMessage());
         }
         signalClose(cause);
         registry.close();
+    }
+
+    /**
+     * Determines if the transport close caused by the given exception was a "clean" close, i.e. the exception is null
+     * (closed by user) or it's a TTransportException.END_OF_FILE (remote peer closed).
+     *
+     * @param cause exception which caused the close
+     * @return true if the close was clean, false if not
+     */
+    private boolean isCleanClose(Exception cause) {
+        if (cause == null) {
+            return true;
+        }
+        if (cause instanceof TTransportException) {
+            return ((TTransportException) cause).getType() == TTransportException.END_OF_FILE;
+        }
+        return false;
     }
 
     public int read(byte[] var1, int var2, int var3) throws TTransportException {

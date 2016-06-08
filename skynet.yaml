@@ -4,7 +4,7 @@ run:
   when-branch-name-is:
     - .+
 
-image: "drydock.workiva.org/workiva/skynet-images:33350"
+image: "drydock.workiva.org/workiva/skynet-images:48052"
 
 also-run:
   Workiva/messaging-sdk:go-tests:
@@ -54,7 +54,7 @@ run:
   when-branch-name-is:
     - .+
 
-image: "docker.webfilings.org/messaging/smithy-runner:2"  #TODO: Update this to the fourHorsemen once it is built
+image: "drydock.workiva.org/workiva/skynet-images:48052"
 
 scripts:
   - testing=$PWD
@@ -85,7 +85,7 @@ run:
   when-branch-name-is:
     - .+
 
-image: "docker.webfilings.org/messaging/smithy-runner:2"  #TODO: Update this to the fourHorsemen once it is built
+image: "drydock.workiva.org/workiva/skynet-images:48052"
 
 scripts:
   - testing=$PWD

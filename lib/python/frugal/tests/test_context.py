@@ -26,14 +26,14 @@ class TestContext(unittest.TestCase):
 
     def test_request_header(self):
         context = FContext(self.correlation_id)
-        context.set_request_header("foo", "bar")
+        self.assertEqual(context, context.set_request_header("foo", "bar"))
         self.assertEqual("bar", context.get_request_header("foo"))
         self.assertEqual(self.correlation_id,
                          context.get_request_header("_cid"))
 
     def test_response_header(self):
         context = FContext(self.correlation_id)
-        context.set_response_header("foo", "bar")
+        self.assertEqual(context, context.set_response_header("foo", "bar"))
         self.assertEqual("bar", context.get_response_header("foo"))
         self.assertEqual(self.correlation_id,
                          context.get_request_header("_cid"))

@@ -2,6 +2,7 @@ package integration
 
 import (
 	"reflect"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -12,7 +13,7 @@ import (
 	"github.com/Workiva/frugal/lib/go"
 )
 
-const addr = "localhost:4535"
+const defaultAddr = "localhost:4535"
 
 func newMiddleware(called chan<- bool) frugal.ServiceMiddleware {
 	return func(next frugal.InvocationHandler) frugal.InvocationHandler {
@@ -36,12 +37,15 @@ func TestBasic(t *testing.T) {
 	}
 	fTransportFactory := frugal.NewFMuxTransportFactory(2)
 
+	startPort := 4536
 	for _, protoFactory := range protoFactories {
-		testBasic(t, protoFactory, fTransportFactory)
+		addr := "localhost:" + strconv.Itoa(startPort)
+		startPort++
+		testBasic(t, protoFactory, fTransportFactory, addr)
 	}
 }
 
-func testBasic(t *testing.T, protoFactory thrift.TProtocolFactory, fTransportFactory frugal.FTransportFactory) {
+func testBasic(t *testing.T, protoFactory thrift.TProtocolFactory, fTransportFactory frugal.FTransportFactory, addr string) {
 	// Setup server.
 	serverMiddlewareCalled := make(chan bool, 1)
 	processor := event.NewFFooProcessor(&FooHandler{}, newMiddleware(serverMiddlewareCalled))
