@@ -11,7 +11,7 @@ from nats.io.client import Client as NATS
 from frugal.processor.processor_factory import FProcessorFactory
 from frugal.protocol.protocol_factory import FProtocolFactory
 from frugal.server import FNatsTornadoServer
-from frugal.transport import FMuxTornadoTransportFactory
+from frugal.transport.tornado import FMuxTornadoTransportFactory
 
 from event.f_Foo import Iface, Processor as FFooProcessor
 

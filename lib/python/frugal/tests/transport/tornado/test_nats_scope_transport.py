@@ -6,7 +6,7 @@ from tornado.testing import gen_test, AsyncTestCase
 from thrift.transport.TTransport import TTransportException
 
 from frugal.exceptions import FException, FMessageSizeException
-from frugal.transport.nats_scope_transport import FNatsScopeTransport
+from frugal.transport.tornado.nats_scope_transport import FNatsScopeTransport
 
 
 class TestFNatsScopeTransport(AsyncTestCase):
