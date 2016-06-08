@@ -63,8 +63,12 @@ class FHttpClientTransport extends FTransport {
     _writeBuffer.clear();
 
     http.Response response;
-    response = await httpClient.post(config.url,
-        headers: config.headers, body: requestBody);
+    try {
+      response = await httpClient.post(config.url,
+          headers: config.headers, body: requestBody);
+    } catch (e) {
+      throw new TTransportError(TTransportErrorType.UNKNOWN, e.toString());
+    }
     if (response.statusCode >= 300) {
       throw new TTransportError(TTransportErrorType.UNKNOWN, response.body);
     }

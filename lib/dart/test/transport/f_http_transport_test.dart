@@ -21,7 +21,7 @@ void main() {
     FHttpClientTransport transport;
 
     setUp(() {
-      client = new FakeHttpClient(sync: false);
+      client = new FakeHttpClient();
       var config = new FHttpConfig(Uri.parse('http://localhost'), {});
       transport = new FHttpClientTransport(client, config);
       registry = new FakeFRegistry();
@@ -57,6 +57,29 @@ void main() {
       client.postResponse = '`';
       transport.writeAll(utf8Codec.encode('my request'));
       expect(transport.flush(), throwsA(new isInstanceOf<TProtocolError>()));
+    });
+  });
+
+  group('FHttpClientTransport http post failed', () {
+    FakeHttpClient client;
+    FakeFRegistry registry;
+    FHttpClientTransport transport;
+
+    setUp(() {
+      client = new FakeHttpClient(err: new StateError("baa!"));
+      var config = new FHttpConfig(Uri.parse('http://localhost'), {});
+      transport = new FHttpClientTransport(client, config);
+      registry = new FakeFRegistry();
+      transport.setRegistry(registry);
+    });
+
+    test('Test transport receives error', () async {
+      var expectedText = 'my response';
+      var expectedBytes = utf8Codec.encode(expectedText);
+      client.postResponse = BASE64.encode(expectedBytes);
+
+      transport.writeAll(utf8Codec.encode('my request'));
+      expect(transport.flush(), throwsA(new isInstanceOf<TTransportError>()));
     });
   });
 
@@ -106,11 +129,14 @@ class FakeHttpClient implements Client {
 
   final bool sync;
   final int code;
+  final Error err;
 
-  FakeHttpClient({this.code: 200, this.sync: false});
+  FakeHttpClient({this.code: 200, this.sync: false, this.err: null});
 
   Future<Response> post(url,
       {Map<String, String> headers, body, Encoding encoding}) {
+    if (err != null) throw err;
+
     postRequest = body;
     var response = new Response(postResponse, code);
 
