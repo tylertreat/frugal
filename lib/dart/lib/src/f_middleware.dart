@@ -4,7 +4,7 @@ part of frugal;
 /// returns the result. The arguments should match the arity of the proxied
 /// method, and have the same types. The first argument will always be the
 /// FContext.
-typedef Object InvocationHandler(
+typedef Future InvocationHandler(
     String serviceName, String methodName, List<Object> args);
 
 /// Middleware is used to implement interceptor logic around API calls. This can
@@ -30,7 +30,7 @@ class FMethod {
 
   /// Call invokes the proxied InvocationHandler with the given arguments
   /// and returns the results.
-  Object call(List<Object> args) {
+  Future call(List<Object> args) {
     return this._handler(this._serviceName, this._methodName, args);
   }
 
