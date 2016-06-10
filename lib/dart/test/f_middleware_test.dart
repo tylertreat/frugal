@@ -1,11 +1,13 @@
+import "dart:async";
+
 import "package:frugal/frugal.dart";
 import "package:test/test.dart";
 
 class MiddlewareTestingService {
   String str;
-  int handleSomething(int first, int second, String str) {
+  Future<int> handleSomething(int first, int second, String str) {
     this.str = str;
-    return first + second;
+    return new Future.value(first + second);
   }
 }
 
@@ -28,15 +30,15 @@ void main() {
     };
   }
 
-  test('no middleware', () {
+  test('no middleware', () async {
     MiddlewareTestingService service = new MiddlewareTestingService();
     FMethod method = new FMethod(service.handleSomething,
         'MiddlewareTestingService', 'handleSomething', null);
-    expect(method([3, 64, 'foo']), equals(67));
+    expect(await method([3, 64, 'foo']), equals(67));
     expect(service.str, equals('foo'));
   });
 
-  test('middleware', () {
+  test('middleware', () async {
     MiddlewareDataStruct mds1 = new MiddlewareDataStruct();
     MiddlewareDataStruct mds2 = new MiddlewareDataStruct();
 
@@ -48,7 +50,7 @@ void main() {
         'MiddlewareTestingService',
         'handleSomething',
         [middleware1, middleware2]);
-    expect(method([3, 64, 'foo']), equals(69));
+    expect(await method([3, 64, 'foo']), equals(69));
     expect(mds1.arg, equals(4));
     expect(mds2.arg, equals(3));
     expect(mds1.serviceName, equals('MiddlewareTestingService'));
