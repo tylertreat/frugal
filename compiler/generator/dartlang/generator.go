@@ -100,15 +100,6 @@ func (g *Generator) createExport(structName string) string {
 
 func (g *Generator) TeardownGenerator() error { return nil }
 
-func (g *Generator) dartfmtFile(objName string, outputDir string) {
-	filename := fmt.Sprintf("f_%s.dart", toFileName(objName))
-	path := filepath.Join(outputDir, filename)
-	cmd := exec.Command("dartfmt", "-w", path)
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("unable to format %s\n", path)
-	}
-}
-
 func (g *Generator) GetOutputDir(dir string) string {
 	if pkg, ok := g.Frugal.Thrift.Namespace(lang); ok {
 		dir = filepath.Join(dir, toLibraryName(pkg))
