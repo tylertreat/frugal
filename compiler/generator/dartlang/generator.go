@@ -3,7 +3,6 @@ package dartlang
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -1428,7 +1427,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s) {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
 	contents += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx%s]);\n", nameLower, g.generateInputArgsWithoutTypes(method.Arguments))
-	contents += fmt.Sprintf(tab+"}\n\n")
+	contents += fmt.Sprintf(tab + "}\n\n")
 
 	// Generate the calling method
 	contents += fmt.Sprintf(tab+"Future%s _%s(frugal.FContext ctx%s) async {\n",
