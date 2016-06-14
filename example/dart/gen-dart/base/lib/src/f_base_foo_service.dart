@@ -10,7 +10,7 @@ import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
 
 import 'package:base/base.dart' as t_base;
-import 'base_foo.dart' as t_base_foo_file;
+import 'f_base_foo_structs.dart' as t_base_foo_file;
 
 
 abstract class FBaseFoo {
