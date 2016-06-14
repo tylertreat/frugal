@@ -81,11 +81,12 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 		contents += g.createExport(enum.Name)
 	}
 
-	if _, err := file.WriteString(contents); err != nil {
+	if err := g.GenerateDocStringComment(file); err != nil {
 		return err
 	}
 
-	return nil
+	_, err = file.WriteString(contents)
+	return err
 }
 
 func (g *Generator) createExport(structName string) string {
