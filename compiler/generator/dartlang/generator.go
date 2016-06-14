@@ -63,8 +63,13 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 		return err
 	}
 	defer file.Close()
+
+	if err := g.GenerateDocStringComment(file); err != nil {
+		return err
+	}
+
 	contents := ""
-	contents += fmt.Sprintf("library %s;\n\n", libraryName)
+	contents += fmt.Sprintf("\n\nlibrary %s;\n\n", libraryName)
 
 	constantsName := fmt.Sprintf("%sConstants", strings.Title(libraryName))
 	contents += g.createExport(constantsName)
@@ -79,10 +84,6 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 	}
 	for _, enum := range g.Frugal.Thrift.Enums {
 		contents += g.createExport(enum.Name)
-	}
-
-	if err := g.GenerateDocStringComment(file); err != nil {
-		return err
 	}
 
 	_, err = file.WriteString(contents)
