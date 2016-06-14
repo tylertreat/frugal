@@ -52,14 +52,12 @@ func NewFrugalHandlerFunc(processor FProcessor, inPfactory, outPfactory *FProtoc
 		}
 
 		// If client requested a limit, check the buffer size
-		if limit > 0 {
-			if outBuf.Len() > int(limit) {
-				http.Error(w,
-					fmt.Sprintf("Response size (%d) larger than requested size (%d)", outBuf.Len(), limit),
-					http.StatusRequestEntityTooLarge,
-				)
-				return
-			}
+		if limit > 0 && outBuf.Len() > int(limit) {
+			http.Error(w,
+				fmt.Sprintf("Response size (%d) larger than requested size (%d)", outBuf.Len(), limit),
+				http.StatusRequestEntityTooLarge,
+			)
+			return
 		}
 
 		// Encode and send response
