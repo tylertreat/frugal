@@ -588,7 +588,7 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 	// Fields
 	for _, field := range s.Fields {
 		if field.Comment != nil {
-			contents += g.GenerateInlineComment(field.Comment, "/")
+			contents += g.GenerateInlineComment(field.Comment, tab+"/")
 		}
 		contents += fmt.Sprintf(tab+"%s _%s;\n", g.getDartTypeFromThriftType(field.Type), toFieldName(field.Name))
 		contents += fmt.Sprintf(tab+"static const int %s = %d;\n", strings.ToUpper(field.Name), field.ID)
@@ -761,7 +761,7 @@ func (g *Generator) generateRead(s *parser.Struct) string {
 func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind string) string {
 	contents := ""
 
-	prefix := "this."
+	prefix := ""
 	dartType := g.getDartTypeFromThriftType(field.Type)
 	if !first {
 		prefix = dartType + " "
@@ -892,11 +892,6 @@ func (g *Generator) generateWrite(s *parser.Struct) string {
 func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind string) string {
 	contents := ""
 
-	prefix := ""
-	if first {
-		prefix = "this."
-	}
-
 	fName := toFieldName(field.Name)
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	isEnum := g.Frugal.IsEnum(underlyingType)
@@ -904,32 +899,32 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 		write := tabtab + ind + "oprot.write"
 		switch underlyingType.Name {
 		case "bool":
-			write += "Bool(%s%s);\n"
+			write += "Bool(%s);\n"
 		case "byte", "i8":
-			write += "Byte(%s%s);\n"
+			write += "Byte(%s);\n"
 		case "i16":
-			write += "I16(%s%s);\n"
+			write += "I16(%s);\n"
 		case "i32":
-			write += "I32(%s%s);\n"
+			write += "I32(%s);\n"
 		case "i64":
-			write += "I64(%s%s);\n"
+			write += "I64(%s);\n"
 		case "double":
-			write += "Double(%s%s);\n"
+			write += "Double(%s);\n"
 		case "string":
-			write += "String(%s%s);\n"
+			write += "String(%s);\n"
 		case "binary":
-			write += "Binary(%s%s);\n"
+			write += "Binary(%s);\n"
 		default:
 			if isEnum {
-				write += "I32(%s%s);\n"
+				write += "I32(%s);\n"
 			} else {
 				panic("unknown thrift type: " + underlyingType.Name)
 			}
 		}
 
-		contents += fmt.Sprintf(write, prefix, fName)
+		contents += fmt.Sprintf(write, fName)
 	} else if g.Frugal.IsStruct(underlyingType) {
-		contents += fmt.Sprintf(tabtab+ind+"%s%s.write(oprot);\n", prefix, fName)
+		contents += fmt.Sprintf(tabtab+ind+"%s.write(oprot);\n", fName)
 	} else if parser.IsThriftContainer(underlyingType) {
 		valEnumType := g.getEnumFromThriftType(underlyingType.ValueType)
 
@@ -937,16 +932,16 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 		case "list":
 			valElem := getElem()
 			valField := parser.FieldFromType(underlyingType.ValueType, valElem)
-			contents += fmt.Sprintf(tabtab+ind+"oprot.writeListBegin(new TList(%s, %s%s.length));\n", valEnumType, prefix, fName)
-			contents += fmt.Sprintf(tabtab+ind+"for(var %s in %s%s) {\n", valElem, prefix, fName)
+			contents += fmt.Sprintf(tabtab+ind+"oprot.writeListBegin(new TList(%s, %s.length));\n", valEnumType, fName)
+			contents += fmt.Sprintf(tabtab+ind+"for(var %s in %s) {\n", valElem, fName)
 			contents += g.generateWriteFieldRec(valField, false, ind+tab)
 			contents += tabtab + ind + "}\n"
 			contents += tabtab + ind + "oprot.writeListEnd();\n"
 		case "set":
 			valElem := getElem()
 			valField := parser.FieldFromType(underlyingType.ValueType, valElem)
-			contents += fmt.Sprintf(tabtab+ind+"oprot.writeSetBegin(new TSet(%s, %s%s.length));\n", valEnumType, prefix, fName)
-			contents += fmt.Sprintf(tabtab+ind+"for(var %s in %s%s) {\n", valElem, prefix, fName)
+			contents += fmt.Sprintf(tabtab+ind+"oprot.writeSetBegin(new TSet(%s, %s.length));\n", valEnumType, fName)
+			contents += fmt.Sprintf(tabtab+ind+"for(var %s in %s) {\n", valElem, fName)
 			contents += g.generateWriteFieldRec(valField, false, ind+tab)
 			contents += tabtab + ind + "}\n"
 			contents += tabtab + ind + "oprot.writeSetEnd();\n"
@@ -954,9 +949,9 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 			keyEnumType := g.getEnumFromThriftType(underlyingType.KeyType)
 			keyElem := getElem()
 			keyField := parser.FieldFromType(underlyingType.KeyType, keyElem)
-			valField := parser.FieldFromType(underlyingType.ValueType, fmt.Sprintf("%s%s[%s]", prefix, fName, keyElem))
-			contents += fmt.Sprintf(tabtab+ind+"oprot.writeMapBegin(new TMap(%s, %s, %s%s.length));\n", keyEnumType, valEnumType, prefix, fName)
-			contents += fmt.Sprintf(tabtab+ind+"for(var %s in %s%s.keys) {\n", keyElem, prefix, fName)
+			valField := parser.FieldFromType(underlyingType.ValueType, fmt.Sprintf("%s[%s]", fName, keyElem))
+			contents += fmt.Sprintf(tabtab+ind+"oprot.writeMapBegin(new TMap(%s, %s, %s.length));\n", keyEnumType, valEnumType, fName)
+			contents += fmt.Sprintf(tabtab+ind+"for(var %s in %s.keys) {\n", keyElem, fName)
 			contents += g.generateWriteFieldRec(keyField, false, ind+tab)
 			contents += g.generateWriteFieldRec(valField, false, ind+tab)
 			contents += tabtab + ind + "}\n"

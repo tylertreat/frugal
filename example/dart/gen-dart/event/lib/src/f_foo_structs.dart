@@ -274,7 +274,7 @@ class blah_args implements TBase {
       switch(field.id) {
         case NUM:
           if(field.type == TType.I32) {
-            this.num = iprot.readI32();
+            num = iprot.readI32();
             this.__isset_num = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -282,14 +282,14 @@ class blah_args implements TBase {
           break;
         case STR:
           if(field.type == TType.STRING) {
-            this.str = iprot.readString();
+            str = iprot.readString();
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case EVENT:
           if(field.type == TType.STRUCT) {
-            this.event = new t_event.Event();
+            event = new t_event.Event();
             event.read(iprot);
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -312,16 +312,16 @@ class blah_args implements TBase {
 
     oprot.writeStructBegin(_STRUCT_DESC);
     oprot.writeFieldBegin(_NUM_FIELD_DESC);
-    oprot.writeI32(this.num);
+    oprot.writeI32(num);
     oprot.writeFieldEnd();
     if(this.str != null) {
       oprot.writeFieldBegin(_STR_FIELD_DESC);
-      oprot.writeString(this.str);
+      oprot.writeString(str);
       oprot.writeFieldEnd();
     }
     if(this.event != null) {
       oprot.writeFieldBegin(_EVENT_FIELD_DESC);
-      this.event.write(oprot);
+      event.write(oprot);
       oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();
@@ -484,7 +484,7 @@ class blah_result implements TBase {
       switch(field.id) {
         case SUCCESS:
           if(field.type == TType.I64) {
-            this.success = iprot.readI64();
+            success = iprot.readI64();
             this.__isset_success = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -492,7 +492,7 @@ class blah_result implements TBase {
           break;
         case AWE:
           if(field.type == TType.STRUCT) {
-            this.awe = new t_event.AwesomeException();
+            awe = new t_event.AwesomeException();
             awe.read(iprot);
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -500,7 +500,7 @@ class blah_result implements TBase {
           break;
         case API:
           if(field.type == TType.STRUCT) {
-            this.api = new t_base.api_exception();
+            api = new t_base.api_exception();
             api.read(iprot);
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -524,17 +524,17 @@ class blah_result implements TBase {
     oprot.writeStructBegin(_STRUCT_DESC);
     if(isSetSuccess()) {
       oprot.writeFieldBegin(_SUCCESS_FIELD_DESC);
-      oprot.writeI64(this.success);
+      oprot.writeI64(success);
       oprot.writeFieldEnd();
     }
     if(isSetAwe() && this.awe != null) {
       oprot.writeFieldBegin(_AWE_FIELD_DESC);
-      this.awe.write(oprot);
+      awe.write(oprot);
       oprot.writeFieldEnd();
     }
     if(isSetApi() && this.api != null) {
       oprot.writeFieldBegin(_API_FIELD_DESC);
-      this.api.write(oprot);
+      api.write(oprot);
       oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();
@@ -676,7 +676,7 @@ class oneWay_args implements TBase {
       switch(field.id) {
         case ID:
           if(field.type == TType.I64) {
-            this.id = iprot.readI64();
+            id = iprot.readI64();
             this.__isset_id = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -685,7 +685,7 @@ class oneWay_args implements TBase {
         case REQ:
           if(field.type == TType.MAP) {
             TMap elem0 = iprot.readMapBegin();
-            this.req = new Map<int, String>();
+            req = new Map<int, String>();
             for(int elem2 = 0; elem2 < elem0.length; ++elem2) {
               int elem3 = iprot.readI32();
               String elem1 = iprot.readString();
@@ -713,14 +713,14 @@ class oneWay_args implements TBase {
 
     oprot.writeStructBegin(_STRUCT_DESC);
     oprot.writeFieldBegin(_ID_FIELD_DESC);
-    oprot.writeI64(this.id);
+    oprot.writeI64(id);
     oprot.writeFieldEnd();
     if(this.req != null) {
       oprot.writeFieldBegin(_REQ_FIELD_DESC);
-      oprot.writeMapBegin(new TMap(TType.I32, TType.STRING, this.req.length));
-      for(var elem4 in this.req.keys) {
+      oprot.writeMapBegin(new TMap(TType.I32, TType.STRING, req.length));
+      for(var elem4 in req.keys) {
         oprot.writeI32(elem4);
-        oprot.writeString(this.req[elem4]);
+        oprot.writeString(req[elem4]);
       }
       oprot.writeMapEnd();
       oprot.writeFieldEnd();

@@ -190,7 +190,7 @@ class TestingUnions implements TBase {
       switch(field.id) {
         case ANID:
           if(field.type == TType.I64) {
-            this.anID = iprot.readI64();
+            anID = iprot.readI64();
             this.__isset_anID = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -198,14 +198,14 @@ class TestingUnions implements TBase {
           break;
         case ASTRING:
           if(field.type == TType.STRING) {
-            this.aString = iprot.readString();
+            aString = iprot.readString();
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case SOMEOTHERTHING:
           if(field.type == TType.I32) {
-            this.someotherthing = iprot.readI32();
+            someotherthing = iprot.readI32();
             this.__isset_someotherthing = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -213,7 +213,7 @@ class TestingUnions implements TBase {
           break;
         case ANINT16:
           if(field.type == TType.I16) {
-            this.anInt16 = iprot.readI16();
+            anInt16 = iprot.readI16();
             this.__isset_anInt16 = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -222,7 +222,7 @@ class TestingUnions implements TBase {
         case REQUESTS:
           if(field.type == TType.MAP) {
             TMap elem46 = iprot.readMapBegin();
-            this.requests = new Map<int, String>();
+            requests = new Map<int, String>();
             for(int elem48 = 0; elem48 < elem46.length; ++elem48) {
               int elem49 = iprot.readI32();
               String elem47 = iprot.readString();
@@ -251,30 +251,30 @@ class TestingUnions implements TBase {
     oprot.writeStructBegin(_STRUCT_DESC);
     if(isSetAnID()) {
       oprot.writeFieldBegin(_AN_ID_FIELD_DESC);
-      oprot.writeI64(this.anID);
+      oprot.writeI64(anID);
       oprot.writeFieldEnd();
     }
     if(isSetAString() && this.aString != null) {
       oprot.writeFieldBegin(_A_STRING_FIELD_DESC);
-      oprot.writeString(this.aString);
+      oprot.writeString(aString);
       oprot.writeFieldEnd();
     }
     if(isSetSomeotherthing()) {
       oprot.writeFieldBegin(_SOMEOTHERTHING_FIELD_DESC);
-      oprot.writeI32(this.someotherthing);
+      oprot.writeI32(someotherthing);
       oprot.writeFieldEnd();
     }
     if(isSetAnInt16()) {
       oprot.writeFieldBegin(_AN_INT16_FIELD_DESC);
-      oprot.writeI16(this.anInt16);
+      oprot.writeI16(anInt16);
       oprot.writeFieldEnd();
     }
     if(isSetRequests() && this.requests != null) {
       oprot.writeFieldBegin(_REQUESTS_FIELD_DESC);
-      oprot.writeMapBegin(new TMap(TType.I32, TType.STRING, this.requests.length));
-      for(var elem50 in this.requests.keys) {
+      oprot.writeMapBegin(new TMap(TType.I32, TType.STRING, requests.length));
+      for(var elem50 in requests.keys) {
         oprot.writeI32(elem50);
-        oprot.writeString(this.requests[elem50]);
+        oprot.writeString(requests[elem50]);
       }
       oprot.writeMapEnd();
       oprot.writeFieldEnd();

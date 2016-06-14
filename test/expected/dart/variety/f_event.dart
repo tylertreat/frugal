@@ -15,10 +15,10 @@ class Event implements TBase {
   static final TField _ID_FIELD_DESC = new TField("ID", TType.I64, 1);
   static final TField _MESSAGE_FIELD_DESC = new TField("Message", TType.STRING, 2);
 
-/// ID is a unique identifier for an event.
+  /// ID is a unique identifier for an event.
   int _iD;
   static const int ID = 1;
-/// Message contains the event payload.
+  /// Message contains the event payload.
   String _message;
   static const int MESSAGE = 2;
 
@@ -114,7 +114,7 @@ class Event implements TBase {
       switch(field.id) {
         case ID:
           if(field.type == TType.I64) {
-            this.iD = iprot.readI64();
+            iD = iprot.readI64();
             this.__isset_iD = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -122,7 +122,7 @@ class Event implements TBase {
           break;
         case MESSAGE:
           if(field.type == TType.STRING) {
-            this.message = iprot.readString();
+            message = iprot.readString();
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
@@ -144,11 +144,11 @@ class Event implements TBase {
 
     oprot.writeStructBegin(_STRUCT_DESC);
     oprot.writeFieldBegin(_ID_FIELD_DESC);
-    oprot.writeI64(this.iD);
+    oprot.writeI64(iD);
     oprot.writeFieldEnd();
     if(this.message != null) {
       oprot.writeFieldBegin(_MESSAGE_FIELD_DESC);
-      oprot.writeString(this.message);
+      oprot.writeString(message);
       oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();

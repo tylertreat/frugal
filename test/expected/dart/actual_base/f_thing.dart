@@ -104,7 +104,7 @@ class thing implements TBase {
       switch(field.id) {
         case AN_ID:
           if(field.type == TType.I32) {
-            this.an_id = iprot.readI32();
+            an_id = iprot.readI32();
             this.__isset_an_id = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -112,7 +112,7 @@ class thing implements TBase {
           break;
         case A_STRING:
           if(field.type == TType.STRING) {
-            this.a_string = iprot.readString();
+            a_string = iprot.readString();
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
@@ -134,11 +134,11 @@ class thing implements TBase {
 
     oprot.writeStructBegin(_STRUCT_DESC);
     oprot.writeFieldBegin(_AN_ID_FIELD_DESC);
-    oprot.writeI32(this.an_id);
+    oprot.writeI32(an_id);
     oprot.writeFieldEnd();
     if(this.a_string != null) {
       oprot.writeFieldBegin(_A_STRING_FIELD_DESC);
-      oprot.writeString(this.a_string);
+      oprot.writeString(a_string);
       oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();

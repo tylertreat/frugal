@@ -274,7 +274,7 @@ class blah_args implements TBase {
       switch(field.id) {
         case NUM:
           if(field.type == TType.I32) {
-            this.num = iprot.readI32();
+            num = iprot.readI32();
             this.__isset_num = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -282,14 +282,14 @@ class blah_args implements TBase {
           break;
         case STR:
           if(field.type == TType.STRING) {
-            this.str = iprot.readString();
+            str = iprot.readString();
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case EVENT:
           if(field.type == TType.STRUCT) {
-            this.event = new t_variety.Event();
+            event = new t_variety.Event();
             event.read(iprot);
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -312,16 +312,16 @@ class blah_args implements TBase {
 
     oprot.writeStructBegin(_STRUCT_DESC);
     oprot.writeFieldBegin(_NUM_FIELD_DESC);
-    oprot.writeI32(this.num);
+    oprot.writeI32(num);
     oprot.writeFieldEnd();
     if(this.str != null) {
       oprot.writeFieldBegin(_STR_FIELD_DESC);
-      oprot.writeString(this.str);
+      oprot.writeString(str);
       oprot.writeFieldEnd();
     }
     if(this.event != null) {
       oprot.writeFieldBegin(_EVENT_FIELD_DESC);
-      this.event.write(oprot);
+      event.write(oprot);
       oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();
@@ -484,7 +484,7 @@ class blah_result implements TBase {
       switch(field.id) {
         case SUCCESS:
           if(field.type == TType.I64) {
-            this.success = iprot.readI64();
+            success = iprot.readI64();
             this.__isset_success = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -492,7 +492,7 @@ class blah_result implements TBase {
           break;
         case AWE:
           if(field.type == TType.STRUCT) {
-            this.awe = new t_variety.AwesomeException();
+            awe = new t_variety.AwesomeException();
             awe.read(iprot);
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -500,7 +500,7 @@ class blah_result implements TBase {
           break;
         case API:
           if(field.type == TType.STRUCT) {
-            this.api = new t_actual_base.api_exception();
+            api = new t_actual_base.api_exception();
             api.read(iprot);
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -524,17 +524,17 @@ class blah_result implements TBase {
     oprot.writeStructBegin(_STRUCT_DESC);
     if(isSetSuccess()) {
       oprot.writeFieldBegin(_SUCCESS_FIELD_DESC);
-      oprot.writeI64(this.success);
+      oprot.writeI64(success);
       oprot.writeFieldEnd();
     }
     if(isSetAwe() && this.awe != null) {
       oprot.writeFieldBegin(_AWE_FIELD_DESC);
-      this.awe.write(oprot);
+      awe.write(oprot);
       oprot.writeFieldEnd();
     }
     if(isSetApi() && this.api != null) {
       oprot.writeFieldBegin(_API_FIELD_DESC);
-      this.api.write(oprot);
+      api.write(oprot);
       oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();
@@ -676,7 +676,7 @@ class oneWay_args implements TBase {
       switch(field.id) {
         case ID:
           if(field.type == TType.I64) {
-            this.id = iprot.readI64();
+            id = iprot.readI64();
             this.__isset_id = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -685,7 +685,7 @@ class oneWay_args implements TBase {
         case REQ:
           if(field.type == TType.MAP) {
             TMap elem51 = iprot.readMapBegin();
-            this.req = new Map<int, String>();
+            req = new Map<int, String>();
             for(int elem53 = 0; elem53 < elem51.length; ++elem53) {
               int elem54 = iprot.readI32();
               String elem52 = iprot.readString();
@@ -713,14 +713,14 @@ class oneWay_args implements TBase {
 
     oprot.writeStructBegin(_STRUCT_DESC);
     oprot.writeFieldBegin(_ID_FIELD_DESC);
-    oprot.writeI64(this.id);
+    oprot.writeI64(id);
     oprot.writeFieldEnd();
     if(this.req != null) {
       oprot.writeFieldBegin(_REQ_FIELD_DESC);
-      oprot.writeMapBegin(new TMap(TType.I32, TType.STRING, this.req.length));
-      for(var elem55 in this.req.keys) {
+      oprot.writeMapBegin(new TMap(TType.I32, TType.STRING, req.length));
+      for(var elem55 in req.keys) {
         oprot.writeI32(elem55);
-        oprot.writeString(this.req[elem55]);
+        oprot.writeString(req[elem55]);
       }
       oprot.writeMapEnd();
       oprot.writeFieldEnd();
@@ -848,14 +848,14 @@ class bin_method_args implements TBase {
       switch(field.id) {
         case BIN:
           if(field.type == TType.STRING) {
-            this.bin = iprot.readBinary();
+            bin = iprot.readBinary();
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case STR:
           if(field.type == TType.STRING) {
-            this.str = iprot.readString();
+            str = iprot.readString();
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
@@ -878,12 +878,12 @@ class bin_method_args implements TBase {
     oprot.writeStructBegin(_STRUCT_DESC);
     if(this.bin != null) {
       oprot.writeFieldBegin(_BIN_FIELD_DESC);
-      oprot.writeBinary(this.bin);
+      oprot.writeBinary(bin);
       oprot.writeFieldEnd();
     }
     if(this.str != null) {
       oprot.writeFieldBegin(_STR_FIELD_DESC);
-      oprot.writeString(this.str);
+      oprot.writeString(str);
       oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();
@@ -1013,14 +1013,14 @@ class bin_method_result implements TBase {
       switch(field.id) {
         case SUCCESS:
           if(field.type == TType.STRING) {
-            this.success = iprot.readBinary();
+            success = iprot.readBinary();
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case API:
           if(field.type == TType.STRUCT) {
-            this.api = new t_actual_base.api_exception();
+            api = new t_actual_base.api_exception();
             api.read(iprot);
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -1044,12 +1044,12 @@ class bin_method_result implements TBase {
     oprot.writeStructBegin(_STRUCT_DESC);
     if(isSetSuccess() && this.success != null) {
       oprot.writeFieldBegin(_SUCCESS_FIELD_DESC);
-      oprot.writeBinary(this.success);
+      oprot.writeBinary(success);
       oprot.writeFieldEnd();
     }
     if(isSetApi() && this.api != null) {
       oprot.writeFieldBegin(_API_FIELD_DESC);
-      this.api.write(oprot);
+      api.write(oprot);
       oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();
@@ -1216,7 +1216,7 @@ class param_modifiers_args implements TBase {
       switch(field.id) {
         case OPT_NUM:
           if(field.type == TType.I32) {
-            this.opt_num = iprot.readI32();
+            opt_num = iprot.readI32();
             this.__isset_opt_num = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -1224,7 +1224,7 @@ class param_modifiers_args implements TBase {
           break;
         case DEFAULT_NUM:
           if(field.type == TType.I32) {
-            this.default_num = iprot.readI32();
+            default_num = iprot.readI32();
             this.__isset_default_num = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -1232,7 +1232,7 @@ class param_modifiers_args implements TBase {
           break;
         case REQ_NUM:
           if(field.type == TType.I32) {
-            this.req_num = iprot.readI32();
+            req_num = iprot.readI32();
             this.__isset_req_num = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -1258,13 +1258,13 @@ class param_modifiers_args implements TBase {
 
     oprot.writeStructBegin(_STRUCT_DESC);
     oprot.writeFieldBegin(_OPT_NUM_FIELD_DESC);
-    oprot.writeI32(this.opt_num);
+    oprot.writeI32(opt_num);
     oprot.writeFieldEnd();
     oprot.writeFieldBegin(_DEFAULT_NUM_FIELD_DESC);
-    oprot.writeI32(this.default_num);
+    oprot.writeI32(default_num);
     oprot.writeFieldEnd();
     oprot.writeFieldBegin(_REQ_NUM_FIELD_DESC);
-    oprot.writeI32(this.req_num);
+    oprot.writeI32(req_num);
     oprot.writeFieldEnd();
     oprot.writeFieldStop();
     oprot.writeStructEnd();
@@ -1364,7 +1364,7 @@ class param_modifiers_result implements TBase {
       switch(field.id) {
         case SUCCESS:
           if(field.type == TType.I64) {
-            this.success = iprot.readI64();
+            success = iprot.readI64();
             this.__isset_success = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -1388,7 +1388,7 @@ class param_modifiers_result implements TBase {
     oprot.writeStructBegin(_STRUCT_DESC);
     if(isSetSuccess()) {
       oprot.writeFieldBegin(_SUCCESS_FIELD_DESC);
-      oprot.writeI64(this.success);
+      oprot.writeI64(success);
       oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();
@@ -1509,7 +1509,7 @@ class underlying_types_test_args implements TBase {
         case LIST_TYPE:
           if(field.type == TType.LIST) {
             TList elem56 = iprot.readListBegin();
-            this.list_type = new List<int>();
+            list_type = new List<int>();
             for(int elem58 = 0; elem58 < elem56.length; ++elem58) {
               int elem57 = iprot.readI64();
               list_type.add(elem57);
@@ -1522,7 +1522,7 @@ class underlying_types_test_args implements TBase {
         case SET_TYPE:
           if(field.type == TType.SET) {
             TSet elem59 = iprot.readSetBegin();
-            this.set_type = new Set<int>();
+            set_type = new Set<int>();
             for(int elem61 = 0; elem61 < elem59.length; ++elem61) {
               int elem60 = iprot.readI64();
               set_type.add(elem60);
@@ -1550,8 +1550,8 @@ class underlying_types_test_args implements TBase {
     oprot.writeStructBegin(_STRUCT_DESC);
     if(this.list_type != null) {
       oprot.writeFieldBegin(_LIST_TYPE_FIELD_DESC);
-      oprot.writeListBegin(new TList(TType.I64, this.list_type.length));
-      for(var elem62 in this.list_type) {
+      oprot.writeListBegin(new TList(TType.I64, list_type.length));
+      for(var elem62 in list_type) {
         oprot.writeI64(elem62);
       }
       oprot.writeListEnd();
@@ -1559,8 +1559,8 @@ class underlying_types_test_args implements TBase {
     }
     if(this.set_type != null) {
       oprot.writeFieldBegin(_SET_TYPE_FIELD_DESC);
-      oprot.writeSetBegin(new TSet(TType.I64, this.set_type.length));
-      for(var elem63 in this.set_type) {
+      oprot.writeSetBegin(new TSet(TType.I64, set_type.length));
+      for(var elem63 in set_type) {
         oprot.writeI64(elem63);
       }
       oprot.writeSetEnd();
@@ -1667,7 +1667,7 @@ class underlying_types_test_result implements TBase {
         case SUCCESS:
           if(field.type == TType.LIST) {
             TList elem64 = iprot.readListBegin();
-            this.success = new List<int>();
+            success = new List<int>();
             for(int elem66 = 0; elem66 < elem64.length; ++elem66) {
               int elem65 = iprot.readI64();
               success.add(elem65);
@@ -1695,8 +1695,8 @@ class underlying_types_test_result implements TBase {
     oprot.writeStructBegin(_STRUCT_DESC);
     if(isSetSuccess() && this.success != null) {
       oprot.writeFieldBegin(_SUCCESS_FIELD_DESC);
-      oprot.writeListBegin(new TList(TType.I64, this.success.length));
-      for(var elem67 in this.success) {
+      oprot.writeListBegin(new TList(TType.I64, success.length));
+      for(var elem67 in success) {
         oprot.writeI64(elem67);
       }
       oprot.writeListEnd();

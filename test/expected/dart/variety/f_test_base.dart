@@ -76,7 +76,7 @@ class TestBase implements TBase {
       switch(field.id) {
         case BASE_STRUCT:
           if(field.type == TType.STRUCT) {
-            this.base_struct = new t_actual_base.thing();
+            base_struct = new t_actual_base.thing();
             base_struct.read(iprot);
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -100,7 +100,7 @@ class TestBase implements TBase {
     oprot.writeStructBegin(_STRUCT_DESC);
     if(this.base_struct != null) {
       oprot.writeFieldBegin(_BASE_STRUCT_FIELD_DESC);
-      this.base_struct.write(oprot);
+      base_struct.write(oprot);
       oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();

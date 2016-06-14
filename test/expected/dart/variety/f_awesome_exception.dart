@@ -13,10 +13,10 @@ class AwesomeException extends Error implements TBase {
   static final TField _ID_FIELD_DESC = new TField("ID", TType.I64, 1);
   static final TField _REASON_FIELD_DESC = new TField("Reason", TType.STRING, 2);
 
-/// ID is a unique identifier for an awesome exception.
+  /// ID is a unique identifier for an awesome exception.
   int _iD;
   static const int ID = 1;
-/// Reason contains the error message.
+  /// Reason contains the error message.
   String _reason;
   static const int REASON = 2;
 
@@ -111,7 +111,7 @@ class AwesomeException extends Error implements TBase {
       switch(field.id) {
         case ID:
           if(field.type == TType.I64) {
-            this.iD = iprot.readI64();
+            iD = iprot.readI64();
             this.__isset_iD = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -119,7 +119,7 @@ class AwesomeException extends Error implements TBase {
           break;
         case REASON:
           if(field.type == TType.STRING) {
-            this.reason = iprot.readString();
+            reason = iprot.readString();
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
@@ -141,11 +141,11 @@ class AwesomeException extends Error implements TBase {
 
     oprot.writeStructBegin(_STRUCT_DESC);
     oprot.writeFieldBegin(_ID_FIELD_DESC);
-    oprot.writeI64(this.iD);
+    oprot.writeI64(iD);
     oprot.writeFieldEnd();
     if(this.reason != null) {
       oprot.writeFieldBegin(_REASON_FIELD_DESC);
-      oprot.writeString(this.reason);
+      oprot.writeString(reason);
       oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();
