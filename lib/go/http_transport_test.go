@@ -42,6 +42,29 @@ func (m *mockWriteCloser) Close() error {
 	return m.closeErr
 }
 
+// Ensures that the payload size header has the wrong format an error is
+// returned
+func TestFrugalHandlerFuncHeaderError(t *testing.T) {
+	assert := assert.New(t)
+	w := httptest.NewRecorder()
+
+	r, err := http.NewRequest("POST", "fooUrl", nil)
+	r.Header.Add(payloadLimitHeader, "foo")
+	assert.Nil(err)
+
+	mockProcessor := &mockFProcessorForHttp{}
+	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
+	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory, protocolFactory)
+
+	handler(w, r)
+
+	assert.Equal(w.Code, http.StatusBadRequest)
+	assert.Equal(
+		[]byte(fmt.Sprintf("%s header not an integer\n", payloadLimitHeader)),
+		w.Body.Bytes(),
+	)
+}
+
 // Ensures that processor errors are handled and routed back in the http
 // response
 func TestFrugalHandlerFuncProcessorError(t *testing.T) {
@@ -61,6 +84,30 @@ func TestFrugalHandlerFuncProcessorError(t *testing.T) {
 	assert.Equal(w.Code, http.StatusBadRequest)
 	assert.Equal(
 		[]byte(fmt.Sprintf("Frugal request failed %s\n", processorErr)),
+		w.Body.Bytes(),
+	)
+}
+
+// Ensures that if the response payload exceeds the request limit, a
+// RequestEntityTooLarge error is returned.
+func TestFrugalHandlerFuncTooLargeError(t *testing.T) {
+	assert := assert.New(t)
+	w := httptest.NewRecorder()
+
+	r, err := http.NewRequest("POST", "fooUrl", nil)
+	r.Header.Add(payloadLimitHeader, "5")
+	assert.Nil(err)
+
+	response := make([]byte, 10)
+	mockProcessor := &mockFProcessorForHttp{response: response}
+	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
+	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory, protocolFactory)
+
+	handler(w, r)
+
+	assert.Equal(w.Code, http.StatusRequestEntityTooLarge)
+	assert.Equal(
+		[]byte("Response size (10) larger than requested size (5)\n"),
 		w.Body.Bytes(),
 	)
 }

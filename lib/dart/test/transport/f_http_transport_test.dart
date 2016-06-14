@@ -10,7 +10,7 @@ import 'package:http/http.dart' show Client;
 import 'package:http/http.dart' show Response;
 import 'package:http/http.dart' show StreamedResponse;
 import 'package:test/test.dart';
-import "package:thrift/thrift.dart";
+import 'package:thrift/thrift.dart';
 
 void main() {
   const utf8Codec = const Utf8Codec();
@@ -60,13 +60,34 @@ void main() {
     });
   });
 
+  group('FHttpClientTransport request size too large', () {
+    FakeHttpClient client;
+    FakeFRegistry registry;
+    FHttpClientTransport transport;
+
+    setUp(() {
+      client = new FakeHttpClient();
+      var config = new FHttpConfig(Uri.parse('http://localhost'), {},
+          requestSizeLimit: 10);
+      transport = new FHttpClientTransport(client, config);
+      registry = new FakeFRegistry();
+      transport.setRegistry(registry);
+    });
+
+    test('Test transport receives error', () {
+      expect(
+          () => transport.writeAll(utf8Codec.encode('my really long request')),
+          throwsA(new isInstanceOf<FMessageSizeError>()));
+    });
+  });
+
   group('FHttpClientTransport http post failed', () {
     FakeHttpClient client;
     FakeFRegistry registry;
     FHttpClientTransport transport;
 
     setUp(() {
-      client = new FakeHttpClient(err: new StateError("baa!"));
+      client = new FakeHttpClient(err: new StateError('baa!'));
       var config = new FHttpConfig(Uri.parse('http://localhost'), {});
       transport = new FHttpClientTransport(client, config);
       registry = new FakeFRegistry();
@@ -80,6 +101,36 @@ void main() {
 
       transport.writeAll(utf8Codec.encode('my request'));
       expect(transport.flush(), throwsA(new isInstanceOf<TTransportError>()));
+    });
+  });
+
+  group('FHttpClientTransport http response too large', () {
+    FakeHttpClient client;
+    FakeFRegistry registry;
+    FHttpClientTransport transport;
+
+    setUp(() {
+      var expectedHeaders = {
+        'X-Frugal-Payload-Limit': '10',
+        'Content-Type': 'application/x-frugal',
+        'Accept': 'application/x-frugal'
+      };
+      client = new FakeHttpClient(
+          code: 413, sync: false, expectedHeaders: expectedHeaders);
+      var config = new FHttpConfig(Uri.parse('http://localhost'), {},
+          responseSizeLimit: 10);
+      transport = new FHttpClientTransport(client, config);
+      registry = new FakeFRegistry();
+      transport.setRegistry(registry);
+    });
+
+    test('Test transport receives error', () async {
+      var expectedText = 'my response';
+      var expectedBytes = utf8Codec.encode(expectedText);
+      client.postResponse = BASE64.encode(expectedBytes);
+
+      transport.writeAll(utf8Codec.encode('my request'));
+      expect(transport.flush(), throwsA(new isInstanceOf<FMessageSizeError>()));
     });
   });
 
@@ -126,16 +177,29 @@ class FakeFRegistry extends FRegistry {
 class FakeHttpClient implements Client {
   String postResponse = '';
   String postRequest = '';
+  Map expectedHeaders;
 
   final bool sync;
   final int code;
   final Error err;
 
-  FakeHttpClient({this.code: 200, this.sync: false, this.err: null});
+  FakeHttpClient(
+      {this.code: 200,
+      this.sync: false,
+      this.err: null,
+      this.expectedHeaders: null});
 
   Future<Response> post(url,
       {Map<String, String> headers, body, Encoding encoding}) {
     if (err != null) throw err;
+
+    if (expectedHeaders != null) {
+      expectedHeaders.forEach((K, V) {
+        if (headers[K] != V) {
+          throw new Error();
+        }
+      });
+    }
 
     postRequest = body;
     var response = new Response(postResponse, code);
