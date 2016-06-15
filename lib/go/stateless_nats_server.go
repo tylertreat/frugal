@@ -100,10 +100,9 @@ func (f *FStatelessNatsServer) Serve() error {
 	log.Info("frugal: server running...")
 	<-f.quit
 	log.Info("frugal: server stopping...")
-	if f.conn.Status() != nats.CONNECTED {
-		log.Warn("frugal: Nats is already disconnected!")
-		return nil
-	}
+
+	f.sub.Unsubscribe()
+
 	return nil
 }
 

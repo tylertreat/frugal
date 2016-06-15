@@ -166,14 +166,11 @@ func (n *FNatsServer) Serve() error {
 	log.Info("frugal: server running...")
 	<-n.quit
 	log.Info("frugal: server stopping...")
-	if n.conn.Status() != nats.CONNECTED {
-		log.Warn("frugal: Nats is already disconnected!")
-		return nil
-	}
 
 	for _, sub := range subscriptions {
 		sub.Unsubscribe()
 	}
+
 	return nil
 }
 
