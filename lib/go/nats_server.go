@@ -274,11 +274,11 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		select {
 		case recvHeartbeat <- struct{}{}:
 		default:
-			log.Println("frugal: FNatsServer received heartbeat dropped")
+			log.Println("frugal: FNatsServer dropped heartbeat:", client.heartbeat)
 		}
 	})
 	if err != nil {
-		log.Errorf("frugal: error subscribing to heartbeat", client.heartbeat)
+		log.Errorf("frugal: error subscribing to heartbeat:", client.heartbeat)
 		return
 	}
 	defer sub.Unsubscribe()
@@ -294,7 +294,7 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		case <-wait:
 			missed++
 			if missed >= n.maxMissedHeartbeats {
-				log.Warn("frugal: client heartbeat expired")
+				log.Warn("frugal: client heartbeat expired for heartbeat:", client.heartbeat)
 				n.remove(client.heartbeat)
 				return
 			}
@@ -332,7 +332,7 @@ func (n *FNatsServer) accept(listenTo, replyTo, heartbeat string) (FTransport, e
 		n.remove(heartbeat)
 	}()
 
-	log.Debug("frugal: client connection accepted")
+	log.Debug("frugal: client connection accepted with heartbeat:", heartbeat)
 	return transport, nil
 }
 
