@@ -160,7 +160,7 @@ func (n *natsServiceTTransport) handleHeartbeat(msg *nats.Msg) {
 	select {
 	case n.recvHeartbeatChan() <- struct{}{}:
 	default:
-		log.Println("frugal: natsServiceTTransport dropped heartbeat: ", n.heartbeatListen)
+		log.Infof("frugal: natsServiceTTransport dropped heartbeat: %s", n.heartbeatListen)
 	}
 	n.conn.Publish(n.heartbeatReply, nil)
 }

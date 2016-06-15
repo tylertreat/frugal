@@ -274,7 +274,7 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		select {
 		case recvHeartbeat <- struct{}{}:
 		default:
-			log.Println("frugal: FNatsServer dropped heartbeat:", client.heartbeat)
+			log.Infof("frugal: FNatsServer dropped heartbeat: %s", client.heartbeat)
 		}
 	})
 	if err != nil {
@@ -294,7 +294,7 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		case <-wait:
 			missed++
 			if missed >= n.maxMissedHeartbeats {
-				log.Warn("frugal: client heartbeat expired for heartbeat:", client.heartbeat)
+				log.Warnf("frugal: client heartbeat expired for heartbeat: %s", client.heartbeat)
 				n.remove(client.heartbeat)
 				return
 			}
