@@ -62,6 +62,21 @@ func Compile(options Options) error {
 	return err
 }
 
+// warnGenWithoutFrugal prints a warning if generating code with thrift
+// when a gen_with_frugal option exists
+// TODO: Remove this once gen_with frugal is no longer experimental
+// and is the default.
+func warnGenWithoutFrugal(genWithFrugal bool) {
+	if !genWithFrugal && !globals.GenWithFrugalWarn {
+		globals.PrintWarning(
+			"Consider using the \"gen_with_frugal\" language option " +
+			"to have Frugal generate code in place of Thrift.\nThis is an " +
+			"experimental feature. Please file a GitHub issue if you encounter " +
+			"problems.")
+		globals.GenWithFrugalWarn = true
+	}
+}
+
 // compile parses the Frugal or Thrift IDL and generates code for it, returning
 // an error if something failed.
 func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
@@ -86,18 +101,14 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	var g generator.ProgramGenerator
 	switch lang {
 	case "dart":
+		// TODO: Remove this once gen_with_frugal is no longer experimental
+		// and is the default
+		warnGenWithoutFrugal(genWithFrugal)
 		g = generator.NewProgramGenerator(dartlang.NewGenerator(options, genWithFrugal), false)
 	case "go":
 		// TODO: Remove this once gen_with frugal is no longer experimental
 		// and is the default.
-		if !genWithFrugal && !globals.GenWithFrugalWarn {
-			globals.PrintWarning(
-				"Consider using the \"gen_with_frugal\" language option " +
-					"to have Frugal generate code in place of Thrift.\nThis is an " +
-					"experimental feature. Please file a GitHub issue if you encounter " +
-					"problems.")
-			globals.GenWithFrugalWarn = true
-		}
+		warnGenWithoutFrugal(genWithFrugal)
 		g = generator.NewProgramGenerator(golang.NewGenerator(options), false)
 	case "java":
 		g = generator.NewProgramGenerator(java.NewGenerator(options), true)

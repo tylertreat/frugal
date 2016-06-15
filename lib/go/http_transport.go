@@ -3,6 +3,7 @@ package frugal
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"net/http"
@@ -38,8 +39,20 @@ func NewFrugalHandlerFunc(processor FProcessor, inPfactory, outPfactory *FProtoc
 			}
 		}
 
-		// Read and process frame
+		// Create a decoder based on the payload
 		decoder := base64.NewDecoder(base64.StdEncoding, r.Body)
+
+		// Read out the frame size
+		frameSize := make([]byte, 4)
+		if _, err := io.ReadFull(decoder, frameSize); err != nil {
+			http.Error(w,
+				fmt.Sprintf("Could not read the frugal frame bytes %s", err),
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		// Read and process frame
 		input := thrift.NewStreamTransportR(decoder)
 		outBuf := new(bytes.Buffer)
 		output := &thrift.TMemoryBuffer{Buffer: outBuf}
@@ -60,23 +73,30 @@ func NewFrugalHandlerFunc(processor FProcessor, inPfactory, outPfactory *FProtoc
 			return
 		}
 
-		// Encode and send response
+		// Encode response
 		encoded := new(bytes.Buffer)
 		encoder := newEncoder(encoded)
-		if _, err := encoder.Write(outBuf.Bytes()); err != nil {
+		var err error
+		binary.BigEndian.PutUint32(frameSize, uint32(outBuf.Len()))
+		if _, e := encoder.Write(frameSize); e != nil {
+			err = e
+		}
+		if _, e := encoder.Write(outBuf.Bytes()); e != nil {
+			err = e
+		}
+		if e := encoder.Close(); e != nil {
+			err = e
+		}
+
+		// Check for encoding errors
+		if err != nil {
 			http.Error(w,
 				fmt.Sprintf("Problem encoding frugal bytes to base64 %s", err),
 				http.StatusInternalServerError,
 			)
 			return
 		}
-		if err := encoder.Close(); err != nil {
-			http.Error(w,
-				fmt.Sprintf("Problem encoding frugal bytes to base64 %s", err),
-				http.StatusInternalServerError,
-			)
-			return
-		}
+
 		w.Write(encoded.Bytes())
 	}
 }
