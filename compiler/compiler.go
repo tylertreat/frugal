@@ -104,7 +104,7 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 		// TODO: Remove this once gen_with_frugal is no longer experimental
 		// and is the default
 		warnGenWithoutFrugal(genWithFrugal)
-		g = generator.NewProgramGenerator(dartlang.NewGenerator(options), false)
+		g = generator.NewProgramGenerator(dartlang.NewGenerator(options, genWithFrugal), false)
 	case "go":
 		// TODO: Remove this once gen_with frugal is no longer experimental
 		// and is the default.
