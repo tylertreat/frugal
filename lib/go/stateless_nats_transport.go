@@ -133,8 +133,7 @@ func (f *statelessNatsTTransport) Write(buf []byte) (int, error) {
 	return num, thrift.NewTTransportExceptionFromError(err)
 }
 
-// Flush sends the buffered bytes over NATS. Returns ErrTooLarge if the number
-// of bytes exceed 1MB.
+// Flush sends the buffered bytes over NATS.
 func (f *statelessNatsTTransport) Flush() error {
 	if !f.IsOpen() {
 		return f.getClosedConditionError("flush:")
@@ -143,9 +142,6 @@ func (f *statelessNatsTTransport) Flush() error {
 	data := f.requestBuffer.Bytes()
 	if len(data) == 0 {
 		return nil
-	}
-	if len(data) > natsMaxMessageSize {
-		return ErrTooLarge
 	}
 	err := f.conn.PublishRequest(f.subject, f.inbox, data)
 	return thrift.NewTTransportExceptionFromError(err)

@@ -240,8 +240,7 @@ func (n *fNatsScopeTransport) Write(p []byte) (int, error) {
 	return num, thrift.NewTTransportExceptionFromError(err)
 }
 
-// Flush publishes the buffered message. Returns ErrTooLarge if the buffered
-// message exceeds 1MB.
+// Flush publishes the buffered message.
 func (n *fNatsScopeTransport) Flush() error {
 	if !n.IsOpen() {
 		return n.getClosedConditionError("flush:")
@@ -250,10 +249,6 @@ func (n *fNatsScopeTransport) Flush() error {
 	data := n.writeBuffer.Bytes()
 	if len(data) == 0 {
 		return nil
-	}
-	// Include 4 bytes for frame size.
-	if len(data)+4 > natsMaxMessageSize {
-		return ErrTooLarge
 	}
 	binary.BigEndian.PutUint32(n.sizeBuffer, uint32(len(data)))
 	err := n.conn.Publish(n.formattedSubject(), append(n.sizeBuffer, data...))
