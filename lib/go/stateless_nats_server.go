@@ -26,7 +26,6 @@ type FStatelessNatsServer struct {
 	workerCount        uint
 	workC              chan *frameWrapper
 	quit               chan struct{}
-	sub                *nats.Subscription
 	waterMu            sync.RWMutex
 	highWatermark      time.Duration
 }
@@ -91,7 +90,6 @@ func (f *FStatelessNatsServer) Serve() error {
 	if err != nil {
 		return err
 	}
-	f.sub = sub
 
 	for i := uint(0); i < f.workerCount; i++ {
 		go f.worker()
@@ -101,7 +99,7 @@ func (f *FStatelessNatsServer) Serve() error {
 	<-f.quit
 	log.Info("frugal: server stopping...")
 
-	f.sub.Unsubscribe()
+	sub.Unsubscribe()
 
 	return nil
 }
