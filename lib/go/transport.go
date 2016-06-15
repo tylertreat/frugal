@@ -27,6 +27,17 @@ var ErrTransportClosed = errors.New("frugal: transport was unexpectedly closed")
 var ErrTooLarge = thrift.NewTTransportException(REQUEST_TOO_LARGE,
 	"request was too large for the transport")
 
+// IsErrTooLarge indicates if the given error is an ErrTooLarge.
+func IsErrTooLarge(err error) bool {
+	if err == ErrTooLarge {
+		return true
+	}
+	if e, ok := err.(thrift.TTransportException); ok {
+		return e.TypeId() == REQUEST_TOO_LARGE || e.TypeId() == RESPONSE_TOO_LARGE
+	}
+	return false
+}
+
 // FScopeTransportFactory produces FScopeTransports and is typically used by an
 // FScopeProvider.
 type FScopeTransportFactory interface {
