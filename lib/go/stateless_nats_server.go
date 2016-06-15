@@ -161,7 +161,9 @@ func (f *FStatelessNatsServer) processFrame(frame []byte, reply string) error {
 	input := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(frame[4:])} // Discard frame size
 	outBuf := new(bytes.Buffer)
 	output := &thrift.TMemoryBuffer{Buffer: outBuf}
-	if err := f.processor.Process(f.inputProtoFactory.GetProtocol(input), f.outputProtoFactory.GetProtocol(output)); err != nil {
+	if err := f.processor.Process(
+		f.inputProtoFactory.GetProtocol(input),
+		f.outputProtoFactory.GetProtocol(output)); err != nil {
 		return err
 	}
 
