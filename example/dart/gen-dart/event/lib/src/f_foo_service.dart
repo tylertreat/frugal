@@ -11,7 +11,7 @@ import 'package:frugal/frugal.dart' as frugal;
 
 import 'package:base/base.dart' as t_base;
 import 'package:event/event.dart' as t_event;
-import 'foo.dart' as t_foo_file;
+import 'f_foo_structs.dart' as t_foo_file;
 
 
 /// This is a thrift service. Frugal will generate bindings that include 
@@ -25,7 +25,7 @@ abstract class FFoo extends t_base.FBaseFoo {
   Future<int> blah(frugal.FContext ctx, int num, String str, t_event.Event event);
 
   /// oneway methods don't receive a response from the server.
-  Future oneWay(frugal.FContext ctx, int id, Map<int,String> req);
+  Future oneWay(frugal.FContext ctx, int id, Map<int, String> req);
 }
 
 /// This is a thrift service. Frugal will generate bindings that include 
@@ -180,11 +180,11 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
   }
 
   /// oneway methods don't receive a response from the server.
-  Future oneWay(frugal.FContext ctx, int id, Map<int,String> req) {
+  Future oneWay(frugal.FContext ctx, int id, Map<int, String> req) {
     return this._methods['oneWay']([ctx, id, req]);
   }
 
-  Future _oneWay(frugal.FContext ctx, int id, Map<int,String> req) async {
+  Future _oneWay(frugal.FContext ctx, int id, Map<int, String> req) async {
     oprot.writeRequestHeader(ctx);
     oprot.writeMessageBegin(new thrift.TMessage("oneWay", thrift.TMessageType.ONEWAY, 0));
     t_foo_file.oneWay_args args = new t_foo_file.oneWay_args();

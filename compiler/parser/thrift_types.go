@@ -53,6 +53,14 @@ func FieldFromType(t *Type, name string) *Field {
 	}
 }
 
+func TypeFromStruct(s *Struct) *Type {
+	return &Type{
+		Name:      s.Name,
+		KeyType:   nil,
+		ValueType: nil,
+	}
+}
+
 type Include struct {
 	Name  string
 	Value string

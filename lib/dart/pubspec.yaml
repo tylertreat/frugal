@@ -4,6 +4,7 @@ authors:
 - Brian Shannan <brian.shannan@workiva.com>
 dependencies:
   logging: ^0.11.2
+  http: ^0.11.3
   thrift:
     hosted:
       name: thrift
