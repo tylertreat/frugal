@@ -117,6 +117,7 @@ func (f *fMuxTransportFactory) GetTransport(tr thrift.TTransport) FTransport {
 type frameWrapper struct {
 	frameBytes []byte
 	timestamp  time.Time
+	reply      string
 }
 
 type fMuxTransport struct {
