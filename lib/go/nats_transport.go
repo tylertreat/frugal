@@ -143,9 +143,9 @@ func (n *natsServiceTTransport) handleMessage(msg *nats.Msg) {
 	if msg.Reply == disconnect {
 		// Remote client is disconnecting.
 		if n.isClient() {
-			log.Error("frugal: transport with heartbeat:", n.heartbeatListen, "received unexpected disconnect from the server")
+			log.Errorf("frugal: transport with heartbeat: %s received unexpected disconnect from the server", n.heartbeatListen)
 		} else {
-			log.Debug("frugal: transport with heartbeat:", n.heartbeatListen, "closed cleanly")
+			log.Debugf("frugal: transport with heartbeat: %s closed cleanly", n.heartbeatListen)
 		}
 		n.Close()
 		return
@@ -160,7 +160,7 @@ func (n *natsServiceTTransport) handleHeartbeat(msg *nats.Msg) {
 	select {
 	case n.recvHeartbeatChan() <- struct{}{}:
 	default:
-		log.Println("frugal: natsServiceTTransport dropped heartbeat:", n.heartbeatListen)
+		log.Println("frugal: natsServiceTTransport dropped heartbeat: ", n.heartbeatListen)
 	}
 	n.conn.Publish(n.heartbeatReply, nil)
 }
@@ -176,7 +176,7 @@ func (n *natsServiceTTransport) heartbeatLoop() {
 		case <-time.After(n.heartbeatTimeoutPeriod()):
 			missed++
 			if missed >= n.maxMissedHeartbeats {
-				log.Warn("frugal: server heartbeat expired for heartbeat:", n.heartbeatListen)
+				log.Warnf("frugal: server heartbeat expired for heartbeat: %s", n.heartbeatListen)
 				n.Close()
 				return
 			}
