@@ -86,7 +86,7 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	var g generator.ProgramGenerator
 	switch lang {
 	case "dart":
-		g = generator.NewProgramGenerator(dartlang.NewGenerator(options), false)
+		g = generator.NewProgramGenerator(dartlang.NewGenerator(options, genWithFrugal), false)
 	case "go":
 		// TODO: Remove this once gen_with frugal is no longer experimental
 		// and is the default.
