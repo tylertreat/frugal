@@ -159,29 +159,21 @@ func (f *FStatelessNatsServer) worker() {
 func (f *FStatelessNatsServer) processFrame(frame []byte, reply string) error {
 	// Read and process frame.
 	input := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(frame[4:])} // Discard frame size
-	outBuf := new(bytes.Buffer)
-	output := &thrift.TMemoryBuffer{Buffer: outBuf}
+	output := NewFBoundedMemoryBuffer(natsMaxMessageSize)
 	if err := f.processor.Process(
 		f.inputProtoFactory.GetProtocol(input),
 		f.outputProtoFactory.GetProtocol(output)); err != nil {
 		return err
 	}
 
-	if outBuf.Len() == 0 {
+	if output.Len() == 0 {
 		return nil
 	}
 
-	if outBuf.Len()+4 > natsMaxMessageSize {
-		// QUESTION: What should happen here? With the existing NATS transport,
-		// if the server attempts to send a response exceeding the limit it
-		// sends a RESPONSE_TOO_LARGE exception back to the client instead.
-		return ErrTooLarge
-	}
-
 	// Add frame size.
-	response := make([]byte, outBuf.Len()+4)
-	binary.BigEndian.PutUint32(response, uint32(outBuf.Len()))
-	copy(response[4:], outBuf.Bytes())
+	response := make([]byte, output.Len()+4)
+	binary.BigEndian.PutUint32(response, uint32(output.Len()))
+	copy(response[4:], output.Bytes())
 
 	// Send response.
 	return f.conn.Publish(reply, response)
