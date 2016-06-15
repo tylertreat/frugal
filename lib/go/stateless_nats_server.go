@@ -170,6 +170,9 @@ func (f *FStatelessNatsServer) processFrame(frame []byte, reply string) error {
 	}
 
 	if outBuf.Len()+4 > natsMaxMessageSize {
+		// QUESTION: What should happen here? With the existing NATS transport,
+		// if the server attempts to send a response exceeding the limit it
+		// sends a RESPONSE_TOO_LARGE exception back to the client instead.
 		return ErrTooLarge
 	}
 
