@@ -10,6 +10,10 @@ import (
 	"github.com/nats-io/nats"
 )
 
+// statelessNatsTTransport implements thrift.TTransport. This is a "stateless"
+// transport in the sense that there is no connection with a server. A request
+// is simply published to a subject and responses are received on another
+// subject. This assumes requests/responses fit within a single NATS message.
 type statelessNatsTTransport struct {
 	conn          *nats.Conn
 	subject       string
@@ -22,6 +26,13 @@ type statelessNatsTTransport struct {
 	closeChan     chan struct{}
 }
 
+// NewStatelessNatsTTransport returns a new Thrift TTransport which uses the
+// NATS messaging system as the underlying transport. Unlike the TTransport
+// created by NewNatsServiceTTransport, this TTransport is stateless in that
+// there is no connection maintained between the client and server. A request
+// is simply published to a subject and responses are received on another
+// subject. This requires requests and responses to fit within a single NATS
+// message.
 func NewStatelessNatsTTransport(conn *nats.Conn, subject, inbox string) thrift.TTransport {
 	if inbox == "" {
 		inbox = nats.NewInbox()
@@ -35,6 +46,7 @@ func NewStatelessNatsTTransport(conn *nats.Conn, subject, inbox string) thrift.T
 	}
 }
 
+// Open subscribes to the configured inbox subject.
 func (f *statelessNatsTTransport) Open() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -54,6 +66,8 @@ func (f *statelessNatsTTransport) Open() error {
 	return nil
 }
 
+// handler receives a NATS message and places it on the frame buffer for
+// reading.
 func (f *statelessNatsTTransport) handler(msg *nats.Msg) {
 	select {
 	case f.frameBuffer <- msg.Data:
@@ -67,6 +81,7 @@ func (f *statelessNatsTTransport) IsOpen() bool {
 	return f.sub != nil && f.conn.Status() == nats.CONNECTED
 }
 
+// Close unsubscribes from the inbox subject.
 func (f *statelessNatsTTransport) Close() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -105,6 +120,7 @@ func (f *statelessNatsTTransport) Read(buf []byte) (int, error) {
 	return num, nil
 }
 
+// Write the bytes to a buffer. Returns ErrTooLarge if the buffer exceeds 1MB.
 func (f *statelessNatsTTransport) Write(buf []byte) (int, error) {
 	if !f.IsOpen() {
 		return 0, f.getClosedConditionError("write:")
@@ -117,6 +133,8 @@ func (f *statelessNatsTTransport) Write(buf []byte) (int, error) {
 	return num, thrift.NewTTransportExceptionFromError(err)
 }
 
+// Flush sends the buffered bytes over NATS. Returns ErrTooLarge if the number
+// of bytes exceed 1MB.
 func (f *statelessNatsTTransport) Flush() error {
 	if !f.IsOpen() {
 		return f.getClosedConditionError("flush:")

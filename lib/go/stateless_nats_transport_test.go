@@ -8,6 +8,7 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/nats-io/nats"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 // Ensures Open returns an error if NATS is not connected.
@@ -275,6 +276,11 @@ func newStatelessClientAndServer(t *testing.T) (*statelessNatsTTransport, *FStat
 	protocolFactory := NewFProtocolFactory(mockTProtocolFactory)
 	server := NewFStatelessNatsServer(conn, mockProcessor, protocolFactory,
 		protocolFactory, "foo", "queue", 1)
+	mockTransport := new(mockFTransport)
+	proto := thrift.NewTJSONProtocol(mockTransport)
+	mockTProtocolFactory.On("GetProtocol", mock.AnythingOfType("*thrift.TMemoryBuffer")).Return(proto)
+	fproto := &FProtocol{proto}
+	mockProcessor.On("Process", fproto, fproto).Return(nil)
 
 	go func() {
 		assert.Nil(t, server.Serve())
