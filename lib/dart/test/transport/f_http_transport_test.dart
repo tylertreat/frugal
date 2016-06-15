@@ -20,6 +20,13 @@ void main() {
     FakeFRegistry registry;
     FHttpClientTransport transport;
 
+    Uint8List transportRequest = new Uint8List.fromList([1, 2, 3, 4, 5]);
+    Uint8List transportRequestFramed =
+        new Uint8List.fromList([0, 0, 0, 5, 1, 2, 3, 4, 5]);
+    Uint8List transportResponse = new Uint8List.fromList([6, 7, 8, 9]);
+    Uint8List transportResponseFramed =
+        new Uint8List.fromList([0, 0, 0, 4, 6, 7, 8, 9]);
+
     setUp(() {
       client = new FakeHttpClient();
       var config = new FHttpConfig(Uri.parse('http://localhost'), {});
@@ -28,34 +35,24 @@ void main() {
       transport.setRegistry(registry);
     });
 
-    test('Test transport sends body', () async {
-      var expectedText = 'my request';
-      transport.writeAll(utf8Codec.encode(expectedText));
-
+    test('Test transport sends body and receives response', () async {
+      transport.writeAll(transportRequest);
       expect(client.postRequest, isEmpty);
 
+      client.postResponse = BASE64.encode(transportResponseFramed);
       await transport.flush();
 
       expect(client.postRequest, isNotEmpty);
 
-      var requestText = utf8Codec.decode(BASE64.decode(client.postRequest));
-      expect(requestText, expectedText);
-    });
+      var actualRequest = BASE64.decode(client.postRequest);
+      expect(actualRequest, transportRequestFramed);
 
-    test('Test transport receives response', () async {
-      var expectedText = 'my response';
-      var expectedBytes = utf8Codec.encode(expectedText);
-      client.postResponse = BASE64.encode(expectedBytes);
-
-      transport.writeAll(utf8Codec.encode('my request'));
-      await transport.flush();
-
-      expect(registry.data, expectedBytes);
+      expect(registry.data, transportResponse);
     });
 
     test('Test transport receives bad data', () async {
       client.postResponse = '`';
-      transport.writeAll(utf8Codec.encode('my request'));
+      transport.writeAll(transportRequest);
       expect(transport.flush(), throwsA(new isInstanceOf<TProtocolError>()));
     });
   });
