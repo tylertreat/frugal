@@ -86,6 +86,9 @@ class FHttpClientTransport extends FTransport {
     wt.Response response;
     try {
       response = await request.post();
+    } on StateError catch (ex) {
+      throw new TTransportError(
+          TTransportErrorType.UNKNOWN, 'Malformed request ${ex.toString()}');
     } on wt.RequestException catch (ex) {
       if (ex.response == null) {
         throw new TTransportError(TTransportErrorType.UNKNOWN, ex.message);
@@ -153,6 +156,7 @@ class FHttpConfig {
     }
 
     h['content-type'] = 'application/x-frugal';
+    h['content-transfer-encoding'] = 'base64';
     h['accept'] = 'application/x-frugal';
 
     if (responseSizeLimit > 0) {

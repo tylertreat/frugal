@@ -22,8 +22,13 @@ void main() {
       'x-frugal-payload-limit': '10',
       // TODO: When w_transport supports content-type overrides, enable this.
       // 'content-type': 'application/x-frugal',
+      'content-transfer-encoding': 'base64',
       'accept': 'application/x-frugal',
       'foo': 'bar'
+    };
+    Map responseHeaders = {
+      'content-type': 'application/x-frugal',
+      'content-transfer-encoding': 'base64'
     };
     Uint8List transportRequest = new Uint8List.fromList([1, 2, 3, 4, 5]);
     Uint8List transportRequestFramed =
@@ -35,7 +40,7 @@ void main() {
     String transportResponseB64 = BASE64.encode(transportResponseFramed);
 
     setUp(() {
-      client = new MockClient();
+      client = new Client();
       config = new FHttpConfig(Uri.parse('http://localhost'), {'foo': 'bar'},
           responseSizeLimit: 10);
       transport = new FHttpClientTransport(client, config);
@@ -56,7 +61,8 @@ void main() {
               return new MockResponse.badRequest();
             }
           });
-          return new MockResponse.ok(body: transportResponseB64);
+          return new MockResponse.ok(
+              body: transportResponseB64, headers: responseHeaders);
         } else {
           return new MockResponse.badRequest();
         }
@@ -87,7 +93,7 @@ void main() {
     FHttpClientTransport transport;
 
     setUp(() {
-      client = new MockClient();
+      client = new Client();
       var config = new FHttpConfig(Uri.parse('http://localhost'), {},
           requestSizeLimit: 10);
       transport = new FHttpClientTransport(client, config);
@@ -109,7 +115,7 @@ void main() {
 
     setUp(() {
       config = new FHttpConfig(Uri.parse('http://localhost'), {});
-      transport = new FHttpClientTransport(new MockClient(), config);
+      transport = new FHttpClientTransport(new Client(), config);
       registry = new FakeFRegistry();
       transport.setRegistry(registry);
     });
@@ -135,6 +141,20 @@ void main() {
       Response response = new MockResponse.badRequest();
       MockTransports.http.expect('POST', config.uri, respondWith: response);
       expect(transport.flush(), throwsA(new isInstanceOf<TTransportError>()));
+    });
+
+    test('Test transport receives error on no response', () async {
+      transport.writeAll(utf8Codec.encode('my request'));
+      Response response = new MockResponse.badRequest();
+      MockTransports.http.expect('POST', config.uri, respondWith: response);
+      expect(transport.flush(), throwsA(new isInstanceOf<TTransportError>()));
+    });
+  });
+
+  group('FHttpConfig null uri', () {
+    test('Test initialization throws error', () {
+      expect(() => new FHttpConfig(null, {}),
+          throwsA(new isInstanceOf<ArgumentError>()));
     });
   });
 }
