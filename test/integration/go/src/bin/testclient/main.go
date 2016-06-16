@@ -2,13 +2,13 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/Workiva/frugal/lib/go"
 	"github.com/Workiva/frugal/test/integration/go/common"
 	"github.com/Workiva/frugal/test/integration/go/gen/frugaltest"
 	"log"
 	"reflect"
 	"time"
-	"fmt"
 )
 
 var host = flag.String("host", "localhost", "Host to connect")

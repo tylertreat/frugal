@@ -70,9 +70,9 @@ func warnGenWithoutFrugal(genWithFrugal bool) {
 	if !genWithFrugal && !globals.GenWithFrugalWarn {
 		globals.PrintWarning(
 			"Consider using the \"gen_with_frugal\" language option " +
-			"to have Frugal generate code in place of Thrift.\nThis is an " +
-			"experimental feature. Please file a GitHub issue if you encounter " +
-			"problems.")
+				"to have Frugal generate code in place of Thrift.\nThis is an " +
+				"experimental feature. Please file a GitHub issue if you encounter " +
+				"problems.")
 		globals.GenWithFrugalWarn = true
 	}
 }
@@ -104,7 +104,7 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 		// TODO: Remove this once gen_with_frugal is no longer experimental
 		// and is the default
 		warnGenWithoutFrugal(genWithFrugal)
-		g = generator.NewProgramGenerator(dartlang.NewGenerator(options), false)
+		g = generator.NewProgramGenerator(dartlang.NewGenerator(options, genWithFrugal), false)
 	case "go":
 		// TODO: Remove this once gen_with frugal is no longer experimental
 		// and is the default.
