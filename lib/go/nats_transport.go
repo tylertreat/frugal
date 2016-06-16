@@ -278,7 +278,9 @@ func (n *natsServiceTTransport) Close() error {
 		return nil
 	}
 
-	// Signal remote peer for a graceful disconnect.
+	// Signal remote peer for a graceful disconnect
+	log.Infof("frugal: sending disconnect to topic: %s", n.writeTo)
+
 	n.conn.PublishRequest(n.writeTo, disconnect, nil)
 	if err := n.sub.Unsubscribe(); err != nil {
 		return thrift.NewTTransportExceptionFromError(err)
