@@ -33,7 +33,7 @@ const (
 
 type Generator struct {
 	*generator.BaseGenerator
-	outputDir string
+	outputDir     string
 	genWithFrugal bool
 }
 

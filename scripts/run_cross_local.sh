@@ -22,7 +22,11 @@ go build -o test/integration/go/bin/testserver test/integration/go/src/bin/tests
 
 # RM and Generate Dart Code
 rm -rf test/integration/dart/gen-dart/
-frugal --gen dart -r --out='test/integration/dart/gen-dart' test/integration/frugalTest.frugal
+if [ $# -eq 1 ] && [ "$1" == "-gen_with_frugal" ]; then
+    frugal --gen dart:gen_with_frugal -r --out='test/integration/dart/gen-dart' test/integration/frugalTest.frugal
+else
+    frugal --gen dart -r --out='test/integration/dart/gen-dart' test/integration/frugalTest.frugal
+fi
 
 cd test/integration/dart/test_client
 pub upgrade

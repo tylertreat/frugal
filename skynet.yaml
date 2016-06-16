@@ -48,7 +48,6 @@ name: cross
 
 requires:
   Workiva/frugal:
-    - local_cache
     - artifactory
 run:
   when-branch-name-is:
@@ -79,7 +78,6 @@ name: cross-gen_with_frugal
 
 requires:
   Workiva/frugal:
-    - local_cache
     - artifactory
 run:
   when-branch-name-is:
