@@ -64,9 +64,16 @@ class FHttpClientTransport extends FTransport {
 
   @override
   Future flush() async {
-    var requestBody = BASE64.encode(_writeBuffer);
+    // Frame the request body per frugal spec
+    Uint8List bytes = new Uint8List(4 + _writeBuffer.length);
+    bytes.buffer.asByteData().setUint32(0, _writeBuffer.length);
+    bytes.setAll(4, _writeBuffer);
     _writeBuffer.clear();
 
+    // Encode request
+    var requestBody = BASE64.encode(bytes);
+
+    // Make the POST request
     http.Response response;
     try {
       response = await httpClient.post(config.url,
@@ -74,12 +81,15 @@ class FHttpClientTransport extends FTransport {
     } catch (e) {
       throw new TTransportError(TTransportErrorType.UNKNOWN, e.toString());
     }
+
+    // Requested too much data or other possible request errors
     if (response.statusCode == 413) {
       throw new FMessageSizeError.response();
     } else if (response.statusCode >= 300) {
       throw new TTransportError(TTransportErrorType.UNKNOWN, response.body);
     }
 
+    // Attempt to decode the response payload
     Uint8List data;
     try {
       data = new Uint8List.fromList(BASE64.decode(response.body));
@@ -87,7 +97,9 @@ class FHttpClientTransport extends FTransport {
       throw new TProtocolError(TProtocolErrorType.INVALID_DATA,
           'Expected a Base 64 encoded string.');
     }
-    _registry.execute(data);
+
+    // Process the request, but drop the frame size
+    _registry.execute(data.sublist(4));
   }
 }
 

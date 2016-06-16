@@ -151,9 +151,9 @@ func (n *natsServiceTTransport) handleMessage(msg *nats.Msg) {
 	if msg.Reply == disconnect {
 		// Remote client is disconnecting.
 		if n.isClient() {
-			log.Error("frugal: transport received unexpected disconnect from the server")
+			log.Errorf("frugal: transport with heartbeat: %s received unexpected disconnect from the server", n.heartbeatListen)
 		} else {
-			log.Debug("frugal: client transport closed cleanly")
+			log.Debugf("frugal: transport with heartbeat: %s closed cleanly", n.heartbeatListen)
 		}
 		n.Close()
 		return
@@ -168,7 +168,7 @@ func (n *natsServiceTTransport) handleHeartbeat(msg *nats.Msg) {
 	select {
 	case n.recvHeartbeatChan() <- struct{}{}:
 	default:
-		log.Println("frugal: natsServiceTTransport received heartbeat dropped")
+		log.Infof("frugal: natsServiceTTransport dropped heartbeat: %s", n.heartbeatListen)
 	}
 	n.conn.Publish(n.heartbeatReply, nil)
 }
@@ -184,7 +184,7 @@ func (n *natsServiceTTransport) heartbeatLoop() {
 		case <-time.After(n.heartbeatTimeoutPeriod()):
 			missed++
 			if missed >= n.maxMissedHeartbeats {
-				log.Warn("frugal: server heartbeat expired")
+				log.Warnf("frugal: server heartbeat expired for heartbeat: %s", n.heartbeatListen)
 				n.Close()
 				return
 			}
@@ -286,7 +286,9 @@ func (n *natsServiceTTransport) Close() error {
 		return nil
 	}
 
-	// Signal remote peer for a graceful disconnect.
+	// Signal remote peer for a graceful disconnect
+	log.Infof("frugal: sending disconnect to topic: %s", n.writeTo)
+
 	n.conn.PublishRequest(n.writeTo, disconnect, nil)
 	if err := n.sub.Unsubscribe(); err != nil {
 		return thrift.NewTTransportExceptionFromError(err)
