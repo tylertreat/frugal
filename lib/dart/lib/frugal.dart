@@ -7,9 +7,9 @@ import "dart:math";
 import "dart:typed_data";
 
 import "package:logging/logging.dart";
-import "package:http/http.dart" as http;
 import "package:thrift/thrift.dart";
 import "package:uuid/uuid.dart";
+import "package:w_transport/w_transport.dart" as wt;
 
 part 'src/f_context.dart';
 part 'src/f_middleware.dart';
