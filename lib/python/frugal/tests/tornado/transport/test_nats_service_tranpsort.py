@@ -5,7 +5,7 @@ from thrift.transport.TTransport import TTransportException
 from tornado import concurrent
 from tornado.testing import gen_test, AsyncTestCase
 
-from frugal.transport.nats_service_transport import TNatsServiceTransport
+from frugal.tornado.transport.nats_service_transport import TNatsServiceTransport
 
 
 class TestTNatsServiceTransport(AsyncTestCase):

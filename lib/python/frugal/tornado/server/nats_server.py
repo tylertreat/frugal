@@ -7,7 +7,8 @@ from nats.io.utils import new_inbox
 from tornado import gen, ioloop
 
 from frugal.server import FServer
-from frugal.transport import FTransport, TNatsServiceTransport
+from frugal.transport import FTransport
+from frugal.tornado.transport import TNatsServiceTransport
 from frugal.registry import FServerRegistry
 
 logger = logging.getLogger(__name__)

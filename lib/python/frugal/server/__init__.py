@@ -1,4 +1,3 @@
-from server import FServer
-from nats_server import FNatsTornadoServer
+from frugal.server.server import FServer
 
-__all__ = ['FServer', 'FNatsTornadoServer']
+__all__ = ['FServer']
