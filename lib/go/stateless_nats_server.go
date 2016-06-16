@@ -170,7 +170,7 @@ func (f *FStatelessNatsServer) processFrame(frame []byte, reply string) error {
 		return nil
 	}
 
-	// Add frame size.
+	// Add frame size (4-byte uint32).
 	response := make([]byte, output.Len()+4)
 	binary.BigEndian.PutUint32(response, uint32(output.Len()))
 	copy(response[4:], output.Bytes())
