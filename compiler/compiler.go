@@ -70,9 +70,9 @@ func warnGenWithoutFrugal(genWithFrugal bool) {
 	if !genWithFrugal && !globals.GenWithFrugalWarn {
 		globals.PrintWarning(
 			"Consider using the \"gen_with_frugal\" language option " +
-			"to have Frugal generate code in place of Thrift.\nThis is an " +
-			"experimental feature. Please file a GitHub issue if you encounter " +
-			"problems.")
+				"to have Frugal generate code in place of Thrift.\nThis is an " +
+				"experimental feature. Please file a GitHub issue if you encounter " +
+				"problems.")
 		globals.GenWithFrugalWarn = true
 	}
 }
