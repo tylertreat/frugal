@@ -33,8 +33,10 @@ type FStatelessNatsServer struct {
 // NewFStatelessNatsServer creates a new FStatelessNatsServer which receives
 // requests on the given subject and queue. Pass an empty string for the queue
 // to not join a queue group. The worker count controls how many goroutines to
-// use to process requests. This uses a default request queue length of 64.
-// Clients must connect with the transport created by
+// use to process requests. This uses a default request queue length of 64. If
+// the queue fills up, newly received requests will block to be placed on the
+// queue. Configurable load-shedding logic may be triggered if requests wait
+// for too long. Clients must connect with the transport created by
 // NewStatelessNatsTTransport.
 func NewFStatelessNatsServer(
 	conn *nats.Conn,
