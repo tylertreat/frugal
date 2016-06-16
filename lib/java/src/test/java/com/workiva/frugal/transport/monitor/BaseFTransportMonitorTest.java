@@ -73,7 +73,7 @@ public class BaseFTransportMonitorTest {
         transport.setMonitor(monitor);
 
         transport.close();
-        Thread.sleep(5);
+        Thread.sleep(50);
 
         verify(monitor).onClosedCleanly();
     }
@@ -90,7 +90,7 @@ public class BaseFTransportMonitorTest {
         transport.setMonitor(monitor);
 
         transport.close(cause);
-        Thread.sleep(5);
+        Thread.sleep(10);
 
         verify(monitor).onClosedUncleanly(cause);
     }
@@ -107,7 +107,7 @@ public class BaseFTransportMonitorTest {
         transport.setMonitor(monitor);
 
         transport.close(cause);
-        Thread.sleep(5);
+        Thread.sleep(10);
 
         verify(monitor).onClosedUncleanly(cause);
         verify(monitor).onReopenSucceeded();
@@ -126,7 +126,7 @@ public class BaseFTransportMonitorTest {
         transport.setMonitor(monitor);
 
         transport.close(cause);
-        Thread.sleep(10);
+        Thread.sleep(15);
 
         verify(monitor).onClosedUncleanly(cause);
         verify(monitor).onReopenFailed(1, 1);
@@ -146,7 +146,7 @@ public class BaseFTransportMonitorTest {
         transport.setMonitor(monitor);
 
         transport.close(cause);
-        Thread.sleep(5);
+        Thread.sleep(10);
 
         verify(monitor).onClosedUncleanly(cause);
         verify(monitor).onReopenFailed(1, 1);

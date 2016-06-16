@@ -244,9 +244,10 @@ func (n *FNatsServer) remove(heartbeat string) {
 }
 
 func (n *FNatsServer) startHeartbeat() {
+	hbTicker := time.NewTicker(n.heartbeatInterval)
 	for {
 		select {
-		case <-time.After(n.heartbeatInterval):
+		case <-hbTicker.C:
 			n.mu.Lock()
 			clients := len(n.clients)
 			n.mu.Unlock()
@@ -255,6 +256,9 @@ func (n *FNatsServer) startHeartbeat() {
 			}
 			if err := n.conn.Publish(n.heartbeatSubject, nil); err != nil {
 				log.Errorf("frugal: error publishing heartbeat:", err.Error())
+			}
+			if err := n.conn.FlushTimeout(n.heartbeatInterval * 3 / 4); err != nil {
+				log.Errorf("frugal: error flushing heartbeat:", err.Error())
 			}
 		case <-n.quit:
 			return
@@ -270,11 +274,11 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		select {
 		case recvHeartbeat <- struct{}{}:
 		default:
-			log.Println("frugal: FNatsServer received heartbeat dropped")
+			log.Infof("frugal: FNatsServer dropped heartbeat: %s", client.heartbeat)
 		}
 	})
 	if err != nil {
-		log.Errorf("frugal: error subscribing to heartbeat", client.heartbeat)
+		log.Errorf("frugal: error subscribing to heartbeat:", client.heartbeat)
 		return
 	}
 	defer sub.Unsubscribe()
@@ -290,7 +294,7 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		case <-wait:
 			missed++
 			if missed >= n.maxMissedHeartbeats {
-				log.Warn("frugal: client heartbeat expired")
+				log.Warnf("frugal: client heartbeat expired for heartbeat: %s", client.heartbeat)
 				n.remove(client.heartbeat)
 				return
 			}
@@ -328,7 +332,7 @@ func (n *FNatsServer) accept(listenTo, replyTo, heartbeat string) (FTransport, e
 		n.remove(heartbeat)
 	}()
 
-	log.Debug("frugal: client connection accepted")
+	log.Debug("frugal: client connection accepted with heartbeat:", heartbeat)
 	return transport, nil
 }
 

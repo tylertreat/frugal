@@ -24,11 +24,11 @@ class Python(LanguageBase):
                            'f_Foo_publisher.py',
                            'f_Foo_subscriber.py']
 
-        out = os.path.join(root, "test/out/valid")
+        valid = os.path.join(root, "test/out/valid")
         expected = os.path.join(root, "test/expected/python")
 
         for f in files_to_update:
-            src = os.path.join(out, f)
-            dest = os.path.join(expected, f)
+            src = os.path.join(expected, f)
+            dest = os.path.join(valid, f)
             print "copying {} to {}".format(src, dest)
             copyfile(src, dest)

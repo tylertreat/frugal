@@ -107,56 +107,66 @@ public class FContext {
 
     /**
      * Adds a request header to the FContext for the given name. A header is a key-value pair. If a header with the name
-     * is already present on the FContext, it will be replaced. The _opid and _cid headers are reserved.
+     * is already present on the FContext, it will be replaced. The _opid and _cid headers are reserved. Returns the
+     * same FContext to allow for call chaining.
      *
      * @param name  header name
      * @param value header value
+     * @return FContext
      */
-    public void addRequestHeader(String name, String value) {
+    public FContext addRequestHeader(String name, String value) {
         if (OP_ID.equals(name) || CID.equals(name)) {
-            return;
+            return this;
         }
         requestHeaders.put(name, value);
+        return this;
     }
 
     /**
      * Adds request headers to the FContext for the given headers map. A header is a key-value pair.
      * If a header with the name is already present on the FContext, it will be replaced. The _opid
-     * and _cid headers are reserved.
+     * and _cid headers are reserved. Returns the same FContext to allow for call chaining.
      *
      * @param headers headers to add to request headers
+     * @return FContext
      */
-    public void addRequestHeaders(Map<String, String> headers) {
+    public FContext addRequestHeaders(Map<String, String> headers) {
         for (Map.Entry<String, String> pair : headers.entrySet()) {
             addRequestHeader(pair.getKey(), pair.getValue());
         }
+        return this;
     }
 
     /**
      * Adds a response header to the FContext for the given name. A header is a key-value pair. If a header with the name
-     * is already present on the FContext, it will be replaced. The _opid header is reserved.
+     * is already present on the FContext, it will be replaced. The _opid header is reserved. Returns the same FContext
+     * to allow for call chaining.
      *
      * @param name  header name
      * @param value header value
+     * @return FContext
      */
-    public void addResponseHeader(String name, String value) {
+    public FContext addResponseHeader(String name, String value) {
         if (OP_ID.equals(name)) {
-            return;
+            return this;
         }
         responseHeaders.put(name, value);
+        return this;
     }
 
     /**
      * Adds response headers to the FContext for the given headers map. A header is a key-value pair.
      * If a header with the name is already present on the FContext, it will be replaced. The _opid
-     * header is reserved.
+     * header is reserved. Returns the same FContext to allow for call chaining.
      *
      * @param headers headers to add to request headers
+     * @return FContext
      */
-    public void addResponseHeaders(Map<String, String> headers) {
+    public FContext addResponseHeaders(Map<String, String> headers) {
         for (Map.Entry<String, String> pair : headers.entrySet()) {
             addResponseHeader(pair.getKey(), pair.getValue());
         }
+        return this;
     }
 
     /**

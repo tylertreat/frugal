@@ -9,8 +9,10 @@ import "dart:typed_data";
 import "package:logging/logging.dart";
 import "package:thrift/thrift.dart";
 import "package:uuid/uuid.dart";
+import "package:w_transport/w_transport.dart" as wt;
 
 part 'src/f_context.dart';
+part 'src/f_middleware.dart';
 part 'src/f_error.dart';
 part 'src/f_protocol_error.dart';
 part 'src/f_provider.dart';
@@ -25,6 +27,7 @@ part 'src/transport/f_scope_transport.dart';
 part 'src/transport/f_scope_transport_factory.dart';
 part 'src/transport/f_transport.dart';
 part 'src/transport/t_framed_transport.dart';
+part 'src/transport/f_http_transport.dart';
 part 'src/transport/f_mux_transport.dart';
 part 'src/transport/t_memory_transport.dart';
 part 'src/transport/f_transport_monitor.dart';

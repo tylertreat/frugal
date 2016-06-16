@@ -132,6 +132,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 
 func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "from thrift.Thrift import TMessageType\n"
+	imports += "from frugal.middleware import Method\n"
 	_, err := file.WriteString(imports)
 	return err
 }

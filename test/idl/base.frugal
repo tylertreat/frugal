@@ -1,5 +1,6 @@
 namespace java base
 namespace go actual_base
+namespace dart actual_base
 
 exception api_exception {}
 
@@ -13,4 +14,11 @@ const i32 const_i32_from_base = 582;
 struct thing {
     1: i32 an_id,
     2: string a_string
+}
+
+enum base_health_condition {
+    PASS = 1,
+    WARN = 2,
+    FAIL = 3,
+    UNKNOWN = 4
 }

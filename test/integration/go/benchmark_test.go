@@ -63,7 +63,7 @@ func benchmarkBasic(b *testing.B, protoFactory thrift.TProtocolFactory, numMiddl
 
 	// Setup server.
 	processor := event.NewFFooProcessor(&BenchmarkHandler{}, middleware...)
-	serverTr, err := thrift.NewTServerSocket(addr)
+	serverTr, err := thrift.NewTServerSocket(defaultAddr)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func benchmarkBasic(b *testing.B, protoFactory thrift.TProtocolFactory, numMiddl
 	<-ch
 
 	// Setup client.
-	transport, err := thrift.NewTSocket(addr)
+	transport, err := thrift.NewTSocket(defaultAddr)
 	if err != nil {
 		b.Fatal(err)
 	}

@@ -251,6 +251,7 @@ public class FNatsServer implements FServer {
             }
             try {
                 conn.publish(heartbeatSubject, null);
+                conn.flush((int) (heartbeatInterval * 3 / 4));
             } catch (Exception e) {
                 LOGGER.severe("error publishing heartbeat " + e.getMessage());
             }
