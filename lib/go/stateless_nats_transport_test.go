@@ -260,7 +260,8 @@ func newStatelessClientAndServer(t *testing.T) (*statelessNatsTTransport, *FStat
 		protocolFactory, "foo", "queue", 1)
 	mockTransport := new(mockFTransport)
 	proto := thrift.NewTJSONProtocol(mockTransport)
-	mockTProtocolFactory.On("GetProtocol", mock.AnythingOfType("*thrift.TMemoryBuffer")).Return(proto)
+	mockTProtocolFactory.On("GetProtocol", mock.AnythingOfType("*thrift.TMemoryBuffer")).Return(proto).Once()
+	mockTProtocolFactory.On("GetProtocol", mock.AnythingOfType("*frugal.FBoundedMemoryBuffer")).Return(proto).Once()
 	fproto := &FProtocol{proto}
 	mockProcessor.On("Process", fproto, fproto).Return(nil)
 
