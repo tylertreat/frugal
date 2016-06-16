@@ -11,7 +11,7 @@ from nats.io.client import Client as NATS
 
 from frugal.protocol.protocol_factory import FProtocolFactory
 from frugal.provider import FScopeProvider
-from frugal.transport.nats_scope_transport import FNatsScopeTransportFactory
+from frugal.tornado.transport.nats_scope_transport import FNatsScopeTransportFactory
 
 from event.f_Events_subscriber import EventsSubscriber
 

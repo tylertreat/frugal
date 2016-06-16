@@ -9,8 +9,8 @@ setup(
     maintainer='Messaging Team',
     maintainer_email='messaging@workiva.com',
     url='http://github.com/Workiva/frugal',
-    packages=find_packages(),
-    extras_require = {
+    packages=find_packages(exclude=('frugal.tests', 'frugal.tests.*')),
+    extras_require={
         'tornado': ["nats-client==0.2.4"]
     }
 )

@@ -12,7 +12,7 @@ from nats.io.client import Client as NATS
 from frugal.context import FContext
 from frugal.protocol import FProtocolFactory
 from frugal.provider import FScopeProvider
-from frugal.transport import (
+from frugal.tornado.transport import (
     FMuxTornadoTransportFactory,
     FNatsScopeTransportFactory,
     TNatsServiceTransport
