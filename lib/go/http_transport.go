@@ -12,7 +12,7 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
 
-const payloadLimitHeader = "X-Frugal-Payload-Limit"
+const payloadLimitHeader = "x-frugal-payload-limit"
 
 var newEncoder = func(buf *bytes.Buffer) io.WriteCloser {
 	return base64.NewEncoder(base64.StdEncoding, buf)
@@ -22,7 +22,7 @@ var newEncoder = func(buf *bytes.Buffer) io.WriteCloser {
 func NewFrugalHandlerFunc(processor FProcessor, inPfactory, outPfactory *FProtocolFactory) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/x-frugal")
+		w.Header().Add("content-type", "application/x-frugal")
 
 		// Check for size limitation
 		limitStr := r.Header.Get(payloadLimitHeader)
@@ -97,6 +97,7 @@ func NewFrugalHandlerFunc(processor FProcessor, inPfactory, outPfactory *FProtoc
 			return
 		}
 
+		w.Header().Add("content-transfer-encoding", "base64")
 		w.Write(encoded.Bytes())
 	}
 }
