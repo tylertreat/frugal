@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -127,6 +128,8 @@ type httpTTransport struct {
 // requests/responses fit within a single http request.
 func NewHttpTTransport(client *http.Client, url string) thrift.TTransport {
 	return &httpTTransport{
+		client:        client,
+		url:           url,
 		frameBuffer:   make(chan []byte, frameBufferSize),
 		requestBuffer: new(bytes.Buffer),
 	}
@@ -220,6 +223,25 @@ func (h *httpTTransport) Flush() error {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 
+	// All responses should be framed with 4 bytes (uint32)
+	if len(response) < 4 {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
+			errors.New("frugal: invalid frame size"))
+	}
+
+	// If there are only 4 bytes, this needs to be a one-way
+	// (i.e. frame size 0)
+	if len(response) == 4 {
+		for i := range response {
+			if response[i] != 0 {
+				return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
+					errors.New("frugal: missing data"))
+			}
+		}
+		// it's a one-way, drop it
+		return nil
+	}
+
 	select {
 	case h.frameBuffer <- response:
 	case <-h.closeChan:
@@ -247,6 +269,7 @@ func (h *httpTTransport) makeRequest(requestPayload []byte) ([]byte, error) {
 
 	// Add request headers
 	request.Header.Add("content-type", "application/x-frugal")
+	request.Header.Add("content-transfer-encoding", "base64")
 	request.Header.Add("accept", "application/x-frugal")
 	if h.responseSizeLimit > 0 {
 		request.Header.Add(payloadLimitHeader, strconv.FormatUint(uint64(h.responseSizeLimit), 10))
@@ -258,18 +281,32 @@ func (h *httpTTransport) makeRequest(requestPayload []byte) ([]byte, error) {
 		return nil, err
 	}
 
+	// Response too large
 	if response.StatusCode == http.StatusRequestEntityTooLarge {
 		return nil, thrift.NewTTransportException(RESPONSE_TOO_LARGE,
 			"request was too large for the transport")
 	}
+
+	// Decode body
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(response.Body); err != nil {
+		return nil, err
+	}
+	body := string(buf.Bytes())
+
+	// Check bad status code
 	if response.StatusCode >= 300 {
-		// TODO: Inject payload body into error
-		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, "")
+		return nil, errors.New(body)
 	}
 
-	// TODO: decode and return response payload
+	// Decode and return response body
+	bts, err := base64.StdEncoding.DecodeString(body)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(bts)
+	return bts, nil
 
-	return nil, nil
 }
 
 func (h *httpTTransport) RemainingBytes() uint64 {

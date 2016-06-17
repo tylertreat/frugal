@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"reflect"
 	"time"
@@ -104,12 +105,24 @@ func handleClient(client *event.FFooClient) (err error) {
 // Client runner
 func runClient(conn *nats.Conn, transportFactory frugal.FTransportFactory, protocolFactory *frugal.FProtocolFactory) error {
 	transport := frugal.NewNatsServiceTTransport(conn, "foo", 5*time.Second, 2)
-	ftransport := transportFactory.GetTransport(transport)
-	defer ftransport.Close()
-	if err := ftransport.Open(); err != nil {
+	natsT := transportFactory.GetTransport(transport)
+	defer natsT.Close()
+	if err := natsT.Open(); err != nil {
 		return err
 	}
-	return handleClient(event.NewFFooClient(ftransport, protocolFactory))
+
+	if err := handleClient(event.NewFFooClient(natsT, protocolFactory)); err != nil {
+		return err
+	}
+
+	transport = frugal.NewHttpTTransport(&http.Client{}, "http://localhost:8090/frugal")
+	httpT := transportFactory.GetTransport(transport)
+	defer httpT.Close()
+	if err := httpT.Open(); err != nil {
+		return err
+	}
+
+	return handleClient(event.NewFFooClient(httpT, protocolFactory))
 }
 
 // Sever handler
@@ -142,6 +155,13 @@ func runServer(conn *nats.Conn, transportFactory frugal.FTransportFactory,
 	protocolFactory *frugal.FProtocolFactory) error {
 	handler := &FooHandler{}
 	processor := event.NewFFooProcessor(handler)
+
+	http.HandleFunc("/frugal", frugal.NewFrugalHandlerFunc(processor, protocolFactory, protocolFactory))
+	go func() {
+		fmt.Println("Starting the http server... on ", "/frugal")
+		http.ListenAndServe(":8090", http.DefaultServeMux)
+	}()
+
 	server := frugal.NewFNatsServerFactory(conn, "foo", 5*time.Second, 2,
 		frugal.NewFProcessorFactory(processor), transportFactory, protocolFactory)
 	fmt.Println("Starting the simple nats server... on ", "foo")
