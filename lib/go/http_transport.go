@@ -98,6 +98,7 @@ func NewFrugalHandlerFunc(processor FProcessor, inPfactory, outPfactory *FProtoc
 			return
 		}
 
+		w.Header().Add("content-transfer-encoding", "base64")
 		w.Write(encoded.Bytes())
 	}
 }

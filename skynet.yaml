@@ -4,7 +4,8 @@ run:
   when-branch-name-is:
     - .+
 
-image: "drydock.workiva.org/workiva/skynet-images:48052"
+# Link to image definition: https://github.com/Workiva/skynet-images/tree/ea53c331b4b7dddc1f617588d901f64f6050764a
+image: "drydock.workiva.org/workiva/skynet-images:51355"
 
 also-run:
   Workiva/messaging-sdk:go-tests:
@@ -48,13 +49,14 @@ name: cross
 
 requires:
   Workiva/frugal:
-    - local_cache
     - artifactory
 run:
   when-branch-name-is:
     - .+
 
-image: "drydock.workiva.org/workiva/skynet-images:48052"
+# https://github.com/Workiva/skynet-images/tree/ea53c331b4b7dddc1f617588d901f64f6050764a
+image: "drydock.workiva.org/workiva/skynet-images:51355"
+
 
 scripts:
   - testing=$PWD
@@ -79,13 +81,13 @@ name: cross-gen_with_frugal
 
 requires:
   Workiva/frugal:
-    - local_cache
     - artifactory
 run:
   when-branch-name-is:
     - .+
 
-image: "drydock.workiva.org/workiva/skynet-images:48052"
+# https://github.com/Workiva/skynet-images/tree/ea53c331b4b7dddc1f617588d901f64f6050764a
+image: "drydock.workiva.org/workiva/skynet-images:51355"
 
 scripts:
   - testing=$PWD

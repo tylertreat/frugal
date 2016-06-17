@@ -195,7 +195,7 @@ func (n *fNatsScopeTransport) Read(p []byte) (int, error) {
 	if !n.IsOpen() {
 		return 0, thrift.NewTTransportExceptionFromError(io.EOF)
 	}
-	if n.currentFrame == nil {
+	if len(n.currentFrame) == 0 {
 		select {
 		case frame := <-n.frameBuffer:
 			n.currentFrame = frame
@@ -208,10 +208,6 @@ func (n *fNatsScopeTransport) Read(p []byte) (int, error) {
 	// full, we could attempt to get the next frame.
 
 	n.currentFrame = n.currentFrame[num:]
-	if len(n.currentFrame) == 0 {
-		// The entire frame was copied, clear it.
-		n.DiscardFrame()
-	}
 	return num, nil
 }
 
@@ -240,8 +236,7 @@ func (n *fNatsScopeTransport) Write(p []byte) (int, error) {
 	return num, thrift.NewTTransportExceptionFromError(err)
 }
 
-// Flush publishes the buffered message. Returns ErrTooLarge if the buffered
-// message exceeds 1MB.
+// Flush publishes the buffered message.
 func (n *fNatsScopeTransport) Flush() error {
 	if !n.IsOpen() {
 		return n.getClosedConditionError("flush:")
@@ -250,10 +245,6 @@ func (n *fNatsScopeTransport) Flush() error {
 	data := n.writeBuffer.Bytes()
 	if len(data) == 0 {
 		return nil
-	}
-	// Include 4 bytes for frame size.
-	if len(data)+4 > natsMaxMessageSize {
-		return ErrTooLarge
 	}
 	binary.BigEndian.PutUint32(n.sizeBuffer, uint32(len(data)))
 	err := n.conn.Publish(n.formattedSubject(), append(n.sizeBuffer, data...))

@@ -1926,7 +1926,7 @@ func (g *Generator) generateCallArgs(method *parser.Method) string {
 func (g *Generator) generateErrTooLarge(service *parser.Service, method *parser.Method) string {
 	servLower := strings.ToLower(service.Name)
 	nameLower := generator.LowercaseFirstLetter(method.Name)
-	contents := "\t\tif err2 == frugal.ErrTooLarge {\n"
+	contents := "\t\tif frugal.IsErrTooLarge(err2) {\n"
 	contents += fmt.Sprintf(
 		"\t\t\t%sWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \"+err2.Error())\n",
 		servLower, nameLower)

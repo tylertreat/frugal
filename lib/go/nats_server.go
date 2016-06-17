@@ -36,6 +36,7 @@ func newInbox(prefix string) string {
 }
 
 // FNatsServer implements FServer by using NATS as the underlying transport.
+// Clients must connect with the transport created by NewNatsServiceTTransport.
 type FNatsServer struct {
 	conn                *nats.Conn
 	subjects            []string
@@ -53,7 +54,8 @@ type FNatsServer struct {
 }
 
 // NewFNatsServer creates a new FNatsServer which listens for requests on the
-// given subject.
+// given subject. Clients must connect with the transport created by
+// NewNatsServiceTTransport.
 func NewFNatsServer(
 	conn *nats.Conn,
 	subject string,
@@ -74,7 +76,8 @@ func NewFNatsServer(
 }
 
 // NewFNatsServerWithSubjects creates a new FNatsServer which listens for
-// requests on the given subjects.
+// requests on the given subjects. Clients must connect with the transport
+// created by NewNatsServiceTTransport.
 func NewFNatsServerWithSubjects(
 	conn *nats.Conn,
 	subjects []string,
@@ -95,7 +98,8 @@ func NewFNatsServerWithSubjects(
 }
 
 // NewFNatsServerFactory creates a new FNatsServer which listens for requests
-// on the given subject.
+// on the given subject. Clients must connect with the transport created by
+// NewNatsServiceTTransport.
 func NewFNatsServerFactory(
 	conn *nats.Conn,
 	subject string,
@@ -117,7 +121,8 @@ func NewFNatsServerFactory(
 }
 
 // NewFNatsServerFactoryWithSubjects creates a new FNatsServer which listens
-// for requests on the given subjects.
+// for requests on the given subjects. Clients must connect with the transport
+// created by NewNatsServiceTTransport.
 func NewFNatsServerFactoryWithSubjects(
 	conn *nats.Conn,
 	subjects []string,
@@ -161,14 +166,11 @@ func (n *FNatsServer) Serve() error {
 	log.Info("frugal: server running...")
 	<-n.quit
 	log.Info("frugal: server stopping...")
-	if n.conn.Status() != nats.CONNECTED {
-		log.Warn("frugal: Nats is already disconnected!")
-		return nil
-	}
 
 	for _, sub := range subscriptions {
 		sub.Unsubscribe()
 	}
+
 	return nil
 }
 
@@ -274,11 +276,11 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		select {
 		case recvHeartbeat <- struct{}{}:
 		default:
-			log.Println("frugal: FNatsServer received heartbeat dropped")
+			log.Infof("frugal: FNatsServer dropped heartbeat: %s", client.heartbeat)
 		}
 	})
 	if err != nil {
-		log.Errorf("frugal: error subscribing to heartbeat", client.heartbeat)
+		log.Errorf("frugal: error subscribing to heartbeat:", client.heartbeat)
 		return
 	}
 	defer sub.Unsubscribe()
@@ -294,7 +296,7 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		case <-wait:
 			missed++
 			if missed >= n.maxMissedHeartbeats {
-				log.Warn("frugal: client heartbeat expired")
+				log.Warnf("frugal: client heartbeat expired for heartbeat: %s", client.heartbeat)
 				n.remove(client.heartbeat)
 				return
 			}
@@ -332,7 +334,7 @@ func (n *FNatsServer) accept(listenTo, replyTo, heartbeat string) (FTransport, e
 		n.remove(heartbeat)
 	}()
 
-	log.Debug("frugal: client connection accepted")
+	log.Debug("frugal: client connection accepted with heartbeat:", heartbeat)
 	return transport, nil
 }
 

@@ -247,24 +247,6 @@ func TestNatsTransportFlushNatsDisconnected(t *testing.T) {
 	assert.Equal(t, thrift.NOT_OPEN, trErr.TypeId())
 }
 
-// Ensures Flush returns ErrTooLarge and the buffer is reset if the buffered
-// frame exceeds 1MB.
-func TestNatsTransportFlushErrTooLarge(t *testing.T) {
-	s := runServer(nil)
-	defer s.Shutdown()
-	tr, server, conn := newClientAndServer(t)
-	defer server.Stop()
-	defer conn.Close()
-	assert.Nil(t, tr.Open())
-	defer tr.Close()
-	assert.True(t, tr.IsOpen())
-
-	tr.writeBuffer.Write(make([]byte, 1024*1024+5))
-	err := tr.Flush()
-	assert.Equal(t, ErrTooLarge, err)
-	assert.Equal(t, 0, tr.writeBuffer.Len())
-}
-
 // Ensures Flush doesn't send anything to NATS if no data is buffered.
 func TestNatsTransportFlushNoData(t *testing.T) {
 	s := runServer(nil)

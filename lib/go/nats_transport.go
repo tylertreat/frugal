@@ -28,7 +28,11 @@ func newFrugalInbox() string {
 	return fmt.Sprintf("%s%s", frugalPrefix, nats.NewInbox())
 }
 
-// natsServiceTTransport implements thrift.TTransport.
+// natsServiceTTransport implements thrift.TTransport. This is a "stateful"
+// transport in the sense that the client forms a connection (proxied by NATS)
+// with the server and maintains it via heartbeats for the duration of the
+// transport lifecycle. This is useful if requests/responses need to span
+// multiple NATS messages.
 type natsServiceTTransport struct {
 	conn                *nats.Conn
 	listenTo            string
@@ -55,7 +59,11 @@ type natsServiceTTransport struct {
 // the NATS messaging system as the underlying transport. It performs a
 // handshake with a server listening on the given NATS subject upon open.
 // This TTransport can only be used with FNatsServer. Message frames are
-// limited to 1MB in size.
+// limited to 1MB in size. See NewStatelessNatsTTransport for a stateless NATS
+// transport which does not rely on maintaining a connection between client
+// and server.
+// TODO: Support >1MB messages.
+// TODO 2.0.0: Remove "Service" from the name.
 func NewNatsServiceTTransport(conn *nats.Conn, subject string,
 	timeout time.Duration, maxMissedHeartbeats uint) thrift.TTransport {
 
@@ -143,9 +151,9 @@ func (n *natsServiceTTransport) handleMessage(msg *nats.Msg) {
 	if msg.Reply == disconnect {
 		// Remote client is disconnecting.
 		if n.isClient() {
-			log.Error("frugal: transport received unexpected disconnect from the server")
+			log.Errorf("frugal: transport with heartbeat: %s received unexpected disconnect from the server", n.heartbeatListen)
 		} else {
-			log.Debug("frugal: client transport closed cleanly")
+			log.Debugf("frugal: transport with heartbeat: %s closed cleanly", n.heartbeatListen)
 		}
 		n.Close()
 		return
@@ -160,7 +168,7 @@ func (n *natsServiceTTransport) handleHeartbeat(msg *nats.Msg) {
 	select {
 	case n.recvHeartbeatChan() <- struct{}{}:
 	default:
-		log.Println("frugal: natsServiceTTransport received heartbeat dropped")
+		log.Infof("frugal: natsServiceTTransport dropped heartbeat: %s", n.heartbeatListen)
 	}
 	n.conn.Publish(n.heartbeatReply, nil)
 }
@@ -176,7 +184,7 @@ func (n *natsServiceTTransport) heartbeatLoop() {
 		case <-time.After(n.heartbeatTimeoutPeriod()):
 			missed++
 			if missed >= n.maxMissedHeartbeats {
-				log.Warn("frugal: server heartbeat expired")
+				log.Warnf("frugal: server heartbeat expired for heartbeat: %s", n.heartbeatListen)
 				n.Close()
 				return
 			}
@@ -278,7 +286,9 @@ func (n *natsServiceTTransport) Close() error {
 		return nil
 	}
 
-	// Signal remote peer for a graceful disconnect.
+	// Signal remote peer for a graceful disconnect
+	log.Infof("frugal: sending disconnect to topic: %s", n.writeTo)
+
 	n.conn.PublishRequest(n.writeTo, disconnect, nil)
 	if err := n.sub.Unsubscribe(); err != nil {
 		return thrift.NewTTransportExceptionFromError(err)
@@ -326,8 +336,7 @@ func (n *natsServiceTTransport) Write(p []byte) (int, error) {
 	return num, thrift.NewTTransportExceptionFromError(err)
 }
 
-// Flush sends the buffered bytes over NATS. Returns ErrTooLarge if the number
-// of bytes exceed 1MB.
+// Flush sends the buffered bytes over NATS.
 func (n *natsServiceTTransport) Flush() error {
 	if !n.IsOpen() {
 		return n.getClosedConditionError("flush:")
@@ -336,9 +345,6 @@ func (n *natsServiceTTransport) Flush() error {
 	data := n.writeBuffer.Bytes()
 	if len(data) == 0 {
 		return nil
-	}
-	if len(data) > natsMaxMessageSize {
-		return ErrTooLarge
 	}
 	err := n.conn.Publish(n.writeTo, data)
 	return thrift.NewTTransportExceptionFromError(err)
