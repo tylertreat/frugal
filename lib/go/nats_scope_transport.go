@@ -195,7 +195,7 @@ func (n *fNatsScopeTransport) Read(p []byte) (int, error) {
 	if !n.IsOpen() {
 		return 0, thrift.NewTTransportExceptionFromError(io.EOF)
 	}
-	if n.currentFrame == nil {
+	if len(n.currentFrame) == 0 {
 		select {
 		case frame := <-n.frameBuffer:
 			n.currentFrame = frame
@@ -208,10 +208,6 @@ func (n *fNatsScopeTransport) Read(p []byte) (int, error) {
 	// full, we could attempt to get the next frame.
 
 	n.currentFrame = n.currentFrame[num:]
-	if len(n.currentFrame) == 0 {
-		// The entire frame was copied, clear it.
-		n.DiscardFrame()
-	}
 	return num, nil
 }
 

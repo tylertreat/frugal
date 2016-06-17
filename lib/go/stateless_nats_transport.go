@@ -100,7 +100,7 @@ func (f *statelessNatsTTransport) Read(buf []byte) (int, error) {
 	if !f.IsOpen() {
 		return 0, f.getClosedConditionError("read:")
 	}
-	if f.currentFrame == nil {
+	if len(f.currentFrame) == 0 {
 		select {
 		case frame := <-f.frameBuffer:
 			f.currentFrame = frame
@@ -113,10 +113,6 @@ func (f *statelessNatsTTransport) Read(buf []byte) (int, error) {
 	// full, we could attempt to get the next frame.
 
 	f.currentFrame = f.currentFrame[num:]
-	if len(f.currentFrame) == 0 {
-		// The entire frame was copied, clear it.
-		f.currentFrame = nil
-	}
 	return num, nil
 }
 
