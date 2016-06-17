@@ -28,7 +28,11 @@ func newFrugalInbox() string {
 	return fmt.Sprintf("%s%s", frugalPrefix, nats.NewInbox())
 }
 
-// natsServiceTTransport implements thrift.TTransport.
+// natsServiceTTransport implements thrift.TTransport. This is a "stateful"
+// transport in the sense that the client forms a connection (proxied by NATS)
+// with the server and maintains it via heartbeats for the duration of the
+// transport lifecycle. This is useful if requests/responses need to span
+// multiple NATS messages.
 type natsServiceTTransport struct {
 	conn                *nats.Conn
 	listenTo            string
@@ -55,7 +59,11 @@ type natsServiceTTransport struct {
 // the NATS messaging system as the underlying transport. It performs a
 // handshake with a server listening on the given NATS subject upon open.
 // This TTransport can only be used with FNatsServer. Message frames are
-// limited to 1MB in size.
+// limited to 1MB in size. See NewStatelessNatsTTransport for a stateless NATS
+// transport which does not rely on maintaining a connection between client
+// and server.
+// TODO: Support >1MB messages.
+// TODO 2.0.0: Remove "Service" from the name.
 func NewNatsServiceTTransport(conn *nats.Conn, subject string,
 	timeout time.Duration, maxMissedHeartbeats uint) thrift.TTransport {
 
@@ -328,8 +336,7 @@ func (n *natsServiceTTransport) Write(p []byte) (int, error) {
 	return num, thrift.NewTTransportExceptionFromError(err)
 }
 
-// Flush sends the buffered bytes over NATS. Returns ErrTooLarge if the number
-// of bytes exceed 1MB.
+// Flush sends the buffered bytes over NATS.
 func (n *natsServiceTTransport) Flush() error {
 	if !n.IsOpen() {
 		return n.getClosedConditionError("flush:")
@@ -338,9 +345,6 @@ func (n *natsServiceTTransport) Flush() error {
 	data := n.writeBuffer.Bytes()
 	if len(data) == 0 {
 		return nil
-	}
-	if len(data) > natsMaxMessageSize {
-		return ErrTooLarge
 	}
 	err := n.conn.Publish(n.writeTo, data)
 	return thrift.NewTTransportExceptionFromError(err)

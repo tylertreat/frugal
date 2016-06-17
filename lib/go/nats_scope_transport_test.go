@@ -462,23 +462,6 @@ func TestNatsScopeFlushNoData(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 }
 
-// Ensures Flush returns ErrTooLarge if the buffered frame exceeds 1MB.
-func TestNatsScopeFlushTooLarge(t *testing.T) {
-	s := runServer(nil)
-	defer s.Shutdown()
-	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer conn.Close()
-	tr := NewNatsFScopeTransport(conn)
-	assert.Nil(t, tr.Open())
-	tr.(*fNatsScopeTransport).writeBuffer.Write(make([]byte, 10204*1024+10))
-
-	assert.Equal(t, ErrTooLarge, tr.Flush())
-	assert.Equal(t, 0, tr.(*fNatsScopeTransport).writeBuffer.Len())
-}
-
 // Ensures RemainingBytes returns max uint64.
 func TestNatsScopeRemainingBytes(t *testing.T) {
 	tr := NewNatsFScopeTransport(nil)
