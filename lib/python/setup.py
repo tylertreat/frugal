@@ -6,8 +6,11 @@ setup(
     name='frugal',
     version=__version__,
     description='Frugal Python Library',
-    maintainer='Charlie Strawn',
-    maintainer_email='charlie.strawn@workiva.com',
+    maintainer='Messaging Team',
+    maintainer_email='messaging@workiva.com',
     url='http://github.com/Workiva/frugal',
-    packages=find_packages(),
+    packages=find_packages(exclude=('frugal.tests', 'frugal.tests.*')),
+    extras_require={
+        'tornado': ["nats-client==0.2.4"]
+    }
 )
