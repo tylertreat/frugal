@@ -245,6 +245,8 @@ func TestFrugalHandlerFunc(t *testing.T) {
 	handler(w, r)
 
 	assert.Equal(w.Code, http.StatusOK)
+	assert.Equal(w.Header().Get("content-type"), "application/x-frugal")
+	assert.Equal(w.Header().Get("content-transfer-encoding"), "base64")
 	assert.Equal(
 		[]byte(base64.StdEncoding.EncodeToString(append([]byte{0, 0, 0, 4}, response...))),
 		w.Body.Bytes(),

@@ -126,7 +126,7 @@ public class BaseFTransportMonitorTest {
         transport.setMonitor(monitor);
 
         transport.close(cause);
-        Thread.sleep(10);
+        Thread.sleep(15);
 
         verify(monitor).onClosedUncleanly(cause);
         verify(monitor).onReopenFailed(1, 1);
