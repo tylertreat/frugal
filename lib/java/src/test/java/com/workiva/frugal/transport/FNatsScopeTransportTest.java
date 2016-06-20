@@ -3,8 +3,6 @@ package com.workiva.frugal.transport;
 import com.workiva.frugal.exception.FException;
 import io.nats.client.*;
 import org.apache.thrift.transport.TTransportException;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
