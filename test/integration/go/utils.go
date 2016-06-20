@@ -47,7 +47,6 @@ func messageHandler(
 		}
 		expected.RUnlock()
 	}()
-	close(started)
 
 	t.Logf("Testing with %v", name)
 
@@ -78,6 +77,9 @@ func messageHandler(
 	if err != nil {
 		panic(err)
 	}
+
+	close(started)
+
 	defer sub.Unsubscribe()
 
 	select {
