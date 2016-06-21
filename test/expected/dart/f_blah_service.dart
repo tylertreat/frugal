@@ -20,7 +20,7 @@ abstract class FBlah {
   /// Use this to ping the server.
   Future ping(frugal.FContext ctx);
 
-  /// Use this to tell the sever how you feel.
+  /// Use this to tell the server how you feel.
   Future<int> bleh(frugal.FContext ctx, t_valid.Thing one, t_valid.Stuff two, List<int> custom_ints);
 
   Future<t_validStructs.Thing> getThing(frugal.FContext ctx);
@@ -104,7 +104,7 @@ class FBlahClient implements FBlah {
     return pingCallback;
   }
 
-  /// Use this to tell the sever how you feel.
+  /// Use this to tell the server how you feel.
   Future<int> bleh(frugal.FContext ctx, t_valid.Thing one, t_valid.Stuff two, List<int> custom_ints) {
     return this._methods['bleh']([ctx, one, two, custom_ints]);
   }
