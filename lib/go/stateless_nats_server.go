@@ -233,7 +233,8 @@ func (f *FStatelessNatsServer) worker() {
 func (f *FStatelessNatsServer) processFrame(frame []byte, reply string) error {
 	// Read and process frame.
 	input := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(frame[4:])} // Discard frame size
-	output := NewFBoundedMemoryBuffer(natsMaxMessageSize)
+	// Buffer 1MB - 4 bytes since frame size is copied directly.
+	output := NewFBoundedMemoryBuffer(natsMaxMessageSize - 4)
 	if err := f.processor.Process(
 		f.inputProtoFactory.GetProtocol(input),
 		f.outputProtoFactory.GetProtocol(output)); err != nil {
