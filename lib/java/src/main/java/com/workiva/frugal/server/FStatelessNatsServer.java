@@ -42,9 +42,9 @@ public class FStatelessNatsServer implements FServer {
     /**
      * Creates a new FStatelessNatsServer which receives requests on the given subject and queue.
      * The worker count controls the size of the thread pool used to process requests. This uses a provided queue
-     * length. If the queue fills up, newly received requests will block to be placed on the queue. Configurable
-     * load-shedding logic will be triggered if requests wait for too long, based on the high watermark. Clients must
-     * connect with the TStatelessNatsTransport.
+     * length. If the queue fills up, newly received requests will block to be placed on the queue. If requests wait for
+     * too long based on the high watermark, the server will log that it is backed up. Clients must connect with the
+     * TStatelessNatsTransport.
      *
      * @param conn         NATS connection
      * @param processor    FProcessor used to process requests
@@ -139,7 +139,7 @@ public class FStatelessNatsServer implements FServer {
     }
 
     @Override
-    public void serve() throws TException {
+    public synchronized void serve() throws TException {
         Subscription sub = conn.subscribe(subject, queue, newRequestHandler());
         LOGGER.info("Frugal server running...");
         try {
@@ -150,7 +150,8 @@ public class FStatelessNatsServer implements FServer {
 
         try {
             sub.unsubscribe();
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            LOGGER.warning("Frugal server failed to unsubscribe: " + e.getMessage());
         }
     }
 
