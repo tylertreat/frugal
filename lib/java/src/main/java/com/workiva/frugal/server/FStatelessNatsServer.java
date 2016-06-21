@@ -259,7 +259,8 @@ public class FStatelessNatsServer implements FServer {
             // Read and process frame (exclude first 4 bytes which represent frame size).
             byte[] frame = Arrays.copyOfRange(frameBytes, 4, frameBytes.length);
             TTransport input = new TMemoryInputTransport(frame);
-            FBoundedMemoryBuffer output = new FBoundedMemoryBuffer(TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE);
+            // Buffer 1MB - 4 bytes since frame size is copied directly.
+            FBoundedMemoryBuffer output = new FBoundedMemoryBuffer(TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE - 4);
             try {
                 processor.process(inputProtoFactory.getProtocol(input), outputProtoFactory.getProtocol(output));
             } catch (TException e) {
