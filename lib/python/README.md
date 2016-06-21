@@ -19,4 +19,4 @@ frugal[tornado]==1.8.0
 1. Make a virutalenv `mkvirtualenv frugal -a /path/to/frugal/lib/python`
 2. Install dependecies `make deps`
 3. Write code, tests & create a pull requests
-    *. Automatically run tests on fail save with `make sniffer`
+    * Automatically run tests on fail save with `make sniffer`
