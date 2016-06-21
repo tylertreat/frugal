@@ -40,61 +40,6 @@ public class FStatelessNatsServer implements FServer {
     private final BlockingQueue<Object> shutdown = new ArrayBlockingQueue<>(1);
 
     /**
-     * Creates a new FStatelessNatsServer which receives requests on the given subject and does not use a queue group.
-     * The worker count controls the size of the thread pool used to process requests. This uses a default request
-     * queue length of 64. If the queue fills up, newly received requests will block to be placed on the queue.
-     * Configurable load-shedding logic will be triggered if requests wait for too long, based on the high watermark.
-     * Clients must connect with the TStatelessNatsTransport.
-     *
-     * @param conn         NATS connection
-     * @param processor    FProcessor used to process requests
-     * @param protoFactory FProtocolFactory used for input and output protocols
-     * @param subject      NATS subject to receive requests on
-     * @param workerCount  thread pool size
-     */
-    public FStatelessNatsServer(Connection conn, FProcessor processor, FProtocolFactory protoFactory,
-                                String subject, int workerCount) {
-        this(conn, processor, protoFactory, subject, "", workerCount);
-    }
-
-    /**
-     * Creates a new FStatelessNatsServer which receives requests on the given subject and queue.
-     * The worker count controls the size of the thread pool used to process requests. This uses a default request
-     * queue length of 64. If the queue fills up, newly received requests will block to be placed on the queue.
-     * Configurable load-shedding logic will be triggered if requests wait for too long, based on the high watermark.
-     * Clients must connect with the TStatelessNatsTransport.
-     *
-     * @param conn         NATS connection
-     * @param processor    FProcessor used to process requests
-     * @param protoFactory FProtocolFactory used for input and output protocols
-     * @param subject      NATS subject to receive requests on
-     * @param queue        NATS queue group to receive requests on
-     * @param workerCount  thread pool size
-     */
-    public FStatelessNatsServer(Connection conn, FProcessor processor, FProtocolFactory protoFactory,
-                                String subject, String queue, int workerCount) {
-        this(conn, processor, protoFactory, subject, queue, workerCount, DEFAULT_WORK_QUEUE_LEN);
-    }
-
-    /**
-     * Creates a new FStatelessNatsServer which receives requests on the given subject and does not use a queue group.
-     * The worker count controls the size of the thread pool used to process requests. This uses a default request
-     * queue length of 64. If the queue fills up, newly received requests will block to be placed on the queue.
-     * Configurable load-shedding logic will be triggered if requests wait for too long, based on the high watermark.
-     * Clients must connect with the TStatelessNatsTransport.
-     *
-     * @param conn         NATS connection
-     * @param processor    FProcessor used to process requests
-     * @param protoFactory FProtocolFactory used for input and output protocols
-     * @param subject      NATS subject to receive requests on
-     * @param workerCount  thread pool size
-     */
-    public FStatelessNatsServer(Connection conn, FProcessor processor, FProtocolFactory protoFactory,
-                                String subject, int workerCount, int queueLength) {
-        this(conn, processor, protoFactory, subject, "", workerCount, queueLength);
-    }
-
-    /**
      * Creates a new FStatelessNatsServer which receives requests on the given subject and queue.
      * The worker count controls the size of the thread pool used to process requests. This uses a provided queue
      * length. If the queue fills up, newly received requests will block to be placed on the queue. Configurable
@@ -108,8 +53,8 @@ public class FStatelessNatsServer implements FServer {
      * @param queue        NATS queue group to receive requests on
      * @param workerCount  thread pool size
      */
-    public FStatelessNatsServer(Connection conn, FProcessor processor, FProtocolFactory protoFactory,
-                                String subject, String queue, int workerCount, int queueLength) {
+    private FStatelessNatsServer(Connection conn, FProcessor processor, FProtocolFactory protoFactory,
+                                 String subject, String queue, int workerCount, int queueLength) {
         this.conn = conn;
         this.processor = processor;
         this.inputProtoFactory = protoFactory;
@@ -119,6 +64,78 @@ public class FStatelessNatsServer implements FServer {
         BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<>(queueLength);
         this.workerPool = new ThreadPoolExecutor(1, workerCount, 30, TimeUnit.SECONDS, workQueue,
                 new BlockingRejectedExecutionHandler());
+    }
+
+    /**
+     * Builder for configuring and constructing FStatelessNatsServer instances.
+     */
+    public static class Builder {
+
+        private final Connection conn;
+        private final FProcessor processor;
+        private final FProtocolFactory protoFactory;
+        private final String subject;
+        private String queue = "";
+        private int workerCount = 1;
+        private int queueLength = DEFAULT_WORK_QUEUE_LEN;
+
+        /**
+         * Creates a new Builder which creates FStatelessNatsServers that subscribe to the given NATS subject.
+         *
+         * @param conn         NATS connection
+         * @param processor    FProcessor used to process requests
+         * @param protoFactory FProtocolFactory used for input and output protocols
+         * @param subject      NATS subject to receive requests on
+         */
+        public Builder(Connection conn, FProcessor processor, FProtocolFactory protoFactory, String subject) {
+            this.conn = conn;
+            this.processor = processor;
+            this.protoFactory = protoFactory;
+            this.subject = subject;
+        }
+
+        /**
+         * Adds a NATS queue group to receive requests on to the Builder.
+         *
+         * @param queue NATS queue group
+         * @return Builder
+         */
+        public Builder withQueue(String queue) {
+            this.queue = queue;
+            return this;
+        }
+
+        /**
+         * Adds a worker count which controls the size of the thread pool used to process requests (defaults to 1).
+         *
+         * @param workerCount thread pool size
+         * @return Builder
+         */
+        public Builder withWorkerCount(int workerCount) {
+            this.workerCount = workerCount;
+            return this;
+        }
+
+        /**
+         * Adds a queue length which controls the size of the work queue buffering requests (defaults to 64).
+         *
+         * @param queueLength work queue length
+         * @return Builder
+         */
+        public Builder withQueueLength(int queueLength) {
+            this.queueLength = queueLength;
+            return this;
+        }
+
+        /**
+         * Creates a new configured FStatelessNatsServer.
+         *
+         * @return FStatelessNatsServer
+         */
+        public FStatelessNatsServer build() {
+            return new FStatelessNatsServer(conn, processor, protoFactory, subject, queue, workerCount, queueLength);
+        }
+
     }
 
     @Override

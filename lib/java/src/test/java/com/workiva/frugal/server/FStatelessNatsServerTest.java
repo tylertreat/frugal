@@ -30,6 +30,7 @@ public class FStatelessNatsServerTest {
     private FProcessor processor;
     private FProtocolFactory protocolFactory;
     private String subject = "foo";
+    private String queue = "bar";
     private FStatelessNatsServer server;
 
     @Before
@@ -37,7 +38,7 @@ public class FStatelessNatsServerTest {
         conn = mock(Connection.class);
         processor = mock(FProcessor.class);
         protocolFactory = mock(FProtocolFactory.class);
-        server = new FStatelessNatsServer(conn, processor, protocolFactory, subject, 1);
+        server = new FStatelessNatsServer.Builder(conn, processor, protocolFactory, subject).withQueue(queue).build();
     }
 
     @Test
@@ -68,7 +69,7 @@ public class FStatelessNatsServerTest {
         }
 
         assertEquals(subject, subjectCaptor.getValue());
-        assertEquals("", queueCaptor.getValue());
+        assertEquals(queue, queueCaptor.getValue());
         assertNotNull(handlerCaptor.getValue());
         verify(sub).unsubscribe();
     }
