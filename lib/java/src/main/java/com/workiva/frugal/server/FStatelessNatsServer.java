@@ -78,6 +78,7 @@ public class FStatelessNatsServer implements FServer {
         private String queue = "";
         private int workerCount = 1;
         private int queueLength = DEFAULT_WORK_QUEUE_LEN;
+        private long highWatermark = FTransport.DEFAULT_WATERMARK;
 
         /**
          * Creates a new Builder which creates FStatelessNatsServers that subscribe to the given NATS subject.
@@ -128,12 +129,27 @@ public class FStatelessNatsServer implements FServer {
         }
 
         /**
+         * Controls the high watermark which determines the time spent waiting in the queue before triggering slow
+         * consumer logic.
+         *
+         * @param highWatermark duration in milliseconds
+         * @return Builder
+         */
+        public Builder withHighWatermark(long highWatermark) {
+            this.highWatermark = highWatermark;
+            return this;
+        }
+
+        /**
          * Creates a new configured FStatelessNatsServer.
          *
          * @return FStatelessNatsServer
          */
         public FStatelessNatsServer build() {
-            return new FStatelessNatsServer(conn, processor, protoFactory, subject, queue, workerCount, queueLength);
+            FStatelessNatsServer server = new FStatelessNatsServer(conn, processor, protoFactory, subject, queue,
+                    workerCount, queueLength);
+            server.setHighWatermark(highWatermark);
+            return server;
         }
 
     }
