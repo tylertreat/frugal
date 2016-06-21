@@ -38,7 +38,7 @@ public class FStatelessNatsServerTest {
         conn = mock(Connection.class);
         processor = mock(FProcessor.class);
         protocolFactory = mock(FProtocolFactory.class);
-        server = new FStatelessNatsServer.Builder(conn, processor, protocolFactory, subject).withQueue(queue).build();
+        server = new FStatelessNatsServer.Builder(conn, processor, protocolFactory, subject).withQueueGroup(queue).build();
     }
 
     @Test

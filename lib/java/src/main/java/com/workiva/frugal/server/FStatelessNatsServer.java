@@ -100,7 +100,7 @@ public class FStatelessNatsServer implements FServer {
          * @param queue NATS queue group
          * @return Builder
          */
-        public Builder withQueue(String queue) {
+        public Builder withQueueGroup(String queue) {
             this.queue = queue;
             return this;
         }
