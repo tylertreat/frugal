@@ -156,10 +156,22 @@ public class FStatelessNatsServer implements FServer {
 
     @Override
     public void stop() throws TException {
-        workerPool.shutdownNow();
+        // Attempt to perform an orderly shutdown of the worker pool by trying to complete any in-flight requests.
+        workerPool.shutdown();
+        try {
+            if (!workerPool.awaitTermination(30, TimeUnit.SECONDS)) {
+                workerPool.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            workerPool.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+
+        // Unblock serving thread.
         try {
             shutdown.put(new Object());
-        } catch (InterruptedException ignored) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
