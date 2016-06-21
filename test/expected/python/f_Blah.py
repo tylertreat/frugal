@@ -36,7 +36,7 @@ class Iface(object):
 
     def bleh(self, ctx, one, Two, custom_ints):
         """
-        Use this to tell the sever how you feel.
+        Use this to tell the server how you feel.
         
         Args:
             ctx: FContext
@@ -130,7 +130,7 @@ class Client(Iface):
 
     def bleh(self, ctx, one, Two, custom_ints):
         """
-        Use this to tell the sever how you feel.
+        Use this to tell the server how you feel.
         
         Args:
             ctx: FContext

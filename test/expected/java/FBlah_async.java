@@ -37,7 +37,7 @@ public class FBlah {
 		public void ping(FContext ctx) throws TException;
 
 		/**
-		 * Use this to tell the sever how you feel.
+		 * Use this to tell the server how you feel.
 		 */
 		public long bleh(FContext ctx, Thing one, Stuff Two, java.util.List<Integer> custom_ints) throws TException, InvalidOperation;
 
@@ -78,14 +78,14 @@ public class FBlah {
 		}
 
 		/**
-		 * Use this to tell the sever how you feel.
+		 * Use this to tell the server how you feel.
 		 */
 		public long bleh(FContext ctx, Thing one, Stuff Two, java.util.List<Integer> custom_ints) throws TException, InvalidOperation {
 			return proxy.bleh(ctx, one, Two, custom_ints);
 		}
 
 		/**
-		 * Use this to tell the sever how you feel.
+		 * Use this to tell the server how you feel.
 		 */
 		public Future<Long> blehAsync(final FContext ctx, final Thing one, final Stuff Two, final java.util.List<Integer> custom_ints) {
 			return asyncExecutor.submit(new Callable<Long>() {
@@ -224,7 +224,7 @@ public class FBlah {
 		}
 
 		/**
-		 * Use this to tell the sever how you feel.
+		 * Use this to tell the server how you feel.
 		 */
 		public long bleh(FContext ctx, Thing one, Stuff Two, java.util.List<Integer> custom_ints) throws TException, InvalidOperation {
 			FProtocol oprot = this.outputProtocol;
