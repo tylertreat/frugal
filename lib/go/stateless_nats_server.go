@@ -13,6 +13,78 @@ import (
 
 const defaultWorkQueueLen = 64
 
+// FStatelessNatsServerBuilder configures and builds FStatelessNatsServer
+// instances.
+type FStatelessNatsServerBuilder struct {
+	conn               *nats.Conn
+	processor          FProcessor
+	inputProtoFactory  *FProtocolFactory
+	outputProtoFactory *FProtocolFactory
+	subject            string
+	queue              string
+	workerCount        uint
+	queueLen           uint
+	highWatermark      time.Duration
+}
+
+// NewFStatelessNatsServerBuilder creates a builder which configures and builds
+// FStatelessNatsServer instances.
+func NewFStatelessNatsServerBuilder(conn *nats.Conn, processor FProcessor,
+	protoFactory *FProtocolFactory, subject string) *FStatelessNatsServerBuilder {
+	return &FStatelessNatsServerBuilder{
+		conn:               conn,
+		processor:          processor,
+		inputProtoFactory:  protoFactory,
+		outputProtoFactory: protoFactory,
+		subject:            subject,
+		workerCount:        1,
+		queueLen:           defaultWorkQueueLen,
+		highWatermark:      defaultWatermark,
+	}
+}
+
+// WithQueueGroup adds a NATS queue group to receive requests on.
+func (f *FStatelessNatsServerBuilder) WithQueueGroup(queue string) *FStatelessNatsServerBuilder {
+	f.queue = queue
+	return f
+}
+
+// WithWorkerCount controls the number of goroutines used to process requests.
+func (f *FStatelessNatsServerBuilder) WithWorkerCount(workerCount uint) *FStatelessNatsServerBuilder {
+	f.workerCount = workerCount
+	return f
+}
+
+// WithQueueLength controls the length of the work queue used to buffer
+// requests.
+func (f *FStatelessNatsServerBuilder) WithQueueLength(queueLength uint) *FStatelessNatsServerBuilder {
+	f.queueLen = queueLength
+	return f
+}
+
+// WithHighWatermark controls the time duration requests wait in queue before
+// triggering slow consumer logic.
+func (f *FStatelessNatsServerBuilder) WithHighWatermark(highWatermark time.Duration) *FStatelessNatsServerBuilder {
+	f.highWatermark = highWatermark
+	return f
+}
+
+// Build a new configured FStatelessNatsServer.
+func (f *FStatelessNatsServerBuilder) Build() *FStatelessNatsServer {
+	return &FStatelessNatsServer{
+		conn:               f.conn,
+		processor:          f.processor,
+		inputProtoFactory:  f.inputProtoFactory,
+		outputProtoFactory: f.outputProtoFactory,
+		subject:            f.subject,
+		queue:              f.queue,
+		workerCount:        f.workerCount,
+		workC:              make(chan *frameWrapper, f.queueLen),
+		quit:               make(chan struct{}),
+		highWatermark:      f.highWatermark,
+	}
+}
+
 // FStatelessNatsServer implements FServer by using NATS as the underlying
 // transport. Clients must connect with the transport created by
 // NewStatelessNatsTTransport.
