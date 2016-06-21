@@ -127,11 +127,25 @@ type httpTTransport struct {
 // is simply an http request and a response is an http response. This assumes
 // requests/responses fit within a single http request.
 func NewHttpTTransport(client *http.Client, url string) thrift.TTransport {
+	return NewHttpTTransportWithLimits(client, url, 0, 0)
+}
+
+// NewHttpTTransport returns a new Thrift TTransport which uses the
+// HTTP as the underlying transport. This TTransport is stateless in that
+// there is no connection maintained between the client and server. A request
+// is simply an http request and a response is an http response. This assumes
+// requests/responses fit within a single http request. The size limits for
+// request/response data may be set with requestSizeLimit and
+// responseSizeLimit, respectively. Setting to 0 implies no limit.
+func NewHttpTTransportWithLimits(client *http.Client, url string,
+	requestSizeLimit uint, responseSizeLimit uint) thrift.TTransport {
 	return &httpTTransport{
-		client:        client,
-		url:           url,
-		frameBuffer:   make(chan []byte, frameBufferSize),
-		requestBuffer: new(bytes.Buffer),
+		client:            client,
+		url:               url,
+		requestSizeLimit:  requestSizeLimit,
+		responseSizeLimit: responseSizeLimit,
+		frameBuffer:       make(chan []byte, frameBufferSize),
+		requestBuffer:     new(bytes.Buffer),
 	}
 }
 
@@ -142,13 +156,6 @@ func (h *httpTTransport) Open() error {
 	h.isOpen = true
 	h.mu.Unlock()
 	return nil
-}
-
-func (h *httpTTransport) handler(data []byte) {
-	select {
-	case h.frameBuffer <- data:
-	case <-h.closeChan:
-	}
 }
 
 func (h *httpTTransport) IsOpen() bool {
@@ -284,7 +291,7 @@ func (h *httpTTransport) makeRequest(requestPayload []byte) ([]byte, error) {
 	// Response too large
 	if response.StatusCode == http.StatusRequestEntityTooLarge {
 		return nil, thrift.NewTTransportException(RESPONSE_TOO_LARGE,
-			"request was too large for the transport")
+			"response was too large for the transport")
 	}
 
 	// Decode body
@@ -296,7 +303,8 @@ func (h *httpTTransport) makeRequest(requestPayload []byte) ([]byte, error) {
 
 	// Check bad status code
 	if response.StatusCode >= 300 {
-		return nil, errors.New(body)
+		return nil, fmt.Errorf("response errored with code %d and message %s",
+			response.StatusCode, body)
 	}
 
 	// Decode and return response body
@@ -304,7 +312,6 @@ func (h *httpTTransport) makeRequest(requestPayload []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(bts)
 	return bts, nil
 
 }
