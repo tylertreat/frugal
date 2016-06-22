@@ -129,7 +129,7 @@ class TNatsServiceTransport(TTransportBase):
     def _on_message_callback(self, msg=None):
         if msg.reply == _DISCONNECT:
             logger.debug("Received DISCONNECT from Frugal server.")
-            self.close()
+            yield self.close()
         else:
             wrapped = bytearray(msg.data)
             self._execute(wrapped)
@@ -216,8 +216,7 @@ class TNatsServiceTransport(TTransportBase):
             yield self._nats_client.unsubscribe(self._heartbeat_sub_id)
             self._heartbeat_sub_id = None
 
-        yield self._nats_client.unsubscribe(self._listen_to)
-
+        yield self._nats_client.unsubscribe(self._sub_id)
         self._is_open = False
 
     def read(self, buff, offset, length):
@@ -245,6 +244,5 @@ class TNatsServiceTransport(TTransportBase):
                                         frame_length + frame)
 
     def _new_frugal_inbox(self):
-        return "{frugal}{new_inbox}".format(frugal=_FRUGAL_PREFIX,
-                                            new_inbox=new_inbox())
+        return "{0}{1}".format(_FRUGAL_PREFIX, new_inbox())
 
