@@ -58,4 +58,26 @@ void main() {
     expect(mds1.methodName, equals('handleSomething'));
     expect(mds2.methodName, equals('handleSomething'));
   });
+
+  group('msgMiddleware', () {
+    test('Can be called', () {
+      expect(stdMiddleware(), []);
+    });
+  });
+
+  group('msgDebugMiddleware', () {
+    test('Prints method, args, and return value', () async {
+      bool handlerRan = false;
+      InvocationHandler handler =
+          (String serviceName, String methodName, List<Object> args) {
+        handlerRan = true;
+        print('hello world');
+      };
+      await debugMiddleware(handler)(
+          'Service', 'method', [new FContext(correlationId: 'cid'), 1]);
+      // It would be nice to expect that print ...hello world... was called, but that does not seem possible
+      // Next best thing is to just see that the handler was called without throwing an error
+      expect(handlerRan, true);
+    });
+  });
 }

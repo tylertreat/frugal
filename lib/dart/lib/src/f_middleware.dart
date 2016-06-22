@@ -46,3 +46,35 @@ class FMethod {
     return middleware.fold(handler, (prev, element) => element(prev));
   }
 }
+
+/// Middleware for debugging that logs the requests and responses when activated with the url param frugal_debug=true
+InvocationHandler debugMiddleware(InvocationHandler next) {
+  return (String serviceName, String methodName, List<Object> args) async {
+    print('frugal called $serviceName.$methodName');
+    for (int i = 0; i < args.length; i++) {
+      int iHuman = i + 1;
+      var obj = args[i];
+      String type = obj.runtimeType.toString();
+      String json = fObjToJson(obj);
+      print(
+          'frugal called $serviceName.$methodName: arg #$iHuman: $type: $json');
+    }
+    TBase ret = await next(serviceName, methodName, args);
+    String type = ret.runtimeType.toString();
+    String json = fObjToJson(ret);
+    print('frugal $serviceName.$methodName returned: $type: $json');
+    return ret;
+  };
+}
+
+List<Middleware> stdMiddleware() {
+  List<Middleware> middlewareList = [];
+
+  // Add debugMiddleware
+  const List<String> truthyStrings = const ['true', 't', '1'];
+  if (truthyStrings.contains(Uri.base.queryParameters['frugal_debug'])) {
+    middlewareList.add(debugMiddleware);
+  }
+
+  return middlewareList;
+}
