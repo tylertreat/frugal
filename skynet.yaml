@@ -4,6 +4,8 @@ run:
   when-branch-name-is:
     - .+
 
+contact: messaging@workiva.com
+
 # Link to image definition: https://github.com/Workiva/skynet-images/tree/ea53c331b4b7dddc1f617588d901f64f6050764a
 image: "drydock.workiva.org/workiva/skynet-images:51355"
 
@@ -54,6 +56,8 @@ run:
   when-branch-name-is:
     - .+
 
+contact: messaging@workiva.com
+
 # https://github.com/Workiva/skynet-images/tree/ea53c331b4b7dddc1f617588d901f64f6050764a
 image: "drydock.workiva.org/workiva/skynet-images:51355"
 
@@ -85,6 +89,8 @@ requires:
 run:
   when-branch-name-is:
     - .+
+
+contact: messaging@workiva.com
 
 # https://github.com/Workiva/skynet-images/tree/ea53c331b4b7dddc1f617588d901f64f6050764a
 image: "drydock.workiva.org/workiva/skynet-images:51355"

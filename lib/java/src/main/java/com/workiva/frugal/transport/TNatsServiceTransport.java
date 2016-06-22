@@ -20,6 +20,8 @@ import java.util.logging.Logger;
 /**
  * TNatsServiceTransport is an extension of thrift.TTransport exclusively used for services which uses NATS as the
  * underlying transport. Message frames are limited to 1MB in size.
+ * TODO: Support >1MB messages.
+ * TODO 2.0.0: Remove "Service" from the name.
  */
 public class TNatsServiceTransport extends TTransport {
 
@@ -93,7 +95,9 @@ public class TNatsServiceTransport extends TTransport {
         return new TNatsServiceTransport(conn, listenTo, writeTo);
     }
 
-    private boolean isClient() {return connectionSubject != null;}
+    private boolean isClient() {
+        return connectionSubject != null;
+    }
 
     @Override
     public synchronized boolean isOpen() {
