@@ -59,7 +59,7 @@ InvocationHandler debugMiddleware(InvocationHandler next) {
       print(
           'frugal called $serviceName.$methodName: arg #$iHuman: $type: $json');
     }
-    TBase ret = await next(serviceName, methodName, args);
+    Object ret = await next(serviceName, methodName, args);
     String type = ret.runtimeType.toString();
     String json = fObjToJson(ret);
     print('frugal $serviceName.$methodName returned: $type: $json');
