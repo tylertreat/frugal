@@ -66,16 +66,3 @@ InvocationHandler debugMiddleware(InvocationHandler next) {
     return ret;
   };
 }
-
-/// Standard list of middleware. Right now this just includes debugMiddleware if ?frugal_debug=true in the url.
-List<Middleware> stdMiddleware() {
-  List<Middleware> middlewareList = [];
-
-  // Add debugMiddleware
-  const List<String> truthyStrings = const ['true', 't', '1'];
-  if (truthyStrings.contains(Uri.base.queryParameters['frugal_debug'])) {
-    middlewareList.add(debugMiddleware);
-  }
-
-  return middlewareList;
-}

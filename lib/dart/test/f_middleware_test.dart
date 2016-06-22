@@ -59,12 +59,6 @@ void main() {
     expect(mds2.methodName, equals('handleSomething'));
   });
 
-  group('msgMiddleware', () {
-    test('Can be called', () {
-      expect(stdMiddleware(), []);
-    });
-  });
-
   group('msgDebugMiddleware', () {
     test('Prints method, args, and return value', () async {
       bool handlerRan = false;
