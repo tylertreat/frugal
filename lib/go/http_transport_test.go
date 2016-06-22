@@ -247,8 +247,8 @@ func TestFrugalHandlerFunc(t *testing.T) {
 	handler(w, r)
 
 	assert.Equal(w.Code, http.StatusOK)
-	assert.Equal(w.Header().Get("content-type"), "application/x-frugal")
-	assert.Equal(w.Header().Get("content-transfer-encoding"), "base64")
+	assert.Equal(w.Header().Get(contentTypeHeader), frugalContentType)
+	assert.Equal(w.Header().Get(contentTransferEncodingHeader), base64Encoding)
 	assert.Equal(
 		[]byte(base64.StdEncoding.EncodeToString(append([]byte{0, 0, 0, 4}, response...))),
 		w.Body.Bytes(),
@@ -269,9 +269,9 @@ func TestHttpTransportLifecycle(t *testing.T) {
 
 	// Setup test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(r.Header.Get("content-type"), "application/x-frugal")
-		assert.Equal(r.Header.Get("content-transfer-encoding"), "base64")
-		assert.Equal(r.Header.Get("accept"), "application/x-frugal")
+		assert.Equal(r.Header.Get(contentTypeHeader), frugalContentType)
+		assert.Equal(r.Header.Get(contentTransferEncodingHeader), base64Encoding)
+		assert.Equal(r.Header.Get(acceptHeader), frugalContentType)
 
 		respStr := base64.StdEncoding.EncodeToString(framedResponse)
 		w.Write([]byte(respStr))

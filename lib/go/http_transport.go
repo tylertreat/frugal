@@ -14,7 +14,15 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
 
-const payloadLimitHeader = "x-frugal-payload-limit"
+const (
+	payloadLimitHeader            = "x-frugal-payload-limit"
+	acceptHeader                  = "accept"
+	contentTypeHeader             = "content-type"
+	contentTransferEncodingHeader = "content-transfer-encoding"
+
+	frugalContentType = "application/x-frugal"
+	base64Encoding    = "base64"
+)
 
 var newEncoder = func(buf *bytes.Buffer) io.WriteCloser {
 	return base64.NewEncoder(base64.StdEncoding, buf)
@@ -24,7 +32,7 @@ var newEncoder = func(buf *bytes.Buffer) io.WriteCloser {
 func NewFrugalHandlerFunc(processor FProcessor, inPfactory, outPfactory *FProtocolFactory) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("content-type", "application/x-frugal")
+		w.Header().Add(contentTypeHeader, frugalContentType)
 
 		// Check for size limitation
 		limitStr := r.Header.Get(payloadLimitHeader)
@@ -99,15 +107,16 @@ func NewFrugalHandlerFunc(processor FProcessor, inPfactory, outPfactory *FProtoc
 			return
 		}
 
-		w.Header().Add("content-transfer-encoding", "base64")
+		w.Header().Add(contentTransferEncodingHeader, base64Encoding)
 		w.Write(encoded.Bytes())
 	}
 }
 
 // httpTTransport implements thrift.TTransport. This is a "stateless"
-// transport in the sense that there is no connection with a server. A request
-// is simply an http request and a response is an http response. This assumes
-// requests/responses fit within a single http request.
+// transport in the sense that this transport is not persistently connected to
+// a single server. A request is simply an http request and a response is an
+// http response. This assumes requests/responses fit within a single http
+// request.
 type httpTTransport struct {
 	client            *http.Client
 	url               string
@@ -180,7 +189,7 @@ func (h *httpTTransport) Read(buf []byte) (int, error) {
 	if !h.IsOpen() {
 		return 0, h.getClosedConditionError("read:")
 	}
-	if h.currentFrame == nil {
+	if len(h.currentFrame) == 0 {
 		select {
 		case frame := <-h.frameBuffer:
 			h.currentFrame = frame
@@ -193,10 +202,6 @@ func (h *httpTTransport) Read(buf []byte) (int, error) {
 	// full, we could attempt to get the next frame.
 
 	h.currentFrame = h.currentFrame[num:]
-	if len(h.currentFrame) == 0 {
-		// The entire frame was copied, clear it.
-		h.currentFrame = nil
-	}
 	return num, nil
 }
 
@@ -239,11 +244,9 @@ func (h *httpTTransport) Flush() error {
 	// If there are only 4 bytes, this needs to be a one-way
 	// (i.e. frame size 0)
 	if len(response) == 4 {
-		for i := range response {
-			if response[i] != 0 {
-				return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
-					errors.New("frugal: missing data"))
-			}
+		if binary.BigEndian.Uint32(response) != 0 {
+			return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
+				errors.New("frugal: missing data"))
 		}
 		// it's a one-way, drop it
 		return nil
@@ -275,9 +278,9 @@ func (h *httpTTransport) makeRequest(requestPayload []byte) ([]byte, error) {
 	}
 
 	// Add request headers
-	request.Header.Add("content-type", "application/x-frugal")
-	request.Header.Add("content-transfer-encoding", "base64")
-	request.Header.Add("accept", "application/x-frugal")
+	request.Header.Add(contentTypeHeader, frugalContentType)
+	request.Header.Add(acceptHeader, frugalContentType)
+	request.Header.Add(contentTransferEncodingHeader, base64Encoding)
 	if h.responseSizeLimit > 0 {
 		request.Header.Add(payloadLimitHeader, strconv.FormatUint(uint64(h.responseSizeLimit), 10))
 	}
@@ -297,6 +300,9 @@ func (h *httpTTransport) makeRequest(requestPayload []byte) ([]byte, error) {
 	// Decode body
 	buf := new(bytes.Buffer)
 	if _, err := buf.ReadFrom(response.Body); err != nil {
+		return nil, err
+	}
+	if err := response.Body.Close(); err != nil {
 		return nil, err
 	}
 	body := string(buf.Bytes())
