@@ -3,12 +3,12 @@ package com.workiva.frugal.transport.monitor;
 import com.workiva.frugal.transport.FTransport;
 import com.workiva.frugal.transport.FTransportClosedCallback;
 import org.apache.thrift.transport.TTransportException;
-
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MonitorRunner implements FTransportClosedCallback {
 
-    private static Logger LOGGER = Logger.getLogger(MonitorRunner.class.getName());
+    private static Logger LOGGER = LoggerFactory.getLogger(MonitorRunner.class);
 
     private FTransportMonitor monitor;
     private FTransport transport;
@@ -33,10 +33,10 @@ public class MonitorRunner implements FTransportClosedCallback {
     }
 
     private void handleUncleanClose(Exception cause) {
-        LOGGER.warning("FTransport Monitor: FTransport was closed uncleanly because: " + cause.getMessage());
+        LOGGER.warn("FTransport Monitor: FTransport was closed uncleanly because: " + cause.getMessage());
         long wait = monitor.onClosedUncleanly(cause);
         if (wait < 0) {
-            LOGGER.warning("FTransport Monitor: Instructed not to reopen.");
+            LOGGER.warn("FTransport Monitor: Instructed not to reopen.");
             return;
         }
         attemptReopen(wait);
@@ -51,13 +51,13 @@ public class MonitorRunner implements FTransportClosedCallback {
             try {
                 Thread.sleep(wait);
             } catch (InterruptedException e) {
-                LOGGER.warning("FTransport Monitor: Reconnect wait interrupted: " + e.getMessage());
+                LOGGER.warn("FTransport Monitor: Reconnect wait interrupted: " + e.getMessage());
             }
 
             try {
                 transport.open();
             } catch (TTransportException e) {
-                LOGGER.warning("FTransport Monitor: Failed to reopen transport due to: " + e.getMessage());
+                LOGGER.warn("FTransport Monitor: Failed to reopen transport due to: " + e.getMessage());
                 prevAttempts++;
 
                 wait = monitor.onReopenFailed(prevAttempts, wait);
@@ -69,7 +69,7 @@ public class MonitorRunner implements FTransportClosedCallback {
             return;
         }
 
-        LOGGER.warning("FTransport Monitor: ReopenFailed callback instructed not to reopen. Terminating...");
+        LOGGER.warn("FTransport Monitor: ReopenFailed callback instructed not to reopen. Terminating...");
     }
 
 }

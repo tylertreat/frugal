@@ -4,10 +4,11 @@ import com.workiva.frugal.protocol.FRegistry;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.logging.Logger;
 
 public class FMuxTransport extends FTransport {
     protected TFramedTransport framedTransport;
@@ -15,7 +16,7 @@ public class FMuxTransport extends FTransport {
     private ProcessorThread processorThread;
     private WorkerThread[] workerThreads;
 
-    private static Logger LOGGER = Logger.getLogger(FMuxTransport.class.getName());
+    private static Logger LOGGER = LoggerFactory.getLogger(FMuxTransport.class);
 
     /**
      * Construct a new FMuxTransport.
@@ -183,7 +184,7 @@ public class FMuxTransport extends FTransport {
                     frameBytes = framedTransport.readFrame();
                 } catch (TTransportException e) {
                     if (e.getType() != TTransportException.END_OF_FILE) {
-                        LOGGER.warning("error reading frame, closing transport " + e.getMessage());
+                        LOGGER.warn("error reading frame, closing transport " + e.getMessage());
                     }
                     close(e);
                     return;
@@ -193,7 +194,7 @@ public class FMuxTransport extends FTransport {
                     FrameWrapper frame = new FrameWrapper(frameBytes, System.currentTimeMillis());
                     workQueue.put(frame);
                 } catch (InterruptedException e) {
-                    LOGGER.warning("could not put frame in work queue. Dropping frame.");
+                    LOGGER.warn("could not put frame in work queue. Dropping frame.");
                 }
             }
         }
@@ -226,14 +227,14 @@ public class FMuxTransport extends FTransport {
                 }
                 long duration = System.currentTimeMillis() - frame.getTimestamp();
                 if (duration > getHighWatermark()) {
-                    LOGGER.warning("frame spent " + duration + "ms in the transport buffer, your consumer might be backed up");
+                    LOGGER.warn("frame spent " + duration + "ms in the transport buffer, your consumer might be backed up");
                 }
                 try {
                     registry.execute(frame.getFrameBytes());
                 } catch (TException e) {
                     // An exception here indicates an unrecoverable exception,
                     // tear down transport.
-                    LOGGER.severe("closing transport due to unrecoverable error processing frame: " + e.getMessage());
+                    LOGGER.error("closing transport due to unrecoverable error processing frame: " + e.getMessage());
                     close(e);
                     return;
                 }

@@ -14,11 +14,12 @@ import io.nats.client.Subscription;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.apache.thrift.transport.TTransport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.*;
-import java.util.logging.Logger;
 
 /**
  * An implementation of FServer which uses NATS as the underlying transport. Clients must connect with the
@@ -27,7 +28,7 @@ import java.util.logging.Logger;
 public class FStatelessNatsServer implements FServer {
 
     private static final int DEFAULT_WORK_QUEUE_LEN = 64;
-    private static final Logger LOGGER = Logger.getLogger(FStatelessNatsServer.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(FStatelessNatsServer.class);
 
     private final Connection conn;
     private final FProcessor processor;
@@ -167,7 +168,7 @@ public class FStatelessNatsServer implements FServer {
         try {
             sub.unsubscribe();
         } catch (IOException e) {
-            LOGGER.warning("Frugal server failed to unsubscribe: " + e.getMessage());
+            LOGGER.warn("Frugal server failed to unsubscribe: " + e.getMessage());
         }
     }
 
@@ -210,7 +211,7 @@ public class FStatelessNatsServer implements FServer {
             public void onMessage(Message message) {
                 String reply = message.getReplyTo();
                 if (reply == null || reply.isEmpty()) {
-                    LOGGER.warning("Discarding invalid NATS request (no reply)");
+                    LOGGER.warn("Discarding invalid NATS request (no reply)");
                     return;
                 }
 
@@ -250,7 +251,7 @@ public class FStatelessNatsServer implements FServer {
         public void run() {
             long duration = System.currentTimeMillis() - timestamp;
             if (duration > highWatermark) {
-                LOGGER.warning("frame spent " + duration + "ms in the transport buffer, your consumer might be backed up");
+                LOGGER.warn("frame spent " + duration + "ms in the transport buffer, your consumer might be backed up");
             }
             process();
         }
@@ -264,7 +265,7 @@ public class FStatelessNatsServer implements FServer {
             try {
                 processor.process(inputProtoFactory.getProtocol(input), outputProtoFactory.getProtocol(output));
             } catch (TException e) {
-                LOGGER.warning("error processing frame: " + e.getMessage());
+                LOGGER.warn("error processing frame: " + e.getMessage());
                 return;
             }
 
@@ -281,7 +282,7 @@ public class FStatelessNatsServer implements FServer {
             try {
                 conn.publish(reply, response);
             } catch (IOException e) {
-                LOGGER.warning("failed to send response: " + e.getMessage());
+                LOGGER.warn("failed to send response: " + e.getMessage());
             }
         }
 

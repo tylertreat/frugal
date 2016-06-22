@@ -8,15 +8,14 @@ import org.apache.thrift.protocol.TMessage;
 import org.apache.thrift.protocol.TMessageType;
 import org.apache.thrift.protocol.TProtocolUtil;
 import org.apache.thrift.protocol.TType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class FBaseProcessor implements FProcessor {
 
-    private static final Logger logger =
-            Logger.getLogger(FBaseProcessor.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(FBaseProcessor.class);
     protected static final Object WRITE_LOCK = new Object();
 
     private final Map<String, FProcessorFunction> processMap;
@@ -34,7 +33,7 @@ public class FBaseProcessor implements FProcessor {
             try {
                 processor.process(ctx, iprot, oprot);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Error processing request with correlationID " + ctx.getCorrelationId() + ": " + e.getMessage());
+                LOGGER.warn("Error processing request with correlationID " + ctx.getCorrelationId() + ": " + e.getMessage());
                 throw e;
             }
             return;

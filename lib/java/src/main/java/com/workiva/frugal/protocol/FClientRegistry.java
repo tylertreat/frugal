@@ -4,11 +4,12 @@ import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.internal.Headers;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
 
 
 /**
@@ -17,7 +18,7 @@ import java.util.logging.Logger;
  */
 public class FClientRegistry implements FRegistry {
 
-    private static final Logger LOGGER = Logger.getLogger(FClientRegistry.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(FClientRegistry.class);
     private static final AtomicLong NEXT_OP_ID = new AtomicLong(0);
 
     protected Map<Long, Pair<FAsyncCallback, Thread>> handlers;
