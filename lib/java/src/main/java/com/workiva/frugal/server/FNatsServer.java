@@ -22,6 +22,10 @@ import java.util.Collection;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
+/**
+ * An implementation of FServer which uses NATS as the underlying transport. Clients must connect with the
+ * TNatsServiceTransport.
+ */
 public class FNatsServer implements FServer {
 
     private static final int DEFAULT_MAX_MISSED_HEARTBEATS = 3;
