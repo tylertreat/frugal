@@ -67,6 +67,7 @@ InvocationHandler debugMiddleware(InvocationHandler next) {
   };
 }
 
+/// Standard list of middleware. Right now this just includes debugMiddleware if ?frugal_debug=true in the url.
 List<Middleware> stdMiddleware() {
   List<Middleware> middlewareList = [];
 
