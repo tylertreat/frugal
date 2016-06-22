@@ -1,10 +1,11 @@
 part of frugal;
 
+final TSerializer _serializer =
+    new TSerializer(protocolFactory: new TJsonProtocolFactory());
+
 String fObjToJson(Object obj) {
   if (obj is TBase) {
-    TSerializer serializer =
-        new TSerializer(protocolFactory: new TJsonProtocolFactory());
-    return new String.fromCharCodes(serializer.write(obj));
+    return new String.fromCharCodes(_serializer.write(obj));
   }
   if (obj is FContext) {
     return JSON.encode(obj.requestHeaders());
