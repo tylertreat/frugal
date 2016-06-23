@@ -11,7 +11,7 @@ from frugal.exceptions import FMessageSizeException
 
 logger = logging.getLogger(__name__)
 
-NATS_MAX_MESSAGE_SIZE = 1024 * 1024
+_NATS_MAX_MESSAGE_SIZE = 1024 * 1024
 _FRAME_BUFFER_SIZE = 5
 
 
@@ -77,7 +77,7 @@ class TStatelessNatsTransport(TTransportBase):
 
         size = len(buff) + wbuf_length
 
-        if size > NATS_MAX_MESSAGE_SIZE:
+        if size > _NATS_MAX_MESSAGE_SIZE:
             ex = FMessageSizeException("Message exceeds NATS max message size")
             logger.exception(ex)
             raise ex

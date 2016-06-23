@@ -8,11 +8,12 @@ from tornado import gen
 
 from frugal.server import FServer
 from frugal.transport import FTransport
+from frugal.tornado.transport import FBoundedMemoryBuffer
+from frugal.tornado.transport import TNatsServiceTransport
 
 logger = logging.getLogger(__name__)
 
 _NATS_PROTOCOL_V0 = 0
-_QUEUE = "rpc"
 
 
 class FStatelessNatsTornadoServer(FServer):
@@ -39,6 +40,7 @@ class FStatelessNatsTornadoServer(FServer):
         self._output_protocol_factory = protocol_factory
         self._high_watermark = high_watermark
         self._queue = queue
+        self._sid = ""
 
     @gen.coroutine
     def serve(self):
@@ -56,6 +58,8 @@ class FStatelessNatsTornadoServer(FServer):
     def stop(self):
         """Stop listening for RPC calls."""
         logger.debug("Shutting down Frugal NATS Server.")
+        self._nats_client.unsubscribe(self._sid)
+        return
 
     def set_high_watermark(self, high_watermark):
         """Set the high watermark value for the server
@@ -85,20 +89,19 @@ class FStatelessNatsTornadoServer(FServer):
             logger.warn("Discarding invalid NATS request (no reply)")
             return
 
-        in_transport = TMemoryBuffer(msg.data[:4])
-        out_transport = TMemoryBuffer()  # this may just need to be bytearray() or BytesIO()
+        in_transport = FBoundedMemoryBuffer(msg.data[:4])
+        out_transport = FBoundedMemoryBuffer()  # this may just need to be bytearray() or BytesIO()
 
         try:
             self._processor.process(self._input_protocol_factory.get_protocol(in_transport),
                                     self._output_protocol_factory.get_protocol(out_transport))
         except TException as ex:
-            # TODO handle
+            logger.warning("error processing frame: {}".format(ex.message))
             print "got an exception"
 
-        if len(out_transport) == 0:
+        if out_transport.length() == 0:
             return
 
-        response = bytearray()
+        response = bytearray(out_transport.getvalue())
 
         yield self._nats_client.publish(msg.reply, "", response)
-
