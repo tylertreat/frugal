@@ -47,7 +47,7 @@ class FMethod {
   }
 }
 
-/// Middleware for debugging that logs the requests and responses when activated with the url param frugal_debug=true
+/// Middleware for debugging that logs the requests and responses in json format
 InvocationHandler debugMiddleware(InvocationHandler next) {
   return (String serviceName, String methodName, List<Object> args) async {
     print('frugal called $serviceName.$methodName');
