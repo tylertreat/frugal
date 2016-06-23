@@ -23,7 +23,7 @@ class TStatelessNatsTransport(TTransportBase):
         self._inbox = inbox or new_inbox()
         self._is_open = False
         self._open_lock = Lock()
-        self._write_buffer = None
+        self._wbuf = BytesIO()
 
     def isOpen(self):
         with self._open_lock:
@@ -48,6 +48,7 @@ class TStatelessNatsTransport(TTransportBase):
             "",
             self._on_message_callback
         )
+        self._is_open = True
 
     def _on_message_callback(self, msg):
         print "Got a message!"
@@ -60,14 +61,19 @@ class TStatelessNatsTransport(TTransportBase):
         yield self._nats_client.unsubscribe(self._sub_id)
         self._is_open = False
 
+    def read(self, sz):
+        ex = Exception("Don't call this.")
+        logger.exception(ex)
+        raise ex
+
     def write(self, buff):
-        if not self.is_open():
+        if not self.isOpen():
             ex = TTransportException(TTransportException.NOT_OPEN,
                                      "Nats not connected!")
             logger.exception(ex)
             raise ex
 
-        wbuf_length = len(self._write_buffer.getvalue())
+        wbuf_length = len(self._wbuf.getvalue())
 
         size = len(buff) + wbuf_length
 
@@ -76,19 +82,19 @@ class TStatelessNatsTransport(TTransportBase):
             logger.exception(ex)
             raise ex
 
-        self._write_buffer.write(buff)
+        self._wbuf.write(buff)
 
     @gen.coroutine
     def flush(self):
-        if not self.is_open():
+        if not self.isOpen():
             ex = TTransportException(TTransportException.NOT_OPEN,
                                      "Nats not connected!")
             logger.exception(ex)
             raise ex
 
-        frame = self._write_buffer.getvalue()
+        frame = self._wbuf.getvalue()
         frame_length = pack('!I', len(frame))
-        self._write_buffer = BytesIO()
+        self._wbuf = BytesIO()
 
         formatted_subject = self._get_formatted_subject()
 
