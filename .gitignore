@@ -34,6 +34,7 @@ unit_tests.xml
 lib/python/frugal.egg-info/
 lib/python/frugalc
 lib/python/dist
+Library/
 
 # Integration tests
 test/integration/log/*
