@@ -1,7 +1,6 @@
 import logging
-import re
+import struct
 
-from nats.io.utils import new_inbox
 from thrift.Thrift import TException
 from tornado import gen
 
@@ -34,17 +33,17 @@ class FStatelessNatsTornadoServer(FServer):
         self._nats_client = nats_client
         self._subject = subject
         self._processor = processor
-        self._input_protocol_factory = protocol_factory
-        self._output_protocol_factory = protocol_factory
+        self._iprot_factory = protocol_factory
+        self._oprot_factory = protocol_factory
         self._high_watermark = high_watermark
         self._queue = queue
-        self._sid = ""
+        self._sub_id = None
 
     @gen.coroutine
     def serve(self):
         """Subscribe to provided subject and listen on "rpc" queue."""
 
-        self._sid = yield self._nats_client.subscribe(
+        self._sub_id = yield self._nats_client.subscribe(
             self._subject,
             self._queue,
             self._on_message_callback
@@ -56,7 +55,7 @@ class FStatelessNatsTornadoServer(FServer):
     def stop(self):
         """Stop listening for RPC calls."""
         logger.debug("Shutting down Frugal NATS Server.")
-        self._nats_client.unsubscribe(self._sid)
+        yield self._nats_client.unsubscribe(self._sub_id)
 
     def set_high_watermark(self, high_watermark):
         """Set the high watermark value for the server
@@ -67,17 +66,8 @@ class FStatelessNatsTornadoServer(FServer):
         self._high_watermark = high_watermark
 
     def get_high_watermark(self):
+        # TODO this should be thread safe
         return self._high_watermark
-
-    def _new_frugal_inbox(self, prefix):
-        tokens = re.split('\.', prefix)
-        tokens[len(tokens) - 1] = new_inbox()
-        inbox = ""
-        pre = ""
-        for token in tokens:
-            inbox += pre + token
-            pre = "."
-        return inbox
 
     @gen.coroutine
     def _on_message_callback(self, msg):
@@ -86,19 +76,23 @@ class FStatelessNatsTornadoServer(FServer):
             logger.warn("Discarding invalid NATS request (no reply)")
             return
 
-        in_transport = FBoundedMemoryBuffer(msg.data[4:])
-        out_transport = FBoundedMemoryBuffer()  # this may just need to be bytearray() or BytesIO()
+        iprot = self._iprot_factory.get_protocol(
+            FBoundedMemoryBuffer(msg.data[4:])
+        )
+        out_transport = FBoundedMemoryBuffer()
+        oprot = self._oprot_factory.get_protocol(out_transport)
 
         try:
-            self._processor.process(self._input_protocol_factory.get_protocol(in_transport),
-                                    self._output_protocol_factory.get_protocol(out_transport))
+            self._processor.process(iprot, oprot)
         except TException as ex:
-            logger.warning("error processing frame: {}".format(ex.message))
-            print "got an exception"
+            logger.exception(ex)
 
         if len(out_transport) == 0:
             return
 
-        response = bytearray(out_transport.getvalue())
+        data = out_transport.getvalue()
+        frame_len = len(data)
+        buff = bytearray(4)
+        struct.pack_into('!I', buff, 0, frame_len + 4)
 
-        yield self._nats_client.publish(msg.reply, response)
+        yield self._nats_client.publish(reply_to, buff + data)

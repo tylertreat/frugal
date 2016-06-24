@@ -1,4 +1,6 @@
+from io import BytesIO
 import mock
+import struct
 from tornado import concurrent
 from tornado.testing import gen_test, AsyncTestCase
 
@@ -10,12 +12,7 @@ _NATS_PROTOCOL_V0 = 0
 class TestFStatelessNatsTornadoServer(AsyncTestCase):
 
     def setUp(self):
-        patcher = mock.patch('frugal.tornado.server.stateless_nats_server.new_inbox')
-        self.mock_new_inbox = patcher.start()
-        self.addCleanup(patcher.stop)
-
         super(TestFStatelessNatsTornadoServer, self).setUp()
-        self.mock_new_inbox.return_value = "new_inbox"
 
         self.subject = "foo"
         self.mock_nats_client = mock.Mock()
@@ -27,11 +24,10 @@ class TestFStatelessNatsTornadoServer(AsyncTestCase):
             self.mock_nats_client,
             self.subject,
             self.mock_processor,
-            self.mock_transport_factory,
             self.mock_prot_factory
         )
-
-        self.mock_transport = mock.Mock()
+        self.server._iprot_factory = mock.Mock()
+        self.server._oprot_factory = mock.Mock()
 
     @gen_test
     def test_serve(self):
@@ -41,53 +37,45 @@ class TestFStatelessNatsTornadoServer(AsyncTestCase):
 
         yield self.server.serve()
 
-        self.assertEquals(123, self.server._sid)
+        self.assertEquals(123, self.server._sub_id)
 
     @gen_test
     def test_stop(self):
+        self.server._sub_id = 123
+        f = concurrent.Future()
+        f.set_result(None)
+        self.mock_nats_client.unsubscribe.return_value = f
+
         yield self.server.stop()
+
+        self.mock_nats_client.unsubscribe.assert_called_with(123)
 
     def test_set_and_get_high_watermark(self):
         self.server.set_high_watermark(1234)
 
         self.assertEquals(1234, self.server.get_high_watermark())
 
-    @mock.patch('frugal.tornado.server.nats_server.TNatsServiceTransport')
     @gen_test
-    def test_on_message_callback(self, mock_server_constructor):
-        mock_server_transport = mock.Mock()
+    def test_on_message_callback(self):
+        iprot = BytesIO()
+        oprot = BytesIO()
+        self.server._iprot_factory.get_protocol.return_value = iprot
+        self.server._oprot_factory.get_protocol.return_value = oprot
 
-        mock_server_constructor.Server.return_value = mock_server_transport
-
-        f = concurrent.Future()
-        f.set_result(None)
-        self.mock_transport.open.return_value = f
-
-        self.mock_transport_factory.get_transport.return_value = self.mock_transport
-        self.mock_nats_client.publish_request.return_value = f
-
-        msg = TestMsg()
+        msg = TestMsg(subject="foo", reply="inbox", data=b'asdf')
 
         yield self.server._on_message_callback(msg)
-        #TODO test something
 
-    @mock.patch('frugal.tornado.server.nats_server.new_inbox')
-    def test_new_frugal_inbox(self, mock_new_inbox):
-        mock_new_inbox.return_value = "new_inbox"
-        prefix = "frugal._INBOX.d138b9369fa35386624d6ad97"
+        frame_len = len(msg.data)
+        buff = bytearray(4)
+        struct.pack_into('!I', buff, 0, frame_len + 4)
 
-        result = self.server._new_frugal_inbox(prefix)
-
-        self.assertEquals("frugal._INBOX.new_inbox", result)
-
-        #TODO how to test close?
-
-        #TODO how to test start?
+        self.server._processor.process.assert_called_with(iprot, oprot)
 
 
 class TestMsg(object):
     def __init__(self, subject='', reply='', data=b'', sid=0,):
         self.subject = subject
-        self.reply   = reply
-        self.data    = data
-        self.sid     = sid
+        self.reply = reply
+        self.data = data
+        self.sid = sid
