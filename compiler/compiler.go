@@ -87,6 +87,11 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 		dir    = filepath.Dir(file)
 	)
 
+	if frugal, ok := globals.CompiledFiles[file]; ok {
+		// This file has already been compiled, skip it.
+		return frugal, nil
+	}
+
 	// Ensure Frugal file exists.
 	if !exists(file) {
 		return nil, fmt.Errorf("Frugal file not found: %s\n", file)
@@ -124,6 +129,7 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	if err != nil {
 		return nil, err
 	}
+	globals.CompiledFiles[file] = frugal
 
 	if out == "" {
 		out = g.DefaultOutputDir()

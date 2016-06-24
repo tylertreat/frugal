@@ -3,6 +3,8 @@ package globals
 import (
 	"fmt"
 	"time"
+
+	"github.com/Workiva/frugal/compiler/parser"
 )
 
 const Version = "1.8.1"
@@ -17,6 +19,7 @@ var (
 	Verbose         bool
 	Now             = time.Now()
 	IntermediateIDL = []string{}
+	CompiledFiles   = make(map[string]*parser.Frugal)
 
 	// TODO: Remove once gen_with_frugal is the default.
 	GenWithFrugalWarn bool
@@ -32,6 +35,7 @@ func Reset() {
 	Verbose = false
 	Now = time.Now()
 	IntermediateIDL = []string{}
+	CompiledFiles = make(map[string]*parser.Frugal)
 	GenWithFrugalWarn = false
 }
 
