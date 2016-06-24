@@ -3,13 +3,11 @@ import re
 
 from nats.io.utils import new_inbox
 from thrift.Thrift import TException
-from thrift.transport.TTransport import TMemoryBuffer
 from tornado import gen
 
 from frugal.server import FServer
 from frugal.transport import FTransport
 from frugal.tornado.transport import FBoundedMemoryBuffer
-from frugal.tornado.transport import TNatsServiceTransport
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +86,7 @@ class FStatelessNatsTornadoServer(FServer):
             logger.warn("Discarding invalid NATS request (no reply)")
             return
 
-        in_transport = FBoundedMemoryBuffer(msg.data[:4])
+        in_transport = FBoundedMemoryBuffer(msg.data[4:])
         out_transport = FBoundedMemoryBuffer()  # this may just need to be bytearray() or BytesIO()
 
         try:
@@ -98,9 +96,9 @@ class FStatelessNatsTornadoServer(FServer):
             logger.warning("error processing frame: {}".format(ex.message))
             print "got an exception"
 
-        if out_transport.length() == 0:
+        if len(out_transport) == 0:
             return
 
         response = bytearray(out_transport.getvalue())
 
-        yield self._nats_client.publish(msg.reply, "", response)
+        yield self._nats_client.publish(msg.reply, response)
