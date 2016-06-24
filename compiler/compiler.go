@@ -30,6 +30,7 @@ type Options struct {
 // Compile parses the Frugal IDL and generates code for it, returning an error
 // if something failed.
 func Compile(options Options) error {
+	defer globals.Reset()
 	globals.TopicDelimiter = options.Delim
 	globals.Gen = options.Gen
 	globals.Out = options.Out
