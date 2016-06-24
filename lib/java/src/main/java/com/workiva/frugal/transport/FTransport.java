@@ -8,8 +8,8 @@ import com.workiva.frugal.transport.monitor.FTransportMonitor;
 import com.workiva.frugal.transport.monitor.MonitorRunner;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
-
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * FTransport is Frugal's equivalent of Thrift's TTransport. FTransport extends
@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  */
 public abstract class FTransport extends TTransport {
 
-    private static Logger LOGGER = Logger.getLogger(FTransport.class.getName());
+    private static Logger LOGGER = LoggerFactory.getLogger(FTransport.class);
 
     public static final int REQUEST_TOO_LARGE = 100;
     public static final int RESPONSE_TOO_LARGE = 101;

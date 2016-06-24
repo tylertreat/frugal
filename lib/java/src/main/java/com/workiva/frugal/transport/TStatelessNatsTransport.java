@@ -4,12 +4,13 @@ import com.workiva.frugal.exception.FMessageSizeException;
 import io.nats.client.*;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.logging.Logger;
 
 /**
  * TStatelessNatsTransport is an extension of thrift.TTransport. This is a "stateless" transport in the sense that there
@@ -21,7 +22,7 @@ public class TStatelessNatsTransport extends TTransport {
     // Controls how many responses to buffer.
     private static final int FRAME_BUFFER_SIZE = 64;
     protected static final byte[] FRAME_BUFFER_CLOSED = new byte[0];
-    private static final Logger LOGGER = Logger.getLogger(TStatelessNatsTransport.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(TStatelessNatsTransport.class);
 
     private final Connection conn;
     private final String subject;
@@ -102,13 +103,13 @@ public class TStatelessNatsTransport extends TTransport {
         try {
             sub.unsubscribe();
         } catch (IOException e) {
-            LOGGER.warning("NATS transport could not unsubscribe from subscription: " + e.getMessage());
+            LOGGER.warn("NATS transport could not unsubscribe from subscription: " + e.getMessage());
         }
         sub = null;
         try {
             frameBuffer.put(FRAME_BUFFER_CLOSED);
         } catch (InterruptedException e) {
-            LOGGER.warning("NATS transport could not close frame buffer: " + e.getMessage());
+            LOGGER.warn("NATS transport could not close frame buffer: " + e.getMessage());
         }
     }
 

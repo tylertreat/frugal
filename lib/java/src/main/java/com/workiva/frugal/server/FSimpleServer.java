@@ -10,9 +10,8 @@ import com.workiva.frugal.transport.FTransportFactory;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TServerTransport;
 import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
-
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simple multi-threaded server.
@@ -26,7 +25,7 @@ public class FSimpleServer implements FServer {
     private volatile boolean stopped;
     private long highWatermark = FTransport.DEFAULT_WATERMARK;
 
-    private static Logger LOGGER = Logger.getLogger(FSimpleServer.class.getName());
+    private static Logger LOGGER = LoggerFactory.getLogger(FSimpleServer.class);
 
     public FSimpleServer(FProcessorFactory fProcessorFactory, TServerTransport fServerTransport,
                          FTransportFactory fTransportFactory, FProtocolFactory fProtocolFactory) {
@@ -55,7 +54,7 @@ public class FSimpleServer implements FServer {
                 try {
                     accept(client);
                 } catch (TException e) {
-                    LOGGER.warning("frugal: error accepting client connection: " + e.getMessage());
+                    LOGGER.warn("frugal: error accepting client connection: " + e.getMessage());
                 }
             }
         }
