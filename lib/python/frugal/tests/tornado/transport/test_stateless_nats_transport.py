@@ -66,6 +66,8 @@ class TestTNatsStatelessTransport(AsyncTestCase):
         yield self.transport.open()
 
         self.assertEquals(1, self.transport._sub_id)
+        self.mock_nats_client.subscribe.assert_called_with(
+            "new_inbox", "", self.transport._on_message_callback)
 
     @gen_test
     def test_close(self):
@@ -116,16 +118,18 @@ class TestTNatsStatelessTransport(AsyncTestCase):
         self.mock_nats_client.is_connected.return_value = True
         self.transport._is_open = True
 
-        self.transport._write_to = "foo"
         b = bytearray('test')
         self.transport._wbuf.write(b)
         frame_length = struct.pack('!I', len(b))
 
         f = concurrent.Future()
         f.set_result("")
-        self.mock_nats_client.publish.return_value = f
+        self.mock_nats_client.publish_request.return_value = f
 
         yield self.transport.flush()
 
-        self.mock_nats_client.publish.assert_called_with("frugal.foo",
-                                                         frame_length + b)
+        self.mock_nats_client.publish_request.assert_called_with(
+            self.subject,
+            self.inbox,
+            frame_length + b
+        )

@@ -47,13 +47,12 @@ class TStatelessNatsTransport(TTransportBase):
             raise ex
 
         self._sub_id = yield self._nats_client.subscribe(
-            self._subject,
+            self._inbox,
             "",
             self._on_message_callback
         )
         self._is_open = True
 
-    @gen.coroutine
     def _on_message_callback(self, msg):
         wrapped = bytearray(msg.data)
         self._execute(wrapped)
@@ -101,11 +100,6 @@ class TStatelessNatsTransport(TTransportBase):
         frame_length = pack('!I', len(frame))
         self._wbuf = BytesIO()
 
-        formatted_subject = self._get_formatted_subject()
-
-        yield self._nats_client.publish(formatted_subject, frame_length + frame)
-
-    def _get_formatted_subject(self):
-        # TODO: use constant
-        return "{}{}".format("frugal.", self._subject)
-
+        yield self._nats_client.publish_request(self._subject,
+                                                self._inbox,
+                                                frame_length + frame)

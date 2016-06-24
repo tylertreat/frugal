@@ -24,10 +24,11 @@ func Usage() {
 func main() {
 	flag.Usage = Usage
 	var (
-		server   = flag.Bool("server", false, "Run server")
-		protocol = flag.String("P", "binary", "Specify the protocol (binary, compact, json, simplejson)")
-		addr     = flag.String("addr", nats.DefaultURL, "NATS address")
-		secure   = flag.Bool("secure", false, "Use tls secure transport")
+		server          = flag.Bool("server", false, "Run server")
+		statelessServer = flag.Bool("stateless-server", false, "Run stateless server.")
+		protocol        = flag.String("P", "binary", "Specify the protocol (binary, compact, json, simplejson)")
+		addr            = flag.String("addr", nats.DefaultURL, "NATS address")
+		secure          = flag.Bool("secure", false, "Use tls secure transport")
 	)
 	flag.Parse()
 
@@ -58,19 +59,23 @@ func main() {
 		panic(err)
 	}
 
-	if !*server {
-		if err := runPublisher(conn, fprotocolFactory); err != nil {
-			fmt.Println("error running publisher:", err)
-		}
-		if err := runClient(conn, ftransportFactory, fprotocolFactory); err != nil {
-			fmt.Println("error running client:", err)
-		}
-	} else {
+	if *server {
 		if err := runSubscriber(conn, fprotocolFactory); err != nil {
 			fmt.Println("error running subscriber:", err)
 		}
 		if err := runServer(conn, ftransportFactory, fprotocolFactory); err != nil {
 			fmt.Println("error running server:", err)
+		}
+	} else if *statelessServer {
+		if err := runStatelessServer(conn, fprotocolFactory); err != nil {
+			fmt.Println("error running stateless server.")
+		}
+	} else {
+		if err := runPublisher(conn, fprotocolFactory); err != nil {
+			fmt.Println("error running publisher:", err)
+		}
+		if err := runClient(conn, ftransportFactory, fprotocolFactory); err != nil {
+			fmt.Println("error running client:", err)
 		}
 	}
 }
@@ -145,6 +150,16 @@ func runServer(conn *nats.Conn, transportFactory frugal.FTransportFactory,
 	server := frugal.NewFNatsServerFactory(conn, "foo", 5*time.Second, 2,
 		frugal.NewFProcessorFactory(processor), transportFactory, protocolFactory)
 	fmt.Println("Starting the simple nats server... on ", "foo")
+	return server.Serve()
+}
+
+// Stateless server runner
+func runStatelessServer(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory) error {
+	handler := &FooHandler{}
+	processor := event.NewFFooProcessor(handler)
+	builder := frugal.NewFStatelessNatsServerBuilder(conn, processor, protocolFactory, "foo")
+	server := builder.Build()
+
 	return server.Serve()
 }
 
