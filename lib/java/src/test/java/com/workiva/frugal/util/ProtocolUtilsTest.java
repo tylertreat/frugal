@@ -1,6 +1,5 @@
-package com.workiva.frugal.utils;
+package com.workiva.frugal.util;
 
-import com.workiva.frugal.util.ProtocolUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

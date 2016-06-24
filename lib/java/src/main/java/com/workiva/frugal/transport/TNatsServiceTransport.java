@@ -6,6 +6,8 @@ import com.workiva.frugal.internal.NatsConnectionProtocol;
 import io.nats.client.*;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -15,11 +17,12 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
 /**
  * TNatsServiceTransport is an extension of thrift.TTransport exclusively used for services which uses NATS as the
  * underlying transport. Message frames are limited to 1MB in size.
+ * TODO: Support >1MB messages.
+ * TODO 2.0.0: Remove "Service" from the name.
  */
 public class TNatsServiceTransport extends TTransport {
 
@@ -28,6 +31,7 @@ public class TNatsServiceTransport extends TTransport {
     public static final String FRUGAL_PREFIX = "frugal.";
 
     private static final String DISCONNECT = "DISCONNECT";
+    private static final Logger LOGGER = LoggerFactory.getLogger(TNatsServiceTransport.class);
 
     private Connection conn;
     private PipedOutputStream writer;
@@ -48,8 +52,6 @@ public class TNatsServiceTransport extends TTransport {
     private final long connectionTimeout;
     private final int maxMissedHeartbeats;
     protected boolean isOpen;
-
-    private static Logger LOGGER = Logger.getLogger(TNatsServiceTransport.class.getName());
 
     /**
      * Used for constructing server side of TNatsServiceTransport
@@ -93,7 +95,9 @@ public class TNatsServiceTransport extends TTransport {
         return new TNatsServiceTransport(conn, listenTo, writeTo);
     }
 
-    private boolean isClient() {return connectionSubject != null;}
+    private boolean isClient() {
+        return connectionSubject != null;
+    }
 
     @Override
     public synchronized boolean isOpen() {
@@ -138,7 +142,7 @@ public class TNatsServiceTransport extends TTransport {
             public void onMessage(Message msg) {
                 if (DISCONNECT.equals(msg.getReplyTo())) {
                     if (isClient()) {
-                        LOGGER.severe("received unexpected disconnect from the server");
+                        LOGGER.error("received unexpected disconnect from the server");
                     } else {
                         LOGGER.info("client closed cleanly");
                     }
@@ -149,7 +153,7 @@ public class TNatsServiceTransport extends TTransport {
                     writer.write(msg.getData());
                     writer.flush();
                 } catch (IOException e) {
-                    LOGGER.warning("could not write incoming data to buffer" + e.getMessage());
+                    LOGGER.warn("could not write incoming data to buffer" + e.getMessage());
                 }
             }
         });
@@ -164,7 +168,7 @@ public class TNatsServiceTransport extends TTransport {
                     try {
                         conn.publish(heartbeatReply, null);
                     } catch (IOException e) {
-                        LOGGER.warning("could not publish heartbeat: " + e.getMessage());
+                        LOGGER.warn("could not publish heartbeat: " + e.getMessage());
                     }
                 }
             });
@@ -242,7 +246,7 @@ public class TNatsServiceTransport extends TTransport {
     private synchronized void missedHeartbeat() {
         int missed = missedHeartbeats.getAndIncrement();
         if (missed >= maxMissedHeartbeats) {
-            LOGGER.warning("missed " + missed + " heartbeats from peer, closing transport");
+            LOGGER.warn("missed " + missed + " heartbeats from peer, closing transport");
             close();
             return;
         }
@@ -264,14 +268,14 @@ public class TNatsServiceTransport extends TTransport {
         try {
             conn.publish(writeTo, DISCONNECT, null);
         } catch (IOException e) {
-            LOGGER.warning("close: could not signal remote peer for disconnect: " + e.getMessage());
+            LOGGER.warn("close: could not signal remote peer for disconnect: " + e.getMessage());
         }
 
         if (heartbeatSub != null) {
             try {
                 heartbeatSub.unsubscribe();
             } catch (IOException e) {
-                LOGGER.warning("close: could not unsubscribe from heartbeat subscription. " + e.getMessage());
+                LOGGER.warn("close: could not unsubscribe from heartbeat subscription. " + e.getMessage());
             }
             heartbeatSub = null;
         }
@@ -283,7 +287,7 @@ public class TNatsServiceTransport extends TTransport {
         try {
             sub.unsubscribe();
         } catch (IOException e) {
-            LOGGER.warning("close: could not unsubscribe from inbox subscription. " + e.getMessage());
+            LOGGER.warn("close: could not unsubscribe from inbox subscription. " + e.getMessage());
         }
         sub = null;
 
@@ -293,13 +297,13 @@ public class TNatsServiceTransport extends TTransport {
         try {
             conn.flush(1000);
         } catch (Exception e) {
-            LOGGER.warning("close: could not flush NATS connection. " + e.getMessage());
+            LOGGER.warn("close: could not flush NATS connection. " + e.getMessage());
         }
 
         try {
             writer.close();
         } catch (IOException e) {
-            LOGGER.warning("close: could not close write buffer. " + e.getMessage());
+            LOGGER.warn("close: could not close write buffer. " + e.getMessage());
         }
         isOpen = false;
     }

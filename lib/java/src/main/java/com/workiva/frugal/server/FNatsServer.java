@@ -1,7 +1,6 @@
 package com.workiva.frugal.server;
 
 import com.google.gson.Gson;
-import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.internal.NatsConnectionProtocol;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFactory;
@@ -15,13 +14,18 @@ import io.nats.client.MessageHandler;
 import io.nats.client.Subscription;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.concurrent.*;
-import java.util.logging.Logger;
 
+/**
+ * An implementation of FServer which uses NATS as the underlying transport. Clients must connect with the
+ * TNatsServiceTransport.
+ */
 public class FNatsServer implements FServer {
 
     private static final int DEFAULT_MAX_MISSED_HEARTBEATS = 3;
@@ -41,7 +45,7 @@ public class FNatsServer implements FServer {
 
     private final ScheduledExecutorService heartbeatExecutor = Executors.newScheduledThreadPool(1);
 
-    private static Logger LOGGER = Logger.getLogger(FNatsServer.class.getName());
+    private static Logger LOGGER = LoggerFactory.getLogger(FNatsServer.class);
 
     public FNatsServer(Connection conn, String subject, long heartbeatInterval,
                        FProcessor processor, FTransportFactory transportFactory,
@@ -198,7 +202,7 @@ public class FNatsServer implements FServer {
         public void onMessage(Message message) {
             String reply = message.getReplyTo();
             if (reply == null || reply.isEmpty()) {
-                LOGGER.warning("Received a bad connection handshake. Discarding.");
+                LOGGER.warn("Received a bad connection handshake. Discarding.");
                 return;
             }
 
@@ -207,11 +211,11 @@ public class FNatsServer implements FServer {
             try {
                 connProtocol = gson.fromJson(new String(message.getData(), "UTF-8"), NatsConnectionProtocol.class);
                 if (connProtocol.getVersion() != NatsConnectionProtocol.NATS_V0) {
-                    LOGGER.severe(String.format("%d not a supported connect version", connProtocol.getVersion()));
+                    LOGGER.error(String.format("%d not a supported connect version", connProtocol.getVersion()));
                     return;
                 }
             } catch (UnsupportedEncodingException e) {
-                LOGGER.severe("could not deserialize connect message");
+                LOGGER.error("could not deserialize connect message");
                 return;
             }
 
@@ -221,7 +225,7 @@ public class FNatsServer implements FServer {
             try {
                 transport = accept(listenTo, reply, heartbeat);
             } catch (TException e) {
-                LOGGER.severe("error accepting client transport " + e.getMessage());
+                LOGGER.error("error accepting client transport " + e.getMessage());
                 return;
             }
 
@@ -236,7 +240,7 @@ public class FNatsServer implements FServer {
             try {
                 conn.publish(reply, listenTo, connectMsg.getBytes());
             } catch (Exception e) {
-                LOGGER.warning("error publishing transport inbox " + e.getMessage());
+                LOGGER.error("error publishing transport inbox " + e.getMessage());
                 transport.close();
             }
         }
@@ -253,7 +257,7 @@ public class FNatsServer implements FServer {
                 conn.publish(heartbeatSubject, null);
                 conn.flush((int) (heartbeatInterval * 3 / 4));
             } catch (Exception e) {
-                LOGGER.severe("error publishing heartbeat " + e.getMessage());
+                LOGGER.error("error publishing heartbeat " + e.getMessage());
             }
         }
 
@@ -308,7 +312,7 @@ public class FNatsServer implements FServer {
             try {
                 sub.unsubscribe();
             } catch (IOException e) {
-                LOGGER.warning("error unsubscribing from heartbeat " + e.getMessage());
+                LOGGER.warn("error unsubscribing from heartbeat " + e.getMessage());
             }
         }
 

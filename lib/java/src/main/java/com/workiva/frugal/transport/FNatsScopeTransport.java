@@ -6,16 +6,15 @@ import com.workiva.frugal.util.ProtocolUtils;
 import io.nats.client.*;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Logger;
 
 /**
  * FNatsScopeTransport implements FScopeTransport by using NATS as the pub/sub message broker. Messages are limited to
@@ -31,7 +30,7 @@ public class FNatsScopeTransport extends FScopeTransport {
     protected String subject;
     protected final String queue;
     protected BlockingQueue<byte[]> frameBuffer;
-    private byte[] currentFrame;
+    private byte[] currentFrame = new byte[0];
     private int currentFramePos;
     private ByteBuffer writeBuffer;
     protected Subscription sub;
@@ -39,7 +38,7 @@ public class FNatsScopeTransport extends FScopeTransport {
     protected boolean isOpen;
     private final ReentrantLock lock;
 
-    private static Logger LOGGER = Logger.getLogger(FNatsScopeTransport.class.getName());
+    private static Logger LOGGER = LoggerFactory.getLogger(FNatsScopeTransport.class);
 
     /**
      * Creates a new FNatsScopeTransport which is used for pub/sub. Subscribers using this transport will subscribe to
@@ -152,7 +151,7 @@ public class FNatsScopeTransport extends FScopeTransport {
             @Override
             public void onMessage(Message msg) {
                 if (msg.getData().length < 4) {
-                    LOGGER.warning("discarding invalid scope message frame");
+                    LOGGER.warn("discarding invalid scope message frame");
                     return;
                 }
                 try {
@@ -178,13 +177,13 @@ public class FNatsScopeTransport extends FScopeTransport {
         try {
             sub.unsubscribe();
         } catch (IOException e) {
-            LOGGER.warning("could not unsubscribe from subscription. " + e.getMessage());
+            LOGGER.warn("could not unsubscribe from subscription. " + e.getMessage());
         }
         sub = null;
         try {
             frameBuffer.put(FRAME_BUFFER_CLOSED);
         } catch (InterruptedException e) {
-            LOGGER.warning("could not close write frame buffer. " + e.getMessage());
+            LOGGER.warn("could not close write frame buffer. " + e.getMessage());
         }
         isOpen = false;
     }
@@ -194,9 +193,10 @@ public class FNatsScopeTransport extends FScopeTransport {
         if (!isOpen()) {
             throw new TTransportException(TTransportException.END_OF_FILE);
         }
-        if (currentFrame == null) {
+        if (currentFramePos == currentFrame.length) {
             try {
                 currentFrame = frameBuffer.take();
+                currentFramePos = 0;
             } catch (InterruptedException e) {
                 throw new TTransportException(TTransportException.END_OF_FILE, e.getMessage());
             }
@@ -207,10 +207,6 @@ public class FNatsScopeTransport extends FScopeTransport {
         int size = Math.min(len, currentFrame.length);
         System.arraycopy(currentFrame, currentFramePos, bytes, off, size);
         currentFramePos += size;
-        if (currentFramePos == currentFrame.length) {
-            // The entire frame was copied, clear it.
-            discardFrame();
-        }
         return size;
     }
 
@@ -246,12 +242,6 @@ public class FNatsScopeTransport extends FScopeTransport {
         writeBuffer.get(data);
         if (data.length == 0) {
             return;
-        }
-        // Include 4 bytes for frame size.
-        if (data.length + 4 > TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE) {
-            throw new FMessageSizeException(String.format(
-                    "Message exceeds %d bytes, was %d bytes",
-                    TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE, 4 + data.length));
         }
         byte[] frame = new byte[data.length + 4];
         ProtocolUtils.writeInt(data.length, frame, 0);

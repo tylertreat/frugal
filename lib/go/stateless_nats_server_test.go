@@ -21,8 +21,7 @@ func TestFStatelessNatsServer(t *testing.T) {
 	}
 	processor := &processor{t}
 	protoFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
-	server := NewFStatelessNatsServer(conn, processor, protoFactory, protoFactory,
-		"foo", "queue", 1)
+	server := NewFStatelessNatsServerBuilder(conn, processor, protoFactory, "foo").WithQueueGroup("queue").Build()
 	go func() {
 		assert.Nil(t, server.Serve())
 	}()
