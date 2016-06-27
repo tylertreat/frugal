@@ -1,5 +1,6 @@
 import logging
 import struct
+from threading import Lock
 
 from thrift.Thrift import TException
 from tornado import gen
@@ -38,6 +39,7 @@ class FStatelessNatsTornadoServer(FServer):
         self._high_watermark = high_watermark
         self._queue = queue
         self._sub_id = None
+        self._watermark_lock = Lock()
 
     @gen.coroutine
     def serve(self):
@@ -63,10 +65,10 @@ class FStatelessNatsTornadoServer(FServer):
         Args:
             high_watermark: long representing high watermark value
         """
-        self._high_watermark = high_watermark
+        with self._watermark_lock:
+            self._high_watermark = high_watermark
 
     def get_high_watermark(self):
-        # TODO this should be thread safe
         return self._high_watermark
 
     @gen.coroutine
