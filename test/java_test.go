@@ -10,7 +10,6 @@ import (
 )
 
 func TestValidJava(t *testing.T) {
-	defer globals.Reset()
 	nowBefore := globals.Now
 	defer func() {
 		globals.Now = nowBefore
@@ -40,7 +39,6 @@ func TestValidJava(t *testing.T) {
 }
 
 func TestValidJavaWithAsync(t *testing.T) {
-	defer globals.Reset()
 	nowBefore := globals.Now
 	defer func() {
 		globals.Now = nowBefore
