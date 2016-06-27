@@ -15,6 +15,8 @@ _NATS_PROTOCOL_V0 = 0
 
 
 class FStatelessNatsTornadoServer(FServer):
+    """An implementation of FServer which uses NATS as the underlying transport.
+    Clients must connect with the TStatelessNatsTransport"""
 
     def __init__(self,
                  nats_client,
@@ -43,8 +45,7 @@ class FStatelessNatsTornadoServer(FServer):
 
     @gen.coroutine
     def serve(self):
-        """Subscribe to provided subject and listen on "rpc" queue."""
-
+        """Subscribe to provided subject and listen on provided queue"""
         self._sub_id = yield self._nats_client.subscribe(
             self._subject,
             self._queue,
@@ -55,7 +56,7 @@ class FStatelessNatsTornadoServer(FServer):
 
     @gen.coroutine
     def stop(self):
-        """Stop listening for RPC calls."""
+        """Unsubscribe from server subject"""
         logger.debug("Shutting down Frugal NATS Server.")
         yield self._nats_client.unsubscribe(self._sub_id)
 
@@ -69,10 +70,16 @@ class FStatelessNatsTornadoServer(FServer):
             self._high_watermark = high_watermark
 
     def get_high_watermark(self):
+        """Get the high watermark value from the server"""
         return self._high_watermark
 
     @gen.coroutine
     def _on_message_callback(self, msg):
+        """Process and respond to server request on server subject
+
+        Args:
+            msg: request message published to server subject
+        """
         reply_to = msg.reply
         if not reply_to:
             logger.warn("Discarding invalid NATS request (no reply)")

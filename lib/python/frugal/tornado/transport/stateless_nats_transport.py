@@ -16,16 +16,34 @@ _FRAME_BUFFER_SIZE = 5
 
 
 class TStatelessNatsTransport(TTransportBase):
+    """TStatelessNatsTransport is an extension of thrift.TTransportBase.
+    This is a "stateless" transport in the sense that there is no
+    connection with a server. A request is simply published to a subject
+    and responses are received on another subject. This assumes
+    requests/responses fit within a single NATS message."""
 
     def __init__(self, nats_client, subject, inbox=""):
+        """Create a new instance of FStatelessNatsTornadoServer
+
+        Args:
+            nats_client: connected instance of nats.io.Client
+            subject: subject to listen on
+        """
         self._nats_client = nats_client
         self._subject = subject
         self._inbox = inbox or new_inbox()
         self._is_open = False
         self._open_lock = Lock()
         self._wbuf = BytesIO()
+        self._execute = None
+        self._sub_id = None
 
     def set_execute_callback(self, execute):
+        """Set the message callback execute function
+
+        Args:
+            execute: message callback execute function
+        """
         self._execute = execute
 
     def isOpen(self):
@@ -34,6 +52,7 @@ class TStatelessNatsTransport(TTransportBase):
 
     @gen.coroutine
     def open(self):
+        """Subscribes to the configured inbox subject"""
         if not self._nats_client.is_connected():
             ex = TTransportException(TTransportException.NOT_OPEN,
                                      "NATS not connected.")
@@ -59,6 +78,7 @@ class TStatelessNatsTransport(TTransportBase):
 
     @gen.coroutine
     def close(self):
+        """Unsubscribes from the inbox subject"""
         if not self._sub_id:
             return
 
@@ -66,11 +86,13 @@ class TStatelessNatsTransport(TTransportBase):
         self._is_open = False
 
     def read(self, sz):
+        """Don't call this"""
         ex = Exception("Don't call this.")
         logger.exception(ex)
         raise ex
 
     def write(self, buff):
+        """Writes the bytes to a buffer. Throws FMessageSizeException if the buffer exceeds 1MB"""
         if not self.isOpen():
             ex = TTransportException(TTransportException.NOT_OPEN,
                                      "Nats not connected!")
@@ -90,6 +112,7 @@ class TStatelessNatsTransport(TTransportBase):
 
     @gen.coroutine
     def flush(self):
+        """Sends the buffered bytes over NATS"""
         if not self.isOpen():
             ex = TTransportException(TTransportException.NOT_OPEN,
                                      "Nats not connected!")
