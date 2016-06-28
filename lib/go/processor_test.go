@@ -34,8 +34,9 @@ func (p *pingProcessor) Process(ctx *FContext, iprot, oprot *FProtocol) error {
 // nil on success.
 func TestFBaseProcessorHappyPath(t *testing.T) {
 	mockTransport := new(mockTTransport)
-	reads := make(chan []byte, 3)
-	reads <- pingFrame[0:5]  // version and headers size
+	reads := make(chan []byte, 4)
+	reads <- pingFrame[0:1]  // version
+	reads <- pingFrame[1:5]  // headers size
 	reads <- pingFrame[5:34] // FContext headers
 	reads <- pingFrame[34:]  // request body
 	mockTransport.reads = reads
@@ -52,8 +53,9 @@ func TestFBaseProcessorHappyPath(t *testing.T) {
 // an error on failure.
 func TestFBaseProcessorError(t *testing.T) {
 	mockTransport := new(mockTTransport)
-	reads := make(chan []byte, 3)
-	reads <- pingFrame[0:5]  // version and headers size
+	reads := make(chan []byte, 4)
+	reads <- pingFrame[0:1]  // version
+	reads <- pingFrame[1:5]  // headers size
 	reads <- pingFrame[5:34] // FContext headers
 	reads <- pingFrame[34:]  // request body
 	mockTransport.reads = reads
@@ -86,8 +88,9 @@ func TestFBaseProcessorReadError(t *testing.T) {
 // TApplicationException if there is no registered FProcessorFunction.
 func TestFBaseProcessorNoProcessorFunction(t *testing.T) {
 	mockTransport := new(mockTTransport)
-	reads := make(chan []byte, 3)
-	reads <- pingFrame[0:5]  // version and headers size
+	reads := make(chan []byte, 4)
+	reads <- pingFrame[0:1]  // version
+	reads <- pingFrame[1:5]  // headers size
 	reads <- pingFrame[5:34] // FContext headers
 	reads <- pingFrame[34:]  // request body
 	mockTransport.reads = reads

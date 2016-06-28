@@ -185,7 +185,7 @@ func TestReadHeader(t *testing.T) {
 // Ensures getHeadersFromFrame returns an error for frames with invalid size.
 func TestGetHeadersFromFrameInvalidSize(t *testing.T) {
 	assert := assert.New(t)
-	expectedErr := NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: invalid frame size 1")
+	expectedErr := NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: invalid v0 frame size 0")
 	_, err := getHeadersFromFrame([]byte{0})
 	assert.Equal(expectedErr, err)
 }
