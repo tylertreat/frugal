@@ -7,12 +7,10 @@ from nats.io.utils import new_inbox
 from thrift.transport.TTransport import TTransportBase, TTransportException
 from tornado import gen
 
-from frugal.exceptions import FMessageSizeException
+from frugal.exceptions import FMessageSizeException, FExecuteCallbackNotSet
+from frugal.tornado.transport.nats_scope_transport import MAX_MESSAGE_SIZE
 
 logger = logging.getLogger(__name__)
-
-_NATS_MAX_MESSAGE_SIZE = 1024 * 1024
-_FRAME_BUFFER_SIZE = 5
 
 
 class TStatelessNatsTransport(TTransportBase):
@@ -27,7 +25,7 @@ class TStatelessNatsTransport(TTransportBase):
 
         Args:
             nats_client: connected instance of nats.io.Client
-            subject: subject to listen on
+            subject: subject to publish to
         """
         self._nats_client = nats_client
         self._subject = subject
@@ -73,6 +71,11 @@ class TStatelessNatsTransport(TTransportBase):
         self._is_open = True
 
     def _on_message_callback(self, msg):
+        if not self._execute:
+            ex = FExecuteCallbackNotSet("Execute callback not set")
+            logger.error(ex.message)
+            raise ex
+
         wrapped = bytearray(msg.data)
         self._execute(wrapped)
 
@@ -87,7 +90,7 @@ class TStatelessNatsTransport(TTransportBase):
 
     def read(self, sz):
         """Don't call this"""
-        ex = Exception("Don't call this.")
+        ex = NotImplementedError("Don't call this.")
         logger.exception(ex)
         raise ex
 
@@ -99,11 +102,9 @@ class TStatelessNatsTransport(TTransportBase):
             logger.exception(ex)
             raise ex
 
-        wbuf_length = len(self._wbuf.getvalue())
+        size = len(buff) + len(self._wbuf.getvalue())
 
-        size = len(buff) + wbuf_length
-
-        if size > _NATS_MAX_MESSAGE_SIZE:
+        if size > MAX_MESSAGE_SIZE:
             ex = FMessageSizeException("Message exceeds NATS max message size")
             logger.exception(ex)
             raise ex

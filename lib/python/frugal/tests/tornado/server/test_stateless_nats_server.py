@@ -6,8 +6,6 @@ from tornado.testing import gen_test, AsyncTestCase
 
 from frugal.tornado.server.stateless_nats_server import FStatelessNatsTornadoServer
 
-_NATS_PROTOCOL_V0 = 0
-
 
 class TestFStatelessNatsTornadoServer(AsyncTestCase):
 
@@ -49,11 +47,6 @@ class TestFStatelessNatsTornadoServer(AsyncTestCase):
         yield self.server.stop()
 
         self.mock_nats_client.unsubscribe.assert_called_with(123)
-
-    def test_set_and_get_high_watermark(self):
-        self.server.set_high_watermark(1234)
-
-        self.assertEquals(1234, self.server.get_high_watermark())
 
     @gen_test
     def test_on_message_callback(self):

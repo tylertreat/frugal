@@ -5,13 +5,14 @@ import struct
 from threading import Lock
 from io import BytesIO
 
+from frugal.tornado.transport.nats_scope_transport import MAX_MESSAGE_SIZE
+from frugal.exceptions import FMessageSizeException
 from nats.io.utils import new_inbox
 from thrift.transport.TTransport import TTransportBase, TTransportException
 from tornado import gen, concurrent, ioloop
 
 
 _NATS_PROTOCOL_VERSION = 0
-_NATS_MAX_MESSAGE_SIZE = 1024 * 1024
 _FRUGAL_PREFIX = "frugal."
 _DISCONNECT = "DISCONNECT"
 _HEARTBEAT_GRACE_PERIOD = 50000
@@ -221,7 +222,7 @@ class TNatsServiceTransport(TTransportBase):
         self._is_open = False
 
     def read(self, buff, offset, length):
-        ex = Exception("Don't call this.")
+        ex = NotImplementedError("Don't call this.")
         logger.exception(ex)
         raise ex
 
@@ -231,6 +232,13 @@ class TNatsServiceTransport(TTransportBase):
             logger.error("Tried to write to closed transport!")
             ex = TTransportException(TTransportException.NOT_OPEN,
                                      "Transport not open!")
+            raise ex
+
+        size = len(buff) + len(self._wbuf.getvalue())
+
+        if size > MAX_MESSAGE_SIZE:
+            ex = FMessageSizeException("Message exceeds max message size")
+            logger.exception(ex)
             raise ex
 
         self._wbuf.write(buff)

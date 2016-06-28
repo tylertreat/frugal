@@ -6,12 +6,10 @@ from thrift.Thrift import TException
 from tornado import gen
 
 from frugal.server import FServer
-from frugal.transport import FTransport
-from frugal.tornado.transport import FBoundedMemoryBuffer
+from frugal.transport import FBoundedMemoryBuffer
+from frugal.tornado.transport.nats_scope_transport import MAX_MESSAGE_SIZE
 
 logger = logging.getLogger(__name__)
-
-_NATS_PROTOCOL_V0 = 0
 
 
 class FStatelessNatsTornadoServer(FServer):
@@ -23,7 +21,6 @@ class FStatelessNatsTornadoServer(FServer):
                  subject,
                  processor,
                  protocol_factory,
-                 high_watermark=FTransport.DEFAULT_HIGH_WATERMARK,
                  queue=""):
         """Create a new instance of FStatelessNatsTornadoServer
 
@@ -38,7 +35,6 @@ class FStatelessNatsTornadoServer(FServer):
         self._processor = processor
         self._iprot_factory = protocol_factory
         self._oprot_factory = protocol_factory
-        self._high_watermark = high_watermark
         self._queue = queue
         self._sub_id = None
         self._watermark_lock = Lock()
@@ -61,17 +57,12 @@ class FStatelessNatsTornadoServer(FServer):
         yield self._nats_client.unsubscribe(self._sub_id)
 
     def set_high_watermark(self, high_watermark):
-        """Set the high watermark value for the server
-
-        Args:
-            high_watermark: long representing high watermark value
-        """
-        with self._watermark_lock:
-            self._high_watermark = high_watermark
+        """Not implemented"""
+        pass
 
     def get_high_watermark(self):
-        """Get the high watermark value from the server"""
-        return self._high_watermark
+        """Not implemented"""
+        return 0
 
     @gen.coroutine
     def _on_message_callback(self, msg):
@@ -85,10 +76,11 @@ class FStatelessNatsTornadoServer(FServer):
             logger.warn("Discarding invalid NATS request (no reply)")
             return
 
+        # Read and process frame (exclude first 4 bytes which represent frame size).
         iprot = self._iprot_factory.get_protocol(
-            FBoundedMemoryBuffer(msg.data[4:])
+            FBoundedMemoryBuffer(MAX_MESSAGE_SIZE, value=msg.data[4:])
         )
-        out_transport = FBoundedMemoryBuffer()
+        out_transport = FBoundedMemoryBuffer(MAX_MESSAGE_SIZE)
         oprot = self._oprot_factory.get_protocol(out_transport)
 
         try:

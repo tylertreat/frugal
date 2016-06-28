@@ -5,6 +5,7 @@ from tornado import concurrent
 from tornado.testing import gen_test, AsyncTestCase
 from thrift.transport.TTransport import TTransportException
 
+from frugal.exceptions import FExecuteCallbackNotSet
 from frugal.tornado.transport import TStatelessNatsTransport
 
 
@@ -69,6 +70,12 @@ class TestTNatsStatelessTransport(AsyncTestCase):
         self.mock_nats_client.subscribe.assert_called_with(
             "new_inbox", "", self.transport._on_message_callback)
 
+    def test_execute_not_set(self):
+        self.transport._execute = None
+
+        with self.assertRaises(FExecuteCallbackNotSet):
+            self.transport._on_message_callback("")
+
     @gen_test
     def test_close(self):
         self.transport._sub_id = 1
@@ -83,21 +90,29 @@ class TestTNatsStatelessTransport(AsyncTestCase):
 
         self.assertFalse(self.transport._is_open)
 
-    def test_read_throws_exception(self):
-        try:
-            self.transport.read(2)
-            self.fail()
-        except Exception as ex:
-            self.assertEquals("Don't call this.", ex.message)
+    @gen_test
+    def test_close_no_sub_id_returns_early(self):
+        self.transport._sub_id = 1
+        f = concurrent.Future()
+        f.set_result(None)
+        self.mock_nats_client.unsubscribe.return_value = f
+        yield self.transport.close()
+        self.mock_nats_client.unsubscribe.assert_not_called()
 
-    def test_write(self):
-        b = bytearray(b'test')
+    def test_read_throws_exception(self):
+        with self.assertRaises(NotImplementedError):
+            self.transport.read(2)
+
+    def test_write_raises_when_not_connected(self):
+        b = bytearray('test')
         try:
             self.transport.write(b)
             self.fail()
         except TTransportException as ex:
             self.assertEquals("Nats not connected!", ex.message)
 
+    def test_write(self):
+        b = bytearray('writetest')
         self.mock_nats_client.is_connected.return_value = True
         self.transport._is_open = True
 

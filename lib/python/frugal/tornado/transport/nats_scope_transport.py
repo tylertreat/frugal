@@ -11,7 +11,7 @@ from frugal.exceptions import FException, FMessageSizeException
 
 _FRAME_BUFFER_SIZE = 5
 _FRUGAL_PREFIX = "frugal."
-NATS_MAX_MESSAGE_SIZE = 1024 * 1024
+MAX_MESSAGE_SIZE = 1024 * 1024
 
 logger = logging.getLogger(__name__)
 
@@ -140,8 +140,9 @@ class FNatsScopeTransport(FScopeTransport):
         self._is_open = False
 
     def read(self, sz):
-        # Don't call this
-        pass
+        ex = NotImplementedError("Don't call this.")
+        logger.exception(ex)
+        raise ex
 
     def write(self, buff):
         """Write takes a bytearray and attempts to write it to an underlying
@@ -160,11 +161,9 @@ class FNatsScopeTransport(FScopeTransport):
             logger.exception(ex)
             raise ex
 
-        wbuf_length = len(self._write_buffer.getvalue())
+        size = len(buff) + len(self._write_buffer.getvalue())
 
-        size = len(buff) + wbuf_length
-
-        if size > NATS_MAX_MESSAGE_SIZE:
+        if size > MAX_MESSAGE_SIZE:
             ex = FMessageSizeException("Message exceeds NATS max message size")
             logger.exception(ex)
             raise ex

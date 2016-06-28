@@ -54,7 +54,6 @@ class FMuxTornadoTransport(FTransport):
             self._transport.set_execute_callback(registry.execute)
 
     def register(self, context, callback):
-        print "calling register"
         with self._lock:
             if not self._registry:
                 ex = StandardError("registry cannot be null.")
