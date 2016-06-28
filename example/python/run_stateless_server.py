@@ -1,6 +1,7 @@
 import logging
 import sys
 sys.path.append('gen-py.tornado')
+sys.path.append('example_handler.py')
 
 from thrift.protocol import TBinaryProtocol
 
@@ -11,7 +12,8 @@ from nats.io.client import Client as NATS
 from frugal.protocol import FProtocolFactory
 from frugal.tornado.server import FStatelessNatsTornadoServer
 
-from event.f_Foo import Iface, Processor as FFooProcessor
+from event.f_Foo import Processor as FFooProcessor
+from example_handler import ExampleHandler
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -22,23 +24,6 @@ formatter = logging.Formatter(
     '%(asctime)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 root.addHandler(ch)
-
-
-class ExampleHandler(Iface):
-
-    def ping(self, ctx):
-        print "ping: {}".format(ctx)
-
-    def oneWay(self, ctx, id, req):
-        print "oneWay: {} {} {}".format(ctx, id, req)
-
-    def blah(self, ctx, num, Str, event):
-        print "blah: {} {} {} {}".format(ctx, num, Str, event)
-        ctx.set_response_header("foo", "bar")
-        return 42
-
-    def basePing(self, ctx):
-        print "basePing: {}".format(ctx)
 
 
 @gen.coroutine
