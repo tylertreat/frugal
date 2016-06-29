@@ -2,7 +2,7 @@
 
 set -ex
 
-gnatsd & pid=$1
+gnatsd &
 frugalDir=$PWD
 
 # Start with clean log folder

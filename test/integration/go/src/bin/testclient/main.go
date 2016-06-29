@@ -22,7 +22,8 @@ var testloops = flag.Int("testloops", 1, "Number of Tests")
 func main() {
 	flag.Parse()
 	pubSub := make(chan bool)
-	client, err := common.StartClient(*host, *port, *domain_socket, *transport, *protocol, pubSub)
+	sent := make(chan bool)
+	client, err := common.StartClient(*host, *port, *domain_socket, *transport, *protocol, pubSub, sent)
 	if err != nil {
 		log.Fatal("Unable to start client: ", err)
 	}
@@ -31,7 +32,7 @@ func main() {
 		callEverything(client)
 	}
 	close(pubSub)
-	time.Sleep(time.Second)
+	<-sent
 }
 
 var rmapmap = map[int32]map[int32]int32{

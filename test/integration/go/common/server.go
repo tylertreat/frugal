@@ -8,7 +8,6 @@ import (
 	"github.com/Workiva/frugal/example/go/gen-go/event"
 	"github.com/Workiva/frugal/lib/go"
 	"github.com/Workiva/frugal/test/integration/go/gen/frugaltest"
-	"github.com/nats-io/nats"
 )
 
 var (
@@ -70,11 +69,7 @@ func StartServer(
 	go server.AcceptLoop()
 
 	go func() {
-		addr := nats.DefaultURL
-		natsOptions := nats.DefaultOptions
-		natsOptions.Servers = []string{addr}
-		natsOptions.Secure = false
-		conn, err := natsOptions.Connect()
+		conn, err := getNatsConn()
 		if err != nil {
 			panic(err)
 		}

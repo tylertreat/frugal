@@ -4,16 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
-
 	"time"
-
-	"os"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/example/go/gen-go/event"
 	"github.com/Workiva/frugal/lib/go"
 	"github.com/Workiva/frugal/test/integration/go/gen/frugaltest"
-	"github.com/nats-io/nats"
 )
 
 var debugClientProtocol bool
@@ -28,7 +24,8 @@ func StartClient(
 	domain_socket string,
 	transport string,
 	protocol string,
-	pubSub chan bool) (client *frugaltest.FFrugalTestClient, err error) {
+	pubSub chan bool,
+	sent chan bool) (client *frugaltest.FFrugalTestClient, err error) {
 
 	hostPort := fmt.Sprintf("%s:%d", host, port)
 
@@ -84,14 +81,12 @@ func StartClient(
 	// fire off a publish here
 	go func() {
 		<-pubSub
-		addr := nats.DefaultURL
-		natsOptions := nats.DefaultOptions
-		natsOptions.Servers = []string{addr}
-		natsOptions.Secure = false
-		conn, err := natsOptions.Connect()
+
+		conn, err := getNatsConn()
 		if err != nil {
 			panic(err)
 		}
+
 		factory := frugal.NewFNatsScopeTransportFactory(conn)
 		provider := frugal.NewFScopeProvider(factory, frugal.NewFProtocolFactory(protocolFactory))
 		publisher := event.NewEventsPublisher(provider)
@@ -124,9 +119,10 @@ func StartClient(
 		select {
 		case <-resp:
 			fmt.Println("Pub/Sub response received from server")
+			close(sent)
 		case <-timeout:
-			fmt.Println("Pub/Sub response timed out!")
-			os.Exit(1)
+			log.Fatal("Pub/Sub response timed out!")
+			close(sent)
 		}
 	}()
 
