@@ -32,6 +32,19 @@ const (
 	Default
 )
 
+func (f *FieldModifier) String() string {
+	switch *f {
+	case Required:
+		return "REQUIRED"
+	case Optional:
+		return "OPTIONAL"
+	case Default:
+		return "DEFAULT"
+	default:
+		panic(fmt.Sprintf("unsupported modifier: %v", *f))
+	}
+}
+
 func IsThriftPrimitive(typ *Type) bool {
 	_, ok := thriftBaseTypes[typ.Name]
 	return ok
