@@ -415,6 +415,11 @@ func (t *Thrift) validateConstants(includes map[string]*Frugal) error {
 }
 
 func (t *Thrift) validateConstant(constant *Constant, includes map[string]*Frugal) error {
+	// validate the type exists
+	if ok := t.isValidType(constant.Type, includes); !ok {
+		return fmt.Errorf("invalid type '%s'", constant.Type.Name)
+	}
+
 	identifier, ok := constant.Value.(Identifier)
 	if !ok {
 		// Just a value, which is fine

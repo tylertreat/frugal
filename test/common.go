@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/Workiva/frugal/compiler"
-	"github.com/Workiva/frugal/compiler/globals"
 )
 
 const (
@@ -22,7 +21,6 @@ var (
 )
 
 func TestInvalid(t *testing.T) {
-	defer globals.Reset()
 	options := compiler.Options{
 		File:  invalidFile,
 		Gen:   languages[0],

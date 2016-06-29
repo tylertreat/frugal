@@ -8,7 +8,7 @@ import (
 	"github.com/Workiva/frugal/compiler"
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/globals"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 const defaultTopicDelim = "."
