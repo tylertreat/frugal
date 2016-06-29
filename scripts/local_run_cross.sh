@@ -2,6 +2,7 @@
 
 set -ex
 
+gnatsd & pid=$1
 frugalDir=$PWD
 
 # Start with clean log folder
@@ -55,3 +56,4 @@ python test/integration/test.py --retry-count=0
 
 # After running this script once, you can just run:     python test/integration/test.py --retry-count=0
 # to run all cross language tests. Be sure to re-run the entire script if you make changes between test runs.
+pkill gnatsd

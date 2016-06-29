@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/Workiva/frugal/example/go/gen-go/event"
 	"github.com/Workiva/frugal/lib/go"
 	"github.com/Workiva/frugal/test/integration/go/gen/frugaltest"
+	"github.com/nats-io/nats"
 )
 
 var (
@@ -66,5 +68,39 @@ func StartServer(
 		return
 	}
 	go server.AcceptLoop()
+
+	go func() {
+		addr := nats.DefaultURL
+		natsOptions := nats.DefaultOptions
+		natsOptions.Servers = []string{addr}
+		natsOptions.Secure = false
+		conn, err := natsOptions.Connect()
+		if err != nil {
+			panic(err)
+		}
+		factory := frugal.NewFNatsScopeTransportFactory(conn)
+		provider := frugal.NewFScopeProvider(factory, frugal.NewFProtocolFactory(protocolFactory))
+		subscriber := event.NewEventsSubscriber(provider)
+
+		// TODO: Document SubscribeEventCreated "user" cannot contain spaces
+		_, err = subscriber.SubscribeEventCreated(fmt.Sprintf("%d-call", port), func(ctx *frugal.FContext, e *event.Event) {
+			// Send a message back to the client
+			fmt.Printf("received %+v : %+v\n", ctx, e)
+			publisher := event.NewEventsPublisher(provider)
+			if err := publisher.Open(); err != nil {
+				panic(err)
+			}
+			defer publisher.Close()
+			ctx = frugal.NewFContext("Response")
+			event := &event.Event{Message: "received call"}
+			if err := publisher.PublishEventCreated(ctx, fmt.Sprintf("%d-response", port), event); err != nil {
+				panic(err)
+			}
+		})
+		if err != nil {
+			panic(err)
+		}
+	}()
+
 	return server, nil
 }

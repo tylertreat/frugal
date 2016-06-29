@@ -23,21 +23,28 @@ import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
-import com.workiva.frugal.transport.FMuxTransport;
-import com.workiva.frugal.transport.FTransport;
-import com.workiva.frugal.transport.FTransportFactory;
+import com.workiva.frugal.provider.FScopeProvider;
+import com.workiva.frugal.transport.*;
 import frugal.test.*;
+import io.nats.client.Connection;
+import io.nats.client.ConnectionFactory;
+import io.nats.client.Constants;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
+import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.*;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Test Java client for frugal. This makes a variety of requests to enable testing for both performance and
@@ -737,6 +744,49 @@ public class TestClient {
                 returnCode |= 1;
             }
 
+            /**
+             * PUB/SUB TEST
+             */
+            final Lock lock = new ReentrantLock();
+            final Condition condition = lock.newCondition();
+            ConnectionFactory cf = new ConnectionFactory(Constants.DEFAULT_URL);
+            Connection conn = cf.createConnection();
+            FScopeTransportFactory factory = new FNatsScopeTransport.Factory(conn);
+            FScopeProvider provider = new FScopeProvider(factory,  new FProtocolFactory(protocolFactory));
+
+            EventsSubscriber subscriber = new EventsSubscriber(provider);
+            subscriber.subscribeEventCreated(Integer.toString(port)+"-call", new EventsSubscriber.EventCreatedHandler() {
+                @Override
+                public void onEventCreated(FContext ctx, Event req) {
+                    System.out.println("Pub/Sub response received from server");
+                    lock.lock();
+                    condition.signalAll();
+                    lock.unlock();
+                }
+            });
+
+            EventsPublisher publisher = new EventsPublisher(provider);
+            publisher.open();
+            Event event = new Event(1, "Sending Call");
+            publisher.publishEventCreated(new FContext("Call"), Integer.toString(port)+"-call", event);
+            System.out.print("Publishing...    ");
+
+            int timeout = 2;
+            lock.lock();
+            try {
+                if (!condition.await(timeout, TimeUnit.SECONDS)) {
+                    System.out.println("Pub/Sub response timed out!");
+                    returnCode = 1;
+                }
+            } catch (InterruptedException e){
+                returnCode = 1;
+            } finally {
+                lock.unlock();
+            }
+
+            /**
+             * Print general test information
+             */
             long stop = System.nanoTime();
             long tot = stop - start;
 
@@ -772,7 +822,6 @@ public class TestClient {
 //            x.printStackTrace();
 //            returnCode |= 1;
 //        }
-
 
         System.exit(returnCode);
     }

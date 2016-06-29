@@ -5,9 +5,15 @@ import (
 	"fmt"
 	"log"
 
+	"time"
+
+	"os"
+
 	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/Workiva/frugal/example/go/gen-go/event"
 	"github.com/Workiva/frugal/lib/go"
 	"github.com/Workiva/frugal/test/integration/go/gen/frugaltest"
+	"github.com/nats-io/nats"
 )
 
 var debugClientProtocol bool
@@ -21,7 +27,8 @@ func StartClient(
 	port int64,
 	domain_socket string,
 	transport string,
-	protocol string) (client *frugaltest.FFrugalTestClient, err error) {
+	protocol string,
+	pubSub chan bool) (client *frugaltest.FFrugalTestClient, err error) {
 
 	hostPort := fmt.Sprintf("%s:%d", host, port)
 
@@ -74,6 +81,57 @@ func StartClient(
 		log.Fatal(err)
 	}
 
-	client = frugaltest.NewFFrugalTestClient(fTransport, frugal.NewFProtocolFactory(protocolFactory))
+	// fire off a publish here
+	go func() {
+		<-pubSub
+		addr := nats.DefaultURL
+		natsOptions := nats.DefaultOptions
+		natsOptions.Servers = []string{addr}
+		natsOptions.Secure = false
+		conn, err := natsOptions.Connect()
+		if err != nil {
+			panic(err)
+		}
+		factory := frugal.NewFNatsScopeTransportFactory(conn)
+		provider := frugal.NewFScopeProvider(factory, frugal.NewFProtocolFactory(protocolFactory))
+		publisher := event.NewEventsPublisher(provider)
+		if err := publisher.Open(); err != nil {
+			panic(err)
+		}
+		defer publisher.Close()
+
+		// Start Subscription, pass timeout
+		resp := make(chan bool)
+		subscriber := event.NewEventsSubscriber(provider)
+		// TODO: Document SubscribeEventCreated "user" cannot contain spaces
+		_, err = subscriber.SubscribeEventCreated(fmt.Sprintf("%d-response", port), func(ctx *frugal.FContext, e *event.Event) {
+			fmt.Println("Response received %v", e)
+			close(resp)
+		})
+		ctx := frugal.NewFContext("Call")
+		event := &event.Event{Message: "Sending call"}
+		fmt.Println("Publishing...")
+		if err := publisher.PublishEventCreated(ctx, fmt.Sprintf("%d-call", port), event); err != nil {
+			panic(err)
+		}
+
+		timeout := make(chan bool, 1)
+		go func() {
+			time.Sleep(2 * time.Second)
+			timeout <- true
+		}()
+
+		select {
+		case <-resp:
+			fmt.Println("Pub/Sub response received from server")
+		case <-timeout:
+			fmt.Println("Pub/Sub response timed out!")
+			os.Exit(1)
+		}
+	}()
+
+	fProtocolFactory := frugal.NewFProtocolFactory(protocolFactory)
+
+	client = frugaltest.NewFFrugalTestClient(fTransport, fProtocolFactory)
 	return
 }

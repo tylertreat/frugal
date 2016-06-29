@@ -54,3 +54,4 @@ python test/integration/test.py --retry-count=0
 if [ -f ${frugalDir}/test/integration/log/unexpected_failures.log ]; then cp -r ${frugalDir}/test/integration/log/unexpected_failures.log /testing/artifacts/unexpected_failures.log; fi
 tar -czf successful_tests.tar.gz test/integration/log
 mv successful_tests.tar.gz /testing/artifacts/
+pkill gnatsd

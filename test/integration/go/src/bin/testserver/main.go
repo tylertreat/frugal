@@ -16,6 +16,7 @@ var certPath = flag.String("certPath", "keys", "Directory that contains SSL cert
 
 func main() {
 	flag.Parse()
+
 	server, err := common.StartServer(*host, *port, *domain_socket, *transport, *protocol, *certPath, common.PrintingHandler)
 	if err != nil {
 		log.Fatalln("Unable to start server: ", err)

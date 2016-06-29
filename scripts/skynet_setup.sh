@@ -16,3 +16,8 @@ go get -d ./compiler .
 godep go install
 go get -d -t ./lib/go .
 go build ./lib/go
+
+wget -O gnatsd.tar.gz https://github.com/nats-io/gnatsd/releases/download/v0.7.2/gnatsd-v0.7.2-linux-amd64.tar.gz
+tar xzf gnatsd.tar.gz
+chmod 0755 gnatsd
+./gnatsd &
