@@ -109,7 +109,7 @@ class TestTNatsStatelessTransport(AsyncTestCase):
             self.transport.write(b)
             self.fail()
         except TTransportException as ex:
-            self.assertEquals("Nats not connected!", ex.message)
+            self.assertEquals("Transport not open!", ex.message)
 
     def test_write(self):
         b = bytearray('writetest')

@@ -4,16 +4,16 @@ from struct import pack
 from threading import Lock
 
 from nats.io.utils import new_inbox
-from thrift.transport.TTransport import TTransportBase, TTransportException
+from thrift.transport.TTransport import TTransportException
 from tornado import gen
 
-from frugal.exceptions import FMessageSizeException, FExecuteCallbackNotSet
-from frugal.tornado.transport.nats_scope_transport import MAX_MESSAGE_SIZE
+from frugal.exceptions import FExecuteCallbackNotSet
+from frugal.tornado.transport import TNatsTransportBase
 
 logger = logging.getLogger(__name__)
 
 
-class TStatelessNatsTransport(TTransportBase):
+class TStatelessNatsTransport(TNatsTransportBase):
     """TStatelessNatsTransport is an extension of thrift.TTransportBase.
     This is a "stateless" transport in the sense that there is no
     connection with a server. A request is simply published to a subject
@@ -35,18 +35,6 @@ class TStatelessNatsTransport(TTransportBase):
         self._wbuf = BytesIO()
         self._execute = None
         self._sub_id = None
-
-    def set_execute_callback(self, execute):
-        """Set the message callback execute function
-
-        Args:
-            execute: message callback execute function
-        """
-        self._execute = execute
-
-    def isOpen(self):
-        with self._open_lock:
-            return self._is_open and self._nats_client.is_connected()
 
     @gen.coroutine
     def open(self):
@@ -76,8 +64,7 @@ class TStatelessNatsTransport(TTransportBase):
             logger.error(ex.message)
             raise ex
 
-        wrapped = bytearray(msg.data)
-        self._execute(wrapped)
+        self._execute(msg.data)
 
     @gen.coroutine
     def close(self):
@@ -87,29 +74,6 @@ class TStatelessNatsTransport(TTransportBase):
 
         yield self._nats_client.unsubscribe(self._sub_id)
         self._is_open = False
-
-    def read(self, sz):
-        """Don't call this"""
-        ex = NotImplementedError("Don't call this.")
-        logger.exception(ex)
-        raise ex
-
-    def write(self, buff):
-        """Writes the bytes to a buffer. Throws FMessageSizeException if the buffer exceeds 1MB"""
-        if not self.isOpen():
-            ex = TTransportException(TTransportException.NOT_OPEN,
-                                     "Nats not connected!")
-            logger.exception(ex)
-            raise ex
-
-        size = len(buff) + len(self._wbuf.getvalue())
-
-        if size > MAX_MESSAGE_SIZE:
-            ex = FMessageSizeException("Message exceeds NATS max message size")
-            logger.exception(ex)
-            raise ex
-
-        self._wbuf.write(buff)
 
     @gen.coroutine
     def flush(self):
@@ -126,4 +90,5 @@ class TStatelessNatsTransport(TTransportBase):
 
         yield self._nats_client.publish_request(self._subject,
                                                 self._inbox,
-                                                frame_length + frame)
+                                                '{0}{1}'.format(frame_length,
+                                                                frame))

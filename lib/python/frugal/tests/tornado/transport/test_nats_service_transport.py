@@ -100,7 +100,7 @@ class TestTNatsServiceTransport(AsyncTestCase):
 
     def test_read_throws_exception(self):
         try:
-            self.transport.read(0, 1, 2)
+            self.transport.read(2)
             self.fail()
         except Exception as ex:
             self.assertEquals("Don't call this.", ex.message)

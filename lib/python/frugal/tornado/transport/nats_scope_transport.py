@@ -184,7 +184,8 @@ class FNatsScopeTransport(FScopeTransport):
 
         formatted_subject = self._get_formatted_subject()
 
-        yield self._nats_client.publish(formatted_subject, frame_length + frame)
+        yield self._nats_client.publish(formatted_subject,
+                                        '{0}{1}'.format(frame_length, frame))
 
     def _get_formatted_subject(self):
         return "{}{}".format(_FRUGAL_PREFIX, self._subject)
