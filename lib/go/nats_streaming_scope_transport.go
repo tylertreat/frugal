@@ -5,11 +5,26 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"strconv"
 	"sync"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	log "github.com/Sirupsen/logrus"
 	"github.com/nats-io/go-nats-streaming"
+)
+
+const (
+	// NatsSequenceHeader is the name of the FContext header that the NATS
+	// streaming scope transport injects corresponding to the sequence number
+	// of the message in the channel. This will be a uint64 in string form.
+	// This value can be used when initializing a subscriber to begin
+	// receiving at a specific offset.
+	NatsSequenceHeader = "nats_seq"
+
+	// NatsTimestampHeader is the name of the FContext header that the NATS
+	// streaming scope transport injects corresponding to the Unix timestamp of
+	// the message in nanoseconds as a string.
+	NatsTimestampHeader = "nats_time"
 )
 
 type FNatsStreamingScopeTransportFactory struct {
@@ -136,9 +151,20 @@ func (f *fNatsStreamingScopeTransport) handleMessage(msg *stan.Msg) {
 		log.Warn("frugal: Discarding invalid scope message frame")
 		return
 	}
-	// Discard frame size.
+
+	// Inject NATS streaming headers.
+	headers := map[string]string{
+		NatsSequenceHeader:  strconv.FormatUint(msg.Sequence, 10),
+		NatsTimestampHeader: strconv.FormatInt(msg.Timestamp, 10),
+	}
+	frame, err := addHeadersToFrame(msg.Data, headers)
+	if err != nil {
+		log.Warnf("frugal: Discarding invalid scope message frame: %s", err)
+		return
+	}
+
 	select {
-	case f.frameBuffer <- msg.Data[4:]:
+	case f.frameBuffer <- frame[4:]: // Discard frame size
 	case <-f.closeChan:
 	}
 }

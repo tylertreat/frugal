@@ -15,16 +15,32 @@ var (
 	v0Marshaler    = &v0ProtocolMarshaler{}
 )
 
+type frameComponents struct {
+	frameSize       int32
+	protocolVersion byte
+	headers         map[string]string
+	payload         []byte
+}
+
 // protocolMarshaler is responsible for serializing and deserializing the
 // Frugal protocol for a specific version.
 type protocolMarshaler interface {
 	// marshalHeaders serializes the given headers map to a byte slice.
 	marshalHeaders(headers map[string]string) []byte
+
 	// unmarshalHeaders reads serialized headers from the reader into a map.
 	unmarshalHeaders(reader io.Reader) (map[string]string, error)
+
 	// unmarshalHeadersFromFrame reads serialized headers from the byte slice
 	// into a map.
 	unmarshalHeadersFromFrame(frame []byte) (map[string]string, error)
+
+	// addHeadersToFrame returns a new frame containing the given headers. This
+	// assumes the frame still has the frame size header at the beginning.
+	addHeadersToFrame(frame []byte, headers map[string]string) ([]byte, error)
+
+	// unmarshalFrame deserializes the byte slice into frame components.
+	unmarshalFrame(frame []byte, components *frameComponents) error
 }
 
 // getMarshaler returns a protocolMarshaler for the given protocol version.
@@ -151,6 +167,7 @@ func readHeader(reader io.Reader) (map[string]string, error) {
 	return marshaler.unmarshalHeaders(reader)
 }
 
+// getHeadersFromFrame deserializes headers from the frame into a map.
 func getHeadersFromFrame(frame []byte) (map[string]string, error) {
 	// Need at least 1 byte for the version.
 	if len(frame) == 0 {
@@ -163,6 +180,50 @@ func getHeadersFromFrame(frame []byte) (map[string]string, error) {
 	}
 
 	return marshaler.unmarshalHeadersFromFrame(frame[1:])
+}
+
+// addHeadersToFrame returns a new frame containing the given headers. This
+// assumes the frame still has the frame size header at the beginning.
+func addHeadersToFrame(frame []byte, headers map[string]string) ([]byte, error) {
+	// Need at least 5 bytes (4 for size and 1 for version).
+	if len(frame) < 5 {
+		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Sprintf("frugal: invalid frame size %d", len(frame)))
+	}
+
+	marshaler, err := getMarshaler(frame[4])
+	if err != nil {
+		return nil, err
+	}
+
+	return marshaler.addHeadersToFrame(frame, headers)
+}
+
+// unmarshalFrame deserializes the byte slice into frame components. This
+// assumes the frame still has the frame size header at the beginning.
+func unmarshalFrame(frame []byte) (*frameComponents, error) {
+	// Need at least 5 bytes (4 for size and 1 for version).
+	if len(frame) < 5 {
+		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Sprintf("frugal: invalid frame size %d", len(frame)))
+	}
+
+	// Read frame size.
+	frameSize := int32(binary.BigEndian.Uint32(frame))
+
+	if int32(len(frame[4:])) != frameSize {
+		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA,
+			fmt.Sprintf("frugal: frame size %d does not match actual size %d", frameSize, len(frame[4:])))
+	}
+
+	marshaler, err := getMarshaler(frame[4])
+	if err != nil {
+		return nil, err
+	}
+
+	components := &frameComponents{
+		frameSize:       frameSize,
+		protocolVersion: frame[4],
+	}
+	return components, marshaler.unmarshalFrame(frame[5:], components)
 }
 
 // v0ProtocolMarshaler implements the protocolMarshaler interface for v0 of the
@@ -232,11 +293,53 @@ func (v *v0ProtocolMarshaler) unmarshalHeadersFromFrame(frame []byte) (map[strin
 		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Sprintf("frugal: invalid v0 frame size %d", len(frame)))
 	}
 	size := int32(binary.BigEndian.Uint32(frame))
-	if size != int32(len(frame[4:])) {
+	if size > int32(len(frame[4:])) {
 		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA,
-			fmt.Sprintf("frugal: v0 frame size %d does not equal actual size %d", size, len(frame[4:])))
+			fmt.Sprintf("frugal: v0 frame size %d does not match actual size %d", size, len(frame[4:])))
 	}
 	return v.readPairs(frame, 4, size+4)
+}
+
+// addHeadersToFrame returns a new frame containing the given headers. This
+// assumes the frame still has the frame size header at the beginning.
+func (v *v0ProtocolMarshaler) addHeadersToFrame(frame []byte, headers map[string]string) ([]byte, error) {
+	existing, err := v.unmarshalHeadersFromFrame(frame[5:])
+	if err != nil {
+		return nil, err
+	}
+	// QUESTION: If a header already exists, should we overwrite it or return
+	// an error?
+	for name, value := range headers {
+		existing[name] = value
+	}
+	serializedHeaders := v.marshalHeaders(existing)
+	oldHeadersSize := int32(binary.BigEndian.Uint32(frame[5:]))
+	frameSize := v.calculateHeaderSize(existing) + int32(len(frame)) - oldHeadersSize
+	buff := make([]byte, frameSize)
+
+	// Add frame size.
+	binary.BigEndian.PutUint32(buff, uint32(frameSize-4))
+
+	// Add headers (version is included).
+	offset := copy(buff[4:], serializedHeaders)
+
+	// Add payload.
+	copy(buff[4+offset:], frame[9+oldHeadersSize:])
+
+	return buff, nil
+}
+
+// unmarshalFrame deserializes the byte slice into frame components.
+func (v *v0ProtocolMarshaler) unmarshalFrame(frame []byte, components *frameComponents) error {
+	headers, err := v.unmarshalHeadersFromFrame(frame)
+	if err != nil {
+		return err
+	}
+
+	components.headers = headers
+	components.payload = frame[v.calculateHeaderSize(headers)+8:]
+
+	return nil
 }
 
 func (v *v0ProtocolMarshaler) readPairs(buff []byte, start, end int32) (map[string]string, error) {
