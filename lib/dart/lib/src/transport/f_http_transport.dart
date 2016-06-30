@@ -117,8 +117,10 @@ class FHttpClientTransport extends FTransport {
 
   @override
   Future flush() {
+    // Swap out the write buffer before yielding the thread via a future,
+    // otherwise other writes could get into the buffer before this one is sent.
+
     // Frame the request body per frugal spec
-    // Swap out the write buffer before yielding the thread via a future
     Uint8List bytes = new Uint8List(4 + _writeBuffer.length);
     bytes.buffer.asByteData().setUint32(0, _writeBuffer.length);
     bytes.setAll(4, _writeBuffer);

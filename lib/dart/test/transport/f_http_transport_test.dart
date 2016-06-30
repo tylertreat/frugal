@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert' show BASE64;
 import 'dart:convert' show Utf8Codec;
 import 'dart:typed_data' show Uint8List;
@@ -69,7 +70,37 @@ void main() {
       });
 
       await transport.flush();
-      expect(registry.data, transportResponse);
+      expect(registry.data[0], transportResponse);
+    });
+
+    test('Multiple writes are not coalesced', () async {
+      MockTransports.http.when(config.uri, (FinalizedRequest request) async {
+        if (request.method == 'POST') {
+          HttpBody body = request.body as HttpBody;
+          if (body == null || body.asString() != transportRequestB64)
+            return new MockResponse.badRequest();
+          expectedRequestHeaders.forEach((K, V) {
+            if (request.headers[K] != V) {
+              return new MockResponse.badRequest();
+            }
+          });
+          return new MockResponse.ok(
+              body: transportResponseB64, headers: responseHeaders);
+        } else {
+          return new MockResponse.badRequest();
+        }
+      });
+
+      transport.writeAll(transportRequest);
+      Future first = transport.flush();
+      transport.writeAll(transportRequest);
+      Future second = transport.flush();
+
+      await first;
+      await second;
+
+      expect(registry.data[0], transportResponse);
+      expect(registry.data[1], transportResponse);
     });
 
     test('Test transport receives non-base64 payload', () async {
@@ -160,7 +191,7 @@ void main() {
 }
 
 class FakeFRegistry extends FRegistry {
-  Uint8List data;
+  List<Uint8List> data = new List();
 
   void register(FContext ctx, FAsyncCallback callback) {
     return;
@@ -171,6 +202,6 @@ class FakeFRegistry extends FRegistry {
   }
 
   void execute(Uint8List data) {
-    this.data = data;
+    this.data.add(data);
   }
 }
