@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/Workiva/frugal/lib/go"
-	"github.com/Workiva/frugal/test/integration/go/common"
-	"github.com/Workiva/frugal/test/integration/go/gen/frugaltest"
 	"log"
 	"reflect"
 	"time"
+
+	"github.com/Workiva/frugal/lib/go"
+	"github.com/Workiva/frugal/test/integration/go/common"
+	"github.com/Workiva/frugal/test/integration/go/gen/frugaltest"
 )
 
 var host = flag.String("host", "localhost", "Host to connect")
@@ -20,7 +21,9 @@ var testloops = flag.Int("testloops", 1, "Number of Tests")
 
 func main() {
 	flag.Parse()
-	client, err := common.StartClient(*host, *port, *domain_socket, *transport, *protocol)
+	pubSub := make(chan bool)
+	sent := make(chan bool)
+	client, err := common.StartClient(*host, *port, *domain_socket, *transport, *protocol, pubSub, sent)
 	if err != nil {
 		log.Fatal("Unable to start client: ", err)
 	}
@@ -28,6 +31,8 @@ func main() {
 	for i := 0; i < *testloops; i++ {
 		callEverything(client)
 	}
+	close(pubSub)
+	<-sent
 }
 
 var rmapmap = map[int32]map[int32]int32{

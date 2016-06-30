@@ -4,9 +4,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/Workiva/frugal/lib/go"
 	. "github.com/Workiva/frugal/test/integration/go/gen/frugaltest"
-	"time"
 )
 
 var PrintingHandler = &printingHandler{}

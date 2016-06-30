@@ -38,6 +38,11 @@
             <artifactId>cglib</artifactId>
             <version>3.2.2</version>
         </dependency>
+        <dependency>
+            <groupId>io.nats</groupId>
+            <artifactId>jnats</artifactId>
+            <version>0.4.1</version>
+        </dependency>
     </dependencies>
 
 
