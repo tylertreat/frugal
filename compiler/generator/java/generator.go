@@ -60,18 +60,19 @@ func (g *Generator) getIsSetType(s *parser.Struct) (IsSetType, string) {
 		}
 	}
 
-	if primitiveCount == 0 {
+	switch {
+	case primitiveCount == 0:
 		return IsSetNone, ""
-	} else if primitiveCount <= 8 {
+	case primitiveCount <= 8:
 		return IsSetBitfield, "byte"
-	} else if primitiveCount <= 16 {
+	case primitiveCount <= 16:
 		return IsSetBitfield, "short"
-	} else if primitiveCount <= 32 {
+	case primitiveCount <= 32:
 		return IsSetBitfield, "int"
-	} else if primitiveCount <= 64 {
+	case primitiveCount <= 64:
 		return IsSetBitfield, "long"
-	} else {
-		return IsSetBitSet, ""
+	default:
+		return IsSetBitfield, ""
 	}
 }
 
@@ -105,19 +106,7 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 		return err
 	}
 
-	if err = g.GenerateDocStringComment(file); err != nil {
-		return err
-	}
-	if _, err = file.WriteString("\n"); err != nil {
-		return err
-	}
-	if err = g.generatePackage(file); err != nil {
-		return err
-	}
-	if _, err = file.WriteString("\n\n"); err != nil {
-		return err
-	}
-	if err = g.GenerateStructImports(file); err != nil {
+	if err = g.initStructFile(file); err != nil {
 		return err
 	}
 	_, err = file.WriteString(contents)
@@ -125,11 +114,11 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	return err
 }
 
-// generateConstantValueWrapper generates a constant value. In other languages,
+// generateConstantValueWrapper generates a constant value. Unlike other languages,
 // constants can't be initialized in a single expression, so temp variables
 // are needed. Due to this, the entire constant, not just the value, is
 // generated.
-func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Type, value interface{}, declare bool, needsStatic bool) string {
+func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Type, value interface{}, declare, needsStatic bool) string {
 	underlyingType := g.Frugal.UnderlyingType(t)
 	contents := tabtab
 
@@ -243,7 +232,21 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 		}
 	}
 
-	return "not supposed to happen"
+	panic("Unrecognized type: " + underlyingType.Name)
+}
+
+func (g *Generator) generateEnumConstValue(frugal *parser.Frugal, pieces []string, t *parser.Type) (string, bool) {
+	for _, enum := range frugal.Thrift.Enums {
+		if pieces[0] == enum.Name {
+			for _, value := range enum.Values {
+				if pieces[1] == value.Name {
+					return fmt.Sprintf("%s.%s", g.getJavaTypeFromThriftType(t), value.Name), true
+				}
+			}
+			panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))
+		}
+	}
+	return "", false
 }
 
 func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) (string, string) {
@@ -267,15 +270,9 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) 
 			}
 		} else if len(pieces) == 2 {
 			// Either from an include, or part of an enum
-			for _, enum := range g.Frugal.Thrift.Enums {
-				if pieces[0] == enum.Name {
-					for _, value := range enum.Values {
-						if pieces[1] == value.Name {
-							return "", fmt.Sprintf("%s.%s", g.getJavaTypeFromThriftType(underlyingType), value.Name)
-						}
-					}
-					panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))
-				}
+			val, ok := g.generateEnumConstValue(g.Frugal, pieces, underlyingType)
+			if ok {
+				return "", val
 			}
 
 			// If not part of an enum, it's from an include
@@ -294,15 +291,10 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) 
 			if !ok {
 				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
 			}
-			for _, enum := range include.Thrift.Enums {
-				if pieces[1] == enum.Name {
-					for _, value := range enum.Values {
-						if pieces[2] == value.Name {
-							return "", fmt.Sprintf("%s.%s", g.getJavaTypeFromThriftType(underlyingType), value.Name)
-						}
-					}
-					panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))
-				}
+
+			val, ok := g.generateEnumConstValue(include, pieces[1:], underlyingType)
+			if ok {
+				return "", val
 			}
 		}
 
@@ -329,7 +321,7 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) 
 			return "", fmt.Sprintf("java.nio.ByteBuffer.wrap(\"%v\".getBytes())", value)
 		}
 	} else if g.Frugal.IsEnum(underlyingType) {
-		return "", "blah"
+		panic("Unexpected enum value")
 	}
 	elem := getElem()
 	preamble := g.generateConstantValueWrapper(elem, t, value, true, false)
@@ -403,6 +395,28 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	return err
 }
 
+func (g *Generator) initStructFile(file *os.File) error {
+	if err := g.GenerateDocStringComment(file); err != nil {
+		return err
+	}
+	if _, err := file.WriteString("\n"); err != nil {
+		return err
+	}
+	if err := g.generatePackage(file); err != nil {
+		return err
+	}
+
+	if _, err := file.WriteString("\n\n"); err != nil {
+		return err
+	}
+
+	if err := g.GenerateStructImports(file); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (g *Generator) GenerateStruct(s *parser.Struct) error {
 	file, err := g.GenerateFile(s.Name, g.outputDir, generator.ObjectFile)
 	defer file.Close()
@@ -410,21 +424,7 @@ func (g *Generator) GenerateStruct(s *parser.Struct) error {
 		return err
 	}
 
-	if err = g.GenerateDocStringComment(file); err != nil {
-		return err
-	}
-	if _, err = file.WriteString("\n"); err != nil {
-		return err
-	}
-	if err = g.generatePackage(file); err != nil {
-		return err
-	}
-
-	if _, err = file.WriteString("\n\n"); err != nil {
-		return err
-	}
-
-	if err = g.GenerateStructImports(file); err != nil {
+	if err = g.initStructFile(file); err != nil {
 		return err
 	}
 
@@ -445,21 +445,7 @@ func (g *Generator) GenerateUnion(union *parser.Struct) error {
 		return err
 	}
 
-	if err = g.GenerateDocStringComment(file); err != nil {
-		return err
-	}
-	if _, err = file.WriteString("\n"); err != nil {
-		return err
-	}
-	if err = g.generatePackage(file); err != nil {
-		return err
-	}
-
-	if _, err = file.WriteString("\n\n"); err != nil {
-		return err
-	}
-
-	if err = g.GenerateStructImports(file); err != nil {
+	if err = g.initStructFile(file); err != nil {
 		return err
 	}
 
@@ -818,21 +804,7 @@ func (g *Generator) GenerateServiceArgsResults(serviceName string, outputDir str
 		return err
 	}
 
-	if err = g.GenerateDocStringComment(file); err != nil {
-		return err
-	}
-	if _, err = file.WriteString("\n"); err != nil {
-		return err
-	}
-	if err = g.generatePackage(file); err != nil {
-		return err
-	}
-
-	if _, err = file.WriteString("\n\n"); err != nil {
-		return err
-	}
-
-	if err = g.GenerateStructImports(file); err != nil {
+	if err = g.initStructFile(file); err != nil {
 		return err
 	}
 	if _, err = file.WriteString(contents); err != nil {
