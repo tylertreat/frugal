@@ -13,6 +13,13 @@ import (
 	"github.com/nats-io/go-nats-streaming"
 )
 
+// OPEN QUESTIONS:
+//   1. Should we allow configuring for async/unacked publishes?
+//   2. Should we expose manual acking of messages and if so, how?
+//   3. Should we allow configuring AckWait for subscribers?
+//   4. Should we allow configuring MaxInFlight for subscribers?
+//   5. Should we allow configuring MaxPubAcksInFlight if async publishing is exposed?
+
 const (
 	// NatsSequenceHeader is the name of the FContext header that the NATS
 	// streaming scope transport injects corresponding to the sequence number
@@ -27,12 +34,24 @@ const (
 	NatsTimestampHeader = "nats_time"
 )
 
+// FNatsStreamingScopeTransportFactory creates FScopeTransports which use NATS
+// streaming as the underlying transport.
+//
+// NATS Streaming is a reliable streaming layer over NATS. At a high level,
+// this provides log-based persistence, at-least-once message delivery, rate
+// matching on a per subscription basis, replayability, and last-value
+// semantics. As such, this implementation of FScopeTransport allows for
+// reliable message delivery.
 type FNatsStreamingScopeTransportFactory struct {
 	conn    stan.Conn
 	queue   string
 	options []stan.SubscriptionOption
 }
 
+// NewFNatsStreamingScopeTransportFactory creates an
+// FNatsStreamingScopeTransportFactory using the provided NATS Streaming
+// connection and subscription options, which apply if the transport is used as
+// a subscriber. Subscribers using this transport will not use a queue group.
 func NewFNatsStreamingScopeTransportFactory(conn stan.Conn,
 	options ...stan.SubscriptionOption) *FNatsStreamingScopeTransportFactory {
 	return &FNatsStreamingScopeTransportFactory{
@@ -41,6 +60,12 @@ func NewFNatsStreamingScopeTransportFactory(conn stan.Conn,
 	}
 }
 
+// NewFNatsStreamingScopeTransportFactory creates an
+// FNatsStreamingScopeTransportFactory using the provided NATS Streaming
+// connection and subscription options, which apply if the transport is used as
+// a subscriber. Subscribers using this transport will subscribe to the
+// provided queue, formaing a queue group. When a queue group is formed, only
+// one member receives the message.
 func NewFNatsStreamingScopeTransportFactoryWithQueue(conn stan.Conn, queue string,
 	options ...stan.SubscriptionOption) *FNatsStreamingScopeTransportFactory {
 	return &FNatsStreamingScopeTransportFactory{
@@ -50,10 +75,12 @@ func NewFNatsStreamingScopeTransportFactoryWithQueue(conn stan.Conn, queue strin
 	}
 }
 
+// GetTransport creates a new NATS Streaming FScopeTransport.
 func (f *FNatsStreamingScopeTransportFactory) GetTransport() FScopeTransport {
 	return NewFNatsStreamingScopeTransportWithQueue(f.conn, f.queue, f.options...)
 }
 
+// fNatsStreamingScopeTransport implements FScopeTransport.
 type fNatsStreamingScopeTransport struct {
 	conn         stan.Conn
 	queue        string
@@ -71,6 +98,15 @@ type fNatsStreamingScopeTransport struct {
 	currentFrame []byte
 }
 
+// NewFNatsStreamingScopeTransport creates a new FScopeTransport which uses
+// NATS Streaming as the underlying transport. Subscribers using this transport
+// will not use a queue group.
+//
+// NATS Streaming is a reliable streaming layer over NATS. At a high level,
+// this provides log-based persistence, at-least-once message delivery, rate
+// matching on a per subscription basis, replayability, and last-value
+// semantics. As such, this implementation of FScopeTransport allows for
+// reliable message delivery.
 func NewFNatsStreamingScopeTransport(conn stan.Conn,
 	options ...stan.SubscriptionOption) FScopeTransport {
 	return &fNatsStreamingScopeTransport{
@@ -79,6 +115,16 @@ func NewFNatsStreamingScopeTransport(conn stan.Conn,
 	}
 }
 
+// NewFNatsStreamingScopeTransportWithQueue creates a new FScopeTransport which
+// uses NATS Streaming as the underlying transport. Subscribers using this
+// transport will subscribe to the provided queue, forming a queue group. When
+// a queue group is formed, only one member receives the message.
+//
+// NATS Streaming is a reliable streaming layer over NATS. At a high level,
+// this provides log-based persistence, at-least-once message delivery, rate
+// matching on a per subscription basis, replayability, and last-value
+// semantics. As such, this implementation of FScopeTransport allows for
+// reliable message delivery.
 func NewFNatsStreamingScopeTransportWithQueue(conn stan.Conn, queue string,
 	options ...stan.SubscriptionOption) FScopeTransport {
 	return &fNatsStreamingScopeTransport{
@@ -88,6 +134,8 @@ func NewFNatsStreamingScopeTransportWithQueue(conn stan.Conn, queue string,
 	}
 }
 
+// LockTopic sets the publish topic and locks the transport for exclusive
+// access.
 func (f *fNatsStreamingScopeTransport) LockTopic(topic string) error {
 	if f.subscriber {
 		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
@@ -98,6 +146,7 @@ func (f *fNatsStreamingScopeTransport) LockTopic(topic string) error {
 	return nil
 }
 
+// UnlockTopic unsets the publish topic and unlocks the transport.
 func (f *fNatsStreamingScopeTransport) UnlockTopic() error {
 	if f.subscriber {
 		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
@@ -108,18 +157,22 @@ func (f *fNatsStreamingScopeTransport) UnlockTopic() error {
 	return nil
 }
 
+// Subscribe sets the subscribe topic and opens the transport.
 func (f *fNatsStreamingScopeTransport) Subscribe(topic string) error {
 	f.subscriber = true
 	f.topic = topic
 	return f.Open()
 }
 
+// Open initializes the transport based on whether it's a publisher or
+// subscriber. If Open is called before Subscribe, the transport is assumed to
+// be a publisher.
 func (f *fNatsStreamingScopeTransport) Open() error {
 	f.openMu.Lock()
 	defer f.openMu.Unlock()
 	// TODO: check conn status
 	if f.isOpen {
-		return thrift.NewTTransportException(thrift.ALREADY_OPEN, "frugal: NATS streaming transport already open")
+		return thrift.NewTTransportException(thrift.ALREADY_OPEN, "frugal: NATS Streaming transport already open")
 	}
 
 	if !f.subscriber {
@@ -152,7 +205,7 @@ func (f *fNatsStreamingScopeTransport) handleMessage(msg *stan.Msg) {
 		return
 	}
 
-	// Inject NATS streaming headers.
+	// Inject NATS Streaming headers.
 	headers := map[string]string{
 		NatsSequenceHeader:  strconv.FormatUint(msg.Sequence, 10),
 		NatsTimestampHeader: strconv.FormatInt(msg.Timestamp, 10),
@@ -176,6 +229,8 @@ func (f *fNatsStreamingScopeTransport) IsOpen() bool {
 	return f.isOpen
 }
 
+// Close unsubscribes in the case of a subscriber and clears the buffer in the
+// case of a publisher.
 func (f *fNatsStreamingScopeTransport) Close() error {
 	f.openMu.Lock()
 	defer f.openMu.Unlock()
@@ -258,6 +313,7 @@ func (f *fNatsStreamingScopeTransport) Flush() error {
 		return ErrTooLarge
 	}
 	binary.BigEndian.PutUint32(f.sizeBuffer, uint32(len(data)))
+	// TODO: Expose a way to configure async publishes?
 	err := f.conn.Publish(f.formattedSubject(), append(f.sizeBuffer, data...))
 	return thrift.NewTTransportExceptionFromError(err)
 }
@@ -273,5 +329,5 @@ func (f *fNatsStreamingScopeTransport) formattedSubject() string {
 func (f *fNatsStreamingScopeTransport) getClosedConditionError(prefix string) error {
 	// TODO: check conn status
 	return thrift.NewTTransportException(thrift.NOT_OPEN,
-		fmt.Sprintf("%s NATS streaming FScopeTransport not open", prefix))
+		fmt.Sprintf("%s NATS Streaming FScopeTransport not open", prefix))
 }
