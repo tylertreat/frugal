@@ -122,7 +122,6 @@ class FHttpClientTransport extends FTransport {
     Uint8List bytes = new Uint8List(4 + _writeBuffer.length);
     bytes.buffer.asByteData().setUint32(0, _writeBuffer.length);
     bytes.setAll(4, _writeBuffer);
-    print('writing: ${bytes.length}');
     _writeBuffer.clear();
 
     return _flushData(bytes);
