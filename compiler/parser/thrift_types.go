@@ -23,25 +23,38 @@ var thriftContainerTypes = map[string]bool{
 	"map":  true,
 }
 
-// Thrift Field Modifiers
+// FieldModifier represents a Thrift IDL field modifier (required, optional
+// default).
 type FieldModifier int
 
 const (
+	// Required indicates always written for the writer and must read or error
+	// for the reader.
 	Required FieldModifier = iota
+
+	// Optional indicates written if set for the writer and read if present for
+	// the reader.
 	Optional
+
+	// Default indicates always written for the writer and read if present for
+	// the reader.
 	Default
 )
 
+// IsThriftPrimitive indicates if the given type is a Thrift primitive type.
 func IsThriftPrimitive(typ *Type) bool {
 	_, ok := thriftBaseTypes[typ.Name]
 	return ok
 }
 
+// IsThriftContainer indicates if the given type is a Thrift container type
+// (list, set, or map).
 func IsThriftContainer(t *Type) bool {
 	_, ok := thriftContainerTypes[t.Name]
 	return ok
 }
 
+// FieldFromType returns a new Field from the given Type and name.
 func FieldFromType(t *Type, name string) *Field {
 	return &Field{
 		Comment:  nil,
@@ -53,6 +66,7 @@ func FieldFromType(t *Type, name string) *Field {
 	}
 }
 
+// TypeFromStruct returns a new Type from the given Struct.
 func TypeFromStruct(s *Struct) *Type {
 	return &Type{
 		Name:      s.Name,
@@ -61,16 +75,19 @@ func TypeFromStruct(s *Struct) *Type {
 	}
 }
 
+// Include represents an IDL file include.
 type Include struct {
 	Name  string
 	Value string
 }
 
+// Namespace represents an IDL namespace.
 type Namespace struct {
 	Scope string
 	Value string
 }
 
+// Type represents an IDL data type.
 type Type struct {
 	Name      string
 	KeyType   *Type // If map
@@ -94,6 +111,7 @@ func (t *Type) ParamName() string {
 	return name
 }
 
+// String returns a human-readable version of the Type.
 func (t *Type) String() string {
 	switch t.Name {
 	case "map":
@@ -106,24 +124,28 @@ func (t *Type) String() string {
 	return t.Name
 }
 
+// TypeDef represents an IDL typedef.
 type TypeDef struct {
 	Comment []string
 	Name    string
 	Type    *Type
 }
 
+// EnumValue represents an IDL enum value.
 type EnumValue struct {
 	Comment []string
 	Name    string
 	Value   int
 }
 
+// Enum represents an IDL enum.
 type Enum struct {
 	Comment []string
 	Name    string
 	Values  []*EnumValue
 }
 
+// Constant represents an IDL constant.
 type Constant struct {
 	Comment []string
 	Name    string
@@ -131,6 +153,7 @@ type Constant struct {
 	Value   interface{}
 }
 
+// Field represents an IDL field on a struct or method.
 type Field struct {
 	Comment  []string
 	ID       int
@@ -140,8 +163,10 @@ type Field struct {
 	Default  interface{}
 }
 
+// StructType represents what "type" a struct is (struct, exception, or union).
 type StructType int
 
+// String returns a human-readable version of the StructType.
 func (s StructType) String() string {
 	switch s {
 	case StructTypeStruct:
@@ -155,12 +180,14 @@ func (s StructType) String() string {
 	}
 }
 
+// Valid StructTypes.
 const (
 	StructTypeStruct = iota
 	StructTypeException
 	StructTypeUnion
 )
 
+// Struct represents an IDL struct (or exception or union).
 type Struct struct {
 	Comment []string
 	Name    string
@@ -168,6 +195,7 @@ type Struct struct {
 	Type    StructType
 }
 
+// Method represents an IDL service method.
 type Method struct {
 	Comment    []string
 	Name       string
@@ -177,6 +205,7 @@ type Method struct {
 	Exceptions []*Field
 }
 
+// Service represents an IDL service.
 type Service struct {
 	Comment []string
 	Name    string
@@ -184,6 +213,8 @@ type Service struct {
 	Methods []*Method
 }
 
+// ExtendsInclude returns the name of the include this service extends from, if
+// applicable, or an empty string if not.
 func (s *Service) ExtendsInclude() string {
 	includeAndService := strings.Split(s.Extends, ".")
 	if len(includeAndService) == 2 {
@@ -192,6 +223,8 @@ func (s *Service) ExtendsInclude() string {
 	return ""
 }
 
+// ExtendsService returns the name of the service this service extends, if
+// applicable, or an empty string if not.
 func (s *Service) ExtendsService() string {
 	includeAndService := strings.Split(s.Extends, ".")
 	if len(includeAndService) == 2 {
@@ -301,6 +334,7 @@ func (s *Service) validate() error {
 	return nil
 }
 
+// Thrift contains the Thrift-specific IDL parse tree.
 type Thrift struct {
 	Includes   []*Include
 	Typedefs   []*TypeDef
@@ -316,6 +350,7 @@ type Thrift struct {
 	namespaceIndex map[string]*Namespace
 }
 
+// Namespace returns namespace value for the given scope.
 func (t *Thrift) Namespace(scope string) (string, bool) {
 	namespace, ok := t.namespaceIndex[scope]
 	value := ""
@@ -330,8 +365,10 @@ func (t *Thrift) Namespace(scope string) (string, bool) {
 	return value, ok
 }
 
+// Identifier represents an IDL identifier.
 type Identifier string
 
+// KeyValue is a key-value pair.
 type KeyValue struct {
 	Key, Value interface{}
 }

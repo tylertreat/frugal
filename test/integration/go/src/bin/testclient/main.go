@@ -65,7 +65,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestString() call: ", err)
 	}
 	if thing != "thing" {
-		log.Fatal("Unexpected TestString() result, expected 'thing' got '%s' ", thing)
+		log.Fatalf("Unexpected TestString() result, expected 'thing' got '%s' ", thing)
 	}
 	fmt.Printf(" = %v \n", thing)
 
@@ -75,7 +75,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestBool() call: ", err)
 	}
 	if !bl {
-		log.Fatal("Unexpected TestBool() result expected true, got %f ", bl)
+		log.Fatalf("Unexpected TestBool() result expected true, got %f ", bl)
 	}
 	fmt.Printf(" = %v \n", bl)
 	fmt.Printf("TestBool(false)")
@@ -84,7 +84,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestBool() call: ", err)
 	}
 	if bl {
-		log.Fatal("Unexpected TestBool() result expected false, got %f ", bl)
+		log.Fatalf("Unexpected TestBool() result expected false, got %f ", bl)
 	}
 	fmt.Printf(" = %v \n", bl)
 
@@ -94,7 +94,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestByte() call: ", err)
 	}
 	if b != 42 {
-		log.Fatal("Unexpected TestByte() result expected 42, got %d ", b)
+		log.Fatalf("Unexpected TestByte() result expected 42, got %d ", b)
 	}
 	fmt.Printf(" = %v \n", b)
 
@@ -104,7 +104,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestI32() call: ", err)
 	}
 	if i32 != 4242 {
-		log.Fatal("Unexpected TestI32() result expected 4242, got %d ", i32)
+		log.Fatalf("Unexpected TestI32() result expected 4242, got %d ", i32)
 	}
 	fmt.Printf(" = %v \n", i32)
 
@@ -114,7 +114,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestI64() call: ", err)
 	}
 	if i64 != 424242 {
-		log.Fatal("Unexpected TestI64() result expected 424242, got %d ", i64)
+		log.Fatalf("Unexpected TestI64() result expected 424242, got %d ", i64)
 	}
 	fmt.Printf(" = %v \n", i64)
 
@@ -124,7 +124,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestDouble() call: ", err)
 	}
 	if d != 42.42 {
-		log.Fatal("Unexpected TestDouble() result expected 42.42, got %f ", d)
+		log.Fatalf("Unexpected TestDouble() result expected 42.42, got %f ", d)
 	}
 	fmt.Printf(" = %v \n", d)
 
@@ -141,7 +141,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestStruct() call: ", err)
 	}
 	if *xs != *xsret {
-		log.Fatal("Unexpected TestStruct() result expected %#v, got %#v ", xs, xsret)
+		log.Fatalf("Unexpected TestStruct() result expected %#v, got %#v ", xs, xsret)
 	}
 	fmt.Printf(" = %v \n", xsret)
 
@@ -153,7 +153,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestNest() call: ", err)
 	}
 	if !reflect.DeepEqual(x2, x2ret) {
-		log.Fatal("Unexpected TestNest() result expected %#v, got %#v ", x2, x2ret)
+		log.Fatalf("Unexpected TestNest() result expected %#v, got %#v ", x2, x2ret)
 	}
 	fmt.Printf(" = %v \n", x2ret)
 
@@ -164,7 +164,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestMap() call: ", err)
 	}
 	if !reflect.DeepEqual(m, mret) {
-		log.Fatal("Unexpected TestMap() result expected %#v, got %#v ", m, mret)
+		log.Fatalf("Unexpected TestMap() result expected %#v, got %#v ", m, mret)
 	}
 	fmt.Printf(" = %v \n", bl)
 
@@ -175,7 +175,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestStringMap() call: ", err)
 	}
 	if !reflect.DeepEqual(sm, smret) {
-		log.Fatal("Unexpected TestStringMap() result expected %#v, got %#v ", sm, smret)
+		log.Fatalf("Unexpected TestStringMap() result expected %#v, got %#v ", sm, smret)
 	}
 	fmt.Printf(" = %v \n", smret)
 
@@ -186,7 +186,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestSet() call: ", err)
 	}
 	if !reflect.DeepEqual(s, sret) {
-		log.Fatal("Unexpected TestSet() result expected %#v, got %#v ", s, sret)
+		log.Fatalf("Unexpected TestSet() result expected %#v, got %#v ", s, sret)
 	}
 	fmt.Printf(" = %v \n", sret)
 
@@ -197,7 +197,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestList() call: ", err)
 	}
 	if !reflect.DeepEqual(l, lret) {
-		log.Fatal("Unexpected TestSet() result expected %#v, got %#v ", l, lret)
+		log.Fatalf("Unexpected TestSet() result expected %#v, got %#v ", l, lret)
 	}
 	fmt.Printf(" = %v \n", lret)
 
@@ -207,7 +207,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestEnum() call: ", err)
 	}
 	if eret != frugaltest.Numberz_TWO {
-		log.Fatal("Unexpected TestEnum() result expected %#v, got %#v ", frugaltest.Numberz_TWO, eret)
+		log.Fatalf("Unexpected TestEnum() result expected %#v, got %#v ", frugaltest.Numberz_TWO, eret)
 	}
 	fmt.Printf(" = %v \n", eret)
 
@@ -217,7 +217,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestTypedef() call: ", err)
 	}
 	if tret != frugaltest.UserId(42) {
-		log.Fatal("Unexpected TestTypedef() result expected %#v, got %#v ", frugaltest.UserId(42), tret)
+		log.Fatalf("Unexpected TestTypedef() result expected %#v, got %#v ", frugaltest.UserId(42), tret)
 	}
 	fmt.Printf(" = %v \n", tret)
 
@@ -227,7 +227,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestMapMap() call: ", err)
 	}
 	if !reflect.DeepEqual(mapmap, rmapmap) {
-		log.Fatal("Unexpected TestMapMap() result expected %#v, got %#v ", rmapmap, mapmap)
+		log.Fatalf("Unexpected TestMapMap() result expected %#v, got %#v ", rmapmap, mapmap)
 	}
 	fmt.Printf(" = %v \n", mapmap)
 
@@ -256,17 +256,17 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestInsanity() call: ", err)
 	}
 	if !reflect.DeepEqual(crazy, insanity[1][2]) {
-		log.Fatal("Unexpected TestInsanity() first result expected %#v, got %#v ",
+		log.Fatalf("Unexpected TestInsanity() first result expected %#v, got %#v ",
 			crazy,
 			insanity[1][2])
 	}
 	if !reflect.DeepEqual(crazy, insanity[1][3]) {
-		log.Fatal("Unexpected TestInsanity() second result expected %#v, got %#v ",
+		log.Fatalf("Unexpected TestInsanity() second result expected %#v, got %#v ",
 			crazy,
 			insanity[1][3])
 	}
 	if len(insanity[2][6].UserMap) > 0 || len(insanity[2][6].Xtructs) > 0 {
-		log.Fatal("Unexpected TestInsanity() non-empty result got %#v ",
+		log.Fatalf("Unexpected TestInsanity() non-empty result got %#v ",
 			insanity[2][6])
 	}
 	fmt.Printf(" = %v \n", insanity)
@@ -277,7 +277,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestMulti() call: ", err)
 	}
 	if !reflect.DeepEqual(xxs, xxsret) {
-		log.Fatal("Unexpected TestMulti() result expected %#v, got %#v ", xxs, xxsret)
+		log.Fatalf("Unexpected TestMulti() result expected %#v, got %#v ", xxs, xxsret)
 	}
 	fmt.Printf(" = %v \n", xxsret)
 
@@ -287,7 +287,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Expecting exception in TestException() call")
 	}
 	if !reflect.DeepEqual(err, xcept) {
-		log.Fatal("Unexpected TestException() result expected %#v, got %#v ", xcept, err)
+		log.Fatalf("Unexpected TestException() result expected %#v, got %#v ", xcept, err)
 	}
 	fmt.Printf(" = %v \n", err)
 
@@ -295,7 +295,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 	// err = client.TestException(ctx, "TException") // This is closing the transport
 	// _, ok := err.(thrift.TApplicationException)
 	// if err == nil || !ok {
-	// 	log.Fatal("Unexpected TestException() result expected ApplicationError, got %#v ", err)
+	// 	log.Fatalf("Unexpected TestException() result expected ApplicationError, got %#v ", err)
 	// }
 
 	fmt.Printf("TestMultiException(\"Xception\", \"ignoreme\")")
@@ -304,7 +304,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Expecting exception in TestMultiException() call")
 	}
 	if !reflect.DeepEqual(err, &frugaltest.Xception{ErrorCode: 1001, Message: "This is an Xception"}) {
-		log.Fatal("Unexpected TestMultiException() %#v ", err)
+		log.Fatalf("Unexpected TestMultiException() %#v ", err)
 	}
 	fmt.Printf(" = %v \n", &frugaltest.Xception{ErrorCode: 1001, Message: "This is an Xception"})
 
@@ -315,7 +315,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 	}
 	expecting := &frugaltest.Xception2{ErrorCode: 2002, StructThing: &frugaltest.Xtruct{StringThing: "This is an Xception2"}}
 	if !reflect.DeepEqual(err, expecting) {
-		log.Fatal("Unexpected TestMultiException() %#v ", err)
+		log.Fatalf("Unexpected TestMultiException() %#v ", err)
 	}
 	fmt.Printf(" = %v \n", expecting)
 

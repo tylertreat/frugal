@@ -66,7 +66,6 @@ func StartClient(
 	case "buffered":
 		trans = thrift.NewTBufferedTransport(trans, 8192)
 	case "":
-		trans = trans
 	default:
 		return nil, fmt.Errorf("Invalid transport specified %s", transport)
 	}
@@ -104,7 +103,7 @@ func StartClient(
 		subscriber := event.NewEventsSubscriber(provider)
 		// TODO: Document SubscribeEventCreated "user" cannot contain spaces
 		_, err = subscriber.SubscribeEventCreated(fmt.Sprintf("%d-response", port), func(ctx *frugal.FContext, e *event.Event) {
-			fmt.Println("Response received %v", e)
+			fmt.Printf("Response received %v\n", e)
 			close(resp)
 		})
 		ctx := frugal.NewFContext("Call")

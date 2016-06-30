@@ -127,8 +127,6 @@ func generateComplexConstant(constant *parser.Constant) string {
 	default:
 		return generateMapLiteral(constant.Value.([]parser.KeyValue), 1)
 	}
-
-	return ""
 }
 
 func generateMapLiteral(entries []parser.KeyValue, indent int) string {

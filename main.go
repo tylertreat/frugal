@@ -126,7 +126,7 @@ func genUsage() string {
 	usage := "generate code with a registered generator and optional parameters " +
 		"(lang[:key1=val1[,key2[,key3=val3]]])\n"
 	langKeys := make([]string, 0, len(generator.Languages))
-	for lang, _ := range generator.Languages {
+	for lang := range generator.Languages {
 		langKeys = append(langKeys, lang)
 	}
 	sort.Strings(langKeys)
