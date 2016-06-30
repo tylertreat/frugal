@@ -111,6 +111,14 @@ func main() {
 			Verbose:            verbose,
 		}
 
+		// Handle panics for graceful error messages.
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("Failed to generate %s:\n\t%s\n", options.File, r)
+				os.Exit(1)
+			}
+		}()
+
 		if err := compiler.Compile(options); err != nil {
 			fmt.Printf("Failed to generate %s:\n\t%s\n", options.File, err.Error())
 			os.Exit(1)
