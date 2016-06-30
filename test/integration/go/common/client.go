@@ -110,20 +110,13 @@ func StartClient(
 			panic(err)
 		}
 
-		timeout := make(chan bool, 1)
-		go func() {
-			time.Sleep(2 * time.Second)
-			timeout <- true
-		}()
-
 		select {
 		case <-resp:
 			fmt.Println("Pub/Sub response received from server")
-			close(sent)
-		case <-timeout:
+		case <-time.After(2 * time.Second):
 			log.Fatal("Pub/Sub response timed out!")
-			close(sent)
 		}
+		close(sent)
 	}()
 
 	fProtocolFactory := frugal.NewFProtocolFactory(protocolFactory)

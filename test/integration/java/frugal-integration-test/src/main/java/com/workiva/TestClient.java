@@ -41,10 +41,9 @@ import org.apache.thrift.transport.*;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Test Java client for frugal. This makes a variety of requests to enable testing for both performance and
@@ -747,8 +746,8 @@ public class TestClient {
             /**
              * PUB/SUB TEST
              */
-            final Lock lock = new ReentrantLock();
-            final Condition condition = lock.newCondition();
+            BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(1);
+            Object o = null;
             ConnectionFactory cf = new ConnectionFactory(Constants.DEFAULT_URL);
             Connection conn = cf.createConnection();
             FScopeTransportFactory factory = new FNatsScopeTransport.Factory(conn);
@@ -759,9 +758,7 @@ public class TestClient {
                 @Override
                 public void onEventCreated(FContext ctx, Event req) {
                     System.out.println("Pub/Sub response received from server");
-                    lock.lock();
-                    condition.signalAll();
-                    lock.unlock();
+                    queue.add(1);
                 }
             });
 
@@ -771,22 +768,20 @@ public class TestClient {
             publisher.publishEventCreated(new FContext("Call"), Integer.toString(port)+"-call", event);
             System.out.print("Publishing...    ");
 
-            int timeout = 2;
-            lock.lock();
             try {
-                if (!condition.await(timeout, TimeUnit.SECONDS)) {
-                    System.out.println("Pub/Sub response timed out!");
-                    returnCode = 1;
-                }
+                o = queue.poll(2, TimeUnit.SECONDS);
             } catch (InterruptedException e){
                 returnCode = 1;
-            } finally {
-                lock.unlock();
             }
 
-            /**
-             * Print general test information
-             */
+            if(o == null) {
+                System.out.println("Pub/Sub response timed out!");
+                returnCode = 1;
+            }
+
+                /**
+                 * Print general test information
+                 */
             long stop = System.nanoTime();
             long tot = stop - start;
 
