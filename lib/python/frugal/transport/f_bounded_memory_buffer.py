@@ -8,13 +8,13 @@ class FBoundedMemoryBuffer(TMemoryBuffer, object):
 
     def __init__(self, size, value=None):
         super(FBoundedMemoryBuffer, self).__init__(value)
-        self._size = size
+        self._limit = size
 
     def write(self, buf):
         """Bounded write to buffer"""
-        if len(self) + len(buf) > self._size:
+        if len(self) + len(buf) > self._limit:
             self._buffer = TMemoryBuffer()
-            raise FMessageSizeException("Buffer size reached {}".format(self._size))
+            raise FMessageSizeException("Buffer size reached {}".format(self._limit))
         self._buffer.write(buf)
 
     def __len__(self):
