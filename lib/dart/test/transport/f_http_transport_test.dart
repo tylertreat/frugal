@@ -191,7 +191,11 @@ void main() {
 }
 
 class FakeFRegistry extends FRegistry {
-  List<Uint8List> data = new List();
+  List<Uint8List> data;
+
+  FakeFRegistry() {
+    this.data = new List();
+  }
 
   void register(FContext ctx, FAsyncCallback callback) {
     return;
