@@ -65,14 +65,7 @@ class FHttpClientTransport extends FTransport {
     _writeBuffer.addAll(buffer.sublist(offset, offset + length));
   }
 
-  @override
-  Future flush() async {
-    // Frame the request body per frugal spec
-    Uint8List bytes = new Uint8List(4 + _writeBuffer.length);
-    bytes.buffer.asByteData().setUint32(0, _writeBuffer.length);
-    bytes.setAll(4, _writeBuffer);
-    _writeBuffer.clear();
-
+  Future _flushData(Uint8List bytes) async {
     // Encode request payload
     var requestBody = BASE64.encode(bytes);
 
@@ -120,6 +113,19 @@ class FHttpClientTransport extends FTransport {
 
     // Process the request, but drop the frame size
     _registry.execute(data.sublist(4));
+  }
+
+  @override
+  Future flush() {
+    // Frame the request body per frugal spec
+    // Swap out the write buffer before yielding the thread via a future
+    Uint8List bytes = new Uint8List(4 + _writeBuffer.length);
+    bytes.buffer.asByteData().setUint32(0, _writeBuffer.length);
+    bytes.setAll(4, _writeBuffer);
+    print('writing: ${bytes.length}');
+    _writeBuffer.clear();
+
+    return _flushData(bytes);
   }
 }
 
