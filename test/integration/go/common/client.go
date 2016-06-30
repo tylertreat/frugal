@@ -78,7 +78,11 @@ func StartClient(
 		log.Fatal(err)
 	}
 
-	// fire off a publish here
+	/*
+		Pub/Sub Test
+		Publish a message, verify that a subscriber receives the message and publishes a response.
+		Verifies that scopes are correctly generated.
+	*/
 	go func() {
 		<-pubSub
 

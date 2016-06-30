@@ -68,6 +68,10 @@ func StartServer(
 	}
 	go server.AcceptLoop()
 
+	/*
+		Subscriber for Pub/Sub tests
+		Subscribe to events, publish response upon receipt
+	*/
 	go func() {
 		conn, err := getNatsConn()
 		if err != nil {

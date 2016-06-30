@@ -745,6 +745,8 @@ public class TestClient {
 
             /**
              * PUB/SUB TEST
+             * Publish a message, verify that a subscriber receives the message and publishes a response.
+             * Verifies that scopes are correctly generated.
              */
             BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(1);
             Object o = null;
