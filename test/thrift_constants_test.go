@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/Workiva/frugal/compiler"
-	"github.com/Workiva/frugal/compiler/globals"
 )
 
 const (
 	frugalFile   = "idl/constants.frugal"
+	thriftFile   = "idl/constants.thrift"
 	expectedFile = "expected/thrift/constants.thrift"
 )
 
@@ -29,13 +29,7 @@ func TestThriftConstants(t *testing.T) {
 	outputPath := filepath.Join("idl", "constants.thrift")
 	compareFiles(t, expectedFile, outputPath)
 
-	// Clean up intermediate IDL.
-	for _, file := range globals.IntermediateIDL {
-		// Only try to remove if file still exists.
-		if _, err := os.Stat(file); err == nil {
-			if err := os.Remove(file); err != nil {
-				t.Fatal("Failed to remove intermediate IDL %s\n", file)
-			}
-		}
+	if err := os.Remove(thriftFile); err != nil {
+		t.Fatalf("Failed to remove intermediate IDL %s\n", thriftFile)
 	}
 }

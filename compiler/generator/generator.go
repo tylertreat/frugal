@@ -8,10 +8,13 @@ import (
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
+// FilePrefix is the default prefix for generated files.
 const FilePrefix = "f_"
 
+// FileType represents a generated file type.
 type FileType string
 
+// Valid FileTypes.
 const (
 	CombinedServiceFile FileType = "combined_service"
 	CombinedScopeFile   FileType = "combined_scope"
@@ -69,7 +72,8 @@ type ProgramGenerator interface {
 	DefaultOutputDir() string
 }
 
-// Generator generates source code as implemented for specific languages.
+// LanguageGenerator generates source code as implemented for specific
+// languages.
 type LanguageGenerator interface {
 	// Generic methods
 	SetFrugal(*parser.Frugal)
@@ -105,6 +109,7 @@ type LanguageGenerator interface {
 	GenerateSubscriber(*os.File, *parser.Scope) error
 }
 
+// GetPackageComponents returns the package string split on dots.
 func GetPackageComponents(pkg string) []string {
 	return strings.Split(pkg, ".")
 }
@@ -115,6 +120,8 @@ type programGenerator struct {
 	splitPublisherSubscriber bool
 }
 
+// NewProgramGenerator creates a new ProgramGenerator using the given
+// LanguageGenerator.
 func NewProgramGenerator(generator LanguageGenerator, splitPublisherSubscriber bool) ProgramGenerator {
 	return &programGenerator{generator, splitPublisherSubscriber}
 }
