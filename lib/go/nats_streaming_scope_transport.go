@@ -64,7 +64,7 @@ func NewFNatsStreamingScopeTransportFactory(conn stan.Conn,
 // FNatsStreamingScopeTransportFactory using the provided NATS Streaming
 // connection and subscription options, which apply if the transport is used as
 // a subscriber. Subscribers using this transport will subscribe to the
-// provided queue, formaing a queue group. When a queue group is formed, only
+// provided queue, forming a queue group. When a queue group is formed, only
 // one member receives the message.
 func NewFNatsStreamingScopeTransportFactoryWithQueue(conn stan.Conn, queue string,
 	options ...stan.SubscriptionOption) *FNatsStreamingScopeTransportFactory {
@@ -139,7 +139,7 @@ func NewFNatsStreamingScopeTransportWithQueue(conn stan.Conn, queue string,
 func (f *fNatsStreamingScopeTransport) LockTopic(topic string) error {
 	if f.subscriber {
 		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
-			"subscriber cannot unlock topic")
+			"subscriber cannot lock topic")
 	}
 	f.topicMu.Lock()
 	f.topic = topic

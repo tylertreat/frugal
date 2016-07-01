@@ -225,7 +225,7 @@ func TestAddHeadersToFrame(t *testing.T) {
 	assert.Equal("12345", oldComponents.headers["_cid"])
 	assert.Equal([]byte("this is a request"), oldComponents.payload)
 
-	headers := map[string]string{"bat": "man", "spider": "man"}
+	headers := map[string]string{"bat": "man", "spider": "person"}
 	newFrame, err := addHeadersToFrame(completeFrugalFrame, headers)
 	assert.Nil(err)
 
@@ -237,7 +237,7 @@ func TestAddHeadersToFrame(t *testing.T) {
 	assert.Equal("0", newComponents.headers["_opid"])
 	assert.Equal("12345", newComponents.headers["_cid"])
 	assert.Equal("man", newComponents.headers["bat"])
-	assert.Equal("man", newComponents.headers["spider"])
+	assert.Equal("person", newComponents.headers["spider"])
 	assert.Equal([]byte("this is a request"), newComponents.payload)
 }
 
