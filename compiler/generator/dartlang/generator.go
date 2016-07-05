@@ -1204,11 +1204,12 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += tab + "frugal.FScopeTransport fTransport;\n"
 	publishers += tab + "frugal.FProtocol fProtocol;\n"
 	publishers += tab + "Map<String, frugal.FMethod> _methods;\n"
-	publishers += tab + "Completer _completer = null;\n\n"
+	publishers += tab + "frugal.Lock _writeLock;\n\n"
 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "fTransport = provider.fTransportFactory.getTransport();\n"
 	publishers += tabtab + "fProtocol = provider.fProtocolFactory.getProtocol(fTransport);\n"
+	publishers += tabtab + "_writeLock = new frugal.Lock();\n"
 	publishers += tabtab + "this._methods = {};\n"
 	for _, operation := range scope.Operations {
 		publishers += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._publish%s, '%s', 'publish%s', middleware);\n",
@@ -1245,7 +1246,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 
-		publishers += generateLockWriteLock("_completer", tabtab)
+		publishers += tabtab+"_writeLock.lock();\n"
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
@@ -1257,7 +1258,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += tabtab + "req.write(oprot);\n"
 		publishers += tabtab + "oprot.writeMessageEnd();\n"
 		publishers += tabtab + "await oprot.transport.flush();\n"
-		publishers += tabtab + "_completer.complete();\n"
+		publishers += tabtab+"_writeLock.unlock();\n"
 		publishers += tab + "}\n"
 	}
 
@@ -1265,14 +1266,6 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 	_, err := file.WriteString(publishers)
 	return err
-}
-
-func generateLockWriteLock(name, ind string) string {
-	contents := fmt.Sprintf(ind+"while (%s != null && !%s.isCompleted) {\n", name, name)
-	contents += fmt.Sprintf(ind+tab+"await %s.future;\n", name)
-	contents += ind + "}\n"
-	contents += fmt.Sprintf(ind+"%s = new Completer();\n", name)
-	return contents
 }
 
 func generatePrefixStringTemplate(scope *parser.Scope) string {
@@ -1430,6 +1423,9 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += tabtab + "_transport.setRegistry(new frugal.FClientRegistry());\n"
 	contents += tabtab + "_protocolFactory = protocolFactory;\n"
 	contents += tabtab + "_oprot = _protocolFactory.getProtocol(_transport);\n\n"
+	if service.Extends == "" {
+		contents += tabtab+"writeLock = new frugal.Lock();\n"
+	}
 	contents += tabtab + "this._methods = {};\n"
 	for _, method := range service.Methods {
 		nameLower := generator.LowercaseFirstLetter(method.Name)
@@ -1442,7 +1438,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += tab + "frugal.FProtocol _oprot;\n"
 	contents += tab + "frugal.FProtocol get oprot => _oprot;\n"
 	if service.Extends == "" {
-		contents += tab + "Completer writeLock = null;\n"
+		contents += tab + "frugal.Lock writeLock;\n"
 	}
 	contents += "\n"
 
@@ -1485,7 +1481,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += tabtab + "try {\n"
 		indent = tabtabtab
 	}
-	contents += generateLockWriteLock("writeLock", indent)
+	contents += indent + "writeLock.lock();\n"
 	contents += indent + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
@@ -1502,7 +1498,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += indent + "args.write(oprot);\n"
 	contents += indent + "oprot.writeMessageEnd();\n"
 	contents += indent + "await oprot.transport.flush();\n"
-	contents += indent + "writeLock.complete();\n"
+	contents += indent + "writeLock.unlock();\n"
 
 	// Nothing more to do for oneway
 	if method.Oneway {
