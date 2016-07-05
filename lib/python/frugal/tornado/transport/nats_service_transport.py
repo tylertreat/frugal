@@ -120,7 +120,7 @@ class TNatsServiceTransport(TNatsTransportBase):
             logger.info("frugal: transport open.")
 
     @gen.coroutine
-    def _on_message_callback(self, msg=None):
+    def _on_message_callback(self, msg):
         if msg.reply == _DISCONNECT:
             logger.debug("Received DISCONNECT from Frugal server.")
             yield self.close()

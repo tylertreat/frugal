@@ -36,10 +36,8 @@ class TestTNatsServiceTransport(AsyncTestCase):
     def test_open_throws_nats_not_connected_exception(self):
         self.mock_nats_client.is_connected.return_value = False
 
-        try:
+        with self.assertRaises(TTransportException) as e:
             yield self.transport.open()
-            self.fail()
-        except TTransportException as e:
             self.assertEqual(TTransportException.NOT_OPEN, e.type)
             self.assertEqual("NATS not connected.", e.message)
 
@@ -48,10 +46,8 @@ class TestTNatsServiceTransport(AsyncTestCase):
         self.mock_nats_client.is_connected.return_value = True
         self.transport._is_open = True
 
-        try:
+        with self.assertRaises(TTransportException) as e:
             yield self.transport.open()
-            self.fail()
-        except TTransportException as e:
             self.assertEqual(TTransportException.ALREADY_OPEN, e.type)
             self.assertEqual("NATS transport already open", e.message)
 
@@ -66,24 +62,22 @@ class TestTNatsServiceTransport(AsyncTestCase):
     def test_write_throws_not_open_exception(self):
         self.transport._is_open = False
 
-        try:
-            self.transport.write(b'')
-            self.fail()
-        except TTransportException as e:
+        with self.assertRaises(TTransportException) as e:
+            self.transport.write('')
             self.assertEqual("Transport not open!", e.message)
 
-    @gen_test
-    def test_write_adds_buff_to_write_buffer(self):
+    def test_write_adds_to_write_buffer(self):
+        b = bytearray('test')
+
         self.mock_nats_client.is_connected.return_value = True
         self.transport._is_open = True
 
-        buff = bytearray(10)
-        struct.pack_into('>I', buff, 0, 10)
+        self.transport.write(b)
 
-        self.transport.write(buff)
+        self.assertEquals(b, self.transport._wbuf.getvalue())
 
     @gen_test
-    def test_close(self):
+    def test_close_unsubscribes_and_sets_is_open_to_false(self):
         self.transport._sub_id = 1
         self._is_open = True
 
@@ -99,29 +93,12 @@ class TestTNatsServiceTransport(AsyncTestCase):
         self.assertFalse(self.transport._is_open)
 
     def test_read_throws_exception(self):
-        try:
+        with self.assertRaises(NotImplementedError) as e:
             self.transport.read(2)
-            self.fail()
-        except Exception as ex:
-            self.assertEquals("Don't call this.", ex.message)
-
-    def test_write(self):
-        b = bytearray(b'test')
-        try:
-            self.transport.write(b)
-            self.fail()
-        except TTransportException as ex:
-            self.assertEquals("Transport not open!", ex.message)
-
-        self.mock_nats_client.is_connected.return_value = True
-        self.transport._is_open = True
-
-        self.transport.write(b)
-
-        self.assertEquals(b, self.transport._wbuf.getvalue())
+            self.assertEquals("Don't call this.", e.message)
 
     @gen_test
-    def test_flush(self):
+    def test_flush_publishes_frame_length_and_buffer_to_nats(self):
         self.transport._write_to = "foo"
         b = bytearray('test')
         self.transport._wbuf.write(b)

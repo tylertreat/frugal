@@ -1,6 +1,5 @@
 import logging
 import struct
-from threading import Lock
 
 from thrift.Thrift import TException
 from tornado import gen
@@ -37,7 +36,6 @@ class FStatelessNatsTornadoServer(FServer):
         self._oprot_factory = protocol_factory
         self._queue = queue
         self._sub_id = None
-        self._watermark_lock = Lock()
 
     @gen.coroutine
     def serve(self):
@@ -76,7 +74,8 @@ class FStatelessNatsTornadoServer(FServer):
             logger.warn("Discarding invalid NATS request (no reply)")
             return
 
-        # Read and process frame (exclude first 4 bytes which represent frame size).
+        # Read and process frame (exclude first 4 bytes which
+        # represent frame size).
         iprot = self._iprot_factory.get_protocol(
             FBoundedMemoryBuffer(MAX_MESSAGE_SIZE, value=msg.data[4:])
         )
@@ -92,8 +91,6 @@ class FStatelessNatsTornadoServer(FServer):
             return
 
         data = out_transport.getvalue()
-        frame_len = len(data)
-        buff = bytearray(4)
-        struct.pack_into('!I', buff, 0, frame_len + 4)
+        buff = struct.pack('!I', len(data) + 4)
 
         yield self._nats_client.publish(reply_to, buff + data)
