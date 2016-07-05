@@ -72,7 +72,7 @@ func (g *Generator) getIsSetType(s *parser.Struct) (IsSetType, string) {
 	case 32 < primitiveCount && primitiveCount <= 64:
 		return IsSetBitfield, "long"
 	default:
-		return IsSetBitfield, ""
+		return IsSetBitSet, ""
 	}
 }
 
