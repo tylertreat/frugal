@@ -1246,7 +1246,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 
-		publishers += tabtab+"_writeLock.lock();\n"
+		publishers += tabtab + "_writeLock.lock();\n"
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
@@ -1258,7 +1258,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += tabtab + "req.write(oprot);\n"
 		publishers += tabtab + "oprot.writeMessageEnd();\n"
 		publishers += tabtab + "await oprot.transport.flush();\n"
-		publishers += tabtab+"_writeLock.unlock();\n"
+		publishers += tabtab + "_writeLock.unlock();\n"
 		publishers += tab + "}\n"
 	}
 
@@ -1424,7 +1424,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += tabtab + "_protocolFactory = protocolFactory;\n"
 	contents += tabtab + "_oprot = _protocolFactory.getProtocol(_transport);\n\n"
 	if service.Extends == "" {
-		contents += tabtab+"writeLock = new frugal.Lock();\n"
+		contents += tabtab + "writeLock = new frugal.Lock();\n"
 	}
 	contents += tabtab + "this._methods = {};\n"
 	for _, method := range service.Methods {
