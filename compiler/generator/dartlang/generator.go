@@ -1245,10 +1245,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 
-		publishers += tabtab + "if (_completer != null) {\n"
-		publishers += tabtabtab + "await _completer.future;\n"
-		publishers += tabtab + "}\n"
-		publishers += tabtab + "_completer = new Completer();\n"
+		publishers += generateLockWriteLock("_completer", tabtab)
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
@@ -1268,6 +1265,14 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 	_, err := file.WriteString(publishers)
 	return err
+}
+
+func generateLockWriteLock(name, ind string) string {
+	contents := fmt.Sprintf(ind+"while (%s != null && !%s.isCompleted) {\n", name, name)
+	contents += fmt.Sprintf(ind+tab+"await %s.future;\n", name)
+	contents += ind + "}\n"
+	contents += fmt.Sprintf(ind+"%s = new Completer();\n", name)
+	return contents
 }
 
 func generatePrefixStringTemplate(scope *parser.Scope) string {
@@ -1435,7 +1440,11 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += tab + "frugal.FTransport _transport;\n"
 	contents += tab + "frugal.FProtocolFactory _protocolFactory;\n"
 	contents += tab + "frugal.FProtocol _oprot;\n"
-	contents += tab + "frugal.FProtocol get oprot => _oprot;\n\n"
+	contents += tab + "frugal.FProtocol get oprot => _oprot;\n"
+	if service.Extends == "" {
+		contents += tab + "Completer writeLock = null;\n"
+	}
+	contents += "\n"
 
 	for _, method := range service.Methods {
 		contents += g.generateClientMethod(service, method)
@@ -1476,6 +1485,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += tabtab + "try {\n"
 		indent = tabtabtab
 	}
+	contents += generateLockWriteLock("writeLock", indent)
 	contents += indent + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
@@ -1492,6 +1502,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += indent + "args.write(oprot);\n"
 	contents += indent + "oprot.writeMessageEnd();\n"
 	contents += indent + "await oprot.transport.flush();\n"
+	contents += indent + "writeLock.complete();\n"
 
 	// Nothing more to do for oneway
 	if method.Oneway {

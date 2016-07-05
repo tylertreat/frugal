@@ -42,7 +42,7 @@ class FooPublisher {
   }
 
   Future _publishFoo(frugal.FContext ctx, String baz, t_valid.Thing req) async {
-    if (_completer != null) {
+    while (_completer != null && !_completer.isCompleted) {
       await _completer.future;
     }
     _completer = new Completer();
@@ -66,7 +66,7 @@ class FooPublisher {
   }
 
   Future _publishBar(frugal.FContext ctx, String baz, t_valid.Stuff req) async {
-    if (_completer != null) {
+    while (_completer != null && !_completer.isCompleted) {
       await _completer.future;
     }
     _completer = new Completer();

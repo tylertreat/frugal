@@ -48,6 +48,7 @@ class FBlahClient implements FBlah {
   frugal.FProtocolFactory _protocolFactory;
   frugal.FProtocol _oprot;
   frugal.FProtocol get oprot => _oprot;
+  Completer writeLock = null;
 
   /// Use this to ping the server.
   Future ping(frugal.FContext ctx) {
@@ -63,12 +64,17 @@ class FBlahClient implements FBlah {
       });
     _transport.register(ctx, _recvPingHandler(ctx, controller));
     try {
+      while (writeLock != null && !writeLock.isCompleted) {
+        await writeLock.future;
+      }
+      writeLock = new Completer();
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
       t_blah_file.ping_args args = new t_blah_file.ping_args();
       args.write(oprot);
       oprot.writeMessageEnd();
       await oprot.transport.flush();
+      writeLock.complete();
       return await controller.stream.first.timeout(ctx.timeout);
     } finally {
       closeSubscription.cancel();
@@ -118,6 +124,10 @@ class FBlahClient implements FBlah {
       });
     _transport.register(ctx, _recvBlehHandler(ctx, controller));
     try {
+      while (writeLock != null && !writeLock.isCompleted) {
+        await writeLock.future;
+      }
+      writeLock = new Completer();
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("bleh", thrift.TMessageType.CALL, 0));
       t_blah_file.bleh_args args = new t_blah_file.bleh_args();
@@ -127,6 +137,7 @@ class FBlahClient implements FBlah {
       args.write(oprot);
       oprot.writeMessageEnd();
       await oprot.transport.flush();
+      writeLock.complete();
       return await controller.stream.first.timeout(ctx.timeout);
     } finally {
       closeSubscription.cancel();
@@ -186,12 +197,17 @@ class FBlahClient implements FBlah {
       });
     _transport.register(ctx, _recvGetThingHandler(ctx, controller));
     try {
+      while (writeLock != null && !writeLock.isCompleted) {
+        await writeLock.future;
+      }
+      writeLock = new Completer();
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("getThing", thrift.TMessageType.CALL, 0));
       t_blah_file.getThing_args args = new t_blah_file.getThing_args();
       args.write(oprot);
       oprot.writeMessageEnd();
       await oprot.transport.flush();
+      writeLock.complete();
       return await controller.stream.first.timeout(ctx.timeout);
     } finally {
       closeSubscription.cancel();
@@ -247,12 +263,17 @@ class FBlahClient implements FBlah {
       });
     _transport.register(ctx, _recvGetMyIntHandler(ctx, controller));
     try {
+      while (writeLock != null && !writeLock.isCompleted) {
+        await writeLock.future;
+      }
+      writeLock = new Completer();
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("getMyInt", thrift.TMessageType.CALL, 0));
       t_blah_file.getMyInt_args args = new t_blah_file.getMyInt_args();
       args.write(oprot);
       oprot.writeMessageEnd();
       await oprot.transport.flush();
+      writeLock.complete();
       return await controller.stream.first.timeout(ctx.timeout);
     } finally {
       closeSubscription.cancel();

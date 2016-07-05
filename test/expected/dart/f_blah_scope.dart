@@ -39,7 +39,7 @@ class BlahPublisher {
   }
 
   Future _publishDoStuff(frugal.FContext ctx, t_valid.Thing req) async {
-    if (_completer != null) {
+    while (_completer != null && !_completer.isCompleted) {
       await _completer.future;
     }
     _completer = new Completer();
