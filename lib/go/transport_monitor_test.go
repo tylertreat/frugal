@@ -310,7 +310,7 @@ func (m *mockFTransport) IsOpen() bool {
 	return args.Get(0).(bool)
 }
 
-func (m *mockFTransport) RemainingBytes() (num_bytes uint64) {
+func (m *mockFTransport) RemainingBytes() uint64 {
 	m.Lock()
 	defer m.Unlock()
 	args := m.Called()

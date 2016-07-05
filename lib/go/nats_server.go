@@ -257,10 +257,10 @@ func (n *FNatsServer) startHeartbeat() {
 				continue
 			}
 			if err := n.conn.Publish(n.heartbeatSubject, nil); err != nil {
-				log.Errorf("frugal: error publishing heartbeat:", err.Error())
+				log.Error("frugal: error publishing heartbeat:", err.Error())
 			}
 			if err := n.conn.FlushTimeout(n.heartbeatInterval * 3 / 4); err != nil {
-				log.Errorf("frugal: error flushing heartbeat:", err.Error())
+				log.Error("frugal: error flushing heartbeat:", err.Error())
 			}
 		case <-n.quit:
 			return
@@ -276,11 +276,11 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		select {
 		case recvHeartbeat <- struct{}{}:
 		default:
-			log.Infof("frugal: FNatsServer dropped heartbeat: %s", client.heartbeat)
+			log.Info("frugal: FNatsServer dropped heartbeat:", client.heartbeat)
 		}
 	})
 	if err != nil {
-		log.Errorf("frugal: error subscribing to heartbeat:", client.heartbeat)
+		log.Error("frugal: error subscribing to heartbeat:", client.heartbeat)
 		return
 	}
 	defer sub.Unsubscribe()

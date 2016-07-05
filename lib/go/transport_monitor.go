@@ -56,10 +56,17 @@ func NewDefaultFTransportMonitor() FTransportMonitor {
 	}
 }
 
+// OnClosedUncleanly is called when the transport is closed for a reason
+// *other* than a call to Close(). Returns whether to try reopening the
+// transport and, if so, how long to wait before making the attempt.
 func (m *BaseFTransportMonitor) OnClosedUncleanly(cause error) (bool, time.Duration) {
 	return m.MaxReopenAttempts > 0, m.InitialWait
 }
 
+// OnReopenFailed is called when an attempt to reopen the transport fails.
+// Given the number of previous attempts to re-open the transport and the
+// length of the previous wait. Returns whether to attempt to re-open the
+// transport, and how long to wait before making the attempt.
 func (m *BaseFTransportMonitor) OnReopenFailed(prevAttempts uint, prevWait time.Duration) (bool, time.Duration) {
 	if prevAttempts >= m.MaxReopenAttempts {
 		return false, 0
@@ -72,8 +79,12 @@ func (m *BaseFTransportMonitor) OnReopenFailed(prevAttempts uint, prevWait time.
 	return true, nextWait
 }
 
+// OnClosedCleanly is called when the transport is closed cleanly by a call
+// to Close()
 func (m *BaseFTransportMonitor) OnClosedCleanly() {}
 
+// OnReopenSucceeded is called after the transport has been successfully
+// re-opened.
 func (m *BaseFTransportMonitor) OnReopenSucceeded() {}
 
 type monitorRunner struct {

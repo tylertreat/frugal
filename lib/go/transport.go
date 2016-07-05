@@ -11,7 +11,12 @@ import (
 )
 
 const (
-	REQUEST_TOO_LARGE  = 100
+	// REQUEST_TOO_LARGE is a TTransportException error type indicating the
+	// request exceeded the size limit.
+	REQUEST_TOO_LARGE = 100
+
+	// RESPONSE_TOO_LARGE is a TTransportException error type indicating the
+	// response exceeded the size limit.
 	RESPONSE_TOO_LARGE = 101
 
 	defaultWatermark = 5 * time.Second

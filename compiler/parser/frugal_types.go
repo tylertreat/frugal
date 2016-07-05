@@ -8,6 +8,9 @@ import (
 //go:generate pigeon -o grammar.peg.go ./grammar.peg
 //go:generate goimports -w ./grammar.peg.go
 
+// Operation is a pub/sub scope operation. Corresponding publish and
+// subscribe methods are generated from this for publishers and subscribers,
+// respectively.
 type Operation struct {
 	Comment []string
 	Name    string
@@ -15,15 +18,21 @@ type Operation struct {
 	Scope   *Scope // Pointer back to containing Scope
 }
 
+// ScopePrefix is the string prefix prepended to a pub/sub topic. The string
+// can contain variables of the form {foo}, e.g. "foo.{bar}.baz" where "bar"
+// is supplied at publish/subscribe time.
 type ScopePrefix struct {
 	String    string
 	Variables []string
 }
 
+// Template returns the prefix where variables are replaced with the given
+// string.
 func (n *ScopePrefix) Template(s string) string {
 	return prefixVariable.ReplaceAllString(n.String, s)
 }
 
+// Scope is a pub/sub namespace.
 type Scope struct {
 	Comment    []string
 	Name       string
@@ -49,6 +58,7 @@ func (s *Scope) assignScope() {
 	}
 }
 
+// Frugal contains the complete IDL parse tree.
 type Frugal struct {
 	Name           string
 	File           string
@@ -68,6 +78,8 @@ type Frugal struct {
 	OrderedDefinitions []interface{}
 }
 
+// NamespaceForInclude returns the namespace value for the given inclue name
+// and language.
 func (f *Frugal) NamespaceForInclude(include, lang string) (string, bool) {
 	parsed, ok := f.ParsedIncludes[include]
 	if !ok {
@@ -77,6 +89,8 @@ func (f *Frugal) NamespaceForInclude(include, lang string) (string, bool) {
 	return namespace, ok
 }
 
+// ContainsFrugalDefinitions indicates if the parse tree contains any
+// scope or service definitions.
 func (f *Frugal) ContainsFrugalDefinitions() bool {
 	return len(f.Scopes)+len(f.Thrift.Services) > 0
 }
@@ -135,6 +149,7 @@ func (f *Frugal) UnderlyingType(t *Type) *Type {
 	return t
 }
 
+// ConstantFromField returns a new Constant from the given Field and value.
 func (f *Frugal) ConstantFromField(field *Field, value interface{}) *Constant {
 	return &Constant{
 		Name:  field.Name,
@@ -194,19 +209,19 @@ func (f *Frugal) validate() error {
 }
 
 func (f *Frugal) sort() {
-	sort.Sort(ScopesByName(f.Scopes))
+	sort.Sort(scopesByName(f.Scopes))
 }
 
-type ScopesByName []*Scope
+type scopesByName []*Scope
 
-func (b ScopesByName) Len() int {
+func (b scopesByName) Len() int {
 	return len(b)
 }
 
-func (b ScopesByName) Swap(i, j int) {
+func (b scopesByName) Swap(i, j int) {
 	b[i], b[j] = b[j], b[i]
 }
 
-func (b ScopesByName) Less(i, j int) bool {
+func (b scopesByName) Less(i, j int) bool {
 	return b[i].Name < b[j].Name
 }

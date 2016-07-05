@@ -11,7 +11,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-var nextOpID uint64 = 0
+var nextOpID uint64
 
 // FAsyncCallback is an internal callback which is constructed by generated
 // code and invoked by an FRegistry when a RPC response is received. In other
@@ -49,7 +49,7 @@ type clientRegistry struct {
 	handlers map[uint64]FAsyncCallback
 }
 
-// NewClientRegistry creates a Registry intended for use by Frugal clients.
+// NewFClientRegistry creates a Registry intended for use by Frugal clients.
 // This is only to be called by generated code.
 func NewFClientRegistry() FRegistry {
 	return &clientRegistry{handlers: make(map[uint64]FAsyncCallback)}
