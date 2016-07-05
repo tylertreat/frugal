@@ -63,13 +63,13 @@ func (g *Generator) getIsSetType(s *parser.Struct) (IsSetType, string) {
 	switch {
 	case primitiveCount == 0:
 		return IsSetNone, ""
-	case primitiveCount <= 8:
+	case 0 < primitiveCount <= 8:
 		return IsSetBitfield, "byte"
-	case primitiveCount <= 16:
+	case 8 < primitiveCount <= 16:
 		return IsSetBitfield, "short"
-	case primitiveCount <= 32:
+	case 16 < primitiveCount <= 32:
 		return IsSetBitfield, "int"
-	case primitiveCount <= 64:
+	case 32 < primitiveCount <= 64:
 		return IsSetBitfield, "long"
 	default:
 		return IsSetBitfield, ""
