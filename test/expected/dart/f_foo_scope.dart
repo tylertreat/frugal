@@ -18,11 +18,12 @@ class FooPublisher {
   frugal.FScopeTransport fTransport;
   frugal.FProtocol fProtocol;
   Map<String, frugal.FMethod> _methods;
-  Completer _completer = null;
+  frugal.Lock _writeLock;
 
   FooPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
     fTransport = provider.fTransportFactory.getTransport();
     fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
+    _writeLock = new frugal.Lock();
     this._methods = {};
     this._methods['Foo'] = new frugal.FMethod(this._publishFoo, 'Foo', 'publishFoo', middleware);
     this._methods['Bar'] = new frugal.FMethod(this._publishBar, 'Foo', 'publishBar', middleware);
@@ -42,10 +43,7 @@ class FooPublisher {
   }
 
   Future _publishFoo(frugal.FContext ctx, String baz, t_valid.Thing req) async {
-    if (_completer != null) {
-      await _completer.future;
-    }
-    _completer = new Completer();
+    _writeLock.lock();
     var op = "Foo";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
@@ -57,7 +55,7 @@ class FooPublisher {
     req.write(oprot);
     oprot.writeMessageEnd();
     await oprot.transport.flush();
-    _completer.complete();
+    _writeLock.unlock();
   }
 
 
@@ -66,10 +64,7 @@ class FooPublisher {
   }
 
   Future _publishBar(frugal.FContext ctx, String baz, t_valid.Stuff req) async {
-    if (_completer != null) {
-      await _completer.future;
-    }
-    _completer = new Completer();
+    _writeLock.lock();
     var op = "Bar";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
@@ -81,7 +76,7 @@ class FooPublisher {
     req.write(oprot);
     oprot.writeMessageEnd();
     await oprot.transport.flush();
-    _completer.complete();
+    _writeLock.unlock();
   }
 }
 
