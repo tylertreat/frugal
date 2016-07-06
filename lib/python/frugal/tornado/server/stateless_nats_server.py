@@ -51,7 +51,7 @@ class FStatelessNatsTornadoServer(FServer):
     @gen.coroutine
     def stop(self):
         """Unsubscribe from server subject"""
-        logger.debug("Shutting down Frugal NATS Server.")
+        logger.debug("Frugal server stopping...")
         yield self._nats_client.unsubscribe(self._sub_id)
 
     def set_high_watermark(self, high_watermark):

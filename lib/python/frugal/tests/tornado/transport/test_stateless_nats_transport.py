@@ -39,10 +39,8 @@ class TestTNatsStatelessTransport(AsyncTestCase):
     def test_open_throws_nats_not_connected_exception(self):
         self.mock_nats_client.is_connected.return_value = False
 
-        try:
+        with self.assertRaises(TTransportException) as e:
             yield self.transport.open()
-            self.fail()
-        except TTransportException as e:
             self.assertEqual(TTransportException.NOT_OPEN, e.type)
             self.assertEqual("NATS not connected.", e.message)
 
@@ -51,15 +49,13 @@ class TestTNatsStatelessTransport(AsyncTestCase):
         self.mock_nats_client.is_connected.return_value = True
         self.transport._is_open = True
 
-        try:
+        with self.assertRaises(TTransportException) as e:
             yield self.transport.open()
-            self.fail()
-        except TTransportException as e:
             self.assertEqual(TTransportException.ALREADY_OPEN, e.type)
             self.assertEqual("NATS transport already open", e.message)
 
     @gen_test
-    def test_open(self):
+    def test_open_subscribes_to_new_inbox(self):
         f = concurrent.Future()
         f.set_result(1)
         self.mock_nats_client.subscribe.return_value = f
@@ -70,14 +66,14 @@ class TestTNatsStatelessTransport(AsyncTestCase):
         self.mock_nats_client.subscribe.assert_called_with(
             "new_inbox", "", self.transport._on_message_callback)
 
-    def test_execute_not_set(self):
+    def test_execute_not_set_raises_exception(self):
         self.transport._execute = None
 
         with self.assertRaises(FExecuteCallbackNotSet):
             self.transport._on_message_callback("")
 
     @gen_test
-    def test_close(self):
+    def test_close_calls_unsubscribe_and_sets_is_open_to_false(self):
         self.transport._sub_id = 1
         f = concurrent.Future()
         f.set_result(None)
@@ -91,7 +87,7 @@ class TestTNatsStatelessTransport(AsyncTestCase):
         self.assertFalse(self.transport._is_open)
 
     @gen_test
-    def test_close_no_sub_id_returns_early(self):
+    def test_close_with_no_sub_id_returns_early(self):
         self.transport._sub_id = 1
         f = concurrent.Future()
         f.set_result(None)
@@ -104,14 +100,11 @@ class TestTNatsStatelessTransport(AsyncTestCase):
             self.transport.read(2)
 
     def test_write_raises_when_not_connected(self):
-        b = bytearray('test')
-        try:
-            self.transport.write(b)
-            self.fail()
-        except TTransportException as ex:
-            self.assertEquals("Transport not open!", ex.message)
+        with self.assertRaises(TTransportException) as e:
+            self.transport.write('test')
+            self.assertEquals("Transport not open!", e.message)
 
-    def test_write(self):
+    def test_write_adds_to_write_buffer(self):
         b = bytearray('writetest')
         self.mock_nats_client.is_connected.return_value = True
         self.transport._is_open = True
@@ -122,14 +115,13 @@ class TestTNatsStatelessTransport(AsyncTestCase):
 
     @gen_test
     def test_flush_not_open_raises_exception(self):
-        try:
+        with self.assertRaises(TTransportException) as e:
             yield self.transport.flush()
-        except TTransportException as ex:
-            self.assertEquals(TTransportException.NOT_OPEN, ex.type)
-            self.assertEquals("Nats not connected!", ex.message)
+            self.assertEquals(TTransportException.NOT_OPEN, e.type)
+            self.assertEquals("Nats not connected!", e.message)
 
     @gen_test
-    def test_flush(self):
+    def test_flush_publishes_request_to_inbox(self):
         self.mock_nats_client.is_connected.return_value = True
         self.transport._is_open = True
 
