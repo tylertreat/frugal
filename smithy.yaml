@@ -16,9 +16,7 @@ artifacts:
         - /frugal
     go_library:
         - goLib.tar.gz
-    dart_library_pubspec:
-        - pubspec.lock
     pub:
-        - frugal_dart.pub.tgz
+        - frugal.pub.tgz
     pypi:
         - frugal-*.tar.gz
