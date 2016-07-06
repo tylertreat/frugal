@@ -48,6 +48,9 @@ pub run dart_dev coverage --no-html
 ./tool/codecov.sh
 pub run dart_dev format --check
 pub run dart_dev analyze
+# Wrap up package for pub
+cd $ROOT
+tar -C lib/dart -czf frugal_dart.pub.tgz .
 
 # Python
 virtualenv -p /usr/bin/python /tmp/frugal
