@@ -38,10 +38,12 @@ go build
 go test -race
 
 # DART
+# Wrap up package for pub
+cd $ROOT
+tar -C lib/dart -czf frugal.pub.tgz .
 # Compile library code
 cd $ROOT/lib/dart
 pub get
-cp ./pubspec.lock $ROOT
 # Run the tests
 pub run dart_dev test
 pub run dart_dev coverage --no-html
