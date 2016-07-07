@@ -16,7 +16,7 @@ var (
 )
 
 type frameComponents struct {
-	frameSize       int32
+	frameSize       uint32
 	protocolVersion byte
 	headers         map[string]string
 	payload         []byte
@@ -207,9 +207,9 @@ func unmarshalFrame(frame []byte) (*frameComponents, error) {
 	}
 
 	// Read frame size.
-	frameSize := int32(binary.BigEndian.Uint32(frame))
+	frameSize := binary.BigEndian.Uint32(frame)
 
-	if int32(len(frame[4:])) != frameSize {
+	if uint32(len(frame[4:])) != frameSize {
 		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA,
 			fmt.Sprintf("frugal: frame size %d does not match actual size %d", frameSize, len(frame[4:])))
 	}

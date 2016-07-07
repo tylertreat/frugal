@@ -308,10 +308,6 @@ func (f *fNatsStreamingScopeTransport) Flush() error {
 	if len(data) == 0 {
 		return nil
 	}
-	// Include 4 bytes for frame size.
-	if len(data)+4 > natsMaxMessageSize {
-		return ErrTooLarge
-	}
 	binary.BigEndian.PutUint32(f.sizeBuffer, uint32(len(data)))
 	// TODO: Expose a way to configure async publishes?
 	err := f.conn.Publish(f.formattedSubject(), append(f.sizeBuffer, data...))

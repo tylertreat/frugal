@@ -10,6 +10,7 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/nats-io/go-nats-streaming"
 	"github.com/nats-io/go-nats-streaming/pb"
+	"github.com/nats-io/nats"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -48,6 +49,10 @@ func (m *mockStanConn) QueueSubscribe(subject, queue string, cb stan.MsgHandler,
 
 func (m *mockStanConn) Close() error {
 	return m.Called().Error(0)
+}
+
+func (m *mockStanConn) NatsConn() *nats.Conn {
+	return m.Called().Get(0).(*nats.Conn)
 }
 
 type mockStanSubscription struct {
