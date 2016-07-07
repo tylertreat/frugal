@@ -99,17 +99,19 @@ class TestTNatsStatelessTransport(AsyncTestCase):
         with self.assertRaises(NotImplementedError):
             self.transport.read(2)
 
+    @gen_test
     def test_write_raises_when_not_connected(self):
         with self.assertRaises(TTransportException) as e:
-            self.transport.write('test')
+            yield self.transport.write('test')
             self.assertEquals("Transport not open!", e.message)
 
+    @gen_test
     def test_write_adds_to_write_buffer(self):
         b = bytearray('writetest')
         self.mock_nats_client.is_connected.return_value = True
         self.transport._is_open = True
 
-        self.transport.write(b)
+        yield self.transport.write(b)
 
         self.assertEquals(b, self.transport._wbuf.getvalue())
 

@@ -1,7 +1,7 @@
 from thrift.transport.TTransport import TTransportBase
 
 
-class FScopeTransport(TTransportBase):
+class FScopeTransport(TTransportBase, object):
 
     def lock_topic(self, topic):
         """Sets the publish topic and locks the transport for exclusive access.

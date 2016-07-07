@@ -1,19 +1,18 @@
 from io import BytesIO
 import logging
 from struct import pack
-from threading import Lock
 
 from nats.io.utils import new_inbox
 from thrift.transport.TTransport import TTransportException
-from tornado import gen
+from tornado import gen, locks
 
 from frugal.exceptions import FExecuteCallbackNotSet
-from frugal.tornado.transport import TNatsTransportBase
+from frugal.tornado.transport import TTornadoTransportBase
 
 logger = logging.getLogger(__name__)
 
 
-class TStatelessNatsTransport(TNatsTransportBase):
+class TStatelessNatsTransport(TTornadoTransportBase):
     """TStatelessNatsTransport is an extension of thrift.TTransportBase.
     This is a "stateless" transport in the sense that there is no
     connection with a server. A request is simply published to a subject
@@ -31,10 +30,10 @@ class TStatelessNatsTransport(TNatsTransportBase):
         self._subject = subject
         self._inbox = inbox or new_inbox()
         self._is_open = False
-        self._open_lock = Lock()
         self._wbuf = BytesIO()
         self._execute = None
         self._sub_id = None
+        self._open_lock = locks.Lock()
 
     @gen.coroutine
     def open(self):
@@ -45,7 +44,7 @@ class TStatelessNatsTransport(TNatsTransportBase):
             logger.error(ex.message)
             raise ex
 
-        elif self.isOpen():
+        elif (yield self.isOpen()):
             ex = TTransportException(TTransportException.ALREADY_OPEN,
                                      "NATS transport already open")
             logger.error(ex.message)
@@ -78,7 +77,7 @@ class TStatelessNatsTransport(TNatsTransportBase):
     @gen.coroutine
     def flush(self):
         """Sends the buffered bytes over NATS"""
-        if not self.isOpen():
+        if not (yield self.isOpen()):
             ex = TTransportException(TTransportException.NOT_OPEN,
                                      "Nats not connected!")
             logger.exception(ex)

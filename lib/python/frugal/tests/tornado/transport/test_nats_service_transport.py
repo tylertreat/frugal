@@ -63,16 +63,17 @@ class TestTNatsServiceTransport(AsyncTestCase):
         self.transport._is_open = False
 
         with self.assertRaises(TTransportException) as e:
-            self.transport.write('')
+            yield self.transport.write('')
             self.assertEqual("Transport not open!", e.message)
 
+    @gen_test
     def test_write_adds_to_write_buffer(self):
         b = bytearray('test')
 
         self.mock_nats_client.is_connected.return_value = True
         self.transport._is_open = True
 
-        self.transport.write(b)
+        yield self.transport.write(b)
 
         self.assertEquals(b, self.transport._wbuf.getvalue())
 

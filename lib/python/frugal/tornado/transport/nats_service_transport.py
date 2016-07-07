@@ -2,27 +2,25 @@ import json
 import logging
 from datetime import timedelta
 import struct
-from threading import Lock
 from io import BytesIO
 
-from frugal.tornado.transport import TNatsTransportBase
+from frugal.tornado.transport import TTornadoTransportBase
 from nats.io.utils import new_inbox
 from thrift.transport.TTransport import TTransportException
-from tornado import gen, concurrent, ioloop
+from tornado import gen, concurrent, ioloop, locks
 
 
 _NATS_PROTOCOL_VERSION = 0
 _FRUGAL_PREFIX = "frugal."
 _DISCONNECT = "DISCONNECT"
 _HEARTBEAT_GRACE_PERIOD = 50000
-_HEARTBEAT_LOCK = Lock()
 _DEFAULT_CONNECTION_TIMEOUT = 20000
 _DEFAULT_MAX_MISSED_HEARTBEATS = 3
 
 logger = logging.getLogger(__name__)
 
 
-class TNatsServiceTransport(TNatsTransportBase):
+class TNatsServiceTransport(TTornadoTransportBase):
 
     @staticmethod
     def Client(nats_client,
@@ -82,7 +80,6 @@ class TNatsServiceTransport(TNatsTransportBase):
 
         self._missed_heartbeats = 0
 
-        self._open_lock = Lock()
         self._wbuf = BytesIO()
 
     @gen.coroutine
@@ -98,13 +95,13 @@ class TNatsServiceTransport(TNatsTransportBase):
             logger.error(ex.message)
             raise ex
 
-        elif self.isOpen():
+        elif (yield self.isOpen()):
             ex = TTransportException(TTransportException.ALREADY_OPEN,
                                      "NATS transport already open")
             logger.error(ex.message)
             raise ex
 
-        with self._open_lock:
+        with (yield self._open_lock.acquire()):
             if self._connection_subject:
                 yield self._handshake()
 

@@ -44,19 +44,17 @@ class TestFNatsScopeTransport(AsyncTestCase):
         expected = "topic"
         self.publisher_transport.subscribe(expected)
 
-        try:
+        with self.assertRaises(FException) as e:
             self.publisher_transport.lock_topic(expected)
-        except FException as ex:
-            self.assertEquals("Subscriber cannot lock topic.", ex.message)
+            self.assertEquals("Subscriber cannot lock topic.", e.message)
 
     def test_subscriber_cannot_unlock_topic(self):
         expected = "topic"
         self.publisher_transport.subscribe(expected)
 
-        try:
+        with self.assertRaises(FException) as e:
             self.publisher_transport.unlock_topic()
-        except FException as ex:
-            self.assertEquals("Subscriber cannot unlock topic.", ex.message)
+            self.assertEquals("Subscriber cannot unlock topic.", e.message)
 
     @gen_test
     def test_open_throws_exception_if_nats_not_connected(self):
@@ -65,35 +63,29 @@ class TestFNatsScopeTransport(AsyncTestCase):
 
         self.publisher_transport = FNatsScopeTransport(mock_conn)
 
-        try:
+        with self.assertRaises(TTransportException) as e:
             yield self.publisher_transport.open()
-            self.fail()
-        except TTransportException as ex:
-            self.assertEquals(TTransportException.NOT_OPEN, ex.type)
-            self.assertEquals("Nats not connected!", ex.message)
+            self.assertEquals(TTransportException.NOT_OPEN, e.type)
+            self.assertEquals("Nats not connected!", e.message)
 
     @gen_test
     def test_open_throws_exception_if_nats_already_open(self):
         self.nats_client.is_connected.return_value = True
         self.publisher_transport._is_open = True
 
-        try:
+        with self.assertRaises(TTransportException) as e:
             yield self.publisher_transport.open()
-            self.fail()
-        except TTransportException as ex:
-            self.assertEquals(TTransportException.ALREADY_OPEN, ex.type)
-            self.assertEquals("Nats is already open!", ex.message)
+            self.assertEquals(TTransportException.ALREADY_OPEN, e.type)
+            self.assertEquals("Nats is already open!", e.message)
 
     @gen_test
     def test_open_when_subscriber_throws_if_empty_subject(self):
         self.nats_client.is_connected.return_value = True
         self.subscriber_transport._pull = True
 
-        try:
+        with self.assertRaises(TTransportException) as e:
             yield self.subscriber_transport.open()
-            self.fail()
-        except TTransportException as ex:
-            self.assertEquals("Subject cannot be empty.", ex.message)
+            self.assertEquals("Subject cannot be empty.", e.message)
 
     @gen_test
     def test_open_when_subscriber_calls_subscribe(self):
@@ -108,48 +100,46 @@ class TestFNatsScopeTransport(AsyncTestCase):
         yield self.subscriber_transport.open()
 
         self.nats_client.subscribe.assert_called()
-        self.assertTrue(self.subscriber_transport.is_open())
+        self.assertTrue(self.subscriber_transport.isOpen())
 
+    @gen_test
     def test_write_throws_if_transport_not_open(self):
-        try:
-            self.publisher_transport.write(bytearray())
-            self.fail()
-        except TTransportException as ex:
-            self.assertEquals(TTransportException.NOT_OPEN, ex.type)
-            self.assertEquals("Nats not connected!", ex.message)
+        with self.assertRaises(TTransportException) as e:
+            yield self.publisher_transport.write(bytearray())
+            self.assertEquals(TTransportException.NOT_OPEN, e.type)
+            self.assertEquals("Nats not connected!", e.message)
 
+    @gen_test
     def test_write_throws_if_max_message_size_exceeded(self):
         self.nats_client.is_connected.return_value = True
         self.publisher_transport._is_open = True
         self.publisher_transport._write_buffer = BytesIO()
 
         buff = bytearray(1024 * 2048)
-        try:
-            self.publisher_transport.write(buff)
-            self.fail()
-        except FMessageSizeException as ex:
+        with self.assertRaises(FMessageSizeException) as e:
+            yield self.publisher_transport.write(buff)
             self.assertEquals("Message exceeds NATS max message size",
-                              ex.message)
+                              e.message)
 
+    @gen_test
     def test_write_writes_to_write_buffer(self):
         self.nats_client.is_connected.return_value = True
         self.publisher_transport._is_open = True
         self.publisher_transport._write_buffer = BytesIO()
         buff = bytearray(b'\x00\x00\x00\x00\x01')
 
-        self.publisher_transport.write(buff)
+        yield self.publisher_transport.write(buff)
 
         self.assertEquals(buff,
                           self.publisher_transport._write_buffer.getvalue())
 
     @gen_test
     def test_flush_throws_if_transport_not_open(self):
-        try:
+        with self.assertRaises(TTransportException) as e:
+            yield self.publisher_transport.write('test')
             yield self.publisher_transport.flush()
-            self.fail()
-        except TTransportException as ex:
-            self.assertEquals(TTransportException.NOT_OPEN, ex.type)
-            self.assertEquals("Nats not connected!", ex.message)
+            self.assertEquals(TTransportException.NOT_OPEN, e.type)
+            self.assertEquals("Nats not connected!", e.message)
 
 
 class Message(object):
