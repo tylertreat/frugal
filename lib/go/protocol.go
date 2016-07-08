@@ -10,6 +10,50 @@ import (
 
 const protocolV0 = 0x00
 
+var (
+	writeMarshaler = v0Marshaler
+	v0Marshaler    = &v0ProtocolMarshaler{}
+)
+
+type frameComponents struct {
+	frameSize       uint32
+	protocolVersion byte
+	headers         map[string]string
+	payload         []byte
+}
+
+// protocolMarshaler is responsible for serializing and deserializing the
+// Frugal protocol for a specific version.
+type protocolMarshaler interface {
+	// marshalHeaders serializes the given headers map to a byte slice.
+	marshalHeaders(headers map[string]string) []byte
+
+	// unmarshalHeaders reads serialized headers from the reader into a map.
+	unmarshalHeaders(reader io.Reader) (map[string]string, error)
+
+	// unmarshalHeadersFromFrame reads serialized headers from the byte slice
+	// into a map.
+	unmarshalHeadersFromFrame(frame []byte) (map[string]string, error)
+
+	// addHeadersToFrame returns a new frame containing the given headers. This
+	// assumes the frame still has the frame size header at the beginning.
+	addHeadersToFrame(frame []byte, headers map[string]string) ([]byte, error)
+
+	// unmarshalFrame deserializes the byte slice into frame components.
+	unmarshalFrame(frame []byte, components *frameComponents) error
+}
+
+// getMarshaler returns a protocolMarshaler for the given protocol version.
+// An error is returned if the version is not supported.
+func getMarshaler(version byte) (protocolMarshaler, error) {
+	switch version {
+	case protocolV0:
+		return v0Marshaler, nil
+	default:
+		return nil, NewFProtocolExceptionWithType(thrift.BAD_VERSION, fmt.Sprintf("frugal: unsupported protocol version %d", version))
+	}
+}
+
 // FProtocolFactory creates new FProtocol instances. It takes a
 // TProtocolFactory and a TTransport and returns an FProtocol which wraps a
 // TProtocol produced by the TProtocolFactory. The TProtocol itself wraps the
@@ -92,11 +136,103 @@ func (f *FProtocol) ReadResponseHeader(ctx *FContext) error {
 	return nil
 }
 
+// writeHeader serializes the headers and writes them to the underlying
+// transport.
 func (f *FProtocol) writeHeader(headers map[string]string) error {
-	size := int32(0)
-	for name, value := range headers {
-		size += int32(8 + len(name) + len(value))
+	buff := writeMarshaler.marshalHeaders(headers)
+	if n, err := f.Transport().Write(buff); err != nil {
+		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error writing protocol headers: %s", err))
+	} else if n != len(buff) {
+		return thrift.NewTTransportException(thrift.UNKNOWN_PROTOCOL_EXCEPTION, "frugal: failed to write complete protocol headers")
 	}
+
+	return nil
+}
+
+// readHeader deserializes headers from the given Reader.
+func readHeader(reader io.Reader) (map[string]string, error) {
+	buff := make([]byte, 1)
+	if _, err := io.ReadFull(reader, buff); err != nil {
+		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
+			return nil, err
+		}
+		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers: %s"))
+	}
+
+	marshaler, err := getMarshaler(buff[0])
+	if err != nil {
+		return nil, err
+	}
+
+	return marshaler.unmarshalHeaders(reader)
+}
+
+// getHeadersFromFrame deserializes headers from the frame into a map.
+func getHeadersFromFrame(frame []byte) (map[string]string, error) {
+	// Need at least 1 byte for the version.
+	if len(frame) == 0 {
+		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: invalid frame size 0")
+	}
+
+	marshaler, err := getMarshaler(frame[0])
+	if err != nil {
+		return nil, err
+	}
+
+	return marshaler.unmarshalHeadersFromFrame(frame[1:])
+}
+
+// addHeadersToFrame returns a new frame containing the given headers. This
+// assumes the frame still has the frame size header at the beginning.
+func addHeadersToFrame(frame []byte, headers map[string]string) ([]byte, error) {
+	// Need at least 5 bytes (4 for size and 1 for version).
+	if len(frame) < 5 {
+		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Sprintf("frugal: invalid frame size %d", len(frame)))
+	}
+
+	marshaler, err := getMarshaler(frame[4])
+	if err != nil {
+		return nil, err
+	}
+
+	return marshaler.addHeadersToFrame(frame, headers)
+}
+
+// unmarshalFrame deserializes the byte slice into frame components. This
+// assumes the frame still has the frame size header at the beginning.
+func unmarshalFrame(frame []byte) (*frameComponents, error) {
+	// Need at least 5 bytes (4 for size and 1 for version).
+	if len(frame) < 5 {
+		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Sprintf("frugal: invalid frame size %d", len(frame)))
+	}
+
+	// Read frame size.
+	frameSize := binary.BigEndian.Uint32(frame)
+
+	if uint32(len(frame[4:])) != frameSize {
+		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA,
+			fmt.Sprintf("frugal: frame size %d does not match actual size %d", frameSize, len(frame[4:])))
+	}
+
+	marshaler, err := getMarshaler(frame[4])
+	if err != nil {
+		return nil, err
+	}
+
+	components := &frameComponents{
+		frameSize:       frameSize,
+		protocolVersion: frame[4],
+	}
+	return components, marshaler.unmarshalFrame(frame[5:], components)
+}
+
+// v0ProtocolMarshaler implements the protocolMarshaler interface for v0 of the
+// Frugal protocol.
+type v0ProtocolMarshaler struct{}
+
+// marshalHeaders serializes the given headers map to a byte slice.
+func (v *v0ProtocolMarshaler) marshalHeaders(headers map[string]string) []byte {
+	size := v.calculateHeaderSize(headers)
 
 	// Header buff = [version (1 byte), size (4 bytes), headers (size bytes)]
 	// Headers = [size (4 bytes) name (size bytes) size (4 bytes) value (size bytes)*]
@@ -125,30 +261,19 @@ func (f *FProtocol) writeHeader(headers map[string]string) error {
 		}
 	}
 
-	if n, err := f.Transport().Write(buff); err != nil {
-		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error writing protocol headers: %s", err))
-	} else if n != len(buff) {
-		return thrift.NewTTransportException(thrift.UNKNOWN_PROTOCOL_EXCEPTION, "frugal: failed to write complete protocol headers")
-	}
-
-	return nil
+	return buff
 }
 
-func readHeader(reader io.Reader) (map[string]string, error) {
-	buff := make([]byte, 5)
+// unmarshalHeaders reads headers from the reader into a map.
+func (v *v0ProtocolMarshaler) unmarshalHeaders(reader io.Reader) (map[string]string, error) {
+	buff := make([]byte, 4)
 	if _, err := io.ReadFull(reader, buff); err != nil {
 		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 			return nil, err
 		}
-		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers: %s", err))
+		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers: %s"))
 	}
-
-	// Support more versions when available.
-	if buff[0] != protocolV0 {
-		return nil, NewFProtocolExceptionWithType(thrift.BAD_VERSION, fmt.Sprintf("frugal: unsupported protocol version %d", buff[0]))
-	}
-
-	size := int32(binary.BigEndian.Uint32(buff[1:]))
+	size := int32(binary.BigEndian.Uint32(buff))
 	buff = make([]byte, size)
 	if _, err := io.ReadFull(reader, buff); err != nil {
 		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
@@ -157,24 +282,67 @@ func readHeader(reader io.Reader) (map[string]string, error) {
 		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers: %s", err))
 	}
 
-	return readPairs(buff, 0, size)
+	return v.readPairs(buff, 0, size)
 }
 
-func getHeadersFromFrame(frame []byte) (map[string]string, error) {
-	if len(frame) < 5 {
-		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Sprintf("frugal: invalid frame size %d", len(frame)))
+// unmarshalHeadersFromFrame reads serialized headers from the byte slice into
+// a map.
+func (v *v0ProtocolMarshaler) unmarshalHeadersFromFrame(frame []byte) (map[string]string, error) {
+	// Need at least 4 bytes for headers size.
+	if len(frame) < 4 {
+		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Sprintf("frugal: invalid v0 frame size %d", len(frame)))
 	}
-
-	// Support more versions when available.
-	if frame[0] != protocolV0 {
-		return nil, NewFProtocolExceptionWithType(thrift.BAD_VERSION, fmt.Sprintf("frugal: unsupported protocol version %d", frame[0]))
+	size := int32(binary.BigEndian.Uint32(frame))
+	if size > int32(len(frame[4:])) {
+		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA,
+			fmt.Sprintf("frugal: v0 frame size %d does not match actual size %d", size, len(frame[4:])))
 	}
-
-	size := int32(binary.BigEndian.Uint32(frame[1:5]))
-	return readPairs(frame, 5, size+5)
+	return v.readPairs(frame, 4, size+4)
 }
 
-func readPairs(buff []byte, start, end int32) (map[string]string, error) {
+// addHeadersToFrame returns a new frame containing the given headers. This
+// assumes the frame still has the frame size header at the beginning.
+func (v *v0ProtocolMarshaler) addHeadersToFrame(frame []byte, headers map[string]string) ([]byte, error) {
+	existing, err := v.unmarshalHeadersFromFrame(frame[5:])
+	if err != nil {
+		return nil, err
+	}
+	// QUESTION: If a header already exists, should we overwrite it or return
+	// an error?
+	for name, value := range headers {
+		existing[name] = value
+	}
+	serializedHeaders := v.marshalHeaders(existing)
+	oldHeadersSize := int32(binary.BigEndian.Uint32(frame[5:]))
+	frameSize := v.calculateHeaderSize(existing) + int32(len(frame)) - oldHeadersSize
+	buff := make([]byte, frameSize)
+
+	// Add frame size.
+	binary.BigEndian.PutUint32(buff, uint32(frameSize-4))
+
+	// Add headers (version is included).
+	offset := copy(buff[4:], serializedHeaders)
+
+	// Add payload.
+	copy(buff[4+offset:], frame[9+oldHeadersSize:])
+
+	return buff, nil
+}
+
+// unmarshalFrame deserializes the byte slice into frame components.
+func (v *v0ProtocolMarshaler) unmarshalFrame(frame []byte, components *frameComponents) error {
+	headers, err := v.unmarshalHeadersFromFrame(frame)
+	if err != nil {
+		return err
+	}
+
+	components.headers = headers
+	components.payload = frame[v.calculateHeaderSize(headers)+8:]
+
+	return nil
+}
+
+func (v *v0ProtocolMarshaler) readPairs(buff []byte, start, end int32) (map[string]string, error) {
 	headers := make(map[string]string)
 	i := start
 	for i < end {
@@ -182,7 +350,7 @@ func readPairs(buff []byte, start, end int32) (map[string]string, error) {
 		nameSize := int32(binary.BigEndian.Uint32(buff[i : i+4]))
 		i += 4
 		if i > end || i+nameSize > end {
-			return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: invalid protocol header name")
+			return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: invalid v0 protocol header name")
 		}
 		name := string(buff[i : i+nameSize])
 		i += nameSize
@@ -191,7 +359,7 @@ func readPairs(buff []byte, start, end int32) (map[string]string, error) {
 		valueSize := int32(binary.BigEndian.Uint32(buff[i : i+4]))
 		i += 4
 		if i > end || i+valueSize > end {
-			return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: invalid protocol header value")
+			return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: invalid v0 protocol header value")
 		}
 		value := string(buff[i : i+valueSize])
 		i += valueSize
@@ -200,4 +368,12 @@ func readPairs(buff []byte, start, end int32) (map[string]string, error) {
 	}
 
 	return headers, nil
+}
+
+func (v *v0ProtocolMarshaler) calculateHeaderSize(headers map[string]string) int32 {
+	size := int32(0)
+	for name, value := range headers {
+		size += int32(8 + len(name) + len(value))
+	}
+	return size
 }

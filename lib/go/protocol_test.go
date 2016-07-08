@@ -2,6 +2,7 @@ package frugal
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"testing"
@@ -18,6 +19,11 @@ var (
 		119, 111, 114, 108, 100, 0, 0, 0, 5, 95, 111, 112, 105, 100, 0, 0, 0, 1, 48, 0, 0, 0,
 		4, 95, 99, 105, 100, 0, 0, 0, 21, 105, 89, 65, 71, 67, 74, 72, 66, 87, 67, 75, 76, 74,
 		66, 115, 106, 107, 100, 111, 104, 98}
+	completeFrugalFrame = []byte{0, 0, 0, 85, 0, 0, 0, 0, 59, 0, 0, 0, 5, 95, 111, 112, 105,
+		100, 0, 0, 0, 1, 48, 0, 0, 0, 4, 95, 99, 105, 100, 0, 0, 0, 5, 49, 50, 51,
+		52, 53, 0, 0, 0, 3, 102, 111, 111, 0, 0, 0, 3, 98, 97, 114, 0, 0, 0, 3, 98,
+		97, 122, 0, 0, 0, 3, 113, 117, 120, 0, 0, 0, 17, 116, 104, 105, 115, 32,
+		105, 115, 32, 97, 32, 114, 101, 113, 117, 101, 115, 116}
 	frugalHeaders = map[string]string{opID: "0", cid: "iYAGCJHBWCKLJBsjkdohb", "hello": "world"}
 
 	tProtocolFactory = thrift.NewTBinaryProtocolFactoryDefault()
@@ -185,7 +191,7 @@ func TestReadHeader(t *testing.T) {
 // Ensures getHeadersFromFrame returns an error for frames with invalid size.
 func TestGetHeadersFromFrameInvalidSize(t *testing.T) {
 	assert := assert.New(t)
-	expectedErr := NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: invalid frame size 1")
+	expectedErr := NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: invalid v0 frame size 0")
 	_, err := getHeadersFromFrame([]byte{0})
 	assert.Equal(expectedErr, err)
 }
@@ -205,4 +211,71 @@ func TestGetHeadersFromFrame(t *testing.T) {
 	headers, err := getHeadersFromFrame(basicFrame)
 	assert.Nil(err)
 	assert.Equal(basicHeaders, headers)
+}
+
+// Ensures addHeadersToFrame returns a new frame with the headers added.
+func TestAddHeadersToFrame(t *testing.T) {
+	assert := assert.New(t)
+	oldComponents, err := unmarshalFrame(completeFrugalFrame)
+	assert.Nil(err)
+	assert.Equal(byte(protocolV0), oldComponents.protocolVersion)
+	assert.Equal("bar", oldComponents.headers["foo"])
+	assert.Equal("qux", oldComponents.headers["baz"])
+	assert.Equal("0", oldComponents.headers["_opid"])
+	assert.Equal("12345", oldComponents.headers["_cid"])
+	assert.Equal([]byte("this is a request"), oldComponents.payload)
+
+	headers := map[string]string{"bat": "man", "spider": "person"}
+	newFrame, err := addHeadersToFrame(completeFrugalFrame, headers)
+	assert.Nil(err)
+
+	newComponents, err := unmarshalFrame(newFrame)
+	assert.Nil(err)
+	assert.Equal(byte(protocolV0), newComponents.protocolVersion)
+	assert.Equal("bar", newComponents.headers["foo"])
+	assert.Equal("qux", newComponents.headers["baz"])
+	assert.Equal("0", newComponents.headers["_opid"])
+	assert.Equal("12345", newComponents.headers["_cid"])
+	assert.Equal("man", newComponents.headers["bat"])
+	assert.Equal("person", newComponents.headers["spider"])
+	assert.Equal([]byte("this is a request"), newComponents.payload)
+}
+
+// Ensures addHeadersToFrame returns an error if the frame size is less than 5.
+func TestAddHeadersToFrameShortFrame(t *testing.T) {
+	assert := assert.New(t)
+	_, err := addHeadersToFrame(make([]byte, 3), make(map[string]string))
+	assert.NotNil(err)
+	assert.Equal(thrift.INVALID_DATA, err.(FProtocolException).TypeId())
+}
+
+// Ensures addHeadersToFrame returns an error if the frame has an unsupported
+// protocol version.
+func TestAddHeadersToFrameBadVersion(t *testing.T) {
+	assert := assert.New(t)
+	frame := make([]byte, 10)
+	frame[4] = 0xFF
+	_, err := addHeadersToFrame(frame, make(map[string]string))
+	assert.NotNil(err)
+	assert.Equal(thrift.BAD_VERSION, err.(FProtocolException).TypeId())
+}
+
+// Ensures addHeadersToFrame returns an error if the frame has an incorrect
+// frame size.
+func TestAddHeadersToFrameBadFrameSize(t *testing.T) {
+	assert := assert.New(t)
+	frame := make([]byte, 10)
+	binary.BigEndian.PutUint32(frame[5:], 9000)
+	frame[4] = protocolV0
+	_, err := addHeadersToFrame(frame, make(map[string]string))
+	assert.NotNil(err)
+	assert.Equal(thrift.INVALID_DATA, err.(FProtocolException).TypeId())
+}
+
+func BenchmarkAddHeadersToFrame(b *testing.B) {
+	headers := map[string]string{"bat": "man", "spider": "man", "super": "man"}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		addHeadersToFrame(completeFrugalFrame, headers)
+	}
 }
