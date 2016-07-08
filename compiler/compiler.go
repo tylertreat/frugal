@@ -117,6 +117,9 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 		warnGenWithoutFrugal(genWithFrugal)
 		g = generator.NewProgramGenerator(golang.NewGenerator(options), false)
 	case "java":
+		// TODO: Remove this once gen_with frugal is no longer experimental
+		// and is the default.
+		warnGenWithoutFrugal(genWithFrugal)
 		g = generator.NewProgramGenerator(java.NewGenerator(options), true)
 	case "py":
 		g = generator.NewProgramGenerator(python.NewGenerator(options), true)
