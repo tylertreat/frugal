@@ -47,7 +47,8 @@ var Languages = LanguageOptions{
 		"generated_annotations": "[undated|suppress] " +
 			"undated: suppress the date at @Generated annotations, " +
 			"suppress: suppress @Generated annotations entirely",
-		"async": "Generate async client code using futures",
+		"async":           "Generate async client code using futures",
+		"gen_with_frugal": "Whether to generate thrift files with frugal (experimental)",
 	},
 	"dart": Options{
 		"library_prefix": "Generate code that can be used within an existing library. " +

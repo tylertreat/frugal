@@ -41,6 +41,19 @@ const (
 	Default
 )
 
+func (f *FieldModifier) String() string {
+	switch *f {
+	case Required:
+		return "REQUIRED"
+	case Optional:
+		return "OPTIONAL"
+	case Default:
+		return "DEFAULT"
+	default:
+		panic(fmt.Sprintf("unsupported modifier: %v", *f))
+	}
+}
+
 // IsThriftPrimitive indicates if the given type is a Thrift primitive type.
 func IsThriftPrimitive(typ *Type) bool {
 	_, ok := thriftBaseTypes[typ.Name]
