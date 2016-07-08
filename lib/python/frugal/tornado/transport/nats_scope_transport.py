@@ -1,7 +1,7 @@
 from io import BytesIO
 import logging
-from threading import Lock
 import struct
+from threading import Lock
 
 from thrift.transport.TTransport import TTransportException, TMemoryBuffer
 from tornado import gen, locks
@@ -176,7 +176,7 @@ class FNatsScopeTransport(FScopeTransport):
 
     @gen.coroutine
     def flush(self):
-        if not self.isOpen():
+        if not (yield self.isOpen()):
             ex = TTransportException(TTransportException.NOT_OPEN,
                                      "Nats not connected!")
             logger.exception(ex)
