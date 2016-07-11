@@ -23,10 +23,12 @@ type FBaseProcessor struct {
 	processMap map[string]FProcessorFunction
 }
 
+// NewFBaseProcessor returns a new FBaseProcessor which FProcessors can extend.
 func NewFBaseProcessor() *FBaseProcessor {
 	return &FBaseProcessor{processMap: make(map[string]FProcessorFunction)}
 }
 
+// Process a request.
 func (f *FBaseProcessor) Process(iprot, oprot *FProtocol) error {
 	ctx, err := iprot.ReadRequestHeader()
 	if err != nil {
@@ -86,6 +88,8 @@ type fProcessorFactory struct {
 	processor FProcessor
 }
 
+// NewFProcessorFactory creates a new FProcessorFactory for creating new
+// FProcessors.
 func NewFProcessorFactory(p FProcessor) FProcessorFactory {
 	return &fProcessorFactory{processor: p}
 }

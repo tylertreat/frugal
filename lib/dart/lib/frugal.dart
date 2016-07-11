@@ -20,6 +20,7 @@ part 'src/f_subscription.dart';
 part 'src/internal/f_byte_buffer.dart';
 part 'src/internal/headers.dart';
 part 'src/internal/f_obj_to_json.dart';
+part 'src/internal/lock.dart';
 part 'src/protocol/f_protocol.dart';
 part 'src/protocol/f_protocol_factory.dart';
 part 'src/registry/f_client_registry.dart';

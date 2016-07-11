@@ -1,6 +1,6 @@
 # Example frugal file. Frugal is a superset of Thrift, meaning this file can
 # contain valid Thrift or Frugal-extended syntax.
-namespace java example
+namespace java variety.java
 
 include "base.frugal"
 

@@ -111,6 +111,14 @@ func main() {
 			Verbose:            verbose,
 		}
 
+		// Handle panics for graceful error messages.
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("Failed to generate %s:\n\t%s\n", options.File, r)
+				os.Exit(1)
+			}
+		}()
+
 		if err := compiler.Compile(options); err != nil {
 			fmt.Printf("Failed to generate %s:\n\t%s\n", options.File, err.Error())
 			os.Exit(1)
@@ -126,7 +134,7 @@ func genUsage() string {
 	usage := "generate code with a registered generator and optional parameters " +
 		"(lang[:key1=val1[,key2[,key3=val3]]])\n"
 	langKeys := make([]string, 0, len(generator.Languages))
-	for lang, _ := range generator.Languages {
+	for lang := range generator.Languages {
 		langKeys = append(langKeys, lang)
 	}
 	sort.Strings(langKeys)
