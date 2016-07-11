@@ -12,6 +12,7 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"
 	"github.com/Workiva/frugal/test/out/ValidTypes"
+	"github.com/Workiva/frugal/test/out/excepts"
 	"github.com/Workiva/frugal/test/out/validStructs"
 )
 
@@ -291,6 +292,10 @@ func (f *FBlahClient) recvBlehHandler(ctx *frugal.FContext, resultC chan<- int64
 		}
 		if result.Oops != nil {
 			errorC <- result.Oops
+			return nil
+		}
+		if result.Err2 != nil {
+			errorC <- result.Err2
 			return nil
 		}
 		resultC <- result.GetSuccess()
@@ -680,6 +685,8 @@ func (p *blahFBleh) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol
 		switch v := err2.(type) {
 		case *InvalidOperation:
 			result.Oops = v
+		case *excepts.InvalidData:
+			result.Err2 = v
 		default:
 			p.writeMu.Lock()
 			blahWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "bleh", "Internal error processing bleh: "+err2.Error())

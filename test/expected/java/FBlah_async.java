@@ -39,7 +39,7 @@ public class FBlah {
 		/**
 		 * Use this to tell the server how you feel.
 		 */
-		public long bleh(FContext ctx, Thing one, Stuff Two, java.util.List<Integer> custom_ints) throws TException, InvalidOperation;
+		public long bleh(FContext ctx, Thing one, Stuff Two, java.util.List<Integer> custom_ints) throws TException, InvalidOperation, InvalidData;
 
 		public Thing getThing(FContext ctx) throws TException;
 
@@ -80,7 +80,7 @@ public class FBlah {
 		/**
 		 * Use this to tell the server how you feel.
 		 */
-		public long bleh(FContext ctx, Thing one, Stuff Two, java.util.List<Integer> custom_ints) throws TException, InvalidOperation {
+		public long bleh(FContext ctx, Thing one, Stuff Two, java.util.List<Integer> custom_ints) throws TException, InvalidOperation, InvalidData {
 			return proxy.bleh(ctx, one, Two, custom_ints);
 		}
 
@@ -226,7 +226,7 @@ public class FBlah {
 		/**
 		 * Use this to tell the server how you feel.
 		 */
-		public long bleh(FContext ctx, Thing one, Stuff Two, java.util.List<Integer> custom_ints) throws TException, InvalidOperation {
+		public long bleh(FContext ctx, Thing one, Stuff Two, java.util.List<Integer> custom_ints) throws TException, InvalidOperation, InvalidData {
 			FProtocol oprot = this.outputProtocol;
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
 			this.transport.register(ctx, recvBlehHandler(ctx, result));
@@ -261,6 +261,9 @@ public class FBlah {
 				}
 				if (r.oops != null) {
 					throw r.oops;
+				}
+				if (r.err2 != null) {
+					throw r.err2;
 				}
 				throw new TApplicationException(TApplicationException.MISSING_RESULT, "bleh failed: unknown result");
 			} finally {
@@ -586,6 +589,8 @@ public class FBlah {
 					result.setSuccessIsSet(true);
 				} catch (InvalidOperation oops) {
 					result.oops = oops;
+				} catch (InvalidData err2) {
+					result.err2 = err2;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
 						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "bleh", "Internal error processing bleh: " + e.getMessage());

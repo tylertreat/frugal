@@ -17,6 +17,7 @@ from thrift.Thrift import TMessageType
 from tornado import gen
 from tornado.concurrent import Future
 
+import excepts
 import validStructs
 import ValidTypes
 from valid.Blah import *
@@ -176,6 +177,9 @@ class Client(Iface):
             if result.oops is not None:
                 future.set_exception(result.oops)
                 return
+            if result.err2 is not None:
+                future.set_exception(result.err2)
+                return
             if result.success is not None:
                 future.set_result(result.success)
                 return
@@ -328,6 +332,8 @@ class _bleh(FProcessorFunction):
             result.success = yield gen.maybe_future(self._handler.bleh(ctx, args.one, args.Two, args.custom_ints))
         except InvalidOperation as oops:
             result.oops = oops
+        except excepts.ttypes.InvalidData as err2:
+            result.err2 = err2
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('bleh', TMessageType.REPLY, 0)
