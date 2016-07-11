@@ -283,6 +283,10 @@ func (s *Service) ReferencedIncludes() []string {
 		if method.ReturnType != nil {
 			includesSet, includes = addInclude(includesSet, includes, method.ReturnType)
 		}
+		// Check exceptions.
+		for _, exception := range method.Exceptions {
+			includesSet, includes = addInclude(includesSet, includes, exception.Type)
+		}
 	}
 
 	return includes
