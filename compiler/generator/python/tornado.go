@@ -268,7 +268,7 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 			method.Name, t.generateServerArgs(method.Arguments))
 	}
 	for _, err := range method.Exceptions {
-		contents += tabtab + fmt.Sprintf("except %s as %s:\n", err.Type, err.Name)
+		contents += tabtab + fmt.Sprintf("except %s as %s:\n", t.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
 	if !method.Oneway {
