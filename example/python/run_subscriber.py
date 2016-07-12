@@ -45,12 +45,11 @@ def main():
     subscriber = EventsSubscriber(provider)
 
     def event_handler(ctx, req):
-        print "Received an event with ID: {} and Message {}".format(req.ID,
-                                                                    req.Message)
+        root.info("Received an event with ID: {} and Message {}".format(req.ID, req.Message))
 
     yield subscriber.subscribe_EventCreated("barUser", event_handler)
 
-    logging.info("Subscriber starting...")
+    root.info("Subscriber starting...")
 
 if __name__ == '__main__':
     io_loop = ioloop.IOLoop.instance()

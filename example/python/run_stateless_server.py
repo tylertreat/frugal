@@ -49,7 +49,7 @@ def main():
                                          processor,
                                          prot_factory)
 
-    logging.info("Starting server...")
+    root.info("Starting server...")
 
     yield server.serve()
 

@@ -59,7 +59,7 @@ def main():
                                 prot_factory,
                                 heartbeat_interval)
 
-    logging.info("Starting server...")
+    root.info("Starting server...")
 
     yield server.serve()
 
