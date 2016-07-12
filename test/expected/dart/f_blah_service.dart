@@ -9,6 +9,7 @@ import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
 
+import 'package:excepts/excepts.dart' as t_excepts;
 import 'package:validStructs/validStructs.dart' as t_validStructs;
 import 'package:ValidTypes/ValidTypes.dart' as t_ValidTypes;
 import 'package:valid/valid.dart' as t_valid;
@@ -166,6 +167,10 @@ class FBlahClient implements FBlah {
 
         if (result.oops != null) {
           controller.addError(result.oops);
+          return;
+        }
+        if (result.err2 != null) {
+          controller.addError(result.err2);
           return;
         }
         throw new thrift.TApplicationError(

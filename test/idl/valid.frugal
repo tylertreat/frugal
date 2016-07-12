@@ -2,6 +2,7 @@
 
 namespace java foo
 
+include "excepts.frugal"
 include "validStructs.frugal"
 include "ValidTypes.frugal"
 
@@ -26,7 +27,7 @@ service Blah {
     /**@ Use this to ping the server. */
     void ping(),
     /**@ Use this to tell the server how you feel. */
-    i64 bleh(1:Thing one, 2:Stuff Two, 3:list<Int> custom_ints) throws (1: InvalidOperation oops),
+    i64 bleh(1:Thing one, 2:Stuff Two, 3:list<Int> custom_ints) throws (1: InvalidOperation oops, 2: excepts.InvalidData err2),
 
     validStructs.Thing getThing(),
     ValidTypes.MyInt getMyInt(),

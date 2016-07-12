@@ -427,3 +427,18 @@ func (g *Generator) getPythonTypeName(t *parser.Type) string {
 		return t.Name
 	}
 }
+
+func (g *Generator) qualifiedTypeName(t *parser.Type) string {
+	param := t.ParamName()
+	include := t.IncludeName()
+
+	if include == "" {
+		return param
+	}
+
+	namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+	if !ok {
+		namespace = include
+	}
+	return fmt.Sprintf("%s.ttypes.%s", namespace, param)
+}
