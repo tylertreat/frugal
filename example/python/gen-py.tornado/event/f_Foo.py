@@ -262,7 +262,7 @@ class _blah(FProcessorFunction):
             result.success = yield gen.maybe_future(self._handler.blah(ctx, args.num, args.Str, args.event))
         except AwesomeException as awe:
             result.awe = awe
-        except base.api_exception as api:
+        except base.ttypes.api_exception as api:
             result.api = api
         with self._lock:
             oprot.write_response_headers(ctx)
