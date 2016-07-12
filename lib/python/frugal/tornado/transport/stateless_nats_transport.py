@@ -72,7 +72,8 @@ class TStatelessNatsTransport(TTornadoTransportBase):
             return
 
         yield self._nats_client.unsubscribe(self._sub_id)
-        self._is_open = False
+        with (yield self._open_lock.acquire()):
+            self._is_open = False
 
     @gen.coroutine
     def flush(self):
