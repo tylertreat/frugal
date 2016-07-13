@@ -249,16 +249,10 @@ func (v *v0ProtocolMarshaler) marshalHeaders(headers map[string]string) []byte {
 	for name, value := range headers {
 		binary.BigEndian.PutUint32(buff[i:i+4], uint32(len(name)))
 		i += 4
-		for k := 0; k < len(name); k++ {
-			buff[i] = name[k]
-			i++
-		}
+		i += copy(buff[i:], name)
 		binary.BigEndian.PutUint32(buff[i:i+4], uint32(len(value)))
 		i += 4
-		for k := 0; k < len(value); k++ {
-			buff[i] = value[k]
-			i++
-		}
+		i += copy(buff[i:], value)
 	}
 
 	return buff
