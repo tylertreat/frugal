@@ -66,7 +66,8 @@ class TNatsServiceTransport(TTornadoTransportBase):
             listen_to: subject to listen on
             write_to: subject to write to
         """
-        super(TNatsServiceTransport, self).__init__(kwargs['nats_client'])
+        super(TNatsServiceTransport, self).__init__()
+        self._nats_client = kwargs['nats_client']
         self._io_loop = kwargs.get('io_loop', ioloop.IOLoop.current())
 
         self._connection_subject = kwargs.get('connection_subject', None)
@@ -81,6 +82,12 @@ class TNatsServiceTransport(TTornadoTransportBase):
         self._missed_heartbeats = 0
 
         self._wbuf = BytesIO()
+
+    @gen.coroutine
+    def isOpen(self):
+        with (yield self._open_lock.acquire()):
+            # Tornado requires we raise a special exception to return a value.
+            raise gen.Return(self._is_open and self._nats_client.is_connected())
 
     @gen.coroutine
     def open(self):

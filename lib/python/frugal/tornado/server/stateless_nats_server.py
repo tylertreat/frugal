@@ -2,6 +2,7 @@ import logging
 import struct
 
 from thrift.Thrift import TException
+from thrift.transport.TTransport import TMemoryBuffer
 from tornado import gen
 
 from frugal.server import FServer
@@ -46,7 +47,7 @@ class FStatelessNatsTornadoServer(FServer):
             self._on_message_callback
         )
 
-        logger.debug("Frugal server started.")
+        logger.info("Frugal server running...")
 
     @gen.coroutine
     def stop(self):
@@ -74,23 +75,29 @@ class FStatelessNatsTornadoServer(FServer):
             logger.warn("Discarding invalid NATS request (no reply)")
             return
 
+        frame_size = struct.unpack('!I', msg.data[:4])[0]
+        if frame_size > MAX_MESSAGE_SIZE - 4:
+            logger.warning("Invalid frame size, dropping message.")
+            return
+
         # Read and process frame (exclude first 4 bytes which
         # represent frame size).
         iprot = self._iprot_factory.get_protocol(
-            FBoundedMemoryBuffer(MAX_MESSAGE_SIZE, value=msg.data[4:])
+            TMemoryBuffer(msg.data[4:])
         )
-        out_transport = FBoundedMemoryBuffer(MAX_MESSAGE_SIZE)
+        out_transport = FBoundedMemoryBuffer(MAX_MESSAGE_SIZE - 4)
         oprot = self._oprot_factory.get_protocol(out_transport)
 
         try:
             self._processor.process(iprot, oprot)
         except TException as ex:
             logger.exception(ex)
+            return
 
         if len(out_transport) == 0:
             return
 
         data = out_transport.getvalue()
-        buff = struct.pack('!I', len(data) + 4)
+        buff = struct.pack('!I', len(data))
 
         yield self._nats_client.publish(reply_to, buff + data)

@@ -72,7 +72,6 @@ class TestHeaders(unittest.TestCase):
     def test_read_pairs(self):
         buff = b'\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00\x00\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId'
         size = unpack_from('!I', buff[1:5])[0]
-        print("size {}".format(size))
 
         headers = self.headers._read_pairs(buff, 5, size + 5)
 
@@ -82,7 +81,6 @@ class TestHeaders(unittest.TestCase):
     def test_read_pars_bad_key_throws_error(self):
         buff = b'\x00\x00\x00\x00 \x00\x00\x00\x20_opid\x00\x00\x00\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId'
         size = unpack_from('!I', buff[1:5])[0]
-        print("size {}".format(size))
 
         with self.assertRaises(FProtocolException) as ex:
             self.headers._read_pairs(buff, 5, size + 5)

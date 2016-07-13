@@ -4,22 +4,15 @@ from thrift.transport.TTransport import TTransportBase, TTransportException
 from tornado import gen, locks
 
 from frugal.exceptions import FMessageSizeException
-from frugal.tornado.transport.nats_scope_transport import MAX_MESSAGE_SIZE
 
 logger = logging.getLogger(__name__)
 
 
 class TTornadoTransportBase(TTransportBase, object):
 
-    def __init__(self, nats_client):
-        self._nats_client = nats_client
+    def __init__(self, max_message_size=1024*1024):
         self._open_lock = locks.Lock()
-
-    @gen.coroutine
-    def isOpen(self):
-        with (yield self._open_lock.acquire()):
-            # Tornado requires we raise a special exception to return a value.
-            raise gen.Return(self._is_open and self._nats_client.is_connected())
+        self._max_message_size = max_message_size
 
     def set_execute_callback(self, execute):
         """Set the message callback execute function
@@ -34,8 +27,12 @@ class TTornadoTransportBase(TTransportBase, object):
 
     @gen.coroutine
     def write(self, buff):
-        """Writes the bytes to a buffer.
-        Throws FMessageSizeException if the buffer exceeds 1MB"""
+        """Writes the bytes to a buffer.  Throws FMessageSizeException if
+        the buffer exceeds limit.
+
+        Args:
+            buff: buffer to append to the write buffer.
+        """
         if not (yield self.isOpen()):
             ex = TTransportException(TTransportException.NOT_OPEN,
                                      "Transport not open!")
@@ -44,8 +41,8 @@ class TTornadoTransportBase(TTransportBase, object):
 
         size = len(buff) + len(self._wbuf.getvalue())
 
-        if size > MAX_MESSAGE_SIZE:
-            ex = FMessageSizeException("Message exceeds NATS max message size")
+        if size > self._max_message_size:
+            ex = FMessageSizeException("Message exceeds max message size")
             logger.exception(ex)
             raise ex
 

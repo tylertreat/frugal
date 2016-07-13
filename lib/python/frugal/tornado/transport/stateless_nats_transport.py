@@ -26,6 +26,7 @@ class TStatelessNatsTransport(TTornadoTransportBase):
             nats_client: connected instance of nats.io.Client
             subject: subject to publish to
         """
+        super(TStatelessNatsTransport, self).__init__()
         self._nats_client = nats_client
         self._subject = subject
         self._inbox = inbox or new_inbox()
@@ -34,6 +35,12 @@ class TStatelessNatsTransport(TTornadoTransportBase):
         self._execute = None
         self._sub_id = None
         self._open_lock = locks.Lock()
+
+    @gen.coroutine
+    def isOpen(self):
+        with (yield self._open_lock.acquire()):
+            # Tornado requires we raise a special exception to return a value.
+            raise gen.Return(self._is_open and self._nats_client.is_connected())
 
     @gen.coroutine
     def open(self):
