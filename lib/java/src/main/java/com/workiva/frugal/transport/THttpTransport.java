@@ -31,22 +31,29 @@ import org.slf4j.LoggerFactory;
  */
 public class THttpTransport extends TTransport {
 
-    // Controls how many responses to buffer.
-    private static final int FRAME_BUFFER_SIZE = 64;
+    // Controls how many responses to buffer
+    private static final int FRAME_BUFFER_SIZE = 5;
+
+    // Frame buffer poison pill
     protected static final byte[] FRAME_BUFFER_CLOSED = new byte[0];
+
+    // Logger
     private static final Logger LOGGER = LoggerFactory.getLogger(THttpTransport.class);
 
-    private CloseableHttpClient httpClient;
-    private String url;
-    private int requestSizeLimit;
-    private int responseSizeLimit;
-    protected ArrayBlockingQueue<byte[]> frameBuffer;
+    // Immutable
+    private final CloseableHttpClient httpClient;
+    private final String url;
+    private final int requestSizeLimit;
+    private final int responseSizeLimit;
+    protected final ArrayBlockingQueue<byte[]> frameBuffer;
+    private final ByteArrayOutputStream requestBuffer;
+
+    // Mutable
     private byte[] currentFrame = new byte[0];
     private int readPos;
-    private ByteArrayOutputStream requestBuffer;
     private boolean isOpen;
 
-    public THttpTransport(CloseableHttpClient httpClient, String url,
+    private THttpTransport(CloseableHttpClient httpClient, String url,
                           int requestSizeLimit, int responseSizeLimit) {
         this.httpClient = httpClient;
         this.url = url;
@@ -56,8 +63,60 @@ public class THttpTransport extends TTransport {
         this.requestBuffer = new ByteArrayOutputStream();
     }
 
-    public THttpTransport(CloseableHttpClient httpClient, String url) {
-        this(httpClient, url, 0, 0);
+    /**
+     * Builder for configuring and construction THttpTransport instances.
+     */
+    public static class Builder {
+        private final CloseableHttpClient httpClient;
+        private final String url;
+        private int requestSizeLimit;
+        private int responseSizeLimit;
+
+        /**
+         * Create a new Builder which create THttpTransports that communicate with a server
+         * at the given url.
+         *
+         * @param httpClient    HTTP client
+         * @param url           Server URL
+         */
+        public Builder(CloseableHttpClient httpClient, String url) {
+            this.httpClient = httpClient;
+            this.url = url;
+        }
+
+        /**
+         * Adds a request size limit to the Builder. If non-positive, there will
+         * be no request size limit (the default behavior).
+         *
+         * @param requestSizeLimit Size limit for outgoing requests.
+         * @return Builder
+         */
+        public Builder withRequestSizeLimit(int requestSizeLimit) {
+            this.requestSizeLimit = requestSizeLimit;
+            return this;
+        }
+
+        /**
+         * Adds a response size limit to the Builder. If non-positive, there will
+         * be no response size limit (the default behavior).
+         *
+         * @param responseSizeLimit Size limit for incoming responses.
+         * @return Builder
+         */
+        public Builder withResponseSizeLimit(int responseSizeLimit) {
+            this.responseSizeLimit = responseSizeLimit;
+            return this;
+        }
+
+        /**
+         * Creates new configured THttpTransport.
+         *
+         * @return THttpTransport
+         */
+        public THttpTransport build() {
+             return new THttpTransport(this.httpClient, this.url,
+                     this.requestSizeLimit, this.responseSizeLimit);
+        }
     }
 
     /**
@@ -92,7 +151,7 @@ public class THttpTransport extends TTransport {
         try {
             frameBuffer.put(FRAME_BUFFER_CLOSED);
         } catch (InterruptedException e) {
-            LOGGER.warn("NATS transport could not close frame buffer: " + e.getMessage());
+            LOGGER.warn("HTTP transport could not close frame buffer: " + e.getMessage());
         }
         isOpen = false;
     }
@@ -108,7 +167,7 @@ public class THttpTransport extends TTransport {
      */
     @Override
     public int read(byte[] buf, int off, int len) throws TTransportException {
-        if (!isOpen) {
+        if (!isOpen()) {
             throw new TTransportException(TTransportException.NOT_OPEN, "read: HTTP transport not open");
         }
 
@@ -145,7 +204,7 @@ public class THttpTransport extends TTransport {
      */
     @Override
     public void write(byte[] buf, int off, int len) throws TTransportException {
-        if (!isOpen) {
+        if (!isOpen()) {
             throw new TTransportException(TTransportException.NOT_OPEN, "write: HTTP transport not open");
         }
 
@@ -165,7 +224,7 @@ public class THttpTransport extends TTransport {
      */
     @Override
     public void flush() throws TTransportException {
-        if (!isOpen) {
+        if (!isOpen()) {
             throw new TTransportException(TTransportException.NOT_OPEN, "flush: HTTP transport not open");
         }
 
@@ -200,9 +259,9 @@ public class THttpTransport extends TTransport {
         }
     }
 
-    private byte[] makeRequest(byte[] requestPaylod) throws TTransportException {
+    private byte[] makeRequest(byte[] requestPayload) throws TTransportException {
         // Encode request payload
-        String encoded = Base64.encodeBase64String(requestPaylod);
+        String encoded = Base64.encodeBase64String(requestPayload);
         StringEntity requestEntity = new StringEntity(encoded, ContentType.create("application/x-frugal", "utf-8"));
 
         // Set headers and payload
@@ -223,39 +282,37 @@ public class THttpTransport extends TTransport {
                     "http request failed: " + e.getMessage());
         }
 
-        // Response too large
-        int status = response.getStatusLine().getStatusCode();
-        if (status == HttpStatus.SC_REQUEST_TOO_LONG) {
-           throw new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE,
-                   "response was too large for the transport");
-        }
-
-        // Decode body
-        String responseBody = "";
         try {
+            // Response too large
+            int status = response.getStatusLine().getStatusCode();
+            if (status == HttpStatus.SC_REQUEST_TOO_LONG) {
+                throw new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE,
+                        "response was too large for the transport");
+            }
+
+            // Decode body
+            String responseBody = "";
             HttpEntity responseEntity = response.getEntity();
             if (responseEntity != null) {
                 responseBody = EntityUtils.toString(responseEntity, "utf-8");
             }
+            // Check bad status code
+            if (status >= 300) {
+                throw new TTransportException(TTransportException.UNKNOWN,
+                        "response errored with code " + status + " and message " + responseBody);
+            }
+            // Decode and return response body
+            return Base64.decodeBase64(responseBody);
+
         } catch (IOException e) {
-            throw new TTransportException( TTransportException.UNKNOWN,
+            throw new TTransportException(TTransportException.UNKNOWN,
                     "could not decode response body: " + e.getMessage());
         } finally {
             try {
                 response.close();
             } catch (IOException e) {
-                throw new TTransportException(TTransportException.UNKNOWN,
-                        "could not close server response: " + e.getMessage());
+                LOGGER.warn("could not close server response: " + e.getMessage());
             }
         }
-
-        // Check bad status code
-        if (status >= 300) {
-            throw new TTransportException(TTransportException.UNKNOWN,
-                    "response errored with code " + status + " and message " + responseBody);
-        }
-
-        // Decode and return response body
-        return Base64.decodeBase64(responseBody);
     }
 }

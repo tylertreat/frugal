@@ -31,7 +31,7 @@ public class THttpTransportTest {
     @Before
     public void setUp() {
         client = mock(CloseableHttpClient.class);
-        transport = new THttpTransport(client, url);
+        transport = new THttpTransport.Builder(client, url).build();
     }
 
     @Test
@@ -80,7 +80,7 @@ public class THttpTransportTest {
     @Test(expected = FMessageSizeException.class)
     public void testWrite_sizeException() throws TTransportException {
         int requestSizeLimit = 1024 * 4;
-        transport = new THttpTransport(client, url, requestSizeLimit, 0);
+        transport = new THttpTransport.Builder(client, url).withRequestSizeLimit(requestSizeLimit).build();
         transport.open();
         transport.write(new byte[requestSizeLimit + 1]);
     }
@@ -88,7 +88,7 @@ public class THttpTransportTest {
     @Test
     public void testWriteFlush() throws TTransportException, IOException {
         int responseSizeLimit = 1024 * 4;
-        transport = new THttpTransport(client, url, 0, responseSizeLimit);
+        transport = new THttpTransport.Builder(client, url).withResponseSizeLimit(responseSizeLimit).build();
         transport.open();
 
         byte[] buff = "helloserver".getBytes();
@@ -144,7 +144,7 @@ public class THttpTransportTest {
     @Test(expected = FMessageSizeException.class)
     public void testFlush_responseTooLarge() throws TTransportException, IOException {
         int responseSizeLimit = 1024 * 4;
-        transport = new THttpTransport(client, url, 0, responseSizeLimit);
+        transport = new THttpTransport.Builder(client, url).withResponseSizeLimit(responseSizeLimit).build();
         transport.open();
 
         byte[] buff = "helloserver".getBytes();
@@ -161,8 +161,7 @@ public class THttpTransportTest {
 
     @Test(expected = TTransportException.class)
     public void testFlush_responseBadStatus() throws TTransportException, IOException {
-        int responseSizeLimit = 1024 * 4;
-        transport = new THttpTransport(client, url, 0, responseSizeLimit);
+        transport = new THttpTransport.Builder(client, url).build();
         transport.open();
 
         byte[] buff = "helloserver".getBytes();
@@ -179,8 +178,7 @@ public class THttpTransportTest {
 
     @Test(expected = TTransportException.class)
     public void testFlush_badResponseLength() throws TTransportException, IOException {
-        int responseSizeLimit = 1024 * 4;
-        transport = new THttpTransport(client, url, 0, responseSizeLimit);
+        transport = new THttpTransport.Builder(client, url).build();
         transport.open();
 
         byte[] buff = "helloserver".getBytes();
@@ -202,8 +200,7 @@ public class THttpTransportTest {
 
     @Test(expected = TTransportException.class)
     public void testFlush_missingData() throws TTransportException, IOException {
-        int responseSizeLimit = 1024 * 4;
-        transport = new THttpTransport(client, url, 0, responseSizeLimit);
+        transport = new THttpTransport.Builder(client, url).build();
         transport.open();
 
         byte[] buff = "helloserver".getBytes();
