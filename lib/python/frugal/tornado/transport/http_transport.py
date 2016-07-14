@@ -3,6 +3,7 @@ import httplib
 from io import BytesIO
 import logging
 import struct
+from threading import Lock
 
 from thrift.transport.TTransport import TTransportBase
 from thrift.transport.TTransport import TTransportException
@@ -34,6 +35,7 @@ class FHttpTransport(TTransportBase):
         self._request_capacity = request_capacity
         self._http = None
         self._wbuf = BytesIO()
+        self._open_lock = Lock()
 
         # create headers
         self._headers = {
@@ -56,20 +58,23 @@ class FHttpTransport(TTransportBase):
 
     def isOpen(self):
         """True if the transport is open, False otherwise."""
-        return self._http is not None
+        with self._open_lock:
+            return self._http is not None
 
     @gen.coroutine
     def open(self):
         """Opens the transport."""
-        if self._http is None:
-            self._http = HTTPClient()
+        with self._open_lock:
+            if self._http is None:
+                self._http = HTTPClient()
 
     @gen.coroutine
     def close(self):
         """Closes the transport."""
-        if self._http is not None:
-            self._http.close()
-            self._http = None
+        with self._open_lock:
+            if self._http is not None:
+                self._http.close()
+                self._http = None
 
     def read(self, sz):
         """You should not call read on the HTTP transport"""
