@@ -245,7 +245,7 @@ public class FClientRegistryTest {
                         FContext context = new FContext();
                         context.setOpId(opId);
 
-                        byte[] frame = makeFrame(context);
+                        byte[] frame = mockFrame(context);
                         registry.execute(frame);
                         registry.unregister(context);
 
@@ -256,15 +256,6 @@ public class FClientRegistryTest {
                     throw new RuntimeException(e);
                 }
 
-            }
-
-            private byte[] makeFrame(FContext context) throws TException, UnsupportedEncodingException {
-                byte[] headers = Headers.encode(context.getRequestHeaders());
-                byte[] message = "hello world".getBytes("UTF-8");
-                byte[] frame = new byte[headers.length + message.length];
-                System.arraycopy(headers, 0, frame, 0, headers.length);
-                System.arraycopy(message, 0, frame, headers.length, message.length);
-                return frame;
             }
 
         }
