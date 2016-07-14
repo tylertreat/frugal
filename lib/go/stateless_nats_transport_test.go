@@ -248,7 +248,7 @@ func TestStatelessNatsTransportFlush(t *testing.T) {
 	assert.Equal(t, frame, msg.Data)
 }
 
-func newStatelessClientAndServer(t *testing.T) (*statelessNatsTTransport, *FStatelessNatsServer, *nats.Conn) {
+func newStatelessClientAndServer(t *testing.T) (*statelessNatsFTransport, *FStatelessNatsServer, *nats.Conn) {
 	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
 	if err != nil {
 		t.Fatal(err)
@@ -270,5 +270,5 @@ func newStatelessClientAndServer(t *testing.T) (*statelessNatsTTransport, *FStat
 	}()
 	time.Sleep(10 * time.Millisecond)
 	tr := NewStatelessNatsTTransport(conn, "foo", "bar")
-	return tr.(*statelessNatsTTransport), server.(*FStatelessNatsServer), conn
+	return tr.(*statelessNatsFTransport), server.(*FStatelessNatsServer), conn
 }
