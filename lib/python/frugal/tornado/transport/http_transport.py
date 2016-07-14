@@ -3,21 +3,19 @@ import httplib
 from io import BytesIO
 import logging
 import struct
-from threading import Lock
 
-from thrift.transport.TTransport import TTransportBase
 from thrift.transport.TTransport import TTransportException
 from tornado import gen
 from tornado.httpclient import HTTPClient
 from tornado.httpclient import HTTPError
 from tornado.httpclient import HTTPRequest
 
-from frugal.exceptions import FMessageSizeException
+from frugal.tornado.transport import TTornadoTransportBase
 
 logger = logging.getLogger(__name__)
 
 
-class FHttpTransport(TTransportBase):
+class FHttpTransport(TTornadoTransportBase):
     def __init__(self, url, request_capacity=0, response_capacity=0):
         """
         Create an HTTP transport.
@@ -31,11 +29,10 @@ class FHttpTransport(TTransportBase):
                                   response. Set to 0 for no size restrictions.
         :type response_capacity: int
         """
+        super(FHttpTransport, self).__init__(max_message_size=request_capacity)
         self._url = url
-        self._request_capacity = request_capacity
         self._http = None
         self._wbuf = BytesIO()
-        self._open_lock = Lock()
 
         # create headers
         self._headers = {
@@ -46,56 +43,29 @@ class FHttpTransport(TTransportBase):
         if response_capacity > 0:
             self._headers['x-frugal-payload-limit'] = str(response_capacity)
 
-        self._callback = None
+        self._execute = None
 
-    def set_execute_callback(self, callback):
-        """
-        Set a callback to be executed with the response body.
-
-        :param callback: The callback to be executed.
-        """
-        self._callback = callback
-
+    @gen.coroutine
     def isOpen(self):
         """True if the transport is open, False otherwise."""
-        with self._open_lock:
-            return self._http is not None
+        with (yield self._open_lock.acquire()):
+            # Tornado requires we raise a special exception to return a value.
+            raise gen.Return(self._http is not None)
 
     @gen.coroutine
     def open(self):
         """Opens the transport."""
-        with self._open_lock:
+        with (yield self._open_lock.acquire()):
             if self._http is None:
                 self._http = HTTPClient()
 
     @gen.coroutine
     def close(self):
         """Closes the transport."""
-        with self._open_lock:
+        with (yield self._open_lock.acquire()):
             if self._http is not None:
                 self._http.close()
                 self._http = None
-
-    def read(self, sz):
-        """You should not call read on the HTTP transport"""
-        raise NotImplementedError('read should not be called')
-
-    def write(self, buf):
-        """
-        Write the given data to the transport's buffer.
-
-        :param buf: The data to write to the transport.
-        """
-        if len(self._wbuf.getvalue()) + len(buf) > self._request_capacity > 0:
-            size = len(self._wbuf.getvalue()) + len(buf)
-            # clear
-            self._wbuf = BytesIO()
-            message = 'message exceeded {0} bytes, was {1} bytes'.format(
-                    self._request_capacity, size
-            )
-            raise FMessageSizeException(message=message)
-
-        self._wbuf.write(buf)
 
     @gen.coroutine
     def flush(self):
@@ -135,4 +105,7 @@ class FHttpTransport(TTransportBase):
             # One-way method, drop response
             return
 
-        self._callback(decoded)
+        if not self._execute:
+            raise TTransportException(type=TTransportException.UNKNOWN,
+                                      message='callback is not set')
+        self._execute(decoded)
