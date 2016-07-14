@@ -61,13 +61,15 @@ class FHttpTransport(TTransportBase):
     @gen.coroutine
     def open(self):
         """Opens the transport."""
-        self._http = HTTPClient()
+        if self._http is None:
+            self._http = HTTPClient()
 
     @gen.coroutine
     def close(self):
         """Closes the transport."""
         if self._http is not None:
             self._http.close()
+            self._http = None
 
     def read(self, sz):
         """You should not call read on the HTTP transport"""
