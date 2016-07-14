@@ -97,7 +97,7 @@ def run_client(nats_client, prot_factory):
     http_tornado_transport = transport_factory.get_transport(http_transport)
 
     try:
-        http_tornado_transport.open()
+        yield http_tornado_transport.open()
     except TTransportException as ex:
         logging.error(ex)
         raise gen.Return()
