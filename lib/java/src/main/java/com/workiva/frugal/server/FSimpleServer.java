@@ -70,6 +70,7 @@ public class FSimpleServer implements FServer {
     }
 
     public void serve() throws TException {
+        tServerTransport.listen();
         acceptLoop();
     }
 

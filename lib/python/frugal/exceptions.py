@@ -28,6 +28,12 @@ class FProtocolException(FException):
         self.type = type
 
 
+class FExecuteCallbackNotSet(FException):
+
+    def __init__(self, message=None):
+        super(FExecuteCallbackNotSet, self).__init__(message)
+
+
 class FMessageSizeException(FException):
 
     def __init__(self, message=None):

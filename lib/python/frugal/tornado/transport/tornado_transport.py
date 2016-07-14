@@ -79,8 +79,9 @@ class FMuxTornadoTransport(FTransport):
     def write(self, buff):
         self._transport.write(buff)
 
+    @gen.coroutine
     def flush(self):
-        self._transport.flush()
+        yield self._transport.flush()
 
 
 class FMuxTornadoTransportFactory(FTransportFactory):
