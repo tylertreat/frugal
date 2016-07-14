@@ -15,7 +15,8 @@ from frugal.provider import FScopeProvider
 from frugal.tornado.transport import (
     FMuxTornadoTransportFactory,
     FNatsScopeTransportFactory,
-    TNatsServiceTransport
+    TNatsServiceTransport,
+    TStatelessNatsTransport
 )
 
 from event.f_Events_publisher import EventsPublisher
@@ -50,45 +51,49 @@ def main():
     prot_factory = FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
 
     if "-client" in sys.argv or len(sys.argv) == 1:
-        logging.debug("Running FFooClient")
+        root.debug("Running FFooClient")
         yield run_client(nats_client, prot_factory)
     if "-publisher" in sys.argv or len(sys.argv) == 1:
-        logging.debug("Running EventsPublisher")
+        root.debug("Running EventsPublisher")
         yield run_publisher(nats_client, prot_factory)
+    if "-stateless" in sys.argv:
+        root.debug("Running Stateless FFooClient")
+        yield run_client(nats_client, prot_factory, stateless=True)
 
     yield nats_client.close()
 
 
 @gen.coroutine
-def run_client(nats_client, prot_factory):
+def run_client(nats_client, prot_factory, stateless=False):
     transport_factory = FMuxTornadoTransportFactory()
-    nats_transport = TNatsServiceTransport.Client(nats_client, "foo", 60000, 5)
+    nats_transport = (TStatelessNatsTransport(nats_client, "foo") if stateless
+        else TNatsServiceTransport.Client(nats_client, "foo", 60000, 5))
     tornado_transport = transport_factory.get_transport(nats_transport)
 
     try:
         yield tornado_transport.open()
     except TTransportException as ex:
-        logging.error(ex)
+        root.error(ex)
         raise gen.Return()
 
     foo_client = FFooClient(tornado_transport, prot_factory,
                             middleware=logging_middleware)
 
-    print 'oneWay()'
+    root.info('oneWay()')
     foo_client.oneWay(FContext(), 99, {99: "request"})
 
-    print 'basePing()'
+    root.info('basePing()')
     yield foo_client.basePing(FContext())
 
-    print 'ping()'
+    root.info('ping()')
     yield foo_client.ping(FContext())
 
     ctx = FContext()
     event = Event(42, "hello world")
-    print 'blah()'
+    root.info('blah()')
     b = yield foo_client.blah(ctx, 100, "awesomesauce", event)
-    print 'Blah response {}'.format(b)
-    print 'Response header foo: {}'.format(ctx.get_response_header("foo"))
+    root.info('Blah response {}'.format(b))
+    root.info('Response header foo: {}'.format(ctx.get_response_header("foo")))
 
     yield tornado_transport.close()
 

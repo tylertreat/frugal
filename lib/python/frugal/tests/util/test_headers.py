@@ -46,10 +46,8 @@ class TestHeaders(unittest.TestCase):
 
         frame = b'\x00'
 
-        try:
+        with self.assertRaises(FProtocolException) as ex:
             self.headers.decode_from_frame(frame)
-            self.fail()
-        except FProtocolException as ex:
             self.assertEquals(FProtocolException.INVALID_DATA, ex.type)
             self.assertEquals("Invalid frame size: 1", ex.message)
 
@@ -57,10 +55,8 @@ class TestHeaders(unittest.TestCase):
 
         frame = b'\x00\x00\x00\x00\x01\x00\x00\x00\x00'
 
-        try:
+        with self.assertRaises(FProtocolException) as ex:
             self.headers.decode_from_frame(frame)
-            self.fail()
-        except FProtocolException as ex:
             self.assertEquals(FProtocolException.BAD_VERSION, ex.type)
             self.assertEquals("Wrong Frugal version. Found 1, wanted 0.",
                               ex.message)
@@ -76,7 +72,6 @@ class TestHeaders(unittest.TestCase):
     def test_read_pairs(self):
         buff = b'\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00\x00\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId'
         size = unpack_from('!I', buff[1:5])[0]
-        print("size {}".format(size))
 
         headers = self.headers._read_pairs(buff, 5, size + 5)
 
@@ -86,22 +81,17 @@ class TestHeaders(unittest.TestCase):
     def test_read_pars_bad_key_throws_error(self):
         buff = b'\x00\x00\x00\x00 \x00\x00\x00\x20_opid\x00\x00\x00\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId'
         size = unpack_from('!I', buff[1:5])[0]
-        print("size {}".format(size))
 
-        try:
+        with self.assertRaises(FProtocolException) as ex:
             self.headers._read_pairs(buff, 5, size + 5)
-        except FProtocolException as ex:
             self.assertEquals(FProtocolException.INVALID_DATA, ex.type)
             self.assertEquals("invalid protocol header name size: 32", ex.message)
 
     def test_read_pars_bad_value_throws(self):
         buff = b'\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00\x01\x000\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId'
         size = unpack_from('!I', buff[1:5])[0]
-        print("size {}".format(size))
-
-        try:
+        with self.assertRaises(FProtocolException) as ex:
             self.headers._read_pairs(buff, 5, size + 5)
-        except FProtocolException as ex:
             self.assertEquals(FProtocolException.INVALID_DATA, ex.type)
             self.assertEquals("invalid protocol header value size: 256",
                               ex.message)

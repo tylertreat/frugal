@@ -100,7 +100,7 @@ class FClientRegistry(FRegistry):
             callback: function to register.
         """
         with self._handlers_lock:
-            if context._get_op_id() in self._handlers:
+            if str(context._get_op_id()) in self._handlers:
                 ex = FException("context already registered")
                 logger.exception(ex)
                 raise ex
