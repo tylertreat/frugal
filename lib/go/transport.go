@@ -127,7 +127,8 @@ func NewFMuxTransportFactory(numWorkers uint) FTransportFactory {
 }
 
 func (f *fMuxTransportFactory) GetTransport(tr thrift.TTransport) FTransport {
-	return NewFMuxTransport(tr, f.numWorkers)
+	//return NewFMuxTransport(tr, f.numWorkers)
+	return NewAdapterTransport(tr)
 }
 
 type frameWrapper struct {
