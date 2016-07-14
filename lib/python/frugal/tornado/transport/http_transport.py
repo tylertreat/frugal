@@ -6,7 +6,7 @@ import struct
 
 from thrift.transport.TTransport import TTransportException
 from tornado import gen
-from tornado.httpclient import HTTPClient
+from tornado.httpclient import AsyncHTTPClient
 from tornado.httpclient import HTTPError
 from tornado.httpclient import HTTPRequest
 
@@ -31,7 +31,7 @@ class FHttpTransport(TTornadoTransportBase):
         """
         super(FHttpTransport, self).__init__(max_message_size=request_capacity)
         self._url = url
-        self._http = None
+        self._http = AsyncHTTPClient()
         self._wbuf = BytesIO()
 
         # create headers
@@ -47,25 +47,20 @@ class FHttpTransport(TTornadoTransportBase):
 
     @gen.coroutine
     def isOpen(self):
-        """True if the transport is open, False otherwise."""
+        """Always returns True"""
         with (yield self._open_lock.acquire()):
             # Tornado requires we raise a special exception to return a value.
-            raise gen.Return(self._http is not None)
+            raise gen.Return(True)
 
     @gen.coroutine
     def open(self):
-        """Opens the transport."""
-        with (yield self._open_lock.acquire()):
-            if self._http is None:
-                self._http = HTTPClient()
+        """No-op"""
+        pass
 
     @gen.coroutine
     def close(self):
-        """Closes the transport."""
-        with (yield self._open_lock.acquire()):
-            if self._http is not None:
-                self._http.close()
-                self._http = None
+        """no-op"""
+        pass
 
     @gen.coroutine
     def flush(self):
@@ -83,7 +78,7 @@ class FHttpTransport(TTornadoTransportBase):
                               headers=self._headers)
 
         try:
-            response = self._http.fetch(request)
+            response = yield self._http.fetch(request)
         except HTTPError as e:
             if e.code == httplib.REQUEST_ENTITY_TOO_LARGE:
                 raise TTransportException(type=TTransportException.UNKNOWN,

@@ -2,7 +2,8 @@ import base64
 
 import mock
 from thrift.transport.TTransport import TTransportException
-from tornado.httpclient import HTTPClient
+from tornado.concurrent import Future
+from tornado.httpclient import AsyncHTTPClient
 from tornado.httpclient import HTTPError
 from tornado.httpclient import HTTPResponse
 from tornado.testing import gen_test, AsyncTestCase
@@ -22,7 +23,7 @@ class TestFHttpTransport(AsyncTestCase):
                 self.url, request_capacity=self.request_capacity,
                 response_capacity=self.response_capacity
         )
-        self.http_mock = mock.Mock(spec=HTTPClient)
+        self.http_mock = mock.Mock(spec=AsyncHTTPClient)
         self.headers = {
             'content-type': 'application/x-frugal',
             'content-transfer-encoding': 'base64',
@@ -32,13 +33,13 @@ class TestFHttpTransport(AsyncTestCase):
 
     @gen_test
     def test_open_close(self):
-        self.assertFalse((yield self.transport.isOpen()))
+        self.assertTrue((yield self.transport.isOpen()))
         yield self.transport.open()
         self.assertTrue((yield self.transport.isOpen()))
         self.assertIsNotNone(self.transport._http)
         yield self.transport.close()
-        self.assertFalse((yield self.transport.isOpen()))
-        self.assertIsNone(self.transport._http)
+        self.assertTrue((yield self.transport.isOpen()))
+        self.assertIsNotNone(self.transport._http)
 
     @gen_test
     def test_write_too_much_data(self):
@@ -60,7 +61,9 @@ class TestFHttpTransport(AsyncTestCase):
         response_frame = bytearray([0, 0, 0, 10]) + response_data
         response_encoded = base64.b64encode(response_frame)
         response_mock.body = response_encoded
-        self.http_mock.fetch.return_value = response_mock
+        response_future = Future()
+        response_future.set_result(response_mock)
+        self.http_mock.fetch.return_value = response_future
 
         yield self.transport.write(request_data[:3])
         yield self.transport.write(request_data[3:7])
@@ -81,7 +84,9 @@ class TestFHttpTransport(AsyncTestCase):
         self.transport._http = self.http_mock
         response_mock = mock.Mock(spec=HTTPResponse)
         response_mock.body = base64.b64encode(bytearray([4, 5]))
-        self.http_mock.fetch.return_value = response_mock
+        response_future = Future()
+        response_future.set_result(response_mock)
+        self.http_mock.fetch.return_value = response_future
 
         yield self.transport.write(bytearray([1, 2, 3, 4]))
 
@@ -99,7 +104,9 @@ class TestFHttpTransport(AsyncTestCase):
         response_encoded = base64.b64encode(bytearray([0, 0, 0, 0]))
         response_mock = mock.Mock(spec=HTTPResponse)
         response_mock.body = response_encoded
-        self.http_mock.fetch.return_value = response_mock
+        response_future = Future()
+        response_future.set_result(response_mock)
+        self.http_mock.fetch.return_value = response_future
 
         yield self.transport.write(bytearray([1, 2, 3]))
         yield self.transport.flush()
