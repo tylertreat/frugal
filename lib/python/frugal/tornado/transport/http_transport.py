@@ -20,14 +20,12 @@ class FHttpTransport(TTornadoTransportBase):
         """
         Create an HTTP transport.
 
-        :param url: The url to send requests to.
-        :type url: str
-        :param request_capacity: The maximum size allowed to be written in a
-                                 request. Set to 0 for no size restrictions.
-        :type request_capacity: int
-        :param response_capacity: The maximum size allowed to be read in a
-                                  response. Set to 0 for no size restrictions.
-        :type response_capacity: int
+        Args:
+            url: The url to send requests to.
+            request_capacity: The maximum size allowed to be written in a
+                              request. Set to 0 for no size restrictions.
+            response_capacity: The maximum size allowed to be read in a
+                               response. Set to 0 for no size restrictions.
         """
         super(FHttpTransport, self).__init__(max_message_size=request_capacity)
         self._url = url
@@ -48,9 +46,8 @@ class FHttpTransport(TTornadoTransportBase):
     @gen.coroutine
     def isOpen(self):
         """Always returns True"""
-        with (yield self._open_lock.acquire()):
-            # Tornado requires we raise a special exception to return a value.
-            raise gen.Return(True)
+        # Tornado requires we raise a special exception to return a value.
+        raise gen.Return(True)
 
     @gen.coroutine
     def open(self):
