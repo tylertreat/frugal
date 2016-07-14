@@ -171,7 +171,7 @@ public class FClientRegistryTest {
      * All data put in to the registry must correctly be consumed to pass the test.
      * <p>
      * Note:
-     * This test may unfairly synchronize consumers using by pulling work from the same queue.
+     * This test may unfairly synchronize consumers by pulling work from the same queue.
      * However, a shared-queue is indicative of real-world use (see {@link com.workiva.frugal.transport.FMuxTransport}).
      */
     @Test
