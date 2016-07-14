@@ -21,7 +21,7 @@ public class FClientRegistry implements FRegistry {
     private static final Logger LOGGER = LoggerFactory.getLogger(FClientRegistry.class);
     private static final AtomicLong NEXT_OP_ID = new AtomicLong(0);
 
-    protected Map<Long, Pair<FAsyncCallback, Thread>> handlers;
+    protected Map<Long, FAsyncCallback> handlers;
 
     public FClientRegistry() {
         handlers = new ConcurrentHashMap<>();
@@ -34,12 +34,15 @@ public class FClientRegistry implements FRegistry {
      * @param callback the callback to register.
      */
     public void register(FContext context, FAsyncCallback callback) throws TException {
+        // Assign an opId if one does not exist
+        if (context.getOpId() == 0) {
+            context.setOpId(NEXT_OP_ID.incrementAndGet());
+        }
+
         if (handlers.containsKey(context.getOpId())) {
             throw new FException("context already registered");
         }
-        long opId = NEXT_OP_ID.incrementAndGet();
-        context.setOpId(opId);
-        handlers.put(opId, new Pair<>(callback, Thread.currentThread()));
+        handlers.put(context.getOpId(), callback);
     }
 
     /**
@@ -48,6 +51,9 @@ public class FClientRegistry implements FRegistry {
      * @param context the FContext to unregister.
      */
     public void unregister(FContext context) {
+        if (context == null) {
+            return;
+        }
         handlers.remove(context.getOpId());
     }
 
@@ -66,31 +72,24 @@ public class FClientRegistry implements FRegistry {
         } catch (NumberFormatException e) {
             throw new FException("frame missing opId");
         }
+
         if (!handlers.containsKey(opId)) {
             LOGGER.info("Got a message for an unregistered context. Dropping.");
             return;
         }
 
-        Pair<FAsyncCallback, Thread> pair = handlers.get(opId);
-        pair.first.onMessage(new TMemoryInputTransport(frame));
+        FAsyncCallback callback = handlers.get(opId);
+        if (callback == null) {
+            LOGGER.info("Got a message for an unregistered context. Dropping.");
+            return;
+        }
+        callback.onMessage(new TMemoryInputTransport(frame));
     }
 
     /**
      * Interrupt any registered contexts.
      */
     public void close() {
-        for (Pair<FAsyncCallback, Thread> pair : handlers.values()) {
-            pair.second.interrupt();
-        }
-    }
-
-    private static class Pair<K, V> {
-        K first;
-        V second;
-
-        Pair(K first, V second) {
-            this.first = first;
-            this.second = second;
-        }
+        handlers.clear();
     }
 }
