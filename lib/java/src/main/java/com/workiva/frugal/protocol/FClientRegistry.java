@@ -73,11 +73,6 @@ public class FClientRegistry implements FRegistry {
             throw new FException("frame missing opId");
         }
 
-        if (!handlers.containsKey(opId)) {
-            LOGGER.info("Got a message for an unregistered context. Dropping.");
-            return;
-        }
-
         FAsyncCallback callback = handlers.get(opId);
         if (callback == null) {
             LOGGER.info("Got a message for an unregistered context. Dropping.");
