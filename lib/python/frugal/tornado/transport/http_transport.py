@@ -46,15 +46,15 @@ class FHttpTransport(TTransportBase):
         if response_capacity > 0:
             self._headers['x-frugal-payload-limit'] = str(response_capacity)
 
-        self._execute_callback = None
+        self._callback = None
 
-    def set_execute_callback(self, execute_callback):
+    def set_execute_callback(self, callback):
         """
         Set a callback to be executed with the response body.
 
-        :param execute_callback: The callback to be executed.
+        :param callback: The callback to be executed.
         """
-        self._execute_callback = execute_callback
+        self._callback = callback
 
     def isOpen(self):
         """True if the transport is open, False otherwise."""
@@ -137,4 +137,4 @@ class FHttpTransport(TTransportBase):
             # One-way method, drop response
             return
 
-        self._execute_callback(decoded)
+        self._callback(decoded)
