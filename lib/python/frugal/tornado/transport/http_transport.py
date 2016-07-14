@@ -78,9 +78,7 @@ class FHttpTransport(TTransportBase):
 
     def read(self, sz):
         """You should not call read on the HTTP transport"""
-        ex = NotImplementedError('read should not be called')
-        logger.exception(ex)
-        raise ex
+        raise NotImplementedError('read should not be called')
 
     def write(self, buf):
         """
