@@ -1,3 +1,4 @@
+// TODO: Remove with 2.0
 package frugal
 
 import (
@@ -9,6 +10,8 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 	log "github.com/Sirupsen/logrus"
 )
+
+const defaultWatermark = 5 * time.Second
 
 type fMuxTransportFactory struct {
 	numWorkers uint

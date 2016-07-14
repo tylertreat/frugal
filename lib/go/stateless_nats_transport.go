@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
+	log "github.com/Sirupsen/logrus"
 	"github.com/nats-io/nats"
 )
 
@@ -52,6 +53,7 @@ func NewStatelessNatsTTransport(conn *nats.Conn, subject, inbox string) thrift.T
 		inbox:          inbox,
 		frameBuffer:    make(chan []byte, frameBufferSize),
 		requestBuffer:  bytes.NewBuffer(make([]byte, 0, natsMaxMessageSize)),
+		isTTransport:   true,
 	}
 }
 
@@ -80,10 +82,9 @@ func NewStatelessNatsFTransport(conn *nats.Conn, subject, inbox string) FTranspo
 // Open subscribes to the configured inbox subject.
 func (f *statelessNatsFTransport) Open() error {
 	// TODO: Remove locking with 2.0
-	if f.fBaseTransport == nil {
-		f.mu.Lock()
-		defer f.mu.Unlock()
-	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	if f.conn.Status() != nats.CONNECTED {
 		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
 			fmt.Sprintf("frugal: NATS not connected, has status %d", f.conn.Status()))
@@ -108,12 +109,14 @@ func (f *statelessNatsFTransport) Open() error {
 
 // handler receives a NATS message and executes the frame
 func (f *statelessNatsFTransport) handler(msg *nats.Msg) {
-	f.fBaseTransport.Execute(msg.Data)
+	if err := f.fBaseTransport.Execute(msg.Data); err != nil {
+		log.Warn("Could not execute frame", err)
+	}
 }
 
 // tTransportHandler receives a NATS message and places it on the frame buffer
 // for reading.
-// TODO: Remove this in 2.0
+// TODO: Remove this with 2.0
 func (f *statelessNatsFTransport) tTransportHandler(msg *nats.Msg) {
 	select {
 	case f.frameBuffer <- msg.Data:
@@ -123,20 +126,18 @@ func (f *statelessNatsFTransport) tTransportHandler(msg *nats.Msg) {
 
 func (f *statelessNatsFTransport) IsOpen() bool {
 	// TODO: Remove locking with 2.0
-	if f.isTTransport {
-		f.mu.RLock()
-		defer f.mu.RUnlock()
-	}
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+
 	return f.sub != nil && f.conn.Status() == nats.CONNECTED
 }
 
 // Close unsubscribes from the inbox subject.
 func (f *statelessNatsFTransport) Close() error {
 	// TODO: Remove locking with 2.0
-	if f.isTTransport {
-		f.mu.Lock()
-		defer f.mu.Unlock()
-	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	if f.sub == nil {
 		return nil
 	}
@@ -148,12 +149,14 @@ func (f *statelessNatsFTransport) Close() error {
 	return nil
 }
 
+// Read up to len(buf) bytes into buf.
+// TODO: This should just return an error with 2.0
 func (f *statelessNatsFTransport) Read(buf []byte) (int, error) {
 	if !f.isTTransport {
 		return 0, errors.New("Cannot read on FTransport")
 	}
 
-	// TODO: Remove all read logic in 2.0
+	// TODO: Remove all read logic with 2.0
 	if !f.IsOpen() {
 		return 0, f.getClosedConditionError("read:")
 	}
@@ -166,8 +169,6 @@ func (f *statelessNatsFTransport) Read(buf []byte) (int, error) {
 		}
 	}
 	num := copy(buf, f.currentFrame)
-	// TODO: We could be more efficient here. If the provided buffer isn't
-	// full, we could attempt to get the next frame.
 
 	f.currentFrame = f.currentFrame[num:]
 	return num, nil
@@ -190,8 +191,18 @@ func (f *statelessNatsFTransport) Flush() error {
 	if len(data) == 0 {
 		return nil
 	}
+
+	// TODO: Remove this check in 2.0
+	if !f.isTTransport {
+		data = prependFrameSize(data)
+	}
+
 	err := f.conn.PublishRequest(f.subject, f.inbox, data)
 	return thrift.NewTTransportExceptionFromError(err)
+}
+
+// This is a no-op for statelessNatsFTransport
+func (f *statelessNatsFTransport) SetMonitor(monitor FTransportMonitor) {
 }
 
 func (f *statelessNatsFTransport) getClosedConditionError(prefix string) error {

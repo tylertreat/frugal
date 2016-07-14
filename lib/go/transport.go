@@ -17,8 +17,6 @@ const (
 	// RESPONSE_TOO_LARGE is a TTransportException error type indicating the
 	// response exceeded the size limit.
 	RESPONSE_TOO_LARGE = 101
-
-	defaultWatermark = 5 * time.Second
 )
 
 // ErrTransportClosed is returned by service calls when the transport is
@@ -107,6 +105,7 @@ type FTransport interface {
 	// SetHighWatermark sets the maximum amount of time a frame is allowed to
 	// await processing before triggering transport overload logic.
 	// DEPRECATED
+	// TODO: Remove this with 2.0
 	SetHighWatermark(watermark time.Duration)
 }
 
@@ -130,11 +129,6 @@ func newFBaseTransport(requestSizeLimit uint) *fBaseTransport {
 	}
 }
 
-// Set the request size limit for the request buffer.
-func (f *fBaseTransport) SetRequestSizeLimit(requestSizeLimit uint) {
-	f.requestSizeLimit = requestSizeLimit
-}
-
 // Write the bytes to a buffer. Returns ErrTooLarge if the buffer exceeds the
 // request size limit.
 func (f *fBaseTransport) Write(buf []byte) (int, error) {
@@ -153,10 +147,7 @@ func (f *fBaseTransport) RemainingBytes() uint64 {
 // Get the request bytes and reset the request buffer.
 func (f *fBaseTransport) GetRequestBytes() []byte {
 	defer f.requestBuffer.Reset()
-	buf := f.requestBuffer.Bytes()
-	frame := make([]byte, 4)
-	binary.BigEndian.PutUint32(frame, uint32(len(buf)))
-	return append(frame, buf...)
+	return f.requestBuffer.Bytes()
 }
 
 // Execute a frugal frame (NOTE: this frame must include the frame size).
@@ -167,24 +158,6 @@ func (f *fBaseTransport) Execute(frame []byte) error {
 // This is a no-op for fBaseTransport
 func (f *fBaseTransport) SetHighWatermark(watermark time.Duration) {
 	return
-}
-
-func (f *fBaseTransport) SetMonitor(monitor FTransportMonitor) {
-	// Stop the previous monitor, if any
-	select {
-	case f.monitorClosedSignal <- nil:
-	default:
-	}
-
-	// Start the new monitor
-	monitorClosedSignal := make(chan error, 1)
-	runner := &monitorRunner{
-		monitor: monitor,
-		//transport:     f,
-		closedChannel: monitorClosedSignal,
-	}
-	f.monitorClosedSignal = monitorClosedSignal
-	go runner.run()
 }
 
 // SetRegistry sets the Registry on the FTransport.
@@ -211,4 +184,10 @@ func (f *fBaseTransport) Unregister(ctx *FContext) {
 // Closed channel is closed when the FTransport is closed.
 func (f *fBaseTransport) Closed() <-chan error {
 	return f.closed
+}
+
+func prependFrameSize(buf []byte) []byte {
+	frame := make([]byte, 4)
+	binary.BigEndian.PutUint32(frame, uint32(len(buf)))
+	return append(frame, buf...)
 }
