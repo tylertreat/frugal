@@ -104,7 +104,7 @@ func handleClient(client *event.FFooClient) (err error) {
 
 // Client runner
 func runClient(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory, port string) error {
-	natsT := frugal.NewStatelessNatsFTransport(conn, "foo", "bar")
+	natsT := frugal.NewNatsFTransport(conn, "foo", "bar")
 	defer natsT.Close()
 	if err := natsT.Open(); err != nil {
 		return err
@@ -159,8 +159,8 @@ func runServer(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory, port s
 		http.ListenAndServe(fmt.Sprintf(":%s", port), http.DefaultServeMux)
 	}()
 
-	server := frugal.NewFStatelessNatsServerBuilder(conn, processor, protocolFactory, "foo").Build()
-	fmt.Println("Starting the stateless nats server... on ", "foo")
+	server := frugal.NewFNatsServerBuilder(conn, processor, protocolFactory, "foo").Build()
+	fmt.Println("Starting the nats server... on ", "foo")
 	return server.Serve()
 }
 
