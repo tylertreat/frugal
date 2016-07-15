@@ -177,11 +177,10 @@ func NewHttpTTransport(client *http.Client, url string) thrift.TTransport {
 func NewHttpTTransportWithLimits(client *http.Client, url string,
 	requestSizeLimit uint, responseSizeLimit uint) thrift.TTransport {
 	return &httpFTransport{
-		fBaseTransport:    newFBaseTransport(requestSizeLimit),
+		fBaseTransport:    newFBaseTransportForTTransport(requestSizeLimit, frameBufferSize),
 		client:            client,
 		url:               url,
 		responseSizeLimit: responseSizeLimit,
-		frameBuffer:       make(chan []byte, frameBufferSize),
 		isTTransport:      true,
 	}
 }
@@ -200,10 +199,7 @@ type httpFTransport struct {
 
 	// TODO: Remove with 2.0
 	isTTransport bool
-	frameBuffer  chan []byte
-	currentFrame []byte
 	mu           sync.RWMutex
-	closeChan    chan struct{}
 }
 
 // Open initializes the close channel and sets the open flag to true.

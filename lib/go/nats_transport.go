@@ -1,3 +1,4 @@
+// TODO: Remove this with 2.0
 package frugal
 
 import (
@@ -62,8 +63,7 @@ type natsServiceTTransport struct {
 // limited to 1MB in size. See NewStatelessNatsTTransport for a stateless NATS
 // transport which does not rely on maintaining a connection between client
 // and server.
-// TODO: Support >1MB messages.
-// TODO 2.0.0: Remove "Service" from the name.
+// DEPRECATED
 func NewNatsServiceTTransport(conn *nats.Conn, subject string,
 	timeout time.Duration, maxMissedHeartbeats uint) thrift.TTransport {
 

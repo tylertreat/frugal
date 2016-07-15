@@ -29,7 +29,7 @@ func (m *mockRegistry) Execute(frame []byte) error {
 }
 
 // Ensures Open returns an error if NATS is not connected.
-func TestStatelessNatsTransportOpenNatsDisconnected(t *testing.T) {
+func TestNatsTransportOpenNatsDisconnected(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
 	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
@@ -37,7 +37,7 @@ func TestStatelessNatsTransportOpenNatsDisconnected(t *testing.T) {
 		t.Fatal(err)
 	}
 	conn.Close()
-	tr := NewStatelessNatsTTransport(conn, "foo", "bar")
+	tr := NewNatsFTransport(conn, "foo", "bar")
 
 	assert.Error(t, tr.Open())
 	assert.False(t, tr.IsOpen())
@@ -45,10 +45,10 @@ func TestStatelessNatsTransportOpenNatsDisconnected(t *testing.T) {
 
 // Ensures Open returns an ALREADY_OPEN TTransportException if the transport
 // is already open.
-func TestStatelessNatsTransportOpenAlreadyOpen(t *testing.T) {
+func TestNatsTransportOpenAlreadyOpen(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
-	tr, server, conn := newStatelessClientAndServer(t, false)
+	tr, server, conn := newClientAndServer(t, false)
 	defer server.Stop()
 	defer conn.Close()
 	assert.Nil(t, tr.Open())
@@ -61,10 +61,10 @@ func TestStatelessNatsTransportOpenAlreadyOpen(t *testing.T) {
 }
 
 // Ensures Open subscribes to the right subject and executes received frames.
-func TestStatelessNatsTransportOpen(t *testing.T) {
+func TestNatsTransportOpen(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
-	tr, server, conn := newStatelessClientAndServer(t, false)
+	tr, server, conn := newClientAndServer(t, false)
 	defer server.Stop()
 	defer conn.Close()
 	assert.Nil(t, tr.Open())
@@ -91,22 +91,22 @@ func TestStatelessNatsTransportOpen(t *testing.T) {
 }
 
 // Ensures Read throws an error whenever called.
-func TestStatelessNatsTransportRead(t *testing.T) {
-	tr := NewStatelessNatsFTransport(nil, "foo", "bar")
+func TestNatsTransportRead(t *testing.T) {
+	tr := NewNatsFTransport(nil, "foo", "bar")
 	_, err := tr.Read(make([]byte, 0))
 	assert.Error(t, err)
 }
 
 // Ensures Write returns a NOT_OPEN TTransportException if the transport is not
 // open.
-func TestStatelessNatsTransportWriteNotOpen(t *testing.T) {
+func TestNatsTransportWriteNotOpen(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
 	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
 	if err != nil {
 		t.Fatal(err)
 	}
-	tr := NewStatelessNatsFTransport(conn, "foo", "bar")
+	tr := NewNatsFTransport(conn, "foo", "bar")
 
 	n, err := tr.Write(make([]byte, 10))
 
@@ -117,10 +117,10 @@ func TestStatelessNatsTransportWriteNotOpen(t *testing.T) {
 
 // Ensures Write returns a NOT_OPEN TTransportException if NATS is not
 // connected.
-func TestStatelessNatsTransportWriteNatsDisconnected(t *testing.T) {
+func TestNatsTransportWriteNatsDisconnected(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
-	tr, server, conn := newStatelessClientAndServer(t, false)
+	tr, server, conn := newClientAndServer(t, false)
 	defer server.Stop()
 	assert.Nil(t, tr.Open())
 	defer tr.Close()
@@ -137,10 +137,10 @@ func TestStatelessNatsTransportWriteNatsDisconnected(t *testing.T) {
 
 // Ensures Write buffers data. If the buffer exceeds 1MB, ErrTooLarge is
 // returned.
-func TestStatelessNatsTransportWrite(t *testing.T) {
+func TestNatsTransportWrite(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
-	tr, server, conn := newStatelessClientAndServer(t, false)
+	tr, server, conn := newClientAndServer(t, false)
 	defer server.Stop()
 	defer conn.Close()
 	assert.Nil(t, tr.Open())
@@ -161,7 +161,7 @@ func TestStatelessNatsTransportWrite(t *testing.T) {
 
 // Ensures Flush returns a NOT_OPEN TTransportException if the transport is not
 // open.
-func TestStatelessNatsTransportFlushNotOpen(t *testing.T) {
+func TestNatsTransportFlushNotOpen(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
 	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
@@ -170,7 +170,7 @@ func TestStatelessNatsTransportFlushNotOpen(t *testing.T) {
 	}
 	defer conn.Close()
 
-	tr := NewStatelessNatsFTransport(conn, "foo", "bar")
+	tr := NewNatsFTransport(conn, "foo", "bar")
 
 	err = tr.Flush()
 	trErr := err.(thrift.TTransportException)
@@ -179,10 +179,10 @@ func TestStatelessNatsTransportFlushNotOpen(t *testing.T) {
 
 // Ensures Flush returns a NOT_OPEN TTransportException if NATS is not
 // connected.
-func TestStatelessNatsTransportFlushNatsDisconnected(t *testing.T) {
+func TestNatsTransportFlushNatsDisconnected(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
-	tr, server, conn := newStatelessClientAndServer(t, false)
+	tr, server, conn := newClientAndServer(t, false)
 	defer server.Stop()
 	defer conn.Close()
 	assert.Nil(t, tr.Open())
@@ -197,10 +197,10 @@ func TestStatelessNatsTransportFlushNatsDisconnected(t *testing.T) {
 }
 
 // Ensures Flush doesn't send anything to NATS if no data is buffered.
-func TestStatelessNatsTransportFlushNoData(t *testing.T) {
+func TestNatsTransportFlushNoData(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
-	tr, server, conn := newStatelessClientAndServer(t, false)
+	tr, server, conn := newClientAndServer(t, false)
 	defer server.Stop()
 	defer conn.Close()
 	assert.Nil(t, tr.Open())
@@ -216,10 +216,10 @@ func TestStatelessNatsTransportFlushNoData(t *testing.T) {
 }
 
 // Ensures Flush sends the frame to the correct NATS subject.
-func TestStatelessNatsTransportFlush(t *testing.T) {
+func TestNatsTransportFlush(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
-	tr, server, conn := newStatelessClientAndServer(t, false)
+	tr, server, conn := newClientAndServer(t, false)
 	defer server.Stop()
 	defer conn.Close()
 	assert.Nil(t, tr.Open())
@@ -245,7 +245,7 @@ func TestStatelessNatsTransportFlush(t *testing.T) {
 func TestStatelessNatsTTransportOpenRead(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
-	tr, server, conn := newStatelessClientAndServer(t, true)
+	tr, server, conn := newClientAndServer(t, true)
 	defer server.Stop()
 	defer conn.Close()
 	assert.Nil(t, tr.Open())
@@ -289,7 +289,7 @@ func TestStatelessNatsTTransportReadNotOpen(t *testing.T) {
 func TestStatelessNatsTTransportReadNatsDisconnected(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
-	tr, server, conn := newStatelessClientAndServer(t, true)
+	tr, server, conn := newClientAndServer(t, true)
 	defer server.Stop()
 	assert.Nil(t, tr.Open())
 	defer tr.Close()
@@ -308,7 +308,7 @@ func TestStatelessNatsTTransportReadNatsDisconnected(t *testing.T) {
 func TestStatelessNatsTTransportFlush(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
-	tr, server, conn := newStatelessClientAndServer(t, true)
+	tr, server, conn := newClientAndServer(t, true)
 	defer server.Stop()
 	defer conn.Close()
 	assert.Nil(t, tr.Open())
@@ -327,8 +327,9 @@ func TestStatelessNatsTTransportFlush(t *testing.T) {
 	assert.Equal(t, frame, msg.Data)
 }
 
-func newStatelessClientAndServer(t *testing.T, isTTransport bool) (
-	*statelessNatsFTransport, *FStatelessNatsServer, *nats.Conn) {
+// HELPER METHODS
+
+func newClientAndServer(t *testing.T, isTTransport bool) (*natsFTransport, *FStatelessNatsServer, *nats.Conn) {
 	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
 	if err != nil {
 		t.Fatal(err)
@@ -349,11 +350,11 @@ func newStatelessClientAndServer(t *testing.T, isTTransport bool) (
 		assert.Nil(t, server.Serve())
 	}()
 	time.Sleep(10 * time.Millisecond)
-	var tr *statelessNatsFTransport
+	var tr *natsFTransport
 	if isTTransport {
-		tr = NewStatelessNatsTTransport(conn, "foo", "bar").(*statelessNatsFTransport)
+		tr = NewStatelessNatsTTransport(conn, "foo", "bar").(*natsFTransport)
 	} else {
-		tr = NewStatelessNatsFTransport(conn, "foo", "bar").(*statelessNatsFTransport)
+		tr = NewNatsFTransport(conn, "foo", "bar").(*natsFTransport)
 	}
 	return tr, server.(*FStatelessNatsServer), conn
 }

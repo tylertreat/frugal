@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"io"
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -119,13 +120,63 @@ type fBaseTransport struct {
 	requestBuffer    bytes.Buffer
 	registry         FRegistry
 	closed           chan error
+
+	// TODO: Remove these with 2.0
+	frameBuffer  chan []byte
+	currentFrame []byte
+	closeChan    chan struct{}
 }
 
+// Initialize a new fBaseTransport
 func newFBaseTransport(requestSizeLimit uint) *fBaseTransport {
 	return &fBaseTransport{
 		requestSizeLimit: requestSizeLimit,
 		closed:           make(chan error),
 	}
+}
+
+// Intialize a new fBaseTransprot for use with legacy TTransports
+// TODO: Remove with 2.0
+func newFBaseTransportForTTransport(requestSizeLimit, frameBufferSize uint) *fBaseTransport {
+	return &fBaseTransport{
+		requestSizeLimit: requestSizeLimit,
+		closed:           make(chan error),
+		frameBuffer:      make(chan []byte, frameBufferSize),
+	}
+}
+
+// Intialize the close channel
+// TODO: Remove with 2.0
+func (f *fBaseTransport) Open() {
+	f.closeChan = make(chan struct{})
+}
+
+// Close the close channel
+// TODO: Remove with 2.0
+func (f *fBaseTransport) Close() {
+	close(f.closeChan)
+}
+
+// Return the close channel
+// TODO: Remove with 2.0
+func (f *fBaseTransport) ClosedChannel() <-chan struct{} {
+	return f.closeChan
+}
+
+// Read up to len(buf) bytes into buf.
+// TODO: Remove all read logic with 2.0
+func (f *fBaseTransport) Read(buf []byte) (int, error) {
+	if len(f.currentFrame) == 0 {
+		select {
+		case frame := <-f.frameBuffer:
+			f.currentFrame = frame
+		case <-f.closeChan:
+			return 0, thrift.NewTTransportExceptionFromError(io.EOF)
+		}
+	}
+	num := copy(buf, f.currentFrame)
+	f.currentFrame = f.currentFrame[num:]
+	return num, nil
 }
 
 // Write the bytes to a buffer. Returns ErrTooLarge if the buffer exceeds the

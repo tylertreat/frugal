@@ -73,6 +73,8 @@ func (f *fMuxTransport) SetHighWatermark(watermark time.Duration) {
 	f.waterMu.Unlock()
 }
 
+// SetMonitor starts a monitor that can watch the health of, and reopen,
+// the transport.
 func (f *fMuxTransport) SetMonitor(monitor FTransportMonitor) {
 	// Stop the previous monitor, if any
 	select {
