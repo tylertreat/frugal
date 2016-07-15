@@ -99,6 +99,12 @@ class FClientRegistry(FRegistry):
             context: FContext to register.
             callback: function to register.
         """
+        # An FContext can be reused for multiple requests. Because of this,
+        # every time an FContext is registered, it must be assigned a new op id
+        # to ensure we can properly correlate responses. We use a monotonically
+        # increasing atomic uint64 for this purpose. If the FContext already
+        # has an op id, it has been used for a request. We check the handlers
+        # map to ensure that request is not still in-flight.
         with self._handlers_lock:
             if str(context._get_op_id()) in self._handlers:
                 ex = FException("context already registered")
