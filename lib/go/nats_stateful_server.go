@@ -1,3 +1,4 @@
+// TODO: Remove this with 2.0
 package frugal
 
 import (
@@ -37,6 +38,7 @@ func newInbox(prefix string) string {
 
 // FNatsServer implements FServer by using NATS as the underlying transport.
 // Clients must connect with the transport created by NewNatsServiceTTransport.
+// DEPRECATED
 type FNatsServer struct {
 	conn                *nats.Conn
 	subjects            []string
@@ -56,6 +58,7 @@ type FNatsServer struct {
 // NewFNatsServer creates a new FNatsServer which listens for requests on the
 // given subject. Clients must connect with the transport created by
 // NewNatsServiceTTransport.
+// DEPRECATED
 func NewFNatsServer(
 	conn *nats.Conn,
 	subject string,
@@ -78,6 +81,7 @@ func NewFNatsServer(
 // NewFNatsServerWithSubjects creates a new FNatsServer which listens for
 // requests on the given subjects. Clients must connect with the transport
 // created by NewNatsServiceTTransport.
+// DEPRECATED
 func NewFNatsServerWithSubjects(
 	conn *nats.Conn,
 	subjects []string,
@@ -100,6 +104,7 @@ func NewFNatsServerWithSubjects(
 // NewFNatsServerFactory creates a new FNatsServer which listens for requests
 // on the given subject. Clients must connect with the transport created by
 // NewNatsServiceTTransport.
+// DEPRECATED
 func NewFNatsServerFactory(
 	conn *nats.Conn,
 	subject string,
@@ -123,6 +128,7 @@ func NewFNatsServerFactory(
 // NewFNatsServerFactoryWithSubjects creates a new FNatsServer which listens
 // for requests on the given subjects. Clients must connect with the transport
 // created by NewNatsServiceTTransport.
+// DEPRECATED
 func NewFNatsServerFactoryWithSubjects(
 	conn *nats.Conn,
 	subjects []string,
