@@ -104,12 +104,23 @@ func handleClient(client *event.FFooClient) (err error) {
 
 // Client runner
 func runClient(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory, port string) error {
-	transport := frugal.NewStatelessNatsFTransport(conn, "foo", "bar")
-	defer transport.Close()
-	if err := transport.Open(); err != nil {
+	natsT := frugal.NewStatelessNatsFTransport(conn, "foo", "bar")
+	defer natsT.Close()
+	if err := natsT.Open(); err != nil {
 		return err
 	}
-	return handleClient(event.NewFFooClient(transport, protocolFactory))
+
+	if err := handleClient(event.NewFFooClient(natsT, protocolFactory)); err != nil {
+		return err
+	}
+
+	httpT := frugal.NewHttpFTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%s/frugal", port)).Build()
+	defer httpT.Close()
+	if err := httpT.Open(); err != nil {
+		return err
+	}
+
+	return handleClient(event.NewFFooClient(httpT, protocolFactory))
 }
 
 // Sever handler
