@@ -11,13 +11,15 @@ import org.junit.runners.JUnit4;
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Matchers.any;
@@ -81,7 +83,7 @@ public class FClientRegistryTest {
     }
 
     @Test
-    public void testRegisterAssignsOpIdIfNotSet() throws Exception {
+    public void testRegisterAssignsOpId() throws Exception {
         // given
         FClientRegistry registry = new FClientRegistry();
         FContext context = new FContext();
@@ -97,6 +99,27 @@ public class FClientRegistryTest {
 
         // then
         assertNotEquals(context.getOpId(), 0);
+    }
+
+    @Test
+    public void testRegisterAssignsIncreasingOpId() throws Exception {
+        // given
+        FClientRegistry registry = new FClientRegistry();
+        FAsyncCallback callback = new FAsyncCallback() {
+            @Override
+            public void onMessage(TTransport transport) throws TException {
+
+            }
+        };
+
+        // when
+        FContext context1 = new FContext();
+        registry.register(context1, callback);
+        FContext context2 = new FContext();
+        registry.register(context2, callback);
+
+        // then
+        assertNotEquals(context1.getOpId(), context2.getOpId());
     }
 
     @Test
@@ -165,6 +188,41 @@ public class FClientRegistryTest {
         assertEquals(registry.handlers.size(), 0);
     }
 
+    @Test
+    public void testCloseInterruptsRunningThreads() throws Exception {
+        // given
+        CountDownLatch readySignal = new CountDownLatch(1);
+        CountDownLatch interruptSignal = new CountDownLatch(1);
+
+        FClientRegistry registry = new FClientRegistry();
+        FContext context = new FContext();
+        ThreadPoolExecutor executorService = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    registry.register(context, transport -> {
+                    }); // no-op callback
+                } catch (TException e) {
+                    fail();
+                }
+                readySignal.countDown();
+
+                // spin wait for interrupt signal
+                while (!Thread.currentThread().isInterrupted()) { }
+
+                interruptSignal.countDown();
+            }
+        });
+
+        readySignal.await(); // wait for thread ready
+
+        // when
+        registry.close();
+
+        // then (success when thread interrupted)
+        interruptSignal.await(); // wait for thread interrupt
+    }
 
     /**
      * Run a producer with multiple consumers.
@@ -211,18 +269,21 @@ public class FClientRegistryTest {
             }
 
             private void putToRegistry() {
-                long opId = ThreadLocalRandom.current().nextLong(Long.MAX_VALUE - 1);
                 FContext context = new FContext();
-                context.setOpId(opId);
 
                 try {
-                    registry.register(context, transport -> executeSum.getAndAdd(opId));
+                    registry.register(context, new FAsyncCallback() {
+                        @Override
+                        public void onMessage(TTransport transport) throws TException {
+                            executeSum.getAndAdd(context.getOpId());
+                        }
+                    });
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
 
-                opIds.add(opId);
-                registerSum.getAndAdd(opId);
+                opIds.add(context.getOpId());
+                registerSum.getAndAdd(context.getOpId());
             }
 
         }

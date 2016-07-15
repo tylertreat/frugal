@@ -2,6 +2,7 @@ package com.workiva.frugal.protocol;
 
 import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.internal.Headers;
+import com.workiva.frugal.util.Pair;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.slf4j.Logger;
@@ -21,7 +22,7 @@ public class FClientRegistry implements FRegistry {
     private static final Logger LOGGER = LoggerFactory.getLogger(FClientRegistry.class);
     private static final AtomicLong NEXT_OP_ID = new AtomicLong(0);
 
-    protected Map<Long, FAsyncCallback> handlers;
+    protected Map<Long, Pair<FAsyncCallback, Thread>> handlers;
 
     public FClientRegistry() {
         handlers = new ConcurrentHashMap<>();
@@ -34,15 +35,12 @@ public class FClientRegistry implements FRegistry {
      * @param callback the callback to register.
      */
     public void register(FContext context, FAsyncCallback callback) throws TException {
-        // Assign an opId if one does not exist
-        if (context.getOpId() == 0) {
-            context.setOpId(NEXT_OP_ID.incrementAndGet());
-        }
-
         if (handlers.containsKey(context.getOpId())) {
             throw new FException("context already registered");
         }
-        handlers.put(context.getOpId(), callback);
+        long opId = NEXT_OP_ID.incrementAndGet();
+        context.setOpId(opId);
+        handlers.put(opId, Pair.of(callback, Thread.currentThread()));
     }
 
     /**
@@ -73,18 +71,19 @@ public class FClientRegistry implements FRegistry {
             throw new FException("frame missing opId");
         }
 
-        FAsyncCallback callback = handlers.get(opId);
-        if (callback == null) {
+        Pair<FAsyncCallback, Thread> callbackThreadPair = handlers.get(opId);
+        if (callbackThreadPair == null) {
             LOGGER.info("Got a message for an unregistered context. Dropping.");
             return;
         }
-        callback.onMessage(new TMemoryInputTransport(frame));
+        callbackThreadPair.getLeft().onMessage(new TMemoryInputTransport(frame));
     }
 
     /**
      * Interrupt any registered contexts.
      */
     public void close() {
+        handlers.values().parallelStream().forEach(pair -> pair.getRight().interrupt());
         handlers.clear();
     }
 }
