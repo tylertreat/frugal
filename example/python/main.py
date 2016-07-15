@@ -13,6 +13,7 @@ from frugal.context import FContext
 from frugal.protocol import FProtocolFactory
 from frugal.provider import FScopeProvider
 from frugal.tornado.transport import (
+    FHttpTransport,
     FMuxTornadoTransportFactory,
     FNatsScopeTransportFactory,
     TNatsServiceTransport,
@@ -96,6 +97,35 @@ def run_client(nats_client, prot_factory, stateless=False):
     root.info('Response header foo: {}'.format(ctx.get_response_header("foo")))
 
     yield tornado_transport.close()
+
+    http_transport = FHttpTransport('http://localhost:8090/frugal')
+    http_tornado_transport = transport_factory.get_transport(http_transport)
+
+    try:
+        yield http_tornado_transport.open()
+    except TTransportException as ex:
+        logging.error(ex)
+        raise gen.Return()
+
+    foo_client = FFooClient(http_tornado_transport, prot_factory,
+                            middleware=logging_middleware)
+    print 'oneWay()'
+    foo_client.oneWay(FContext(), 123, {123: 'request'})
+
+    print 'basePing()'
+    yield foo_client.basePing(FContext())
+
+    print 'ping()'
+    yield foo_client.ping(FContext())
+
+    ctx = FContext()
+    event = Event(43, 'other hello world')
+    print 'blah()'
+    b = yield foo_client.blah(ctx, 203, 'an http message', event)
+    print 'blah response {}'.format(b)
+    print 'response header foo: {}'.format(ctx.get_response_header('foo'))
+
+    yield http_tornado_transport.close()
 
 
 @gen.coroutine

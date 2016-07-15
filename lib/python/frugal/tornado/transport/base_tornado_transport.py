@@ -13,6 +13,7 @@ class TTornadoTransportBase(TTransportBase, object):
     def __init__(self, max_message_size=1024*1024):
         self._open_lock = locks.Lock()
         self._max_message_size = max_message_size
+        self._execute = None
 
     def set_execute_callback(self, execute):
         """Set the message callback execute function
@@ -41,7 +42,7 @@ class TTornadoTransportBase(TTransportBase, object):
 
         size = len(buff) + len(self._wbuf.getvalue())
 
-        if size > self._max_message_size:
+        if size > self._max_message_size > 0:
             ex = FMessageSizeException("Message exceeds max message size")
             logger.exception(ex)
             raise ex
