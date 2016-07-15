@@ -197,22 +197,18 @@ public class FClientRegistryTest {
         FClientRegistry registry = new FClientRegistry();
         FContext context = new FContext();
         ThreadPoolExecutor executorService = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    registry.register(context, transport -> {
-                    }); // no-op callback
-                } catch (TException e) {
-                    fail();
-                }
-                readySignal.countDown();
-
-                // spin wait for interrupt signal
-                while (!Thread.currentThread().isInterrupted()) { }
-
-                interruptSignal.countDown();
+        executorService.execute(() -> {
+            try {
+                registry.register(context, transport -> { }); // no-op callback
+            } catch (TException e) {
+                fail();
             }
+            readySignal.countDown();
+
+            // spin wait for interrupt signal
+            while (!Thread.currentThread().isInterrupted()) { }
+
+            interruptSignal.countDown();
         });
 
         readySignal.await(); // wait for thread ready
