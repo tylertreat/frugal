@@ -122,6 +122,7 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 		warnGenWithoutFrugal(genWithFrugal)
 		g = generator.NewProgramGenerator(java.NewGenerator(options), true)
 	case "py":
+		warnGenWithoutFrugal(genWithFrugal)
 		g = generator.NewProgramGenerator(python.NewGenerator(options), true)
 	default:
 		return nil, fmt.Errorf("Invalid gen value %s", gen)
