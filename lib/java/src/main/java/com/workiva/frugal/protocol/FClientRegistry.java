@@ -34,6 +34,12 @@ public class FClientRegistry implements FRegistry {
      * @param callback the callback to register.
      */
     public void register(FContext context, FAsyncCallback callback) throws TException {
+        // An FContext can be reused for multiple requests. Because of this, every
+        // time an FContext is registered, it must be assigned a new op id to
+        // ensure we can properly correlate responses. We use a monotonically
+        // increasing atomic uint64 for this purpose. If the FContext already has
+        // an op id, it has been used for a request. We check the handlers map to
+        // ensure that request is not still in-flight.
         if (handlers.containsKey(context.getOpId())) {
             throw new FException("context already registered");
         }
