@@ -6,7 +6,18 @@ from tornado.web import RequestHandler
 
 
 class FTornadoHttpHandler(RequestHandler):
+    """
+    This class implements a Tornado web server request handler to interface
+    with a frugal HTTP client.
+    """
     def initialize(self, processor, protocol_factory):
+        """
+
+        Args:
+            processor: The processor to use to handle requests
+            protocol_factory: A protocol factory to serialize/deserialize
+                              frugal requests
+        """
         self._processor = processor
         self._protocol_factory = protocol_factory
 
