@@ -63,4 +63,4 @@ class TTornadoTransportBase(TTransportBase, object):
 
     @gen.coroutine
     def flush(self):
-        raise NotImplementedError("Don't call this.")
+        raise gen.Return(NotImplementedError("You must override this."))
