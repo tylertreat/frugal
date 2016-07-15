@@ -115,11 +115,10 @@ type FTransportFactory interface {
 }
 
 type fBaseTransport struct {
-	requestSizeLimit    uint
-	requestBuffer       bytes.Buffer
-	registry            FRegistry
-	closed              chan error
-	monitorClosedSignal chan<- error
+	requestSizeLimit uint
+	requestBuffer    bytes.Buffer
+	registry         FRegistry
+	closed           chan error
 }
 
 func newFBaseTransport(requestSizeLimit uint) *fBaseTransport {

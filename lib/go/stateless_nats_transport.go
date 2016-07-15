@@ -14,7 +14,7 @@ import (
 
 // statelessNatsFTransport implements FTransport and, until the next major
 // release, thrift.TTransport that may be wrapped with fMuxTransport
-// (DEPECATED). This is a "stateless" transport in the sense that there is no
+// (DEPRECATED). This is a "stateless" transport in the sense that there is no
 // connection with a server. A request is simply published to a subject and
 // responses are received on another subject. This assumes requests/responses
 // fit within a single NATS message.
@@ -42,6 +42,7 @@ type statelessNatsFTransport struct {
 // subject. This requires requests and responses to fit within a single NATS
 // message.
 // DEPRECATED - Use NewNatsFTransport to create an FTransport directly.
+// TODO: Remove this with 2.0
 func NewStatelessNatsTTransport(conn *nats.Conn, subject, inbox string) thrift.TTransport {
 	if inbox == "" {
 		inbox = nats.NewInbox()
@@ -68,7 +69,6 @@ func NewStatelessNatsFTransport(conn *nats.Conn, subject, inbox string) FTranspo
 	if inbox == "" {
 		inbox = nats.NewInbox()
 	}
-
 	return &statelessNatsFTransport{
 		fBaseTransport: newFBaseTransport(natsMaxMessageSize),
 		conn:           conn,
@@ -94,6 +94,7 @@ func (f *statelessNatsFTransport) Open() error {
 	}
 
 	handler := f.handler
+	// TODO: Remove this with 2.0
 	if f.isTTransport {
 		handler = f.tTransportHandler
 	}
@@ -103,6 +104,8 @@ func (f *statelessNatsFTransport) Open() error {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	f.sub = sub
+
+	// TODO: Remove this with 2.0
 	f.closeChan = make(chan struct{})
 	return nil
 }
@@ -145,7 +148,10 @@ func (f *statelessNatsFTransport) Close() error {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	f.sub = nil
+
+	// TODO: Remove this with 2.0
 	close(f.closeChan)
+
 	return nil
 }
 
@@ -169,7 +175,6 @@ func (f *statelessNatsFTransport) Read(buf []byte) (int, error) {
 		}
 	}
 	num := copy(buf, f.currentFrame)
-
 	f.currentFrame = f.currentFrame[num:]
 	return num, nil
 }
