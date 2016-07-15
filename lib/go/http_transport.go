@@ -206,8 +206,8 @@ type httpFTransport struct {
 func (h *httpFTransport) Open() error {
 	// TODO: Open can be a no-op with 2.0
 	h.mu.Lock()
-	h.closeChan = make(chan struct{})
 	h.isOpen = true
+	h.fBaseTransport.Open()
 	h.mu.Unlock()
 	return nil
 }
@@ -230,8 +230,8 @@ func (h *httpFTransport) Close() error {
 	if !h.isOpen {
 		return nil
 	}
-	close(h.closeChan)
 	h.isOpen = false
+	h.fBaseTransport.Close(nil)
 	return nil
 }
 
@@ -250,7 +250,7 @@ func (h *httpFTransport) Read(buf []byte) (int, error) {
 		select {
 		case frame := <-h.frameBuffer:
 			h.currentFrame = frame
-		case <-h.closeChan:
+		case <-h.ClosedChannel():
 			return 0, thrift.NewTTransportExceptionFromError(io.EOF)
 		}
 	}
@@ -310,7 +310,7 @@ func (h *httpFTransport) Flush() error {
 	if h.isTTransport {
 		select {
 		case h.frameBuffer <- response:
-		case <-h.closeChan:
+		case <-h.ClosedChannel():
 		}
 		return nil
 	}

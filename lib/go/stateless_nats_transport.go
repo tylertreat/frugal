@@ -141,8 +141,7 @@ func (f *natsFTransport) Close() error {
 	}
 	f.sub = nil
 
-	// TODO: Remove this with 2.0
-	f.fBaseTransport.Close()
+	f.fBaseTransport.Close(nil)
 
 	return nil
 }

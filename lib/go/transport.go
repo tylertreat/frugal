@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
+	log "github.com/Sirupsen/logrus"
 )
 
 const (
@@ -129,10 +130,7 @@ type fBaseTransport struct {
 
 // Initialize a new fBaseTransport
 func newFBaseTransport(requestSizeLimit uint) *fBaseTransport {
-	return &fBaseTransport{
-		requestSizeLimit: requestSizeLimit,
-		closed:           make(chan error),
-	}
+	return &fBaseTransport{requestSizeLimit: requestSizeLimit}
 }
 
 // Intialize a new fBaseTransprot for use with legacy TTransports
@@ -140,24 +138,33 @@ func newFBaseTransport(requestSizeLimit uint) *fBaseTransport {
 func newFBaseTransportForTTransport(requestSizeLimit, frameBufferSize uint) *fBaseTransport {
 	return &fBaseTransport{
 		requestSizeLimit: requestSizeLimit,
-		closed:           make(chan error),
 		frameBuffer:      make(chan []byte, frameBufferSize),
 	}
 }
 
-// Intialize the close channel
-// TODO: Remove with 2.0
+// Intialize the close channels
 func (f *fBaseTransport) Open() {
+	f.closed = make(chan error)
+
+	// TODO: Remove this with 2.0
 	f.closeChan = make(chan struct{})
 }
 
-// Close the close channel
-// TODO: Remove with 2.0
-func (f *fBaseTransport) Close() {
+// Close the close channels
+func (f *fBaseTransport) Close(cause error) {
+
+	select {
+	case f.closed <- cause:
+	default:
+		log.Warnf("frugal: unable to put close error '%s' on fBaseTransport closed channel", cause)
+	}
+	close(f.closed)
+
+	// TODO: Remove this with 2.0
 	close(f.closeChan)
 }
 
-// Return the close channel
+// Return the struct close channel
 // TODO: Remove with 2.0
 func (f *fBaseTransport) ClosedChannel() <-chan struct{} {
 	return f.closeChan
