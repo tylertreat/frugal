@@ -6,14 +6,12 @@ sys.path.append('example_handler.py')
 from thrift.protocol import TBinaryProtocol
 
 from tornado import gen, ioloop
-from tornado.web import Application
 
 from nats.io.client import Client as NATS
 
 from frugal.processor import FProcessorFactory
 from frugal.protocol import FProtocolFactory
 from frugal.tornado.server import FNatsTornadoServer
-from frugal.tornado.server import FTornadoHttpHandler
 from frugal.tornado.transport import FMuxTornadoTransportFactory
 
 from event.f_Foo import Processor as FFooProcessor
@@ -65,22 +63,7 @@ def main():
 
     yield server.serve()
 
-
-def create_http_application():
-    handler = ExampleHandler()
-    processor = FFooProcessor(handler)
-    prot_factory = FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
-    return Application([
-        ('/frugal', FTornadoHttpHandler, {
-            'processor': processor,
-            'protocol_factory': prot_factory,
-        })
-    ])
-
-
 if __name__ == '__main__':
     io_loop = ioloop.IOLoop.instance()
     io_loop.add_callback(main)
-    application = create_http_application()
-    application.listen(8090)
     io_loop.start()
