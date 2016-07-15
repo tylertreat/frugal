@@ -3,7 +3,6 @@ package com.workiva.frugal.protocol;
 import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.internal.Headers;
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransport;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -52,12 +51,7 @@ public class FClientRegistryTest {
         FContext context = new FContext();
 
         // when
-        registry.register(context, new FAsyncCallback() {
-            @Override
-            public void onMessage(TTransport transport) throws TException {
-
-            }
-        });
+        registry.register(context, transport -> { });
 
         // then
         assertEquals(1, registry.handlers.size());
@@ -68,12 +62,7 @@ public class FClientRegistryTest {
         // given
         FClientRegistry registry = new FClientRegistry();
         FContext context = new FContext();
-        FAsyncCallback callback = new FAsyncCallback() {
-            @Override
-            public void onMessage(TTransport transport) throws TException {
-
-            }
-        };
+        FAsyncCallback callback = transport -> { };
 
         // when
         registry.register(context, callback);
@@ -87,15 +76,9 @@ public class FClientRegistryTest {
         // given
         FClientRegistry registry = new FClientRegistry();
         FContext context = new FContext();
-        FAsyncCallback callback = new FAsyncCallback() {
-            @Override
-            public void onMessage(TTransport transport) throws TException {
-
-            }
-        };
 
         // when
-        registry.register(context, callback);
+        registry.register(context, transport -> {});
 
         // then
         assertNotEquals(context.getOpId(), 0);
@@ -105,18 +88,12 @@ public class FClientRegistryTest {
     public void testRegisterAssignsIncreasingOpId() throws Exception {
         // given
         FClientRegistry registry = new FClientRegistry();
-        FAsyncCallback callback = new FAsyncCallback() {
-            @Override
-            public void onMessage(TTransport transport) throws TException {
-
-            }
-        };
 
         // when
         FContext context1 = new FContext();
-        registry.register(context1, callback);
+        registry.register(context1, transport -> {});
         FContext context2 = new FContext();
-        registry.register(context2, callback);
+        registry.register(context2, transport -> {});
 
         // then
         assertNotEquals(context1.getOpId(), context2.getOpId());
@@ -127,12 +104,7 @@ public class FClientRegistryTest {
         // given
         FClientRegistry registry = new FClientRegistry();
         FContext context = new FContext();
-        registry.register(context, new FAsyncCallback() {
-            @Override
-            public void onMessage(TTransport transport) throws TException {
-
-            }
-        });
+        registry.register(context, transport -> {});
 
         // when
         registry.unregister(context);
@@ -174,12 +146,7 @@ public class FClientRegistryTest {
         // given
         FClientRegistry registry = new FClientRegistry();
         FContext context = new FContext();
-        registry.register(context, new FAsyncCallback() {
-            @Override
-            public void onMessage(TTransport transport) throws TException {
-
-            }
-        });
+        registry.register(context, transport -> { });
 
         // when
         registry.close();
@@ -268,12 +235,7 @@ public class FClientRegistryTest {
                 FContext context = new FContext();
 
                 try {
-                    registry.register(context, new FAsyncCallback() {
-                        @Override
-                        public void onMessage(TTransport transport) throws TException {
-                            executeSum.getAndAdd(context.getOpId());
-                        }
-                    });
+                    registry.register(context, transport -> executeSum.getAndAdd(context.getOpId()));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
