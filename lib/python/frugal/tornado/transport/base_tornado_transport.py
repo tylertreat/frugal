@@ -23,6 +23,18 @@ class TTornadoTransportBase(TTransportBase, object):
         """
         self._execute = execute
 
+    @gen.coroutine
+    def isOpen(self):
+        raise gen.Return(NotImplementedError("You must override this."))
+
+    @gen.coroutine
+    def open(self):
+        raise gen.Return(NotImplementedError("You must override this."))
+
+    @gen.coroutine
+    def close(self):
+        raise gen.Return(NotImplementedError("You must override this."))
+
     def read(self, size):
         raise NotImplementedError("Don't call this.")
 
@@ -49,3 +61,6 @@ class TTornadoTransportBase(TTransportBase, object):
 
         self._wbuf.write(buff)
 
+    @gen.coroutine
+    def flush(self):
+        raise gen.Return(NotImplementedError("You must override this."))
