@@ -24,7 +24,10 @@ func (m *mockFRegistry) Unregister(ctx *FContext) {
 }
 
 func (m *mockFRegistry) Execute(frame []byte) error {
-	m.executeCalled <- struct{}{}
+	select {
+	case m.executeCalled <- struct{}{}:
+	default:
+	}
 	return m.Called(frame).Error(0)
 }
 
