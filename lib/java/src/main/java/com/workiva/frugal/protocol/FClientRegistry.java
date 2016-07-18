@@ -2,6 +2,7 @@ package com.workiva.frugal.protocol;
 
 import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.internal.Headers;
+import com.workiva.frugal.util.Pair;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.slf4j.Logger;
@@ -45,7 +46,7 @@ public class FClientRegistry implements FRegistry {
         }
         long opId = NEXT_OP_ID.incrementAndGet();
         context.setOpId(opId);
-        handlers.put(opId, new Pair<>(callback, Thread.currentThread()));
+        handlers.put(opId, Pair.of(callback, Thread.currentThread()));
     }
 
     /**
@@ -54,6 +55,9 @@ public class FClientRegistry implements FRegistry {
      * @param context the FContext to unregister.
      */
     public void unregister(FContext context) {
+        if (context == null) {
+            return;
+        }
         handlers.remove(context.getOpId());
     }
 
@@ -72,31 +76,20 @@ public class FClientRegistry implements FRegistry {
         } catch (NumberFormatException e) {
             throw new FException("frame missing opId");
         }
-        if (!handlers.containsKey(opId)) {
+
+        Pair<FAsyncCallback, Thread> callbackThreadPair = handlers.get(opId);
+        if (callbackThreadPair == null) {
             LOGGER.info("Got a message for an unregistered context. Dropping.");
             return;
         }
-
-        Pair<FAsyncCallback, Thread> pair = handlers.get(opId);
-        pair.first.onMessage(new TMemoryInputTransport(frame));
+        callbackThreadPair.getLeft().onMessage(new TMemoryInputTransport(frame));
     }
 
     /**
      * Interrupt any registered contexts.
      */
     public void close() {
-        for (Pair<FAsyncCallback, Thread> pair : handlers.values()) {
-            pair.second.interrupt();
-        }
-    }
-
-    private static class Pair<K, V> {
-        K first;
-        V second;
-
-        Pair(K first, V second) {
-            this.first = first;
-            this.second = second;
-        }
+        handlers.values().parallelStream().forEach(pair -> pair.getRight().interrupt());
+        handlers.clear();
     }
 }
