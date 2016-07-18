@@ -129,6 +129,8 @@ public class FNatsTransport extends FBaseTransport {
     }
 
     /**
+     * Reads up to len bytes into buffer buf, starting at offset off.
+     *
      * @throws TTransportException
      */
     @Override

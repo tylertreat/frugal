@@ -25,6 +25,9 @@ import java.util.concurrent.*;
 /**
  * An implementation of FServer which uses NATS as the underlying transport. Clients must connect with the
  * TNatsServiceTransport.
+ *
+ * @deprecated With the next major release of frugal, stateful NATS transports will no longer be supported.
+ * With the release of 2.0, FStatelessNatsServer will be renamed to FNatsServer.
  */
 public class FNatsServer implements FServer {
 

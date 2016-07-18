@@ -21,7 +21,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * TNatsServiceTransport is an extension of thrift.TTransport exclusively used for services which uses NATS as the
  * underlying transport. Message frames are limited to 1MB in size.
- * @deprecated
+ *
+ * @deprecated With the next major release of frugal, stateful NATS transports will no longer be supported.
+ * Use the "stateless" FNatsTransport instead.
  */
 public class TNatsServiceTransport extends TTransport {
 
