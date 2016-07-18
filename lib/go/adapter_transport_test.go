@@ -94,7 +94,6 @@ func TestAdapterTransportOpenReadClose(t *testing.T) {
 	}
 
 	mockTr.AssertExpectations(t)
-	mockRegistry.AssertExpectations(t)
 }
 
 // Ensures the read loop closes the transport when it encounters an error.
