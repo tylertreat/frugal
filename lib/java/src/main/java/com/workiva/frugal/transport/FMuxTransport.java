@@ -10,6 +10,10 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+/**
+ * @deprecated Use direct extensions FTransport instead of wrapping
+ * thrift.TTransport with FMuxTransport.
+ */
 public class FMuxTransport extends FTransport {
     protected TFramedTransport framedTransport;
     protected BlockingQueue<FrameWrapper> workQueue;

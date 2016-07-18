@@ -19,6 +19,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
+@Deprecated
 public class TNatsServiceTransportTest {
 
     private final Connection mockConn = mock(Connection.class);

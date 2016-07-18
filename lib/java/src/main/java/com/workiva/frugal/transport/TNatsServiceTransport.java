@@ -21,8 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * TNatsServiceTransport is an extension of thrift.TTransport exclusively used for services which uses NATS as the
  * underlying transport. Message frames are limited to 1MB in size.
- * TODO: Support >1MB messages.
- * TODO 2.0.0: Remove "Service" from the name.
+ * @deprecated
  */
 public class TNatsServiceTransport extends TTransport {
 
