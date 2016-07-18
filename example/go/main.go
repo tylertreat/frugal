@@ -50,7 +50,7 @@ func main() {
 	}
 
 	fprotocolFactory := frugal.NewFProtocolFactory(protocolFactory)
-	ftransportFactory := frugal.NewFMuxTransportFactory(5)
+	ftransportFactory := frugal.NewAdapterTransportFactory()
 
 	natsOptions := nats.DefaultOptions
 	natsOptions.Servers = []string{*addr}

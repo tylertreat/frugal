@@ -10,6 +10,22 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+type fAdapterTransportFactory struct{}
+
+// NewAdapterTransportFactory creates a new FTransportFactory which produces an
+// FTransport implementation that acts as an adapter for thrift.TTransport.
+// This allows TTransports which support blocking reads to work with Frugal by
+// starting a goroutine that reads from the underlying transport and calling
+// the registry on received frames.
+func NewAdapterTransportFactory() FTransportFactory {
+	return &fAdapterTransportFactory{}
+}
+
+// GetTransport returns a new adapter FTransport.
+func (f *fAdapterTransportFactory) GetTransport(tr thrift.TTransport) FTransport {
+	return NewAdapterTransport(tr)
+}
+
 type fAdapterTransport struct {
 	*TFramedTransport
 	isOpen             bool
@@ -21,7 +37,10 @@ type fAdapterTransport struct {
 }
 
 // NewAdapterTransport returns an FTransport which uses the given TTransport
-// for read/write operations in a way that is compatible with Frugal.
+// for read/write operations in a way that is compatible with Frugal. This
+// allows TTransports which support blocking reads to work with Frugal by
+// starting a goroutine that reads from the underlying transport and calling
+// the registry on received frames.
 func NewAdapterTransport(tr thrift.TTransport) FTransport {
 	return &fAdapterTransport{
 		TFramedTransport: NewTFramedTransport(tr),
@@ -34,11 +53,16 @@ func (f *fAdapterTransport) Open() error {
 	defer f.mu.Unlock()
 	if f.isOpen {
 		return thrift.NewTTransportException(thrift.ALREADY_OPEN,
-			"frugal: NATS transport already open")
+			"frugal: transport already open")
 	}
+
 	if err := f.TFramedTransport.Open(); err != nil {
-		return err
+		// It's OK if the underlying transport is already open.
+		if e, ok := err.(thrift.TTransportException); !(ok && e.TypeId() == thrift.ALREADY_OPEN) {
+			return err
+		}
 	}
+
 	go f.readLoop()
 	f.isOpen = true
 	f.closeChan = make(chan error, 1)
@@ -63,13 +87,14 @@ func (f *fAdapterTransport) readLoop() {
 				return
 			}
 
-			log.Error("frugal: error reading protocol frame, closing transport:", err)
+			log.Error("frugal: error reading protocol frame, closing transport: ", err)
 			f.close(err)
+			return
 		}
 
 		if err := f.registry.Execute(frame); err != nil {
 			// An error here indicates an unrecoverable error, teardown transport.
-			log.Error("frugal: closing transport due to unrecoverable error processing frame:", err)
+			log.Error("frugal: closing transport due to unrecoverable error processing frame: ", err)
 			f.close(err)
 			return
 		}
@@ -139,6 +164,9 @@ func (f *fAdapterTransport) close(cause error) error {
 	return nil
 }
 
+// Read returns an error as it should not be called directly. The adapter
+// transport handles reading from the underlying transport and is responsible
+// for invoking callbacks on received frames.
 func (f *fAdapterTransport) Read(buf []byte) (int, error) {
 	return 0, errors.New("Do not call Read directly on FTransport")
 }
