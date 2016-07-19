@@ -104,7 +104,7 @@ func handleClient(client *event.FFooClient) (err error) {
 
 // Client runner
 func runClient(conn *nats.Conn, protocolFactory *frugal.FProtocolFactory, port string) error {
-	natsT := frugal.NewNatsFTransport(conn, "foo", "bar")
+	natsT := frugal.NewFNatsTransport(conn, "foo", "bar")
 	defer natsT.Close()
 	if err := natsT.Open(); err != nil {
 		return err

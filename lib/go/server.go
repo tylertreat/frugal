@@ -14,6 +14,8 @@ type FServer interface {
 
 	// SetHighWatermark sets the maximum amount of time a frame is allowed to
 	// await processing before triggering server overload logic.
-	// DEPRECATED
+	// DEPRECATED - This will be a constructor implementation detail for
+	// servers which buffer client requests.
+	// TODO: Remove this with 2.0
 	SetHighWatermark(watermark time.Duration)
 }

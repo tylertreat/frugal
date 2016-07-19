@@ -37,7 +37,7 @@ func TestNatsTransportOpenNatsDisconnected(t *testing.T) {
 		t.Fatal(err)
 	}
 	conn.Close()
-	tr := NewNatsFTransport(conn, "foo", "bar")
+	tr := NewFNatsTransport(conn, "foo", "bar")
 
 	assert.Error(t, tr.Open())
 	assert.False(t, tr.IsOpen())
@@ -92,7 +92,7 @@ func TestNatsTransportOpen(t *testing.T) {
 
 // Ensures Read throws an error whenever called.
 func TestNatsTransportRead(t *testing.T) {
-	tr := NewNatsFTransport(nil, "foo", "bar")
+	tr := NewFNatsTransport(nil, "foo", "bar")
 	_, err := tr.Read(make([]byte, 0))
 	assert.Error(t, err)
 }
@@ -106,7 +106,7 @@ func TestNatsTransportWriteNotOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tr := NewNatsFTransport(conn, "foo", "bar")
+	tr := NewFNatsTransport(conn, "foo", "bar")
 
 	n, err := tr.Write(make([]byte, 10))
 
@@ -170,7 +170,7 @@ func TestNatsTransportFlushNotOpen(t *testing.T) {
 	}
 	defer conn.Close()
 
-	tr := NewNatsFTransport(conn, "foo", "bar")
+	tr := NewFNatsTransport(conn, "foo", "bar")
 
 	err = tr.Flush()
 	trErr := err.(thrift.TTransportException)
@@ -329,7 +329,7 @@ func TestStatelessNatsTTransportFlush(t *testing.T) {
 
 // HELPER METHODS
 
-func newClientAndServer(t *testing.T, isTTransport bool) (*natsFTransport, *FStatelessNatsServer, *nats.Conn) {
+func newClientAndServer(t *testing.T, isTTransport bool) (*fNatsTransport, *FStatelessNatsServer, *nats.Conn) {
 	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
 	if err != nil {
 		t.Fatal(err)
@@ -350,11 +350,11 @@ func newClientAndServer(t *testing.T, isTTransport bool) (*natsFTransport, *FSta
 		assert.Nil(t, server.Serve())
 	}()
 	time.Sleep(10 * time.Millisecond)
-	var tr *natsFTransport
+	var tr *fNatsTransport
 	if isTTransport {
-		tr = NewStatelessNatsTTransport(conn, "foo", "bar").(*natsFTransport)
+		tr = NewStatelessNatsTTransport(conn, "foo", "bar").(*fNatsTransport)
 	} else {
-		tr = NewNatsFTransport(conn, "foo", "bar").(*natsFTransport)
+		tr = NewFNatsTransport(conn, "foo", "bar").(*fNatsTransport)
 	}
 	return tr, server.(*FStatelessNatsServer), conn
 }

@@ -106,7 +106,8 @@ type FTransport interface {
 
 	// SetHighWatermark sets the maximum amount of time a frame is allowed to
 	// await processing before triggering transport overload logic.
-	// DEPRECATED
+	// DEPRECATED - This will be a constructor implementation detail for
+	// transports which buffer response data.
 	// TODO: Remove this with 2.0
 	SetHighWatermark(watermark time.Duration)
 }
@@ -144,7 +145,7 @@ func newFBaseTransportForTTransport(requestSizeLimit, frameBufferSize uint) *fBa
 
 // Intialize the close channels
 func (f *fBaseTransport) Open() {
-	f.closed = make(chan error)
+	f.closed = make(chan error, 1)
 
 	// TODO: Remove this with 2.0
 	f.closeChan = make(chan struct{})

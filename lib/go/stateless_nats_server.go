@@ -13,7 +13,7 @@ import (
 
 const defaultWorkQueueLen = 64
 
-// FNatsServerBuilder configures and builds FNatsServer instances.
+// FNatsServerBuilder configures and builds "stateless" nats servers instances.
 type FNatsServerBuilder struct {
 	conn               *nats.Conn
 	processor          FProcessor
@@ -27,7 +27,7 @@ type FNatsServerBuilder struct {
 }
 
 // NewFStatelessNatsServerBuilder creates a builder which configures and builds
-// FStatelessNatsServer instances.
+// "stateless" nats servers instances.
 func NewFNatsServerBuilder(conn *nats.Conn, processor FProcessor,
 	protoFactory *FProtocolFactory, subject string) *FNatsServerBuilder {
 	return &FNatsServerBuilder{
@@ -113,7 +113,7 @@ func NewFStatelessNatsServerBuilder(conn *nats.Conn, processor FProcessor,
 }
 
 // WithQueueGroup adds a NATS queue group to receive requests on.
-// DEPRECATED
+// DEPRECATED - Use FNatsServerBuilder
 // TODO: Remove this with 2.0
 func (f *FStatelessNatsServerBuilder) WithQueueGroup(queue string) *FStatelessNatsServerBuilder {
 	f.queue = queue
@@ -121,7 +121,7 @@ func (f *FStatelessNatsServerBuilder) WithQueueGroup(queue string) *FStatelessNa
 }
 
 // WithWorkerCount controls the number of goroutines used to process requests.
-// DEPRECATED
+// DEPRECATED - Use FNatsServerBuilder
 // TODO: Remove this with 2.0
 func (f *FStatelessNatsServerBuilder) WithWorkerCount(workerCount uint) *FStatelessNatsServerBuilder {
 	f.workerCount = workerCount
@@ -130,7 +130,7 @@ func (f *FStatelessNatsServerBuilder) WithWorkerCount(workerCount uint) *FStatel
 
 // WithQueueLength controls the length of the work queue used to buffer
 // requests.
-// DEPRECATED
+// DEPRECATED - Use FNatsServerBuilder
 // TODO: Remove this with 2.0
 func (f *FStatelessNatsServerBuilder) WithQueueLength(queueLength uint) *FStatelessNatsServerBuilder {
 	f.queueLen = queueLength
@@ -139,7 +139,7 @@ func (f *FStatelessNatsServerBuilder) WithQueueLength(queueLength uint) *FStatel
 
 // WithHighWatermark controls the time duration requests wait in queue before
 // triggering slow consumer logic.
-// DEPRECATED
+// DEPRECATED - Use FNatsServerBuilder
 // TODO: Remove this with 2.0
 func (f *FStatelessNatsServerBuilder) WithHighWatermark(highWatermark time.Duration) *FStatelessNatsServerBuilder {
 	f.highWatermark = highWatermark
@@ -147,7 +147,7 @@ func (f *FStatelessNatsServerBuilder) WithHighWatermark(highWatermark time.Durat
 }
 
 // Build a new configured FStatelessNatsServer.
-// DEPRECATED
+// DEPRECATED - Use FNatsServerBuilder
 // TODO: Remove this with 2.0
 func (f *FStatelessNatsServerBuilder) Build() *FStatelessNatsServer {
 	return &FStatelessNatsServer{
@@ -169,7 +169,7 @@ func (f *FStatelessNatsServerBuilder) Build() *FStatelessNatsServer {
 // FStatelessNatsServer implements FServer by using NATS as the underlying
 // transport. Clients must connect with the transport created by
 // NewStatelessNatsTTransport.
-// DEPRECATED
+// DEPRECATED - Use FNatsServerBuilder
 // TODO: Remove this with 2.0
 type FStatelessNatsServer struct {
 	*fNatsServer
