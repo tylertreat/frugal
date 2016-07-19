@@ -141,8 +141,6 @@ public class TestClient {
             case "binary":
                 protocolFactory = new TBinaryProtocol.Factory();
                 break;
-            default:
-                throw new Exception("Unknown protocol type encountered: " + protocol_type);
         }
 
         FTransportFactory fTransportFactory = new FMuxTransport.Factory(2);

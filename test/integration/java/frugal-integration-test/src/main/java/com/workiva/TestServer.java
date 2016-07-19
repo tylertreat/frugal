@@ -120,8 +120,6 @@ public class TestServer {
                 case "binary":
                     protocolFactory = new TBinaryProtocol.Factory();
                     break;
-                default:
-                    throw new Exception("Unknown protocol type encountered: " + protocol_type);
             }
 
             FTransportFactory fTransportFactory = new FMuxTransport.Factory(2);
@@ -151,7 +149,7 @@ public class TestServer {
     private static class TestServerHandler implements FFrugalTest.Iface {
 
 //      Each RPC handler "test___" accepts a value of type ___ and returns the same value (where applicable).
-//      The client then asserts that the returned value is equal to the value sent
+//      The client then asserts that the returned value is equal to the value sent.
         @Override
         public void testVoid(FContext ctx) throws TException {
             System.out.format("testVoid(%s)\n", ctx);
