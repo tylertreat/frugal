@@ -6,7 +6,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 
-import java.nio.ByteBuffer;
+import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -21,7 +21,7 @@ public abstract class FBaseTransport extends FTransport {
     private final Logger logger;
     private FRegistry registry;
     private final int requestBufferSize;
-    private final ByteBuffer requestBuffer;
+    private final ByteArrayOutputStream requestBuffer;
 
     // TODO: Remove with 2.0
     protected final BlockingQueue<byte[]> frameBuffer;
@@ -30,8 +30,15 @@ public abstract class FBaseTransport extends FTransport {
     private int currentFramePos;
 
     FBaseTransport(int requestBufferSize, Logger logger) {
-        this.requestBufferSize = requestBufferSize;
-        this.requestBuffer = ByteBuffer.allocate(requestBufferSize);
+        if (requestBufferSize <= 0) {
+            // No size limit
+            this.requestBufferSize = 0;
+            this.requestBuffer = new ByteArrayOutputStream();
+        } else {
+            // Cap the size of the buffer
+            this.requestBufferSize = requestBufferSize;
+            this.requestBuffer = new ByteArrayOutputStream(requestBufferSize);
+        }
         this.frameBuffer = null;
         this.logger = logger;
     }
@@ -39,7 +46,7 @@ public abstract class FBaseTransport extends FTransport {
     // TODO: Remove with 2.0
     FBaseTransport(int requestBufferSize, int frameBufferSize, Logger logger) {
         this.requestBufferSize = requestBufferSize;
-        this.requestBuffer = ByteBuffer.allocate(requestBufferSize);
+        this.requestBuffer = new ByteArrayOutputStream(requestBufferSize);
         this.frameBuffer = new ArrayBlockingQueue<>(frameBufferSize);
         this.logger = logger;
     }
@@ -56,6 +63,7 @@ public abstract class FBaseTransport extends FTransport {
 
     /**
      * Close the frame buffer and signal close
+     *
      * @param cause
      */
     void close(final Exception cause) {
@@ -64,7 +72,9 @@ public abstract class FBaseTransport extends FTransport {
         } catch (InterruptedException e) {
             logger.warn("could not close frame buffer: " + e.getMessage());
         }
-        registry.close();
+        if (registry != null) {
+            registry.close();
+        }
         signalClose(cause);
     }
 
@@ -100,19 +110,17 @@ public abstract class FBaseTransport extends FTransport {
      * @throws TTransportException
      */
     public void write(byte[] bytes, int off, int len) throws TTransportException {
-        if (requestBuffer.remaining() < len) {
-            int size = len + requestBufferSize - requestBuffer.remaining();
-            requestBuffer.clear();
+        if (requestBufferSize > 0 && requestBuffer.size() + len > requestBufferSize) {
+            int size = requestBuffer.size() + len;
+            requestBuffer.reset();
             throw new FMessageSizeException(
                     String.format("Message exceeds %d bytes, was %d bytes",
                             requestBufferSize, size));
         }
-        requestBuffer.put(bytes, off, len);
+        requestBuffer.write(bytes, off, len);
     }
 
-    protected boolean isRequestData() {
-        return requestBuffer.position() > 0;
-    }
+    protected boolean isRequestData() { return requestBuffer.size() > 0; }
 
     /**
      * Get the request bytes and reset the buffer.
@@ -121,10 +129,8 @@ public abstract class FBaseTransport extends FTransport {
      * TODO: Remove this with 2.0
      */
     protected byte[] getRequestBytes() {
-        byte[] data = new byte[requestBuffer.position()];
-        requestBuffer.flip();
-        requestBuffer.get(data);
-        requestBuffer.clear();
+        byte[] data = requestBuffer.toByteArray();
+        requestBuffer.reset();
         return data;
     }
 
@@ -134,12 +140,11 @@ public abstract class FBaseTransport extends FTransport {
      * @return request bytes
      */
     protected byte[] getFramedRequestBytes() {
-        int numBytes = requestBuffer.position();
+        int numBytes = requestBuffer.size();
         byte[] data = new byte[numBytes + 4];
-        requestBuffer.flip();
-        requestBuffer.get(data, 4, numBytes);
-        requestBuffer.clear();
         encodeFrameSize(numBytes, data);
+        System.arraycopy(requestBuffer.toByteArray(), 0, data, 4, numBytes);
+        requestBuffer.reset();
         return data;
     }
 

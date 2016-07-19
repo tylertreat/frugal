@@ -16,6 +16,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
@@ -23,44 +24,26 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * THttpTransport extends thrift.TTransport. This is a "stateless"
- * transport in the sense that this transport is not persistently connected to
- * a single server. A request is simply an http request and a response is an
- * http response. This assumes requests/responses fit within a single http
- * request.
+ * FHttpTransport extends FTransport. This is a "stateless" transport in the
+ * sense that this transport is not persistently connected to a single server.
+ * A request is simply an http request and a response is an http response.
+ * This assumes requests/responses fit within a single http request.
  */
-public class THttpTransport extends TTransport {
-
-    // Controls how many responses to buffer
-    private static final int FRAME_BUFFER_SIZE = 5;
-
-    // Frame buffer poison pill
-    protected static final byte[] FRAME_BUFFER_CLOSED = new byte[0];
-
+public class FHttpTransport extends FBaseTransport {
     // Logger
-    private static final Logger LOGGER = LoggerFactory.getLogger(THttpTransport.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FHttpTransport.class);
 
     // Immutable
     private final CloseableHttpClient httpClient;
     private final String url;
-    private final int requestSizeLimit;
     private final int responseSizeLimit;
-    protected final ArrayBlockingQueue<byte[]> frameBuffer;
-    private final ByteArrayOutputStream requestBuffer;
 
-    // Mutable
-    private byte[] currentFrame = new byte[0];
-    private int readPos;
-    private boolean isOpen;
-
-    private THttpTransport(CloseableHttpClient httpClient, String url,
+    private FHttpTransport(CloseableHttpClient httpClient, String url,
                           int requestSizeLimit, int responseSizeLimit) {
+        super(requestSizeLimit - 4, LOGGER);
         this.httpClient = httpClient;
         this.url = url;
-        this.requestSizeLimit = requestSizeLimit;
         this.responseSizeLimit = responseSizeLimit;
-        this.frameBuffer = new ArrayBlockingQueue<>(FRAME_BUFFER_SIZE);
-        this.requestBuffer = new ByteArrayOutputStream();
     }
 
     /**
@@ -113,8 +96,8 @@ public class THttpTransport extends TTransport {
          *
          * @return THttpTransport
          */
-        public THttpTransport build() {
-             return new THttpTransport(this.httpClient, this.url,
+        public FHttpTransport build() {
+             return new FHttpTransport(this.httpClient, this.url,
                      this.requestSizeLimit, this.responseSizeLimit);
         }
     }
@@ -122,75 +105,31 @@ public class THttpTransport extends TTransport {
     /**
      * Queries whether the transport is open.
      *
-     * @return True if the transport is open.
+     * @return True
      */
     @Override
     public synchronized boolean isOpen() {
-        return isOpen;
+        return true;
     }
 
     /**
-     * Opens the transport for reading/writing.
-     *
-     * @throws TTransportException if the transport could not be opened
+     * This is a no-op for FHttpTransport
      */
     @Override
-    public void open() throws TTransportException {
-        // Make sure the frame buffer is completely empty (in case this
-        // transport was re-opened).
-        frameBuffer.clear();
-        isOpen = true;
-    }
+    public void open() throws TTransportException {}
 
     /**
-     * Clears and puts the close frame into the response buffer
+     * This is a no-op for FHttpTransport
      */
     @Override
-    public synchronized void close() {
-        frameBuffer.clear();
-        try {
-            frameBuffer.put(FRAME_BUFFER_CLOSED);
-        } catch (InterruptedException e) {
-            LOGGER.warn("HTTP transport could not close frame buffer: " + e.getMessage());
-        }
-        isOpen = false;
-    }
+    public synchronized void close() {}
 
     /**
-     * Reads up to len bytes into buffer buf, starting at offset off.
-     *
-     * @param buf Array to read into
-     * @param off Index to start reading at
-     * @param len Maximum number of bytes to read
-     * @return The number of bytes actually read
-     * @throws TTransportException if there was an error reading data
+     * @throws TTransportException - Do not call read directly on FTransport
      */
     @Override
     public int read(byte[] buf, int off, int len) throws TTransportException {
-        if (!isOpen()) {
-            throw new TTransportException(TTransportException.NOT_OPEN, "read: HTTP transport not open");
-        }
-
-        if (readPos == currentFrame.length) {
-            try {
-                currentFrame = frameBuffer.take();
-            } catch (InterruptedException e) {
-                throw new TTransportException(TTransportException.END_OF_FILE, e.getMessage());
-            }
-            readPos = 0;
-        }
-
-        if (currentFrame == FRAME_BUFFER_CLOSED) {
-            throw new TTransportException(TTransportException.END_OF_FILE);
-        }
-
-        // Can only copy bytes that are available in the current buffer
-        len = Math.min(currentFrame.length - readPos, len);
-
-        System.arraycopy(currentFrame, readPos, buf, off, len);
-        readPos += len;
-
-        return len;
+        throw new TTransportException("Do not call read directly on FTransport");
     }
 
     /**
@@ -204,17 +143,7 @@ public class THttpTransport extends TTransport {
      */
     @Override
     public void write(byte[] buf, int off, int len) throws TTransportException {
-        if (!isOpen()) {
-            throw new TTransportException(TTransportException.NOT_OPEN, "write: HTTP transport not open");
-        }
-
-        if (requestSizeLimit > 0 && len + requestBuffer.size() > requestSizeLimit) {
-            int size = len + requestBuffer.size();
-            requestBuffer.reset();
-            throw new FMessageSizeException(
-                    String.format("Message exceeds %d bytes, was %d bytes", requestSizeLimit, size));
-        }
-        requestBuffer.write(buf, off, len);
+        super.write(buf, off, len);
     }
 
     /**
@@ -224,38 +153,30 @@ public class THttpTransport extends TTransport {
      */
     @Override
     public void flush() throws TTransportException {
-        if (!isOpen()) {
-            throw new TTransportException(TTransportException.NOT_OPEN, "flush: HTTP transport not open");
-        }
-
-        if (requestBuffer.size() == 0) {
+        if (!isRequestData()) {
             return;
         }
-
-        byte[] data = requestBuffer.toByteArray();
-        requestBuffer.reset();
-
+        byte[] data = getFramedRequestBytes();
         byte[] response = makeRequest(data);
 
         // All responses should be framed with 4 bytes
         if (response.length < 4) {
-            throw new TTransportException(TTransportException.UNKNOWN, "invalid frame size");
+            throw new TTransportException("invalid frame size");
         }
 
         // If there are only 4 bytes, this needs to be a one-way
         // (i.e. frame size 0)
         if (response.length == 4) {
             if (ByteBuffer.wrap(response).getInt() != 0) {
-                throw new TTransportException(TTransportException.UNKNOWN, "missing data");
+                throw new TTransportException("missing data");
             }
         }
 
         // Put the frame in the buffer
         try {
-            frameBuffer.put(response);
-        } catch (InterruptedException e) {
-            throw new TTransportException(TTransportException.UNKNOWN,
-                    "could not put frame in buffer: " + e.getMessage());
+            execute(response);
+        } catch (TException e) {
+            throw new TTransportException("could not execute response callback: " + e.getMessage());
         }
     }
 
@@ -278,8 +199,7 @@ public class THttpTransport extends TTransport {
         try {
             response = httpClient.execute(request);
         } catch (IOException e) {
-            throw new TTransportException(TTransportException.UNKNOWN,
-                    "http request failed: " + e.getMessage());
+            throw new TTransportException("http request failed: " + e.getMessage());
         }
 
         try {
@@ -298,15 +218,13 @@ public class THttpTransport extends TTransport {
             }
             // Check bad status code
             if (status >= 300) {
-                throw new TTransportException(TTransportException.UNKNOWN,
-                        "response errored with code " + status + " and message " + responseBody);
+                throw new TTransportException("response errored with code " + status + " and message " + responseBody);
             }
             // Decode and return response body
             return Base64.decodeBase64(responseBody);
 
         } catch (IOException e) {
-            throw new TTransportException(TTransportException.UNKNOWN,
-                    "could not decode response body: " + e.getMessage());
+            throw new TTransportException("could not decode response body: " + e.getMessage());
         } finally {
             try {
                 response.close();
