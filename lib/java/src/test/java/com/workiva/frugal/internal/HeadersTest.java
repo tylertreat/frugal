@@ -1,8 +1,5 @@
 package com.workiva.frugal.internal;
 
-import static org.junit.Assert.*;
-
-import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.exception.FProtocolException;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
@@ -10,10 +7,15 @@ import org.apache.thrift.transport.TTransport;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+
+@RunWith(JUnit4.class)
 public class HeadersTest {
 
     private static final Map<String, String> HEADERS;
