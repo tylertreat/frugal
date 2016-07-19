@@ -142,20 +142,6 @@ public class FClientRegistryTest {
     }
 
     @Test
-    public void testCloseClearsCallbackHandlers() throws TException {
-        // given
-        FClientRegistry registry = new FClientRegistry();
-        FContext context = new FContext();
-        registry.register(context, transport -> { });
-
-        // when
-        registry.close();
-
-        // then
-        assertEquals(registry.handlers.size(), 0);
-    }
-
-    @Test
     public void testCloseInterruptsRunningThreads() throws Exception {
         // given
         CountDownLatch readySignal = new CountDownLatch(1);
@@ -185,6 +171,7 @@ public class FClientRegistryTest {
 
         // then (success when thread interrupted)
         interruptSignal.await(); // wait for thread interrupt
+        assertEquals(registry.handlers.size(), 0);
     }
 
     /**
