@@ -35,8 +35,10 @@ import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
-import org.apache.thrift.transport.TFramedTransport;
-import org.apache.thrift.transport.*;
+import org.apache.thrift.transport.THttpClient;
+import org.apache.thrift.transport.TSocket;
+import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.transport.TTransportException;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -120,7 +122,6 @@ public class TestClient {
                     case "buffered":
                         break;
                     case "framed":
-                        transport = new TFramedTransport(transport);
                         break;
                 }
             }
@@ -715,7 +716,7 @@ public class TestClient {
             long startOneway = System.nanoTime();
             testClient.testOneway(context, 3);
             long onewayElapsedMillis = (System.nanoTime() - startOneway) / 1000000;
-            if (onewayElapsedMillis > 200) {
+            if (onewayElapsedMillis > 1000) {
                 System.out.println("Oneway test failed: took " +
                         Long.toString(onewayElapsedMillis) +
                         "ms");
@@ -756,19 +757,16 @@ public class TestClient {
             FScopeProvider provider = new FScopeProvider(factory,  new FProtocolFactory(protocolFactory));
 
             EventsSubscriber subscriber = new EventsSubscriber(provider);
-            subscriber.subscribeEventCreated(Integer.toString(port)+"-call", new EventsSubscriber.EventCreatedHandler() {
-                @Override
-                public void onEventCreated(FContext ctx, Event req) {
-                    System.out.println("Pub/Sub response received from server");
-                    queue.add(1);
-                }
+            subscriber.subscribeEventCreated(Integer.toString(port)+"-response", (ctx, event) -> {
+                System.out.format("Pub/Sub response received from server\n");
+                queue.add(1);
             });
 
             EventsPublisher publisher = new EventsPublisher(provider);
             publisher.open();
             Event event = new Event(1, "Sending Call");
             publisher.publishEventCreated(new FContext("Call"), Integer.toString(port)+"-call", event);
-            System.out.print("Publishing...    ");
+            System.out.format("Publishing...    ");
 
             try {
                 o = queue.poll(2, TimeUnit.SECONDS);
@@ -777,7 +775,7 @@ public class TestClient {
             }
 
             if(o == null) {
-                System.out.println("Pub/Sub response timed out!");
+                System.out.format("Pub/Sub response timed out!");
                 returnCode = 1;
             }
 
@@ -787,7 +785,7 @@ public class TestClient {
             long stop = System.nanoTime();
             long tot = stop - start;
 
-            System.out.println("Total time: " + tot / 1000 + "us");
+            System.out.format("Total time: " + tot / 1000 + "us");
 
             if (timeMin == 0 || tot < timeMin) {
                 timeMin = tot;
