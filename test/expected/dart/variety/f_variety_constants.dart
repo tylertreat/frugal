@@ -45,4 +45,5 @@ class VarietyConstants {
   static final Uint8List bin_const = new Uint8List.fromList(UTF8.encode('hello'));
   static final bool true_constant = true;
   static final bool false_constant = false;
+  static final int const_hc = 2;
 }

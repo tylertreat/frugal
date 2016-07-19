@@ -44,3 +44,4 @@ MAPCONSTANT2 = {
 bin_const = "hello"
 true_constant = True
 false_constant = False
+const_hc = 2

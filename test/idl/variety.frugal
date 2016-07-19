@@ -34,6 +34,8 @@ const binary bin_const = "hello"
 const bool true_constant = true
 const bool false_constant = false
 
+const HealthCondition const_hc = 2;
+
 struct TestBase {
     1: base.thing base_struct,
 }
