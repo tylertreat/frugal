@@ -156,7 +156,7 @@ public class FStatelessNatsServer implements FServer {
     }
 
     @Override
-    public synchronized void serve() throws TException {
+    public void serve() throws TException {
         Subscription sub = conn.subscribe(subject, queue, newRequestHandler());
         LOGGER.info("Frugal server running...");
         try {
