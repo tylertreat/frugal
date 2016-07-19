@@ -1,3 +1,4 @@
+# TODO: Remove this with 2.0
 import json
 import logging
 from datetime import timedelta
@@ -7,7 +8,7 @@ from io import BytesIO
 from frugal.tornado.transport import TTornadoTransportBase
 from nats.io.utils import new_inbox
 from thrift.transport.TTransport import TTransportException
-from tornado import gen, concurrent, ioloop, locks
+from tornado import gen, concurrent, ioloop
 
 
 _NATS_PROTOCOL_VERSION = 0
@@ -21,6 +22,10 @@ logger = logging.getLogger(__name__)
 
 
 class TNatsServiceTransport(TTornadoTransportBase):
+    """
+    @deprecated With the next major release of frugal, stateful NATS transports
+    will no longer be supported.  Use the "stateless" FNatsTransport instead.
+    """
 
     @staticmethod
     def Client(nats_client,
@@ -34,7 +39,10 @@ class TNatsServiceTransport(TTornadoTransportBase):
             nats_client: connected nats.io.Client
             connection_subject: string NATS subject to connect to
             connection_timeout: timeout in milliseconds
-            max_missed_heartbeats: number of missed heartbeats before disconnect
+            max_missed_heartbeats: number of missed heartbeats before
+                disconnect
+
+
         """
         return TNatsServiceTransport(
             nats_client=nats_client,
@@ -87,7 +95,8 @@ class TNatsServiceTransport(TTornadoTransportBase):
     def isOpen(self):
         with (yield self._open_lock.acquire()):
             # Tornado requires we raise a special exception to return a value.
-            raise gen.Return(self._is_open and self._nats_client.is_connected())
+            raise gen.Return(
+                self._is_open and self._nats_client.is_connected())
 
     @gen.coroutine
     def open(self):
@@ -201,7 +210,8 @@ class TNatsServiceTransport(TTornadoTransportBase):
         if not self._is_open:
             return
 
-        yield self._nats_client.publish_request(self._write_to, _DISCONNECT, '')
+        yield self._nats_client.publish_request(
+            self._write_to, _DISCONNECT, '')
 
         if (hasattr(self, '_heartbeat_timer') and
                 self._heartbeat_timer.is_running()):

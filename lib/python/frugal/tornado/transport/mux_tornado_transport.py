@@ -1,3 +1,4 @@
+# TODO: Remove with 2.0
 import logging
 from threading import Lock
 
@@ -10,7 +11,11 @@ logger = logging.getLogger(__name__)
 
 
 class FMuxTornadoTransport(FTransport):
-    """FMuxTornadoTransport is a wrapper around a TFramedTransport"""
+    """FMuxTornadoTransport is a wrapper around a TFramedTransport
+
+    @deprecated Use direct extensions FTransport instead of wrapping
+    thrift.TTransport with FMuxTransport.
+    """
 
     def __init__(self, framed_transport, io_loop=None):
         super(FTransport, self).__init__()
@@ -85,7 +90,11 @@ class FMuxTornadoTransport(FTransport):
 
 
 class FMuxTornadoTransportFactory(FTransportFactory):
-    """Factory for creating FMuxTransports."""
+    """Factory for creating FMuxTransports.
+
+    @deprecated Use direct extensions FTransport instead of wrapping
+    thrift.TTransport with FMuxTransport.
+    """
 
     def get_transport(self, thrift_transport):
         """ Returns a new FMuxTransport wrapping the given TTransport

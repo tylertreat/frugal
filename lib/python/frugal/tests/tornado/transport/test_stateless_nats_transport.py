@@ -1,3 +1,4 @@
+# TODO: Remove with 2.0
 import mock
 import struct
 
@@ -21,7 +22,7 @@ class TestTNatsStatelessTransport(AsyncTestCase):
                                                  self.subject,
                                                  self.inbox)
 
-    @mock.patch('frugal.tornado.transport.stateless_nats_transport.new_inbox')
+    @mock.patch('frugal.tornado.transport.nats_transport.new_inbox')
     def test_init(self, mock_new_inbox):
         self.assertEquals(self.mock_nats_client, self.transport._nats_client)
         self.assertEquals(self.subject, self.transport._subject)
@@ -64,13 +65,13 @@ class TestTNatsStatelessTransport(AsyncTestCase):
 
         self.assertEquals(1, self.transport._sub_id)
         self.mock_nats_client.subscribe.assert_called_with(
-            "new_inbox", "", self.transport._on_message_callback)
+            "new_inbox", "", self.transport._ttransport_on_message_callback)
 
     def test_execute_not_set_raises_exception(self):
         self.transport._execute = None
 
         with self.assertRaises(FExecuteCallbackNotSet):
-            self.transport._on_message_callback("")
+            self.transport._ttransport_on_message_callback("")
 
     @gen_test
     def test_close_calls_unsubscribe_and_sets_is_open_to_false(self):
