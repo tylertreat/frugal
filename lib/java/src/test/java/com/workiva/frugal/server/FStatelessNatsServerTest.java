@@ -63,6 +63,7 @@ public class FStatelessNatsServerTest {
 
     @Test
     public void testServe() throws TException, IOException, InterruptedException {
+        server = new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject).withQueueGroup(queue).build();
         ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> queueCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<MessageHandler> handlerCaptor = ArgumentCaptor.forClass(MessageHandler.class);
@@ -75,7 +76,7 @@ public class FStatelessNatsServerTest {
         new Thread(() -> {
             try {
                 server.serve();
-                stopSignal.countDown(); // signal server stopped
+                stopSignal.countDown(); // signal server stop
             } catch (TException e) {
                 fail(e.getMessage());
             }
