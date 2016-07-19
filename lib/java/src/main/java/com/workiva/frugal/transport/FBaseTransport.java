@@ -19,7 +19,6 @@ import java.util.concurrent.BlockingQueue;
 public abstract class FBaseTransport extends FTransport {
 
     private final Logger logger;
-    private FRegistry registry;
     private final int requestBufferSize;
     private final ByteArrayOutputStream requestBuffer;
 
