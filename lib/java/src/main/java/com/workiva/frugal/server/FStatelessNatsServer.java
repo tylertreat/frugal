@@ -223,19 +223,20 @@ public class FStatelessNatsServer implements FServer {
     /**
      * Runnable which encapsulates a request received by the server.
      */
-    protected static class Request implements Runnable {
+    static class Request implements Runnable {
 
-        protected final byte[] frameBytes;
-        protected final long timestamp;
-        protected final String reply;
-        protected final long highWatermark;
-        protected final FProtocolFactory inputProtoFactory;
-        protected final FProtocolFactory outputProtoFactory;
-        protected final FProcessor processor;
-        protected final Connection conn;
+        final byte[] frameBytes;
+        final long timestamp;
+        final String reply;
+        final long highWatermark;
+        final FProtocolFactory inputProtoFactory;
+        final FProtocolFactory outputProtoFactory;
+        final FProcessor processor;
+        final Connection conn;
 
-        public Request(byte[] frameBytes, long timestamp, String reply, long highWatermark, FProtocolFactory inputProtoFactory,
-                       FProtocolFactory outputProtoFactory, FProcessor processor, Connection conn) {
+        Request(byte[] frameBytes, long timestamp, String reply, long highWatermark,
+                       FProtocolFactory inputProtoFactory, FProtocolFactory outputProtoFactory,
+                       FProcessor processor, Connection conn) {
             this.frameBytes = frameBytes;
             this.timestamp = timestamp;
             this.reply = reply;

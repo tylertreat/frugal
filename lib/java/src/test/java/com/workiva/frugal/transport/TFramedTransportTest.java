@@ -3,11 +3,17 @@ package com.workiva.frugal.transport;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+/**
+ * Tests for {@link TFramedTransport}.
+ */
+@RunWith(JUnit4.class)
 public class TFramedTransportTest {
 
     TTransport mockTrans = mock(TTransport.class);
@@ -51,7 +57,7 @@ public class TFramedTransportTest {
     public void testWrite() throws Exception {
         transport.write(new byte[] {0x01}, 0, 1);
 
-        byte[] result = transport.writeBuffer_.get();
+        byte[] result = transport.writeBuffer.get();
 
         assertEquals(0x01, result[0]);
     }
@@ -60,7 +66,7 @@ public class TFramedTransportTest {
     public void testFlush() throws Exception {
         transport.write(new byte[] {0x00, 0x00, 0x00, 0x01}, 0, 1);
 
-        byte[] result = transport.writeBuffer_.get();
+        byte[] result = transport.writeBuffer.get();
         transport.flush();
 
         verify(mockTrans).write(new byte[] {0x00, 0x00, 0x00, 0x01}, 0, 4);

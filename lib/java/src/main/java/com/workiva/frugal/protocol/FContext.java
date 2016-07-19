@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-
 
 /**
  * FContext is the context for a Frugal message. Every RPC has an FContext, which
@@ -70,6 +68,10 @@ public class FContext {
             headers.put(CID, generateCorrelationId());
         }
         return new FContext(headers, new HashMap<String, String>());
+    }
+
+    private static String generateCorrelationId() {
+        return UUID.randomUUID().toString().replace("-", "");
     }
 
     /**
@@ -138,9 +140,9 @@ public class FContext {
     }
 
     /**
-     * Adds a response header to the FContext for the given name. A header is a key-value pair. If a header with the name
-     * is already present on the FContext, it will be replaced. The _opid header is reserved. Returns the same FContext
-     * to allow for call chaining.
+     * Adds a response header to the FContext for the given name. A header is a key-value pair.
+     * If a header with the name is already present on the FContext, it will be replaced.
+     * The _opid header is reserved. Returns the same FContext to allow for call chaining.
      *
      * @param name  header name
      * @param value header value
@@ -218,15 +220,6 @@ public class FContext {
     }
 
     /**
-     * Set the request timeout. Default is 1 minute.
-     *
-     * @param timeout timeout for the request in milliseconds.
-     */
-    public void setTimeout(long timeout) {
-        this.timeout = timeout;
-    }
-
-    /**
      * Get the request timeout.
      *
      * @return the request timeout in milliseconds.
@@ -235,11 +228,16 @@ public class FContext {
         return this.timeout;
     }
 
-    protected void setResponseOpId(String opId) {
-        responseHeaders.put(OP_ID, opId);
+    /**
+     * Set the request timeout. Default is 1 minute.
+     *
+     * @param timeout timeout for the request in milliseconds.
+     */
+    public void setTimeout(long timeout) {
+        this.timeout = timeout;
     }
 
-    private static String generateCorrelationId() {
-        return UUID.randomUUID().toString().replace("-", "");
+    protected void setResponseOpId(String opId) {
+        responseHeaders.put(OP_ID, opId);
     }
 }

@@ -184,7 +184,7 @@ public class FClientRegistryTest {
      */
     @Test
     public void testRegistryIsThreadsafe() throws TException {
-        final long POISON_PILL = Long.MAX_VALUE;
+        final long poisonPill = Long.MAX_VALUE;
 
         final ExecutorService pool = Executors.newCachedThreadPool();
 
@@ -210,7 +210,7 @@ public class FClientRegistryTest {
                             .forEach(i -> putToRegistry());
 
                     // Signal end of queue with poison pill
-                    opIds.add(POISON_PILL);
+                    opIds.add(poisonPill);
 
                     barrier.await();
                 } catch (Exception e) {
@@ -242,7 +242,7 @@ public class FClientRegistryTest {
 
                     while (true) {
                         long opId = opIds.take();
-                        if (opId == POISON_PILL) {
+                        if (opId == poisonPill) {
                             opIds.put(opId); // notify other threads to quit
                             barrier.await(); // release barrier
                             return;

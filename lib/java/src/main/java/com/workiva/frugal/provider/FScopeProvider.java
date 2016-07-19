@@ -12,6 +12,9 @@ import com.workiva.frugal.transport.FScopeTransportFactory;
  */
 public class FScopeProvider {
 
+    /**
+     * Client of this scope.
+     */
     public class Client {
         private FScopeTransport transport;
         private FProtocol protocol;

@@ -18,6 +18,8 @@ import org.slf4j.LoggerFactory;
  */
 public class FSimpleServer implements FServer {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(FSimpleServer.class);
+
     private FProcessorFactory fProcessorFactory;
     private TServerTransport tServerTransport;
     private FTransportFactory fTransportFactory;
@@ -25,7 +27,6 @@ public class FSimpleServer implements FServer {
     private volatile boolean stopped;
     private long highWatermark = FTransport.DEFAULT_WATERMARK;
 
-    private static Logger LOGGER = LoggerFactory.getLogger(FSimpleServer.class);
 
     public FSimpleServer(FProcessorFactory fProcessorFactory, TServerTransport fServerTransport,
                          FTransportFactory fTransportFactory, FProtocolFactory fProtocolFactory) {

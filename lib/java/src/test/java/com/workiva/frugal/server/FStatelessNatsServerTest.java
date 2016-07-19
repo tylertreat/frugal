@@ -18,16 +18,24 @@ import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+/**
+ * Tests for {@link FStatelessNatsServer}.
+ */
 @RunWith(JUnit4.class)
 public class FStatelessNatsServerTest {
 
@@ -43,18 +51,19 @@ public class FStatelessNatsServerTest {
         mockConn = mock(Connection.class);
         mockProcessor = mock(FProcessor.class);
         mockProtocolFactory = mock(FProtocolFactory.class);
-        server = new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject).withQueueGroup(queue).build();
+        server = new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+                .withQueueGroup(queue).build();
     }
 
     @Test
     public void testBuilderConfiguresServer() {
         FStatelessNatsServer server =
-            new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
-                .withHighWatermark(7)
-                .withQueueGroup("myQueue")
-                .withQueueLength(7)
-                .withWorkerCount(10)
-                .build();
+                new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+                        .withHighWatermark(7)
+                        .withQueueGroup("myQueue")
+                        .withQueueLength(7)
+                        .withWorkerCount(10)
+                        .build();
 
         assertEquals(server.getQueue(), "myQueue");
         assertEquals(server.getWorkQueue().remainingCapacity(), 7);
@@ -63,12 +72,14 @@ public class FStatelessNatsServerTest {
 
     @Test
     public void testServe() throws TException, IOException, InterruptedException {
-        server = new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject).withQueueGroup(queue).build();
+        server = new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+                .withQueueGroup(queue).build();
         ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> queueCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<MessageHandler> handlerCaptor = ArgumentCaptor.forClass(MessageHandler.class);
         Subscription sub = mock(Subscription.class);
-        when(mockConn.subscribe(subjectCaptor.capture(), queueCaptor.capture(), handlerCaptor.capture())).thenReturn(sub);
+        when(mockConn.subscribe(subjectCaptor.capture(), queueCaptor.capture(), handlerCaptor.capture()))
+                .thenReturn(sub);
 
         CountDownLatch stopSignal = new CountDownLatch(1);
 

@@ -3,7 +3,13 @@ package com.workiva.frugal.transport;
 import com.google.gson.Gson;
 import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.internal.NatsConnectionProtocol;
-import io.nats.client.*;
+import io.nats.client.AsyncSubscription;
+import io.nats.client.Connection;
+import io.nats.client.Constants;
+import io.nats.client.Message;
+import io.nats.client.MessageHandler;
+import io.nats.client.Subscription;
+import io.nats.client.SyncSubscription;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
@@ -15,7 +21,8 @@ import java.io.PipedOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -54,7 +61,7 @@ public class TNatsServiceTransport extends TTransport {
     protected boolean isOpen;
 
     /**
-     * Used for constructing server side of TNatsServiceTransport
+     * Used for constructing server side of TNatsServiceTransport.
      */
     private TNatsServiceTransport(Connection conn, String listenTo, String writeTo) {
         this.conn = conn;
@@ -67,9 +74,12 @@ public class TNatsServiceTransport extends TTransport {
     }
 
     /**
-     * Used for constructing client side of TNatsServiceTransport
+     * Used for constructing client side of TNatsServiceTransport.
      */
-    private TNatsServiceTransport(Connection conn, String connectionSubject, long connectionTimeout, int maxMissedHeartbeats) {
+    private TNatsServiceTransport(Connection conn,
+                                  String connectionSubject,
+                                  long connectionTimeout,
+                                  int maxMissedHeartbeats) {
         this.conn = conn;
         this.connectionSubject = connectionSubject;
         this.connectionTimeout = connectionTimeout;
@@ -78,18 +88,17 @@ public class TNatsServiceTransport extends TTransport {
     }
 
     /**
-     * Returns a new thrift TTransport which uses the NATS messaging system as the
-     * underlying transport. It performs a handshake with a server listening on the
-     * given NATS subject upon open. This TTransport can only be used with
-     * FNatsServer.
+     * Returns a new thrift TTransport which uses the NATS messaging system as the underlying transport.
+     * It performs a handshake with a server listening on the given NATS subject upon open.
+     * This TTransport can only be used with FNatsServer.
      */
     public static TNatsServiceTransport client(Connection conn, String subject, long timeout, int maxMissedHeartbeats) {
         return new TNatsServiceTransport(conn, subject, timeout, maxMissedHeartbeats);
     }
 
     /**
-     * Returns a new thrift TTransport which uses the NATS messaging system as the
-     * underlying transport. This TTransport can only be used with FNatsServer.
+     * Returns a new thrift TTransport which uses the NATS messaging system as the underlying transport.
+     * This TTransport can only be used with FNatsServer.
      */
     public static TNatsServiceTransport server(Connection conn, String listenTo, String writeTo) {
         return new TNatsServiceTransport(conn, listenTo, writeTo);
