@@ -91,4 +91,6 @@ public class varietyConstants {
 
 		public static final boolean false_constant = false;
 
+		public static final HealthCondition const_hc = HealthCondition.WARN;
+
 }
