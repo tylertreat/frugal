@@ -8,12 +8,12 @@ from tornado.httpclient import AsyncHTTPClient
 from tornado.httpclient import HTTPError
 from tornado.httpclient import HTTPRequest
 
-from frugal.tornado.transport import FTornadoTransportBase
+from frugal.tornado.transport import FTornadoTransport
 
 logger = logging.getLogger(__name__)
 
 
-class FHttpTransport(FTornadoTransportBase):
+class FHttpTransport(FTornadoTransport):
     def __init__(self, url, request_capacity=0, response_capacity=0):
         """
         Create an HTTP transport.
@@ -62,7 +62,7 @@ class FHttpTransport(FTornadoTransportBase):
         Write the current buffer and execute the set callback with the
         response.
         """
-        frame = self.get_request_bytes()
+        frame = self.get_write_bytes()
         if not frame:
             return
 
@@ -93,4 +93,4 @@ class FHttpTransport(FTornadoTransportBase):
             # One-way method, drop response
             return
 
-        self.execute(decoded)
+        self.execute_frame(decoded)

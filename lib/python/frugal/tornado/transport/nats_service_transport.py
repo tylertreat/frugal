@@ -5,10 +5,12 @@ from datetime import timedelta
 import struct
 from io import BytesIO
 
-from frugal.tornado.transport import TTornadoTransportBase
 from nats.io.utils import new_inbox
 from thrift.transport.TTransport import TTransportException
 from tornado import gen, concurrent, ioloop
+
+from frugal.tornado.transport import TTornadoTransportBase
+from frugal.util.deprecate import deprecated
 
 
 _NATS_PROTOCOL_VERSION = 0
@@ -28,6 +30,7 @@ class TNatsServiceTransport(TTornadoTransportBase):
     """
 
     @staticmethod
+    @deprecated
     def Client(nats_client,
                connection_subject,
                connection_timeout=_DEFAULT_CONNECTION_TIMEOUT,
@@ -52,6 +55,7 @@ class TNatsServiceTransport(TTornadoTransportBase):
         )
 
     @staticmethod
+    @deprecated
     def Server(nats_client, listen_to, write_to):
         """ Return a server instance of TNatsServiceTransport
 
@@ -66,6 +70,7 @@ class TNatsServiceTransport(TTornadoTransportBase):
             write_to=write_to
         )
 
+    @deprecated
     def __init__(self, **kwargs):
         """Create a TNatsServerTransport to communicate with NATS
 

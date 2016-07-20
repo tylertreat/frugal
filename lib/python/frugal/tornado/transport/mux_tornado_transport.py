@@ -6,6 +6,7 @@ from thrift.transport.TTransport import TTransportException
 from tornado import ioloop, gen
 
 from frugal.transport import FTransport, FTransportFactory
+from frugal.util.deprecate import deprecated
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ class FMuxTornadoTransport(FTransport):
     thrift.TTransport with FMuxTransport.
     """
 
+    @deprecated
     def __init__(self, framed_transport, io_loop=None):
         super(FTransport, self).__init__()
         self._registry = None
@@ -96,6 +98,7 @@ class FMuxTornadoTransportFactory(FTransportFactory):
     thrift.TTransport with FMuxTransport.
     """
 
+    @deprecated
     def get_transport(self, thrift_transport):
         """ Returns a new FMuxTransport wrapping the given TTransport
 

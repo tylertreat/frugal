@@ -5,12 +5,12 @@ from thrift.transport.TTransport import TTransportException
 from tornado import gen, locks
 
 from frugal.exceptions import FExecuteCallbackNotSet
-from frugal.tornado.transport import FTornadoTransportBase
+from frugal.tornado.transport import FTornadoTransport
 
 logger = logging.getLogger(__name__)
 
 
-class FNatsTransport(FTornadoTransportBase):
+class FNatsTransport(FTornadoTransport):
     """FNatsTransport is an extension of FTransport. This is a "stateless"
     transport in the sense that there is no connection with a server. A request
     is simply published to a subject and responses are received on another
@@ -69,7 +69,7 @@ class FNatsTransport(FTornadoTransportBase):
         self._is_open = True
 
     def _on_message_callback(self, msg):
-        self.execute(msg.data)
+        self.execute_frame(msg.data)
 
     def _ttransport_on_message_callback(self, msg):
         if not self._execute:
@@ -98,7 +98,7 @@ class FNatsTransport(FTornadoTransportBase):
             logger.exception(ex)
             raise ex
 
-        frame = self.get_request_bytes()
+        frame = self.get_write_bytes()
         if not frame:
             return
 

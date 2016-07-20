@@ -1,5 +1,6 @@
 # TODO: Remove with 2.0
 from frugal.tornado.transport import FNatsTransport
+from frugal.util.deprecate import deprecated
 
 
 class TStatelessNatsTransport(FNatsTransport):
@@ -12,6 +13,7 @@ class TStatelessNatsTransport(FNatsTransport):
     @deprecated - Use FNatsTransport instead
     """
 
+    @deprecated
     def __init__(self, nats_client, subject, inbox=""):
         """Create a new instance of FStatelessNatsTornadoServer
 

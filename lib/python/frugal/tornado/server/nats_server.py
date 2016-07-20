@@ -11,6 +11,7 @@ from frugal.server import FServer
 from frugal.transport import FTransport
 from frugal.tornado.transport import TNatsServiceTransport
 from frugal.registry import FServerRegistry
+from frugal.util.deprecate import deprecated
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ class FNatsTornadoServer(FServer):
     FStatelessNatsTornadoServer will be renamed to FNatsTornadoServer.
     """
 
+    @deprecated
     def __init__(self,
                  nats_client,
                  subject,
