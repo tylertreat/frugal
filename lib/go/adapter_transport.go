@@ -184,11 +184,15 @@ func (f *fAdapterTransport) SetRegistry(registry FRegistry) {
 }
 
 func (f *fAdapterTransport) Register(ctx *FContext, cb FAsyncCallback) error {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 	return f.registry.Register(ctx, cb)
 }
 
 func (f *fAdapterTransport) Unregister(ctx *FContext) {
+	f.mu.RLock()
 	f.registry.Unregister(ctx)
+	f.mu.RUnlock()
 }
 
 func (f *fAdapterTransport) SetMonitor(monitor FTransportMonitor) {
