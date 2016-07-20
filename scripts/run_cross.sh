@@ -39,7 +39,11 @@ cd ${frugalDir}
 
 # RM and Generate Java Code
 rm -rf test/integration/java/frugal-integration-test/gen-java/*
-frugal --gen java -r --out='test/integration/java/frugal-integration-test/gen-java' test/integration/frugalTest.frugal
+if [ $# -eq 1 ] && [ "$1" == "-gen_with_frugal" ]; then
+    frugal --gen java:gen_with_frugal -r --out='test/integration/java/frugal-integration-test/gen-java' test/integration/frugalTest.frugal
+else
+    frugal --gen java -r --out='test/integration/java/frugal-integration-test/gen-java' test/integration/frugalTest.frugal
+fi
 
 # Java dependency magic
 cp $SKYNET_APPLICATION_FRUGAL_ARTIFACTORY ${frugalDir}/test/integration/java/frugal-integration-test/frugal.jar
@@ -50,8 +54,3 @@ mvn clean compile -U
 # Run tests
 cd ${frugalDir}
 python test/integration/test.py --retry-count=0
-
-if [ -f ${frugalDir}/test/integration/log/unexpected_failures.log ]; then cp -r ${frugalDir}/test/integration/log/unexpected_failures.log /testing/artifacts/unexpected_failures.log; fi
-tar -czf successful_tests.tar.gz test/integration/log
-mv successful_tests.tar.gz /testing/artifacts/
-pkill gnatsd

@@ -37,7 +37,11 @@ cd ${frugalDir}
 
 # RM and Generate Java Code
 rm -rf test/integration/java/frugal-integration-test/gen-java/
-frugal --gen java -r --out='test/integration/java/frugal-integration-test/gen-java' test/integration/frugalTest.frugal
+if [ $# -eq 1 ] && [ "$1" == "-gen_with_frugal" ]; then
+    frugal --gen java:gen_with_frugal -r --out='test/integration/java/frugal-integration-test/gen-java' test/integration/frugalTest.frugal
+else
+    frugal --gen java -r --out='test/integration/java/frugal-integration-test/gen-java' test/integration/frugalTest.frugal
+fi
 
 cd lib/java
 mvn clean verify
