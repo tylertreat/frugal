@@ -31,12 +31,7 @@ import io.nats.client.ConnectionFactory;
 import io.nats.client.Constants;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
-import org.apache.thrift.transport.THttpClient;
-import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
@@ -90,58 +85,9 @@ public class TestClient {
             System.exit(1);
         }
 
-        List<String> validProtocols = new ArrayList<>();
-        validProtocols.add("binary");
-        validProtocols.add("compact");
-        validProtocols.add("json");
 
-        if (!validProtocols.contains(protocol_type)) {
-            throw new Exception("Unknown protocol type! " + protocol_type);
-        }
-
-        List<String> validTransports = new ArrayList<>();
-        validTransports.add("buffered");
-        validTransports.add("framed");
-        validTransports.add("http");
-
-        if (!validTransports.contains(transport_type)) {
-            throw new Exception("Unknown transport type! " + transport_type);
-        }
-
-        TTransport transport = null;
-        try {
-            if (transport_type.equals("http")) {
-                String url = "http://" + host + ":" + port + "/service";
-                transport = new THttpClient(url);
-            } else {
-                TSocket socket;
-                socket = new TSocket(host, port);
-                socket.setTimeout(socketTimeoutMs);
-                transport = socket;
-                switch (transport_type) {
-                    case "buffered":
-                        break;
-                    case "framed":
-                        break;
-                }
-            }
-        } catch (Exception x) {
-            x.printStackTrace();
-            System.exit(1);
-        }
-
-        TProtocolFactory protocolFactory;
-        switch (protocol_type) {
-            case "json":
-                protocolFactory = new TJSONProtocol.Factory();
-                break;
-            case "compact":
-                protocolFactory = new TCompactProtocol.Factory();
-                break;
-            case "binary":
-                protocolFactory = new TBinaryProtocol.Factory();
-                break;
-        }
+        TTransport transport = utils.whichTTransport(transport_type, socketTimeoutMs, host, port);
+        TProtocolFactory protocolFactory = utils.whichProtocolFactory(protocol_type);
 
         FTransportFactory fTransportFactory = new FMuxTransport.Factory(2);
         FTransport fTransport = fTransportFactory.getTransport(transport);

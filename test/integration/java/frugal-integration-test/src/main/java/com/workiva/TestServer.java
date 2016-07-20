@@ -33,9 +33,6 @@ import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
 import io.nats.client.Constants;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
@@ -81,15 +78,6 @@ public class TestServer {
                 System.exit(1);
             }
 
-            List<String> validProtocols = new ArrayList<>();
-            validProtocols.add("binary");
-            validProtocols.add("compact");
-            validProtocols.add("json");
-
-            if (!validProtocols.contains(protocol_type)) {
-                throw new Exception("Unknown protocol type! " + protocol_type);
-            }
-
             List<String> validTransports = new ArrayList<>();
             validTransports.add("buffered");
             validTransports.add("framed");
@@ -98,7 +86,6 @@ public class TestServer {
             if (!validTransports.contains(transport_type)) {
                 throw new Exception("Unknown transport type! " + transport_type);
             }
-
 
             InetSocketAddress address = new InetSocketAddress(host, port);
             TServerTransport serverTransport = new TServerSocket(address);
@@ -109,24 +96,12 @@ public class TestServer {
                     break;
             }
 
-            TProtocolFactory protocolFactory;
-            switch (protocol_type) {
-                case "json":
-                    protocolFactory = new TJSONProtocol.Factory();
-                    break;
-                case "compact":
-                    protocolFactory = new TCompactProtocol.Factory();
-                    break;
-                case "binary":
-                    protocolFactory = new TBinaryProtocol.Factory();
-                    break;
-            }
+            TProtocolFactory protocolFactory = utils.whichProtocolFactory(protocol_type);
 
             FTransportFactory fTransportFactory = new FMuxTransport.Factory(2);
             FFrugalTest.Iface handler = new TestServerHandler();
             FFrugalTest.Processor processor = new FFrugalTest.Processor(handler);
             FProtocolFactory fProtocolFactory = new FProtocolFactory(protocolFactory);
-
 
             FSimpleServer server = new FSimpleServer(
                     new FProcessorFactory(processor),
