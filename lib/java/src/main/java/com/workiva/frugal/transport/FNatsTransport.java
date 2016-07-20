@@ -14,7 +14,7 @@ import java.io.IOException;
  * published to a subject and responses are received on another subject. This
  * assumes requests/responses fit within a single NATS message.
  */
-public class FNatsTransport extends FBaseTransport {
+public class FNatsTransport extends FTransport {
 
     private static final int FRAME_BUFFER_SIZE = 64;
     public static final int NATS_MAX_MESSAGE_SIZE = 1024 * 1024;
@@ -50,7 +50,8 @@ public class FNatsTransport extends FBaseTransport {
      * @param inbox   subject to receive responses on
      */
     public FNatsTransport(Connection conn, String subject, String inbox) {
-        super(NATS_MAX_MESSAGE_SIZE - 4, FRAME_BUFFER_SIZE, LOGGER);
+        // Leave room for the frame size
+        super(NATS_MAX_MESSAGE_SIZE - 4);
         this.conn = conn;
         this.subject = subject;
         this.inbox = inbox;
@@ -61,11 +62,9 @@ public class FNatsTransport extends FBaseTransport {
 
     /**
      * TODO: Remove this with 2.0
-     *
-     * @deprecated
      */
-    FNatsTransport(Connection conn, String subject, String inbox, boolean isTTransport) {
-        super(NATS_MAX_MESSAGE_SIZE, FRAME_BUFFER_SIZE, LOGGER);
+    @Deprecated FNatsTransport(Connection conn, String subject, String inbox, boolean isTTransport) {
+        super(NATS_MAX_MESSAGE_SIZE, FRAME_BUFFER_SIZE);
         this.conn = conn;
         this.subject = subject;
         this.inbox = inbox;
@@ -73,7 +72,7 @@ public class FNatsTransport extends FBaseTransport {
     }
 
     @Override
-    public synchronized boolean isOpen() {
+    public boolean isOpen() {
         return sub != null && conn.getState() == Constants.ConnState.CONNECTED;
     }
 
@@ -83,7 +82,7 @@ public class FNatsTransport extends FBaseTransport {
      * @throws TTransportException
      */
     @Override
-    public synchronized void open() throws TTransportException {
+    public void open() throws TTransportException {
         if (conn.getState() != Constants.ConnState.CONNECTED) {
             throw getClosedConditionException(conn, "open:");
         }
@@ -103,7 +102,7 @@ public class FNatsTransport extends FBaseTransport {
                 }
             } else {
                 try {
-                    execute(message.getData());
+                    executeFrame(message.getData());
                 } catch (TException ignored) {
                 }
             }
@@ -115,7 +114,7 @@ public class FNatsTransport extends FBaseTransport {
      * Unsubscribes from the inbox subject and closes the response buffer.
      */
     @Override
-    public synchronized void close() {
+    public void close() {
         if (sub == null) {
             return;
         }
@@ -125,23 +124,7 @@ public class FNatsTransport extends FBaseTransport {
             LOGGER.warn("NATS transport could not unsubscribe from subscription: " + e.getMessage());
         }
         sub = null;
-        close(null);
-    }
-
-    /**
-     * Reads up to len bytes into buffer buf, starting at offset off.
-     *
-     * @throws TTransportException
-     */
-    @Override
-    public int read(byte[] bytes, int off, int len) throws TTransportException {
-        if (!isTTransport) {
-            throw new TTransportException("Do not call read directly on FTransport");
-        }
-        if (!isOpen()) {
-            throw new TTransportException(TTransportException.END_OF_FILE);
-        }
-        return super.read(bytes, off, len);
+        super.close();
     }
 
     /**
@@ -168,16 +151,16 @@ public class FNatsTransport extends FBaseTransport {
             throw getClosedConditionException(conn, "flush:");
         }
 
-        if (!isRequestData()) {
+        if (!isWriteData()) {
             return;
         }
 
         // TODO: Remove TTransport check with 2.0
         byte[] data;
         if (isTTransport) {
-            data = getRequestBytes();
+            data = getWriteBytes();
         } else {
-            data = getFramedRequestBytes();
+            data = getFramedWriteBytes();
         }
 
         try {

@@ -18,7 +18,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
 import static org.junit.Assert.*;
@@ -45,7 +44,7 @@ public class FHttpTransportTest {
         assertTrue(transport.isOpen());
     }
 
-    @Test(expected = TTransportException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testRead() throws TTransportException {
         transport.read(new byte[0], 0, 0);
     }

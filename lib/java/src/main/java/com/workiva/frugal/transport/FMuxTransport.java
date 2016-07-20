@@ -14,7 +14,7 @@ import java.util.concurrent.BlockingQueue;
  * @deprecated Use direct extensions FTransport instead of wrapping
  * thrift.TTransport with FMuxTransport.
  */
-public class FMuxTransport extends FTransport {
+@Deprecated public class FMuxTransport extends FTransport {
     protected TFramedTransport framedTransport;
     protected BlockingQueue<FrameWrapper> workQueue;
     private ProcessorThread processorThread;
@@ -27,15 +27,18 @@ public class FMuxTransport extends FTransport {
      *
      * @param transport  TTransport to wrap
      * @param numWorkers number of worker thread for the FTransport
+     *
+     * @deprecated Use direct extensions FTransport instead of wrapping
+     * thrift.TTransport with FMuxTransport.
      */
-    public FMuxTransport(TTransport transport, int numWorkers) {
+    @Deprecated public FMuxTransport(TTransport transport, int numWorkers) {
         this.framedTransport = new TFramedTransport(transport);
         this.workQueue = new ArrayBlockingQueue<>(numWorkers);
         this.processorThread = new ProcessorThread();
         this.workerThreads = new WorkerThread[numWorkers];
     }
 
-    public static class Factory implements FTransportFactory {
+    @Deprecated public static class Factory implements FTransportFactory {
 
         private final int numWorkers;
 
@@ -43,8 +46,11 @@ public class FMuxTransport extends FTransport {
          * Construct a new FMuxTransport factory.
          *
          * @param numWorkers number of worker thread for the FTransport
+         *
+         * @deprecated Use direct extensions FTransport instead of wrapping
+         * thrift.TTransport with FMuxTransport.
          */
-        public Factory(int numWorkers) {
+        @Deprecated public Factory(int numWorkers) {
             this.numWorkers = numWorkers;
         }
 

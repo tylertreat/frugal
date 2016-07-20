@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @deprecated With the next major release of frugal, stateful NATS transports will no longer be supported.
  * Use the "stateless" FNatsTransport instead.
  */
-public class TNatsServiceTransport extends TTransport {
+@Deprecated public class TNatsServiceTransport extends TTransport {
 
     // NATS limits messages to 1MB.
     public static final int NATS_MAX_MESSAGE_SIZE = 1024 * 1024;
@@ -56,8 +56,11 @@ public class TNatsServiceTransport extends TTransport {
 
     /**
      * Used for constructing server side of TNatsServiceTransport
+     *
+     * @deprecated With the next major release of frugal, stateful NATS transports will no longer be supported.
+     * Use the "stateless" FNatsTransport instead.
      */
-    private TNatsServiceTransport(Connection conn, String listenTo, String writeTo) {
+    @Deprecated private TNatsServiceTransport(Connection conn, String listenTo, String writeTo) {
         this.conn = conn;
         this.listenTo = listenTo;
         this.writeTo = writeTo;
@@ -69,8 +72,11 @@ public class TNatsServiceTransport extends TTransport {
 
     /**
      * Used for constructing client side of TNatsServiceTransport
+     *
+     * @deprecated With the next major release of frugal, stateful NATS transports will no longer be supported.
+     * Use the "stateless" FNatsTransport instead.
      */
-    private TNatsServiceTransport(Connection conn, String connectionSubject, long connectionTimeout, int maxMissedHeartbeats) {
+    @Deprecated private TNatsServiceTransport(Connection conn, String connectionSubject, long connectionTimeout, int maxMissedHeartbeats) {
         this.conn = conn;
         this.connectionSubject = connectionSubject;
         this.connectionTimeout = connectionTimeout;
@@ -83,16 +89,22 @@ public class TNatsServiceTransport extends TTransport {
      * underlying transport. It performs a handshake with a server listening on the
      * given NATS subject upon open. This TTransport can only be used with
      * FNatsServer.
+     *
+     * @deprecated With the next major release of frugal, stateful NATS transports will no longer be supported.
+     * Use the "stateless" FNatsTransport instead.
      */
-    public static TNatsServiceTransport client(Connection conn, String subject, long timeout, int maxMissedHeartbeats) {
+    @Deprecated public static TNatsServiceTransport client(Connection conn, String subject, long timeout, int maxMissedHeartbeats) {
         return new TNatsServiceTransport(conn, subject, timeout, maxMissedHeartbeats);
     }
 
     /**
      * Returns a new thrift TTransport which uses the NATS messaging system as the
      * underlying transport. This TTransport can only be used with FNatsServer.
+     *
+     * @deprecated With the next major release of frugal, stateful NATS transports will no longer be supported.
+     * Use the "stateless" FNatsTransport instead.
      */
-    public static TNatsServiceTransport server(Connection conn, String listenTo, String writeTo) {
+    @Deprecated public static TNatsServiceTransport server(Connection conn, String listenTo, String writeTo) {
         return new TNatsServiceTransport(conn, listenTo, writeTo);
     }
 

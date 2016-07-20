@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  * A request is simply an http request and a response is an http response.
  * This assumes requests/responses fit within a single http request.
  */
-public class FHttpTransport extends FBaseTransport {
+public class FHttpTransport extends FTransport {
     // Logger
     private static final Logger LOGGER = LoggerFactory.getLogger(FHttpTransport.class);
 
@@ -40,14 +40,14 @@ public class FHttpTransport extends FBaseTransport {
 
     private FHttpTransport(CloseableHttpClient httpClient, String url,
                           int requestSizeLimit, int responseSizeLimit) {
-        super(requestSizeLimit - 4, LOGGER);
+        super(requestSizeLimit - 4);
         this.httpClient = httpClient;
         this.url = url;
         this.responseSizeLimit = responseSizeLimit;
     }
 
     /**
-     * Builder for configuring and construction THttpTransport instances.
+     * Builder for configuring and construction FHttpTransport instances.
      */
     public static class Builder {
         private final CloseableHttpClient httpClient;
@@ -56,7 +56,7 @@ public class FHttpTransport extends FBaseTransport {
         private int responseSizeLimit;
 
         /**
-         * Create a new Builder which create THttpTransports that communicate with a server
+         * Create a new Builder which create FHttpTransports that communicate with a server
          * at the given url.
          *
          * @param httpClient    HTTP client
@@ -92,9 +92,9 @@ public class FHttpTransport extends FBaseTransport {
         }
 
         /**
-         * Creates new configured THttpTransport.
+         * Creates new configured FHttpTransport.
          *
-         * @return THttpTransport
+         * @return FHttpTransport
          */
         public FHttpTransport build() {
              return new FHttpTransport(this.httpClient, this.url,
@@ -108,7 +108,7 @@ public class FHttpTransport extends FBaseTransport {
      * @return True
      */
     @Override
-    public synchronized boolean isOpen() {
+    public boolean isOpen() {
         return true;
     }
 
@@ -122,29 +122,7 @@ public class FHttpTransport extends FBaseTransport {
      * This is a no-op for FHttpTransport
      */
     @Override
-    public synchronized void close() {}
-
-    /**
-     * @throws TTransportException - Do not call read directly on FTransport
-     */
-    @Override
-    public int read(byte[] buf, int off, int len) throws TTransportException {
-        throw new TTransportException("Do not call read directly on FTransport");
-    }
-
-    /**
-     * Writes the bytes to a buffer. Throws FMessageSizeException if the buffer exceeds
-     * {@code requestSizeLimit} bytes.
-     *
-     * @param buf The output data buffer
-     * @param off The offset to start writing from
-     * @param len The number of bytes to write
-     * @throws TTransportException if there was an error writing data
-     */
-    @Override
-    public void write(byte[] buf, int off, int len) throws TTransportException {
-        super.write(buf, off, len);
-    }
+    public void close() {}
 
     /**
      * Sends the buffered bytes over HTTP.
@@ -153,10 +131,10 @@ public class FHttpTransport extends FBaseTransport {
      */
     @Override
     public void flush() throws TTransportException {
-        if (!isRequestData()) {
+        if (!isWriteData()) {
             return;
         }
-        byte[] data = getFramedRequestBytes();
+        byte[] data = getFramedWriteBytes();
         byte[] response = makeRequest(data);
 
         // All responses should be framed with 4 bytes
@@ -174,7 +152,7 @@ public class FHttpTransport extends FBaseTransport {
 
         // Put the frame in the buffer
         try {
-            execute(response);
+            executeFrame(response);
         } catch (TException e) {
             throw new TTransportException("could not execute response callback: " + e.getMessage());
         }

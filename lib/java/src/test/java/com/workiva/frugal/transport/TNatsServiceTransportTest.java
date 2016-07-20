@@ -1,5 +1,5 @@
+// TODO: Remove this with 2.0
 package com.workiva.frugal.transport;
-
 
 import io.nats.client.Connection;
 import io.nats.client.Constants;
@@ -19,8 +19,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
-@Deprecated
-public class TNatsServiceTransportTest {
+@Deprecated public class TNatsServiceTransportTest {
 
     private final Connection mockConn = mock(Connection.class);
     private final String inbox = "_INBOX";

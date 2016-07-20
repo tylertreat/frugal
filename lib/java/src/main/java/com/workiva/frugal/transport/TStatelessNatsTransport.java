@@ -11,7 +11,7 @@ import org.apache.thrift.transport.TTransportException;
  *
  * @deprecated Use FNatsTransport instead.
  */
-public class TStatelessNatsTransport extends TTransport {
+@Deprecated public class TStatelessNatsTransport extends TTransport {
 
     protected final FNatsTransport fNatsTransport;
 
@@ -26,7 +26,7 @@ public class TStatelessNatsTransport extends TTransport {
      *
      * @deprecated Use FNatsTransport instead
      */
-    public TStatelessNatsTransport(Connection conn, String subject) {
+    @Deprecated public TStatelessNatsTransport(Connection conn, String subject) {
         this(conn, subject, conn.newInbox());
     }
 
@@ -42,7 +42,7 @@ public class TStatelessNatsTransport extends TTransport {
      *
      * @deprecated Use FNatsTransport instead
      */
-    public TStatelessNatsTransport(Connection conn, String subject, String inbox) {
+    @Deprecated public TStatelessNatsTransport(Connection conn, String subject, String inbox) {
         this.fNatsTransport = new FNatsTransport(conn, subject, inbox, true);
     }
 

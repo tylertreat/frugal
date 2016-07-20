@@ -29,7 +29,7 @@ import java.util.concurrent.*;
  * @deprecated With the next major release of frugal, stateful NATS transports will no longer be supported.
  * With the release of 2.0, FStatelessNatsServer will be renamed to FNatsServer.
  */
-public class FNatsServer implements FServer {
+@Deprecated public class FNatsServer implements FServer {
 
     private static final int DEFAULT_MAX_MISSED_HEARTBEATS = 3;
     private static final String QUEUE = "rpc";
@@ -50,27 +50,27 @@ public class FNatsServer implements FServer {
 
     private static Logger LOGGER = LoggerFactory.getLogger(FNatsServer.class);
 
-    public FNatsServer(Connection conn, String subject, long heartbeatInterval,
+    @Deprecated public FNatsServer(Connection conn, String subject, long heartbeatInterval,
                        FProcessor processor, FTransportFactory transportFactory,
                        FProtocolFactory protocolFactory) {
         this(conn, new String[]{subject}, heartbeatInterval, processor, transportFactory, protocolFactory);
     }
 
-    public FNatsServer(Connection conn, String[] subjects, long heartbeatInterval,
+    @Deprecated public FNatsServer(Connection conn, String[] subjects, long heartbeatInterval,
                        FProcessor processor, FTransportFactory transportFactory,
                        FProtocolFactory protocolFactory) {
         this(conn, subjects, heartbeatInterval, DEFAULT_MAX_MISSED_HEARTBEATS,
                 new FProcessorFactory(processor), transportFactory, protocolFactory);
     }
 
-    public FNatsServer(Connection conn, String subject, long heartbeatInterval, int maxMissedHeartbeats,
+    @Deprecated public FNatsServer(Connection conn, String subject, long heartbeatInterval, int maxMissedHeartbeats,
                        FProcessorFactory processorFactory, FTransportFactory transportFactory,
                        FProtocolFactory protocolFactory) {
         this(conn, new String[]{subject}, heartbeatInterval, maxMissedHeartbeats,
                 processorFactory, transportFactory, protocolFactory);
     }
 
-    public FNatsServer(Connection conn, String[] subjects, long heartbeatInterval, int maxMissedHeartbeats,
+    @Deprecated public FNatsServer(Connection conn, String[] subjects, long heartbeatInterval, int maxMissedHeartbeats,
                        FProcessorFactory processorFactory, FTransportFactory transportFactory,
                        FProtocolFactory protocolFactory) {
         this.conn = conn;

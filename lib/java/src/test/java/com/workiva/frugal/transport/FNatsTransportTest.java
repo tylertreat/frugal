@@ -10,7 +10,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
 import static org.junit.Assert.*;
@@ -74,10 +73,9 @@ public class FNatsTransportTest {
         verify(sub).unsubscribe();
         verify(mockCallback).onClose(null);
         verify(mockRegistry).close();
-        assertEquals(FBaseTransport.FRAME_BUFFER_CLOSED, transport.frameBuffer.poll(1, TimeUnit.SECONDS));
     }
 
-    @Test(expected = TTransportException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testRead() throws TTransportException {
         transport.read(new byte[0], 0, 0);
     }

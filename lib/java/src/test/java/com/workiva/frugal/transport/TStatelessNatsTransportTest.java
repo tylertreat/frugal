@@ -15,8 +15,7 @@ import static org.mockito.Matchers.any;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-@Deprecated
-public class TStatelessNatsTransportTest {
+@Deprecated public class TStatelessNatsTransportTest {
 
     private Connection conn;
     private String subject = "foo";
@@ -61,7 +60,7 @@ public class TStatelessNatsTransportTest {
         transport.close();
 
         verify(sub).unsubscribe();
-        assertEquals(FBaseTransport.FRAME_BUFFER_CLOSED, transport.fNatsTransport.frameBuffer.poll(1, TimeUnit.SECONDS));
+        assertEquals(FTransport.FRAME_BUFFER_CLOSED, transport.fNatsTransport.frameBuffer.poll(1, TimeUnit.SECONDS));
     }
 
     @Test(expected = TTransportException.class)
@@ -85,7 +84,7 @@ public class TStatelessNatsTransportTest {
         assertEquals(5, transport.read(buff, 0, 5));
         assertArrayEquals("world".getBytes(), buff);
 
-        transport.fNatsTransport.frameBuffer.put(FBaseTransport.FRAME_BUFFER_CLOSED);
+        transport.fNatsTransport.frameBuffer.put(FTransport.FRAME_BUFFER_CLOSED);
 
         try {
             transport.read(buff, 0, 5);
