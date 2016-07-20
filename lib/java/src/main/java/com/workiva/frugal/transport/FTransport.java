@@ -105,7 +105,7 @@ public abstract class FTransport extends TTransport {
      *
      * @param cause Exception if not a clean close (null otherwise)
      */
-    void close(final Exception cause) {
+    protected void close(final Exception cause) {
         // TODO: Remove all read logic with 2.0
         if (frameBuffer != null) {
             try {
@@ -131,6 +131,7 @@ public abstract class FTransport extends TTransport {
      *
      * TODO: Remove all read logic with 2.0
      */
+    @Override
     public int read(byte[] bytes, int off, int len) throws TTransportException {
         if (frameBuffer == null) {
             throw new UnsupportedOperationException("Do not call read directly on FTransport");
@@ -163,6 +164,7 @@ public abstract class FTransport extends TTransport {
      *
      * @throws TTransportException
      */
+    @Override
     public void write(byte[] bytes, int off, int len) throws TTransportException {
         if (writeBuffer == null) {
             throw new UnsupportedOperationException("No write buffer set on FTranspprt");
@@ -274,7 +276,8 @@ public abstract class FTransport extends TTransport {
         if (writeBuffer == null) {
             throw new UnsupportedOperationException("No write buffer set on FTranspprt");
         }
-        return writeBuffer.size() > 0; }
+        return writeBuffer.size() > 0;
+    }
 
     /**
      * Get the write bytes and reset the buffer.
