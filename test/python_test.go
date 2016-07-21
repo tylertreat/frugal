@@ -31,3 +31,30 @@ func TestValidPythonTornado(t *testing.T) {
 	initPath := filepath.Join(outputDir, "valid", "__init__.py")
 	compareFiles(t, "expected/python/__init__.py", initPath)
 }
+
+func TestValidPythonFrugalCompiler(t *testing.T) {
+	options := compiler.Options{
+		File:    frugalGenFile,
+		Gen:     "py:tornado,gen_with_frugal",
+		Out:     outputDir,
+		Delim:   delim,
+		Recurse: true,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("unexpected error", err)
+	}
+
+	baseConstantsPath := filepath.Join(outputDir, "actual_base", "python", "constants.py")
+	compareFiles(t, "expected/python/actual_base/constants.py", baseConstantsPath)
+	baseFtypesPath := filepath.Join(outputDir, "actual_base", "python", "ttypes.py")
+	compareFiles(t, "expected/python/actual_base/ttypes.py", baseFtypesPath)
+	baseFooPath := filepath.Join(outputDir, "actual_base", "python", "BaseFoo.py")
+	compareFiles(t, "expected/python/actual_base/BaseFoo.py", baseFooPath)
+
+	varietyConstantsPath := filepath.Join(outputDir, "variety", "python", "constants.py")
+	compareFiles(t, "expected/python/variety/constants.py", varietyConstantsPath)
+	varietyFtypesPath := filepath.Join(outputDir, "variety", "python", "ttypes.py")
+	compareFiles(t, "expected/python/variety/ttypes.py", varietyFtypesPath)
+	varietyFooPath := filepath.Join(outputDir, "variety", "python", "Foo.py")
+	compareFiles(t, "expected/python/variety/Foo.py", varietyFooPath)
+}

@@ -76,6 +76,18 @@ class FTornadoTransport(FTransport):
 
         self._registry.unregister(context)
 
+    @gen.coroutine
+    def isOpen(self):
+        raise gen.Return(NotImplementedError("You must override this."))
+
+    @gen.coroutine
+    def open(self):
+        raise gen.Return(NotImplementedError("You must override this."))
+
+    @gen.coroutine
+    def close(self):
+        raise gen.Return(NotImplementedError("You must override this."))
+
     def read(self, size):
         raise NotImplementedError("Don't call this.")
 
@@ -101,6 +113,10 @@ class FTornadoTransport(FTransport):
             raise ex
 
         self._wbuf.write(buff)
+
+    @gen.coroutine
+    def flush(self):
+        raise gen.Return(NotImplementedError("You must override this."))
 
     def get_write_bytes(self):
         frame = self._wbuf.getvalue()
