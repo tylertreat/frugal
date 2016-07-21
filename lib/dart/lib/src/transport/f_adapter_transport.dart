@@ -1,17 +1,13 @@
 part of frugal;
 
-/// FMultiplexedTransport is a multiplexed Transport that routes frames to the
-/// correct callbacks.
-/// Deprecated - Use FAdapterTransport instead
-class FMultiplexedTransport extends FTransport {
-  final Logger log = new Logger('FMultiplexedTransport');
+/// FAdapterTransport is an FTransport that executes TSocketTransport
+/// frames.
+class FAdapterTransport extends FTransport {
+  final Logger log = new Logger('FAdapterTransport');
   _TFramedTransport _transport;
-  FRegistry _registry;
 
-  /// Deprecated - Use FAdapterTransport instead
-  FMultiplexedTransport(TSocketTransport transport)
+  FAdapterTransport(TSocketTransport transport)
       : _transport = new _TFramedTransport(transport.socket) {
-    super.transport = _transport;
     // If there is an error on the socket, close the transport pessimistically.
     // This error is already logged upstream in TSocketTransport.
     transport.socket.onError.listen((e) => closeWithException(e));
@@ -26,7 +22,21 @@ class FMultiplexedTransport extends FTransport {
   bool get isOpen => _transport.isOpen && _registry != null;
 
   @override
+  Future open() => _transport.open();
+
+  @override
   Future close() => closeWithException(null);
+
+  // TODO: Remove this override with 2.0
+  @override
+  int read(Uint8List buffer, int offset, int length) {
+    throw new UnsupportedError("Cannot call read on FTransport");
+  }
+
+  @override
+  void write(Uint8List buffer, int offset, int length) {
+    _transport.write(buffer, offset, length);
+  }
 
   Future closeWithException(cause) async {
     await _transport.close();
@@ -35,13 +45,7 @@ class FMultiplexedTransport extends FTransport {
 
   @override
   void setRegistry(FRegistry registry) {
-    if (registry == null) {
-      throw new FError.withMessage("registry cannot be null");
-    }
-    if (_registry != null) {
-      return;
-    }
-
+    super.setRegistry(registry);
     _registry = registry;
     _transport.onFrame.listen((_FrameWrapper frame) {
       try {
@@ -59,21 +63,5 @@ class FMultiplexedTransport extends FTransport {
         closeWithException(e);
       }
     });
-  }
-
-  @override
-  void register(FContext ctx, FAsyncCallback callback) {
-    if (_registry == null) {
-      throw new FError.withMessage("transport registry not set");
-    }
-    _registry.register(ctx, callback);
-  }
-
-  @override
-  void unregister(FContext ctx) {
-    if (_registry == null) {
-      throw new FError.withMessage("frugal: transport registry not set");
-    }
-    _registry.unregister(ctx);
   }
 }

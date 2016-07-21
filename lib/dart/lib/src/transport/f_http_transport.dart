@@ -23,31 +23,6 @@ class FHttpClientTransport extends FTransport {
   Future close() => new Future.value();
 
   @override
-  void setRegistry(FRegistry registry) {
-    if (registry == null) {
-      throw new FError.withMessage('registry cannot be null');
-    }
-    if (_registry != null) return;
-    _registry = registry;
-  }
-
-  @override
-  void register(FContext ctx, FAsyncCallback callback) {
-    if (_registry == null) {
-      throw new FError.withMessage('transport registry not set');
-    }
-    _registry.register(ctx, callback);
-  }
-
-  @override
-  void unregister(FContext ctx) {
-    if (_registry == null) {
-      throw new FError.withMessage('frugal: transport registry not set');
-    }
-    _registry.unregister(ctx);
-  }
-
-  @override
   void write(Uint8List buffer, int offset, int length) {
     if (buffer == null) {
       throw new ArgumentError.notNull('buffer');
