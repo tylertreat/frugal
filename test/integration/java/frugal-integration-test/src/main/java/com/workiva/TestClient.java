@@ -702,7 +702,7 @@ public class TestClient {
 
             EventsSubscriber subscriber = new EventsSubscriber(provider);
             subscriber.subscribeEventCreated(Integer.toString(port)+"-response", (ctx, event) -> {
-                System.out.format("Pub/Sub response received from server\n");
+                System.out.println("Pub/Sub response received from server");
                 queue.add(1);
             });
 
@@ -710,7 +710,7 @@ public class TestClient {
             publisher.open();
             Event event = new Event(1, "Sending Call");
             publisher.publishEventCreated(new FContext("Call"), Integer.toString(port)+"-call", event);
-            System.out.format("Publishing...    ");
+            System.out.println("Publishing...    ");
 
             try {
                 o = queue.poll(2, TimeUnit.SECONDS);
@@ -719,7 +719,7 @@ public class TestClient {
             }
 
             if(o == null) {
-                System.out.format("Pub/Sub response timed out!");
+                System.out.println("Pub/Sub response timed out!");
                 returnCode = 1;
             }
 
@@ -729,7 +729,7 @@ public class TestClient {
             long stop = System.nanoTime();
             long tot = stop - start;
 
-            System.out.format("Total time: " + tot / 1000 + "us");
+            System.out.println("Total time: " + tot / 1000 + "us");
 
             if (timeMin == 0 || tot < timeMin) {
                 timeMin = tot;
