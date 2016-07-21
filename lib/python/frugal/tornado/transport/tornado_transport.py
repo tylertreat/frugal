@@ -1,99 +1,116 @@
+from io import BytesIO
 import logging
-from threading import Lock
+from struct import pack
 
 from thrift.transport.TTransport import TTransportException
-from tornado import ioloop, gen
+from tornado import gen, locks
 
-from frugal.transport import FTransport, FTransportFactory
+from frugal.exceptions import FMessageSizeException
+from frugal.transport import FTransport
+from frugal.util.deprecate import deprecated
 
 logger = logging.getLogger(__name__)
 
 
-class FMuxTornadoTransport(FTransport):
-    """FMuxTornadoTransport is a wrapper around a TFramedTransport"""
+class FTornadoTransport(FTransport):
+    """ FTornadoTransport implements the buffered write data and registry
+    interactions shared by all FTransports.
+    """
 
-    def __init__(self, framed_transport, io_loop=None):
-        super(FTransport, self).__init__()
-        self._registry = None
-        self._transport = framed_transport
-        self.io_loop = io_loop or ioloop.IOLoop.current()
-        self._lock = Lock()
+    def __init__(self, max_message_size=1024 * 1024):
+        super(FTornadoTransport, self).__init__()
+        self._max_message_size = max_message_size
+        self._wbuf = BytesIO()
 
-    def isOpen(self):
-        return self._transport.isOpen()
+        # TODO: Remove this with 2.0
+        self._execute = None
+        self._open_lock = locks.Lock()
 
-    @gen.coroutine
-    def open(self):
-        try:
-            yield self._transport.open()
-        except TTransportException as ex:
-            if ex.type != TTransportException.ALREADY_OPEN:
-                # It's okay if transport is already open
-                logger.exception(ex)
-                raise ex
+    # TODO: Remove with 2.0
+    @deprecated
+    def set_execute_callback(self, execute):
+        """Set the message callback execute function
 
-    @gen.coroutine
-    def close(self):
-        yield self._transport.close()
+        Args:
+            execute: message callback execute function
 
+        @deprecated Construct transports which call execute_frame,
+                    triggering the registry directly.
+        """
+        self._execute = execute
+
+    # TODO: With 2.0, make this a gen.coroutine and protect registry access
+    # with a tornado lock
     def set_registry(self, registry):
         """Set FRegistry on the transport.  No-Op if already set.
         args:
             registry: FRegistry to set on the transport
         """
-        with self._lock:
-            if not registry:
-                ex = ValueError("registry cannot be null.")
-                logger.exception(ex)
-                raise ex
+        if not registry:
+            ex = ValueError("registry cannot be null.")
+            logger.exception(ex)
+            raise ex
 
-            if self._registry:
-                return
+        if self._registry:
+            return
 
-            self._registry = registry
-            self._transport.set_execute_callback(registry.execute)
+        self._registry = registry
 
+    # TODO: With 2.0, make this a gen.coroutine and protect registry access
+    # with a tornado lock
     def register(self, context, callback):
-        with self._lock:
-            if not self._registry:
-                ex = StandardError("registry cannot be null.")
-                logger.exception(ex)
-                raise ex
+        if not self._registry:
+            ex = StandardError("registry cannot be null.")
+            logger.exception(ex)
+            raise ex
 
-            self._registry.register(context, callback)
+        self._registry.register(context, callback)
 
+    # TODO: With 2.0, make this a gen.coroutine and protect registry access
+    # with a tornado lock
     def unregister(self, context):
-        with self._lock:
-            if not self._registry:
-                ex = StandardError("registry cannot be null.")
-                logger.exception(ex)
-                raise ex
+        if not self._registry:
+            ex = StandardError("registry cannot be null.")
+            logger.exception(ex)
+            raise ex
 
-            self._registry.unregister(context)
+        self._registry.unregister(context)
 
-    def read(self):
-        ex = StandardError("you're doing it wrong")
-        logger.exception(ex)
-        raise ex
-
-    def write(self, buff):
-        self._transport.write(buff)
+    def read(self, size):
+        raise NotImplementedError("Don't call this.")
 
     @gen.coroutine
-    def flush(self):
-        yield self._transport.flush()
-
-
-class FMuxTornadoTransportFactory(FTransportFactory):
-    """Factory for creating FMuxTransports."""
-
-    def get_transport(self, thrift_transport):
-        """ Returns a new FMuxTransport wrapping the given TTransport
+    def write(self, buff):
+        """Writes the bytes to a buffer. Throws FMessageSizeException if the
+        buffer exceeds limit.
 
         Args:
-            thrift_transport: TTransport to wrap
-        Returns:
-            new FTransport
+            buff: buffer to append to the write buffer.
         """
+        if not (yield self.isOpen()):
+            ex = TTransportException(TTransportException.NOT_OPEN,
+                                     "Transport not open!")
+            logger.exception(ex)
+            raise ex
 
-        return FMuxTornadoTransport(thrift_transport)
+        size = len(buff) + len(self._wbuf.getvalue())
+
+        if size > self._max_message_size > 0:
+            ex = FMessageSizeException("Message exceeds max message size")
+            logger.exception(ex)
+            raise ex
+
+        self._wbuf.write(buff)
+
+    def get_write_bytes(self):
+        frame = self._wbuf.getvalue()
+        if len(frame) == 0:
+            return None
+
+        frame_length = pack('!I', len(frame))
+        self._wbuf = BytesIO()
+        return '{0}{1}'.format(frame_length, frame)
+
+    def execute_frame(self, frame):
+        self._registry.execute(frame[4:])
+
