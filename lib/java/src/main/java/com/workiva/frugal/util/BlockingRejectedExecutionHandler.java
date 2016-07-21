@@ -4,6 +4,9 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 
+/**
+ * Thread-pool rejection policy that blocks incoming requests.
+ */
 public class BlockingRejectedExecutionHandler implements RejectedExecutionHandler {
 
     @Override

@@ -10,10 +10,13 @@ import (
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
+// TornadoGenerator implements the LanguageGenerator interface for Python using
+// Tornado.
 type TornadoGenerator struct {
 	*Generator
 }
 
+// GenerateServiceImports generates necessary imports for the given service.
 func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Service) error {
 	imports := "from threading import Lock\n\n"
 
@@ -47,6 +50,7 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	return err
 }
 
+// GenerateScopeImports generates necessary imports for the given scope.
 func (t *TornadoGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "import sys\n"
 	imports += "import traceback\n\n"
@@ -67,6 +71,7 @@ func (t *TornadoGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	return err
 }
 
+// GenerateService generates the given service.
 func (t *TornadoGenerator) GenerateService(file *os.File, s *parser.Service) error {
 	if err := t.exposeServiceModule(filepath.Dir(file.Name()), s); err != nil {
 		return err
@@ -263,7 +268,7 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 			method.Name, t.generateServerArgs(method.Arguments))
 	}
 	for _, err := range method.Exceptions {
-		contents += tabtab + fmt.Sprintf("except %s as %s:\n", err.Type, err.Name)
+		contents += tabtab + fmt.Sprintf("except %s as %s:\n", t.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
 	if !method.Oneway {
@@ -279,6 +284,7 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 	return contents
 }
 
+// GenerateSubscriber generates the subscriber for the given scope.
 func (t *TornadoGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	subscriber := ""
 	subscriber += fmt.Sprintf("class %sSubscriber(object):\n", scope.Name)

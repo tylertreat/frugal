@@ -2,9 +2,9 @@
   {
     "name": "dart",
     "client": {
+      "timeout": 15,
       "transports": [
         "buffered",
-        "framed",
         "http"
       ],
       "sockets": [
@@ -25,7 +25,7 @@
   {
     "name": "go",
     "server": {
-      "delay": 1,
+      "delay": 5,
       "command": [
         "testserver"
       ]
@@ -52,14 +52,24 @@
   {
     "name": "java",
     "join_args": true,
+
     "command": [
       "mvn",
       "exec:java"
     ],
     "client": {
-      "timeout": 17,
+      "timeout": 20,
       "command": [
         "\"-Dexec.mainClass=com.workiva.TestClient\""
+      ],
+      "extra_args": [
+        "-f=\"java/frugal-integration-test/pom.xml\""
+      ]
+    },
+    "server": {
+      "delay": 15,
+      "command": [
+        "\"-Dexec.mainClass=com.workiva.TestServer\""
       ],
       "extra_args": [
         "-f=\"java/frugal-integration-test/pom.xml\""

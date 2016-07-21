@@ -11,7 +11,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-var nextOpID uint64 = 0
+var nextOpID uint64
 
 // FAsyncCallback is an internal callback which is constructed by generated
 // code and invoked by an FRegistry when a RPC response is received. In other
@@ -49,7 +49,7 @@ type clientRegistry struct {
 	handlers map[uint64]FAsyncCallback
 }
 
-// NewClientRegistry creates a Registry intended for use by Frugal clients.
+// NewFClientRegistry creates a Registry intended for use by Frugal clients.
 // This is only to be called by generated code.
 func NewFClientRegistry() FRegistry {
 	return &clientRegistry{handlers: make(map[uint64]FAsyncCallback)}
@@ -57,6 +57,12 @@ func NewFClientRegistry() FRegistry {
 
 // Register a callback for the given Context.
 func (c *clientRegistry) Register(ctx *FContext, callback FAsyncCallback) error {
+	// An FContext can be reused for multiple requests. Because of this, every
+	// time an FContext is registered, it must be assigned a new op id to
+	// ensure we can properly correlate responses. We use a monotonically
+	// increasing atomic uint64 for this purpose. If the FContext already has
+	// an op id, it has been used for a request. We check the handlers map to
+	// ensure that request is not still in-flight.
 	opID := ctx.opID()
 	c.mu.Lock()
 	defer c.mu.Unlock()

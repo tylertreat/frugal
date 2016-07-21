@@ -131,23 +131,23 @@ type FooHandler struct {
 }
 
 func (f *FooHandler) Ping(ctx *frugal.FContext) error {
-	fmt.Printf("Ping(%s)\n", ctx)
+	fmt.Printf("Ping(%+v)\n", ctx)
 	return nil
 }
 
 func (f *FooHandler) Blah(ctx *frugal.FContext, num int32, str string, e *event.Event) (int64, error) {
-	fmt.Printf("Blah(%s, %d, %s, %v)\n", ctx, num, str, e)
+	fmt.Printf("Blah(%+v, %d, %s, %v)\n", ctx, num, str, e)
 	ctx.AddResponseHeader("foo", "bar")
 	return 42, nil
 }
 
 func (f *FooHandler) BasePing(ctx *frugal.FContext) error {
-	fmt.Printf("BasePing(%s)\n", ctx)
+	fmt.Printf("BasePing(%+v)\n", ctx)
 	return nil
 }
 
 func (f *FooHandler) OneWay(ctx *frugal.FContext, id event.ID, req event.Request) error {
-	fmt.Printf("OneWay(%s, %s, %s)\n", ctx, id, req)
+	fmt.Printf("OneWay(%+v, %s, %s)\n", ctx, id, req)
 	return nil
 }
 

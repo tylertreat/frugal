@@ -13,6 +13,8 @@ import (
 
 const defaultMaxLength = 16384000
 
+// TFramedTransport is an implementation of thrift.TTransport which frames
+// messages with their size.
 type TFramedTransport struct {
 	transport   thrift.TTransport
 	buf         bytes.Buffer
@@ -29,44 +31,57 @@ type tFramedTransportFactory struct {
 	maxLength uint32
 }
 
+// NewTFramedTransportFactory creates a new TTransportFactory that produces
+// TFramedTransports.
 func NewTFramedTransportFactory(factory thrift.TTransportFactory) thrift.TTransportFactory {
 	return &tFramedTransportFactory{factory: factory, maxLength: defaultMaxLength}
 }
 
+// NewTFramedTransportFactoryMaxLength creates a new TTransportFactory that
+// produces TFramedTransports with the given max length.
 func NewTFramedTransportFactoryMaxLength(factory thrift.TTransportFactory, maxLength uint32) thrift.TTransportFactory {
 	return &tFramedTransportFactory{factory: factory, maxLength: maxLength}
 }
 
+// GetTransport creates a new TFramedTransport wrapping the given TTransport.
 func (p *tFramedTransportFactory) GetTransport(base thrift.TTransport) thrift.TTransport {
 	return NewTFramedTransportMaxLength(p.factory.GetTransport(base), p.maxLength)
 }
 
+// NewTFramedTransport creates a new TFramedTransport wrapping the given
+// TTransport.
 func NewTFramedTransport(transport thrift.TTransport) *TFramedTransport {
 	return &TFramedTransport{transport: transport, reader: bufio.NewReader(transport), maxLength: defaultMaxLength}
 }
 
+// NewTFramedTransportMaxLength creates a new TFramedTransport wrapping the
+// given TTransport using the given max length.
 func NewTFramedTransportMaxLength(transport thrift.TTransport, maxLength uint32) *TFramedTransport {
 	return &TFramedTransport{transport: transport, reader: bufio.NewReader(transport), maxLength: maxLength}
 }
 
+// Open the transport.
 func (p *TFramedTransport) Open() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.transport.Open()
 }
 
+// IsOpen checks if the transport is open.
 func (p *TFramedTransport) IsOpen() bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.transport.IsOpen()
 }
 
+// Close the transport.
 func (p *TFramedTransport) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.transport.Close()
 }
 
+// Read from the transport.
 func (p *TFramedTransport) Read(buf []byte) (l int, err error) {
 	if p.frameSize == 0 {
 		p.frameSize, err = p.readFrameHeader()
@@ -90,11 +105,13 @@ func (p *TFramedTransport) Read(buf []byte) (l int, err error) {
 	return got, thrift.NewTTransportExceptionFromError(err)
 }
 
+// Write to the transport.
 func (p *TFramedTransport) Write(buf []byte) (int, error) {
 	n, err := p.buf.Write(buf)
 	return n, thrift.NewTTransportExceptionFromError(err)
 }
 
+// Flush the transport.
 func (p *TFramedTransport) Flush() error {
 	size := p.buf.Len()
 	buf := p.writeBuffer[:4]
@@ -128,6 +145,7 @@ func (p *TFramedTransport) readFrameHeader() (uint32, error) {
 	return size, nil
 }
 
-func (p *TFramedTransport) RemainingBytes() (num_bytes uint64) {
+// RemainingBytes returns the current frame size.
+func (p *TFramedTransport) RemainingBytes() uint64 {
 	return uint64(p.frameSize)
 }

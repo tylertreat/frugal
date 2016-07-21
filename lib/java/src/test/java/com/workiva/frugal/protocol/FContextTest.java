@@ -1,14 +1,20 @@
 package com.workiva.frugal.protocol;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+
+/**
+ * Tests for {@link FContext}.
+ */
+@RunWith(JUnit4.class)
 public class FContextTest {
 
     @Test

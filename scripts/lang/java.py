@@ -27,6 +27,11 @@ class Java(LanguageBase):
         self._update_maven_version(version)
         self._update_maven_dep(_WORKIVA, 'frugal', version)
 
+        # Update integration tests
+        path = '{0}/test/integration/java/frugal-integration-test'.format(root)
+        os.chdir(path)
+        self._update_maven_dep(_WORKIVA, 'frugal', version)
+
     def _update_maven_version(self, version):
         """Update the project version in the current directory's pom.xml."""
         tree = ElementTree.parse(_POM_XML)

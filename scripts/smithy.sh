@@ -26,7 +26,7 @@ export PATH=$PATH:$ROOT/bin
 
 # JAVA
 # Compile library code
-cd $ROOT/lib/java && mvn clean verify
+cd $ROOT/lib/java && mvn checkstyle:check && mvn clean verify
 mv target/frugal-*.jar $ROOT
 
 # GO
@@ -38,10 +38,12 @@ go build
 go test -race
 
 # DART
+# Wrap up package for pub
+cd $ROOT
+tar -C lib/dart -czf frugal.pub.tgz .
 # Compile library code
 cd $ROOT/lib/dart
 pub get
-cp ./pubspec.lock $ROOT
 # Run the tests
 pub run dart_dev test
 pub run dart_dev coverage --no-html

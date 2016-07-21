@@ -7,10 +7,12 @@ import (
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
-const Version = "1.8.1"
+// Version of the Frugal compiler.
+const Version = "1.10.0"
 
+// Global variables.
 var (
-	TopicDelimiter  string = "."
+	TopicDelimiter  = "."
 	Gen             string
 	Out             string
 	FileDir         string
@@ -25,6 +27,7 @@ var (
 	GenWithFrugalWarn bool
 )
 
+// Reset global variables to initial state.
 func Reset() {
 	TopicDelimiter = "."
 	Gen = ""

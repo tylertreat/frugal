@@ -28,7 +28,8 @@ var newEncoder = func(buf *bytes.Buffer) io.WriteCloser {
 	return base64.NewEncoder(base64.StdEncoding, buf)
 }
 
-// NewFugalHandlerFunc is a function that create a ready to use Frugal handler function
+// NewFrugalHandlerFunc is a function that create a ready to use Frugal handler
+// function.
 func NewFrugalHandlerFunc(processor FProcessor, inPfactory, outPfactory *FProtocolFactory) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +37,7 @@ func NewFrugalHandlerFunc(processor FProcessor, inPfactory, outPfactory *FProtoc
 
 		// Check for size limitation
 		limitStr := r.Header.Get(payloadLimitHeader)
-		var limit int64 = 0
+		var limit int64
 		if limitStr != "" {
 			var err error
 			limit, err = strconv.ParseInt(limitStr, 10, 64)
@@ -139,7 +140,7 @@ func NewHttpTTransport(client *http.Client, url string) thrift.TTransport {
 	return NewHttpTTransportWithLimits(client, url, 0, 0)
 }
 
-// NewHttpTTransport returns a new Thrift TTransport which uses the
+// NewHttpTTransportWithLimits returns a new Thrift TTransport which uses the
 // HTTP as the underlying transport. This TTransport is stateless in that
 // there is no connection maintained between the client and server. A request
 // is simply an http request and a response is an http response. This assumes

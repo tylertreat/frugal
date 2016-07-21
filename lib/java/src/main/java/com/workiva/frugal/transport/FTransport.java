@@ -1,8 +1,8 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.protocol.FAsyncCallback;
+import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FRegistry;
 import com.workiva.frugal.transport.monitor.FTransportMonitor;
 import com.workiva.frugal.transport.monitor.MonitorRunner;
@@ -27,13 +27,13 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class FTransport extends TTransport {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(FTransport.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FTransport.class);
 
     public static final int REQUEST_TOO_LARGE = 100;
     public static final int RESPONSE_TOO_LARGE = 101;
     public static final long DEFAULT_WATERMARK = 5 * 1000;
 
-    private volatile FClosedCallback _closedCallback;
+    private volatile FClosedCallback fClosedCallback;
     private volatile FTransportClosedCallback closedCallback;
     private volatile FTransportClosedCallback monitor;
     protected long highWatermark = DEFAULT_WATERMARK;
@@ -79,7 +79,7 @@ public abstract class FTransport extends TTransport {
      */
     @Deprecated
     public synchronized void setClosedCallback(FClosedCallback closedCallback) {
-        this._closedCallback = closedCallback;
+        this.fClosedCallback = closedCallback;
     }
 
     /**
@@ -117,8 +117,8 @@ public abstract class FTransport extends TTransport {
 
     protected synchronized void signalClose(final Exception cause) {
         // TODO: Remove deprecated callback in future release.
-        if (_closedCallback != null) {
-            _closedCallback.onClose();
+        if (fClosedCallback != null) {
+            fClosedCallback.onClose();
         }
         if (closedCallback != null) {
             closedCallback.onClose(cause);

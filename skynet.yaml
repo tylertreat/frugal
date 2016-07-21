@@ -47,6 +47,7 @@ test-reports:
 
 ---
 
+# TODO: change test/integration/test.py line 100 when this configuration is no longer needed
 name: cross
 
 requires:
@@ -70,6 +71,7 @@ scripts:
 
   # Catch non-zero exit code and fail after results are uploaded
   - ./scripts/run_cross.sh || code=$?
+  - ./scripts/test_cleanup.sh
 
   # If applicable, fail here
   - if [ $code > 0 ]; then exit $code; fi
@@ -80,6 +82,8 @@ artifacts:
   - /testing/artifacts
 
 ---
+
+size: large
 
 name: cross-gen_with_frugal
 
@@ -103,6 +107,7 @@ scripts:
 
   # Catch non-zero exit code and fail after results are uploaded
   - ./scripts/run_cross.sh -gen_with_frugal || code=$?
+  - ./scripts/test_cleanup.sh
 
   # If applicable, fail here
   - if [ $code > 0 ]; then exit $code; fi

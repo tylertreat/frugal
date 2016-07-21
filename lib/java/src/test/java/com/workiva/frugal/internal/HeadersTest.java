@@ -1,8 +1,5 @@
 package com.workiva.frugal.internal;
 
-import static org.junit.Assert.*;
-
-import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.exception.FProtocolException;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
@@ -10,10 +7,18 @@ import org.apache.thrift.transport.TTransport;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+
+/**
+ * Tests for {@link Headers}.
+ */
+@RunWith(JUnit4.class)
 public class HeadersTest {
 
     private static final Map<String, String> HEADERS;
@@ -24,8 +29,10 @@ public class HeadersTest {
         HEADERS.put("blah", "baz");
     }
 
-    private static final byte[] LIST = new byte[]{0, 0, 0, 0, 29, 0, 0, 0, 3, 102, 111, 111, 0, 0, 0, 3, 98, 97,
-            114, 0, 0, 0, 4, 98, 108, 97, 104, 0, 0, 0, 3, 98, 97, 122};
+    private static final byte[] LIST = new byte[]{
+          0, 0, 0, 0, 29, 0, 0, 0, 3, 102, 111, 111, 0, 0, 0, 3, 98, 97,
+          114, 0, 0, 0, 4, 98, 108, 97, 104, 0, 0, 0, 3, 98, 97, 122
+    };
 
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
@@ -52,7 +59,9 @@ public class HeadersTest {
         TTransport transport = new TMemoryInputTransport(new byte[]{0, 0, 0});
 
         thrown.expect(TException.class);
+        // CHECKSTYLE:OFF
         thrown.expectMessage("Cannot read. Remote side has closed. Tried to read 4 bytes, but only got 2 bytes. (This is often indicative of an internal error on the server side. Please check your server logs.");
+        // CHECKSTYLE:ON
         Headers.read(transport);
     }
 

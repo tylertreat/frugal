@@ -3,12 +3,18 @@ package com.workiva.frugal.protocol;
 import com.workiva.frugal.processor.FProcessor;
 import org.apache.thrift.transport.TTransport;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Tests for {@link FServerRegistry}.
+ */
+@RunWith(JUnit4.class)
 public class FServerRegistryTest {
 
     @Test

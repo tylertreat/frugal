@@ -2,27 +2,25 @@ import json
 import logging
 from datetime import timedelta
 import struct
-from threading import Lock
 from io import BytesIO
 
+from frugal.tornado.transport import TTornadoTransportBase
 from nats.io.utils import new_inbox
-from thrift.transport.TTransport import TTransportBase, TTransportException
-from tornado import gen, concurrent, ioloop
+from thrift.transport.TTransport import TTransportException
+from tornado import gen, concurrent, ioloop, locks
 
 
 _NATS_PROTOCOL_VERSION = 0
-_NATS_MAX_MESSAGE_SIZE = 1024 * 1024
 _FRUGAL_PREFIX = "frugal."
 _DISCONNECT = "DISCONNECT"
 _HEARTBEAT_GRACE_PERIOD = 50000
-_HEARTBEAT_LOCK = Lock()
 _DEFAULT_CONNECTION_TIMEOUT = 20000
 _DEFAULT_MAX_MISSED_HEARTBEATS = 3
 
 logger = logging.getLogger(__name__)
 
 
-class TNatsServiceTransport(TTransportBase):
+class TNatsServiceTransport(TTornadoTransportBase):
 
     @staticmethod
     def Client(nats_client,
@@ -68,6 +66,7 @@ class TNatsServiceTransport(TTransportBase):
             listen_to: subject to listen on
             write_to: subject to write to
         """
+        super(TNatsServiceTransport, self).__init__()
         self._nats_client = kwargs['nats_client']
         self._io_loop = kwargs.get('io_loop', ioloop.IOLoop.current())
 
@@ -82,15 +81,13 @@ class TNatsServiceTransport(TTransportBase):
 
         self._missed_heartbeats = 0
 
-        self._open_lock = Lock()
         self._wbuf = BytesIO()
 
-    def set_execute_callback(self, execute):
-        self._execute = execute
-
+    @gen.coroutine
     def isOpen(self):
-        with self._open_lock:
-            return self._is_open and self._nats_client.is_connected()
+        with (yield self._open_lock.acquire()):
+            # Tornado requires we raise a special exception to return a value.
+            raise gen.Return(self._is_open and self._nats_client.is_connected())
 
     @gen.coroutine
     def open(self):
@@ -105,19 +102,19 @@ class TNatsServiceTransport(TTransportBase):
             logger.error(ex.message)
             raise ex
 
-        elif self.isOpen():
+        elif (yield self.isOpen()):
             ex = TTransportException(TTransportException.ALREADY_OPEN,
                                      "NATS transport already open")
             logger.error(ex.message)
             raise ex
 
-        with self._open_lock:
+        with (yield self._open_lock.acquire()):
             if self._connection_subject:
                 yield self._handshake()
 
             self._sub_id = yield self._nats_client.subscribe(
                 self._listen_to,
-                "",
+                '',
                 self._on_message_callback
             )
 
@@ -126,13 +123,13 @@ class TNatsServiceTransport(TTransportBase):
             self._is_open = True
             logger.info("frugal: transport open.")
 
-    def _on_message_callback(self, msg=None):
+    @gen.coroutine
+    def _on_message_callback(self, msg):
         if msg.reply == _DISCONNECT:
             logger.debug("Received DISCONNECT from Frugal server.")
-            self.close()
+            yield self.close()
         else:
-            wrapped = bytearray(msg.data)
-            self._execute(wrapped)
+            self._execute(msg.data)
 
     @gen.coroutine
     def _handshake(self):
@@ -140,7 +137,7 @@ class TNatsServiceTransport(TTransportBase):
         handshake = json.dumps({"version": _NATS_PROTOCOL_VERSION})
 
         future = concurrent.Future()
-        sid = yield self._nats_client.subscribe(inbox, b'', None, future)
+        sid = yield self._nats_client.subscribe(inbox, '', None, future)
         yield self._nats_client.auto_unsubscribe(sid, 1)
         yield self._nats_client.publish_request(self._connection_subject,
                                                 inbox,
@@ -165,7 +162,7 @@ class TNatsServiceTransport(TTransportBase):
     def _on_heartbeat_message(self, msg=None):
         logger.debug("Received heartbeat.")
         self._heartbeat_timer.stop()
-        self._nats_client.publish(self._heartbeat_reply, "")
+        self._nats_client.publish(self._heartbeat_reply, '')
         self._missed_heartbeats = 0
         self._heartbeat_timer.start()
 
@@ -174,7 +171,7 @@ class TNatsServiceTransport(TTransportBase):
         if self._heartbeat_interval > 0:
             self._heartbeat_sub_id = yield self._nats_client.subscribe(
                 self._heartbeat_listen,
-                "",
+                '',
                 self._on_heartbeat_message
             )
 
@@ -204,7 +201,7 @@ class TNatsServiceTransport(TTransportBase):
         if not self._is_open:
             return
 
-        yield self._nats_client.publish_request(self._write_to, _DISCONNECT, "")
+        yield self._nats_client.publish_request(self._write_to, _DISCONNECT, '')
 
         if (hasattr(self, '_heartbeat_timer') and
                 self._heartbeat_timer.is_running()):
@@ -216,24 +213,8 @@ class TNatsServiceTransport(TTransportBase):
             yield self._nats_client.unsubscribe(self._heartbeat_sub_id)
             self._heartbeat_sub_id = None
 
-        yield self._nats_client.unsubscribe(self._listen_to)
-
+        yield self._nats_client.unsubscribe(self._sub_id)
         self._is_open = False
-
-    def read(self, buff, offset, length):
-        ex = Exception("Don't call this.")
-        logger.exception(ex)
-        raise ex
-
-    def write(self, buff):
-        """Write takes in a bytearray and appends it to the write buffer"""
-        if not self.isOpen():
-            logger.error("Tried to write to closed transport!")
-            ex = TTransportException(TTransportException.NOT_OPEN,
-                                     "Transport not open!")
-            raise ex
-
-        self._wbuf.write(buff)
 
     @gen.coroutine
     def flush(self):
@@ -242,9 +223,8 @@ class TNatsServiceTransport(TTransportBase):
         frame_length = struct.pack('!I', len(frame))
         self._wbuf = BytesIO()
         yield self._nats_client.publish(self._write_to,
-                                        frame_length + frame)
+                                        '{0}{1}'.format(frame_length, frame))
 
     def _new_frugal_inbox(self):
-        return "{frugal}{new_inbox}".format(frugal=_FRUGAL_PREFIX,
-                                            new_inbox=new_inbox())
+        return "{0}{1}".format(_FRUGAL_PREFIX, new_inbox())
 

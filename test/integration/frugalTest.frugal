@@ -19,10 +19,24 @@ enum Numberz
   EIGHT = 8
 }
 
+// Event for pub/sub testing
+typedef i64 id
+const id DEFAULT_ID = -1
+
+scope Events prefix foo.{user} {
+    EventCreated: Event
+}
+
+struct Event {
+    /**@ ID is a unique identifier for an event. */
+    1: id ID = DEFAULT_ID,
+
+    /**@ Message contains the event payload. */
+    2: string Message
+}
+// End of pub/sub testing
+
 const Numberz myNumberz = 1;
-// const Numberz myNumberz = Numberz.ONE;  // This is panicing until #147 is resolved. TODO: enable after #147 is resolved.
-// the following is expected to fail:
-// const Numberz urNumberz = ONE;
 
 typedef i64 UserId
 

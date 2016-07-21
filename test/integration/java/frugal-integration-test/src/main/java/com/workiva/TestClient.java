@@ -23,21 +23,24 @@ import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
-import com.workiva.frugal.transport.FMuxTransport;
-import com.workiva.frugal.transport.FTransport;
-import com.workiva.frugal.transport.FTransportFactory;
+import com.workiva.frugal.provider.FScopeProvider;
+import com.workiva.frugal.transport.*;
 import frugal.test.*;
+import io.nats.client.Connection;
+import io.nats.client.ConnectionFactory;
+import io.nats.client.Constants;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
-import org.apache.thrift.transport.*;
+import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.transport.TTransportException;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Test Java client for frugal. This makes a variety of requests to enable testing for both performance and
@@ -82,61 +85,9 @@ public class TestClient {
             System.exit(1);
         }
 
-        List<String> validProtocols = new ArrayList<>();
-        validProtocols.add("binary");
-        validProtocols.add("compact");
-        validProtocols.add("json");
 
-        if (!validProtocols.contains(protocol_type)) {
-            throw new Exception("Unknown protocol type! " + protocol_type);
-        }
-
-        List<String> validTransports = new ArrayList<>();
-        validTransports.add("buffered");
-        validTransports.add("framed");
-        validTransports.add("http");
-
-        if (!validTransports.contains(transport_type)) {
-            throw new Exception("Unknown transport type! " + transport_type);
-        }
-
-        TTransport transport = null;
-        try {
-            if (transport_type.equals("http")) {
-                String url = "http://" + host + ":" + port + "/service";
-                transport = new THttpClient(url);
-            } else {
-                TSocket socket;
-                socket = new TSocket(host, port);
-                socket.setTimeout(socketTimeoutMs);
-                transport = socket;
-                switch (transport_type) {
-                    case "buffered":
-                        break;
-                    case "framed":
-                        transport = new TFramedTransport(transport);
-                        break;
-                }
-            }
-        } catch (Exception x) {
-            x.printStackTrace();
-            System.exit(1);
-        }
-
-        TProtocolFactory protocolFactory;
-        switch (protocol_type) {
-            case "json":
-                protocolFactory = new TJSONProtocol.Factory();
-                break;
-            case "compact":
-                protocolFactory = new TCompactProtocol.Factory();
-                break;
-            case "binary":
-                protocolFactory = new TBinaryProtocol.Factory();
-                break;
-            default:
-                throw new Exception("Unknown protocol type encountered: " + protocol_type);
-        }
+        TTransport transport = utils.whichTTransport(transport_type, socketTimeoutMs, host, port);
+        TProtocolFactory protocolFactory = utils.whichProtocolFactory(protocol_type);
 
         FTransportFactory fTransportFactory = new FMuxTransport.Factory(2);
         FTransport fTransport = fTransportFactory.getTransport(transport);
@@ -709,7 +660,7 @@ public class TestClient {
             long startOneway = System.nanoTime();
             testClient.testOneway(context, 3);
             long onewayElapsedMillis = (System.nanoTime() - startOneway) / 1000000;
-            if (onewayElapsedMillis > 200) {
+            if (onewayElapsedMillis > 1000) {
                 System.out.println("Oneway test failed: took " +
                         Long.toString(onewayElapsedMillis) +
                         "ms");
@@ -737,6 +688,44 @@ public class TestClient {
                 returnCode |= 1;
             }
 
+            /**
+             * PUB/SUB TEST
+             * Publish a message, verify that a subscriber receives the message and publishes a response.
+             * Verifies that scopes are correctly generated.
+             */
+            BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(1);
+            Object o = null;
+            ConnectionFactory cf = new ConnectionFactory(Constants.DEFAULT_URL);
+            Connection conn = cf.createConnection();
+            FScopeTransportFactory factory = new FNatsScopeTransport.Factory(conn);
+            FScopeProvider provider = new FScopeProvider(factory,  new FProtocolFactory(protocolFactory));
+
+            EventsSubscriber subscriber = new EventsSubscriber(provider);
+            subscriber.subscribeEventCreated(Integer.toString(port)+"-response", (ctx, event) -> {
+                System.out.println("Pub/Sub response received from server");
+                queue.add(1);
+            });
+
+            EventsPublisher publisher = new EventsPublisher(provider);
+            publisher.open();
+            Event event = new Event(1, "Sending Call");
+            publisher.publishEventCreated(new FContext("Call"), Integer.toString(port)+"-call", event);
+            System.out.println("Publishing...    ");
+
+            try {
+                o = queue.poll(2, TimeUnit.SECONDS);
+            } catch (InterruptedException e){
+                returnCode = 1;
+            }
+
+            if(o == null) {
+                System.out.println("Pub/Sub response timed out!");
+                returnCode = 1;
+            }
+
+                /**
+                 * Print general test information
+                 */
             long stop = System.nanoTime();
             long tot = stop - start;
 
@@ -772,7 +761,6 @@ public class TestClient {
 //            x.printStackTrace();
 //            returnCode |= 1;
 //        }
-
 
         System.exit(returnCode);
     }

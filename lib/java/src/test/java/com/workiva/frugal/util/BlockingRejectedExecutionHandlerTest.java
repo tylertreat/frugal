@@ -1,11 +1,26 @@
 package com.workiva.frugal.util;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
-import java.util.concurrent.*;
+
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.fail;
 
+/**
+ * Tests for {@link BlockingRejectedExecutionHandler}.
+ */
+@RunWith(JUnit4.class)
 public class BlockingRejectedExecutionHandlerTest {
 
     /**
@@ -15,7 +30,9 @@ public class BlockingRejectedExecutionHandlerTest {
     @Test
     public void testRejectedExecution() throws InterruptedException {
         BlockingQueue<Runnable> workQueue = new SynchronousQueue<>();
-        ExecutorService executor = new ThreadPoolExecutor(1, 1, 1, TimeUnit.MILLISECONDS, workQueue, new BlockingRejectedExecutionHandler());
+        ExecutorService executor =
+                new ThreadPoolExecutor(1, 1, 1, TimeUnit.MILLISECONDS, workQueue,
+                        new BlockingRejectedExecutionHandler());
 
         final CountDownLatch latch = new CountDownLatch(1);
         executor.submit(new Runnable() {

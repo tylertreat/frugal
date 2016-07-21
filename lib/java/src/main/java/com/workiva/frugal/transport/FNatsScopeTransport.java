@@ -3,7 +3,11 @@ package com.workiva.frugal.transport;
 import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.util.ProtocolUtils;
-import io.nats.client.*;
+import io.nats.client.Connection;
+import io.nats.client.Constants;
+import io.nats.client.Message;
+import io.nats.client.MessageHandler;
+import io.nats.client.Subscription;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
@@ -22,6 +26,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class FNatsScopeTransport extends FScopeTransport {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(FNatsScopeTransport.class);
+
     // The number of message frames to buffer on the subscriber.
     private static final int FRAME_BUFFER_SIZE = 5;
     private static final byte[] FRAME_BUFFER_CLOSED = new byte[0];
@@ -38,7 +44,6 @@ public class FNatsScopeTransport extends FScopeTransport {
     protected boolean isOpen;
     private final ReentrantLock lock;
 
-    private static Logger LOGGER = LoggerFactory.getLogger(FNatsScopeTransport.class);
 
     /**
      * Creates a new FNatsScopeTransport which is used for pub/sub. Subscribers using this transport will subscribe to

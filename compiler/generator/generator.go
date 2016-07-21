@@ -8,10 +8,13 @@ import (
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
+// FilePrefix is the default prefix for generated files.
 const FilePrefix = "f_"
 
+// FileType represents a generated file type.
 type FileType string
 
+// Valid FileTypes.
 const (
 	CombinedServiceFile FileType = "combined_service"
 	CombinedScopeFile   FileType = "combined_scope"
@@ -44,7 +47,8 @@ var Languages = LanguageOptions{
 		"generated_annotations": "[undated|suppress] " +
 			"undated: suppress the date at @Generated annotations, " +
 			"suppress: suppress @Generated annotations entirely",
-		"async": "Generate async client code using futures",
+		"async":           "Generate async client code using futures",
+		"gen_with_frugal": "Whether to generate thrift files with frugal (experimental)",
 	},
 	"dart": Options{
 		"library_prefix": "Generate code that can be used within an existing library. " +
@@ -53,6 +57,7 @@ var Languages = LanguageOptions{
 	},
 	"py": Options{
 		"tornado": "Generate code for use with Tornado",
+		"gen_with_frugal": "Whether to generate thrift files with frugal (experimental)",
 	},
 }
 
@@ -69,7 +74,8 @@ type ProgramGenerator interface {
 	DefaultOutputDir() string
 }
 
-// Generator generates source code as implemented for specific languages.
+// LanguageGenerator generates source code as implemented for specific
+// languages.
 type LanguageGenerator interface {
 	// Generic methods
 	SetFrugal(*parser.Frugal)
@@ -105,6 +111,7 @@ type LanguageGenerator interface {
 	GenerateSubscriber(*os.File, *parser.Scope) error
 }
 
+// GetPackageComponents returns the package string split on dots.
 func GetPackageComponents(pkg string) []string {
 	return strings.Split(pkg, ".")
 }
@@ -115,6 +122,8 @@ type programGenerator struct {
 	splitPublisherSubscriber bool
 }
 
+// NewProgramGenerator creates a new ProgramGenerator using the given
+// LanguageGenerator.
 func NewProgramGenerator(generator LanguageGenerator, splitPublisherSubscriber bool) ProgramGenerator {
 	return &programGenerator{generator, splitPublisherSubscriber}
 }
