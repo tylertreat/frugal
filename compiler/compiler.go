@@ -87,13 +87,6 @@ func warnGenWithoutFrugal(genWithFrugal bool) {
 	globals.GenWithFrugalWarn = true
 }
 
-// warnGenWithFrugal prints a warning that gen_with_frugal is enabled and how
-// to fallback to the Thrift compiler if problems occur.
-// TODO: Remove this once gen_with_frugal is no longer experimental and is the
-// default.
-func warnGenWithFrugal(genWithFrugal bool) {
-}
-
 // compile parses the Frugal or Thrift IDL and generates code for it, returning
 // an error if something failed.
 func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
