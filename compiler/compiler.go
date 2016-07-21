@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/Workiva/frugal/compiler/generator"
@@ -101,7 +102,16 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	// Process options for specific generators.
 	lang, options := cleanGenParam(gen)
 
-	_, genWithFrugal := options["gen_with_frugal"]
+	// Gen with Frugal by default.
+	genWithFrugal := true
+	if genWithFrugalStr, ok := options["gen_with_frugal"]; ok {
+		if gen, err := strconv.ParseBool(genWithFrugalStr); err != nil {
+			globals.PrintWarning(
+				fmt.Sprintf("Invalid value '%s' for gen_with_frugal", genWithFrugalStr))
+		} else {
+			genWithFrugal = gen
+		}
+	}
 
 	// Resolve Frugal generator.
 	var g generator.ProgramGenerator
@@ -122,6 +132,8 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 		warnGenWithoutFrugal(genWithFrugal)
 		g = generator.NewProgramGenerator(java.NewGenerator(options), true)
 	case "py":
+		// TODO: Remove this once gen_with frugal is no longer experimental
+		// and is the default.
 		warnGenWithoutFrugal(genWithFrugal)
 		g = generator.NewProgramGenerator(python.NewGenerator(options), true)
 	default:
