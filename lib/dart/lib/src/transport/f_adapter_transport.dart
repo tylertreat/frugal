@@ -46,7 +46,6 @@ class FAdapterTransport extends FTransport {
   @override
   void setRegistry(FRegistry registry) {
     super.setRegistry(registry);
-    _registry = registry;
     _transport.onFrame.listen((_FrameWrapper frame) {
       try {
         var dur = new DateTime.now().difference(frame.timestamp);

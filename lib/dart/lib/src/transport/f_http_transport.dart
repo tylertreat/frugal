@@ -9,7 +9,6 @@ class FHttpClientTransport extends FTransport {
   final List<int> _writeBuffer = [];
   final wt.Client client;
   final FHttpConfig config;
-  FRegistry _registry;
 
   FHttpClientTransport(this.client, this.config) {}
 
@@ -87,7 +86,7 @@ class FHttpClientTransport extends FTransport {
     }
 
     // Process the request, but drop the frame size
-    _registry.execute(data.sublist(4));
+    executeFrame(data);
   }
 
   @override

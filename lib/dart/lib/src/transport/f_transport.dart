@@ -103,6 +103,14 @@ abstract class FTransport extends TTransport {
     this._highWatermark = watermark;
   }
 
+  /// Execute a frugal frame (NOTE: this frame must include the frame size).
+  void executeFrame(Uint8List frame) {
+    if (_registry == null) {
+      throw new FError.withMessage("transport registry not set");
+    }
+    _registry.execute(frame.sublist(4));
+  }
+
   Future _signalClose(cause) async {
     _closeController.add(cause);
     await _monitor?.onClose(cause);
