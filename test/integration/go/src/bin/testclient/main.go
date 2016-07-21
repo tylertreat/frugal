@@ -23,7 +23,7 @@ func main() {
 	flag.Parse()
 	pubSub := make(chan bool)
 	sent := make(chan bool)
-	client, err := common.StartClient(*host, *port, *domain_socket, *transport, *protocol, pubSub, sent)
+	client, err := common.StartClient(*host, *port, *transport, *protocol, pubSub, sent)
 	if err != nil {
 		log.Fatal("Unable to start client: ", err)
 	}

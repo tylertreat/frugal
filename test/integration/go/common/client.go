@@ -21,7 +21,6 @@ func init() {
 func StartClient(
 	host string,
 	port int64,
-	domain_socket string,
 	transport string,
 	protocol string,
 	pubSub chan bool,
@@ -47,11 +46,7 @@ func StartClient(
 	}
 
 	var trans thrift.TTransport
-	if domain_socket != "" {
-		trans, err = thrift.NewTSocket(domain_socket)
-	} else {
-		trans, err = thrift.NewTSocket(hostPort)
-	}
+	trans, err = thrift.NewTSocket(hostPort)
 	if err != nil {
 		return nil, err
 	}
