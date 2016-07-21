@@ -6,7 +6,8 @@ package com.workiva.frugal.transport;
  *
  * @deprecated use {@code FTransportClosedCallback} instead.
  */
-@Deprecated public interface FClosedCallback {
+@Deprecated
+public interface FClosedCallback {
 
     /**
      * This callback notification method is invoked when the {@code FTransport} is

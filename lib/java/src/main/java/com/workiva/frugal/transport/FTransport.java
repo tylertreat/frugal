@@ -86,7 +86,8 @@ public abstract class FTransport extends TTransport {
      * @deprecated Construct callback-based transports instead
      * TODO: Remove with 2.0
      */
-    @Deprecated FTransport(int requestBufferSize, int frameBufferSize) {
+    @Deprecated
+    FTransport(int requestBufferSize, int frameBufferSize) {
         this.writeBufferSize = requestBufferSize;
         this.writeBuffer = new ByteArrayOutputStream(requestBufferSize);
         this.frameBuffer = new ArrayBlockingQueue<>(frameBufferSize);
@@ -229,7 +230,8 @@ public abstract class FTransport extends TTransport {
      * @param closedCallback
      * @deprecated use {@link #setClosedCallback(FTransportClosedCallback)} instead.
      */
-    @Deprecated public synchronized void setClosedCallback(FClosedCallback closedCallback) {
+    @Deprecated
+    public synchronized void setClosedCallback(FClosedCallback closedCallback) {
         this._closedCallback = closedCallback;
     }
 
@@ -261,11 +263,13 @@ public abstract class FTransport extends TTransport {
      * @deprecated - Implementing may use a watermark as a constructor option.
      * TODO: Remove this with 2.0
      */
-    @Deprecated public synchronized void setHighWatermark(long watermark) {
+    @Deprecated
+    public synchronized void setHighWatermark(long watermark) {
         this.highWatermark = watermark;
     }
 
-    @Deprecated protected synchronized long getHighWatermark() {
+    @Deprecated
+    protected synchronized long getHighWatermark() {
         return highWatermark;
     }
 
@@ -287,7 +291,8 @@ public abstract class FTransport extends TTransport {
      * @deprecated - Get the framed bytes
      * TODO: Remove this with 2.0
      */
-    @Deprecated protected byte[] getWriteBytes() {
+    @Deprecated
+    protected byte[] getWriteBytes() {
         if (writeBuffer == null) {
             throw new UnsupportedOperationException("No write buffer set on FTranspprt");
         }

@@ -52,7 +52,8 @@ public class FSubscription {
      * @return The Exception queue.
      * @deprecated TODO 2.0.0: remove in a future release.
      */
-    @Deprecated public BlockingQueue<Exception> onError() {
+    @Deprecated
+    public BlockingQueue<Exception> onError() {
         return onError;
     }
 

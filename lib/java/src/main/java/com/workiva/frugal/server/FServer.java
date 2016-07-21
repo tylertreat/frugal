@@ -40,5 +40,6 @@ public interface FServer {
      * @deprecated This will be a constructor implementation detail for
      * servers which buffer client requests.
      */
-    @Deprecated void setHighWatermark(long watermark);
+    @Deprecated
+    void setHighWatermark(long watermark);
 }
