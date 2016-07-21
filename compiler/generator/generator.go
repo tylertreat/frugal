@@ -61,6 +61,17 @@ var Languages = LanguageOptions{
 	},
 }
 
+// ValidateOption indicates if the language option is supported for the given
+// language.
+func ValidateOption(lang, option string) bool {
+	options, ok := Languages[lang]
+	if !ok {
+		return false
+	}
+	_, ok = options[option]
+	return ok
+}
+
 // ProgramGenerator generates source code in a specified language for a Frugal
 // produced by the parser.
 type ProgramGenerator interface {

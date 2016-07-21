@@ -69,14 +69,29 @@ func Compile(options Options) error {
 // TODO: Remove this once gen_with frugal is no longer experimental
 // and is the default.
 func warnGenWithoutFrugal(genWithFrugal bool) {
-	if !genWithFrugal && !globals.GenWithFrugalWarn {
+	if globals.GenWithFrugalWarn {
+		return
+	}
+	if genWithFrugal {
+		globals.PrintWarning(
+			"Generating Thrift code with Frugal. If you encounter problems, file a " +
+				"GitHub issue and generate your\ncode with \"gen_with_frugal=false\" to " +
+				"use the Thrift compiler instead.")
+	} else {
 		globals.PrintWarning(
 			"Consider using the \"gen_with_frugal\" language option " +
 				"to have Frugal generate code in place of Thrift.\nThis is an " +
 				"experimental feature. Please file a GitHub issue if you encounter " +
 				"problems.")
-		globals.GenWithFrugalWarn = true
 	}
+	globals.GenWithFrugalWarn = true
+}
+
+// warnGenWithFrugal prints a warning that gen_with_frugal is enabled and how
+// to fallback to the Thrift compiler if problems occur.
+// TODO: Remove this once gen_with_frugal is no longer experimental and is the
+// default.
+func warnGenWithFrugal(genWithFrugal bool) {
 }
 
 // compile parses the Frugal or Thrift IDL and generates code for it, returning
@@ -100,7 +115,10 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	}
 
 	// Process options for specific generators.
-	lang, options := cleanGenParam(gen)
+	lang, options, err := cleanGenParam(gen)
+	if err != nil {
+		return nil, err
+	}
 
 	// Gen with Frugal by default.
 	genWithFrugal := true
@@ -183,7 +201,7 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	if !genWithFrugal {
 		// Generate Thrift code.
 		logv(fmt.Sprintf("Generating \"%s\" Thrift code for %s", lang, file))
-		if err := generateThrift(frugal, dir, file, out, gen); err != nil {
+		if err := generateThrift(frugal, dir, file, out, removeGenWithFrugalOption(gen)); err != nil {
 			return nil, err
 		}
 	}
@@ -201,7 +219,7 @@ func exists(path string) bool {
 
 // cleanGenParam processes a string that includes an optional trailing
 // options set.  Format: <language>:<name>=<value>,<name>=<value>,...
-func cleanGenParam(gen string) (lang string, options map[string]string) {
+func cleanGenParam(gen string) (lang string, options map[string]string, err error) {
 	lang = gen
 	options = make(map[string]string)
 	if strings.Contains(gen, ":") {
@@ -216,6 +234,9 @@ func cleanGenParam(gen string) (lang string, options map[string]string) {
 		}
 		for _, option := range optionArray {
 			s := strings.Split(option, "=")
+			if !generator.ValidateOption(lang, s[0]) {
+				err = fmt.Errorf("Unknown option '%s' for %s", s[0], lang)
+			}
 			if len(s) == 1 {
 				options[s[0]] = ""
 			} else {
@@ -224,6 +245,33 @@ func cleanGenParam(gen string) (lang string, options map[string]string) {
 		}
 	}
 	return
+}
+
+// removeGenWithFrugalOption removes the gen_with_frugal language option from
+// the gen string, if present, so that it doesn't cause issues with the Thrift
+// compiler when set to false.
+// TODO: Remove this once gen_with_frugal is the default.
+func removeGenWithFrugalOption(gen string) string {
+	if !strings.Contains(gen, ":") {
+		return gen
+	}
+	s := strings.Split(gen, ":")
+	lang := s[0]
+	optionsStr := s[1]
+	options := strings.Split(optionsStr, ",")
+	cleaned := ""
+	prefix := ""
+	for _, option := range options {
+		if !strings.HasPrefix(option, "gen_with_frugal") {
+			cleaned += prefix + option
+			prefix = ","
+		}
+	}
+
+	if cleaned == "" {
+		return lang
+	}
+	return fmt.Sprintf("%s:%s", lang, cleaned)
 }
 
 // logv prints the message if in verbose mode.

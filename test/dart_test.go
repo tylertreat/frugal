@@ -10,7 +10,7 @@ import (
 func TestValidDart(t *testing.T) {
 	options := compiler.Options{
 		File:  validFile,
-		Gen:   "dart",
+		Gen:   "dart:gen_with_frugal=false",
 		Out:   outputDir,
 		Delim: delim,
 	}
