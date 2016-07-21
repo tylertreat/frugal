@@ -117,8 +117,7 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	genWithFrugal := true
 	if genWithFrugalStr, ok := options["gen_with_frugal"]; ok {
 		if gen, err := strconv.ParseBool(genWithFrugalStr); err != nil {
-			globals.PrintWarning(
-				fmt.Sprintf("Invalid value '%s' for gen_with_frugal", genWithFrugalStr))
+			return nil, fmt.Errorf("Invalid value '%s' for gen_with_frugal", genWithFrugalStr)
 		} else {
 			genWithFrugal = gen
 		}
@@ -243,7 +242,7 @@ func cleanGenParam(gen string) (lang string, options map[string]string, err erro
 // removeGenWithFrugalOption removes the gen_with_frugal language option from
 // the gen string, if present, so that it doesn't cause issues with the Thrift
 // compiler when set to false.
-// TODO: Remove this once gen_with_frugal is the default.
+// TODO: Remove this once the Thrift compiler is no longer used.
 func removeGenWithFrugalOption(gen string) string {
 	if !strings.Contains(gen, ":") {
 		return gen
