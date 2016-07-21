@@ -228,8 +228,10 @@ func TestAdapterTransportSetRegistryAlreadySet(t *testing.T) {
 	tr := NewAdapterTransport(nil)
 	tr.SetRegistry(registry)
 	assert.Equal(t, registry, tr.(*fAdapterTransport).registry)
+	defer func() {
+		assert.NotNil(t, recover())
+	}()
 	tr.SetRegistry(NewServerRegistry(nil, nil, nil))
-	assert.Equal(t, registry, tr.(*fAdapterTransport).registry)
 }
 
 // Ensures a direct Read returns an error.
