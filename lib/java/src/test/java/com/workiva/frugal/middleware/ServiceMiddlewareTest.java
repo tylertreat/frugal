@@ -1,11 +1,17 @@
 package com.workiva.frugal.middleware;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import static org.junit.Assert.assertEquals;
 
 import java.lang.reflect.Method;
 
+/**
+ * Tests for {@link ServiceMiddleware}.
+ */
+@RunWith(JUnit4.class)
 public class ServiceMiddlewareTest {
 
     /**
@@ -80,10 +86,16 @@ public class ServiceMiddlewareTest {
         assertEquals(arg, handler.calledArg);
     }
 
+    /**
+     * Test handler interface.
+     */
     public interface Handler {
         String handlerMethod(int x);
     }
 
+    /**
+     * Test handler.
+     */
     public static class TestHandler implements Handler {
 
         private int calledArg;
@@ -95,6 +107,9 @@ public class ServiceMiddlewareTest {
 
     }
 
+    /**
+     * Test middleware.
+     */
     public class TestMiddleware implements ServiceMiddleware {
 
         private int calledArg;

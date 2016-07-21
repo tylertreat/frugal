@@ -2,6 +2,9 @@ package com.workiva.frugal.exception;
 
 import org.apache.thrift.TException;
 
+/**
+ * Basic Frugal exception.
+ */
 public class FException extends TException {
 
     public FException() {

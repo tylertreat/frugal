@@ -2,6 +2,9 @@ package com.workiva.frugal.util;
 
 import java.nio.charset.Charset;
 
+/**
+ * Utilities for reading/writing protocol data.
+ */
 public class ProtocolUtils {
 
     public static int readInt(byte[] buff, int offset) {

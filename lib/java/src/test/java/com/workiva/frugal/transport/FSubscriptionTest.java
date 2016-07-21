@@ -2,11 +2,17 @@ package com.workiva.frugal.transport;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+/**
+ * Tests for {@link FSubscription}.
+ */
+@RunWith(JUnit4.class)
 public class FSubscriptionTest {
 
     private final String topic = "topic";

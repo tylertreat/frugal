@@ -1,21 +1,33 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FException;
-import io.nats.client.*;
+import io.nats.client.AsyncSubscription;
+import io.nats.client.Connection;
+import io.nats.client.Constants;
+import io.nats.client.MessageHandler;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Tests for {@link FNatsScopeTransport}.
+ */
+@RunWith(JUnit4.class)
 public class FNatsScopeTransportTest {
 
     private FNatsScopeTransport transport;
@@ -78,7 +90,8 @@ public class FNatsScopeTransportTest {
         when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
         ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
 
-        when(conn.subscribe(topicCaptor.capture(), (String) Matchers.isNull(), any(MessageHandler.class))).thenReturn(mockSub);
+        when(conn.subscribe(topicCaptor.capture(), (String) Matchers.isNull(), any(MessageHandler.class)))
+                .thenReturn(mockSub);
 
         transport.subscribe(topic);
 
@@ -95,7 +108,8 @@ public class FNatsScopeTransportTest {
         ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> queueCaptor = ArgumentCaptor.forClass(String.class);
 
-        when(conn.subscribe(topicCaptor.capture(), queueCaptor.capture(), any(MessageHandler.class))).thenReturn(mockSub);
+        when(conn.subscribe(topicCaptor.capture(), queueCaptor.capture(), any(MessageHandler.class)))
+                .thenReturn(mockSub);
 
         transport.subscribe(topic);
 
@@ -112,7 +126,7 @@ public class FNatsScopeTransportTest {
         try {
             transport.subscribe("");
             fail();
-        } catch(TTransportException ex) {
+        } catch (TTransportException ex) {
             assertEquals("Subject cannot be empty.", ex.getMessage());
         }
     }
