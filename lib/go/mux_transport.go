@@ -20,8 +20,8 @@ type fMuxTransportFactory struct {
 // NewFMuxTransportFactory creates a new FTransportFactory which produces
 // multiplexed FTransports. The numWorkers argument specifies the number of
 // goroutines to use to process requests concurrently.
-// DEPRECATED - Use direct implementations of FTransport instead of wrapping
-// thrift.TTransport with FMuxTransport
+// DEPRECATED: Use NewAdapterTransportFactory instead.
+// TODO: Remove in 2.0.0.
 func NewFMuxTransportFactory(numWorkers uint) FTransportFactory {
 	return &fMuxTransportFactory{numWorkers: numWorkers}
 }
