@@ -37,11 +37,22 @@ class FAdapterTransport extends FTransport {
 
   @override
   void write(Uint8List buffer, int offset, int length) {
+    if (!isOpen) {
+      throw new TTransportError(TTransportErrorType.NOT_OPEN);
+    }
     _framedTransport.write(buffer, offset, length);
   }
 
+  @override
+  Future flush() {
+    if (!isOpen) {
+      throw new TTransportError(TTransportErrorType.NOT_OPEN);
+    }
+    return _framedTransport.flush();
+  }
+
   Future closeWithException(cause) async {
-    _framedTransport.close();
+    await _framedTransport.close();
     await super.closeWithException(cause);
   }
 

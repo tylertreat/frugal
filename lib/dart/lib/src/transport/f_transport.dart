@@ -71,7 +71,7 @@ abstract class FTransport extends TTransport {
   /// Set the Registry on the transport.
   void setRegistry(FRegistry registry) {
     if (registry == null) {
-      throw new FError.withMessage("registry cannot be null");
+      throw new FError.withMessage('registry cannot be null');
     }
     if (_registry != null) {
       // Fatal error, may only set registry once on transport
@@ -83,7 +83,7 @@ abstract class FTransport extends TTransport {
   /// Register a callback for the given Context.
   void register(FContext ctx, FAsyncCallback callback) {
     if (_registry == null) {
-      throw new FError.withMessage("transport registry not set");
+      throw new FError.withMessage('transport registry not set');
     }
     _registry.register(ctx, callback);
   }
@@ -91,7 +91,7 @@ abstract class FTransport extends TTransport {
   /// Unregister a callback for the given Context.
   void unregister(FContext ctx) {
     if (_registry == null) {
-      throw new FError.withMessage("transport registry not set");
+      throw new FError.withMessage('transport registry not set');
     }
     _registry.unregister(ctx);
   }
@@ -109,7 +109,7 @@ abstract class FTransport extends TTransport {
   /// Execute a frugal frame (NOTE: this frame must include the frame size).
   void executeFrame(Uint8List frame) {
     if (_registry == null) {
-      throw new FError.withMessage("transport registry not set");
+      throw new FError.withMessage('transport registry not set');
     }
     _registry.execute(frame.sublist(4));
   }

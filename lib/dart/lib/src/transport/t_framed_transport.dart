@@ -22,7 +22,7 @@ class _TFramedTransport extends TTransport {
   StreamSubscription _messageSub;
 
   /// Instantiate new TFramedTransport for the given TSocket.
-  /// Add a listener to the socket state the opens/closes the
+  /// Add a listener to the socket state that opens/closes the
   /// transport in response to socket state changes.
   _TFramedTransport(this.socket) {
     if (socket == null) {

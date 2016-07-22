@@ -82,6 +82,7 @@ class MockFRegistry extends FRegistry {
   FContext context;
   FAsyncCallback callback;
   Completer executeCompleter;
+  Error executeError;
 
   MockFRegistry() {
     data = new List();
@@ -107,6 +108,9 @@ class MockFRegistry extends FRegistry {
     this.data.add(data);
     if (executeCompleter != null && !executeCompleter.isCompleted) {
       executeCompleter.complete();
+    }
+    if (executeError != null) {
+      throw executeError;
     }
   }
 }

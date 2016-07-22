@@ -32,7 +32,7 @@ void main() {
       registry = new MockFRegistry();
     });
 
-    test('test transport open, set registry open and listen to the socket',
+    test('test transport open and set registry opens and listens to the socket',
         () async {
       // Open the transport
       when(socket.isClosed).thenReturn(true);
@@ -43,9 +43,43 @@ void main() {
       // Set the registry
       registry.initCompleter();
       transport.setRegistry(registry);
+      expect(transport.isOpen, equals(true));
+
+      // Add a message to the socket
       messageStream.add(new Uint8List.fromList([0, 0, 0, 4, 1, 2, 3, 4]));
       await registry.executeCompleter.future.timeout(new Duration(seconds: 1));
       expect(registry.data[0], equals(new Uint8List.fromList([1, 2, 3, 4])));
+    });
+
+    test(
+        'test transport writes and flushes properly, read throws '
+        'UnsupportedError', () async {
+      // Open the transport
+      when(socket.isClosed).thenReturn(true);
+      when(socket.open()).thenReturn(new Future.value());
+      await transport.open();
+      verify(socket.open()).called(1);
+
+      // Write to/flush transport before setting registry
+      var buffer = new Uint8List.fromList([1, 2, 3, 4]);
+      var framedBuffer = new Uint8List.fromList([0, 0, 0, 4, 1, 2, 3, 4]);
+      expect(() => transport.writeAll(buffer),
+          throwsA(new isInstanceOf<TTransportError>()));
+      expect(transport.flush, throwsA(new isInstanceOf<TTransportError>()));
+
+      // Set the registry
+      registry.initCompleter();
+      transport.setRegistry(registry);
+      expect(transport.isOpen, equals(true));
+
+      // Write to/flush transport
+      transport.writeAll(buffer);
+      await transport.flush();
+      verify(socket.send(framedBuffer)).called(1);
+
+      // Attempt to read
+      expect(() => transport.read(new Uint8List(1), 0, 0),
+          throwsA(new isInstanceOf<UnsupportedError>()));
     });
 
     test('test socket error triggers transport close', () async {
@@ -86,6 +120,37 @@ void main() {
       });
       await monitorCompleter.future.timeout(timeout);
       expect(transport.isOpen, equals(true));
+    });
+
+    test('test registry error triggers transport close', () async {
+      // Open the transport
+      when(socket.isClosed).thenReturn(true);
+      when(socket.open()).thenReturn(new Future.value());
+      await transport.open();
+      transport.setRegistry(registry);
+      expect(transport.isOpen, equals(true));
+
+      // Kill the transport with the registry failing
+      registry.initCompleter();
+      var err = new FError();
+      registry.executeError = err;
+      var closeCompleter = new Completer();
+      transport.onClose.listen((e) {
+        closeCompleter.complete(e);
+      });
+
+      // Make sure socket gets closed
+      when(socket.isOpen).thenReturn(true);
+      when(socket.open()).thenReturn(new Future.value());
+      messageStream.add(new Uint8List.fromList([0, 0, 0, 4, 1, 2, 3, 4]));
+      var timeout = new Duration(seconds: 1);
+      await registry.executeCompleter.future.timeout(timeout);
+      expect(registry.data[0], equals(new Uint8List.fromList([1, 2, 3, 4])));
+
+      // Make sure the transport was closed with the correct error
+      expect(await closeCompleter.future.timeout(timeout), equals(err));
+      verify(socket.isOpen).called(1);
+      expect(transport.isOpen, equals(false));
     });
   });
 }
