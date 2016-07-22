@@ -702,7 +702,7 @@ public class TestClient {
 
             EventsSubscriber subscriber = new EventsSubscriber(provider);
             subscriber.subscribeEventCreated(Integer.toString(port)+"-response", (ctx, event) -> {
-                System.out.format("Pub/Sub response received from server\n");
+                System.out.println("Pub/Sub response received from server");
                 queue.add(1);
             });
 
@@ -710,7 +710,7 @@ public class TestClient {
             publisher.open();
             Event event = new Event(1, "Sending Call");
             publisher.publishEventCreated(new FContext("Call"), Integer.toString(port)+"-call", event);
-            System.out.format("Publishing...    ");
+            System.out.println("Publishing...    ");
 
             try {
                 o = queue.poll(2, TimeUnit.SECONDS);

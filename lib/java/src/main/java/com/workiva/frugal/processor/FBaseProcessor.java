@@ -13,6 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+/**
+ * Base message processor.
+ */
 public class FBaseProcessor implements FProcessor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FBaseProcessor.class);
@@ -33,14 +36,16 @@ public class FBaseProcessor implements FProcessor {
             try {
                 processor.process(ctx, iprot, oprot);
             } catch (Exception e) {
-                LOGGER.warn("Error processing request with correlationID " + ctx.getCorrelationId() + ": " + e.getMessage());
+                LOGGER.warn("Error processing request with correlationID "
+                        + ctx.getCorrelationId() + ": " + e.getMessage());
                 throw e;
             }
             return;
         }
         TProtocolUtil.skip(iprot, TType.STRUCT);
         iprot.readMessageEnd();
-        TApplicationException e = new TApplicationException(TApplicationException.UNKNOWN_METHOD, "Unknown function " + message.name);
+        TApplicationException e =
+                new TApplicationException(TApplicationException.UNKNOWN_METHOD, "Unknown function " + message.name);
         synchronized (WRITE_LOCK) {
             oprot.writeResponseHeader(ctx);
             oprot.writeMessageBegin(new TMessage(message.name, TMessageType.EXCEPTION, 0));

@@ -3,18 +3,26 @@ package com.workiva.frugal.processor;
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocol;
 import org.apache.thrift.TApplicationException;
-import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TField;
 import org.apache.thrift.protocol.TMessage;
 import org.apache.thrift.transport.TTransport;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+/**
+ * Tests for {@link FBaseProcessor}.
+ */
+@RunWith(JUnit4.class)
 public class FBaseProcessorTest {
 
     private final String oneWay = "oneWay";
@@ -45,7 +53,7 @@ public class FBaseProcessorTest {
 
         when(iprot.readRequestHeader()).thenReturn(ctx);
         when(iprot.readMessageBegin()).thenReturn(thriftMessage);
-        
+
         processor.process(iprot, oprot);
 
         verify(oneWayFunction).process(ctx, iprot, oprot);
@@ -67,7 +75,7 @@ public class FBaseProcessorTest {
 
         try {
             processor.process(iprot, oprot);
-        } catch(TApplicationException ex) {
+        } catch (TApplicationException ex) {
             assertEquals("Unknown function unknown", ex.getMessage());
             verify(oprot).writeResponseHeader(ctx);
             verify(oprot).writeMessageBegin(any(TMessage.class));

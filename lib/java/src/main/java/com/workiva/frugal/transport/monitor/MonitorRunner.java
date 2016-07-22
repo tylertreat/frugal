@@ -6,9 +6,12 @@ import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Runs a transport monitor.
+ */
 public class MonitorRunner implements FTransportClosedCallback {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(MonitorRunner.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MonitorRunner.class);
 
     private FTransportMonitor monitor;
     private FTransport transport;

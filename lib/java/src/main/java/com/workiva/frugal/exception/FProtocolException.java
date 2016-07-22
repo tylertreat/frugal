@@ -2,6 +2,9 @@ package com.workiva.frugal.exception;
 
 import org.apache.thrift.protocol.TProtocolException;
 
+/**
+ * Exception signaling a Frugal protocol error.
+ */
 public class FProtocolException extends TProtocolException {
 
     public FProtocolException() {

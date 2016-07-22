@@ -4,11 +4,18 @@ import com.workiva.frugal.exception.FMessageSizeException;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
+/**
+ * Tests for {@link FBoundedMemoryBuffer}.
+ */
+@RunWith(JUnit4.class)
 public class FBoundedMemoryBufferTest {
 
     private FBoundedMemoryBuffer buffer;
