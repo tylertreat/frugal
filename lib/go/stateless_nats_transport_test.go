@@ -151,12 +151,12 @@ func TestNatsTransportWrite(t *testing.T) {
 	n, err := tr.Write(buff)
 	assert.Nil(t, err)
 	assert.Equal(t, 5, n)
-	assert.Equal(t, 5, tr.fBaseTransport.requestBuffer.Len())
+	assert.Equal(t, 5, tr.writeBuffer.Len())
 	buff = make([]byte, 1024*1024)
 	n, err = tr.Write(buff)
 	assert.Equal(t, ErrTooLarge, err)
 	assert.Equal(t, 0, n)
-	assert.Equal(t, 0, tr.requestBuffer.Len())
+	assert.Equal(t, 0, tr.writeBuffer.Len())
 }
 
 // Ensures Flush returns a NOT_OPEN TTransportException if the transport is not

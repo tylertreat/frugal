@@ -103,7 +103,7 @@ func (f *fNatsTransport) Open() error {
 
 // handler receives a NATS message and executes the frame
 func (f *fNatsTransport) handler(msg *nats.Msg) {
-	if err := f.fBaseTransport.Execute(msg.Data); err != nil {
+	if err := f.fBaseTransport.ExecuteFrame(msg.Data); err != nil {
 		log.Warn("Could not execute frame", err)
 	}
 }
@@ -173,11 +173,12 @@ func (f *fNatsTransport) Flush() error {
 	if !f.IsOpen() {
 		return f.getClosedConditionError("flush:")
 	}
-	data := f.fBaseTransport.GetRequestBytes()
+	data := f.GetWriteBytes()
 	if len(data) == 0 {
 		return nil
 	}
 
+	f.ResetWriteBuffer()
 	// TODO: Remove this check in 2.0
 	if !f.isTTransport {
 		data = prependFrameSize(data)
