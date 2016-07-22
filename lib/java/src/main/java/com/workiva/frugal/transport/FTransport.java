@@ -1,9 +1,9 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FException;
+import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.protocol.FAsyncCallback;
 import com.workiva.frugal.protocol.FContext;
-import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.protocol.FRegistry;
 import com.workiva.frugal.transport.monitor.FTransportMonitor;
 import com.workiva.frugal.transport.monitor.MonitorRunner;
@@ -62,7 +62,7 @@ public abstract class FTransport extends TTransport {
     }
 
     /**
-     * Construct an FTransport with the given writeBufferSize
+     * Construct an FTransport with the given writeBufferSize.
      *
      * @param writeBufferSize maximum number of bytes allowed to be written to
      *                        the transport before getWriteBytes is called
@@ -102,7 +102,7 @@ public abstract class FTransport extends TTransport {
     }
 
     /**
-     * Close the frame buffer and signal close
+     * Close the frame buffer and signal close.
      *
      * @param cause Exception if not a clean close (null otherwise)
      */
@@ -274,7 +274,7 @@ public abstract class FTransport extends TTransport {
     }
 
     /**
-     * Queries whether there is write data
+     * Queries whether there is write data.
      */
     protected boolean hasWriteData() {
         if (writeBuffer == null) {

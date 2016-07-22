@@ -2,9 +2,6 @@ package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FMessageSizeException;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
@@ -18,6 +15,9 @@ import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 
 /**
@@ -36,7 +36,7 @@ public class FHttpTransport extends FTransport {
     private final int responseSizeLimit;
 
     private FHttpTransport(CloseableHttpClient httpClient, String url,
-                          int requestSizeLimit, int responseSizeLimit) {
+                           int requestSizeLimit, int responseSizeLimit) {
         super(requestSizeLimit - 4);
         this.httpClient = httpClient;
         this.url = url;
@@ -56,8 +56,8 @@ public class FHttpTransport extends FTransport {
          * Create a new Builder which create FHttpTransports that communicate with a server
          * at the given url.
          *
-         * @param httpClient    HTTP client
-         * @param url           Server URL
+         * @param httpClient HTTP client
+         * @param url        Server URL
          */
         public Builder(CloseableHttpClient httpClient, String url) {
             this.httpClient = httpClient;
@@ -94,8 +94,8 @@ public class FHttpTransport extends FTransport {
          * @return FHttpTransport
          */
         public FHttpTransport build() {
-             return new FHttpTransport(this.httpClient, this.url,
-                     this.requestSizeLimit, this.responseSizeLimit);
+            return new FHttpTransport(this.httpClient, this.url,
+                    this.requestSizeLimit, this.responseSizeLimit);
         }
     }
 
@@ -110,16 +110,18 @@ public class FHttpTransport extends FTransport {
     }
 
     /**
-     * This is a no-op for FHttpTransport
+     * This is a no-op for FHttpTransport.
      */
     @Override
-    public void open() throws TTransportException {}
+    public void open() throws TTransportException {
+    }
 
     /**
-     * This is a no-op for FHttpTransport
+     * This is a no-op for FHttpTransport.
      */
     @Override
-    public void close() {}
+    public void close() {
+    }
 
     /**
      * Sends the buffered bytes over HTTP.

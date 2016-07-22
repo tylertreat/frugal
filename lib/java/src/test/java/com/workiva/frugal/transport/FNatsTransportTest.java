@@ -2,7 +2,11 @@ package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.protocol.FRegistry;
-import io.nats.client.*;
+import io.nats.client.AsyncSubscription;
+import io.nats.client.Connection;
+import io.nats.client.Constants;
+import io.nats.client.Message;
+import io.nats.client.MessageHandler;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
@@ -11,10 +15,18 @@ import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+/**
+ * Tests for {@link FNatsTransport}.
+ */
 public class FNatsTransportTest {
 
     private Connection conn;
@@ -108,7 +120,7 @@ public class FNatsTransportTest {
         transport.flush();
 
         byte[] expected = new byte[4 + buff.length];
-        expected[3] = (byte)buff.length;
+        expected[3] = (byte) buff.length;
         System.arraycopy(buff, 0, expected, 4, buff.length);
 
         verify(conn).publish(subject, inbox, expected);

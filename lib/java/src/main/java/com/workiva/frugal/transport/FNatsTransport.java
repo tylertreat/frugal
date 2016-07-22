@@ -1,6 +1,10 @@
 package com.workiva.frugal.transport;
 
-import io.nats.client.*;
+import io.nats.client.Connection;
+import io.nats.client.Constants;
+import io.nats.client.Message;
+import io.nats.client.MessageHandler;
+import io.nats.client.Subscription;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
@@ -61,7 +65,7 @@ public class FNatsTransport extends FTransport {
     }
 
     /**
-     * TODO: Remove this with 2.0
+     * TODO: Remove this with 2.0.
      */
     @Deprecated
     FNatsTransport(Connection conn, String subject, String inbox, boolean isTTransport) {
@@ -93,7 +97,10 @@ public class FNatsTransport extends FTransport {
         sub = conn.subscribe(inbox, new Handler());
     }
 
-    protected class Handler implements io.nats.client.MessageHandler {
+    /**
+     * NATS message handler the executes Frugal frames.
+     */
+    protected class Handler implements MessageHandler {
         public void onMessage(Message message) {
             // TODO: Remove this with 2.0
             if (isTTransport) {
