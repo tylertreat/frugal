@@ -91,7 +91,13 @@ def main(argv):
     server_match = list(chain(*[x.split(',') for x in options.server]))
     client_match = list(chain(*[x.split(',') for x in options.client]))
 
-    options.jobs = int(multiprocessing.cpu_count() * 1.25) + 1
+
+    '''
+    TODO: Change this back to
+    options.jobs = int(multiprocessing.cpu_count()) - 1
+    once the "cross" skynet configuration is no longer needed
+    '''
+    options.jobs = int(multiprocessing.cpu_count()) / 2 - 1
 
     res = run_cross_tests(server_match, client_match, options.jobs, options.retry_count, options.regex)
     return 0 if res else 1

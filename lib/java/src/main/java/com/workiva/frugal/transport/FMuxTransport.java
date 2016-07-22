@@ -11,17 +11,19 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 /**
+ * A multiplexed transport.
+ *
  * @deprecated Use direct extensions FTransport instead of wrapping
  * thrift.TTransport with FMuxTransport.
  */
 @Deprecated
 public class FMuxTransport extends FTransport {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FMuxTransport.class);
+
     protected TFramedTransport framedTransport;
     protected BlockingQueue<FrameWrapper> workQueue;
     private ProcessorThread processorThread;
     private WorkerThread[] workerThreads;
-
-    private static Logger LOGGER = LoggerFactory.getLogger(FMuxTransport.class);
 
     /**
      * Construct a new FMuxTransport.
@@ -40,6 +42,9 @@ public class FMuxTransport extends FTransport {
         this.workerThreads = new WorkerThread[numWorkers];
     }
 
+    /**
+     * Factory for creating {@link FMuxTransport} instances.
+     */
     @Deprecated
     public static class Factory implements FTransportFactory {
 
@@ -241,7 +246,8 @@ public class FMuxTransport extends FTransport {
                 }
                 long duration = System.currentTimeMillis() - frame.getTimestamp();
                 if (duration > getHighWatermark()) {
-                    LOGGER.warn("frame spent " + duration + "ms in the transport buffer, your consumer might be backed up");
+                    LOGGER.warn("frame spent "
+                            + duration + "ms in the transport buffer, your consumer might be backed up");
                 }
                 try {
                     registry.execute(frame.getFrameBytes());

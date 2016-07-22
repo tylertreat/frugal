@@ -3,6 +3,9 @@ package com.workiva.frugal.transport;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
 
+/**
+ * A scoped transport providing pub/sub capabilities.
+ */
 public abstract class FScopeTransport extends TTransport {
     /**
      * Sets the publish topic and locks the transport for exclusive access.

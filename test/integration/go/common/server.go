@@ -21,10 +21,8 @@ func init() {
 func StartServer(
 	host string,
 	port int64,
-	domain_socket string,
 	transport string,
 	protocol string,
-	certPath string,
 	handler frugaltest.FFrugalTest) (srv *frugal.FSimpleServer, err error) {
 
 	hostPort := fmt.Sprintf("%s:%d", host, port)
@@ -46,11 +44,7 @@ func StartServer(
 	}
 
 	var serverTransport thrift.TServerTransport
-	if domain_socket != "" {
-		serverTransport, err = thrift.NewTServerSocket(domain_socket)
-	} else {
-		serverTransport, err = thrift.NewTServerSocket(hostPort)
-	}
+	serverTransport, err = thrift.NewTServerSocket(hostPort)
 	if err != nil {
 		return nil, err
 	}
@@ -63,10 +57,8 @@ func StartServer(
 		fTransportFactory,
 		frugal.NewFProtocolFactory(protocolFactory))
 
-	if err = server.Listen(); err != nil {
-		return
-	}
-	go server.AcceptLoop()
+	fmt.Println("Starting the Go server on port %d", port)
+	go server.Serve()
 
 	/*
 		Subscriber for Pub/Sub tests

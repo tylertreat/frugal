@@ -22,6 +22,6 @@ after_install:
 volumes:
   - 'data'
 
-workdir: ../../data
+workdir: /data
 
 cmd: ["frugal"]

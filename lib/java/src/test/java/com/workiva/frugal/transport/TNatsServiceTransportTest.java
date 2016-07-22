@@ -8,6 +8,8 @@ import io.nats.client.SyncSubscription;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import java.util.concurrent.TimeUnit;
 
@@ -16,9 +18,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Tests for {@link TNatsServiceTransport}.
+ */
+@RunWith(JUnit4.class)
 @Deprecated
 public class TNatsServiceTransportTest {
 
@@ -50,7 +57,7 @@ public class TNatsServiceTransportTest {
         try {
             client.open();
             fail();
-        } catch(TTransportException ex) {
+        } catch (TTransportException ex) {
             assertEquals(TTransportException.NOT_OPEN, ex.getType());
             assertEquals("NATS not connected, has status DISCONNECTED", ex.getMessage());
         }
@@ -64,7 +71,7 @@ public class TNatsServiceTransportTest {
         try {
             client.open();
             fail();
-        } catch(TTransportException ex) {
+        } catch (TTransportException ex) {
             assertEquals(TTransportException.ALREADY_OPEN, ex.getType());
             assertEquals("NATS transport already open", ex.getMessage());
         }
@@ -74,7 +81,8 @@ public class TNatsServiceTransportTest {
     public void testClientThrowsTransportExceptionWhenOpenCalledAlreadyOpen() throws Exception {
         when(mockConn.getState()).thenReturn(Constants.ConnState.CONNECTED);
         when(mockConn.newInbox()).thenReturn(inbox);
-        when(mockConn.subscribeSync(TNatsServiceTransport.FRUGAL_PREFIX + inbox, null)).thenReturn(mockSyncSubscription);
+        when(mockConn.subscribeSync(TNatsServiceTransport.FRUGAL_PREFIX + inbox, null))
+                .thenReturn(mockSyncSubscription);
 
         Message result = mock(Message.class);
         when(result.getReplyTo()).thenReturn("replyTo");

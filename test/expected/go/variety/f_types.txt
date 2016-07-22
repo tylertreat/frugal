@@ -47,6 +47,8 @@ const TrueConstant = true
 
 const FalseConstant = false
 
+const ConstHc = 2
+
 func init() {
 	DEFAULT_ID = -1
 	OtherDefault = -1

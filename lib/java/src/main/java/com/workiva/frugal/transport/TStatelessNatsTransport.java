@@ -1,6 +1,6 @@
 package com.workiva.frugal.transport;
 
-import io.nats.client.*;
+import io.nats.client.Connection;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 

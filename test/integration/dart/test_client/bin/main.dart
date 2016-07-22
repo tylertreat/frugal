@@ -60,7 +60,6 @@ FFrugalTestClient client;
 bool verbose;
 FContext ctx;
 
-/// Adapted from TestClient.php
 main(List<String> args) async {
   ArgResults results = _parseArgs(args);
 
@@ -161,9 +160,6 @@ Future _initTestClient(
   } else {
     var socket = await Socket.connect(host, port);
     transport = new TClientSocketTransport(new TTcpSocket(socket));
-    if (transportType == 'framed') {
-      transport = new TFramedTransport(transport);
-    }
   }
 
   FProtocolFactory fProtocolFactory = new FProtocolFactory(getProtocolFactory(protocolType));

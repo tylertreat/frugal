@@ -249,6 +249,28 @@ func (g *Generator) generateEnumConstValue(frugal *parser.Frugal, pieces []strin
 	return "", false
 }
 
+func (g *Generator) generateEnumConstFromValue(t *parser.Type, value int) string {
+	frugal := g.Frugal
+	if t.IncludeName() != "" {
+		// The type is from an include
+		frugal = g.Frugal.ParsedIncludes[t.IncludeName()]
+	}
+
+	for _, enum := range frugal.Thrift.Enums {
+		if enum.Name == t.ParamName() {
+			// found the enum
+			for _, enumValue := range enum.Values {
+				if enumValue.Value == value {
+					// found the value
+					return fmt.Sprintf("%s.%s", g.getJavaTypeFromThriftType(t), enumValue.Name)
+				}
+			}
+		}
+	}
+
+	panic("value not found")
+}
+
 func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) (string, string) {
 	underlyingType := g.Frugal.UnderlyingType(t)
 
@@ -321,7 +343,7 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) 
 			return "", fmt.Sprintf("java.nio.ByteBuffer.wrap(\"%v\".getBytes())", value)
 		}
 	} else if g.Frugal.IsEnum(underlyingType) {
-		panic("Unexpected enum value")
+		return "", g.generateEnumConstFromValue(underlyingType, int(value.(int64)))
 	}
 	elem := getElem()
 	preamble := g.generateConstantValueWrapper(elem, t, value, true, false)

@@ -2,7 +2,6 @@ package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.protocol.FAsyncCallback;
-import com.workiva.frugal.protocol.FClientRegistry;
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FRegistry;
 import org.apache.thrift.TException;
@@ -10,11 +9,17 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+/**
+ * Tests for {@link FTransport}.
+ */
+@RunWith(JUnit4.class)
 public class FTransportTest {
 
     private final FContext context = new FContext();
@@ -48,9 +53,9 @@ public class FTransportTest {
 
     @Test
     public void testRegisterThrowsFExceptionIfRegistryNotSet() throws Exception {
-        try{
+        try {
             transport.register(context, callback);
-        } catch(FException ex) {
+        } catch (FException ex) {
             assertEquals("registry not set", ex.getMessage());
         }
     }
@@ -65,28 +70,36 @@ public class FTransportTest {
 
     @Test
     public void testUnregisterThrowsFExceptionIfRegistryNotSet() throws Exception {
-        try{
+        try {
             transport.unregister(context);
-        } catch(FException ex) {
+        } catch (FException ex) {
             assertEquals("registry not set", ex.getMessage());
         }
     }
 
     class FTransportTester extends FTransport {
 
-        @Override
-        public boolean isOpen() { return false; }
 
         @Override
-        public void open() throws TTransportException { }
+        public boolean isOpen() {
+            return false;
+        }
 
         @Override
-        public void close() { }
+        public void open() throws TTransportException {
+        }
 
         @Override
-        public int read(byte[] bytes, int i, int i1) throws TTransportException { return 0; }
+        public void close() {
+        }
 
         @Override
-        public void write(byte[] bytes, int i, int i1) throws TTransportException { }
+        public int read(byte[] bytes, int i, int i1) throws TTransportException {
+            return 0;
+        }
+
+        @Override
+        public void write(byte[] bytes, int i, int i1) throws TTransportException {
+        }
     }
 }

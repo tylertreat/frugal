@@ -13,7 +13,5 @@ import org.apache.thrift.transport.TTransport;
  * shutdown.
  */
 public interface FAsyncCallback {
-
     void onMessage(TTransport transport) throws TException;
-
 }

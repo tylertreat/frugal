@@ -7,7 +7,10 @@ import com.workiva.frugal.processor.FProcessorFactory;
 import com.workiva.frugal.protocol.FProtocol;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.protocol.FServerRegistry;
-import com.workiva.frugal.transport.*;
+import com.workiva.frugal.transport.FTransport;
+import com.workiva.frugal.transport.FTransportClosedCallback;
+import com.workiva.frugal.transport.FTransportFactory;
+import com.workiva.frugal.transport.TNatsServiceTransport;
 import io.nats.client.Connection;
 import io.nats.client.Message;
 import io.nats.client.MessageHandler;
@@ -20,7 +23,13 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * An implementation of FServer which uses NATS as the underlying transport. Clients must connect with the
@@ -31,6 +40,7 @@ import java.util.concurrent.*;
  */
 @Deprecated
 public class FNatsServer implements FServer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FNatsServer.class);
 
     private static final int DEFAULT_MAX_MISSED_HEARTBEATS = 3;
     private static final String QUEUE = "rpc";
@@ -49,7 +59,6 @@ public class FNatsServer implements FServer {
 
     private final ScheduledExecutorService heartbeatExecutor = Executors.newScheduledThreadPool(1);
 
-    private static Logger LOGGER = LoggerFactory.getLogger(FNatsServer.class);
 
     @Deprecated
     public FNatsServer(Connection conn, String subject, long heartbeatInterval,
@@ -170,7 +179,7 @@ public class FNatsServer implements FServer {
 
     private String newFrugalInbox(String prefix) {
         String[] tokens = prefix.split("\\.");
-        tokens[tokens.length-1] = conn.newInbox(); // Always at least 1 token
+        tokens[tokens.length - 1] = conn.newInbox(); // Always at least 1 token
         String inbox = "";
         String pre = "";
         for (String token : tokens) {
