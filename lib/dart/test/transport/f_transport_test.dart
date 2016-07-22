@@ -23,12 +23,6 @@ void main() {
           throwsA(new isInstanceOf<FError>()));
     });
 
-    test('test setting registry more than once throws StateError', () async {
-      transport.setRegistry(registry);
-      expect(() => transport.setRegistry(registry),
-          throwsA(new isInstanceOf<StateError>()));
-    });
-
     test('test registering/unregistering beforw setting registry throws FError',
         () async {
       expect(() => transport.register(context, callback),

@@ -74,8 +74,7 @@ abstract class FTransport extends TTransport {
       throw new FError.withMessage('registry cannot be null');
     }
     if (_registry != null) {
-      // Fatal error, may only set registry once on transport
-      throw new StateError('registry already set');
+      return;
     }
     _registry = registry;
   }
