@@ -52,7 +52,7 @@ class FTornadoTransport(FTransport):
             raise ex
 
         if self._registry:
-            return
+            raise StandardError("registry already set")
 
         self._registry = registry
 
@@ -119,14 +119,21 @@ class FTornadoTransport(FTransport):
         raise gen.Return(NotImplementedError("You must override this."))
 
     def get_write_bytes(self):
+        """Get the framed bytes from the write buffer."""
         frame = self._wbuf.getvalue()
         if len(frame) == 0:
             return None
 
         frame_length = pack('!I', len(frame))
-        self._wbuf = BytesIO()
         return '{0}{1}'.format(frame_length, frame)
 
+    def reset_write_buffer(self):
+        """Reset the write buffer."""
+        self._wbuf = BytesIO()
+
     def execute_frame(self, frame):
+        """Execute a frugal frame.
+        NOTE: this frame must include the frame size.
+        """
         self._registry.execute(frame[4:])
 
