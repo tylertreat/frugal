@@ -228,7 +228,7 @@ func (f *fBaseTransport) SetRegistry(registry FRegistry) {
 		panic("frugal: registry cannot be nil")
 	}
 	if f.registry != nil {
-		panic("frugal: registry already set")
+		return
 	}
 	f.registry = registry
 }
