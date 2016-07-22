@@ -20,9 +20,7 @@ class TestFTornadoTransport(AsyncTestCase):
 
         registry = mock.Mock()
         self.transport.set_registry(registry)
-
-        with self.assertRaises(StandardError):
-            self.transport.set_registry(registry)
+        self.transport.set_registry(registry)
 
     @gen_test
     def test_register_unregister(self):

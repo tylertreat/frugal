@@ -51,8 +51,11 @@ class FTornadoTransport(FTransport):
             logger.exception(ex)
             raise ex
 
+        # TODO: With 2.0, consider throwing a StandardError.
+        # Currently, the generated code sets the registry for each extending
+        # service for a particular base service.
         if self._registry:
-            raise StandardError("registry already set")
+            return
 
         self._registry = registry
 
