@@ -36,7 +36,6 @@ public class FTransportTest {
         transport = new FTransportTester();
     }
 
-    @Test(expected = RuntimeException.class)
     public void testSetRegistryMultipleTimes() throws Exception {
         FRegistry registry = mock(FRegistry.class);
         transport.setRegistry(registry);

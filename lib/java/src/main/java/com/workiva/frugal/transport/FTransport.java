@@ -193,8 +193,11 @@ public abstract class FTransport extends TTransport {
         if (registry == null) {
             throw new IllegalArgumentException("registry cannot by null");
         }
+        // TODO: With 2.0, consider throwing a RuntimeException.
+        // Currently, the generated code sets the registry for each
+        // extending service for a particular base service.
         if (this.registry != null) {
-            throw new RuntimeException("registry already set");
+            return;
         }
         this.registry = registry;
     }
