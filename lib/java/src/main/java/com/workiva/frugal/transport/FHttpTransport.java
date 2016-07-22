@@ -4,8 +4,6 @@ import com.workiva.frugal.exception.FMessageSizeException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.io.ByteArrayOutputStream;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
@@ -17,7 +15,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,10 +128,11 @@ public class FHttpTransport extends FTransport {
      */
     @Override
     public void flush() throws TTransportException {
-        if (!isWriteData()) {
+        if (!hasWriteData()) {
             return;
         }
         byte[] data = getFramedWriteBytes();
+        resetWriteBuffer();
         byte[] response = makeRequest(data);
 
         // All responses should be framed with 4 bytes

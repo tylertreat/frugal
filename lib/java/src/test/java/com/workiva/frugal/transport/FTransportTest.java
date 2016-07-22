@@ -31,14 +31,18 @@ public class FTransportTest {
         transport = new FTransportTester();
     }
 
+    @Test(expected = RuntimeException.class)
+    public void testSetRegistryMultipleTimes() throws Exception {
+        FRegistry registry = mock(FRegistry.class);
+        transport.setRegistry(registry);
+        transport.setRegistry(registry);
+    }
+
     @Test
     public void testRegister() throws Exception {
         FRegistry registry = mock(FRegistry.class);
-
         transport.setRegistry(registry);
-
         transport.register(context, callback);
-
         verify(registry).register(context, callback);
     }
 
@@ -54,11 +58,8 @@ public class FTransportTest {
     @Test
     public void testUnregister() throws Exception {
         FRegistry registry = mock(FRegistry.class);
-
         transport.setRegistry(registry);
-
         transport.unregister(context);
-
         verify(registry).unregister(context);
     }
 
@@ -72,11 +73,6 @@ public class FTransportTest {
     }
 
     class FTransportTester extends FTransport {
-
-        @Override
-        public void setRegistry(FRegistry registry){
-            this.registry = registry;
-        }
 
         @Override
         public boolean isOpen() { return false; }

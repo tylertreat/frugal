@@ -103,7 +103,8 @@ public class FNatsTransport extends FTransport {
             } else {
                 try {
                     executeFrame(message.getData());
-                } catch (TException ignored) {
+                } catch (TException e) {
+                    LOGGER.warn("Could not execute frame", e);
                 }
             }
         }
@@ -151,7 +152,7 @@ public class FNatsTransport extends FTransport {
             throw getClosedConditionException(conn, "flush:");
         }
 
-        if (!isWriteData()) {
+        if (!hasWriteData()) {
             return;
         }
 
@@ -162,6 +163,7 @@ public class FNatsTransport extends FTransport {
         } else {
             data = getFramedWriteBytes();
         }
+        resetWriteBuffer();
 
         try {
             conn.publish(subject, inbox, data);

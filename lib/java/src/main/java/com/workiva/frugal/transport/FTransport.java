@@ -42,7 +42,7 @@ public abstract class FTransport extends TTransport {
 
     // TODO: Remove with 2.0
     // Closed callback
-    private volatile FClosedCallback _closedCallback;
+    private FClosedCallback _closedCallback;
     // Read buffer
     protected final BlockingQueue<byte[]> frameBuffer;
     protected static final byte[] FRAME_BUFFER_CLOSED = new byte[0];
@@ -193,7 +193,7 @@ public abstract class FTransport extends TTransport {
             throw new IllegalArgumentException("registry cannot by null");
         }
         if (this.registry != null) {
-            return;
+            throw new RuntimeException("registry already set");
         }
         this.registry = registry;
     }
@@ -272,7 +272,7 @@ public abstract class FTransport extends TTransport {
     /**
      * Queries whether there is write data
      */
-    protected boolean isWriteData() {
+    protected boolean hasWriteData() {
         if (writeBuffer == null) {
             throw new UnsupportedOperationException("No write buffer set on FTranspprt");
         }
@@ -280,7 +280,7 @@ public abstract class FTransport extends TTransport {
     }
 
     /**
-     * Get the write bytes and reset the buffer.
+     * Get the write bytes.
      *
      * @return write bytes
      *
@@ -291,13 +291,11 @@ public abstract class FTransport extends TTransport {
         if (writeBuffer == null) {
             throw new UnsupportedOperationException("No write buffer set on FTranspprt");
         }
-        byte[] data = writeBuffer.toByteArray();
-        writeBuffer.reset();
-        return data;
+        return writeBuffer.toByteArray();
     }
 
     /**
-     * Get the framed write bytes and reset the buffer.
+     * Get the framed write bytes.
      *
      * @return framed write bytes
      */
@@ -309,8 +307,17 @@ public abstract class FTransport extends TTransport {
         byte[] data = new byte[numBytes + 4];
         ProtocolUtils.writeInt(numBytes, data, 0);
         System.arraycopy(writeBuffer.toByteArray(), 0, data, 4, numBytes);
-        writeBuffer.reset();
         return data;
+    }
+
+    /**
+     * Reset the write buffer.
+     */
+    protected void resetWriteBuffer() {
+        if (writeBuffer == null) {
+            throw new UnsupportedOperationException("No write buffer set on FTranspprt");
+        }
+        writeBuffer.reset();
     }
 
     /**
