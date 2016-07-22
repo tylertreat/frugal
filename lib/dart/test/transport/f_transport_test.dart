@@ -81,9 +81,14 @@ class MockFRegistry extends FRegistry {
   List<Uint8List> data;
   FContext context;
   FAsyncCallback callback;
+  Completer executeCompleter;
 
   MockFRegistry() {
-    this.data = new List();
+    data = new List();
+  }
+
+  void initCompleter() {
+    executeCompleter = new Completer();
   }
 
   void register(FContext ctx, FAsyncCallback callback) {
@@ -100,11 +105,12 @@ class MockFRegistry extends FRegistry {
 
   void execute(Uint8List data) {
     this.data.add(data);
+    if (executeCompleter != null && !executeCompleter.isCompleted) {
+      executeCompleter.complete();
+    }
   }
 }
 
 class MockTransportMonitor extends Mock implements FTransportMonitor {
-  //this tells Dart analyzer you meant not to implement all methods,
-  // and not to hint/warn that methods are missing
   noSuchMethod(i) => super.noSuchMethod(i);
 }

@@ -14,8 +14,11 @@ abstract class FTransport extends TTransport {
   Stream<Object> get onClose => _closeController.stream;
 
   // TODO: Remove with 2.0
+  @deprecated
   static const DEFAULT_WATERMARK = const Duration(seconds: 5);
+  @deprecated
   TTransport _transport;
+  @deprecated
   Duration _highWatermark = DEFAULT_WATERMARK;
 
   /// With 2.0, implementations of FTransport will not typically
@@ -100,7 +103,7 @@ abstract class FTransport extends TTransport {
   /// which buffer read data.
   @deprecated
   void setHighWatermark(Duration watermark) {
-    this._highWatermark = watermark;
+    _highWatermark = watermark;
   }
 
   /// Execute a frugal frame (NOTE: this frame must include the frame size).

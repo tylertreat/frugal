@@ -3,12 +3,12 @@ part of frugal;
 /// FMultiplexedTransport is a multiplexed Transport that routes frames to the
 /// correct callbacks.
 /// Deprecated - Use FAdapterTransport instead
+@deprecated
 class FMultiplexedTransport extends FTransport {
   final Logger log = new Logger('FMultiplexedTransport');
   _TFramedTransport _transport;
   FRegistry _registry;
 
-  /// Deprecated - Use FAdapterTransport instead
   FMultiplexedTransport(TSocketTransport transport)
       : _transport = new _TFramedTransport(transport.socket) {
     super.transport = _transport;

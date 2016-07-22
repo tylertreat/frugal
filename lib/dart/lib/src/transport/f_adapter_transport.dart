@@ -1,13 +1,15 @@
 part of frugal;
 
-/// FAdapterTransport is an FTransport that executes TSocketTransport
-/// frames.
+/// FAdapterTransport returns an FTransport which uses the given
+/// TSocketTransport for write/callback operations in a way that is compatible
+/// with Frugal. Messages received on the TSocket (i.e. Frugal frames) are
+/// routed to the FRegistry's execute method.
 class FAdapterTransport extends FTransport {
   final Logger log = new Logger('FAdapterTransport');
-  _TFramedTransport _transport;
+  _TFramedTransport _framedTransport;
 
   FAdapterTransport(TSocketTransport transport)
-      : _transport = new _TFramedTransport(transport.socket) {
+      : _framedTransport = new _TFramedTransport(transport.socket) {
     // If there is an error on the socket, close the transport pessimistically.
     // This error is already logged upstream in TSocketTransport.
     transport.socket.onError.listen((e) => closeWithException(e));
@@ -19,10 +21,10 @@ class FAdapterTransport extends FTransport {
   }
 
   @override
-  bool get isOpen => _transport.isOpen && _registry != null;
+  bool get isOpen => _framedTransport.isOpen && _registry != null;
 
   @override
-  Future open() => _transport.open();
+  Future open() => _framedTransport.open();
 
   @override
   Future close() => closeWithException(null);
@@ -35,27 +37,21 @@ class FAdapterTransport extends FTransport {
 
   @override
   void write(Uint8List buffer, int offset, int length) {
-    _transport.write(buffer, offset, length);
+    _framedTransport.write(buffer, offset, length);
   }
 
   Future closeWithException(cause) async {
-    await _transport.close();
-    await _signalClose(cause);
+    _framedTransport.close();
+    await super.closeWithException(cause);
   }
 
   @override
   void setRegistry(FRegistry registry) {
     super.setRegistry(registry);
-    _transport.onFrame.listen((_FrameWrapper frame) {
+    _framedTransport.onFrame.listen((_FrameWrapper frame) {
       try {
-        var dur = new DateTime.now().difference(frame.timestamp);
-        if (dur > _highWatermark) {
-          log.warning(
-              "frame spent ${dur} in the transport buffer, your consumer might be backed up");
-        }
         _registry.execute(frame.frameBytes);
       } catch (e) {
-        // TODO: Log the stacktrace
         // Fatal error. Close the transport.
         log.severe("FAsyncCallback had a fatal error ${e.toString()}." +
             "Closing transport.");
