@@ -15,7 +15,8 @@ import static org.mockito.Matchers.any;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-@Deprecated public class TStatelessNatsTransportTest {
+@Deprecated
+public class TStatelessNatsTransportTest {
 
     private Connection conn;
     private String subject = "foo";

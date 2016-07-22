@@ -63,7 +63,8 @@ public class FNatsTransport extends FTransport {
     /**
      * TODO: Remove this with 2.0
      */
-    @Deprecated FNatsTransport(Connection conn, String subject, String inbox, boolean isTTransport) {
+    @Deprecated
+    FNatsTransport(Connection conn, String subject, String inbox, boolean isTTransport) {
         super(NATS_MAX_MESSAGE_SIZE, FRAME_BUFFER_SIZE);
         this.conn = conn;
         this.subject = subject;
