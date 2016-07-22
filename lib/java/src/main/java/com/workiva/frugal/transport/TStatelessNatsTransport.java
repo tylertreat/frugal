@@ -1,7 +1,11 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FMessageSizeException;
-import io.nats.client.*;
+import io.nats.client.Connection;
+import io.nats.client.Constants;
+import io.nats.client.Message;
+import io.nats.client.MessageHandler;
+import io.nats.client.Subscription;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
