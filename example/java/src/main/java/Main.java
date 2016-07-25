@@ -23,7 +23,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException, TimeoutException, TException {
         FProtocolFactory protocolFactory = new FProtocolFactory(new TBinaryProtocol.Factory());
-        FTransportFactory transportFactory = new FMuxTransport.Factory(5);
+        FTransportFactory transportFactory = new FAdapterTransport.Factory();
         ConnectionFactory cf = new ConnectionFactory(Constants.DEFAULT_URL);
         Connection conn = cf.createConnection();
 

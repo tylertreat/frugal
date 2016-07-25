@@ -80,16 +80,6 @@ public class FMuxTransport extends FTransport {
         }
     }
 
-    public synchronized void setRegistry(FRegistry registry) {
-        if (registry == null) {
-            throw new RuntimeException("registry cannot by null");
-        }
-        if (this.registry != null) {
-            return;
-        }
-        this.registry = registry;
-    }
-
     public synchronized boolean isOpen() {
         return framedTransport.isOpen();
     }

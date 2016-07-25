@@ -8,6 +8,7 @@ import com.workiva.frugal.transport.monitor.FTransportMonitor;
 import com.workiva.frugal.transport.monitor.MonitorRunner;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,13 +39,37 @@ public abstract class FTransport extends TTransport {
     private volatile FTransportClosedCallback monitor;
     protected long highWatermark = DEFAULT_WATERMARK;
     protected FRegistry registry;
+    private boolean isOpen;
+
+    @Override
+    public synchronized boolean isOpen() {
+        return isOpen;
+    }
+
+    @Override
+    public synchronized void open() throws TTransportException {
+        isOpen = true;
+    }
+
+    @Override
+    public synchronized void close() {
+        isOpen = false;
+    }
 
     /**
      * Set the FRegistry on the FTransport.
      *
      * @param registry FRegistry to set on the FTransport.
      */
-    public abstract void setRegistry(FRegistry registry);
+    public synchronized void setRegistry(FRegistry registry) {
+        if (registry == null) {
+            throw new RuntimeException("registry cannot by null");
+        }
+        if (this.registry != null) {
+            return;
+        }
+        this.registry = registry;
+    }
 
     /**
      * Register a callback for the given FContext.
@@ -69,6 +94,10 @@ public abstract class FTransport extends TTransport {
             throw new FException("registry not set");
         }
         registry.unregister(context);
+    }
+
+    protected synchronized FRegistry getRegistry() {
+        return registry;
     }
 
     /**
@@ -111,6 +140,11 @@ public abstract class FTransport extends TTransport {
         this.highWatermark = watermark;
     }
 
+    @Override
+    public int read(byte[] buff, int off, int len) throws TTransportException {
+        throw new RuntimeException("Do not call read directly on FTransport");
+    }
+
     protected synchronized long getHighWatermark() {
         return highWatermark;
     }
@@ -124,11 +158,8 @@ public abstract class FTransport extends TTransport {
             closedCallback.onClose(cause);
         }
         if (monitor != null) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    monitor.onClose(cause);
-                }
+            new Thread(() -> {
+                monitor.onClose(cause);
             }, "transport-monitor").start();
         }
     }
