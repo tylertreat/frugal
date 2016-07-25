@@ -246,17 +246,7 @@ func (h *httpFTransport) Read(buf []byte) (int, error) {
 	if !h.IsOpen() {
 		return 0, h.getClosedConditionError("read:")
 	}
-	if len(h.currentFrame) == 0 {
-		select {
-		case frame := <-h.frameBuffer:
-			h.currentFrame = frame
-		case <-h.ClosedChannel():
-			return 0, thrift.NewTTransportExceptionFromError(io.EOF)
-		}
-	}
-	num := copy(buf, h.currentFrame)
-	h.currentFrame = h.currentFrame[num:]
-	return num, nil
+	return h.fBaseTransport.Read(buf)
 }
 
 // Write the bytes to a buffer. Returns ErrTooLarge if the buffer exceeds the
@@ -273,11 +263,12 @@ func (h *httpFTransport) Flush() error {
 	if !h.IsOpen() {
 		return h.getClosedConditionError("flush:")
 	}
-	data := h.fBaseTransport.GetRequestBytes()
+	data := h.GetWriteBytes()
 	if len(data) == 0 {
 		return nil
 	}
 
+	h.ResetWriteBuffer()
 	// TODO: Remove this check in 2.0
 	if !h.isTTransport {
 		data = prependFrameSize(data)
@@ -315,7 +306,7 @@ func (h *httpFTransport) Flush() error {
 		return nil
 	}
 
-	return thrift.NewTTransportExceptionFromError(h.fBaseTransport.Execute(response))
+	return thrift.NewTTransportExceptionFromError(h.fBaseTransport.ExecuteFrame(response))
 }
 
 // This is a no-op for httpFTransport
