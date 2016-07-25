@@ -78,11 +78,11 @@ public class FAdapterTransport extends FTransport {
         close(null);
     }
 
-    private synchronized void close(Exception cause) {
+    protected synchronized void close(Exception cause) {
         if (isCleanClose(cause) && !isOpen()) {
             return;
         }
-        super.close();
+        super.close(cause);
         readExecutor.shutdownNow(); // No need to do a clean shutdown
         framedTransport.close();
         if (isCleanClose(cause)) {
@@ -91,7 +91,6 @@ public class FAdapterTransport extends FTransport {
             LOGGER.info("transport closed with cause: " + cause.getMessage());
         }
         signalClose(cause);
-        registry.close();
     }
 
     /**

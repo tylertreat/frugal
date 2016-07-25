@@ -119,7 +119,7 @@ type FTransportFactory interface {
 
 type fBaseTransport struct {
 	requestSizeLimit uint
-	requestBuffer    bytes.Buffer
+	writeBuffer      bytes.Buffer
 	registry         FRegistry
 	closed           chan error
 
@@ -190,11 +190,11 @@ func (f *fBaseTransport) Read(buf []byte) (int, error) {
 // Write the bytes to a buffer. Returns ErrTooLarge if the buffer exceeds the
 // request size limit.
 func (f *fBaseTransport) Write(buf []byte) (int, error) {
-	if f.requestSizeLimit > 0 && len(buf)+f.requestBuffer.Len() > int(f.requestSizeLimit) {
-		f.requestBuffer.Reset()
+	if f.requestSizeLimit > 0 && len(buf)+f.writeBuffer.Len() > int(f.requestSizeLimit) {
+		f.writeBuffer.Reset()
 		return 0, ErrTooLarge
 	}
-	num, err := f.requestBuffer.Write(buf)
+	num, err := f.writeBuffer.Write(buf)
 	return num, thrift.NewTTransportExceptionFromError(err)
 }
 
@@ -202,14 +202,18 @@ func (f *fBaseTransport) RemainingBytes() uint64 {
 	return ^uint64(0)
 }
 
-// Get the request bytes and reset the request buffer.
-func (f *fBaseTransport) GetRequestBytes() []byte {
-	defer f.requestBuffer.Reset()
-	return f.requestBuffer.Bytes()
+// Get the write bytes
+func (f *fBaseTransport) GetWriteBytes() []byte {
+	return f.writeBuffer.Bytes()
+}
+
+// Reset the write buffer
+func (f *fBaseTransport) ResetWriteBuffer() {
+	f.writeBuffer.Reset()
 }
 
 // Execute a frugal frame (NOTE: this frame must include the frame size).
-func (f *fBaseTransport) Execute(frame []byte) error {
+func (f *fBaseTransport) ExecuteFrame(frame []byte) error {
 	return f.registry.Execute(frame[4:])
 }
 

@@ -102,5 +102,6 @@ class FNatsTransport(FTornadoTransport):
         if not frame:
             return
 
+        self.reset_write_buffer()
         yield self._nats_client.publish_request(self._subject, self._inbox,
                                                 frame)

@@ -51,6 +51,9 @@ class FTornadoTransport(FTransport):
             logger.exception(ex)
             raise ex
 
+        # TODO: With 2.0, consider throwing a StandardError.
+        # Currently, the generated code sets the registry for each extending
+        # service for a particular base service.
         if self._registry:
             return
 
@@ -119,14 +122,21 @@ class FTornadoTransport(FTransport):
         raise gen.Return(NotImplementedError("You must override this."))
 
     def get_write_bytes(self):
+        """Get the framed bytes from the write buffer."""
         frame = self._wbuf.getvalue()
         if len(frame) == 0:
             return None
 
         frame_length = pack('!I', len(frame))
-        self._wbuf = BytesIO()
         return '{0}{1}'.format(frame_length, frame)
 
+    def reset_write_buffer(self):
+        """Reset the write buffer."""
+        self._wbuf = BytesIO()
+
     def execute_frame(self, frame):
+        """Execute a frugal frame.
+        NOTE: this frame must include the frame size.
+        """
         self._registry.execute(frame[4:])
 

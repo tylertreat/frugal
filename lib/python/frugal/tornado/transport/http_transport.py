@@ -66,6 +66,7 @@ class FHttpTransport(FTornadoTransport):
         if not frame:
             return
 
+        self.reset_write_buffer()
         encoded = base64.b64encode(frame)
         request = HTTPRequest(self._url, method='POST', body=encoded,
                               headers=self._headers)
