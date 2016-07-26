@@ -90,7 +90,6 @@ public class FAdapterTransport extends FTransport {
         } else {
             LOGGER.info("transport closed with cause: " + cause.getMessage());
         }
-        signalClose(cause);
     }
 
     /**
