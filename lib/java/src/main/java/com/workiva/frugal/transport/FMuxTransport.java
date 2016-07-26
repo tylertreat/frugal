@@ -1,6 +1,5 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.protocol.FRegistry;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -90,16 +89,6 @@ public class FMuxTransport extends FTransport {
         protected long getTimestamp() {
             return this.timestamp;
         }
-    }
-
-    public synchronized void setRegistry(FRegistry registry) {
-        if (registry == null) {
-            throw new RuntimeException("registry cannot by null");
-        }
-        if (this.registry != null) {
-            return;
-        }
-        this.registry = registry;
     }
 
     public synchronized boolean isOpen() {

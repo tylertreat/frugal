@@ -35,6 +35,7 @@ public abstract class FTransport extends TTransport {
     private volatile FTransportClosedCallback closedCallback;
     private volatile FTransportClosedCallback monitor;
     protected FRegistry registry;
+    private boolean isOpen;
 
     // Write buffer
     private final int writeBufferSize;
@@ -93,6 +94,16 @@ public abstract class FTransport extends TTransport {
         this.frameBuffer = new ArrayBlockingQueue<>(frameBufferSize);
     }
 
+    @Override
+    public synchronized boolean isOpen() {
+        return isOpen;
+    }
+
+    @Override
+    public synchronized void open() throws TTransportException {
+        isOpen = true;
+    }
+
     /**
      * Closes the transport.
      */
@@ -106,7 +117,7 @@ public abstract class FTransport extends TTransport {
      *
      * @param cause Exception if not a clean close (null otherwise)
      */
-    protected void close(final Exception cause) {
+    protected synchronized void close(final Exception cause) {
         // TODO: Remove all read logic with 2.0
         if (frameBuffer != null) {
             try {
@@ -119,6 +130,7 @@ public abstract class FTransport extends TTransport {
         if (registry != null) {
             registry.close();
         }
+        isOpen = false;
         signalClose(cause);
     }
 
@@ -225,6 +237,10 @@ public abstract class FTransport extends TTransport {
             throw new FException("registry not set");
         }
         registry.unregister(context);
+    }
+
+    protected synchronized FRegistry getRegistry() {
+        return registry;
     }
 
     /**
@@ -350,11 +366,8 @@ public abstract class FTransport extends TTransport {
             closedCallback.onClose(cause);
         }
         if (monitor != null) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    monitor.onClose(cause);
-                }
+            new Thread(() -> {
+                monitor.onClose(cause);
             }, "transport-monitor").start();
         }
     }

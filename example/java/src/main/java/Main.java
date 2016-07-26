@@ -1,10 +1,8 @@
 
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
-import com.workiva.frugal.processor.FProcessorFactory;
 import com.workiva.frugal.protocol.*;
 import com.workiva.frugal.provider.FScopeProvider;
-import com.workiva.frugal.server.FNatsServer;
 import com.workiva.frugal.server.FServer;
 import com.workiva.frugal.server.FStatelessNatsServer;
 import com.workiva.frugal.transport.*;
