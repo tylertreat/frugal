@@ -23,7 +23,7 @@ class FMultiplexedTransport extends FTransport {
   }
 
   @override
-  bool get isOpen => _transport.isOpen && _registry != null;
+  bool get isOpen => _transport.isOpen;
 
   @override
   Future close() => closeWithException(null);

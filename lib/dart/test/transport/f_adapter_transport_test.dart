@@ -54,18 +54,18 @@ void main() {
     test(
         'test transport writes and flushes properly, read throws '
         'UnsupportedError', () async {
-      // Open the transport
-      when(socket.isClosed).thenReturn(true);
-      when(socket.open()).thenReturn(new Future.value());
-      await transport.open();
-      verify(socket.open()).called(1);
-
-      // Write to/flush transport before setting registry
+      // Write to/flush transport before opening
       var buffer = new Uint8List.fromList([1, 2, 3, 4]);
       var framedBuffer = new Uint8List.fromList([0, 0, 0, 4, 1, 2, 3, 4]);
       expect(() => transport.writeAll(buffer),
           throwsA(new isInstanceOf<TTransportError>()));
       expect(transport.flush, throwsA(new isInstanceOf<TTransportError>()));
+
+      // Open the transport
+      when(socket.isClosed).thenReturn(true);
+      when(socket.open()).thenReturn(new Future.value());
+      await transport.open();
+      verify(socket.open()).called(1);
 
       // Set the registry
       registry.initCompleter();

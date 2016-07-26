@@ -21,7 +21,7 @@ class FAdapterTransport extends FTransport {
   }
 
   @override
-  bool get isOpen => _framedTransport.isOpen && _registry != null;
+  bool get isOpen => _framedTransport.isOpen;
 
   @override
   Future open() => _framedTransport.open();
