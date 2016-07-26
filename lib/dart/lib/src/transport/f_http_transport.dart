@@ -13,7 +13,7 @@ class FHttpClientTransport extends FTransport {
   FHttpClientTransport(this.client, this.config) {}
 
   @override
-  bool get isOpen => _registry != null;
+  bool get isOpen => true;
 
   @override
   Future open() => new Future.value();
