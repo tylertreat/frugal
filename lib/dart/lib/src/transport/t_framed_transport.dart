@@ -15,7 +15,7 @@ class _TFramedTransport extends TTransport {
 
   StreamController<_FrameWrapper> _frameStream = new StreamController();
 
-  bool _isOpen;
+  bool _isOpen = false;
 
   final Uint8List headerBytes = new Uint8List(headerByteCount);
 
