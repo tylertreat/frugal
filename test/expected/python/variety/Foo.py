@@ -282,7 +282,7 @@ class oneWay_args:
             oprot.writeFieldEnd()
         if self.req is not None:
             oprot.writeFieldBegin('req', TType.MAP, 2)
-            oprot.writeMapBegin(TType.I32TType.STRING, len(self.req))
+            oprot.writeMapBegin(TType.I32, TType.STRING, len(self.req))
             for _elem46, _elem45 in self.req.items():
                 oprot.writeI32(_elem46)
                 oprot.writeString(_elem45)
