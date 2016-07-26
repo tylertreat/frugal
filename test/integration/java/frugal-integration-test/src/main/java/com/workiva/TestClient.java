@@ -719,7 +719,7 @@ public class TestClient {
             }
 
             if(o == null) {
-                System.out.format("Pub/Sub response timed out!");
+                System.out.println("Pub/Sub response timed out!");
                 returnCode = 1;
             }
 
@@ -729,7 +729,7 @@ public class TestClient {
             long stop = System.nanoTime();
             long tot = stop - start;
 
-            System.out.format("Total time: " + tot / 1000 + "us");
+            System.out.println("Total time: " + tot / 1000 + "us");
 
             if (timeMin == 0 || tot < timeMin) {
                 timeMin = tot;
