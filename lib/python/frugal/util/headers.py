@@ -1,6 +1,7 @@
 import logging
 from struct import pack_into, unpack_from
 
+from frugal import IS_PY2
 from frugal.exceptions import FProtocolException
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ class _Headers(object):
         """
         size = 0
 
-        for key, value in headers.iteritems():
+        for key, value in headers.items():
             size = size + 8 + len(key) + len(value)
 
         buff = bytearray(size + 5)
@@ -37,17 +38,21 @@ class _Headers(object):
 
         offset = 5
 
-        for key, value in headers.iteritems():
+        for key, value in headers.items():
             key_length = len(key)
             pack_into(_UINT, buff, offset, key_length)
             offset += 4
 
+            if not IS_PY2 and isinstance(key, str):
+                key = bytes(key, 'utf8')
             pack_into('>{0}s'.format(str(key_length)), buff, offset, key)
             offset += len(key)
 
             pack_into(_UINT, buff, offset, len(value))
             offset += 4
 
+            if not IS_PY2 and isinstance(value, str):
+                value = bytes(value, 'utf8')
             pack_into('>{0}s'.format(str(len(value))), buff, offset, value)
             offset += len(value)
 
@@ -116,6 +121,8 @@ class _Headers(object):
 
             name = unpack_from('>{0}s'.format(name_size),
                                buff[i:i + name_size])[0]
+            if not IS_PY2:
+                name = name.decode('utf8')
             i += name_size
 
             val_size = unpack_from(_UINT, buff[i: i + 4])[0]
@@ -129,6 +136,8 @@ class _Headers(object):
                 raise ex
 
             val = unpack_from('>{0}s'.format(val_size), buff[i:i + val_size])[0]
+            if not IS_PY2:
+                val = val.decode('utf8')
             i += val_size
             parsed_headers[name] = val
 
