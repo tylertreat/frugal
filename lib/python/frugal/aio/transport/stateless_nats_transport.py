@@ -1,4 +1,3 @@
-import asyncio
 from io import BytesIO
 import struct
 
@@ -11,6 +10,13 @@ from frugal.aio.transport import FAsyncIORegistryTransport
 
 
 class FStatelessNatsAsyncIOTransport(FAsyncIORegistryTransport):
+    """
+    FStatelessNatsAsyncIOTransport is an FTransport that uses nats as the
+    underlying transport. This is "stateless" in the sense there is no
+    connection with a server. A request is published on a subject and responses
+    are received on another subject. To use this, requests and responses MUST
+    fit within a single nats message.
+    """
     def __init__(
             self,
             nats_client: Client,
@@ -25,9 +31,11 @@ class FStatelessNatsAsyncIOTransport(FAsyncIORegistryTransport):
         self._sub_id = None
 
     def isOpen(self):
+        """Check whether the transport is open."""
         return self._is_open and self._nats_client.is_connected
 
     async def open(self):
+        """Subscribe to the inbox subject."""
         if not self._nats_client.is_connected:
             raise TTransportException(TTransportException.NOT_OPEN,
                                       'Nats not connected')
@@ -46,6 +54,7 @@ class FStatelessNatsAsyncIOTransport(FAsyncIORegistryTransport):
         self.execute(message.data)
 
     async def close(self):
+        """Unsubscribe from the inbox subject."""
         if not self._sub_id:
             return
 
@@ -54,7 +63,7 @@ class FStatelessNatsAsyncIOTransport(FAsyncIORegistryTransport):
         self._sub_id = None
 
     async def flush(self):
-        print('flushing')
+        """Send buffered data over nats."""
         if not self._is_open:
             raise TTransportException(TTransportException.NOT_OPEN,
                                       'Transport is not open')

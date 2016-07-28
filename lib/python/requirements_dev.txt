@@ -3,7 +3,6 @@ nose-exclude==0.4.1
 rednose
 mock==1.0.1
 coverage
-six==1.10.0
 
 nats-client==0.2.4
 

@@ -16,6 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 class FStatelessNatsAsyncIOServer(FServer):
+    """
+    FStatelessNatsAsyncIOServer is an FServer that uses nats as the underlying
+    transport.
+    """
     def __init__(
             self,
             nats_client: Client,
@@ -32,6 +36,7 @@ class FStatelessNatsAsyncIOServer(FServer):
         self._sub_id = None
 
     async def serve(self):
+        """Subscribe to the server subject and queue."""
         self._sub_id = await self._nats_client.subscribe(
             self._subject,
             queue=self._queue,
@@ -40,9 +45,11 @@ class FStatelessNatsAsyncIOServer(FServer):
         logger.info('Frugal server running...')
 
     async def stop(self):
+        """Unsubscribe from the server subject."""
         await self._nats_client.unsubscribe(self._sub_id)
 
     async def _on_message_callback(self, message):
+        """The function to be executed when a message is received."""
         if not message.reply:
             logger.warn('no reply present, discarding message')
             return

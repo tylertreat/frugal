@@ -1,4 +1,3 @@
-import asyncio
 from io import BytesIO
 
 from thrift.transport.TTransport import TTransportException
@@ -8,7 +7,16 @@ from frugal.transport import FTransport
 
 
 class FAsyncIOTransportBase(FTransport):
-    def __init__(self, max_message_size):
+    """
+    FAsyncIOTransportBase serves as a base class for FTransports,
+    implementing a potentially size limited buffered write method.
+    """
+    def __init__(self, max_message_size: int):
+        """
+        Args:
+            max_message_size: The maximum amount of data allowed to be buffered,
+                              0 indicates unlimited size.
+        """
         super().__init__()
         self._max_message_size = max_message_size
         self._wbuf = BytesIO()
@@ -16,18 +24,23 @@ class FAsyncIOTransportBase(FTransport):
     def isOpen(self):
         raise NotImplementedError('You must override this')
 
-    @asyncio.coroutine
-    def open(self):
+    async def open(self):
         raise NotImplementedError('You must override this')
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         raise NotImplementedError('You must override this')
 
     def read(self, size):
         raise NotImplementedError('Do not call this')
 
     def write(self, buf):
+        """
+        Writes the given data to a buffer. Throws FMessageSizeException if
+        this will cause the buffer to exceed the message size limit.
+
+        Args:
+            buf: The data to write.
+        """
         if not self.isOpen():
             raise TTransportException(TTransportException.NOT_OPEN,
                                       'Transport is not open')
@@ -35,9 +48,9 @@ class FAsyncIOTransportBase(FTransport):
         size = len(buf) + len(self._wbuf.getvalue())
 
         if size > self._max_message_size > 0:
+            self._wbuf = BytesIO()
             raise FMessageSizeException('Message exceeds max message size')
         self._wbuf.write(buf)
 
-    @asyncio.coroutine
-    def flush(self):
+    async def flush(self):
         raise NotImplementedError('You must override this')
