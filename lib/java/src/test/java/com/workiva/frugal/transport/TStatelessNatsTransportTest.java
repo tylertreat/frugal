@@ -1,3 +1,4 @@
+// TODO: Remove this with 2.0
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FMessageSizeException;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.when;
  * Tests for {@link TStatelessNatsTransport}.
  */
 @RunWith(JUnit4.class)
+@Deprecated
 public class TStatelessNatsTransportTest {
 
     private Connection conn;
@@ -74,7 +76,7 @@ public class TStatelessNatsTransportTest {
         transport.close();
 
         verify(sub).unsubscribe();
-        assertEquals(TStatelessNatsTransport.FRAME_BUFFER_CLOSED, transport.frameBuffer.poll(1, TimeUnit.SECONDS));
+        assertEquals(FTransport.FRAME_BUFFER_CLOSED, transport.fNatsTransport.frameBuffer.poll(1, TimeUnit.SECONDS));
     }
 
     @Test(expected = TTransportException.class)
@@ -89,8 +91,8 @@ public class TStatelessNatsTransportTest {
         when(conn.subscribe(any(String.class), any(MessageHandler.class))).thenReturn(sub);
         transport.open();
 
-        transport.frameBuffer.put("hello".getBytes());
-        transport.frameBuffer.put("world".getBytes());
+        transport.fNatsTransport.frameBuffer.put("hello".getBytes());
+        transport.fNatsTransport.frameBuffer.put("world".getBytes());
 
         byte[] buff = new byte[5];
         assertEquals(5, transport.read(buff, 0, 5));
@@ -98,7 +100,7 @@ public class TStatelessNatsTransportTest {
         assertEquals(5, transport.read(buff, 0, 5));
         assertArrayEquals("world".getBytes(), buff);
 
-        transport.frameBuffer.put(TStatelessNatsTransport.FRAME_BUFFER_CLOSED);
+        transport.fNatsTransport.frameBuffer.put(FTransport.FRAME_BUFFER_CLOSED);
 
         try {
             transport.read(buff, 0, 5);
