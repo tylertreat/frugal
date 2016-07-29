@@ -75,7 +75,7 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 	contents := ""
 	contents += fmt.Sprintf("\n\nlibrary %s;\n\n", libraryName)
 
-	constantsName := fmt.Sprintf("%sConstants", strings.Title(libraryName))
+	constantsName := fmt.Sprintf("%sConstants", snakeToCamel(libraryName))
 	contents += g.createExport(constantsName)
 	for _, s := range g.Frugal.Thrift.Structs {
 		contents += g.createExport(s.Name)
@@ -329,7 +329,7 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 
 // GenerateConstantsContents generates constants.
 func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) error {
-	className := fmt.Sprintf("%sConstants", strings.Title(g.getLibraryName()))
+	className := fmt.Sprintf("%sConstants", snakeToCamel(g.getLibraryName()))
 	file, err := g.GenerateFile(className, g.outputDir, generator.ObjectFile)
 	defer file.Close()
 	if err != nil {
@@ -1739,6 +1739,17 @@ func (g *Generator) getNamespaceOrName() string {
 
 func toLibraryName(name string) string {
 	return strings.Replace(name, ".", "_", -1)
+}
+
+func snakeToCamel(name string) string {
+	result := ""
+
+	words := strings.Split(name, "_")
+	for _, word := range words {
+		result += strings.Title(word)
+	}
+
+	return result
 }
 
 // e.g. change APIForFileIO to api_for_file_io
