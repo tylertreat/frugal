@@ -110,7 +110,7 @@ public class TestBase implements org.apache.thrift.TBase<TestBase, TestBase._Fie
 	static {
 		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
 		tmpMap.put(_Fields.BASE_STRUCT, new org.apache.thrift.meta_data.FieldMetaData("base_struct", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, base.thing.class)));
+				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, actual_base.java.thing.class)));
 		metaDataMap = Collections.unmodifiableMap(tmpMap);
 		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(TestBase.class, metaDataMap);
 	}
