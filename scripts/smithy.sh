@@ -55,7 +55,7 @@ pub run dart_dev analyze
 virtualenv -p /usr/bin/python /tmp/frugal
 source /tmp/frugal/bin/activate
 cd $ROOT/lib/python
-make deps
+make deps-py2
 make xunit-py2
 make install
 mv dist/frugal-*.tar.gz $ROOT
@@ -64,7 +64,7 @@ deactivate
 virtualenv -p /usr/bin/python3.5 /tmp/frugal-py3
 source /tmp/frugal-py3/bin/activate
 cd $ROOT/lib/python
-make deps
+make deps-py3
 make xunit-py3
 deactivate
 

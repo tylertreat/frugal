@@ -14,8 +14,11 @@ distclean: clean
 
 test: clean unit
 
-deps:
-	$(PIP) install -Ur requirements_dev.txt
+deps-py2:
+	$(PIP) install -Ur requirements_dev_py2.txt
+
+deps-py3:
+	$(PIP) install -Ur requirements_dev_py3.txt
 
 sniffer:
 	sniffer -x--with-doctest -x--logging-level=ERROR -x--with-coverage -x--cover-package=frugal
