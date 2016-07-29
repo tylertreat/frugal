@@ -55,23 +55,3 @@ class TestTAsyncIOTransportBase(utils.AsyncIOTestCase):
         mock_data = mock.Mock()
         self.transport.execute(mock_data)
         self.mock_registry.execute.assert_called_once_with(mock_data)
-
-
-    # def test_write_transport_not_open(self):
-    #     self.transport.isOpen = lambda: False
-    #     with self.assertRaises(TTransportException) as e:
-    #         self.transport.write(bytearray([]))
-    #         self.assertEqual(TTransportException.NOT_OPEN, e.type)
-    #
-    # def test_write(self):
-    #     data = bytearray([1, 2, 3, 4, 5, 6])
-    #     self.transport.write(data[:3])
-    #     self.transport.write(data[3:5])
-    #     self.transport.write(data[5:])
-    #     self.assertEqual(data, self.transport._wbuf.getvalue())
-    #
-    # def test_write_over_limit(self):
-    #     self.transport._max_message_size = 4
-    #     self.transport.write(bytearray([0] * 4))
-    #     with self.assertRaises(FMessageSizeException):
-    #         self.transport.write(bytearray([0]))

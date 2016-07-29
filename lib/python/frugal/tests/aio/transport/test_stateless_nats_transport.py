@@ -65,15 +65,9 @@ class TestTStatelessNatsAsyncIOTransport(utils.AsyncIOTestCase):
         )
         self.assertTrue(self.transport._is_open)
 
-    # def test_on_message_callback_none(self):
-    #     self.transport._callback = None
-    #     with self.assertRaises(FExecuteCallbackNotSet):
-    #         self.transport._on_message_callback(None)
-
     def test_on_message_callback(self):
         message = mock.Mock()
         callback = mock.Mock()
-        # self.transport.set_execute_callback(callback)
         self.transport.execute = callback
         self.transport._on_message_callback(message)
         callback.assert_called_once_with(message.data)
@@ -120,21 +114,3 @@ class TestTStatelessNatsAsyncIOTransport(utils.AsyncIOTestCase):
             self.inbox,
             bytearray([0, 0, 0, 6]) + data
         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
