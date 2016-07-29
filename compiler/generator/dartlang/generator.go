@@ -76,7 +76,7 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 	contents += fmt.Sprintf("\n\nlibrary %s;\n\n", libraryName)
 
 	if len(g.Frugal.Thrift.Constants) > 0 {
-		constantsName := fmt.Sprintf("%sConstants", strings.Title(libraryName))
+		constantsName := fmt.Sprintf("%sConstants", snakeToCamel(libraryName))
 		contents += g.createExport(constantsName)
 	}
 	for _, s := range g.Frugal.Thrift.Structs {
@@ -335,7 +335,7 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 		return nil
 	}
 
-	className := fmt.Sprintf("%sConstants", strings.Title(g.getLibraryName()))
+	className := fmt.Sprintf("%sConstants", snakeToCamel(g.getLibraryName()))
 	file, err := g.GenerateFile(className, g.outputDir, generator.ObjectFile)
 	defer file.Close()
 	if err != nil {
@@ -773,7 +773,7 @@ func (g *Generator) generateRead(s *parser.Struct) string {
 		if field.Modifier == parser.Required && g.isDartPrimitive(field.Type) {
 			fName := toFieldName(field.Name)
 			contents += fmt.Sprintf(tabtab+"if(!__isset_%s) {\n", fName)
-			contents += fmt.Sprintf(tabtabtab+"throw new TProtocolError(TProtocolErrorType.UNKWOWN, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
+			contents += fmt.Sprintf(tabtabtab+"throw new TProtocolError(TProtocolErrorType.UNKNOWN, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
 			contents += tabtab + "}\n"
 		}
 	}
@@ -1745,6 +1745,17 @@ func (g *Generator) getNamespaceOrName() string {
 
 func toLibraryName(name string) string {
 	return strings.Replace(name, ".", "_", -1)
+}
+
+func snakeToCamel(name string) string {
+	result := ""
+
+	words := strings.Split(name, "_")
+	for _, word := range words {
+		result += strings.Title(word)
+	}
+
+	return result
 }
 
 // e.g. change APIForFileIO to api_for_file_io

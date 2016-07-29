@@ -3,7 +3,7 @@
 
 library actual_base;
 
-export 'src/f_actual_base_constants.dart' show Actual_baseConstants;
+export 'src/f_actual_base_constants.dart' show ActualBaseConstants;
 export 'src/f_thing.dart' show thing;
 export 'src/f_api_exception.dart' show api_exception;
 export 'src/f_base_health_condition.dart' show base_health_condition;

@@ -755,10 +755,10 @@ class TestingDefaults implements TBase {
 
     // check for required fields of primitive type, which can't be checked in the validate method
     if(!__isset_status) {
-      throw new TProtocolError(TProtocolErrorType.UNKWOWN, "Required field 'status' was not present in struct TestingDefaults");
+      throw new TProtocolError(TProtocolErrorType.UNKNOWN, "Required field 'status' was not present in struct TestingDefaults");
     }
     if(!__isset_base_status) {
-      throw new TProtocolError(TProtocolErrorType.UNKWOWN, "Required field 'base_status' was not present in struct TestingDefaults");
+      throw new TProtocolError(TProtocolErrorType.UNKNOWN, "Required field 'base_status' was not present in struct TestingDefaults");
     }
     validate();
   }
