@@ -18,11 +18,11 @@ class FAsyncIORegistryTransport(FAsyncIOTransportBase):
         Args:
              registry: The registry to set, must be non-null.
         """
+        if not registry:
+            raise ValueError('registry must be non-null')
+
         if self._registry:
             return
-
-        if not registry:
-            raise ValueError('registry must be set')
 
         self._registry = registry
 

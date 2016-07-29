@@ -1,5 +1,3 @@
-import mock
-
 from thrift.transport.TTransport import TTransportException
 
 from frugal.aio.transport import FAsyncIOTransportBase
