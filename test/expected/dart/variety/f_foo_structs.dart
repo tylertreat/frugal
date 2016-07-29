@@ -1248,7 +1248,7 @@ class param_modifiers_args implements TBase {
 
     // check for required fields of primitive type, which can't be checked in the validate method
     if(!__isset_req_num) {
-      throw new TProtocolError(TProtocolErrorType.UNKWOWN, "Required field 'req_num' was not present in struct param_modifiers_args");
+      throw new TProtocolError(TProtocolErrorType.UNKNOWN, "Required field 'req_num' was not present in struct param_modifiers_args");
     }
     validate();
   }
