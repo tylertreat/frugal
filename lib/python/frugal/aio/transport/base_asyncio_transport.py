@@ -1,4 +1,5 @@
 from io import BytesIO
+import struct
 
 from thrift.transport.TTransport import TTransportException
 
@@ -54,3 +55,16 @@ class FAsyncIOTransportBase(FTransport):
 
     async def flush(self):
         raise NotImplementedError('You must override this')
+
+    def get_write_bytes(self):
+        """Get the framed bytes from the write buffer."""
+        data = self._wbuf.getvalue()
+        if len(data) == 0:
+            return None
+
+        data_length = struct.pack('!I', len(data))
+        return data_length + data
+
+    def reset_write_buffer(self):
+        """Reset the write buffer."""
+        self._wbuf = BytesIO()

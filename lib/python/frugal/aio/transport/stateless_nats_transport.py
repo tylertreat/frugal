@@ -1,5 +1,4 @@
 from io import BytesIO
-import struct
 
 from nats.aio.client import Client
 from nats.aio.utils import new_inbox
@@ -68,11 +67,11 @@ class FNatsTransport(FAsyncIORegistryTransport):
             raise TTransportException(TTransportException.NOT_OPEN,
                                       'Transport is not open')
 
-        data = self._wbuf.getvalue()
-        data_length = struct.pack('!I', len(data))
+        frame = self.get_write_bytes()
+        self.reset_write_buffer()
         self._wbuf = BytesIO()
         await self._nats_client.publish_request(
                 self._subject,
                 self._inbox,
-                data_length + data
+                frame
         )
