@@ -5,11 +5,11 @@ from nats.aio.client import Client
 from nats.aio.utils import new_inbox
 from thrift.transport.TTransport import TTransportException
 
-from frugal import NATS_MAX_MESSAGE_SIZE
+from frugal import _NATS_MAX_MESSAGE_SIZE
 from frugal.aio.transport import FAsyncIORegistryTransport
 
 
-class FStatelessNatsAsyncIOTransport(FAsyncIORegistryTransport):
+class FNatsTransport(FAsyncIORegistryTransport):
     """
     FStatelessNatsAsyncIOTransport is an FTransport that uses nats as the
     underlying transport. This is "stateless" in the sense there is no
@@ -23,7 +23,7 @@ class FStatelessNatsAsyncIOTransport(FAsyncIORegistryTransport):
             subject: str,
             inbox=''
     ):
-        super().__init__(NATS_MAX_MESSAGE_SIZE)
+        super().__init__(_NATS_MAX_MESSAGE_SIZE)
         self._nats_client = nats_client
         self._subject = subject
         self._inbox = inbox or new_inbox()
@@ -51,7 +51,7 @@ class FStatelessNatsAsyncIOTransport(FAsyncIORegistryTransport):
         self._is_open = True
 
     def _on_message_callback(self, message):
-        self.execute(message.data)
+        self.execute_frame(message.data)
 
     async def close(self):
         """Unsubscribe from the inbox subject."""

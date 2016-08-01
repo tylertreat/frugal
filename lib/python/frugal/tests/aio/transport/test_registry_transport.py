@@ -48,10 +48,10 @@ class TestTAsyncIOTransportBase(utils.AsyncIOTestCase):
 
     def test_execute_not_set(self):
         with self.assertRaises(ValueError):
-            self.transport.execute([])
+            self.transport.execute_frame([])
 
     def test_execute(self):
         self.transport.set_registry(self.mock_registry)
         mock_data = mock.Mock()
-        self.transport.execute(mock_data)
+        self.transport.execute_frame(mock_data)
         self.mock_registry.execute.assert_called_once_with(mock_data)

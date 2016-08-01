@@ -1,6 +1,6 @@
 import uuid
 from copy import copy
-from frugal import IS_PY2
+from frugal import _IS_PY2
 from frugal.exceptions import FContextHeaderException
 
 _C_ID = "_cid"
@@ -133,9 +133,9 @@ class FContext(object):
         return self
 
     def _check_string(self, string):
-        if IS_PY2 and not isinstance(string, str):
+        if _IS_PY2 and not isinstance(string, str):
             raise TypeError("Value should be a string.")
-        if not IS_PY2 and not \
+        if not _IS_PY2 and not \
                 (isinstance(string, str) or isinstance(string, bytes)):
             raise TypeError('Value should be a string or bytes')
 

@@ -51,7 +51,7 @@ class FAsyncIORegistryTransport(FAsyncIOTransportBase):
 
         self._registry.unregister(context)
 
-    def execute(self, frame):
+    def execute_frame(self, frame):
         """
         Executes the callback associated with the data frame.
 

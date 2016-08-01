@@ -4,7 +4,7 @@ import mock
 from nats.aio.client import Client
 from thrift.transport.TTransport import TTransportException
 
-from frugal.aio.transport import FStatelessNatsAsyncIOTransport
+from frugal.aio.transport import FNatsTransport
 from frugal.exceptions import FExecuteCallbackNotSet
 from frugal.tests.aio import utils
 
@@ -16,7 +16,7 @@ class TestTStatelessNatsAsyncIOTransport(utils.AsyncIOTestCase):
         self.mock_nats_client = mock.Mock(spec=Client)
         self.subject = 'foo'
         self.inbox = 'bar'
-        self.transport = FStatelessNatsAsyncIOTransport(
+        self.transport = FNatsTransport(
             self.mock_nats_client,
             self.subject,
             inbox=self.inbox
@@ -29,8 +29,8 @@ class TestTStatelessNatsAsyncIOTransport(utils.AsyncIOTestCase):
         self.assertEqual(self.inbox, self.transport._inbox)
 
         mock_new_inbox.return_value = 'a new inbox'
-        transport = FStatelessNatsAsyncIOTransport(self.mock_nats_client,
-                                                   self.subject)
+        transport = FNatsTransport(self.mock_nats_client,
+                                   self.subject)
         mock_new_inbox.assert_called_once_with()
         self.assertEqual('a new inbox', transport._inbox)
 
@@ -68,7 +68,7 @@ class TestTStatelessNatsAsyncIOTransport(utils.AsyncIOTestCase):
     def test_on_message_callback(self):
         message = mock.Mock()
         callback = mock.Mock()
-        self.transport.execute = callback
+        self.transport.execute_frame = callback
         self.transport._on_message_callback(message)
         callback.assert_called_once_with(message.data)
 

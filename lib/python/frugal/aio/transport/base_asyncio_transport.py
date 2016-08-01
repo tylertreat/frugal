@@ -31,7 +31,7 @@ class FAsyncIOTransportBase(FTransport):
         raise NotImplementedError('You must override this')
 
     def read(self, size):
-        raise NotImplementedError('Do not call this')
+        raise Exception('Do not call this')
 
     def write(self, buf):
         """
