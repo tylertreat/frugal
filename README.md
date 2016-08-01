@@ -12,7 +12,32 @@ Currently supported languages are Go, Java, and Dart.
 
 ## Installation
 
-Install Thrift. Dart support has not yet been released for Thrift, so we use a fork for the time-being.
+1.  Install [go](https://golang.org/doc/install) and setup [`GOPATH`](https://github.com/golang/go/wiki/GOPATH).
+1.  Install [godep](https://github.com/tools/godep).
+1.  Get the frugal source code
+
+    ```bash
+    $ go get github.com/Workiva/frugal
+    ```
+
+    Or you can manually clone the frugal repo
+
+    ```bash
+    $ mkdir -p $GOPATH/src/github.com/Workiva/
+    $ cd $GOPATH/src/github.com/Workiva
+    $ git clone git@github.com:Workiva/frugal.git
+    ```
+
+1.  Install frugal with godep
+    ```bash
+    $ cd $GOPATH/src/github.com/Workiva/frugal
+    $ godep go install
+    ```
+
+## Using the Thrift compiler (DEPRECATED)
+You may use the thrift compiler to generate parts of the internal code used by frugal using the --gen_with_frugal=false flag.
+
+To do so, install Thrift. Dart support has not yet been released for Thrift, so we use a fork for the time-being.
 
 ### From Source
 
@@ -50,20 +75,6 @@ brew install Workiva/workiva/thrift
 ```
 
 Expect the build to take about 3 minutes.
-
-Install Frugal using [godep](https://github.com/tools/godep)
-```
-$ git clone https://github.com/Workiva/frugal.git
-$ godep go install
-```
-
-You can also install into your GOPATH using `go get`:
-```
-$ go get github.com/Workiva/frugal
-```
-
-If you don't have a Go environment setup or don't want to install Thrift you
-can use Docker. [Check the bottom of the Readme](#docker) for more info.
 
 ## Usage
 
