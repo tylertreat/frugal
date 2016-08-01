@@ -12,18 +12,18 @@ Currently supported languages are Go, Java, and Dart.
 
 ## Installation
 
-1. Install [go](https://golang.org/doc/install) and setup [`GOPATH`](https://github.com/golang/go/wiki/GOPATH).
-1. Install [godep](https://github.com/tools/godep).
-1. Clone this repo into your `GOPATH`.
-```bash
-$ cd $GOPATH/src/github.com/Workiva
-$ git clone https://github.com/Workiva/frugal.git
-```
-1. Install frugal with godep
-```bash
-$ cd $GOPATH/src/github.com/Workiva/frugal
-$ godep go install
-```
+1.  Install [go](https://golang.org/doc/install) and setup [`GOPATH`](https://github.com/golang/go/wiki/GOPATH).
+1.  Install [godep](https://github.com/tools/godep).
+1.  Clone this repo into your `GOPATH`.
+    ```bash
+    $ cd $GOPATH/src/github.com/Workiva
+    $ git clone https://github.com/Workiva/frugal.git
+    ```
+1.  Install frugal with godep
+    ```bash
+    $ cd $GOPATH/src/github.com/Workiva/frugal
+    $ godep go install
+    ```
 
 ## Using the Thrift compiler (DEPRECATED)
 You may use the thrift compiler to generate parts of the internal code used by frugal using the --gen_with_frugal=false flag.
