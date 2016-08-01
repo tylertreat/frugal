@@ -138,5 +138,5 @@ class FTornadoTransport(FTransport):
         """Execute a frugal frame.
         NOTE: this frame must include the frame size.
         """
-        self._registry.execute_frame(frame[4:])
+        self._registry.execute(frame[4:])
 
