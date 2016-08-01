@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	log "github.com/Sirupsen/logrus"
 )
 
 const (
@@ -157,7 +156,7 @@ func (f *fBaseTransport) Close(cause error) {
 	select {
 	case f.closed <- cause:
 	default:
-		log.Warnf("frugal: unable to put close error '%s' on fBaseTransport closed channel", cause)
+		logger().Warnf("frugal: unable to put close error '%s' on fBaseTransport closed channel", cause)
 	}
 	close(f.closed)
 
