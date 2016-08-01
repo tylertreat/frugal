@@ -15,10 +15,12 @@ Currently supported languages are Go, Java, and Dart.
 1.  Install [go](https://golang.org/doc/install) and setup [`GOPATH`](https://github.com/golang/go/wiki/GOPATH).
 1.  Install [godep](https://github.com/tools/godep).
 1.  Clone this repo into your `GOPATH`.
+
     ```bash
     $ cd $GOPATH/src/github.com/Workiva
     $ git clone https://github.com/Workiva/frugal.git
     ```
+
 1.  Install frugal with godep
     ```bash
     $ cd $GOPATH/src/github.com/Workiva/frugal
