@@ -1200,7 +1200,7 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 		tmpMap.put(_Fields.AWE, new org.apache.thrift.meta_data.FieldMetaData("awe", org.apache.thrift.TFieldRequirementType.DEFAULT,
 				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, AwesomeException.class)));
 		tmpMap.put(_Fields.API, new org.apache.thrift.meta_data.FieldMetaData("api", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, base.api_exception.class)));
+				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, actual_base.java.api_exception.class)));
 		metaDataMap = Collections.unmodifiableMap(tmpMap);
 		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(blah_result.class, metaDataMap);
 	}
@@ -2747,7 +2747,7 @@ public static class bin_method_result implements org.apache.thrift.TBase<bin_met
 		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
 				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING, true)));
 		tmpMap.put(_Fields.API, new org.apache.thrift.meta_data.FieldMetaData("api", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, base.api_exception.class)));
+				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, actual_base.java.api_exception.class)));
 		metaDataMap = Collections.unmodifiableMap(tmpMap);
 		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(bin_method_result.class, metaDataMap);
 	}

@@ -240,7 +240,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		tmpMap.put(_Fields.STATUS, new org.apache.thrift.meta_data.FieldMetaData("status", org.apache.thrift.TFieldRequirementType.REQUIRED,
 				new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, HealthCondition.class)));
 		tmpMap.put(_Fields.BASE_STATUS, new org.apache.thrift.meta_data.FieldMetaData("base_status", org.apache.thrift.TFieldRequirementType.REQUIRED,
-				new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, base.base_health_condition.class)));
+				new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, actual_base.java.base_health_condition.class)));
 		metaDataMap = Collections.unmodifiableMap(tmpMap);
 		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(TestingDefaults.class, metaDataMap);
 	}

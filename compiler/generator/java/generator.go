@@ -86,6 +86,10 @@ func (g *Generator) TeardownGenerator() error {
 }
 
 func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) error {
+	if len(constants) == 0 {
+		return nil
+	}
+
 	contents := ""
 
 	if g.includeGeneratedAnnotation() {
@@ -1963,9 +1967,9 @@ func (g *Generator) generateMetaDataMapEntry(t *parser.Type, ind string) string 
 		}
 		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.FieldValueMetaData(%s%s)", ttype, boolArg)
 	} else if g.Frugal.IsStruct(underlyingType) {
-		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, %s.class)", underlyingType.Name)
+		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, %s.class)", g.qualifiedTypeName(underlyingType))
 	} else if g.Frugal.IsEnum(underlyingType) {
-		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, %s.class)", underlyingType.Name)
+		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, %s.class)", g.qualifiedTypeName(underlyingType))
 	} else if parser.IsThriftContainer(underlyingType) {
 		switch underlyingType.Name {
 		case "list":
