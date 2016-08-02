@@ -6,6 +6,7 @@
 
 
 
+from datetime import timedelta
 from threading import Lock
 
 from frugal.middleware import Method
@@ -16,6 +17,7 @@ from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from tornado import gen
 from tornado.concurrent import Future
+from tornado.ioloop import IOLoop
 
 import excepts
 import validStructs
@@ -97,13 +99,21 @@ class Client(Iface):
         return self._methods['ping']([ctx])
 
     def _ping(self, ctx):
-        future = Future()
-        self._send_ping(ctx, future)
+        delta = timedelta(milliseconds=ctx.get_timeout())
+        future = gen.with_timeout(delta, Future())
+        ioloop = IOLoop.current()
+        timeout = ioloop.add_timeout(delta, self._transport.unregister, ctx)
+
+        def cancel_timeout():
+            ioloop.remove_timeout(timeout)
+
+        self._transport.register(ctx, self._recv_ping(ctx, future, cancel_timeout))
+        self._send_ping(ctx)
+
         return future
 
-    def _send_ping(self, ctx, future):
+    def _send_ping(self, ctx):
         oprot = self._oprot
-        self._transport.register(ctx, self._recv_ping(ctx, future))
         with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.CALL, 0)
@@ -112,8 +122,10 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_ping(self, ctx, future):
+    def _recv_ping(self, ctx, future, cancel_timeout):
         def ping_callback(transport):
+            cancel_timeout()
+            self._transport.unregister(ctx)
             iprot = self._protocol_factory.get_protocol(transport)
             iprot.read_response_headers(ctx)
             _, mtype, _ = iprot.readMessageBegin()
@@ -142,13 +154,21 @@ class Client(Iface):
         return self._methods['bleh']([ctx, one, Two, custom_ints])
 
     def _bleh(self, ctx, one, Two, custom_ints):
-        future = Future()
-        self._send_bleh(ctx, future, one, Two, custom_ints)
+        delta = timedelta(milliseconds=ctx.get_timeout())
+        future = gen.with_timeout(delta, Future())
+        ioloop = IOLoop.current()
+        timeout = ioloop.add_timeout(delta, self._transport.unregister, ctx)
+
+        def cancel_timeout():
+            ioloop.remove_timeout(timeout)
+
+        self._transport.register(ctx, self._recv_bleh(ctx, future, cancel_timeout))
+        self._send_bleh(ctx, one, Two, custom_ints)
+
         return future
 
-    def _send_bleh(self, ctx, future, one, Two, custom_ints):
+    def _send_bleh(self, ctx, one, Two, custom_ints):
         oprot = self._oprot
-        self._transport.register(ctx, self._recv_bleh(ctx, future))
         with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('bleh', TMessageType.CALL, 0)
@@ -160,8 +180,10 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_bleh(self, ctx, future):
+    def _recv_bleh(self, ctx, future, cancel_timeout):
         def bleh_callback(transport):
+            cancel_timeout()
+            self._transport.unregister(ctx)
             iprot = self._protocol_factory.get_protocol(transport)
             iprot.read_response_headers(ctx)
             _, mtype, _ = iprot.readMessageBegin()
@@ -196,13 +218,21 @@ class Client(Iface):
         return self._methods['getThing']([ctx])
 
     def _getThing(self, ctx):
-        future = Future()
-        self._send_getThing(ctx, future)
+        delta = timedelta(milliseconds=ctx.get_timeout())
+        future = gen.with_timeout(delta, Future())
+        ioloop = IOLoop.current()
+        timeout = ioloop.add_timeout(delta, self._transport.unregister, ctx)
+
+        def cancel_timeout():
+            ioloop.remove_timeout(timeout)
+
+        self._transport.register(ctx, self._recv_getThing(ctx, future, cancel_timeout))
+        self._send_getThing(ctx)
+
         return future
 
-    def _send_getThing(self, ctx, future):
+    def _send_getThing(self, ctx):
         oprot = self._oprot
-        self._transport.register(ctx, self._recv_getThing(ctx, future))
         with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.CALL, 0)
@@ -211,8 +241,10 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_getThing(self, ctx, future):
+    def _recv_getThing(self, ctx, future, cancel_timeout):
         def getThing_callback(transport):
+            cancel_timeout()
+            self._transport.unregister(ctx)
             iprot = self._protocol_factory.get_protocol(transport)
             iprot.read_response_headers(ctx)
             _, mtype, _ = iprot.readMessageBegin()
@@ -241,13 +273,21 @@ class Client(Iface):
         return self._methods['getMyInt']([ctx])
 
     def _getMyInt(self, ctx):
-        future = Future()
-        self._send_getMyInt(ctx, future)
+        delta = timedelta(milliseconds=ctx.get_timeout())
+        future = gen.with_timeout(delta, Future())
+        ioloop = IOLoop.current()
+        timeout = ioloop.add_timeout(delta, self._transport.unregister, ctx)
+
+        def cancel_timeout():
+            ioloop.remove_timeout(timeout)
+
+        self._transport.register(ctx, self._recv_getMyInt(ctx, future, cancel_timeout))
+        self._send_getMyInt(ctx)
+
         return future
 
-    def _send_getMyInt(self, ctx, future):
+    def _send_getMyInt(self, ctx):
         oprot = self._oprot
-        self._transport.register(ctx, self._recv_getMyInt(ctx, future))
         with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.CALL, 0)
@@ -256,8 +296,10 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_getMyInt(self, ctx, future):
+    def _recv_getMyInt(self, ctx, future, cancel_timeout):
         def getMyInt_callback(transport):
+            cancel_timeout()
+            self._transport.unregister(ctx)
             iprot = self._protocol_factory.get_protocol(transport)
             iprot.read_response_headers(ctx)
             _, mtype, _ = iprot.readMessageBegin()

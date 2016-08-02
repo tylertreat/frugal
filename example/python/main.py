@@ -14,10 +14,8 @@ from frugal.protocol import FProtocolFactory
 from frugal.provider import FScopeProvider
 from frugal.tornado.transport import (
     FHttpTransport,
-    FMuxTornadoTransportFactory,
     FNatsScopeTransportFactory,
-    TNatsServiceTransport,
-    TStatelessNatsTransport
+    FNatsTransport
 )
 
 from event.f_Events_publisher import EventsPublisher
@@ -52,39 +50,36 @@ def main():
     prot_factory = FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
 
     if "-client" in sys.argv or len(sys.argv) == 1:
-        root.debug("Running FFooClient")
+        root.debug("Running FFooClient with NATS")
         yield run_client(nats_client, prot_factory)
     if "-publisher" in sys.argv or len(sys.argv) == 1:
         root.debug("Running EventsPublisher")
         yield run_publisher(nats_client, prot_factory)
-    if "-stateless" in sys.argv:
-        root.debug("Running Stateless FFooClient")
-        yield run_client(nats_client, prot_factory, stateless=True)
+    if "-http" in sys.argv:
+        root.debug("Running FFooClient with NATS and HTTP")
+        yield run_client(nats_client, prot_factory, http=True)
 
     yield nats_client.close()
 
 
 @gen.coroutine
-def run_client(nats_client, prot_factory, stateless=False):
-    transport_factory = FMuxTornadoTransportFactory()
-    nats_transport = (TStatelessNatsTransport(nats_client, "foo") if stateless
-        else TNatsServiceTransport.Client(nats_client, "foo", 60000, 5))
-    tornado_transport = transport_factory.get_transport(nats_transport)
+def run_client(nats_client, prot_factory, http=False):
+    nats_transport = FNatsTransport(nats_client, "foo")
 
     try:
-        yield tornado_transport.open()
+        yield nats_transport.open()
     except TTransportException as ex:
         root.error(ex)
         raise gen.Return()
 
-    foo_client = FFooClient(tornado_transport, prot_factory,
+    foo_client = FFooClient(nats_transport, prot_factory,
                             middleware=logging_middleware)
 
     root.info('oneWay()')
     foo_client.oneWay(FContext(), 99, {99: "request"})
 
     root.info('basePing()')
-    yield foo_client.basePing(FContext())
+    yield foo_client.basePing(FContext(timeout=5 * 1000))
 
     root.info('ping()')
     yield foo_client.ping(FContext())
@@ -96,7 +91,10 @@ def run_client(nats_client, prot_factory, stateless=False):
     root.info('Blah response {}'.format(b))
     root.info('Response header foo: {}'.format(ctx.get_response_header("foo")))
 
-    yield tornado_transport.close()
+    yield nats_transport.close()
+
+    if not http:
+        return
 
     http_transport = FHttpTransport('http://localhost:8090/frugal')
 

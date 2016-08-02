@@ -6,6 +6,7 @@
 
 
 
+from datetime import timedelta
 from threading import Lock
 
 from frugal.middleware import Method
@@ -16,6 +17,7 @@ from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from tornado import gen
 from tornado.concurrent import Future
+from tornado.ioloop import IOLoop
 
 import base
 from event.Foo import *
@@ -92,13 +94,21 @@ class Client(base.f_BaseFoo.Client, Iface):
         return self._methods['ping']([ctx])
 
     def _ping(self, ctx):
-        future = Future()
-        self._send_ping(ctx, future)
+        delta = timedelta(milliseconds=ctx.get_timeout())
+        future = gen.with_timeout(delta, Future())
+        ioloop = IOLoop.current()
+        timeout = ioloop.add_timeout(delta, self._transport.unregister, ctx)
+
+        def cancel_timeout():
+            ioloop.remove_timeout(timeout)
+
+        self._transport.register(ctx, self._recv_ping(ctx, future, cancel_timeout))
+        self._send_ping(ctx)
+
         return future
 
-    def _send_ping(self, ctx, future):
+    def _send_ping(self, ctx):
         oprot = self._oprot
-        self._transport.register(ctx, self._recv_ping(ctx, future))
         with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.CALL, 0)
@@ -107,8 +117,10 @@ class Client(base.f_BaseFoo.Client, Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_ping(self, ctx, future):
+    def _recv_ping(self, ctx, future, cancel_timeout):
         def ping_callback(transport):
+            cancel_timeout()
+            self._transport.unregister(ctx)
             iprot = self._protocol_factory.get_protocol(transport)
             iprot.read_response_headers(ctx)
             _, mtype, _ = iprot.readMessageBegin()
@@ -137,13 +149,21 @@ class Client(base.f_BaseFoo.Client, Iface):
         return self._methods['blah']([ctx, num, Str, event])
 
     def _blah(self, ctx, num, Str, event):
-        future = Future()
-        self._send_blah(ctx, future, num, Str, event)
+        delta = timedelta(milliseconds=ctx.get_timeout())
+        future = gen.with_timeout(delta, Future())
+        ioloop = IOLoop.current()
+        timeout = ioloop.add_timeout(delta, self._transport.unregister, ctx)
+
+        def cancel_timeout():
+            ioloop.remove_timeout(timeout)
+
+        self._transport.register(ctx, self._recv_blah(ctx, future, cancel_timeout))
+        self._send_blah(ctx, num, Str, event)
+
         return future
 
-    def _send_blah(self, ctx, future, num, Str, event):
+    def _send_blah(self, ctx, num, Str, event):
         oprot = self._oprot
-        self._transport.register(ctx, self._recv_blah(ctx, future))
         with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('blah', TMessageType.CALL, 0)
@@ -155,8 +175,10 @@ class Client(base.f_BaseFoo.Client, Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_blah(self, ctx, future):
+    def _recv_blah(self, ctx, future, cancel_timeout):
         def blah_callback(transport):
+            cancel_timeout()
+            self._transport.unregister(ctx)
             iprot = self._protocol_factory.get_protocol(transport)
             iprot.read_response_headers(ctx)
             _, mtype, _ = iprot.readMessageBegin()

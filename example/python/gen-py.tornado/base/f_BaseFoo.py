@@ -6,6 +6,7 @@
 
 
 
+from datetime import timedelta
 from threading import Lock
 
 from frugal.middleware import Method
@@ -16,6 +17,7 @@ from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from tornado import gen
 from tornado.concurrent import Future
+from tornado.ioloop import IOLoop
 
 from base.BaseFoo import *
 from base.ttypes import *
@@ -61,13 +63,21 @@ class Client(Iface):
         return self._methods['basePing']([ctx])
 
     def _basePing(self, ctx):
-        future = Future()
-        self._send_basePing(ctx, future)
+        delta = timedelta(milliseconds=ctx.get_timeout())
+        future = gen.with_timeout(delta, Future())
+        ioloop = IOLoop.current()
+        timeout = ioloop.add_timeout(delta, self._transport.unregister, ctx)
+
+        def cancel_timeout():
+            ioloop.remove_timeout(timeout)
+
+        self._transport.register(ctx, self._recv_basePing(ctx, future, cancel_timeout))
+        self._send_basePing(ctx)
+
         return future
 
-    def _send_basePing(self, ctx, future):
+    def _send_basePing(self, ctx):
         oprot = self._oprot
-        self._transport.register(ctx, self._recv_basePing(ctx, future))
         with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('basePing', TMessageType.CALL, 0)
@@ -76,8 +86,10 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_basePing(self, ctx, future):
+    def _recv_basePing(self, ctx, future, cancel_timeout):
         def basePing_callback(transport):
+            cancel_timeout()
+            self._transport.unregister(ctx)
             iprot = self._protocol_factory.get_protocol(transport)
             iprot.read_response_headers(ctx)
             _, mtype, _ = iprot.readMessageBegin()

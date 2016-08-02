@@ -1,5 +1,5 @@
 import logging
-from threading import Lock
+from threading import RLock
 
 from thrift.transport.TTransport import TMemoryBuffer
 
@@ -88,9 +88,9 @@ class FClientRegistry(FRegistry):
 
     def __init__(self):
         self._handlers = {}
-        self._handlers_lock = Lock()
+        self._handlers_lock = RLock()
         self._next_opid = 0
-        self._opid_lock = Lock()
+        self._opid_lock = RLock()
 
     def register(self, context, callback):
         """Register a callback for a given FContext.
