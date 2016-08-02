@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * FContext is the context for a Frugal message. Every RPC has an FContext, which
  * can be used to set request headers, response headers, and the request timeout.
- * The default timeout is one minute. An FContext is also sent with every publish
+ * The default timeout is five seconds. An FContext is also sent with every publish
  * message which is then received by subscribers.
  * <p/>
  * In addition to headers, the FContext also contains a correlation ID which can
@@ -27,7 +27,7 @@ public class FContext {
 
     protected static final String CID = "_cid";
     protected static final String OP_ID = "_opid";
-    protected static final long DEFAULT_TIMEOUT = 60 * 1000;
+    protected static final long DEFAULT_TIMEOUT = 5 * 1000;
 
     private Map<String, String> requestHeaders = new ConcurrentHashMap<>();
     private Map<String, String> responseHeaders = new ConcurrentHashMap<>();
@@ -229,7 +229,7 @@ public class FContext {
     }
 
     /**
-     * Set the request timeout. Default is 1 minute.
+     * Set the request timeout. Default is 5 seconds.
      *
      * @param timeout timeout for the request in milliseconds.
      */
