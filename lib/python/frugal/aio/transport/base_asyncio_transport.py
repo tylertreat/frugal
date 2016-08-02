@@ -7,9 +7,9 @@ from frugal.exceptions import FMessageSizeException
 from frugal.transport import FTransport
 
 
-class FAsyncIOTransportBase(FTransport):
+class FTransportBase(FTransport):
     """
-    FAsyncIOTransportBase serves as a base class for FTransports,
+    FTransportBase serves as a base class for FTransports,
     implementing a potentially size limited buffered write method.
     """
     def __init__(self, max_message_size: int):

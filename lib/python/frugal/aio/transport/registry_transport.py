@@ -1,11 +1,11 @@
-from frugal.aio.transport import FAsyncIOTransportBase
+from frugal.aio.transport import FTransportBase
 from frugal.context import FContext
 from frugal.registry import FRegistry
 
 
-class FAsyncIORegistryTransport(FAsyncIOTransportBase):
+class FRegistryTransport(FTransportBase):
     """
-    FAsyncIORegistryTransport implements registry manipulation methods.
+    FRegistryTransport implements registry manipulation methods.
     """
     def __init__(self, max_message_size):
         super().__init__(max_message_size)

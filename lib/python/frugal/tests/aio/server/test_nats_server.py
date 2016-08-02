@@ -7,7 +7,7 @@ from frugal.tests.aio import utils
 from frugal.aio.server import FNatsServer
 
 
-class TestFStatelessNatsAsyncIOServer(utils.AsyncIOTestCase):
+class TestFNatsServer(utils.AsyncIOTestCase):
     def setUp(self):
         super().setUp()
         self.subject = 'foo'
@@ -54,7 +54,7 @@ class TestFStatelessNatsAsyncIOServer(utils.AsyncIOTestCase):
         self.assertFalse(self.mock_processor.process.called)
         self.assertFalse(self.mock_prot_factory.get_protocol.called)
 
-    @mock.patch('frugal.aio.server.stateless_nats_server._NATS_MAX_MESSAGE_SIZE', 6)
+    @mock.patch('frugal.aio.server.nats_server._NATS_MAX_MESSAGE_SIZE', 6)
     @utils.async_runner
     async def test_on_message_callback_large_frame_size(self):
         data = bytearray([1, 2, 3, 4, 5])

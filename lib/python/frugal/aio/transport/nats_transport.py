@@ -5,16 +5,16 @@ from nats.aio.utils import new_inbox
 from thrift.transport.TTransport import TTransportException
 
 from frugal import _NATS_MAX_MESSAGE_SIZE
-from frugal.aio.transport import FAsyncIORegistryTransport
+from frugal.aio.transport import FRegistryTransport
 
 
-class FNatsTransport(FAsyncIORegistryTransport):
+class FNatsTransport(FRegistryTransport):
     """
-    FStatelessNatsAsyncIOTransport is an FTransport that uses nats as the
-    underlying transport. This is "stateless" in the sense there is no
-    connection with a server. A request is published on a subject and responses
-    are received on another subject. To use this, requests and responses MUST
-    fit within a single nats message.
+    FNatsTransport is an FTransport that uses nats as the underlying transport.
+    This is "stateless" in the sense there is no connection with a server. A
+    request is published on a subject and responses are received on another
+    subject. To use this, requests and responses MUST fit within a single nats
+    message.
     """
     def __init__(
             self,

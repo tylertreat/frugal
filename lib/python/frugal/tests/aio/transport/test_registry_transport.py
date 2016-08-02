@@ -1,13 +1,13 @@
 import mock
 
-from frugal.aio.transport import FAsyncIORegistryTransport
+from frugal.aio.transport import FRegistryTransport
 from frugal.tests.aio import utils
 
 
-class TestTAsyncIOTransportBase(utils.AsyncIOTestCase):
+class TestFRegistryTransport(utils.AsyncIOTestCase):
     def setUp(self):
         super().setUp()
-        self.transport = FAsyncIORegistryTransport(0)
+        self.transport = FRegistryTransport(0)
         self.mock_registry = mock.Mock()
         self.mock_context = mock.Mock()
         self.mock_callback = mock.Mock()

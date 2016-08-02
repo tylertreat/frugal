@@ -1,10 +1,10 @@
-from frugal.aio.transport.base_asyncio_transport import FAsyncIOTransportBase
-from frugal.aio.transport.registry_transport import FAsyncIORegistryTransport
-from frugal.aio.transport.stateless_nats_transport import FNatsTransport
+from frugal.aio.transport.base_asyncio_transport import FTransportBase
+from frugal.aio.transport.registry_transport import FRegistryTransport
+from frugal.aio.transport.nats_transport import FNatsTransport
 
 
 __all__ = [
-    'FAsyncIOTransportBase',
-    'FAsyncIORegistryTransport',
+    'FTransportBase',
+    'FRegistryTransport',
     'FNatsTransport',
 ]

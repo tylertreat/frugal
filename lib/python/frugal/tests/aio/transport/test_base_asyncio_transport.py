@@ -1,14 +1,14 @@
 from thrift.transport.TTransport import TTransportException
 
-from frugal.aio.transport import FAsyncIOTransportBase
+from frugal.aio.transport import FTransportBase
 from frugal.exceptions import FMessageSizeException
 from frugal.tests.aio import utils
 
 
-class TestTAsyncIOTransportBase(utils.AsyncIOTestCase):
+class TestFTransportBase(utils.AsyncIOTestCase):
     def setUp(self):
         super().setUp()
-        self.transport = FAsyncIOTransportBase(0)
+        self.transport = FTransportBase(0)
         self.transport.isOpen = lambda: True
 
     def test_write_transport_not_open(self):

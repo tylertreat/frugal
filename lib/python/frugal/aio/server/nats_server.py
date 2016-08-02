@@ -15,10 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class FNatsServer(FServer):
-    """
-    FStatelessNatsAsyncIOServer is an FServer that uses nats as the underlying
-    transport.
-    """
+    """FNatsServer is an FServer that uses nats as the underlyingtransport."""
     def __init__(
             self,
             nats_client: Client,

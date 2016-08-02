@@ -1,4 +1,4 @@
-from frugal.aio.server.stateless_nats_server import FNatsServer
+from frugal.aio.server.nats_server import FNatsServer
 
 
 __all__ = [

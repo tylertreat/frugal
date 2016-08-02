@@ -5,11 +5,10 @@ from nats.aio.client import Client
 from thrift.transport.TTransport import TTransportException
 
 from frugal.aio.transport import FNatsTransport
-from frugal.exceptions import FExecuteCallbackNotSet
 from frugal.tests.aio import utils
 
 
-class TestTStatelessNatsAsyncIOTransport(utils.AsyncIOTestCase):
+class TestFNatsTransport(utils.AsyncIOTestCase):
 
     def setUp(self):
         super().setUp()
@@ -22,7 +21,7 @@ class TestTStatelessNatsAsyncIOTransport(utils.AsyncIOTestCase):
             inbox=self.inbox
         )
 
-    @mock.patch('frugal.aio.transport.stateless_nats_transport.new_inbox')
+    @mock.patch('frugal.aio.transport.nats_transport.new_inbox')
     def test_init(self, mock_new_inbox):
         self.assertEqual(self.mock_nats_client, self.transport._nats_client)
         self.assertEqual(self.subject, self.transport._subject)
