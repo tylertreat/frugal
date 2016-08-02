@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	log "github.com/Sirupsen/logrus"
 	"github.com/nats-io/nats"
 )
 
@@ -179,9 +178,9 @@ func (n *FNatsServer) Serve() error {
 		go n.startHeartbeat()
 	}
 
-	log.Info("frugal: server running...")
+	logger().Info("frugal: server running...")
 	<-n.quit
-	log.Info("frugal: server stopping...")
+	logger().Info("frugal: server stopping...")
 
 	for _, sub := range subscriptions {
 		sub.Unsubscribe()
@@ -209,16 +208,16 @@ func (n *FNatsServer) SetHighWatermark(watermark time.Duration) {
 // the server.
 func (n *FNatsServer) handleConnection(msg *nats.Msg) {
 	if msg.Reply == "" {
-		log.Warnf("frugal: discarding invalid connect message %+v", msg)
+		logger().Warnf("frugal: discarding invalid connect message %+v", msg)
 		return
 	}
 	hs := &natsConnectionHandshake{}
 	if err := json.Unmarshal(msg.Data, hs); err != nil {
-		log.Errorf("frugal: could not deserialize connect message %+v", msg)
+		logger().Errorf("frugal: could not deserialize connect message %+v", msg)
 		return
 	}
 	if hs.Version != natsV0 {
-		log.Errorf("frugal: not a supported connect version %d", hs.Version)
+		logger().Errorf("frugal: not a supported connect version %d", hs.Version)
 		return
 	}
 	var (
@@ -227,7 +226,7 @@ func (n *FNatsServer) handleConnection(msg *nats.Msg) {
 		tr, err        = n.accept(listenTo, msg.Reply, heartbeatReply)
 	)
 	if err != nil {
-		log.Errorf("frugal: error accepting client transport: %s", err)
+		logger().Errorf("frugal: error accepting client transport: %s", err)
 		return
 	}
 
@@ -242,7 +241,7 @@ func (n *FNatsServer) handleConnection(msg *nats.Msg) {
 	connectMsg := n.heartbeatSubject + " " + heartbeatReply + " " +
 		strconv.FormatInt(int64(n.heartbeatInterval/time.Millisecond), 10)
 	if err := n.conn.PublishRequest(msg.Reply, listenTo, []byte(connectMsg)); err != nil {
-		log.Errorf("frugal: error publishing transport inbox: %s", err)
+		logger().Errorf("frugal: error publishing transport inbox: %s", err)
 		tr.Close()
 	} else if n.isHeartbeating() {
 		go n.acceptHeartbeat(client)
@@ -273,10 +272,10 @@ func (n *FNatsServer) startHeartbeat() {
 				continue
 			}
 			if err := n.conn.Publish(n.heartbeatSubject, nil); err != nil {
-				log.Error("frugal: error publishing heartbeat:", err.Error())
+				logger().Error("frugal: error publishing heartbeat:", err.Error())
 			}
 			if err := n.conn.FlushTimeout(n.heartbeatInterval * 3 / 4); err != nil {
-				log.Error("frugal: error flushing heartbeat:", err.Error())
+				logger().Error("frugal: error flushing heartbeat:", err.Error())
 			}
 		case <-n.quit:
 			return
@@ -292,11 +291,11 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		select {
 		case recvHeartbeat <- struct{}{}:
 		default:
-			log.Info("frugal: FNatsServer dropped heartbeat:", client.heartbeat)
+			logger().Info("frugal: FNatsServer dropped heartbeat:", client.heartbeat)
 		}
 	})
 	if err != nil {
-		log.Error("frugal: error subscribing to heartbeat:", client.heartbeat)
+		logger().Error("frugal: error subscribing to heartbeat:", client.heartbeat)
 		return
 	}
 	defer sub.Unsubscribe()
@@ -312,7 +311,7 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		case <-wait:
 			missed++
 			if missed >= n.maxMissedHeartbeats {
-				log.Warnf("frugal: client heartbeat expired for heartbeat: %s", client.heartbeat)
+				logger().Warnf("frugal: client heartbeat expired for heartbeat: %s", client.heartbeat)
 				n.remove(client.heartbeat)
 				return
 			}
@@ -350,7 +349,7 @@ func (n *FNatsServer) accept(listenTo, replyTo, heartbeat string) (FTransport, e
 		n.remove(heartbeat)
 	}()
 
-	log.Debug("frugal: client connection accepted with heartbeat:", heartbeat)
+	logger().Debug("frugal: client connection accepted with heartbeat:", heartbeat)
 	return transport, nil
 }
 

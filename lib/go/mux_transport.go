@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	log "github.com/Sirupsen/logrus"
 )
 
 const defaultWatermark = 5 * time.Second
@@ -142,7 +141,7 @@ func (f *fMuxTransport) Open() error {
 	f.startWorkers()
 
 	f.open = true
-	log.Debug("frugal: transport opened")
+	logger().Debug("frugal: transport opened")
 	return nil
 }
 
@@ -159,7 +158,7 @@ func (f *fMuxTransport) readLoop() {
 				// Indicates the transport was closed.
 				return
 			}
-			log.Error("frugal: error reading protocol frame, closing transport:", err)
+			logger().Error("frugal: error reading protocol frame, closing transport:", err)
 			return
 		}
 
@@ -192,14 +191,14 @@ func (f *fMuxTransport) close(cause error) error {
 	select {
 	case f.closed <- cause:
 	default:
-		log.Printf("frugal: unable to put close error '%s' on fMuxTransport closed channel", cause)
+		logger().Printf("frugal: unable to put close error '%s' on fMuxTransport closed channel", cause)
 	}
 	close(f.closed)
 
 	if cause == nil {
-		log.Debug("frugal: transport closed")
+		logger().Debug("frugal: transport closed")
 	} else {
-		log.Debugf("frugal: transport closed with cause: %s", cause)
+		logger().Debugf("frugal: transport closed with cause: %s", cause)
 	}
 
 	// Signal transport monitor of close.
@@ -207,7 +206,7 @@ func (f *fMuxTransport) close(cause error) error {
 	case f.monitorClosedSignal <- cause:
 	default:
 		if f.monitorClosedSignal != nil {
-			log.Printf("frugal: unable to put close error '%s' on fMuxTransport monitor channel", cause)
+			logger().Printf("frugal: unable to put close error '%s' on fMuxTransport monitor channel", cause)
 		}
 	}
 
@@ -243,12 +242,12 @@ func (f *fMuxTransport) startWorkers() {
 					dur := time.Since(frame.timestamp)
 					f.waterMu.RLock()
 					if dur > f.highWatermark {
-						log.Warnf("frugal: frame spent %+v in the transport buffer, your consumer might be backed up", dur)
+						logger().Warnf("frugal: frame spent %+v in the transport buffer, your consumer might be backed up", dur)
 					}
 					f.waterMu.RUnlock()
 					if err := f.registry.Execute(frame.frameBytes); err != nil {
 						// An error here indicates an unrecoverable error, teardown transport.
-						log.Error("frugal: closing transport due to unrecoverable error processing frame:", err)
+						logger().Error("frugal: closing transport due to unrecoverable error processing frame:", err)
 						f.close(err)
 						return
 					}
