@@ -99,15 +99,14 @@ def run_client(nats_client, prot_factory, stateless=False):
     yield tornado_transport.close()
 
     http_transport = FHttpTransport('http://localhost:8090/frugal')
-    http_tornado_transport = transport_factory.get_transport(http_transport)
 
     try:
-        yield http_tornado_transport.open()
+        yield http_transport.open()
     except TTransportException as ex:
         logging.error(ex)
         raise gen.Return()
 
-    foo_client = FFooClient(http_tornado_transport, prot_factory,
+    foo_client = FFooClient(http_transport, prot_factory,
                             middleware=logging_middleware)
     print 'oneWay()'
     foo_client.oneWay(FContext(), 123, {123: 'request'})
@@ -125,7 +124,7 @@ def run_client(nats_client, prot_factory, stateless=False):
     print 'blah response {}'.format(b)
     print 'response header foo: {}'.format(ctx.get_response_header('foo'))
 
-    yield http_tornado_transport.close()
+    yield http_transport.close()
 
 
 @gen.coroutine
