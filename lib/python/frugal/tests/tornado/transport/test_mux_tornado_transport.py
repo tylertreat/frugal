@@ -59,9 +59,7 @@ class TestFmuxTornadoTransport(AsyncTestCase):
         mock_registry = mock.Mock()
         self.transport.set_registry(mock_registry)
 
-        def cb():
-            pass
-
+        cb = mock.Mock()
         ctx = FContext()
 
         self.transport.register(ctx, cb)
@@ -69,9 +67,7 @@ class TestFmuxTornadoTransport(AsyncTestCase):
         mock_registry.register.assert_called_with(ctx, cb)
 
     def test_register_none_registry(self):
-        def cb():
-            pass
-
+        cb = mock.Mock()
         ctx = FContext()
 
         with self.assertRaises(StandardError):
