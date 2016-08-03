@@ -6,6 +6,7 @@
 
 
 
+from datetime import timedelta
 from threading import Lock
 
 from frugal.middleware import Method
@@ -60,14 +61,21 @@ class Client(Iface):
         """
         return self._methods['basePing']([ctx])
 
+    @gen.coroutine
     def _basePing(self, ctx):
-        future = Future()
-        self._send_basePing(ctx, future)
-        return future
-
-    def _send_basePing(self, ctx, future):
-        oprot = self._oprot
+        delta = timedelta(milliseconds=ctx.get_timeout())
+        future = gen.with_timeout(delta, Future())
         self._transport.register(ctx, self._recv_basePing(ctx, future))
+        self._send_basePing(ctx)
+
+        try:
+            result = yield future
+        finally:
+            self._transport.unregister(ctx)
+        raise gen.Return(result)
+
+    def _send_basePing(self, ctx):
+        oprot = self._oprot
         with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('basePing', TMessageType.CALL, 0)

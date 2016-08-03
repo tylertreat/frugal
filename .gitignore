@@ -6,7 +6,7 @@ target/
 *.pyc
 
 
-# Don’t commit the following directories created by pub.
+# Do not commit the following directories created by pub.
 .buildlog
 .pub/
 build/
@@ -30,6 +30,7 @@ skynet.Dockerfile
 .coverage
 .build/
 .ropeproject/
+coverage_html/
 unit_tests.xml
 lib/python/frugal.egg-info/
 lib/python/frugalc
