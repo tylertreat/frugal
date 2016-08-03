@@ -65,7 +65,7 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
       });
     _transport.register(ctx, _recvPingHandler(ctx, controller));
     try {
-      writeLock.lock();
+      await writeLock.lock();
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
       t_foo_file.ping_args args = new t_foo_file.ping_args();
@@ -122,7 +122,7 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
       });
     _transport.register(ctx, _recvBlahHandler(ctx, controller));
     try {
-      writeLock.lock();
+      await writeLock.lock();
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("blah", thrift.TMessageType.CALL, 0));
       t_foo_file.blah_args args = new t_foo_file.blah_args();
@@ -189,7 +189,7 @@ class FFooClient extends t_base.FBaseFooClient implements FFoo {
   }
 
   Future _oneWay(frugal.FContext ctx, int id, Map<int, String> req) async {
-    writeLock.lock();
+    await writeLock.lock();
     oprot.writeRequestHeader(ctx);
     oprot.writeMessageBegin(new thrift.TMessage("oneWay", thrift.TMessageType.ONEWAY, 0));
     t_foo_file.oneWay_args args = new t_foo_file.oneWay_args();

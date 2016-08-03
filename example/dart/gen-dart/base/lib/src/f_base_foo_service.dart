@@ -51,7 +51,7 @@ class FBaseFooClient implements FBaseFoo {
       });
     _transport.register(ctx, _recvBasePingHandler(ctx, controller));
     try {
-      writeLock.lock();
+      await writeLock.lock();
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("basePing", thrift.TMessageType.CALL, 0));
       t_base_foo_file.basePing_args args = new t_base_foo_file.basePing_args();

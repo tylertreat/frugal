@@ -43,7 +43,7 @@ class FooPublisher {
   }
 
   Future _publishFoo(frugal.FContext ctx, String baz, t_valid.Thing req) async {
-    _writeLock.lock();
+    await _writeLock.lock();
     var op = "Foo";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
@@ -64,7 +64,7 @@ class FooPublisher {
   }
 
   Future _publishBar(frugal.FContext ctx, String baz, t_valid.Stuff req) async {
-    _writeLock.lock();
+    await _writeLock.lock();
     var op = "Bar";
     var prefix = "foo.bar.${baz}.qux.";
     var topic = "${prefix}Foo${delimiter}${op}";
