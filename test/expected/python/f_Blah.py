@@ -17,7 +17,6 @@ from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from tornado import gen
 from tornado.concurrent import Future
-from tornado.ioloop import IOLoop
 
 import excepts
 import validStructs
@@ -98,19 +97,18 @@ class Client(Iface):
         """
         return self._methods['ping']([ctx])
 
+    @gen.coroutine
     def _ping(self, ctx):
         delta = timedelta(milliseconds=ctx.get_timeout())
         future = gen.with_timeout(delta, Future())
-        ioloop = IOLoop.current()
-        timeout = ioloop.add_timeout(delta, self._transport.unregister, ctx)
-
-        def cancel_timeout():
-            ioloop.remove_timeout(timeout)
-
-        self._transport.register(ctx, self._recv_ping(ctx, future, cancel_timeout))
+        self._transport.register(ctx, self._recv_ping(ctx, future))
         self._send_ping(ctx)
 
-        return future
+        try:
+            result = yield future
+        finally:
+            self._transport.unregister(ctx)
+        raise gen.Return(result)
 
     def _send_ping(self, ctx):
         oprot = self._oprot
@@ -122,10 +120,8 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_ping(self, ctx, future, cancel_timeout):
+    def _recv_ping(self, ctx, future):
         def ping_callback(transport):
-            cancel_timeout()
-            self._transport.unregister(ctx)
             iprot = self._protocol_factory.get_protocol(transport)
             iprot.read_response_headers(ctx)
             _, mtype, _ = iprot.readMessageBegin()
@@ -153,19 +149,18 @@ class Client(Iface):
         """
         return self._methods['bleh']([ctx, one, Two, custom_ints])
 
+    @gen.coroutine
     def _bleh(self, ctx, one, Two, custom_ints):
         delta = timedelta(milliseconds=ctx.get_timeout())
         future = gen.with_timeout(delta, Future())
-        ioloop = IOLoop.current()
-        timeout = ioloop.add_timeout(delta, self._transport.unregister, ctx)
-
-        def cancel_timeout():
-            ioloop.remove_timeout(timeout)
-
-        self._transport.register(ctx, self._recv_bleh(ctx, future, cancel_timeout))
+        self._transport.register(ctx, self._recv_bleh(ctx, future))
         self._send_bleh(ctx, one, Two, custom_ints)
 
-        return future
+        try:
+            result = yield future
+        finally:
+            self._transport.unregister(ctx)
+        raise gen.Return(result)
 
     def _send_bleh(self, ctx, one, Two, custom_ints):
         oprot = self._oprot
@@ -180,10 +175,8 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_bleh(self, ctx, future, cancel_timeout):
+    def _recv_bleh(self, ctx, future):
         def bleh_callback(transport):
-            cancel_timeout()
-            self._transport.unregister(ctx)
             iprot = self._protocol_factory.get_protocol(transport)
             iprot.read_response_headers(ctx)
             _, mtype, _ = iprot.readMessageBegin()
@@ -217,19 +210,18 @@ class Client(Iface):
         """
         return self._methods['getThing']([ctx])
 
+    @gen.coroutine
     def _getThing(self, ctx):
         delta = timedelta(milliseconds=ctx.get_timeout())
         future = gen.with_timeout(delta, Future())
-        ioloop = IOLoop.current()
-        timeout = ioloop.add_timeout(delta, self._transport.unregister, ctx)
-
-        def cancel_timeout():
-            ioloop.remove_timeout(timeout)
-
-        self._transport.register(ctx, self._recv_getThing(ctx, future, cancel_timeout))
+        self._transport.register(ctx, self._recv_getThing(ctx, future))
         self._send_getThing(ctx)
 
-        return future
+        try:
+            result = yield future
+        finally:
+            self._transport.unregister(ctx)
+        raise gen.Return(result)
 
     def _send_getThing(self, ctx):
         oprot = self._oprot
@@ -241,10 +233,8 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_getThing(self, ctx, future, cancel_timeout):
+    def _recv_getThing(self, ctx, future):
         def getThing_callback(transport):
-            cancel_timeout()
-            self._transport.unregister(ctx)
             iprot = self._protocol_factory.get_protocol(transport)
             iprot.read_response_headers(ctx)
             _, mtype, _ = iprot.readMessageBegin()
@@ -272,19 +262,18 @@ class Client(Iface):
         """
         return self._methods['getMyInt']([ctx])
 
+    @gen.coroutine
     def _getMyInt(self, ctx):
         delta = timedelta(milliseconds=ctx.get_timeout())
         future = gen.with_timeout(delta, Future())
-        ioloop = IOLoop.current()
-        timeout = ioloop.add_timeout(delta, self._transport.unregister, ctx)
-
-        def cancel_timeout():
-            ioloop.remove_timeout(timeout)
-
-        self._transport.register(ctx, self._recv_getMyInt(ctx, future, cancel_timeout))
+        self._transport.register(ctx, self._recv_getMyInt(ctx, future))
         self._send_getMyInt(ctx)
 
-        return future
+        try:
+            result = yield future
+        finally:
+            self._transport.unregister(ctx)
+        raise gen.Return(result)
 
     def _send_getMyInt(self, ctx):
         oprot = self._oprot
@@ -296,10 +285,8 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_getMyInt(self, ctx, future, cancel_timeout):
+    def _recv_getMyInt(self, ctx, future):
         def getMyInt_callback(transport):
-            cancel_timeout()
-            self._transport.unregister(ctx)
             iprot = self._protocol_factory.get_protocol(transport)
             iprot.read_response_headers(ctx)
             _, mtype, _ = iprot.readMessageBegin()

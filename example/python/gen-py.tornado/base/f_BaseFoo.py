@@ -17,7 +17,6 @@ from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from tornado import gen
 from tornado.concurrent import Future
-from tornado.ioloop import IOLoop
 
 from base.BaseFoo import *
 from base.ttypes import *
@@ -62,19 +61,18 @@ class Client(Iface):
         """
         return self._methods['basePing']([ctx])
 
+    @gen.coroutine
     def _basePing(self, ctx):
         delta = timedelta(milliseconds=ctx.get_timeout())
         future = gen.with_timeout(delta, Future())
-        ioloop = IOLoop.current()
-        timeout = ioloop.add_timeout(delta, self._transport.unregister, ctx)
-
-        def cancel_timeout():
-            ioloop.remove_timeout(timeout)
-
-        self._transport.register(ctx, self._recv_basePing(ctx, future, cancel_timeout))
+        self._transport.register(ctx, self._recv_basePing(ctx, future))
         self._send_basePing(ctx)
 
-        return future
+        try:
+            result = yield future
+        finally:
+            self._transport.unregister(ctx)
+        raise gen.Return(result)
 
     def _send_basePing(self, ctx):
         oprot = self._oprot
@@ -86,10 +84,8 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_basePing(self, ctx, future, cancel_timeout):
+    def _recv_basePing(self, ctx, future):
         def basePing_callback(transport):
-            cancel_timeout()
-            self._transport.unregister(ctx)
             iprot = self._protocol_factory.get_protocol(transport)
             iprot.read_response_headers(ctx)
             _, mtype, _ = iprot.readMessageBegin()

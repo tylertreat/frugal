@@ -28,8 +28,7 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "from tornado import gen\n"
-	imports += "from tornado.concurrent import Future\n"
-	imports += "from tornado.ioloop import IOLoop\n\n"
+	imports += "from tornado.concurrent import Future\n\n"
 
 	// Import include modules.
 	for _, include := range s.ReferencedIncludes() {
@@ -156,22 +155,24 @@ func (t *TornadoGenerator) generateClientMethod(method *parser.Method) string {
 	contents += tabtab + fmt.Sprintf("return self._methods['%s']([ctx%s])\n\n",
 		method.Name, t.generateClientArgs(method.Arguments))
 
-	contents += tab + fmt.Sprintf("def _%s(self, ctx%s):\n", method.Name, t.generateClientArgs(method.Arguments))
 	if method.Oneway {
+		contents += tab + fmt.Sprintf("def _%s(self, ctx%s):\n", method.Name, t.generateClientArgs(method.Arguments))
 		contents += tabtab + fmt.Sprintf("self._send_%s(ctx%s)\n\n", method.Name, t.generateClientArgs(method.Arguments))
 		contents += t.generateClientSendMethod(method)
 		return contents
 	}
 
+	contents += tab + "@gen.coroutine\n"
+	contents += tab + fmt.Sprintf("def _%s(self, ctx%s):\n", method.Name, t.generateClientArgs(method.Arguments))
 	contents += tabtab + "delta = timedelta(milliseconds=ctx.get_timeout())\n"
 	contents += tabtab + "future = gen.with_timeout(delta, Future())\n"
-	contents += tabtab + "ioloop = IOLoop.current()\n"
-	contents += tabtab + "timeout = ioloop.add_timeout(delta, self._transport.unregister, ctx)\n\n"
-	contents += tabtab + "def cancel_timeout():\n"
-	contents += tabtabtab + "ioloop.remove_timeout(timeout)\n\n"
-	contents += tabtab + fmt.Sprintf("self._transport.register(ctx, self._recv_%s(ctx, future, cancel_timeout))\n", method.Name)
+	contents += tabtab + fmt.Sprintf("self._transport.register(ctx, self._recv_%s(ctx, future))\n", method.Name)
 	contents += tabtab + fmt.Sprintf("self._send_%s(ctx%s)\n\n", method.Name, t.generateClientArgs(method.Arguments))
-	contents += tabtab + "return future\n\n"
+	contents += tabtab + "try:\n"
+	contents += tabtabtab + "result = yield future\n"
+	contents += tabtab + "finally:\n"
+	contents += tabtabtab + "self._transport.unregister(ctx)\n"
+	contents += tabtab + "raise gen.Return(result)\n\n"
 	contents += t.generateClientSendMethod(method)
 	contents += t.generateClientRecvMethod(method)
 
@@ -197,10 +198,8 @@ func (t *TornadoGenerator) generateClientSendMethod(method *parser.Method) strin
 }
 
 func (t *TornadoGenerator) generateClientRecvMethod(method *parser.Method) string {
-	contents := tab + fmt.Sprintf("def _recv_%s(self, ctx, future, cancel_timeout):\n", method.Name)
+	contents := tab + fmt.Sprintf("def _recv_%s(self, ctx, future):\n", method.Name)
 	contents += tabtab + fmt.Sprintf("def %s_callback(transport):\n", method.Name)
-	contents += tabtabtab + "cancel_timeout()\n"
-	contents += tabtabtab + "self._transport.unregister(ctx)\n"
 	contents += tabtabtab + "iprot = self._protocol_factory.get_protocol(transport)\n"
 	contents += tabtabtab + "iprot.read_response_headers(ctx)\n"
 	contents += tabtabtab + "_, mtype, _ = iprot.readMessageBegin()\n"
