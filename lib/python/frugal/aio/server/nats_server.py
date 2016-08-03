@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class FNatsServer(FServer):
-    """FNatsServer is an FServer that uses nats as the underlyingtransport."""
+    """FNatsServer is an FServer that uses nats as the underlying transport."""
     def __init__(
             self,
             nats_client: Client,
