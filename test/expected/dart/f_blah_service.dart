@@ -66,7 +66,7 @@ class FBlahClient implements FBlah {
       });
     _transport.register(ctx, _recvPingHandler(ctx, controller));
     try {
-      writeLock.lock();
+      await writeLock.lock();
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
       t_blah_file.ping_args args = new t_blah_file.ping_args();
@@ -123,7 +123,7 @@ class FBlahClient implements FBlah {
       });
     _transport.register(ctx, _recvBlehHandler(ctx, controller));
     try {
-      writeLock.lock();
+      await writeLock.lock();
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("bleh", thrift.TMessageType.CALL, 0));
       t_blah_file.bleh_args args = new t_blah_file.bleh_args();
@@ -197,7 +197,7 @@ class FBlahClient implements FBlah {
       });
     _transport.register(ctx, _recvGetThingHandler(ctx, controller));
     try {
-      writeLock.lock();
+      await writeLock.lock();
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("getThing", thrift.TMessageType.CALL, 0));
       t_blah_file.getThing_args args = new t_blah_file.getThing_args();
@@ -260,7 +260,7 @@ class FBlahClient implements FBlah {
       });
     _transport.register(ctx, _recvGetMyIntHandler(ctx, controller));
     try {
-      writeLock.lock();
+      await writeLock.lock();
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("getMyInt", thrift.TMessageType.CALL, 0));
       t_blah_file.getMyInt_args args = new t_blah_file.getMyInt_args();

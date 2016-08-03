@@ -44,7 +44,7 @@ class EventsPublisher {
   }
 
   Future _publishEventCreated(frugal.FContext ctx, String user, t_event.Event req) async {
-    _writeLock.lock();
+    await _writeLock.lock();
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";

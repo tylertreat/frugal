@@ -40,7 +40,7 @@ class BlahPublisher {
   }
 
   Future _publishDoStuff(frugal.FContext ctx, t_valid.Thing req) async {
-    _writeLock.lock();
+    await _writeLock.lock();
     var op = "DoStuff";
     var prefix = "";
     var topic = "${prefix}Blah${delimiter}${op}";
