@@ -44,12 +44,16 @@ type Auditor struct {
 	newFrugal *Frugal
 }
 
+// NewAuditor constructs an auditor that logs warnings and errors to
+// standard output
 func NewAuditor() *Auditor {
 	return &Auditor{
 		logger: &stdOutLogger{},
 	}
 }
 
+// NewAuditorWithLogger constructs an auditor which uses the given logger
+// to log warnings and errors
 func NewAuditorWithLogger(logger ValidationLogger) *Auditor {
 	return &Auditor{
 		logger: logger,
