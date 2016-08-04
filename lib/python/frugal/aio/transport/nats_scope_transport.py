@@ -12,9 +12,7 @@ from frugal.transport import FScopeTransportFactory
 
 
 class FNatsScopeTransportFactory(FScopeTransportFactory):
-    """
-    FNatsScopeTransportFactory produces FScopeTransports.
-    """
+    """FNatsScopeTransportFactory produces FScopeTransports."""
     def __init__(
             self,
             nats_client: Client,
@@ -42,6 +40,10 @@ class FNatsScopeTransportFactory(FScopeTransportFactory):
 
 
 class FNatsScopeTransport(FScopeTransport, FTransportBase):
+    """
+    FNatsScopeTransport implements FScopeTransport using nats as the underlying
+    message broker. Messages are limited to 1MB in size.
+    """
     def __init__(
             self,
             nats_client: Client,
