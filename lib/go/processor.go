@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	log "github.com/Sirupsen/logrus"
 )
 
 // FProcessor is Frugal's equivalent of Thrift's TProcessor. It's a generic
@@ -42,7 +41,7 @@ func (f *FBaseProcessor) Process(iprot, oprot *FProtocol) error {
 	if ok {
 		err := processor.Process(ctx, iprot, oprot)
 		if err != nil {
-			log.Warnf("frugal: error processing request with correlation id %s: %s", ctx.CorrelationID(), err.Error())
+			logger().Warnf("frugal: error processing request with correlation id %s: %s", ctx.CorrelationID(), err.Error())
 		}
 		return err
 	}

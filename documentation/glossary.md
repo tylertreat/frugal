@@ -21,7 +21,7 @@ shutdown.
 
 FContext is the context for a Frugal message. Every RPC has an FContext, which
 can be used to set request headers, response headers, and the request timeout.
-The default timeout is one minute. An FContext is also sent with every publish
+The default timeout is five seconds. An FContext is also sent with every publish
 message which is then received by subscribers.
 
 In addition to headers, the FContext also contains a correlation ID which can

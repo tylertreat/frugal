@@ -16,12 +16,12 @@ var ErrTimeout = errors.New("frugal: request timed out")
 const (
 	cid            = "_cid"
 	opID           = "_opid"
-	defaultTimeout = time.Minute
+	defaultTimeout = 5 * time.Second
 )
 
 // FContext is the context for a Frugal message. Every RPC has an FContext,
 // which can be used to set request headers, response headers, and the request
-// timeout. The default timeout is one minute. An FContext is also sent with
+// timeout. The default timeout is five seconds. An FContext is also sent with
 // every publish message which is then received by subscribers.
 //
 // In addition to headers, the FContext also contains a correlation ID which
@@ -153,7 +153,7 @@ func (c *FContext) ResponseHeaders() map[string]string {
 	return headers
 }
 
-// SetTimeout sets the request timeout. Default is 1 minute. Returns the same
+// SetTimeout sets the request timeout. Default is 5 seconds. Returns the same
 // FContext to allow for chaining calls.
 func (c *FContext) SetTimeout(timeout time.Duration) *FContext {
 	c.mu.Lock()

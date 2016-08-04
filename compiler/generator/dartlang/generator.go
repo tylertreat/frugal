@@ -75,8 +75,10 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 	contents := ""
 	contents += fmt.Sprintf("\n\nlibrary %s;\n\n", libraryName)
 
-	constantsName := fmt.Sprintf("%sConstants", strings.Title(libraryName))
-	contents += g.createExport(constantsName)
+	if len(g.Frugal.Thrift.Constants) > 0 {
+		constantsName := fmt.Sprintf("%sConstants", snakeToCamel(libraryName))
+		contents += g.createExport(constantsName)
+	}
 	for _, s := range g.Frugal.Thrift.Structs {
 		contents += g.createExport(s.Name)
 	}
@@ -329,7 +331,11 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 
 // GenerateConstantsContents generates constants.
 func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) error {
-	className := fmt.Sprintf("%sConstants", strings.Title(g.getLibraryName()))
+	if len(constants) == 0 {
+		return nil
+	}
+
+	className := fmt.Sprintf("%sConstants", snakeToCamel(g.getLibraryName()))
 	file, err := g.GenerateFile(className, g.outputDir, generator.ObjectFile)
 	defer file.Close()
 	if err != nil {
@@ -767,7 +773,7 @@ func (g *Generator) generateRead(s *parser.Struct) string {
 		if field.Modifier == parser.Required && g.isDartPrimitive(field.Type) {
 			fName := toFieldName(field.Name)
 			contents += fmt.Sprintf(tabtab+"if(!__isset_%s) {\n", fName)
-			contents += fmt.Sprintf(tabtabtab+"throw new TProtocolError(TProtocolErrorType.UNKWOWN, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
+			contents += fmt.Sprintf(tabtabtab+"throw new TProtocolError(TProtocolErrorType.UNKNOWN, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
 			contents += tabtab + "}\n"
 		}
 	}
@@ -1246,7 +1252,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 
-		publishers += tabtab + "_writeLock.lock();\n"
+		publishers += tabtab + "await _writeLock.lock();\n"
 		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
@@ -1481,7 +1487,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += tabtab + "try {\n"
 		indent = tabtabtab
 	}
-	contents += indent + "writeLock.lock();\n"
+	contents += indent + "await writeLock.lock();\n"
 	contents += indent + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
@@ -1739,6 +1745,17 @@ func (g *Generator) getNamespaceOrName() string {
 
 func toLibraryName(name string) string {
 	return strings.Replace(name, ".", "_", -1)
+}
+
+func snakeToCamel(name string) string {
+	result := ""
+
+	words := strings.Split(name, "_")
+	for _, word := range words {
+		result += strings.Title(word)
+	}
+
+	return result
 }
 
 // e.g. change APIForFileIO to api_for_file_io

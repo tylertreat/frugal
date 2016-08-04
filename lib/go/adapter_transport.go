@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	log "github.com/Sirupsen/logrus"
 )
 
 type fAdapterTransportFactory struct{}
@@ -87,14 +86,14 @@ func (f *fAdapterTransport) readLoop() {
 				return
 			}
 
-			log.Error("frugal: error reading protocol frame, closing transport: ", err)
+			logger().Error("frugal: error reading protocol frame, closing transport: ", err)
 			f.close(err)
 			return
 		}
 
 		if err := f.registry.Execute(frame); err != nil {
 			// An error here indicates an unrecoverable error, teardown transport.
-			log.Error("frugal: closing transport due to unrecoverable error processing frame: ", err)
+			logger().Error("frugal: closing transport due to unrecoverable error processing frame: ", err)
 			f.close(err)
 			return
 		}
@@ -149,9 +148,9 @@ func (f *fAdapterTransport) close(cause error) error {
 	close(f.closeChan)
 
 	if cause == nil {
-		log.Debug("frugal: transport closed")
+		logger().Debug("frugal: transport closed")
 	} else {
-		log.Debugf("frugal: transport closed with cause: %s", cause)
+		logger().Debugf("frugal: transport closed with cause: %s", cause)
 	}
 
 	// Signal transport monitor of close.

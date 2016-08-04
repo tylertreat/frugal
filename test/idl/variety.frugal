@@ -101,7 +101,8 @@ struct EventWrapper {
     4: set<Event> Events2,
     5: map<id, Event> EventMap,
     6: list<list<int>> Nums,
-    7: list<ItsAnEnum> Enums
+    7: list<ItsAnEnum> Enums,
+    8: bool aBoolField,
 }
 
 exception AwesomeException {
