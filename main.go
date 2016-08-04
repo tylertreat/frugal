@@ -106,9 +106,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		file := c.Args()[0]
 		options := compiler.Options{
-			File:               file,
 			Gen:                gen,
 			Out:                out,
 			Delim:              delim,
@@ -125,16 +123,18 @@ func main() {
 			}
 		}()
 
-		if audit == "" {
-			if err := compiler.Compile(options); err != nil {
-				fmt.Printf("Failed to generate %s:\n\t%s\n", options.File, err.Error())
-				os.Exit(1)
-			}
-		} else {
-			auditor := parser.NewAuditor()
-			if err := auditor.Audit(audit, options.File); err != nil {
-				fmt.Println(err.Error())
-				os.Exit(1)
+		for _, options.File = range c.Args() {
+			if audit == "" {
+				if err := compiler.Compile(options); err != nil {
+					fmt.Printf("Failed to generate %s:\n\t%s\n", options.File, err.Error())
+					os.Exit(1)
+				}
+			} else {
+				auditor := parser.NewAuditor()
+				if err := auditor.Audit(audit, options.File); err != nil {
+					fmt.Println(err.Error())
+					os.Exit(1)
+				}
 			}
 		}
 
