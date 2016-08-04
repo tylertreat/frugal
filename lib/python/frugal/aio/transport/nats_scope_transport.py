@@ -1,5 +1,4 @@
 from asyncio.locks import Lock
-from io import BytesIO
 
 from nats.aio.client import Client
 from thrift.transport.TTransport import TTransportException
@@ -13,11 +12,25 @@ from frugal.transport import FScopeTransportFactory
 
 
 class FNatsScopeTransportFactory(FScopeTransportFactory):
+    """
+    FNatsScopeTransportFactory produces FScopeTransports.
+    """
     def __init__(
             self,
             nats_client: Client,
             queue=''
     ):
+        """
+        Creates a new instance of FNatsScopeTransportFactory for producing new
+        pub/sub transports.
+
+        Args:
+            nats_client: A connected nats client.
+            queue: The queue group to subscribe to. If multiple transport
+                   are part of the same queue group, only one transport will
+                   receive a message sent to that queue group. The empty string
+                   indicates NOT to join a queue group.
+        """
         self._nats_client = nats_client
         self._queue = queue
 
@@ -34,6 +47,16 @@ class FNatsScopeTransport(FScopeTransport, FTransportBase):
             nats_client: Client,
             queue=''
     ):
+        """
+        Creates a new instance of FNatsScopeTransport for pub/sub.
+
+        Args:
+            nats_client: A connected nats client.
+            queue: The queue group to subscribe to. If multiple transports
+                   are part of the same queue group, only one transport will
+                   receive a message sent to that queue group. The empty string
+                   indicates NOT to join a queue group.
+        """
         FTransportBase.__init__(self, _NATS_MAX_MESSAGE_SIZE)
         self._nats_client = nats_client
         self._queue = queue
@@ -45,6 +68,13 @@ class FNatsScopeTransport(FScopeTransport, FTransportBase):
         self._callback = None
 
     async def lock_topic(self, topic: str):
+        """
+        Sets the publish topic and locks the transport for exclusive access.
+        This should not be used if the transport instance is a subscriber.
+
+        Args:
+            topic: The topic name to subscribe to.
+        """
         if self._pull:
             raise FException('Subscribers cannot lock topics')
 
@@ -52,6 +82,10 @@ class FNatsScopeTransport(FScopeTransport, FTransportBase):
         self._subject = topic
 
     def unlock_topic(self):
+        """
+        Unsets the publish topic and unlocks the transport.
+        This should not be used if the transport instance is a subscriber.
+        """
         if self._pull:
             raise FException('Subscribers cannot lock topics')
 
@@ -59,14 +93,31 @@ class FNatsScopeTransport(FScopeTransport, FTransportBase):
         self._topic_lock.release()
 
     async def subscribe(self, topic: str, callback):
+        """
+        Opens the transport to receive messages on the subscription.
+
+        Args:
+             topic: The topic to subscribe to.
+             callback: The function to call when a message is received.
+        """
         self._pull = True
         self._subject = topic
         await self.open(callback=callback)
 
     def isOpen(self):
+        """True if the transport is open, False otherwise"""
         return self._nats_client.is_connected and self._is_open
 
     async def open(self, callback=None):
+        """
+        Opens the transport. An exception will be thrown if the nats client
+        is not connected or the transport is already open.
+
+        Args:
+            callback: The function to call when a message is received, this
+                      should only be provided if the transport instance
+                      is a subscriber.
+        """
         if not self._nats_client.is_connected:
             raise TTransportException(TTransportException.NOT_OPEN,
                                       'Nats is not connected')
@@ -92,6 +143,7 @@ class FNatsScopeTransport(FScopeTransport, FTransportBase):
         self._is_open = True
 
     async def close(self):
+        """Close the transport."""
         if not self.isOpen():
             return
 
@@ -105,6 +157,7 @@ class FNatsScopeTransport(FScopeTransport, FTransportBase):
         self._is_open = False
 
     async def flush(self):
+        """Flushes buffered write data over the network."""
         if not self.isOpen():
             raise TTransportException(TTransportException.NOT_OPEN,
                                       'Transport is not connected')
