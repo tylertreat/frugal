@@ -233,8 +233,8 @@ func TestNatsServerDiscardInvalidConnectNoReply(t *testing.T) {
 	assert.Nil(t, server.Stop())
 }
 
-// Ensures FNatsServer discards invalid connect messages.
-func TestNatsServerDiscardInvalidConnect(t *testing.T) {
+// Ensures FNatsServer correctly handles requests from stateless clients
+func TestNatsServerStatelessRequest(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
 	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
@@ -242,23 +242,33 @@ func TestNatsServerDiscardInvalidConnect(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer conn.Close()
-	mockProcessor := new(mockFProcessor)
 	mockTransportFactory := new(mockFTransportFactory)
-	mockTProtocolFactory := new(mockTProtocolFactory)
-	protocolFactory := NewFProtocolFactory(mockTProtocolFactory)
-	server := NewFNatsServer(conn, "foo", 5*time.Millisecond, mockProcessor,
+	processor := &processor{t}
+	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
+	server := NewFNatsServer(conn, "foo", 5*time.Millisecond, processor,
 		mockTransportFactory, protocolFactory)
 
 	go func() {
 		assert.Nil(t, server.Serve())
 	}()
 	time.Sleep(10 * time.Millisecond)
+	defer server.Stop()
 
-	conn.PublishRequest("foo", "reply", []byte("invalid connect message"))
-	conn.Flush()
-	time.Sleep(5 * time.Millisecond)
+	tr := NewStatelessNatsTTransport(conn, "foo", "bar")
+	assert.Nil(t, tr.Open())
 
-	assert.Nil(t, server.Stop())
+	// Send a request.
+	_, err = tr.Write([]byte("xxxxhello"))
+	assert.Nil(t, err)
+	assert.Nil(t, tr.Flush())
+
+	// Get the response.
+	buff := make([]byte, 100)
+	n, err := tr.Read(buff)
+	assert.Nil(t, err)
+
+	// Server should send back "foo" in binary protocol.
+	assert.Equal(t, []byte{0x0, 0x0, 0x0, 0x7, 0x0, 0x0, 0x0, 0x3, 0x66, 0x6f, 0x6f}, buff[0:n])
 }
 
 // Ensures FNatsServer discards connect messages with an unsupported version.

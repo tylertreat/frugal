@@ -1,4 +1,6 @@
 import json
+from io import BytesIO
+import struct
 import mock
 
 from tornado import concurrent, ioloop
@@ -84,18 +86,21 @@ class TestFNatsTornadoServer(AsyncTestCase):
         f.set_result(None)
         self.mock_transport.open.return_value = f
 
-        self.mock_transport_factory.get_transport.return_value = self.mock_transport
+        self.mock_transport_factory.get_transport.return_value = \
+            self.mock_transport
 
-        client = yield self.server._accept("listen_to", "reply_to", "heartbeat")
+        client = yield self.server._accept("listen_to", "reply_to",
+                                           "heartbeat")
 
         self.assertEquals(mock_server_transport, client)
 
-        mock_server_constructor.Server.assert_called_with(self.mock_nats_client,
-                                                          "listen_to",
-                                                          "reply_to")
+        mock_server_constructor.Server.assert_called_with(
+            self.mock_nats_client, "listen_to", "reply_to")
         self.mock_transport_factory.get_transport.assert_called_with(client)
-        self.mock_processor_factory.get_processor.assert_called_with(self.mock_transport)
-        self.mock_prot_factory.get_protocol.assert_called_with(self.mock_transport)
+        self.mock_processor_factory.get_processor.assert_called_with(
+            self.mock_transport)
+        self.mock_prot_factory.get_protocol.assert_called_with(
+            self.mock_transport)
         self.mock_transport.open.assert_called_with()
 
     @gen_test
@@ -142,7 +147,8 @@ class TestFNatsTornadoServer(AsyncTestCase):
         f.set_result(None)
         self.mock_transport.open.return_value = f
 
-        self.mock_transport_factory.get_transport.return_value = self.mock_transport
+        self.mock_transport_factory.get_transport.return_value = \
+            self.mock_transport
         self.mock_nats_client.publish_request.return_value = f
 
         msg = TestMsg()
@@ -165,6 +171,23 @@ class TestFNatsTornadoServer(AsyncTestCase):
             expected_listen,
             expected_connect
         )
+
+    @gen_test
+    def test_on_message_callback_calls_process_stateless_client(self):
+        iprot = BytesIO()
+        oprot = BytesIO()
+        self.server._protocol_factory.get_protocol.side_effect = [iprot, oprot]
+
+        data = b'asdf'
+        frame_size = struct.pack('!I', len(data))
+
+        msg = TestMsg(subject="foo", reply="inbox", data=frame_size + data)
+
+        yield self.server._on_message_callback(msg)
+
+        get_processor = self.server._processor_factory.get_processor
+        get_processor.assert_called_once_with(None)
+        get_processor.return_value.process.assert_called_with(iprot, oprot)
 
     @mock.patch('frugal.tornado.server.nats_server.new_inbox')
     def test_new_frugal_inbox(self, mock_new_inbox):
@@ -244,6 +267,6 @@ class TestFNatsTornadoServer(AsyncTestCase):
 class TestMsg(object):
     def __init__(self, subject='', reply='', data=b'', sid=0,):
         self.subject = subject
-        self.reply   = reply
-        self.data    = data
-        self.sid     = sid
+        self.reply = reply
+        self.data = data
+        self.sid = sid
