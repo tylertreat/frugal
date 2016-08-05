@@ -70,7 +70,7 @@ func (f *FNatsServerBuilder) WithHighWatermark(highWatermark time.Duration) *FNa
 // Build a new configured NATS FServer.
 func (f *FNatsServerBuilder) Build() FServer {
 	// TODO: With 2.0, this should return fNatsServer instance
-	return NewFNatsServerStatelessConfig(
+	return NewFNatsServerWithStatelessConfig(
 		f.conn,
 		[]string{f.subject},
 		f.workerCount,

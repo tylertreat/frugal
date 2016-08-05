@@ -158,7 +158,7 @@ func NewFNatsServerFactoryWithSubjects(
 	transportFactory FTransportFactory,
 	protocolFactory *FProtocolFactory) FServer {
 
-	return NewFNatsServerStatelessConfig(
+	return NewFNatsServerWithStatelessConfig(
 		conn,
 		subjects,
 		defaultNumWorkers,
@@ -170,7 +170,7 @@ func NewFNatsServerFactoryWithSubjects(
 		protocolFactory)
 }
 
-// NewFNatsServerStatelessConfig creates a new FNatsServer which listens
+// NewFNatsServerWithStatelessConfig creates a new FNatsServer which listens
 // for requests on the given subjects, and has the given number of stateless
 // worker goroutines and stateless request buffer queue length.
 // Clients must connect with the transport created by NewNatsServiceTTransport
@@ -178,7 +178,7 @@ func NewFNatsServerFactoryWithSubjects(
 // DEPRECATED - With the next major release of frugal, stateful NATS transports
 // will no longer be supported. With the release of 2.0, FStatelessNatsServer
 // will be renamed to FNatsServer.
-func NewFNatsServerStatelessConfig(
+func NewFNatsServerWithStatelessConfig(
 	conn *nats.Conn,
 	subjects []string,
 	numWorkers uint,
