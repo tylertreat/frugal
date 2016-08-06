@@ -123,18 +123,17 @@ func main() {
 			}
 		}()
 
+		var err error
+		auditor := parser.NewAuditor()
 		for _, options.File = range c.Args() {
 			if audit == "" {
-				if err := compiler.Compile(options); err != nil {
-					fmt.Printf("Failed to generate %s:\n\t%s\n", options.File, err.Error())
-					os.Exit(1)
-				}
+				err = compiler.Compile(options)
 			} else {
-				auditor := parser.NewAuditor()
-				if err := auditor.Audit(audit, options.File); err != nil {
-					fmt.Println(err.Error())
-					os.Exit(1)
-				}
+				err = auditor.Audit(audit, options.File)
+			}
+			if err != nil {
+				fmt.Printf("Failed to generate %s:\n\t%s\n", options.File, err.Error())
+				os.Exit(1)
 			}
 		}
 
