@@ -66,10 +66,11 @@ class TestFNatsTransport(utils.AsyncIOTestCase):
 
     def test_on_message_callback(self):
         message = mock.Mock()
+        message.data = [1, 2, 3, 4, 5, 6, 7, 8, 9]
         callback = mock.Mock()
         self.transport.execute_frame = callback
         self.transport._on_message_callback(message)
-        callback.assert_called_once_with(message.data)
+        callback.assert_called_once_with(message.data[4:])
 
     @utils.async_runner
     async def test_close_not_subscribed(self):

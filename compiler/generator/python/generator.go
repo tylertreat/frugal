@@ -34,6 +34,9 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	if _, ok := options["tornado"]; ok {
 		return &TornadoGenerator{gen}
 	}
+	if _, ok := options["asyncio"]; ok {
+		return &AsyncIOGenerator{gen}
+	}
 	return gen
 }
 
@@ -87,7 +90,7 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 
 	contents := "\n\n"
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
-	contents += "from ttypes import *\n\n"
+	contents += "from .ttypes import *\n\n"
 
 	for _, constant := range constants {
 		value := g.generateConstantValue(constant.Type, constant.Value, "")
@@ -501,7 +504,7 @@ func (g *Generator) generateMagicMethods(s *parser.Struct) string {
 
 	contents += tab + "def __repr__(self):\n"
 	contents += tabtab + "L = ['%s=%r' % (key, value)\n"
-	contents += tabtabtab + "for key, value in self.__dict__.iteritems()]\n"
+	contents += tabtabtab + "for key, value in self.__dict__.items()]\n"
 	contents += tabtab + "return '%s(%s)' % (self.__class__.__name__, ', '.join(L))\n\n"
 
 	contents += tab + "def __eq__(self, other):\n"
@@ -578,21 +581,21 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 		case "list":
 			contents += fmt.Sprintf(ind+"%s%s = []\n", prefix, field.Name)
 			contents += fmt.Sprintf(ind+"(_, %s) = iprot.readListBegin()\n", sizeElem)
-			contents += fmt.Sprintf(ind+"for _ in xrange(%s):\n", sizeElem)
+			contents += fmt.Sprintf(ind+"for _ in range(%s):\n", sizeElem)
 			contents += g.generateReadFieldRec(valField, false, ind+tab)
 			contents += fmt.Sprintf(ind+tab+"%s%s.append(%s)\n", prefix, field.Name, valElem)
 			contents += fmt.Sprintf(ind + "iprot.readListEnd()\n")
 		case "set":
 			contents += fmt.Sprintf(ind+"%s%s = set()\n", prefix, field.Name)
 			contents += fmt.Sprintf(ind+"(_, %s) = iprot.readSetBegin()\n", sizeElem)
-			contents += fmt.Sprintf(ind+"for _ in xrange(%s):\n", sizeElem)
+			contents += fmt.Sprintf(ind+"for _ in range(%s):\n", sizeElem)
 			contents += g.generateReadFieldRec(valField, false, ind+tab)
 			contents += fmt.Sprintf(ind+tab+"%s%s.add(%s)\n", prefix, field.Name, valElem)
 			contents += fmt.Sprintf(ind + "iprot.readSetEnd()\n")
 		case "map":
 			contents += fmt.Sprintf(ind+"%s%s = {}\n", prefix, field.Name)
 			contents += fmt.Sprintf(ind+"(_, _, %s) = iprot.readMapBegin()\n", sizeElem)
-			contents += fmt.Sprintf(ind+"for _ in xrange(%s):\n", sizeElem)
+			contents += fmt.Sprintf(ind+"for _ in range(%s):\n", sizeElem)
 			keyElem := getElem()
 			keyField := parser.FieldFromType(underlyingType.KeyType, keyElem)
 			contents += g.generateReadFieldRec(keyField, false, ind+tab)
@@ -745,7 +748,7 @@ func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) err
 	}
 	contents += "\n"
 	if isArgsOrResult {
-		contents += "from ttypes import *\n"
+		contents += "from .ttypes import *\n"
 	}
 	contents += "from thrift.transport import TTransport\n"
 	contents += "from thrift.protocol import TBinaryProtocol, TProtocol\n"
