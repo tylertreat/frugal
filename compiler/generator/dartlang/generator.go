@@ -1490,43 +1490,46 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 	contents += indent + "await writeLock.lock();\n"
 
-	contents += tabtab + "try {\n"
-	indent = tabtabtab
-	contents += indent + "oprot.writeRequestHeader(ctx);\n"
+	if !method.Oneway {
+		contents += tabtab + "try {\n"
+		indent = tabtabtab
+	}
+	contents += indent + "try {\n"
+
+	contents += indent + tab + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
 		msgType = "ONEWAY"
 	}
-	contents += fmt.Sprintf(indent+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.%s, 0));\n",
+	contents += fmt.Sprintf(indent+tab+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.%s, 0));\n",
 		nameLower, msgType)
-	contents += fmt.Sprintf(indent+"t_%s_file.%s_args args = new t_%s_file.%s_args();\n",
+	contents += fmt.Sprintf(indent+tab+"t_%s_file.%s_args args = new t_%s_file.%s_args();\n",
 		servSnake, nameLower, servSnake, nameLower)
 	for _, arg := range method.Arguments {
 		argLower := generator.LowercaseFirstLetter(arg.Name)
-		contents += fmt.Sprintf(indent+"args.%s = %s;\n", argLower, argLower)
+		contents += fmt.Sprintf(indent+tab+"args.%s = %s;\n", argLower, argLower)
 	}
-	contents += indent + "args.write(oprot);\n"
-	contents += indent + "oprot.writeMessageEnd();\n"
-	contents += indent + "await oprot.transport.flush();\n"
+	contents += indent + tab + "args.write(oprot);\n"
+	contents += indent + tab + "oprot.writeMessageEnd();\n"
+	contents += indent + tab + "await oprot.transport.flush();\n"
 
-	contents += tabtab + "} finally {\n"
-	contents += tabtabtab + "writeLock.unlock();\n"
+	contents += indent + "} finally {\n"
+	contents += indent + tab + "writeLock.unlock();\n"
+	contents += indent + "}\n"
 	// Nothing more to do for oneway
 	if method.Oneway {
-		contents += tabtab + "}\n"
 		contents += tab + "}\n\n"
 		return contents
 	}
 
-	contents += tabtabtab + "try {\n"
+	contents += "\n"
 
 	// TODO 2.0.0: Dart TimeoutException should be wrapped in an FTimeoutException.
 	// This should happen in a major release since it's an API change.
-	contents += tabtabtabtab + "return await controller.stream.first.timeout(ctx.timeout);\n"
-	contents += tabtabtab + "} finally {\n"
-	contents += tabtabtabtab + "closeSubscription.cancel();\n"
-	contents += tabtabtabtab + "_transport.unregister(ctx);\n"
-	contents += tabtabtab + "}\n"
+	contents += tabtabtab + "return await controller.stream.first.timeout(ctx.timeout);\n"
+	contents += tabtab + "} finally {\n"
+	contents += tabtabtab + "closeSubscription.cancel();\n"
+	contents += tabtabtab + "_transport.unregister(ctx);\n"
 	contents += tabtab + "}\n"
 	contents += tab + "}\n\n"
 	if method.Oneway {

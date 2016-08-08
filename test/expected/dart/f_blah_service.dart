@@ -67,20 +67,21 @@ class FBlahClient implements FBlah {
     _transport.register(ctx, _recvPingHandler(ctx, controller));
     await writeLock.lock();
     try {
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
-      t_blah_file.ping_args args = new t_blah_file.ping_args();
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await oprot.transport.flush();
-    } finally {
-      writeLock.unlock();
       try {
-        return await controller.stream.first.timeout(ctx.timeout);
+        oprot.writeRequestHeader(ctx);
+        oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
+        t_blah_file.ping_args args = new t_blah_file.ping_args();
+        args.write(oprot);
+        oprot.writeMessageEnd();
+        await oprot.transport.flush();
       } finally {
-        closeSubscription.cancel();
-        _transport.unregister(ctx);
+        writeLock.unlock();
       }
+
+      return await controller.stream.first.timeout(ctx.timeout);
+    } finally {
+      closeSubscription.cancel();
+      _transport.unregister(ctx);
     }
   }
 
@@ -127,23 +128,24 @@ class FBlahClient implements FBlah {
     _transport.register(ctx, _recvBlehHandler(ctx, controller));
     await writeLock.lock();
     try {
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("bleh", thrift.TMessageType.CALL, 0));
-      t_blah_file.bleh_args args = new t_blah_file.bleh_args();
-      args.one = one;
-      args.two = two;
-      args.custom_ints = custom_ints;
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await oprot.transport.flush();
-    } finally {
-      writeLock.unlock();
       try {
-        return await controller.stream.first.timeout(ctx.timeout);
+        oprot.writeRequestHeader(ctx);
+        oprot.writeMessageBegin(new thrift.TMessage("bleh", thrift.TMessageType.CALL, 0));
+        t_blah_file.bleh_args args = new t_blah_file.bleh_args();
+        args.one = one;
+        args.two = two;
+        args.custom_ints = custom_ints;
+        args.write(oprot);
+        oprot.writeMessageEnd();
+        await oprot.transport.flush();
       } finally {
-        closeSubscription.cancel();
-        _transport.unregister(ctx);
+        writeLock.unlock();
       }
+
+      return await controller.stream.first.timeout(ctx.timeout);
+    } finally {
+      closeSubscription.cancel();
+      _transport.unregister(ctx);
     }
   }
 
@@ -204,20 +206,21 @@ class FBlahClient implements FBlah {
     _transport.register(ctx, _recvGetThingHandler(ctx, controller));
     await writeLock.lock();
     try {
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("getThing", thrift.TMessageType.CALL, 0));
-      t_blah_file.getThing_args args = new t_blah_file.getThing_args();
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await oprot.transport.flush();
-    } finally {
-      writeLock.unlock();
       try {
-        return await controller.stream.first.timeout(ctx.timeout);
+        oprot.writeRequestHeader(ctx);
+        oprot.writeMessageBegin(new thrift.TMessage("getThing", thrift.TMessageType.CALL, 0));
+        t_blah_file.getThing_args args = new t_blah_file.getThing_args();
+        args.write(oprot);
+        oprot.writeMessageEnd();
+        await oprot.transport.flush();
       } finally {
-        closeSubscription.cancel();
-        _transport.unregister(ctx);
+        writeLock.unlock();
       }
+
+      return await controller.stream.first.timeout(ctx.timeout);
+    } finally {
+      closeSubscription.cancel();
+      _transport.unregister(ctx);
     }
   }
 
@@ -270,20 +273,21 @@ class FBlahClient implements FBlah {
     _transport.register(ctx, _recvGetMyIntHandler(ctx, controller));
     await writeLock.lock();
     try {
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("getMyInt", thrift.TMessageType.CALL, 0));
-      t_blah_file.getMyInt_args args = new t_blah_file.getMyInt_args();
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await oprot.transport.flush();
-    } finally {
-      writeLock.unlock();
       try {
-        return await controller.stream.first.timeout(ctx.timeout);
+        oprot.writeRequestHeader(ctx);
+        oprot.writeMessageBegin(new thrift.TMessage("getMyInt", thrift.TMessageType.CALL, 0));
+        t_blah_file.getMyInt_args args = new t_blah_file.getMyInt_args();
+        args.write(oprot);
+        oprot.writeMessageEnd();
+        await oprot.transport.flush();
       } finally {
-        closeSubscription.cancel();
-        _transport.unregister(ctx);
+        writeLock.unlock();
       }
+
+      return await controller.stream.first.timeout(ctx.timeout);
+    } finally {
+      closeSubscription.cancel();
+      _transport.unregister(ctx);
     }
   }
 
