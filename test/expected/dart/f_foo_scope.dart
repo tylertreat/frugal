@@ -44,18 +44,21 @@ class FooPublisher {
 
   Future _publishFoo(frugal.FContext ctx, String baz, t_valid.Thing req) async {
     await _writeLock.lock();
-    var op = "Foo";
-    var prefix = "foo.bar.${baz}.qux.";
-    var topic = "${prefix}Foo${delimiter}${op}";
-    fTransport.setTopic(topic);
-    var oprot = fProtocol;
-    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
-    oprot.writeRequestHeader(ctx);
-    oprot.writeMessageBegin(msg);
-    req.write(oprot);
-    oprot.writeMessageEnd();
-    await oprot.transport.flush();
-    _writeLock.unlock();
+    try {
+      var op = "Foo";
+      var prefix = "foo.bar.${baz}.qux.";
+      var topic = "${prefix}Foo${delimiter}${op}";
+      fTransport.setTopic(topic);
+      var oprot = fProtocol;
+      var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
+      oprot.writeRequestHeader(ctx);
+      oprot.writeMessageBegin(msg);
+      req.write(oprot);
+      oprot.writeMessageEnd();
+      await oprot.transport.flush();
+    } finally {
+      _writeLock.unlock();
+    }
   }
 
 
@@ -65,18 +68,21 @@ class FooPublisher {
 
   Future _publishBar(frugal.FContext ctx, String baz, t_valid.Stuff req) async {
     await _writeLock.lock();
-    var op = "Bar";
-    var prefix = "foo.bar.${baz}.qux.";
-    var topic = "${prefix}Foo${delimiter}${op}";
-    fTransport.setTopic(topic);
-    var oprot = fProtocol;
-    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
-    oprot.writeRequestHeader(ctx);
-    oprot.writeMessageBegin(msg);
-    req.write(oprot);
-    oprot.writeMessageEnd();
-    await oprot.transport.flush();
-    _writeLock.unlock();
+    try {
+      var op = "Bar";
+      var prefix = "foo.bar.${baz}.qux.";
+      var topic = "${prefix}Foo${delimiter}${op}";
+      fTransport.setTopic(topic);
+      var oprot = fProtocol;
+      var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
+      oprot.writeRequestHeader(ctx);
+      oprot.writeMessageBegin(msg);
+      req.write(oprot);
+      oprot.writeMessageEnd();
+      await oprot.transport.flush();
+    } finally {
+      _writeLock.unlock();
+    }
   }
 }
 

@@ -1253,18 +1253,21 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 
 		publishers += tabtab + "await _writeLock.lock();\n"
-		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
-		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
-		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
-		publishers += tabtab + "fTransport.setTopic(topic);\n"
-		publishers += tabtab + "var oprot = fProtocol;\n"
-		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);\n"
-		publishers += tabtab + "oprot.writeRequestHeader(ctx);\n"
-		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
-		publishers += tabtab + "req.write(oprot);\n"
-		publishers += tabtab + "oprot.writeMessageEnd();\n"
-		publishers += tabtab + "await oprot.transport.flush();\n"
-		publishers += tabtab + "_writeLock.unlock();\n"
+		publishers += tabtab + "try {\n"
+		publishers += fmt.Sprintf(tabtabtab+"var op = \"%s\";\n", op.Name)
+		publishers += fmt.Sprintf(tabtabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
+		publishers += tabtabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
+		publishers += tabtabtab + "fTransport.setTopic(topic);\n"
+		publishers += tabtabtab + "var oprot = fProtocol;\n"
+		publishers += tabtabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);\n"
+		publishers += tabtabtab + "oprot.writeRequestHeader(ctx);\n"
+		publishers += tabtabtab + "oprot.writeMessageBegin(msg);\n"
+		publishers += tabtabtab + "req.write(oprot);\n"
+		publishers += tabtabtab + "oprot.writeMessageEnd();\n"
+		publishers += tabtabtab + "await oprot.transport.flush();\n"
+		publishers += tabtab + "} finally {\n"
+		publishers += tabtabtab + "_writeLock.unlock();\n"
+		publishers += tabtab + "}\n"
 		publishers += tab + "}\n"
 	}
 
@@ -1484,10 +1487,11 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += tabtabtabtab + "\"Transport closed before request completed.\"));\n"
 		contents += tabtabtab + "});\n"
 		contents += fmt.Sprintf(tabtab+"_transport.register(ctx, _recv%sHandler(ctx, controller));\n", nameTitle)
-		contents += tabtab + "try {\n"
-		indent = tabtabtab
 	}
 	contents += indent + "await writeLock.lock();\n"
+
+	contents += tabtab + "try {\n"
+	indent = tabtabtab
 	contents += indent + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
@@ -1504,22 +1508,30 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += indent + "args.write(oprot);\n"
 	contents += indent + "oprot.writeMessageEnd();\n"
 	contents += indent + "await oprot.transport.flush();\n"
-	contents += indent + "writeLock.unlock();\n"
 
+	contents += tabtab + "} finally {\n"
+	contents += tabtabtab + "writeLock.unlock();\n"
 	// Nothing more to do for oneway
 	if method.Oneway {
+		contents += tabtab + "}\n"
 		contents += tab + "}\n\n"
 		return contents
 	}
 
+	contents += tabtabtab + "try {\n"
+
 	// TODO 2.0.0: Dart TimeoutException should be wrapped in an FTimeoutException.
 	// This should happen in a major release since it's an API change.
-	contents += tabtabtab + "return await controller.stream.first.timeout(ctx.timeout);\n"
-	contents += tabtab + "} finally {\n"
-	contents += tabtabtab + "closeSubscription.cancel();\n"
-	contents += tabtabtab + "_transport.unregister(ctx);\n"
+	contents += tabtabtabtab + "return await controller.stream.first.timeout(ctx.timeout);\n"
+	contents += tabtabtab + "} finally {\n"
+	contents += tabtabtabtab + "closeSubscription.cancel();\n"
+	contents += tabtabtabtab + "_transport.unregister(ctx);\n"
+	contents += tabtabtab + "}\n"
 	contents += tabtab + "}\n"
 	contents += tab + "}\n\n"
+	if method.Oneway {
+		return contents
+	}
 
 	// Generate the callback
 	contents += fmt.Sprintf(tab+"_recv%sHandler(frugal.FContext ctx, StreamController controller) {\n", nameTitle)

@@ -41,18 +41,21 @@ class BlahPublisher {
 
   Future _publishDoStuff(frugal.FContext ctx, t_valid.Thing req) async {
     await _writeLock.lock();
-    var op = "DoStuff";
-    var prefix = "";
-    var topic = "${prefix}Blah${delimiter}${op}";
-    fTransport.setTopic(topic);
-    var oprot = fProtocol;
-    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
-    oprot.writeRequestHeader(ctx);
-    oprot.writeMessageBegin(msg);
-    req.write(oprot);
-    oprot.writeMessageEnd();
-    await oprot.transport.flush();
-    _writeLock.unlock();
+    try {
+      var op = "DoStuff";
+      var prefix = "";
+      var topic = "${prefix}Blah${delimiter}${op}";
+      fTransport.setTopic(topic);
+      var oprot = fProtocol;
+      var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
+      oprot.writeRequestHeader(ctx);
+      oprot.writeMessageBegin(msg);
+      req.write(oprot);
+      oprot.writeMessageEnd();
+      await oprot.transport.flush();
+    } finally {
+      _writeLock.unlock();
+    }
   }
 }
 
