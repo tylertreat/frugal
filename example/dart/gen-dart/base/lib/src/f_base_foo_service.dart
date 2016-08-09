@@ -50,15 +50,19 @@ class FBaseFooClient implements FBaseFoo {
         "Transport closed before request completed."));
       });
     _transport.register(ctx, _recvBasePingHandler(ctx, controller));
+    await writeLock.lock();
     try {
-      await writeLock.lock();
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("basePing", thrift.TMessageType.CALL, 0));
-      t_base_foo_file.basePing_args args = new t_base_foo_file.basePing_args();
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await oprot.transport.flush();
-      writeLock.unlock();
+      try {
+        oprot.writeRequestHeader(ctx);
+        oprot.writeMessageBegin(new thrift.TMessage("basePing", thrift.TMessageType.CALL, 0));
+        t_base_foo_file.basePing_args args = new t_base_foo_file.basePing_args();
+        args.write(oprot);
+        oprot.writeMessageEnd();
+        await oprot.transport.flush();
+      } finally {
+        writeLock.unlock();
+      }
+
       return await controller.stream.first.timeout(ctx.timeout);
     } finally {
       closeSubscription.cancel();

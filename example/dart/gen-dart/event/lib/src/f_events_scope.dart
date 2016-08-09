@@ -45,18 +45,21 @@ class EventsPublisher {
 
   Future _publishEventCreated(frugal.FContext ctx, String user, t_event.Event req) async {
     await _writeLock.lock();
-    var op = "EventCreated";
-    var prefix = "foo.${user}.";
-    var topic = "${prefix}Events${delimiter}${op}";
-    fTransport.setTopic(topic);
-    var oprot = fProtocol;
-    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
-    oprot.writeRequestHeader(ctx);
-    oprot.writeMessageBegin(msg);
-    req.write(oprot);
-    oprot.writeMessageEnd();
-    await oprot.transport.flush();
-    _writeLock.unlock();
+    try {
+      var op = "EventCreated";
+      var prefix = "foo.${user}.";
+      var topic = "${prefix}Events${delimiter}${op}";
+      fTransport.setTopic(topic);
+      var oprot = fProtocol;
+      var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
+      oprot.writeRequestHeader(ctx);
+      oprot.writeMessageBegin(msg);
+      req.write(oprot);
+      oprot.writeMessageEnd();
+      await oprot.transport.flush();
+    } finally {
+      _writeLock.unlock();
+    }
   }
 }
 
