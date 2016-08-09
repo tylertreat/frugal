@@ -7,6 +7,7 @@
 
 
 from datetime import timedelta
+import inspect
 from threading import Lock
 
 from frugal.middleware import Method
@@ -28,7 +29,7 @@ class Iface(base.f_BaseFoo.Iface):
     a frugal Context for each service call.
     """
 
-    def ping(self, ctx):
+    async def ping(self, ctx):
         """
         Ping the server.
         
@@ -37,7 +38,7 @@ class Iface(base.f_BaseFoo.Iface):
         """
         pass
 
-    def blah(self, ctx, num, Str, event):
+    async def blah(self, ctx, num, Str, event):
         """
         Blah the server.
         
@@ -49,7 +50,7 @@ class Iface(base.f_BaseFoo.Iface):
         """
         pass
 
-    def oneWay(self, ctx, id, req):
+    async def oneWay(self, ctx, id, req):
         """
         oneway methods don't receive a response from the server.
         
@@ -82,14 +83,14 @@ class Client(base.f_BaseFoo.Client, Iface):
             'oneWay': Method(self._oneWay, middleware),
         })
 
-    def ping(self, ctx):
+    async def ping(self, ctx):
         """
         Ping the server.
         
         Args:
             ctx: FContext
         """
-        return self._methods['ping']([ctx])
+        await self._methods['ping']([ctx])
 
     async def _ping(self, ctx):
         timeout = ctx.get_timeout() / 1000.0
@@ -131,7 +132,7 @@ class Client(base.f_BaseFoo.Client, Iface):
             future.set_result(None)
         return ping_callback
 
-    def blah(self, ctx, num, Str, event):
+    async def blah(self, ctx, num, Str, event):
         """
         Blah the server.
         
@@ -141,7 +142,7 @@ class Client(base.f_BaseFoo.Client, Iface):
             Str: string
             event: Event
         """
-        return self._methods['blah']([ctx, num, Str, event])
+        await self._methods['blah']([ctx, num, Str, event])
 
     async def _blah(self, ctx, num, Str, event):
         timeout = ctx.get_timeout() / 1000.0
@@ -197,7 +198,7 @@ class Client(base.f_BaseFoo.Client, Iface):
             raise x
         return blah_callback
 
-    def oneWay(self, ctx, id, req):
+    async def oneWay(self, ctx, id, req):
         """
         oneway methods don't receive a response from the server.
         
@@ -206,7 +207,7 @@ class Client(base.f_BaseFoo.Client, Iface):
             id: int (signed 64 bits)
             req: dict of <int (signed 32 bits), string>
         """
-        return self._methods['oneWay']([ctx, id, req])
+        await self._methods['oneWay']([ctx, id, req])
 
     async def _oneWay(self, ctx, id, req):
         await self._send_oneWay(ctx, id, req)
@@ -250,7 +251,9 @@ class _ping(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = ping_result()
-        self._handler.ping(ctx)
+        ret = self._handler.ping(ctx)
+        if inspect.iscoroutine(ret):
+            ret = await ret
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
@@ -271,7 +274,10 @@ class _blah(FProcessorFunction):
         iprot.readMessageEnd()
         result = blah_result()
         try:
-            result.success = self._handler.blah(ctx, args.num, args.Str, args.event) 
+            ret = self._handler.blah(ctx, args.num, args.Str, args.event)
+            if inspect.iscoroutine(ret):
+                ret = await ret
+            result.success = ret
         except AwesomeException as awe:
             result.awe = awe
         except base.ttypes.api_exception as api:
@@ -294,6 +300,8 @@ class _oneWay(FProcessorFunction):
         args = oneWay_args()
         args.read(iprot)
         iprot.readMessageEnd()
-        self._handler.oneWay(ctx, args.id, args.req)
+        ret = self._handler.oneWay(ctx, args.id, args.req)
+        if inspect.iscoroutine(ret):
+            ret = await ret
 
 

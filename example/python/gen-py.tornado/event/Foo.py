@@ -7,7 +7,7 @@
 from thrift.Thrift import TType, TMessageType, TException, TApplicationException
 import base.ttypes
 
-from ttypes import *
+from .ttypes import *
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol, TProtocol
 
@@ -38,7 +38,7 @@ class ping_args:
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
-            for key, value in self.__dict__.iteritems()]
+            for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
 
     def __eq__(self, other):
@@ -73,7 +73,7 @@ class ping_result:
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
-            for key, value in self.__dict__.iteritems()]
+            for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
 
     def __eq__(self, other):
@@ -150,7 +150,7 @@ class blah_args:
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
-            for key, value in self.__dict__.iteritems()]
+            for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
 
     def __eq__(self, other):
@@ -228,7 +228,7 @@ class blah_result:
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
-            for key, value in self.__dict__.iteritems()]
+            for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
 
     def __eq__(self, other):
@@ -262,7 +262,7 @@ class oneWay_args:
                 if ftype == TType.MAP:
                     self.req = {}
                     (_, _, _elem0) = iprot.readMapBegin()
-                    for _ in xrange(_elem0):
+                    for _ in range(_elem0):
                         _elem2 = iprot.readI32()
                         _elem1 = iprot.readString()
                         self.req[_elem2] = _elem1
@@ -302,7 +302,7 @@ class oneWay_args:
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
-            for key, value in self.__dict__.iteritems()]
+            for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
 
     def __eq__(self, other):

@@ -15,23 +15,21 @@ from thrift.Thrift import TType
 from frugal.middleware import Method
 from frugal.subscription import FSubscription
 
-from event.ttypes import *
+from valid.ttypes import *
 
 
 
 
-class EventsPublisher(object):
+class FooPublisher(object):
     """
-    This docstring gets added to the generated code because it has
-    the @ sign. Prefix specifies topic prefix tokens, which can be static or
-    variable.
+    And this is a scope docstring.
     """
 
     _DELIMITER = '.'
 
     def __init__(self, provider, middleware=None):
         """
-        Create a new EventsPublisher.
+        Create a new FooPublisher.
 
         Args:
             provider: FScopeProvider
@@ -43,7 +41,8 @@ class EventsPublisher(object):
         self._transport, protocol_factory = provider.new()
         self._protocol = protocol_factory.get_protocol(self._transport)
         self._methods = {
-            'publish_EventCreated': Method(self._publish_EventCreated, middleware),
+            'publish_Foo': Method(self._publish_Foo, middleware),
+            'publish_Bar': Method(self._publish_Bar, middleware),
         }
 
     async def open(self):
@@ -52,21 +51,46 @@ class EventsPublisher(object):
     async def close(self):
         await self._transport.close()
 
-    async def publish_EventCreated(self, ctx, user, req):
+    async def publish_Foo(self, ctx, baz, req):
         """
-        This is a docstring.
+        This is an operation docstring.
         
         Args:
             ctx: FContext
-            user: string
-            req: Event
+            baz: string
+            req: Thing
         """
-        await self._methods['publish_EventCreated']([ctx, user, req])
+        await self._methods['publish_Foo']([ctx, baz, req])
 
-    async def _publish_EventCreated(self, ctx, user, req):
-        op = 'EventCreated'
-        prefix = 'foo.{}.'.format(user)
-        topic = '{}Events{}{}'.format(prefix, self._DELIMITER, op)
+    async def _publish_Foo(self, ctx, baz, req):
+        op = 'Foo'
+        prefix = 'foo.bar.{}.qux.'.format(baz)
+        topic = '{}Foo{}{}'.format(prefix, self._DELIMITER, op)
+        oprot = self._protocol
+        await self._transport.lock_topic(topic)
+        try:
+            oprot.write_request_headers(ctx)
+            oprot.writeMessageBegin(op, TMessageType.CALL, 0)
+            req.write(oprot)
+            oprot.writeMessageEnd()
+            await oprot.get_transport().flush()
+        finally:
+            self._transport.unlock_topic()
+
+
+    async def publish_Bar(self, ctx, baz, req):
+        """
+        Args:
+            ctx: FContext
+            baz: string
+            req: Stuff
+        """
+        await self._methods['publish_Bar']([ctx, baz, req])
+
+    async def _publish_Bar(self, ctx, baz, req):
+        op = 'Bar'
+        prefix = 'foo.bar.{}.qux.'.format(baz)
+        topic = '{}Foo{}{}'.format(prefix, self._DELIMITER, op)
         oprot = self._protocol
         await self._transport.lock_topic(topic)
         try:

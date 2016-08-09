@@ -5,10 +5,8 @@ sys.path.append('gen-py.asyncio')
 from thrift.protocol import TBinaryProtocol
 from thrift.transport.TTransport import TTransportException
 
-# from tornado import ioloop, gen
 import asyncio
 
-# from nats.io.client import Client as NATS
 from nats.aio.client import Client as NatsClient
 
 from frugal.context import FContext
@@ -134,7 +132,7 @@ async def run_publisher(nats_client, prot_factory):
     await publisher.open()
 
     event = Event(42, "hello, world!!!")
-    publisher.publish_EventCreated(FContext(), "barUser", event)
+    await publisher.publish_EventCreated(FContext(), "barUser", event)
     await publisher.close()
 
 

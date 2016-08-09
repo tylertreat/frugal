@@ -11,7 +11,6 @@ from aiohttp import web
 from nats.aio.client import Client as NatsClient
 
 from frugal.protocol import FProtocolFactory
-# from frugal.tornado.server import FStatelessNatsTornadoServer
 from frugal.aio.server import (
     FNatsServer,
     new_http_handler,
@@ -66,7 +65,6 @@ async def run_http_server():
     root.info('Starting HTTP server...')
     await asyncio.get_event_loop().create_server(
             app.make_handler(), host='127.0.0.1', port=8090)
-
 
 if __name__ == '__main__':
     io_loop = asyncio.get_event_loop()

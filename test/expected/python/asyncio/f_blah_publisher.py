@@ -15,23 +15,18 @@ from thrift.Thrift import TType
 from frugal.middleware import Method
 from frugal.subscription import FSubscription
 
-from event.ttypes import *
+from valid.ttypes import *
 
 
 
 
-class EventsPublisher(object):
-    """
-    This docstring gets added to the generated code because it has
-    the @ sign. Prefix specifies topic prefix tokens, which can be static or
-    variable.
-    """
+class blahPublisher(object):
 
     _DELIMITER = '.'
 
     def __init__(self, provider, middleware=None):
         """
-        Create a new EventsPublisher.
+        Create a new blahPublisher.
 
         Args:
             provider: FScopeProvider
@@ -43,7 +38,7 @@ class EventsPublisher(object):
         self._transport, protocol_factory = provider.new()
         self._protocol = protocol_factory.get_protocol(self._transport)
         self._methods = {
-            'publish_EventCreated': Method(self._publish_EventCreated, middleware),
+            'publish_DoStuff': Method(self._publish_DoStuff, middleware),
         }
 
     async def open(self):
@@ -52,21 +47,18 @@ class EventsPublisher(object):
     async def close(self):
         await self._transport.close()
 
-    async def publish_EventCreated(self, ctx, user, req):
+    async def publish_DoStuff(self, ctx, req):
         """
-        This is a docstring.
-        
         Args:
             ctx: FContext
-            user: string
-            req: Event
+            req: Thing
         """
-        await self._methods['publish_EventCreated']([ctx, user, req])
+        await self._methods['publish_DoStuff']([ctx, req])
 
-    async def _publish_EventCreated(self, ctx, user, req):
-        op = 'EventCreated'
-        prefix = 'foo.{}.'.format(user)
-        topic = '{}Events{}{}'.format(prefix, self._DELIMITER, op)
+    async def _publish_DoStuff(self, ctx, req):
+        op = 'DoStuff'
+        prefix = ''
+        topic = '{}blah{}{}'.format(prefix, self._DELIMITER, op)
         oprot = self._protocol
         await self._transport.lock_topic(topic)
         try:

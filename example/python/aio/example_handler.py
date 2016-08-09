@@ -3,7 +3,7 @@ from event.f_Foo import Iface
 
 class ExampleHandler(Iface):
 
-    def ping(self, ctx):
+    async def ping(self, ctx):
         print("ping: {}".format(ctx))
 
     def oneWay(self, ctx, id, req):

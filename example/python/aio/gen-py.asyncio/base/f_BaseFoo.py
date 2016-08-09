@@ -7,6 +7,7 @@
 
 
 from datetime import timedelta
+import inspect
 from threading import Lock
 
 from frugal.middleware import Method
@@ -23,7 +24,7 @@ from base.ttypes import *
 
 class Iface(object):
 
-    def basePing(self, ctx):
+    async def basePing(self, ctx):
         """
         Args:
             ctx: FContext
@@ -53,12 +54,12 @@ class Client(Iface):
             'basePing': Method(self._basePing, middleware),
         }
 
-    def basePing(self, ctx):
+    async def basePing(self, ctx):
         """
         Args:
             ctx: FContext
         """
-        return self._methods['basePing']([ctx])
+        await self._methods['basePing']([ctx])
 
     async def _basePing(self, ctx):
         timeout = ctx.get_timeout() / 1000.0
@@ -125,7 +126,9 @@ class _basePing(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = basePing_result()
-        self._handler.basePing(ctx)
+        ret = self._handler.basePing(ctx)
+        if inspect.iscoroutine(ret):
+            ret = await ret
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('basePing', TMessageType.REPLY, 0)

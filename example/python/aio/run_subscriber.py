@@ -1,17 +1,16 @@
 import logging
 import sys
-sys.path.append('gen-py.tornado')
+sys.path.append('gen-py.asyncio')
 
 from thrift.protocol import TBinaryProtocol
 
-from tornado import ioloop
-from tornado import gen
+import asyncio
 
-from nats.io.client import Client as NATS
+from nats.aio.client import Client as NatsClient
 
 from frugal.protocol.protocol_factory import FProtocolFactory
 from frugal.provider import FScopeProvider
-from frugal.tornado.transport import FNatsScopeTransportFactory
+from frugal.aio.transport import FNatsScopeTransportFactory
 
 from event.f_Events_subscriber import EventsSubscriber
 
@@ -27,16 +26,15 @@ ch.setFormatter(formatter)
 root.addHandler(ch)
 
 
-@gen.coroutine
-def main():
+async def main():
 
-    nats_client = NATS()
+    nats_client = NatsClient()
     options = {
         "verbose": True,
         "servers": ["nats://127.0.0.1:4222"]
     }
 
-    yield nats_client.connect(**options)
+    await nats_client.connect(**options)
 
     prot_factory = FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
     scope_transport_factory = FNatsScopeTransportFactory(nats_client)
@@ -47,11 +45,11 @@ def main():
     def event_handler(ctx, req):
         root.info("Received an event with ID: {} and Message {}".format(req.ID, req.Message))
 
-    yield subscriber.subscribe_EventCreated("barUser", event_handler)
+    await subscriber.subscribe_EventCreated("barUser", event_handler)
 
     root.info("Subscriber starting...")
 
 if __name__ == '__main__':
-    io_loop = ioloop.IOLoop.instance()
-    io_loop.add_callback(main)
-    io_loop.start()
+    io_loop = asyncio.get_event_loop()
+    asyncio.ensure_future(main())
+    io_loop.run_forever()

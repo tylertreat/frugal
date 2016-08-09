@@ -19,6 +19,7 @@ type AsyncIOGenerator struct {
 // GenerateServiceImports generates necessary imports for the given service.
 func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Service) error {
 	imports := "from datetime import timedelta\n"
+	imports += "import inspect\n"
 	imports += "from threading import Lock\n\n"
 
 	imports += "from frugal.middleware import Method\n"
@@ -28,8 +29,6 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "import asyncio\n\n"
-	//imports += "from tornado import gen\n"
-	//imports += "from tornado.concurrent import Future\n\n"
 
 	// Import include modules.
 	for _, include := range s.ReferencedIncludes() {
@@ -60,7 +59,6 @@ func (a *AsyncIOGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "from thrift.Thrift import TType\n"
-	//imports += "from tornado import gen\n"
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.subscription import FSubscription\n\n"
 
@@ -153,7 +151,7 @@ func (a *AsyncIOGenerator) generateClient(service *parser.Service) string {
 func (a *AsyncIOGenerator) generateClientMethod(method *parser.Method) string {
 	contents := ""
 	contents += a.generateMethodSignature(method)
-	contents += tabtab + fmt.Sprintf("return self._methods['%s']([ctx%s])\n\n",
+	contents += tabtab + fmt.Sprintf("await self._methods['%s']([ctx%s])\n\n",
 		method.Name, a.generateClientArgs(method.Arguments))
 
 	if method.Oneway {
@@ -163,11 +161,8 @@ func (a *AsyncIOGenerator) generateClientMethod(method *parser.Method) string {
 		return contents
 	}
 
-	//contents += tab + "@gen.coroutine\n"
 	contents += tab + fmt.Sprintf("async def _%s(self, ctx%s):\n", method.Name, a.generateClientArgs(method.Arguments))
-	//contents += tabtab + "delta = timedelta(milliseconds=ctx.get_timeout())\n"
 	contents += tabtab + "timeout = ctx.get_timeout() / 1000.0\n"
-	//contents += tabtab + "future = gen.with_timeout(delta, Future())\n"
 	contents += tabtab + "future = asyncio.Future()\n"
 	contents += tabtab + "timed_future = asyncio.wait_for(future, timeout)\n"
 	contents += tabtab + fmt.Sprintf("self._transport.register(ctx, self._recv_%s(ctx, future))\n", method.Name)
@@ -254,7 +249,6 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += tabtab + "self._handler = handler\n"
 	contents += tabtab + "self._lock = lock\n\n"
 
-	//contents += tab + "@gen.coroutine\n"
 	contents += tab + "async def process(self, ctx, iprot, oprot):\n"
 	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
 	contents += tabtab + "args.read(iprot)\n"
@@ -267,16 +261,12 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 		indent += tab
 		contents += tabtab + "try:\n"
 	}
-	if method.ReturnType == nil {
-		//contents += indent + fmt.Sprintf("yield gen.maybe_future(self._handler.%s(ctx%s))\n",
-		//	method.Name, a.generateServerArgs(method.Arguments))
-		contents += indent + fmt.Sprintf("self._handler.%s(ctx%s)\n",
-			method.Name, a.generateServerArgs(method.Arguments))
-	} else {
-		contents += indent + fmt.Sprintf("result.success = self._handler.%s(ctx%s) \n",
-			method.Name, a.generateServerArgs(method.Arguments))
-		//contents += indent + fmt.Sprintf("result.success = yield gen.maybe_future(self._handler.%s(ctx%s))\n",
-		//	method.Name, a.generateServerArgs(method.Arguments))
+	contents += indent + fmt.Sprintf("ret = self._handler.%s(ctx%s)\n",
+		method.Name, a.generateServerArgs(method.Arguments))
+	contents += indent + "if inspect.iscoroutine(ret):\n"
+	contents += indent + tab + "ret = await ret\n"
+	if method.ReturnType != nil {
+		contents += indent + "result.success = ret\n"
 	}
 	for _, err := range method.Exceptions {
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", a.qualifiedTypeName(err.Type), err.Name)
