@@ -12,6 +12,15 @@ Currently supported languages are Go, Java, and Dart.
 
 ## Installation
 
+### Download
+
+Pre-compiled binaries for OS X and Linux are available from the Github
+releases tab. Currently, adding these binaries is a manual process. If
+a downloadable release is missing, notify the messaging team to have it
+added.
+
+### From Source
+
 1.  Install [go](https://golang.org/doc/install) and setup [`GOPATH`](https://github.com/golang/go/wiki/GOPATH).
 1.  Install [godep](https://github.com/tools/godep).
 1.  Get the frugal source code
