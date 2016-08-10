@@ -26,6 +26,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -190,6 +191,31 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         transport.flush();
+    }
+
+    @Test
+    public void testFlush_oneWay() throws TException, IOException {
+        transport = new FHttpTransport.Builder(client, url).build();
+
+        byte[] buff = "helloserver".getBytes();
+        transport.write(buff);
+
+        StatusLine statusLine = new StatusLineImpl(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, null);
+        byte[] responsePayload = new byte[] {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+        String encoded = Base64.encodeBase64String(responsePayload);
+        StringEntity responseEntity = new StringEntity(encoded, ContentType.create("application/x-frugal", "utf-8"));
+
+        CloseableHttpResponse response = new BasicClosableHttpResponse(statusLine);
+        response.setEntity(responseEntity);
+
+        ArgumentCaptor<HttpPost> topicCaptor = ArgumentCaptor.forClass(HttpPost.class);
+        when(client.execute(topicCaptor.capture())).thenReturn(response);
+
+        FRegistry mockRegistry = mock(FRegistry.class);
+        transport.setRegistry(mockRegistry);
+        transport.flush();
+
+        verify(mockRegistry, never()).execute(any(byte[].class));
     }
 
     private HttpPost validRequest(byte[] payload, int responseSizeLimit) {
