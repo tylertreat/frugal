@@ -61,7 +61,7 @@ class TestHeaders(unittest.TestCase):
             self.headers.decode_from_frame(frame)
 
         self.assertEqual(FProtocolException.INVALID_DATA, cm.exception.type)
-        # self.assertEqual("Invalid frame size: 1", cm.exception.message)
+        self.assertEqual("Invalid frame size: 1", str(cm.exception))
 
     def test_decode_from_frame_throws_bad_version(self):
         frame = bytearray(b'\x01\x00\x00\x00\x00')

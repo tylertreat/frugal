@@ -135,7 +135,8 @@ class _Headers(object):
                 logger.exception(ex)
                 raise ex
 
-            val = unpack_from('>{0}s'.format(val_size), buff[i:i + val_size])[0]
+            val = unpack_from('>{0}s'.format(val_size),
+                              buff[i:i + val_size])[0]
             if not _IS_PY2:
                 val = val.decode('utf8')
             i += val_size
