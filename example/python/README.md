@@ -13,7 +13,7 @@
 
 1. Start up server:
     ```
-    python run_server.py
+    python main.py -server
     ```
 
 1. Run client:
