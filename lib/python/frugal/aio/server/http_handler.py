@@ -44,7 +44,6 @@ def new_http_handler(processor: FProcessor, protocol_factory: FProtocolFactory):
         output_data_len = struct.pack('!I', len(output_data))
         output_payload = base64.b64encode(output_data_len + output_data)
 
-        headers['content-transfer-encoding'] = 'base64'
         return web.Response(body=output_payload, headers=headers)
 
     return handler
