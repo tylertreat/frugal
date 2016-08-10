@@ -17,11 +17,21 @@ class FHttpServer(FServer):
     """
 
     def __init__(self, processor, address, proto_factory):
+        """Initialize an FHttpServer.
+
+        Args:
+            processor: FProcessor used to process requests.
+            address: tuple of host name and port.
+            proto_factory: FProtocolFactory used to read requests and write
+                           responses.
+        """
 
         class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             def do_POST(self):
                 length = self.headers.getheader('Content-Length')
                 payload = b64decode(self.rfile.read(int(length)))
+                response_limit = int(self.headers.getheader(
+                    'x-frugal-payload-limit', 0))
 
                 if len(payload) <= 4:
                     logging.exception(
@@ -39,11 +49,24 @@ class FHttpServer(FServer):
                     processor.process(iprot, oprot)
                 except Exception as x:
                     logger.exception(x)
+                    # TODO: This isn't actually right but it's what the other
+                    # implementations are doing. An exception here doesn't
+                    # necessarily mean a bad request. We should be checking
+                    # the exception type. Make this consistent across
+                    # languages.
+                    self.send_response(400)
+                    self.end_headers()
+                    return
 
                 # Encode response.
                 response = otrans.getvalue()
                 frame_length = pack('!I', len(response))
                 frame = b64encode(frame_length + response)
+
+                if len(frame) > response_limit > 0:
+                    self.send_response(413)
+                    self.end_headers()
+                    return
 
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/x-frugal')

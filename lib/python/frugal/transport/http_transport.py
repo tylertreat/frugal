@@ -7,17 +7,23 @@ from struct import unpack
 from httplib2 import Http
 from thrift.transport.TTransport import TTransportException
 
+from frugal.exceptions import FMessageSizeException
 from frugal.transport import FSynchronousTransport
 
 
 class FBaseHttpTransport(FSynchronousTransport):
     """Base synchronous transport implemented with HTTP."""
 
-    def __init__(self, url, headers=None, get_headers=None):
+    def __init__(self, url, request_capacity=0, response_capacity=0,
+                 headers=None, get_headers=None):
         """Initialize a new FBaseHttpTransport.
 
         Args:
             url: url of the Frugal server.
+            request_capacity: max size allowed to be written in a request. Set
+                              0 for no restriction.
+            response_capacity: max size allowed to be read in a response. Set
+                               0 for no restriction.
             headers: dict containing static headers.
             get_headers: func which returns dynamic headers per request.
         """
@@ -26,6 +32,8 @@ class FBaseHttpTransport(FSynchronousTransport):
         self._http = Http()
         self._wbuff = BytesIO()
         self._rbuff = BytesIO()
+        self._request_capacity = request_capacity
+        self._response_capacity = response_capacity
         self._custom_headers = headers
         self._get_headers = get_headers
 
@@ -42,6 +50,11 @@ class FBaseHttpTransport(FSynchronousTransport):
         return self._rbuff.read(sz)
 
     def write(self, buf):
+        size = len(buf) + len(self._wbuff.getvalue())
+        if size > self._request_capacity > 0:
+            self._wbuff = BytesIO()
+            raise FMessageSizeException('Message exceeds max message size')
+
         self._wbuff.write(buf)
 
     def _get_headers_and_body(self):
@@ -64,6 +77,9 @@ class FBaseHttpTransport(FSynchronousTransport):
             'Content-Length': str(len(body)),
             'Content-Transfer-Encoding': 'base64',
         }
+
+        if self._response_capacity:
+            headers['x-frugal-payload-limit'] = str(self._response_capacity)
 
         if self._get_headers:
             headers.update(self._get_headers())
