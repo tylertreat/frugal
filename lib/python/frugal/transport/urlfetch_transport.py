@@ -2,7 +2,6 @@ from base64 import b64decode
 from io import BytesIO
 from struct import unpack
 
-from google.appengine.api import urlfetch
 from thrift.transport.TTransport import TTransportException
 
 from frugal.transport.http_transport import FBaseHttpTransport
@@ -39,11 +38,8 @@ class FUrlfetchTransport(FBaseHttpTransport):
         if not body:
             return
 
-        resp = urlfetch.fetch(
-            self._url, method=urlfetch.POST, payload=body, headers=headers,
-            validate_certificate=self._url.startswith('https://'),
-            deadline=self._timeout
-        )
+        resp = _urlfetch(self._url, body, self._url.startswith('https://'),
+                         self._timeout, headers)
 
         if resp.status_code >= 400:
             raise TTransportException(
@@ -68,4 +64,13 @@ class FUrlfetchTransport(FBaseHttpTransport):
             return
 
         self._rbuff = BytesIO(resp_body[4:])
+
+
+def _urlfetch(url, body, validate_certificate, timeout, headers):
+    from google.appengine.api import urlfetch
+    return urlfetch.fetch(
+        url, method=urlfetch.POST, payload=body, headers=headers,
+        validate_certificate=url.startswith('https://'),
+        deadline=timeout
+    )
 
