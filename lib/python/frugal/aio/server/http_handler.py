@@ -34,7 +34,11 @@ def new_http_handler(processor: FProcessor, protocol_factory: FProtocolFactory):
         iprot = protocol_factory.get_protocol(TMemoryBuffer(payload[4:]))
         out_transport = TMemoryBuffer()
         oprot = protocol_factory.get_protocol(out_transport)
-        await processor.process(iprot, oprot)
+        try:
+            await processor.process(iprot, oprot)
+        except:
+            # TODO make this less broad in the future
+            return web.Response(status=400)
 
         # write back response
         output_data = out_transport.getvalue()
