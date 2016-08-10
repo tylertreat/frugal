@@ -5,7 +5,7 @@ String _opid = "_opid";
 
 /// FContext is the context for a Frugal message. Every RPC has an FContext,
 /// which can be used to set request headers, response headers, and the request
-/// timeout. The default timeout is one minute. An FContext is also sent with
+/// timeout. The default timeout is five seconds. An FContext is also sent with
 /// every publish message which is then received by subscribers.
 ///
 /// In addition to headers, the FContext also contains a correlation ID which
@@ -25,8 +25,8 @@ class FContext {
   Map<String, String> _requestHeaders;
   Map<String, String> _responseHeaders;
 
-  // Default timeout to 1 minute
-  Duration _timeout = new Duration(minutes: 1);
+  // Default timeout to 5 seconds
+  Duration _timeout = new Duration(seconds: 5);
 
   Duration get timeout => _timeout;
   void set timeout(timeout) {

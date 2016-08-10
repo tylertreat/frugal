@@ -1,5 +1,4 @@
 import unittest
-import mock
 from io import BytesIO
 from struct import unpack_from
 
@@ -15,18 +14,31 @@ class TestHeaders(unittest.TestCase):
 
     def test_write_header_given_fcontext(self):
         ctx = FContext("corrId")
-        expected = b'\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00\x00\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId'
+        expected = bytearray(b'\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00'
+                             b'\x00\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06'
+                             b'corrId')
         buff = self.headers._write_to_bytearray(ctx.get_request_headers())
 
-        self.assertEqual(len(expected), len(buff))
+        self.assertEqual(expected, buff)
+
+    def test_read_throws_bad_version(self):
+        buff = bytearray(b'\x01\x00\x00\x00\x00')
+
+        with self.assertRaises(FProtocolException) as cm:
+            self.headers._read(BytesIO(buff))
+
+        self.assertEqual(FProtocolException.BAD_VERSION, cm.exception.type)
+        self.assertEqual("Wrong Frugal version. Found 1, wanted 0.",
+                         cm.exception.message)
 
     def test_read(self):
-        buff = b'\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00\x00\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId'
+        buff = bytearray(b'\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00\x00'
+                         b'\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId')
 
         headers = self.headers._read(BytesIO(buff))
 
-        self.assertEquals("0", headers["_opid"])
-        self.assertEquals("corrId", headers["_cid"])
+        self.assertEqual("0", headers["_opid"])
+        self.assertEqual("corrId", headers["_cid"])
 
     def test_write_read(self):
         context = FContext("corrId")
@@ -38,61 +50,68 @@ class TestHeaders(unittest.TestCase):
 
         actual = self.headers._read(BytesIO(buff))
 
-        self.assertEquals(expected["_opid"], actual["_opid"])
-        self.assertEquals(expected["_cid"], actual["_cid"])
-        self.assertEquals(expected["foo"], actual["foo"])
+        self.assertEqual(expected["_opid"], actual["_opid"])
+        self.assertEqual(expected["_cid"], actual["_cid"])
+        self.assertEqual(expected["foo"], actual["foo"])
 
     def test_decode_from_frame_throws_fprotocol_exception_frame_too_short(self):
+        frame = bytearray(b'\x00')
 
-        frame = b'\x00'
-
-        with self.assertRaises(FProtocolException) as ex:
+        with self.assertRaises(FProtocolException) as cm:
             self.headers.decode_from_frame(frame)
-            self.assertEquals(FProtocolException.INVALID_DATA, ex.type)
-            self.assertEquals("Invalid frame size: 1", ex.message)
+
+        self.assertEqual(FProtocolException.INVALID_DATA, cm.exception.type)
+        self.assertEqual("Invalid frame size: 1", cm.exception.message)
 
     def test_decode_from_frame_throws_bad_version(self):
+        frame = bytearray(b'\x01\x00\x00\x00\x00')
 
-        frame = b'\x00\x00\x00\x00\x01\x00\x00\x00\x00'
-
-        with self.assertRaises(FProtocolException) as ex:
+        with self.assertRaises(FProtocolException) as cm:
             self.headers.decode_from_frame(frame)
-            self.assertEquals(FProtocolException.BAD_VERSION, ex.type)
-            self.assertEquals("Wrong Frugal version. Found 1, wanted 0.",
-                              ex.message)
+
+        self.assertEqual(FProtocolException.BAD_VERSION, cm.exception.type)
+        self.assertEqual("Wrong Frugal version. Found 1, wanted 0.",
+                         cm.exception.message)
 
     def test_decode_from_frame_reads_pairs(self):
-        buff = b'\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00\x00\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId'
+        buff = bytearray(b'\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00\x00'
+                         b'\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId')
 
         headers = self.headers.decode_from_frame(buff)
 
-        self.assertEquals("0", headers["_opid"])
-        self.assertEquals("corrId", headers["_cid"])
+        self.assertEqual("0", headers["_opid"])
+        self.assertEqual("corrId", headers["_cid"])
 
     def test_read_pairs(self):
-        buff = b'\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00\x00\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId'
+        buff = bytearray(b'\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00\x00'
+                         b'\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId')
         size = unpack_from('!I', buff[1:5])[0]
 
         headers = self.headers._read_pairs(buff, 5, size + 5)
 
-        self.assertEquals("0", headers["_opid"])
-        self.assertEquals("corrId", headers["_cid"])
+        self.assertEqual("0", headers["_opid"])
+        self.assertEqual("corrId", headers["_cid"])
 
     def test_read_pars_bad_key_throws_error(self):
-        buff = b'\x00\x00\x00\x00 \x00\x00\x00\x20_opid\x00\x00\x00\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId'
+        buff = bytearray(b'\x00\x00\x00\x00 \x00\x00\x00\x20_opid\x00\x00\x00'
+                         b'\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId')
         size = unpack_from('!I', buff[1:5])[0]
 
-        with self.assertRaises(FProtocolException) as ex:
+        with self.assertRaises(FProtocolException) as cm:
             self.headers._read_pairs(buff, 5, size + 5)
-            self.assertEquals(FProtocolException.INVALID_DATA, ex.type)
-            self.assertEquals("invalid protocol header name size: 32", ex.message)
+
+        self.assertEqual(FProtocolException.INVALID_DATA, cm.exception.type)
+        self.assertEqual("invalid protocol header name size: 32",
+                         cm.exception.message)
 
     def test_read_pars_bad_value_throws(self):
-        buff = b'\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00\x01\x000\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId'
+        buff = bytearray(b'\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00\x01'
+                         b'\x000\x00\x00\x00\x04_cid\x00\x00\x00\x06corrId')
         size = unpack_from('!I', buff[1:5])[0]
-        with self.assertRaises(FProtocolException) as ex:
+        with self.assertRaises(FProtocolException) as cm:
             self.headers._read_pairs(buff, 5, size + 5)
-            self.assertEquals(FProtocolException.INVALID_DATA, ex.type)
-            self.assertEquals("invalid protocol header value size: 256",
-                              ex.message)
+
+        self.assertEqual(FProtocolException.INVALID_DATA, cm.exception.type)
+        self.assertEqual("invalid protocol header value size: 256",
+                         cm.exception.message)
 

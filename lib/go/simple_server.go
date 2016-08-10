@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	log "github.com/Sirupsen/logrus"
 )
 
 // FSimpleServer is a simple FServer which starts a goroutine for each
@@ -64,7 +63,7 @@ func (p *FSimpleServer) AcceptLoop() error {
 		if client != nil {
 			go func() {
 				if err := p.accept(client); err != nil {
-					log.Error("frugal: error accepting client transport:", err)
+					logger().Error("frugal: error accepting client transport:", err)
 				}
 			}()
 		}
@@ -108,6 +107,6 @@ func (p *FSimpleServer) accept(client thrift.TTransport) error {
 		return err
 	}
 
-	log.Debug("frugal: client connection accepted")
+	logger().Debug("frugal: client connection accepted")
 	return nil
 }

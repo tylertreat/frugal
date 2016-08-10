@@ -37,20 +37,22 @@ class TestFNatsTransport(AsyncTestCase):
     def test_open_throws_nats_not_connected_exception(self):
         self.mock_nats_client.is_connected.return_value = False
 
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             yield self.transport.open()
-            self.assertEqual(TTransportException.NOT_OPEN, e.type)
-            self.assertEqual("NATS not connected.", e.message)
+
+        self.assertEqual(TTransportException.NOT_OPEN, cm.exception.type)
+        self.assertEqual("NATS not connected.", cm.exception.message)
 
     @gen_test
     def test_open_throws_transport_already_open_exception(self):
         self.mock_nats_client.is_connected.return_value = True
         self.transport._is_open = True
 
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             yield self.transport.open()
-            self.assertEqual(TTransportException.ALREADY_OPEN, e.type)
-            self.assertEqual("NATS transport already open", e.message)
+
+        self.assertEqual(TTransportException.ALREADY_OPEN, cm.exception.type)
+        self.assertEqual("NATS transport already open", cm.exception.message)
 
     @gen_test
     def test_open_subscribes_to_new_inbox(self):
@@ -103,9 +105,10 @@ class TestFNatsTransport(AsyncTestCase):
 
     @gen_test
     def test_write_raises_when_not_connected(self):
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             yield self.transport.write('test')
-            self.assertEquals("Transport not open!", e.message)
+
+        self.assertEquals("Transport not open!", cm.exception.message)
 
     @gen_test
     def test_write_adds_to_write_buffer(self):
@@ -119,10 +122,11 @@ class TestFNatsTransport(AsyncTestCase):
 
     @gen_test
     def test_flush_not_open_raises_exception(self):
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             yield self.transport.flush()
-            self.assertEquals(TTransportException.NOT_OPEN, e.type)
-            self.assertEquals("Nats not connected!", e.message)
+
+        self.assertEquals(TTransportException.NOT_OPEN, cm.exception.type)
+        self.assertEquals("Nats not connected!", cm.exception.message)
 
     @gen_test
     def test_flush_publishes_request_to_inbox(self):

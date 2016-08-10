@@ -143,7 +143,7 @@ class TNatsServiceTransport(TTornadoTransportBase):
             logger.debug("Received DISCONNECT from Frugal server.")
             yield self.close()
         else:
-            self._execute(msg.data)
+            self._execute(msg.data[4:])
 
     @gen.coroutine
     def _handshake(self):

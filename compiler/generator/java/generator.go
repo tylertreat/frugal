@@ -86,6 +86,10 @@ func (g *Generator) TeardownGenerator() error {
 }
 
 func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) error {
+	if len(constants) == 0 {
+		return nil
+	}
+
 	contents := ""
 
 	if g.includeGeneratedAnnotation() {
@@ -1268,6 +1272,13 @@ func (g *Generator) generateContainerAddTo(field *parser.Field) string {
 	return contents
 }
 
+func (g *Generator) getAccessorPrefix(t *parser.Type) string {
+	if g.Frugal.UnderlyingType(t).Name == "bool" {
+		return "is"
+	}
+	return "get"
+}
+
 func (g *Generator) generateGetField(field *parser.Field) string {
 	contents := ""
 	fieldTitle := strings.Title(field.Name)
@@ -1282,7 +1293,8 @@ func (g *Generator) generateGetField(field *parser.Field) string {
 		returnType = "byte[]"
 	}
 
-	contents += fmt.Sprintf(tab+"public %s get%s() {\n", returnType, fieldTitle)
+	accessPrefix := g.getAccessorPrefix(field.Type)
+	contents += fmt.Sprintf(tab+"public %s %s%s() {\n", returnType, accessPrefix, fieldTitle)
 	if underlyingType.Name == "binary" {
 		contents += fmt.Sprintf(tabtab+"set%s(org.apache.thrift.TBaseHelper.rightSize(%s));\n",
 			strings.Title(field.Name), field.Name)
@@ -1435,7 +1447,8 @@ func (g *Generator) generateGetValue(s *parser.Struct) string {
 	contents += tabtab + "switch (field) {\n"
 	for _, field := range s.Fields {
 		contents += fmt.Sprintf(tabtab+"case %s:\n", toConstantName(field.Name))
-		contents += fmt.Sprintf(tabtabtab+"return get%s();\n\n", strings.Title(field.Name))
+		contents += fmt.Sprintf(tabtabtab+"return %s%s();\n\n",
+			g.getAccessorPrefix(field.Type), strings.Title(field.Name))
 	}
 	contents += tabtab + "}\n"
 	contents += tabtab + "throw new IllegalStateException();\n"
@@ -1963,9 +1976,9 @@ func (g *Generator) generateMetaDataMapEntry(t *parser.Type, ind string) string 
 		}
 		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.FieldValueMetaData(%s%s)", ttype, boolArg)
 	} else if g.Frugal.IsStruct(underlyingType) {
-		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, %s.class)", underlyingType.Name)
+		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, %s.class)", g.qualifiedTypeName(underlyingType))
 	} else if g.Frugal.IsEnum(underlyingType) {
-		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, %s.class)", underlyingType.Name)
+		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, %s.class)", g.qualifiedTypeName(underlyingType))
 	} else if parser.IsThriftContainer(underlyingType) {
 		switch underlyingType.Name {
 		case "list":

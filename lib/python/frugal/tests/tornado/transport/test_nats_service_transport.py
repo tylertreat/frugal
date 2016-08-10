@@ -5,7 +5,9 @@ from thrift.transport.TTransport import TTransportException
 from tornado import concurrent
 from tornado.testing import gen_test, AsyncTestCase
 
-from frugal.tornado.transport.nats_service_transport import TNatsServiceTransport
+from frugal.tornado.transport.nats_service_transport import (
+    TNatsServiceTransport
+)
 
 
 class TestTNatsServiceTransport(AsyncTestCase):
@@ -36,20 +38,22 @@ class TestTNatsServiceTransport(AsyncTestCase):
     def test_open_throws_nats_not_connected_exception(self):
         self.mock_nats_client.is_connected.return_value = False
 
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             yield self.transport.open()
-            self.assertEqual(TTransportException.NOT_OPEN, e.type)
-            self.assertEqual("NATS not connected.", e.message)
+
+        self.assertEqual(TTransportException.NOT_OPEN, cm.exception.type)
+        self.assertEqual("NATS not connected.", cm.exception.message)
 
     @gen_test
     def test_open_throws_transport_already_open_exception(self):
         self.mock_nats_client.is_connected.return_value = True
         self.transport._is_open = True
 
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             yield self.transport.open()
-            self.assertEqual(TTransportException.ALREADY_OPEN, e.type)
-            self.assertEqual("NATS transport already open", e.message)
+
+        self.assertEqual(TTransportException.ALREADY_OPEN, cm.exception.type)
+        self.assertEqual("NATS transport already open", cm.exception.message)
 
     @gen_test
     def test_open(self):
@@ -62,9 +66,10 @@ class TestTNatsServiceTransport(AsyncTestCase):
     def test_write_throws_not_open_exception(self):
         self.transport._is_open = False
 
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             yield self.transport.write('')
-            self.assertEqual("Transport not open!", e.message)
+
+        self.assertEqual("Transport not open!", cm.exception.message)
 
     @gen_test
     def test_write_adds_to_write_buffer(self):
@@ -94,9 +99,10 @@ class TestTNatsServiceTransport(AsyncTestCase):
         self.assertFalse(self.transport._is_open)
 
     def test_read_throws_exception(self):
-        with self.assertRaises(NotImplementedError) as e:
+        with self.assertRaises(NotImplementedError) as cm:
             self.transport.read(2)
-            self.assertEquals("Don't call this.", e.message)
+
+        self.assertEquals("Don't call this.", cm.exception.message)
 
     @gen_test
     def test_flush_publishes_frame_length_and_buffer_to_nats(self):

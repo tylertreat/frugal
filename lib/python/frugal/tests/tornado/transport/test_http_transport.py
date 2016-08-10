@@ -121,9 +121,10 @@ class TestFHttpTransport(AsyncTestCase):
         self.http_mock.fetch.side_effect = HTTPError(code=413)
         yield self.transport.write(bytearray([0]))
 
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             yield self.transport.flush()
-            self.assertEqual(e.message, 'response was too large')
+
+        self.assertEqual(cm.exception.message, 'response was too large')
 
     @gen_test
     def test_flush_response_error(self):
