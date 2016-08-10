@@ -75,7 +75,7 @@ class FServerRegistry(FRegistry):
         Args:
             frame: an entire Frugal message frame.
         """
-        wrapped_transport = TMemoryBuffer(frame[4:])
+        wrapped_transport = TMemoryBuffer(frame)
         iprot = self._iprot_factory.get_protocol(wrapped_transport)
         self._processor.process(iprot, self._oprot)
 
@@ -136,15 +136,19 @@ class FClientRegistry(FRegistry):
         op_id = headers.get(_OP_ID, None)
 
         if not op_id:
-            logger.warning("Got a message for unregistered context. Dropping")
-            return
+            raise FException("Frame missing op_id")
 
         with self._handlers_lock:
-            self._handlers[op_id](TMemoryBuffer(frame[4:]))
+            handler = self._handlers.get(op_id, None)
+            if not handler:
+                logger.warning("Got a message for unregistered context."
+                               "Dropping")
+                return
+
+            handler(TMemoryBuffer(frame))
 
     def _increment_and_get_next_op_id(self):
         with self._opid_lock:
             self._next_opid += 1
             op_id = self._next_opid
         return op_id
-

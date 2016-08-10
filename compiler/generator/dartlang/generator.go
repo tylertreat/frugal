@@ -75,8 +75,10 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 	contents := ""
 	contents += fmt.Sprintf("\n\nlibrary %s;\n\n", libraryName)
 
-	constantsName := fmt.Sprintf("%sConstants", strings.Title(libraryName))
-	contents += g.createExport(constantsName)
+	if len(g.Frugal.Thrift.Constants) > 0 {
+		constantsName := fmt.Sprintf("%sConstants", snakeToCamel(libraryName))
+		contents += g.createExport(constantsName)
+	}
 	for _, s := range g.Frugal.Thrift.Structs {
 		contents += g.createExport(s.Name)
 	}
@@ -329,7 +331,11 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 
 // GenerateConstantsContents generates constants.
 func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) error {
-	className := fmt.Sprintf("%sConstants", strings.Title(g.getLibraryName()))
+	if len(constants) == 0 {
+		return nil
+	}
+
+	className := fmt.Sprintf("%sConstants", snakeToCamel(g.getLibraryName()))
 	file, err := g.GenerateFile(className, g.outputDir, generator.ObjectFile)
 	defer file.Close()
 	if err != nil {
@@ -767,7 +773,7 @@ func (g *Generator) generateRead(s *parser.Struct) string {
 		if field.Modifier == parser.Required && g.isDartPrimitive(field.Type) {
 			fName := toFieldName(field.Name)
 			contents += fmt.Sprintf(tabtab+"if(!__isset_%s) {\n", fName)
-			contents += fmt.Sprintf(tabtabtab+"throw new TProtocolError(TProtocolErrorType.UNKWOWN, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
+			contents += fmt.Sprintf(tabtabtab+"throw new TProtocolError(TProtocolErrorType.UNKNOWN, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
 			contents += tabtab + "}\n"
 		}
 	}
@@ -1246,19 +1252,22 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 
-		publishers += tabtab + "_writeLock.lock();\n"
-		publishers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
-		publishers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
-		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
-		publishers += tabtab + "fTransport.setTopic(topic);\n"
-		publishers += tabtab + "var oprot = fProtocol;\n"
-		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);\n"
-		publishers += tabtab + "oprot.writeRequestHeader(ctx);\n"
-		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
-		publishers += tabtab + "req.write(oprot);\n"
-		publishers += tabtab + "oprot.writeMessageEnd();\n"
-		publishers += tabtab + "await oprot.transport.flush();\n"
-		publishers += tabtab + "_writeLock.unlock();\n"
+		publishers += tabtab + "await _writeLock.lock();\n"
+		publishers += tabtab + "try {\n"
+		publishers += fmt.Sprintf(tabtabtab+"var op = \"%s\";\n", op.Name)
+		publishers += fmt.Sprintf(tabtabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
+		publishers += tabtabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
+		publishers += tabtabtab + "fTransport.setTopic(topic);\n"
+		publishers += tabtabtab + "var oprot = fProtocol;\n"
+		publishers += tabtabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);\n"
+		publishers += tabtabtab + "oprot.writeRequestHeader(ctx);\n"
+		publishers += tabtabtab + "oprot.writeMessageBegin(msg);\n"
+		publishers += tabtabtab + "req.write(oprot);\n"
+		publishers += tabtabtab + "oprot.writeMessageEnd();\n"
+		publishers += tabtabtab + "await oprot.transport.flush();\n"
+		publishers += tabtab + "} finally {\n"
+		publishers += tabtabtab + "_writeLock.unlock();\n"
+		publishers += tabtab + "}\n"
 		publishers += tab + "}\n"
 	}
 
@@ -1478,33 +1487,42 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += tabtabtabtab + "\"Transport closed before request completed.\"));\n"
 		contents += tabtabtab + "});\n"
 		contents += fmt.Sprintf(tabtab+"_transport.register(ctx, _recv%sHandler(ctx, controller));\n", nameTitle)
+	}
+	contents += indent + "await writeLock.lock();\n"
+
+	if !method.Oneway {
 		contents += tabtab + "try {\n"
 		indent = tabtabtab
 	}
-	contents += indent + "writeLock.lock();\n"
-	contents += indent + "oprot.writeRequestHeader(ctx);\n"
+	contents += indent + "try {\n"
+
+	contents += indent + tab + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
 		msgType = "ONEWAY"
 	}
-	contents += fmt.Sprintf(indent+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.%s, 0));\n",
+	contents += fmt.Sprintf(indent+tab+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.%s, 0));\n",
 		nameLower, msgType)
-	contents += fmt.Sprintf(indent+"t_%s_file.%s_args args = new t_%s_file.%s_args();\n",
+	contents += fmt.Sprintf(indent+tab+"t_%s_file.%s_args args = new t_%s_file.%s_args();\n",
 		servSnake, nameLower, servSnake, nameLower)
 	for _, arg := range method.Arguments {
 		argLower := generator.LowercaseFirstLetter(arg.Name)
-		contents += fmt.Sprintf(indent+"args.%s = %s;\n", argLower, argLower)
+		contents += fmt.Sprintf(indent+tab+"args.%s = %s;\n", argLower, argLower)
 	}
-	contents += indent + "args.write(oprot);\n"
-	contents += indent + "oprot.writeMessageEnd();\n"
-	contents += indent + "await oprot.transport.flush();\n"
-	contents += indent + "writeLock.unlock();\n"
+	contents += indent + tab + "args.write(oprot);\n"
+	contents += indent + tab + "oprot.writeMessageEnd();\n"
+	contents += indent + tab + "await oprot.transport.flush();\n"
 
+	contents += indent + "} finally {\n"
+	contents += indent + tab + "writeLock.unlock();\n"
+	contents += indent + "}\n"
 	// Nothing more to do for oneway
 	if method.Oneway {
 		contents += tab + "}\n\n"
 		return contents
 	}
+
+	contents += "\n"
 
 	// TODO 2.0.0: Dart TimeoutException should be wrapped in an FTimeoutException.
 	// This should happen in a major release since it's an API change.
@@ -1514,6 +1532,9 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtab + "_transport.unregister(ctx);\n"
 	contents += tabtab + "}\n"
 	contents += tab + "}\n\n"
+	if method.Oneway {
+		return contents
+	}
 
 	// Generate the callback
 	contents += fmt.Sprintf(tab+"_recv%sHandler(frugal.FContext ctx, StreamController controller) {\n", nameTitle)
@@ -1739,6 +1760,17 @@ func (g *Generator) getNamespaceOrName() string {
 
 func toLibraryName(name string) string {
 	return strings.Replace(name, ".", "_", -1)
+}
+
+func snakeToCamel(name string) string {
+	result := ""
+
+	words := strings.Split(name, "_")
+	for _, word := range words {
+		result += strings.Title(word)
+	}
+
+	return result
 }
 
 // e.g. change APIForFileIO to api_for_file_io

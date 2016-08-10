@@ -81,6 +81,10 @@ func (g *Generator) TeardownGenerator() error {
 
 // GenerateConstantsContents generates constants.
 func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) error {
+	if len(constants) == 0 {
+		return nil
+	}
+
 	contents := "\n\n"
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
 	contents += "from ttypes import *\n\n"

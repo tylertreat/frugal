@@ -2,6 +2,8 @@
 package frugal
 
 import (
+	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"strconv"
 	"strings"
@@ -9,13 +11,14 @@ import (
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	log "github.com/Sirupsen/logrus"
 	"github.com/nats-io/nats"
 )
 
 const (
 	queue                      = "rpc"
 	defaultMaxMissedHeartbeats = 3
+	defaultNumWorkers          = 5
+	leftBrace                  = '\x7b' // "{"
 )
 
 type client struct {
@@ -37,7 +40,8 @@ func newInbox(prefix string) string {
 }
 
 // FNatsServer implements FServer by using NATS as the underlying transport.
-// Clients must connect with the transport created by NewNatsServiceTTransport.
+// Clients must connect with the transport created by NewNatsServiceTTransport
+// or NewFNatsTransport.
 // DEPRECATED - With the next major release of frugal, stateful NATS transports
 // will no longer be supported. Use the "stateless" Nats server instead with
 // FNatsServerBuilder.
@@ -55,11 +59,14 @@ type FNatsServer struct {
 	protocolFactory     *FProtocolFactory
 	highWatermark       time.Duration
 	waterMu             sync.RWMutex
+	numWorkers          uint
+	workC               chan *frameWrapper
 }
 
 // NewFNatsServer creates a new FNatsServer which listens for requests on the
-// given subject. Clients must connect with the transport created by
-// NewNatsServiceTTransport.
+// given subject.
+// Clients must connect with the transport created by NewNatsServiceTTransport
+// or NewFNatsTransport.
 // DEPRECATED - With the next major release of frugal, stateful NATS transports
 // will no longer be supported. With the release of 2.0, FStatelessNatsServer
 // will be renamed to FNatsServer.
@@ -83,8 +90,9 @@ func NewFNatsServer(
 }
 
 // NewFNatsServerWithSubjects creates a new FNatsServer which listens for
-// requests on the given subjects. Clients must connect with the transport
-// created by NewNatsServiceTTransport.
+// requests on the given subjects.
+// Clients must connect with the transport created by NewNatsServiceTTransport
+// or NewFNatsTransport.
 // DEPRECATED - With the next major release of frugal, stateful NATS transports
 // will no longer be supported. With the release of 2.0, FStatelessNatsServer
 // will be renamed to FNatsServer.
@@ -108,8 +116,9 @@ func NewFNatsServerWithSubjects(
 }
 
 // NewFNatsServerFactory creates a new FNatsServer which listens for requests
-// on the given subject. Clients must connect with the transport created by
-// NewNatsServiceTTransport.
+// on the given subject.
+// Clients must connect with the transport created by NewNatsServiceTTransport
+// or NewFNatsTransport.
 // DEPRECATED - With the next major release of frugal, stateful NATS transports
 // will no longer be supported. With the release of 2.0, FStatelessNatsServer
 // will be renamed to FNatsServer.
@@ -134,8 +143,9 @@ func NewFNatsServerFactory(
 }
 
 // NewFNatsServerFactoryWithSubjects creates a new FNatsServer which listens
-// for requests on the given subjects. Clients must connect with the transport
-// created by NewNatsServiceTTransport.
+// for requests on the given subjects.
+// Clients must connect with the transport created by NewNatsServiceTTransport
+// or NewFNatsTransport.
 // DEPRECATED - With the next major release of frugal, stateful NATS transports
 // will no longer be supported. With the release of 2.0, FStatelessNatsServer
 // will be renamed to FNatsServer.
@@ -148,9 +158,41 @@ func NewFNatsServerFactoryWithSubjects(
 	transportFactory FTransportFactory,
 	protocolFactory *FProtocolFactory) FServer {
 
+	return NewFNatsServerWithStatelessConfig(
+		conn,
+		subjects,
+		defaultNumWorkers,
+		defaultWorkQueueLen,
+		heartbeatInterval,
+		maxMissedHeartbeats,
+		processorFactory,
+		transportFactory,
+		protocolFactory)
+}
+
+// NewFNatsServerWithStatelessConfig creates a new FNatsServer which listens
+// for requests on the given subjects, and has the given number of stateless
+// worker goroutines and stateless request buffer queue length.
+// Clients must connect with the transport created by NewNatsServiceTTransport
+// or NewFNatsTransport.
+// DEPRECATED - With the next major release of frugal, stateful NATS transports
+// will no longer be supported. With the release of 2.0, FStatelessNatsServer
+// will be renamed to FNatsServer.
+func NewFNatsServerWithStatelessConfig(
+	conn *nats.Conn,
+	subjects []string,
+	numWorkers uint,
+	queueLen uint,
+	heartbeatInterval time.Duration,
+	maxMissedHeartbeats uint,
+	processorFactory FProcessorFactory,
+	transportFactory FTransportFactory,
+	protocolFactory *FProtocolFactory) FServer {
+
 	return &FNatsServer{
 		conn:                conn,
 		subjects:            subjects,
+		numWorkers:          numWorkers,
 		heartbeatSubject:    nats.NewInbox(),
 		heartbeatInterval:   heartbeatInterval,
 		maxMissedHeartbeats: maxMissedHeartbeats,
@@ -160,6 +202,7 @@ func NewFNatsServerFactoryWithSubjects(
 		protocolFactory:     protocolFactory,
 		quit:                make(chan struct{}, 1),
 		highWatermark:       defaultWatermark,
+		workC:               make(chan *frameWrapper, queueLen),
 	}
 }
 
@@ -179,9 +222,13 @@ func (n *FNatsServer) Serve() error {
 		go n.startHeartbeat()
 	}
 
-	log.Info("frugal: server running...")
+	for i := uint(0); i < n.numWorkers; i++ {
+		go n.worker()
+	}
+
+	logger().Info("frugal: server running...")
 	<-n.quit
-	log.Info("frugal: server stopping...")
+	logger().Info("frugal: server stopping...")
 
 	for _, sub := range subscriptions {
 		sub.Unsubscribe()
@@ -209,16 +256,27 @@ func (n *FNatsServer) SetHighWatermark(watermark time.Duration) {
 // the server.
 func (n *FNatsServer) handleConnection(msg *nats.Msg) {
 	if msg.Reply == "" {
-		log.Warnf("frugal: discarding invalid connect message %+v", msg)
+		logger().Warnf("frugal: discarding invalid connect message %+v", msg)
 		return
 	}
+
+	// Check to see if this is a stateless client
+	if msg.Data != nil && len(msg.Data) > 0 && msg.Data[0] != leftBrace {
+		select {
+		case n.workC <- &frameWrapper{frameBytes: msg.Data, timestamp: time.Now(), reply: msg.Reply}:
+		case <-n.quit:
+			return
+		}
+		return
+	}
+
 	hs := &natsConnectionHandshake{}
 	if err := json.Unmarshal(msg.Data, hs); err != nil {
-		log.Errorf("frugal: could not deserialize connect message %+v", msg)
+		logger().Errorf("frugal: could not deserialize connect message %+v", msg)
 		return
 	}
 	if hs.Version != natsV0 {
-		log.Errorf("frugal: not a supported connect version %d", hs.Version)
+		logger().Errorf("frugal: not a supported connect version %d", hs.Version)
 		return
 	}
 	var (
@@ -227,7 +285,7 @@ func (n *FNatsServer) handleConnection(msg *nats.Msg) {
 		tr, err        = n.accept(listenTo, msg.Reply, heartbeatReply)
 	)
 	if err != nil {
-		log.Errorf("frugal: error accepting client transport: %s", err)
+		logger().Errorf("frugal: error accepting client transport: %s", err)
 		return
 	}
 
@@ -242,7 +300,7 @@ func (n *FNatsServer) handleConnection(msg *nats.Msg) {
 	connectMsg := n.heartbeatSubject + " " + heartbeatReply + " " +
 		strconv.FormatInt(int64(n.heartbeatInterval/time.Millisecond), 10)
 	if err := n.conn.PublishRequest(msg.Reply, listenTo, []byte(connectMsg)); err != nil {
-		log.Errorf("frugal: error publishing transport inbox: %s", err)
+		logger().Errorf("frugal: error publishing transport inbox: %s", err)
 		tr.Close()
 	} else if n.isHeartbeating() {
 		go n.acceptHeartbeat(client)
@@ -273,10 +331,10 @@ func (n *FNatsServer) startHeartbeat() {
 				continue
 			}
 			if err := n.conn.Publish(n.heartbeatSubject, nil); err != nil {
-				log.Error("frugal: error publishing heartbeat:", err.Error())
+				logger().Error("frugal: error publishing heartbeat:", err.Error())
 			}
 			if err := n.conn.FlushTimeout(n.heartbeatInterval * 3 / 4); err != nil {
-				log.Error("frugal: error flushing heartbeat:", err.Error())
+				logger().Error("frugal: error flushing heartbeat:", err.Error())
 			}
 		case <-n.quit:
 			return
@@ -292,11 +350,11 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		select {
 		case recvHeartbeat <- struct{}{}:
 		default:
-			log.Info("frugal: FNatsServer dropped heartbeat:", client.heartbeat)
+			logger().Info("frugal: FNatsServer dropped heartbeat:", client.heartbeat)
 		}
 	})
 	if err != nil {
-		log.Error("frugal: error subscribing to heartbeat:", client.heartbeat)
+		logger().Error("frugal: error subscribing to heartbeat:", client.heartbeat)
 		return
 	}
 	defer sub.Unsubscribe()
@@ -312,7 +370,7 @@ func (n *FNatsServer) acceptHeartbeat(client *client) {
 		case <-wait:
 			missed++
 			if missed >= n.maxMissedHeartbeats {
-				log.Warnf("frugal: client heartbeat expired for heartbeat: %s", client.heartbeat)
+				logger().Warnf("frugal: client heartbeat expired for heartbeat: %s", client.heartbeat)
 				n.remove(client.heartbeat)
 				return
 			}
@@ -350,10 +408,57 @@ func (n *FNatsServer) accept(listenTo, replyTo, heartbeat string) (FTransport, e
 		n.remove(heartbeat)
 	}()
 
-	log.Debug("frugal: client connection accepted with heartbeat:", heartbeat)
+	logger().Debug("frugal: client connection accepted with heartbeat:", heartbeat)
 	return transport, nil
 }
 
 func (n *FNatsServer) isHeartbeating() bool {
 	return n.heartbeatInterval > 0
+}
+
+// worker should be called as a goroutine. It reads requests off the work
+// channel and processes them.
+func (n *FNatsServer) worker() {
+	for {
+		select {
+		case <-n.quit:
+			return
+		case frame := <-n.workC:
+			dur := time.Since(frame.timestamp)
+			n.waterMu.RLock()
+			if dur > n.highWatermark {
+				logger().Warnf("frugal: frame spent %+v in the transport buffer, your consumer might be backed up", dur)
+			}
+			n.waterMu.RUnlock()
+			if err := n.processFrame(frame.frameBytes, frame.reply); err != nil {
+				logger().Errorf("frugal: error processing frame: %s", err.Error())
+			}
+		}
+	}
+}
+
+// processFrame invokes the FProcessor and sends the response on the given
+// subject.
+func (n *FNatsServer) processFrame(frame []byte, reply string) error {
+	// Read and process frame.
+	input := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(frame[4:])} // Discard frame size
+	// Buffer 1MB - 4 bytes since frame size is copied directly.
+	output := NewFBoundedMemoryBuffer(natsMaxMessageSize - 4)
+	if err := n.processorFactory.GetProcessor(nil).Process(
+		n.protocolFactory.GetProtocol(input),
+		n.protocolFactory.GetProtocol(output)); err != nil {
+		return err
+	}
+
+	if output.Len() == 0 {
+		return nil
+	}
+
+	// Add frame size (4-byte uint32).
+	response := make([]byte, output.Len()+4)
+	binary.BigEndian.PutUint32(response, uint32(output.Len()))
+	copy(response[4:], output.Bytes())
+
+	// Send response.
+	return n.conn.Publish(reply, response)
 }

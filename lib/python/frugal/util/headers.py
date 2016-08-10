@@ -83,13 +83,12 @@ class _Headers(object):
     def decode_from_frame(frame):
         if len(frame) < 5:
             ex = FProtocolException(FProtocolException.INVALID_DATA,
-                                    "Invalid frame size: {}".format(len(frame)))
+                                    "Invalid frame size: {}".format(len(frame))
+                                    )
             logger.exception(ex)
             raise ex
 
-        unpack_from(_UINT, frame[:4])[0]
-
-        version = unpack_from(_UCHAR, frame[4:5])[0]
+        version = unpack_from(_UCHAR, frame[0:1])[0]
 
         if version is not _V0:
             ex = FProtocolException(
@@ -100,9 +99,9 @@ class _Headers(object):
             logger.exception(ex)
             raise ex
 
-        headers_size = unpack_from(_UINT, frame[5:9])[0]
+        headers_size = unpack_from(_UINT, frame[1:5])[0]
 
-        return _Headers._read_pairs(frame, 9, headers_size + 9)
+        return _Headers._read_pairs(frame, 5, headers_size + 5)
 
     @staticmethod
     def _read_pairs(buff, start, end):
@@ -129,13 +128,15 @@ class _Headers(object):
             i += 4
 
             if i > end or i + val_size > end:
-                ex = FProtocolException(FProtocolException.INVALID_DATA,
-                                        "invalid protocol header value size: {}"
-                                        .format(val_size))
+                ex = FProtocolException(
+                    FProtocolException.INVALID_DATA,
+                    "invalid protocol header value size: {}".format(val_size)
+                )
                 logger.exception(ex)
                 raise ex
 
-            val = unpack_from('>{0}s'.format(val_size), buff[i:i + val_size])[0]
+            val = unpack_from('>{0}s'.format(val_size),
+                              buff[i:i + val_size])[0]
             if not _IS_PY2:
                 val = val.decode('utf8')
             i += val_size

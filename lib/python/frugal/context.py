@@ -5,12 +5,30 @@ from frugal.exceptions import FContextHeaderException
 
 _C_ID = "_cid"
 _OP_ID = "_opid"
-_DEFAULT_TIMEOUT = 60 * 1000
+_DEFAULT_TIMEOUT = 5 * 1000
 _DEFAULT_OP_ID = 0
 
 
 class FContext(object):
-    """FContext is the message context for a Frugal message."""
+    """FContext is the context for a Frugal message. Every RPC has an FContext,
+    which can be used to set request headers, response headers, and the request
+    timeout. The default timeout is five seconds. An FContext is also sent with
+    every publish message which is then received by subscribers.
+
+    In addition to headers, the FContext also contains a correlation ID which
+    can be used for distributed tracing purposes. A random correlation ID is
+    generated for each FContext if one is not provided.
+
+    FContext also plays a key role in Frugal's multiplexing support. A unique,
+    per-request operation ID is set on every FContext before a request is made.
+    This operation ID is sent in the request and included in the response,
+    which is then used to correlate a response to a request. The operation ID
+    is an internal implementation detail and is not exposed to the user.
+
+    An FContext should belong to a single request for the lifetime of that
+    request. It can be reused once the request has completed, though they
+    should generally not be reused.
+    """
 
     def __init__(self, correlation_id=None, timeout=_DEFAULT_TIMEOUT):
         """Initialize FContext.

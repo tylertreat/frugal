@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	log "github.com/Sirupsen/logrus"
 	"github.com/nats-io/nats"
 )
 
@@ -70,18 +69,19 @@ func (f *FNatsServerBuilder) WithHighWatermark(highWatermark time.Duration) *FNa
 
 // Build a new configured NATS FServer.
 func (f *FNatsServerBuilder) Build() FServer {
-	return &fNatsServer{
-		conn:               f.conn,
-		processor:          f.processor,
-		inputProtoFactory:  f.inputProtoFactory,
-		outputProtoFactory: f.outputProtoFactory,
-		subject:            f.subject,
-		queue:              f.queue,
-		workerCount:        f.workerCount,
-		workC:              make(chan *frameWrapper, f.queueLen),
-		quit:               make(chan struct{}),
-		highWatermark:      f.highWatermark,
-	}
+	// TODO: With 2.0, this should return fNatsServer instance
+	return NewFNatsServerWithStatelessConfig(
+		f.conn,
+		[]string{f.subject},
+		f.workerCount,
+		f.queueLen,
+		1*time.Minute,
+		defaultMaxMissedHeartbeats,
+		NewFProcessorFactory(f.processor),
+		NewAdapterTransportFactory(),
+		f.inputProtoFactory,
+	)
+
 }
 
 // FStatelessNatsServerBuilder configures and builds FStatelessNatsServer
@@ -254,9 +254,9 @@ func (f *fNatsServer) Serve() error {
 		go f.worker()
 	}
 
-	log.Info("frugal: server running...")
+	logger().Info("frugal: server running...")
 	<-f.quit
-	log.Info("frugal: server stopping...")
+	logger().Info("frugal: server stopping...")
 
 	sub.Unsubscribe()
 
@@ -284,7 +284,7 @@ func (f *fNatsServer) SetHighWatermark(watermark time.Duration) {
 // work channel which is processed by a worker goroutine.
 func (f *fNatsServer) handler(msg *nats.Msg) {
 	if msg.Reply == "" {
-		log.Warn("frugal: discarding invalid NATS request (no reply)")
+		logger().Warn("frugal: discarding invalid NATS request (no reply)")
 		return
 	}
 	select {
@@ -305,11 +305,11 @@ func (f *fNatsServer) worker() {
 			dur := time.Since(frame.timestamp)
 			f.waterMu.RLock()
 			if dur > f.highWatermark {
-				log.Warnf("frugal: frame spent %+v in the transport buffer, your consumer might be backed up", dur)
+				logger().Warnf("frugal: frame spent %+v in the transport buffer, your consumer might be backed up", dur)
 			}
 			f.waterMu.RUnlock()
 			if err := f.processFrame(frame.frameBytes, frame.reply); err != nil {
-				log.Errorf("frugal: error processing frame: %s", err.Error())
+				logger().Errorf("frugal: error processing frame: %s", err.Error())
 			}
 		}
 	}

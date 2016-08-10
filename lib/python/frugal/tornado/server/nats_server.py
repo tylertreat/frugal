@@ -8,6 +8,9 @@ from nats.io.utils import new_inbox
 from tornado import gen, ioloop
 
 from frugal.server import FServer
+from frugal.tornado.server.stateless_nats_server import (
+    FStatelessNatsTornadoServer
+)
 from frugal.transport import FTransport
 from frugal.tornado.transport import TNatsServiceTransport
 from frugal.registry import FServerRegistry
@@ -19,6 +22,7 @@ _NATS_PROTOCOL_V0 = 0
 _DEFAULT_MAX_MISSED_HEARTBEATS = 2
 _DEFAULT_HEARTBEAT_INTERVAL = 20000
 _QUEUE = "rpc"
+_LEFT_BRACE = "{"
 
 
 class FNatsTornadoServer(FServer):
@@ -60,6 +64,9 @@ class FNatsTornadoServer(FServer):
         self._high_watermark = high_watermark
         self._clients_lock = Lock()
         self._clients = {}
+        self._stateless_server = FStatelessNatsTornadoServer(
+            nats_client, subject, processor_factory.get_processor(None),
+            protocol_factory)
 
     @gen.coroutine
     def serve(self):
@@ -147,6 +154,12 @@ class FNatsTornadoServer(FServer):
         reply_to = msg.reply
         if not reply_to:
             logger.warn("Received a bad connection handshake. Discarding.")
+            return
+
+        data = msg.data
+        # Check to see if this a request from a stateless client
+        if (data and len(data) > 0 and data[0] != _LEFT_BRACE):
+            yield self._stateless_server._on_message_callback(msg)
             return
 
         conn_protocol = json.loads(msg.data)

@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	log "github.com/Sirupsen/logrus"
 	"github.com/nats-io/nats"
 )
 
@@ -143,7 +142,7 @@ func (n *fNatsScopeTransport) Open() error {
 
 func (n *fNatsScopeTransport) handleMessage(msg *nats.Msg) {
 	if len(msg.Data) < 4 {
-		log.Warn("frugal: Discarding invalid scope message frame")
+		logger().Warn("frugal: Discarding invalid scope message frame")
 		return
 	}
 	// Discard frame size.

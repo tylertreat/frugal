@@ -85,7 +85,7 @@ artifacts:
 
 size: large
 
-name: cross-gen_with_frugal
+name: cross-gen_with_thrift
 
 requires:
   Workiva/frugal:
@@ -106,7 +106,7 @@ scripts:
   - export PATH=$PATH:$testing/bin
 
   # Catch non-zero exit code and fail after results are uploaded
-  - ./scripts/run_cross.sh -gen_with_frugal || code=$?
+  - ./scripts/run_cross.sh -gen_with_thrift || code=$?
   - ./scripts/test_cleanup.sh
 
   # If applicable, fail here

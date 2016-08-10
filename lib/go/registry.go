@@ -8,7 +8,6 @@ import (
 	"sync/atomic"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	log "github.com/Sirupsen/logrus"
 )
 
 var nextOpID uint64
@@ -88,13 +87,13 @@ func (c *clientRegistry) Unregister(ctx *FContext) {
 func (c *clientRegistry) Execute(frame []byte) error {
 	headers, err := getHeadersFromFrame(frame)
 	if err != nil {
-		log.Warn("frugal: invalid protocol frame headers:", err)
+		logger().Warn("frugal: invalid protocol frame headers:", err)
 		return err
 	}
 
 	opid, err := strconv.ParseUint(headers[opID], 10, 64)
 	if err != nil {
-		log.Warn("frugal: invalid protocol frame:", err)
+		logger().Warn("frugal: invalid protocol frame:", err)
 		return err
 	}
 

@@ -6,19 +6,24 @@
     mkvirtualenv frugal-example -a $PWD
     ```
 
-2. Install deps:
+1. Install deps:
     ```
     pip install -Ur requirements.txt
     ```
 
-3. Install and/or Start Up NATS:
+1. Install and/or Start up NATS:
     ```bash
     brew install gnatsd
     # Follow instructions to run as daemon or...
     gnatsd -DV
     ```
 
-4. Profit:
+1. Start up server:
+    ```
+    python run_server.py
+    ```
+
+1. Run client:
     ```
     python main.py
     ```

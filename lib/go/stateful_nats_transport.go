@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	log "github.com/Sirupsen/logrus"
 	"github.com/nats-io/nats"
 )
 
@@ -156,9 +155,9 @@ func (n *natsServiceTTransport) handleMessage(msg *nats.Msg) {
 	if msg.Reply == disconnect {
 		// Remote client is disconnecting.
 		if n.isClient() {
-			log.Errorf("frugal: transport with heartbeat: %s received unexpected disconnect from the server", n.heartbeatListen)
+			logger().Errorf("frugal: transport with heartbeat: %s received unexpected disconnect from the server", n.heartbeatListen)
 		} else {
-			log.Debugf("frugal: transport with heartbeat: %s closed cleanly", n.heartbeatListen)
+			logger().Debugf("frugal: transport with heartbeat: %s closed cleanly", n.heartbeatListen)
 		}
 		n.Close()
 		return
@@ -173,7 +172,7 @@ func (n *natsServiceTTransport) handleHeartbeat(msg *nats.Msg) {
 	select {
 	case n.recvHeartbeatChan() <- struct{}{}:
 	default:
-		log.Infof("frugal: natsServiceTTransport dropped heartbeat: %s", n.heartbeatListen)
+		logger().Infof("frugal: natsServiceTTransport dropped heartbeat: %s", n.heartbeatListen)
 	}
 	n.conn.Publish(n.heartbeatReply, nil)
 }
@@ -189,7 +188,7 @@ func (n *natsServiceTTransport) heartbeatLoop() {
 		case <-time.After(n.heartbeatTimeoutPeriod()):
 			missed++
 			if missed >= n.maxMissedHeartbeats {
-				log.Warnf("frugal: server heartbeat expired for heartbeat: %s", n.heartbeatListen)
+				logger().Warnf("frugal: server heartbeat expired for heartbeat: %s", n.heartbeatListen)
 				n.Close()
 				return
 			}
@@ -292,7 +291,7 @@ func (n *natsServiceTTransport) Close() error {
 	}
 
 	// Signal remote peer for a graceful disconnect
-	log.Infof("frugal: sending disconnect to topic: %s", n.writeTo)
+	logger().Infof("frugal: sending disconnect to topic: %s", n.writeTo)
 
 	n.conn.PublishRequest(n.writeTo, disconnect, nil)
 	if err := n.sub.Unsubscribe(); err != nil {
