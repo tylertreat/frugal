@@ -79,7 +79,6 @@ class FHttpTransport(FRegistryTransport):
                                       message='invalid frame size')
 
         if len(decoded) == 4:
-            print(any(decoded))
             if any(decoded):
                 raise TTransportException(type=TTransportException.UNKNOWN,
                                           message='missing data')
