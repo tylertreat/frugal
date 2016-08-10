@@ -6,6 +6,7 @@ from aiohttp.client import ClientSession
 from thrift.transport.TTransport import TTransportException
 
 from frugal.aio.transport import FRegistryTransport
+from frugal.exceptions import FMessageSizeException
 
 
 class FHttpTransport(FRegistryTransport):
@@ -61,10 +62,8 @@ class FHttpTransport(FRegistryTransport):
         encoded = base64.b64encode(frame_length + frame)
         status, text = await self._make_request(encoded)
         if status == 413:
-            raise TTransportException(
-                type=TTransportException.UNKNOWN,
-                message='response was too large for the transport'
-            )
+            raise FMessageSizeException(
+                    'response was too large for the transport')
 
         decoded = base64.b64decode(text)
         if status >= 300:
@@ -80,6 +79,10 @@ class FHttpTransport(FRegistryTransport):
                                       message='invalid frame size')
 
         if len(decoded) == 4:
+            print(any(decoded))
+            if any(decoded):
+                raise TTransportException(type=TTransportException.UNKNOWN,
+                                          message='missing data')
             # One-way method, drop response
             return
 
@@ -98,5 +101,4 @@ class FHttpTransport(FRegistryTransport):
             async with session.post(self._url,
                                     data=data,
                                     headers=self._headers) as response:
-                print(response.__class__)
                 return response.status, await response.content.read()

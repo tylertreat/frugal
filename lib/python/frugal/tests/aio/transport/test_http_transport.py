@@ -9,7 +9,6 @@ from frugal.aio.transport import FHttpTransport
 from frugal.exceptions import FMessageSizeException
 
 
-# @mock.patch('frugal.aio.transport.http_transport.ClientSession')
 class TestFHttpTransport(utils.AsyncIOTestCase):
     def setUp(self):
         super().setUp()
@@ -104,6 +103,19 @@ class TestFHttpTransport(utils.AsyncIOTestCase):
         self.assertFalse(registry_mock.execute.called)
 
     @utils.async_runner
+    async def test_flush_missing_data(self):
+        response_encoded = base64.b64encode(bytearray([0, 0, 0, 1]))
+        response_future = Future()
+        response_future.set_result((200, response_encoded))
+        self.make_request_mock.return_value = response_future
+
+        self.transport.write(bytearray([1, 2, 3]))
+        with self.assertRaises(TTransportException) as e:
+            await self.transport.flush()
+
+        self.assertEqual(str(e.exception), 'missing data')
+
+    @utils.async_runner
     async def test_flush_response_too_large(self):
         message = b'something went wrong'
         encoded_message = base64.b64encode(message)
@@ -112,7 +124,7 @@ class TestFHttpTransport(utils.AsyncIOTestCase):
         self.make_request_mock.return_value = response_future
 
         self.transport.write(bytearray([1, 2, 3]))
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(FMessageSizeException) as e:
             await self.transport.flush()
 
         self.assertEqual(str(e.exception),

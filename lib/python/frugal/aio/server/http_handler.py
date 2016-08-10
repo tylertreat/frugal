@@ -21,6 +21,7 @@ def new_http_handler(processor: FProcessor, protocol_factory: FProtocolFactory):
     async def handler(request: web.Request):
         headers = {
             'content-type': 'application/x-frugal',
+            'content-transfer-encoding': 'base64',
         }
 
         # check for response size limit
