@@ -148,6 +148,7 @@ public class FHttpTransport extends FTransport {
             if (ByteBuffer.wrap(response).getInt() != 0) {
                 throw new TTransportException("missing data");
             }
+            return;
         }
 
         // Put the frame in the buffer
