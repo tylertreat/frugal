@@ -10,8 +10,8 @@ import (
 	"github.com/Workiva/frugal/compiler/parser"
 )
 
-// TornadoGenerator implements the LanguageGenerator interface for Python using
-// Tornado.
+// AsyncIOGenerator implements the LanguageGenerator interface for Python using
+// AsyncIO.
 type AsyncIOGenerator struct {
 	*Generator
 }
@@ -336,7 +336,6 @@ func (a *AsyncIOGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 		docstr[0] = "\n" + tabtab + docstr[0]
 		docstr = append(op.Comment, docstr...)
 	}
-	//method := tab + "@gen.coroutine\n"
 	method := ""
 	method += tab + fmt.Sprintf("async def subscribe_%s(self, %s%s_handler):\n", op.Name, args, op.Name)
 	method += a.generateDocString(docstr, tabtab)

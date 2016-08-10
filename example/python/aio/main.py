@@ -138,19 +138,13 @@ async def run_publisher(nats_client, prot_factory):
 
 def logging_middleware(next):
     def handler(method, args):
-        # service = '%s.%s' % (method.im_self.__module__,
-        #                      method.im_class.__name__)
-        # print '==== CALLING %s.%s ====' % (service, method.im_func.func_name)
         print('==== CALLING %s ====', method.__name__)
         ret = next(method, args)
-        # print '==== CALLED  %s.%s ====' % (service, method.im_func.func_name)
         print('==== CALLED  %s ====', method.__name__)
         return ret
     return handler
 
 
 if __name__ == '__main__':
-    # Since we can exit after the client calls use `run_sync`
-    # ioloop.IOLoop.instance().run_sync(main)
     io_loop = asyncio.get_event_loop()
     io_loop.run_until_complete(main())
