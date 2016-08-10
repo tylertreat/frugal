@@ -45,3 +45,6 @@ test/integration/go/bin/*
 test/integration/java/frugal-integration-test/gen-java
 test/integration/java/frugal-integration-test/frugal
 test/integration/java/frugal.jar
+
+# Cross-compiled code
+pkg/
