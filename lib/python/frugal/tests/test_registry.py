@@ -50,7 +50,7 @@ class TestClientRegistry(unittest.TestCase):
         with self.assertRaises(FException) as cm:
             registry.register(context, callback)
 
-        self.assertEquals("context already registered", cm.exception.message)
+        self.assertEquals("context already registered", str(cm.exception))
 
     def test_unregister(self):
         registry = FClientRegistry()
@@ -71,7 +71,7 @@ class TestClientRegistry(unittest.TestCase):
         with self.assertRaises(FException) as cm:
             registry.execute(b"foo")
 
-        self.assertEquals("Invalid frame size: 3", cm.exception.message)
+        self.assertEquals("Invalid frame size: 3", str(cm.exception))
 
     def test_execute_frame_missing_op_id(self):
         registry = FClientRegistry()
@@ -86,7 +86,7 @@ class TestClientRegistry(unittest.TestCase):
         with self.assertRaises(FException) as cm:
             registry.execute(frame)
 
-        self.assertEquals("Frame missing op_id", cm.exception.message)
+        self.assertEquals("Frame missing op_id", str(cm.exception))
 
     def test_execute_unregistered_op_id(self):
         registry = FClientRegistry()
