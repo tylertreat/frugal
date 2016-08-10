@@ -6,13 +6,17 @@
 
 
 
+from datetime import timedelta
 from threading import Lock
 
 from frugal.middleware import Method
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
+from frugal.registry import FClientRegistry
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
+from tornado import gen
+from tornado.concurrent import Future
 
 import excepts
 import validStructs
@@ -66,16 +70,16 @@ class Client(Iface):
         Create a new Client with a transport and protocol factory.
 
         Args:
-            transport: FSynchronousTransport
+            transport: FTransport
             protocol_factory: FProtocolFactory
             middleware: ServiceMiddleware or list of ServiceMiddleware
         """
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
+        transport.set_registry(FClientRegistry())
         self._transport = transport
         self._protocol_factory = protocol_factory
         self._oprot = protocol_factory.get_protocol(transport)
-        self._iprot = protocol_factory.get_protocol(transport)
         self._write_lock = Lock()
         self._methods = {
             'ping': Method(self._ping, middleware),
@@ -93,14 +97,22 @@ class Client(Iface):
         """
         return self._methods['ping']([ctx])
 
+    @gen.coroutine
     def _ping(self, ctx):
+        delta = timedelta(milliseconds=ctx.get_timeout())
+        future = gen.with_timeout(delta, Future())
+        self._transport.register(ctx, self._recv_ping(ctx, future))
         self._send_ping(ctx)
-        self._recv_ping(ctx)
+
+        try:
+            result = yield future
+        finally:
+            self._transport.unregister(ctx)
+        raise gen.Return(result)
 
     def _send_ping(self, ctx):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.CALL, 0)
             args = ping_args()
@@ -108,18 +120,22 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_ping(self, ctx):
-        self._iprot.read_response_headers(ctx)
-        _, mtype, _ = self._iprot.readMessageBegin()
-        if mtype == TMessageType.EXCEPTION:
-            x = TApplicationException()
-            x.read(self._iprot)
-            self._iprot.readMessageEnd()
-            raise x
-        result = ping_result()
-        result.read(self._iprot)
-        self._iprot.readMessageEnd()
-        return
+    def _recv_ping(self, ctx, future):
+        def ping_callback(transport):
+            iprot = self._protocol_factory.get_protocol(transport)
+            iprot.read_response_headers(ctx)
+            _, mtype, _ = iprot.readMessageBegin()
+            if mtype == TMessageType.EXCEPTION:
+                x = TApplicationException()
+                x.read(iprot)
+                iprot.readMessageEnd()
+                future.set_exception(x)
+                raise x
+            result = ping_result()
+            result.read(iprot)
+            iprot.readMessageEnd()
+            future.set_result(None)
+        return ping_callback
 
     def bleh(self, ctx, one, Two, custom_ints):
         """
@@ -133,14 +149,22 @@ class Client(Iface):
         """
         return self._methods['bleh']([ctx, one, Two, custom_ints])
 
+    @gen.coroutine
     def _bleh(self, ctx, one, Two, custom_ints):
+        delta = timedelta(milliseconds=ctx.get_timeout())
+        future = gen.with_timeout(delta, Future())
+        self._transport.register(ctx, self._recv_bleh(ctx, future))
         self._send_bleh(ctx, one, Two, custom_ints)
-        return self._recv_bleh(ctx)
+
+        try:
+            result = yield future
+        finally:
+            self._transport.unregister(ctx)
+        raise gen.Return(result)
 
     def _send_bleh(self, ctx, one, Two, custom_ints):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('bleh', TMessageType.CALL, 0)
             args = bleh_args()
@@ -151,25 +175,33 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_bleh(self, ctx):
-        self._iprot.read_response_headers(ctx)
-        _, mtype, _ = self._iprot.readMessageBegin()
-        if mtype == TMessageType.EXCEPTION:
-            x = TApplicationException()
-            x.read(self._iprot)
-            self._iprot.readMessageEnd()
+    def _recv_bleh(self, ctx, future):
+        def bleh_callback(transport):
+            iprot = self._protocol_factory.get_protocol(transport)
+            iprot.read_response_headers(ctx)
+            _, mtype, _ = iprot.readMessageBegin()
+            if mtype == TMessageType.EXCEPTION:
+                x = TApplicationException()
+                x.read(iprot)
+                iprot.readMessageEnd()
+                future.set_exception(x)
+                raise x
+            result = bleh_result()
+            result.read(iprot)
+            iprot.readMessageEnd()
+            if result.oops is not None:
+                future.set_exception(result.oops)
+                return
+            if result.err2 is not None:
+                future.set_exception(result.err2)
+                return
+            if result.success is not None:
+                future.set_result(result.success)
+                return
+            x = TApplicationException(TApplicationException.MISSING_RESULT, "bleh failed: unknown result")
+            future.set_exception(x)
             raise x
-        result = bleh_result()
-        result.read(self._iprot)
-        self._iprot.readMessageEnd()
-        if result.oops is not None:
-            raise result.oops
-        if result.err2 is not None:
-            raise result.err2
-        if result.success is not None:
-            return result.success
-        x = TApplicationException(TApplicationException.MISSING_RESULT, "bleh failed: unknown result")
-        raise x
+        return bleh_callback
 
     def getThing(self, ctx):
         """
@@ -178,14 +210,22 @@ class Client(Iface):
         """
         return self._methods['getThing']([ctx])
 
+    @gen.coroutine
     def _getThing(self, ctx):
+        delta = timedelta(milliseconds=ctx.get_timeout())
+        future = gen.with_timeout(delta, Future())
+        self._transport.register(ctx, self._recv_getThing(ctx, future))
         self._send_getThing(ctx)
-        return self._recv_getThing(ctx)
+
+        try:
+            result = yield future
+        finally:
+            self._transport.unregister(ctx)
+        raise gen.Return(result)
 
     def _send_getThing(self, ctx):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.CALL, 0)
             args = getThing_args()
@@ -193,21 +233,27 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_getThing(self, ctx):
-        self._iprot.read_response_headers(ctx)
-        _, mtype, _ = self._iprot.readMessageBegin()
-        if mtype == TMessageType.EXCEPTION:
-            x = TApplicationException()
-            x.read(self._iprot)
-            self._iprot.readMessageEnd()
+    def _recv_getThing(self, ctx, future):
+        def getThing_callback(transport):
+            iprot = self._protocol_factory.get_protocol(transport)
+            iprot.read_response_headers(ctx)
+            _, mtype, _ = iprot.readMessageBegin()
+            if mtype == TMessageType.EXCEPTION:
+                x = TApplicationException()
+                x.read(iprot)
+                iprot.readMessageEnd()
+                future.set_exception(x)
+                raise x
+            result = getThing_result()
+            result.read(iprot)
+            iprot.readMessageEnd()
+            if result.success is not None:
+                future.set_result(result.success)
+                return
+            x = TApplicationException(TApplicationException.MISSING_RESULT, "getThing failed: unknown result")
+            future.set_exception(x)
             raise x
-        result = getThing_result()
-        result.read(self._iprot)
-        self._iprot.readMessageEnd()
-        if result.success is not None:
-            return result.success
-        x = TApplicationException(TApplicationException.MISSING_RESULT, "getThing failed: unknown result")
-        raise x
+        return getThing_callback
 
     def getMyInt(self, ctx):
         """
@@ -216,14 +262,22 @@ class Client(Iface):
         """
         return self._methods['getMyInt']([ctx])
 
+    @gen.coroutine
     def _getMyInt(self, ctx):
+        delta = timedelta(milliseconds=ctx.get_timeout())
+        future = gen.with_timeout(delta, Future())
+        self._transport.register(ctx, self._recv_getMyInt(ctx, future))
         self._send_getMyInt(ctx)
-        return self._recv_getMyInt(ctx)
+
+        try:
+            result = yield future
+        finally:
+            self._transport.unregister(ctx)
+        raise gen.Return(result)
 
     def _send_getMyInt(self, ctx):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.CALL, 0)
             args = getMyInt_args()
@@ -231,21 +285,28 @@ class Client(Iface):
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_getMyInt(self, ctx):
-        self._iprot.read_response_headers(ctx)
-        _, mtype, _ = self._iprot.readMessageBegin()
-        if mtype == TMessageType.EXCEPTION:
-            x = TApplicationException()
-            x.read(self._iprot)
-            self._iprot.readMessageEnd()
+    def _recv_getMyInt(self, ctx, future):
+        def getMyInt_callback(transport):
+            iprot = self._protocol_factory.get_protocol(transport)
+            iprot.read_response_headers(ctx)
+            _, mtype, _ = iprot.readMessageBegin()
+            if mtype == TMessageType.EXCEPTION:
+                x = TApplicationException()
+                x.read(iprot)
+                iprot.readMessageEnd()
+                future.set_exception(x)
+                raise x
+            result = getMyInt_result()
+            result.read(iprot)
+            iprot.readMessageEnd()
+            if result.success is not None:
+                future.set_result(result.success)
+                return
+            x = TApplicationException(TApplicationException.MISSING_RESULT, "getMyInt failed: unknown result")
+            future.set_exception(x)
             raise x
-        result = getMyInt_result()
-        result.read(self._iprot)
-        self._iprot.readMessageEnd()
-        if result.success is not None:
-            return result.success
-        x = TApplicationException(TApplicationException.MISSING_RESULT, "getMyInt failed: unknown result")
-        raise x
+        return getMyInt_callback
+
 
 class Processor(FBaseProcessor):
 
@@ -269,12 +330,13 @@ class _ping(FProcessorFunction):
         self._handler = handler
         self._lock = lock
 
+    @gen.coroutine
     def process(self, ctx, iprot, oprot):
         args = ping_args()
         args.read(iprot)
         iprot.readMessageEnd()
         result = ping_result()
-        self._handler.ping(ctx)
+        yield gen.maybe_future(self._handler.ping(ctx))
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
@@ -289,13 +351,14 @@ class _bleh(FProcessorFunction):
         self._handler = handler
         self._lock = lock
 
+    @gen.coroutine
     def process(self, ctx, iprot, oprot):
         args = bleh_args()
         args.read(iprot)
         iprot.readMessageEnd()
         result = bleh_result()
         try:
-            result.success = self._handler.bleh(ctx, args.one, args.Two, args.custom_ints)
+            result.success = yield gen.maybe_future(self._handler.bleh(ctx, args.one, args.Two, args.custom_ints))
         except InvalidOperation as oops:
             result.oops = oops
         except excepts.ttypes.InvalidData as err2:
@@ -314,12 +377,13 @@ class _getThing(FProcessorFunction):
         self._handler = handler
         self._lock = lock
 
+    @gen.coroutine
     def process(self, ctx, iprot, oprot):
         args = getThing_args()
         args.read(iprot)
         iprot.readMessageEnd()
         result = getThing_result()
-        result.success = self._handler.getThing(ctx)
+        result.success = yield gen.maybe_future(self._handler.getThing(ctx))
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.REPLY, 0)
@@ -334,12 +398,13 @@ class _getMyInt(FProcessorFunction):
         self._handler = handler
         self._lock = lock
 
+    @gen.coroutine
     def process(self, ctx, iprot, oprot):
         args = getMyInt_args()
         args.read(iprot)
         iprot.readMessageEnd()
         result = getMyInt_result()
-        result.success = self._handler.getMyInt(ctx)
+        result.success = yield gen.maybe_future(self._handler.getMyInt(ctx))
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.REPLY, 0)
