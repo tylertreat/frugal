@@ -23,7 +23,7 @@ def new_http_handler(processor: FProcessor, protocol_factory: FProtocolFactory):
             'content-type': 'application/x-frugal',
         }
 
-        # check fro response size limit
+        # check for response size limit
         response_limit = request.headers.get('x-frugal-payload-limit') or 0
         if response_limit:
             response_limit = int(response_limit)

@@ -98,4 +98,5 @@ class FHttpTransport(FRegistryTransport):
             async with session.post(self._url,
                                     data=data,
                                     headers=self._headers) as response:
-                return response.status, await response.text()
+                print(response.__class__)
+                return response.status, await response.content.read()
