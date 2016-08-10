@@ -11,6 +11,7 @@ import com.workiva.frugal.transport.FTransport;
 import com.workiva.frugal.transport.FTransportClosedCallback;
 import com.workiva.frugal.transport.FTransportFactory;
 import com.workiva.frugal.transport.TNatsServiceTransport;
+import com.workiva.frugal.util.BlockingRejectedExecutionHandler;
 import io.nats.client.Connection;
 import io.nats.client.Message;
 import io.nats.client.MessageHandler;
@@ -26,14 +27,16 @@ import java.util.Collection;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
  * An implementation of FServer which uses NATS as the underlying transport. Clients must connect with the
- * TNatsServiceTransport.
+ * TNatsServiceTransport or the FNatsTransport.
  *
  * @deprecated With the next major release of frugal, stateful NATS transports will no longer be supported.
  * With the release of 2.0, FStatelessNatsServer will be renamed to FNatsServer.
@@ -42,8 +45,10 @@ import java.util.concurrent.TimeUnit;
 public class FNatsServer implements FServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(FNatsServer.class);
 
+    private static final int DEFAULT_WORK_QUEUE_LEN = 64;
     private static final int DEFAULT_MAX_MISSED_HEARTBEATS = 3;
     private static final String QUEUE = "rpc";
+    private static final byte LEFT_BRACE = 0x7b; // "{"
 
     private Connection conn;
     private String[] subjects;
@@ -56,6 +61,10 @@ public class FNatsServer implements FServer {
     private FProtocolFactory protocolFactory;
     private final BlockingQueue<Object> shutdown = new ArrayBlockingQueue<>(1);
     private long highWatermark = FTransport.DEFAULT_WATERMARK;
+
+    // Stateless utils
+    private ExecutorService workerPool;
+    private final BlockingQueue<Runnable> workQueue;
 
     private final ScheduledExecutorService heartbeatExecutor = Executors.newScheduledThreadPool(1);
 
@@ -87,6 +96,14 @@ public class FNatsServer implements FServer {
     public FNatsServer(Connection conn, String[] subjects, long heartbeatInterval, int maxMissedHeartbeats,
                        FProcessorFactory processorFactory, FTransportFactory transportFactory,
                        FProtocolFactory protocolFactory) {
+        this(conn, subjects, heartbeatInterval, maxMissedHeartbeats,
+                0, DEFAULT_WORK_QUEUE_LEN, processorFactory, transportFactory, protocolFactory);
+    }
+
+    @Deprecated
+    public FNatsServer(Connection conn, String[] subjects, long heartbeatInterval, int maxMissedHeartbeats,
+                       int workerCount, int queueLength, FProcessorFactory processorFactory,
+                       FTransportFactory transportFactory, FProtocolFactory protocolFactory) {
         this.conn = conn;
         this.subjects = subjects;
         this.heartbeatSubject = conn.newInbox();
@@ -96,6 +113,10 @@ public class FNatsServer implements FServer {
         this.processorFactory = processorFactory;
         this.transportFactory = transportFactory;
         this.protocolFactory = protocolFactory;
+        this.workQueue = new ArrayBlockingQueue<>(queueLength);
+        workerCount = Math.max(1, workerCount);
+        this.workerPool = new ThreadPoolExecutor(1, workerCount, 30, TimeUnit.SECONDS, workQueue,
+                new BlockingRejectedExecutionHandler());
     }
 
     private class Client {
@@ -156,6 +177,18 @@ public class FNatsServer implements FServer {
         clients.clear();
         heartbeatExecutor.shutdown();
 
+        // Kill worker pool
+        workerPool.shutdown();
+        try {
+            if (!workerPool.awaitTermination(30, TimeUnit.SECONDS)) {
+                workerPool.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            workerPool.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+
+        // Unblock serving thread.
         try {
             shutdown.put(new Object());
         } catch (InterruptedException ignored) {
@@ -220,6 +253,15 @@ public class FNatsServer implements FServer {
             String reply = message.getReplyTo();
             if (reply == null || reply.isEmpty()) {
                 LOGGER.warn("Received a bad connection handshake. Discarding.");
+                return;
+            }
+
+            byte[] data = message.getData();
+            // Check to see if this is a stateless client
+            if (data != null && data.length > 0 && data[0] != LEFT_BRACE) {
+                FProcessor processor = processorFactory.getProcessor(null);
+                workerPool.submit(new FStatelessNatsServer.Request(message.getData(), System.currentTimeMillis(),
+                        message.getReplyTo(), getHighWatermark(), protocolFactory, protocolFactory, processor, conn));
                 return;
             }
 

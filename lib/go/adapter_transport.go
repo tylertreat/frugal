@@ -177,7 +177,7 @@ func (f *fAdapterTransport) SetRegistry(registry FRegistry) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.registry != nil {
-		panic("frugal: registry already set")
+		return
 	}
 	f.registry = registry
 }

@@ -60,7 +60,8 @@ class TestFStatelessNatsTornadoServer(AsyncTestCase):
         assert not self.server._oprot_factory.get_protocol.called
         assert not self.server._processor.process.called
 
-    @mock.patch('frugal.tornado.server.stateless_nats_server.MAX_MESSAGE_SIZE', 6)
+    @mock.patch('frugal.tornado.server.stateless_nats_server.MAX_MESSAGE_SIZE',
+                6)
     @gen_test
     def test_on_message_callback_bad_framesize_returns_early(self):
         data = b'asdf'

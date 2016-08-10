@@ -228,9 +228,6 @@ func TestAdapterTransportSetRegistryAlreadySet(t *testing.T) {
 	tr := NewAdapterTransport(nil)
 	tr.SetRegistry(registry)
 	assert.Equal(t, registry, tr.(*fAdapterTransport).registry)
-	defer func() {
-		assert.NotNil(t, recover())
-	}()
 	tr.SetRegistry(NewServerRegistry(nil, nil, nil))
 }
 
