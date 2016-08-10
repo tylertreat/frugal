@@ -13,6 +13,7 @@ dependencies:
   w_transport: ^2.5.0
 description: A frugal client for Dart
 dev_dependencies:
+  analyzer: ^0.27.3
   coverage: ^0.7.2
   dart_dev: ^1.4.0
   dart_style: ^0.2.4
