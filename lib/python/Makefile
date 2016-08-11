@@ -1,7 +1,6 @@
 SHELL := /bin/bash
 PYTHON := python
 PIP := pip
-HOME := $(PWD)
 
 all: deps
 
