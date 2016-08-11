@@ -1,1 +1,1 @@
-w-thrift==1.0.0.dev5
+w-thrift==1.0.0-dev5
