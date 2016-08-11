@@ -21,8 +21,10 @@ const (
 	tabtabtabtabtab  = tab + tab + tab + tab + tab
 )
 
+type asyncFramework int
+
 const (
-	vanilla = iota
+	vanilla asyncFramework = iota
 	tornado
 	asyncio
 )
@@ -1133,7 +1135,7 @@ func getElem() string {
 	return s
 }
 
-func getAsyncOpt(options map[string]string) int {
+func getAsyncOpt(options map[string]string) asyncFramework {
 	if _, ok := options["tornado"]; ok {
 		return tornado
 	} else if _, ok := options["asyncio"]; ok {
