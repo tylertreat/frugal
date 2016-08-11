@@ -21,10 +21,10 @@ const (
 	tabtabtabtabtab  = tab + tab + tab + tab + tab
 )
 
-type asyncFramework int
+type concurrencyModel int
 
 const (
-	vanilla asyncFramework = iota
+	synchronous concurrencyModel = iota
 	tornado
 	asyncio
 )
@@ -1135,11 +1135,11 @@ func getElem() string {
 	return s
 }
 
-func getAsyncOpt(options map[string]string) asyncFramework {
+func getAsyncOpt(options map[string]string) concurrencyModel {
 	if _, ok := options["tornado"]; ok {
 		return tornado
 	} else if _, ok := options["asyncio"]; ok {
 		return asyncio
 	}
-	return vanilla
+	return synchronous
 }
