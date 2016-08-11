@@ -521,7 +521,7 @@ func (t *Thrift) validateConstant(constant *Constant, includes map[string]*Fruga
 				return nil
 			}
 		}
-		return fmt.Errorf("Refenced constant %s from include %s not found",
+		return fmt.Errorf("Referenced constant %s from include %s not found",
 			paramName, includeName)
 	}
 
