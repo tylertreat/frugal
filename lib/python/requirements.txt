@@ -1,1 +1,1 @@
-git+git://github.com/apache/thrift.git@1654fe99aff4dc69c52ba361124ead1734cd9be8#egg=thrift&subdirectory=lib/py
+w-thrift==1.0.0-dev5
