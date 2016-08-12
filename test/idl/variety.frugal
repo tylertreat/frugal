@@ -103,6 +103,7 @@ struct EventWrapper {
     6: list<list<int>> Nums,
     7: list<ItsAnEnum> Enums,
     8: bool aBoolField,
+    9: TestingUnions a_union,
 }
 
 exception AwesomeException {
