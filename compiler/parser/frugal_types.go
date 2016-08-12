@@ -167,6 +167,7 @@ func (f *Frugal) IsStruct(t *Type) bool {
 	return t.KeyType == nil && t.ValueType == nil && !f.IsEnum(t)
 }
 
+// IsUnion indicates if the underlying types is a union.
 func (f *Frugal) IsUnion(t *Type) bool {
 	t = f.UnderlyingType(t)
 
