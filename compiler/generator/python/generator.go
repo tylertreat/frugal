@@ -817,8 +817,9 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	}
 	publisher += tabtab + "}\n\n"
 
+	asyncOpt := getAsyncOpt(g.Options)
 	publisher += tab
-	switch getAsyncOpt(g.Options) {
+	switch asyncOpt {
 	case tornado:
 		publisher += "@gen.coroutine\n" + tab
 	case asyncio:
@@ -827,7 +828,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += "def open(self):\n"
 
 	publisher += tabtab
-	switch getAsyncOpt(g.Options) {
+	switch asyncOpt {
 	case tornado:
 		publisher += "yield "
 	case asyncio:
@@ -836,7 +837,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += "self._transport.open()\n\n"
 
 	publisher += tab
-	switch getAsyncOpt(g.Options) {
+	switch asyncOpt {
 	case tornado:
 		publisher += "@gen.coroutine\n" + tab
 	case asyncio:
@@ -845,7 +846,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += "def close(self):\n"
 
 	publisher += tabtab
-	switch getAsyncOpt(g.Options) {
+	switch asyncOpt {
 	case tornado:
 		publisher += "yield "
 	case asyncio:

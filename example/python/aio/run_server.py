@@ -48,7 +48,7 @@ async def run_nats_server():
     subject = "foo"
     server = FNatsServer(nats_client, subject, processor, prot_factory)
 
-    root.info("Starting Nats server...")
+    root.info("Starting Nats rpc server...")
 
     await server.serve()
 
@@ -62,7 +62,7 @@ async def run_http_server():
     app.router.add_route('POST', '/frugal',
                          new_http_handler(processor, prot_factory))
 
-    root.info('Starting HTTP server...')
+    root.info('Starting HTTP rpc server...')
     await asyncio.get_event_loop().create_server(
             app.make_handler(), host='127.0.0.1', port=8090)
 
