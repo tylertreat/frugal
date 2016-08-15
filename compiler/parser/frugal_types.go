@@ -3,7 +3,6 @@ package parser
 import (
 	"fmt"
 	"sort"
-	"strconv"
 )
 
 //go:generate pigeon -o grammar.peg.go ./grammar.peg
