@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -33,8 +33,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class FStatelessNatsServer implements FServer {
 
-    private static final int DEFAULT_WORK_QUEUE_LEN = 64;
     private static final Logger LOGGER = LoggerFactory.getLogger(FStatelessNatsServer.class);
+    private static final int DEFAULT_WORK_QUEUE_LEN = 64;
 
     private final Connection conn;
     private final FProcessor processor;
@@ -44,9 +44,8 @@ public class FStatelessNatsServer implements FServer {
     private final String queue;
     private long highWatermark = FTransport.DEFAULT_WATERMARK;
 
-    private ExecutorService workerPool;
-    private final BlockingQueue<Object> shutdown = new ArrayBlockingQueue<>(1);
-    private final BlockingQueue<Runnable> workQueue;
+    private final CountDownLatch shutdownSignal = new CountDownLatch(1);
+    private final ExecutorService executorService;
 
     /**
      * Creates a new FStatelessNatsServer which receives requests on the given subject and queue.
@@ -61,19 +60,16 @@ public class FStatelessNatsServer implements FServer {
      * @param protoFactory FProtocolFactory used for input and output protocols
      * @param subject      NATS subject to receive requests on
      * @param queue        NATS queue group to receive requests on
-     * @param workerCount  thread pool size
      */
     private FStatelessNatsServer(Connection conn, FProcessor processor, FProtocolFactory protoFactory,
-                                 String subject, String queue, int workerCount, int queueLength) {
+                                 String subject, String queue, ExecutorService executorService) {
         this.conn = conn;
         this.processor = processor;
         this.inputProtoFactory = protoFactory;
         this.outputProtoFactory = protoFactory;
         this.subject = subject;
         this.queue = queue;
-        this.workQueue = new ArrayBlockingQueue<>(queueLength);
-        this.workerPool = new ThreadPoolExecutor(1, workerCount, 30, TimeUnit.SECONDS, workQueue,
-                new BlockingRejectedExecutionHandler());
+        this.executorService = executorService;
     }
 
     /**
@@ -90,6 +86,7 @@ public class FStatelessNatsServer implements FServer {
         private int workerCount = 1;
         private int queueLength = DEFAULT_WORK_QUEUE_LEN;
         private long highWatermark = FTransport.DEFAULT_WATERMARK;
+        private ExecutorService executorService;
 
         /**
          * Creates a new Builder which creates FStatelessNatsServers that subscribe to the given NATS subject.
@@ -140,6 +137,30 @@ public class FStatelessNatsServer implements FServer {
         }
 
         /**
+         * Set the executor service used to execute incoming processor tasks.
+         * If set, overrides withQueueLength and withWorkerCount options.
+         * <p>
+         * Defaults to:
+         * <pre>
+         * {@code
+         * new ThreadPoolExecutor(1,
+         *                        workerCount,
+         *                        30,
+         *                        TimeUnit.SECONDS,
+         *                        new ArrayBlockingQueue<>(queueLength),
+         *                        new BlockingRejectedExecutionHandler());
+         * }
+         * </pre>
+         *
+         * @param executorService ExecutorService to run tasks
+         * @return Builder
+         */
+        public Builder withExecutorService(ExecutorService executorService) {
+            this.executorService = executorService;
+            return this;
+        }
+
+        /**
          * Controls the high watermark which determines the time spent waiting in the queue before triggering slow
          * consumer logic.
          *
@@ -157,8 +178,14 @@ public class FStatelessNatsServer implements FServer {
          * @return FStatelessNatsServer
          */
         public FStatelessNatsServer build() {
-            FStatelessNatsServer server = new FStatelessNatsServer(conn, processor, protoFactory, subject, queue,
-                    workerCount, queueLength);
+            if (executorService == null) {
+                this.executorService = new ThreadPoolExecutor(
+                        1, workerCount, 30, TimeUnit.SECONDS,
+                        new ArrayBlockingQueue<>(queueLength),
+                        new BlockingRejectedExecutionHandler());
+            }
+            FStatelessNatsServer server =
+                    new FStatelessNatsServer(conn, processor, protoFactory, subject, queue, executorService);
             server.setHighWatermark(highWatermark);
             return server;
         }
@@ -170,7 +197,7 @@ public class FStatelessNatsServer implements FServer {
         Subscription sub = conn.subscribe(subject, queue, newRequestHandler());
         LOGGER.info("Frugal server running...");
         try {
-            shutdown.take();
+            shutdownSignal.await();
         } catch (InterruptedException ignored) {
         }
         LOGGER.info("Frugal server stopping...");
@@ -185,22 +212,18 @@ public class FStatelessNatsServer implements FServer {
     @Override
     public void stop() throws TException {
         // Attempt to perform an orderly shutdown of the worker pool by trying to complete any in-flight requests.
-        workerPool.shutdown();
+        executorService.shutdown();
         try {
-            if (!workerPool.awaitTermination(30, TimeUnit.SECONDS)) {
-                workerPool.shutdownNow();
+            if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
             }
         } catch (InterruptedException e) {
-            workerPool.shutdownNow();
+            executorService.shutdownNow();
             Thread.currentThread().interrupt();
         }
 
         // Unblock serving thread.
-        try {
-            shutdown.put(new Object());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        shutdownSignal.countDown();
     }
 
     /**
@@ -216,7 +239,7 @@ public class FStatelessNatsServer implements FServer {
                     return;
                 }
 
-                workerPool.submit(new Request(message.getData(), System.currentTimeMillis(), message.getReplyTo(),
+                executorService.submit(new Request(message.getData(), System.currentTimeMillis(), message.getReplyTo(),
                         getHighWatermark(), inputProtoFactory, outputProtoFactory, processor, conn));
             }
         };
@@ -308,16 +331,8 @@ public class FStatelessNatsServer implements FServer {
         return queue;
     }
 
-    ExecutorService getWorkerPool() {
-        return workerPool;
-    }
-
-    void setWorkerPool(ExecutorService workerPool) {
-        this.workerPool = workerPool;
-    }
-
-    BlockingQueue<Runnable> getWorkQueue() {
-        return workQueue;
+    ExecutorService getExecutorService() {
+        return executorService;
     }
 
     @Override
