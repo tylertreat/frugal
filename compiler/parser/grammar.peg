@@ -480,8 +480,11 @@ Operation ← docstr:(DocString __)? name:Identifier _ ':' __ typ:Identifier __ 
 
 Literal ← (('"' (`\"` / [^"])* '"') / ('\'' (`\'` / [^'])* '\'')) {
     if len(c.text) != 0 && c.text[0] == '\'' {
-        return strconv.Unquote(`"` + strings.Replace(string(c.text[1:len(c.text)-1]), `\'`, `'`, -1) + `"`)
+        intermediate := strings.Replace(string(c.text[1:len(c.text)-1]), `\'`, `'`, -1)
+        // TODO
+        return strconv.Unquote(`"` + strings.Replace(intermediate, `"`, `\"`, -1) + `"`)
     }
+
     return strconv.Unquote(string(c.text))
 }
 

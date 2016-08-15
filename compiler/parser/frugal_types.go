@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"sort"
+	"strconv"
 )
 
 //go:generate pigeon -o grammar.peg.go ./grammar.peg
@@ -29,6 +30,7 @@ type ScopePrefix struct {
 // Template returns the prefix where variables are replaced with the given
 // string.
 func (n *ScopePrefix) Template(s string) string {
+	strconv.Unquote("")
 	return prefixVariable.ReplaceAllString(n.String, s)
 }
 

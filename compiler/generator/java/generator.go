@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"strconv"
 	"time"
 	"unicode"
 
@@ -342,7 +343,7 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) 
 		case "double":
 			return "", fmt.Sprintf("%v", value)
 		case "string":
-			return "", fmt.Sprintf("\"%v\"", value)
+			return "", fmt.Sprintf("%v", strconv.Quote(value.(string)))
 		case "binary":
 			return "", fmt.Sprintf("java.nio.ByteBuffer.wrap(\"%v\".getBytes())", value)
 		}

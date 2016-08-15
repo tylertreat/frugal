@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"strconv"
 
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/globals"
@@ -181,7 +182,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 		case "i8", "byte", "i16", "i32", "i64", "double":
 			return fmt.Sprintf("%v", value)
 		case "string", "binary":
-			return fmt.Sprintf("\"%s\"", value)
+			return fmt.Sprintf("%s", strconv.Quote(value.(string)))
 		case "list", "set":
 			contents := ""
 			if underlyingType.Name == "set" {

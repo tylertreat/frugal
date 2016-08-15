@@ -49,6 +49,10 @@ const FalseConstant = false
 
 const ConstHc = 2
 
+const EvilString = "thin'g\" \""
+
+const EvilString2 = "th'ing\"ad\"f"
+
 func init() {
 	DEFAULT_ID = -1
 	OtherDefault = -1
