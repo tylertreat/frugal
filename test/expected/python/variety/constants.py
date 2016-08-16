@@ -45,3 +45,5 @@ bin_const = "hello"
 true_constant = True
 false_constant = False
 const_hc = 2
+evil_string = "thin'g\" \""
+evil_string2 = "th'ing\"ad\"f"

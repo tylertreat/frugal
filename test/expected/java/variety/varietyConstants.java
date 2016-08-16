@@ -93,4 +93,8 @@ public class varietyConstants {
 
 		public static final HealthCondition const_hc = HealthCondition.WARN;
 
+		public static final String evil_string = "thin'g\" \"";
+
+		public static final String evil_string2 = "th'ing\"ad\"f";
+
 }
