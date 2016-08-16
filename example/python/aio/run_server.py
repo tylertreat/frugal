@@ -11,10 +11,7 @@ from aiohttp import web
 from nats.aio.client import Client as NatsClient
 
 from frugal.protocol import FProtocolFactory
-from frugal.aio.server import (
-    FNatsServer,
-    new_http_handler,
-)
+from frugal.aio.server import FNatsServer
 
 from event.f_Foo import Processor as FFooProcessor
 from example_handler import ExampleHandler
@@ -53,21 +50,7 @@ async def run_nats_server():
     await server.serve()
 
 
-async def run_http_server():
-    app = web.Application()
-
-    prot_factory = FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
-    handler = ExampleHandler()
-    processor = FFooProcessor(handler)
-    app.router.add_route('POST', '/frugal',
-                         new_http_handler(processor, prot_factory))
-
-    root.info('Starting HTTP rpc server...')
-    await asyncio.get_event_loop().create_server(
-            app.make_handler(), host='127.0.0.1', port=8090)
-
 if __name__ == '__main__':
     io_loop = asyncio.get_event_loop()
     asyncio.ensure_future(run_nats_server())
-    asyncio.ensure_future(run_http_server())
     io_loop.run_forever()

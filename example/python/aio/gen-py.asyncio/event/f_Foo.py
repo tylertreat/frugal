@@ -8,8 +8,6 @@
 
 from datetime import timedelta
 import inspect
-from threading import Lock
-
 from frugal.middleware import Method
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
@@ -107,7 +105,7 @@ class Client(base.f_BaseFoo.Client, Iface):
 
     async def _send_ping(self, ctx):
         oprot = self._oprot
-        with self._write_lock:
+        async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.CALL, 0)
             args = ping_args()
@@ -159,7 +157,7 @@ class Client(base.f_BaseFoo.Client, Iface):
 
     async def _send_blah(self, ctx, num, Str, event):
         oprot = self._oprot
-        with self._write_lock:
+        async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('blah', TMessageType.CALL, 0)
             args = blah_args()
@@ -214,7 +212,7 @@ class Client(base.f_BaseFoo.Client, Iface):
 
     async def _send_oneWay(self, ctx, id, req):
         oprot = self._oprot
-        with self._write_lock:
+        async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('oneWay', TMessageType.CALL, 0)
             args = oneWay_args()
@@ -244,7 +242,7 @@ class _ping(FProcessorFunction):
 
     def __init__(self, handler, lock):
         self._handler = handler
-        self._lock = lock
+        self._write_lock = lock
 
     async def process(self, ctx, iprot, oprot):
         args = ping_args()
@@ -254,7 +252,7 @@ class _ping(FProcessorFunction):
         ret = self._handler.ping(ctx)
         if inspect.iscoroutine(ret):
             ret = await ret
-        with self._lock:
+        async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
             result.write(oprot)
@@ -266,7 +264,7 @@ class _blah(FProcessorFunction):
 
     def __init__(self, handler, lock):
         self._handler = handler
-        self._lock = lock
+        self._write_lock = lock
 
     async def process(self, ctx, iprot, oprot):
         args = blah_args()
@@ -282,7 +280,7 @@ class _blah(FProcessorFunction):
             result.awe = awe
         except base.ttypes.api_exception as api:
             result.api = api
-        with self._lock:
+        async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('blah', TMessageType.REPLY, 0)
             result.write(oprot)
@@ -294,7 +292,7 @@ class _oneWay(FProcessorFunction):
 
     def __init__(self, handler, lock):
         self._handler = handler
-        self._lock = lock
+        self._write_lock = lock
 
     async def process(self, ctx, iprot, oprot):
         args = oneWay_args()

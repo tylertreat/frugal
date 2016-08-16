@@ -20,7 +20,6 @@ type AsyncIOGenerator struct {
 func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Service) error {
 	imports := "from datetime import timedelta\n"
 	imports += "import inspect\n"
-	imports += "from threading import Lock\n\n"
 
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.processor import FBaseProcessor\n"
@@ -86,8 +85,6 @@ func (a *AsyncIOGenerator) GenerateService(file *os.File, s *parser.Service) err
 }
 
 func (a *AsyncIOGenerator) exposeServiceModule(path string, service *parser.Service) error {
-	// Expose service in __init__.py.
-	// TODO: Generate __init__.py ourselves once Thrift is removed.
 	initFile := fmt.Sprintf("%s%s__init__.py", path, string(os.PathSeparator))
 	init, err := ioutil.ReadFile(initFile)
 	if err != nil {
@@ -127,7 +124,7 @@ func (a *AsyncIOGenerator) generateClient(service *parser.Service) string {
 		contents += tabtab + "self._transport = transport\n"
 		contents += tabtab + "self._protocol_factory = protocol_factory\n"
 		contents += tabtab + "self._oprot = protocol_factory.get_protocol(transport)\n"
-		contents += tabtab + "self._write_lock = Lock()\n"
+		contents += tabtab + "self._write_lock = asyncio.Lock()\n"
 		contents += tabtab + "self._methods = "
 	}
 	contents += "{\n"
@@ -182,7 +179,7 @@ func (a *AsyncIOGenerator) generateClientSendMethod(method *parser.Method) strin
 	contents := ""
 	contents += tab + fmt.Sprintf("async def _send_%s(self, ctx%s):\n", method.Name, a.generateClientArgs(method.Arguments))
 	contents += tabtab + "oprot = self._oprot\n"
-	contents += tabtab + "with self._write_lock:\n"
+	contents += tabtab + "async with self._write_lock:\n"
 	contents += tabtabtab + "oprot.write_request_headers(ctx)\n"
 	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
 	contents += tabtabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
@@ -242,12 +239,39 @@ func (a *AsyncIOGenerator) generateServer(service *parser.Service) string {
 	return contents
 }
 
+func (g *AsyncIOGenerator) generateProcessor(service *parser.Service) string {
+	contents := ""
+	if service.Extends != "" {
+		contents += fmt.Sprintf("class Processor(%s.Processor):\n\n", g.getServiceExtendsName(service))
+	} else {
+		contents += "class Processor(FBaseProcessor):\n\n"
+	}
+
+	contents += tab + "def __init__(self, handler):\n"
+	contents += g.generateDocString([]string{
+		"Create a new Processor.\n",
+		"Args:",
+		tab + "handler: Iface",
+	}, tabtab)
+	if service.Extends != "" {
+		contents += tabtab + "super(Processor, self).__init__(handler)\n"
+	} else {
+		contents += tabtab + "super(Processor, self).__init__(write_lock_constructor=asyncio.Lock)\n"
+	}
+	for _, method := range service.Methods {
+		contents += tabtab + fmt.Sprintf("self.add_to_processor_map('%s', _%s(handler, self.get_write_lock()))\n",
+			method.Name, method.Name)
+	}
+	contents += "\n\n"
+	return contents
+}
+
 func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) string {
 	contents := ""
 	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
 	contents += tabtab + "self._handler = handler\n"
-	contents += tabtab + "self._lock = lock\n\n"
+	contents += tabtab + "self._write_lock = lock\n\n"
 
 	contents += tab + "async def process(self, ctx, iprot, oprot):\n"
 	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
@@ -273,7 +297,7 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
 	if !method.Oneway {
-		contents += tabtab + "with self._lock:\n"
+		contents += tabtab + "async with self._write_lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
 		contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", method.Name)
 		contents += tabtabtab + "result.write(oprot)\n"

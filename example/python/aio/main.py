@@ -14,7 +14,6 @@ from frugal.protocol import FProtocolFactory
 from frugal.provider import FScopeProvider
 from frugal.aio.transport import (
     FNatsTransport,
-    FHttpTransport,
     FNatsScopeTransportFactory,
 )
 
@@ -55,21 +54,11 @@ async def main():
     if "-publisher" in sys.argv or len(sys.argv) == 1:
         root.debug("Running EventsPublisher")
         await run_publisher(nats_client, prot_factory)
-    if "-http" in sys.argv:
-        root.debug("Running FFooClient with NATS and HTTP")
-        await run_client(nats_client, prot_factory, http=True)
 
     await nats_client.close()
 
 
-async def run_client(nats_client, prot_factory, http=False):
-    await run_nats_client(nats_client, prot_factory)
-
-    if http:
-        await run_http_client(prot_factory)
-
-
-async def run_nats_client(nats_client, prot_factory):
+async def run_client(nats_client, prot_factory):
     nats_transport = FNatsTransport(nats_client, "foo")
 
     try:
@@ -98,36 +87,6 @@ async def run_nats_client(nats_client, prot_factory):
     root.info('Response header foo: {}'.format(ctx.get_response_header("foo")))
 
     await nats_transport.close()
-
-
-async def run_http_client(prot_factory):
-    http_transport = FHttpTransport('http://localhost:8090/frugal')
-
-    try:
-        await http_transport.open()
-    except TTransportException as ex:
-        logging.error(ex)
-        return
-
-    foo_client = FFooClient(http_transport, prot_factory,
-                            middleware=logging_middleware)
-    root.info('oneWay()')
-    await foo_client.oneWay(FContext(), 123, {123: 'request'})
-
-    root.info('basePing()')
-    await foo_client.basePing(FContext())
-
-    root.info('ping()')
-    await foo_client.ping(FContext())
-
-    ctx = FContext()
-    event = Event(43, 'other hello world')
-    root.info('blah()')
-    b = await foo_client.blah(ctx, 203, 'an http message', event)
-    root.info('blah response {}'.format(b))
-    root.info('response header foo: {}'.format(ctx.get_response_header('foo')))
-
-    await http_transport.close()
 
 
 async def run_publisher(nats_client, prot_factory):

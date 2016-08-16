@@ -8,8 +8,6 @@
 
 from datetime import timedelta
 import inspect
-from threading import Lock
-
 from frugal.middleware import Method
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
@@ -80,7 +78,7 @@ class Client(Iface):
         self._transport = transport
         self._protocol_factory = protocol_factory
         self._oprot = protocol_factory.get_protocol(transport)
-        self._write_lock = Lock()
+        self._write_lock = asyncio.Lock()
         self._methods = {
             'ping': Method(self._ping, middleware),
             'bleh': Method(self._bleh, middleware),
@@ -112,7 +110,7 @@ class Client(Iface):
 
     async def _send_ping(self, ctx):
         oprot = self._oprot
-        with self._write_lock:
+        async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.CALL, 0)
             args = ping_args()
@@ -164,7 +162,7 @@ class Client(Iface):
 
     async def _send_bleh(self, ctx, one, Two, custom_ints):
         oprot = self._oprot
-        with self._write_lock:
+        async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('bleh', TMessageType.CALL, 0)
             args = bleh_args()
@@ -225,7 +223,7 @@ class Client(Iface):
 
     async def _send_getThing(self, ctx):
         oprot = self._oprot
-        with self._write_lock:
+        async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.CALL, 0)
             args = getThing_args()
@@ -277,7 +275,7 @@ class Client(Iface):
 
     async def _send_getMyInt(self, ctx):
         oprot = self._oprot
-        with self._write_lock:
+        async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.CALL, 0)
             args = getMyInt_args()
@@ -317,7 +315,7 @@ class Processor(FBaseProcessor):
         Args:
             handler: Iface
         """
-        super(Processor, self).__init__()
+        super(Processor, self).__init__(write_lock_constructor=asyncio.Lock)
         self.add_to_processor_map('ping', _ping(handler, self.get_write_lock()))
         self.add_to_processor_map('bleh', _bleh(handler, self.get_write_lock()))
         self.add_to_processor_map('getThing', _getThing(handler, self.get_write_lock()))
@@ -328,7 +326,7 @@ class _ping(FProcessorFunction):
 
     def __init__(self, handler, lock):
         self._handler = handler
-        self._lock = lock
+        self._write_lock = lock
 
     async def process(self, ctx, iprot, oprot):
         args = ping_args()
@@ -338,7 +336,7 @@ class _ping(FProcessorFunction):
         ret = self._handler.ping(ctx)
         if inspect.iscoroutine(ret):
             ret = await ret
-        with self._lock:
+        async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
             result.write(oprot)
@@ -350,7 +348,7 @@ class _bleh(FProcessorFunction):
 
     def __init__(self, handler, lock):
         self._handler = handler
-        self._lock = lock
+        self._write_lock = lock
 
     async def process(self, ctx, iprot, oprot):
         args = bleh_args()
@@ -366,7 +364,7 @@ class _bleh(FProcessorFunction):
             result.oops = oops
         except excepts.ttypes.InvalidData as err2:
             result.err2 = err2
-        with self._lock:
+        async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('bleh', TMessageType.REPLY, 0)
             result.write(oprot)
@@ -378,7 +376,7 @@ class _getThing(FProcessorFunction):
 
     def __init__(self, handler, lock):
         self._handler = handler
-        self._lock = lock
+        self._write_lock = lock
 
     async def process(self, ctx, iprot, oprot):
         args = getThing_args()
@@ -389,7 +387,7 @@ class _getThing(FProcessorFunction):
         if inspect.iscoroutine(ret):
             ret = await ret
         result.success = ret
-        with self._lock:
+        async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.REPLY, 0)
             result.write(oprot)
@@ -401,7 +399,7 @@ class _getMyInt(FProcessorFunction):
 
     def __init__(self, handler, lock):
         self._handler = handler
-        self._lock = lock
+        self._write_lock = lock
 
     async def process(self, ctx, iprot, oprot):
         args = getMyInt_args()
@@ -412,7 +410,7 @@ class _getMyInt(FProcessorFunction):
         if inspect.iscoroutine(ret):
             ret = await ret
         result.success = ret
-        with self._lock:
+        async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.REPLY, 0)
             result.write(oprot)

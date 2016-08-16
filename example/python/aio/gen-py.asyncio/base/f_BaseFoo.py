@@ -8,8 +8,6 @@
 
 from datetime import timedelta
 import inspect
-from threading import Lock
-
 from frugal.middleware import Method
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
@@ -49,7 +47,7 @@ class Client(Iface):
         self._transport = transport
         self._protocol_factory = protocol_factory
         self._oprot = protocol_factory.get_protocol(transport)
-        self._write_lock = Lock()
+        self._write_lock = asyncio.Lock()
         self._methods = {
             'basePing': Method(self._basePing, middleware),
         }
@@ -76,7 +74,7 @@ class Client(Iface):
 
     async def _send_basePing(self, ctx):
         oprot = self._oprot
-        with self._write_lock:
+        async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('basePing', TMessageType.CALL, 0)
             args = basePing_args()
@@ -111,7 +109,7 @@ class Processor(FBaseProcessor):
         Args:
             handler: Iface
         """
-        super(Processor, self).__init__()
+        super(Processor, self).__init__(write_lock_constructor=asyncio.Lock)
         self.add_to_processor_map('basePing', _basePing(handler, self.get_write_lock()))
 
 
@@ -119,7 +117,7 @@ class _basePing(FProcessorFunction):
 
     def __init__(self, handler, lock):
         self._handler = handler
-        self._lock = lock
+        self._write_lock = lock
 
     async def process(self, ctx, iprot, oprot):
         args = basePing_args()
@@ -129,7 +127,7 @@ class _basePing(FProcessorFunction):
         ret = self._handler.basePing(ctx)
         if inspect.iscoroutine(ret):
             ret = await ret
-        with self._lock:
+        async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('basePing', TMessageType.REPLY, 0)
             result.write(oprot)

@@ -17,10 +17,10 @@ class FProcessor(object):
 
 class FBaseProcessor(FProcessor):
 
-    def __init__(self):
+    def __init__(self, write_lock_constructor=Lock):
         """Create new instance of FBaseProcessor that will process requests."""
         self._processor_function_map = {}
-        self._write_lock = Lock()
+        self._write_lock = write_lock_constructor()
         self._function_map_lock = Lock()
 
     def add_to_processor_map(self, key, proc):
