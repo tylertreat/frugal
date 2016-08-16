@@ -167,6 +167,24 @@ func (f *Frugal) IsStruct(t *Type) bool {
 	return t.KeyType == nil && t.ValueType == nil && !f.IsEnum(t)
 }
 
+// IsUnion indicates if the underlying types is a union.
+func (f *Frugal) IsUnion(t *Type) bool {
+	t = f.UnderlyingType(t)
+
+	frugal := f
+	if t.IncludeName() != "" {
+		// The type is from an include
+		frugal = f.ParsedIncludes[t.IncludeName()]
+	}
+
+	for _, union := range frugal.Thrift.Unions {
+		if t.ParamName() == union.Name {
+			return true
+		}
+	}
+	return false
+}
+
 // IsEnum indicates if the underlying Type is an enum.
 func (f *Frugal) IsEnum(t *Type) bool {
 	include := t.IncludeName()

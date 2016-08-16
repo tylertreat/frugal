@@ -16,15 +16,15 @@ class VarietyConstants {
   static final int other_default = -1;
   static final int thirtyfour = 34;
   static final Map<String, String> MAPCONSTANT = {
-    'hello': 'world',
-    'goodnight': 'moon',
+    "hello": "world",
+    "goodnight": "moon",
   };
   static final t_variety.Event ConstEvent1 = new t_variety.Event()
     ..iD = -2
-    ..message = 'first one';
+    ..message = "first one";
   static final t_variety.Event ConstEvent2 = new t_variety.Event()
     ..iD = -7
-    ..message = 'second one';
+    ..message = "second one";
   static final List<int> NumsList = [
     2,
     4,
@@ -38,12 +38,14 @@ class VarietyConstants {
     0,
   ]);
   static final Map<String, t_variety.Event> MAPCONSTANT2 = {
-    'hello': new t_variety.Event()
+    "hello": new t_variety.Event()
       ..iD = -2
-      ..message = 'first here',
+      ..message = "first here",
   };
   static final Uint8List bin_const = new Uint8List.fromList(UTF8.encode('hello'));
   static final bool true_constant = true;
   static final bool false_constant = false;
   static final int const_hc = 2;
+  static final String evil_string = "thin'g\" \"";
+  static final String evil_string2 = "th'ing\"ad\"f";
 }

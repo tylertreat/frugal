@@ -18,6 +18,7 @@ class EventWrapper implements TBase {
   static final TField _NUMS_FIELD_DESC = new TField("Nums", TType.LIST, 6);
   static final TField _ENUMS_FIELD_DESC = new TField("Enums", TType.LIST, 7);
   static final TField _A_BOOL_FIELD_FIELD_DESC = new TField("aBoolField", TType.BOOL, 8);
+  static final TField _A_UNION_FIELD_DESC = new TField("a_union", TType.STRUCT, 9);
 
   int _iD;
   static const int ID = 1;
@@ -35,6 +36,8 @@ class EventWrapper implements TBase {
   static const int ENUMS = 7;
   bool _aBoolField;
   static const int ABOOLFIELD = 8;
+  t_variety.TestingUnions _a_union;
+  static const int A_UNION = 9;
 
   bool __isset_iD = false;
   bool __isset_aBoolField = false;
@@ -140,6 +143,18 @@ class EventWrapper implements TBase {
     this.__isset_aBoolField = false;
   }
 
+  t_variety.TestingUnions get a_union => this._a_union;
+
+  set a_union(t_variety.TestingUnions a_union) {
+    this._a_union = a_union;
+  }
+
+  bool isSetA_union() => this.a_union != null;
+
+  unsetA_union() {
+    this.a_union = null;
+  }
+
   getFieldValue(int fieldID) {
     switch (fieldID) {
       case ID:
@@ -158,6 +173,8 @@ class EventWrapper implements TBase {
         return this.enums;
       case ABOOLFIELD:
         return this.aBoolField;
+      case A_UNION:
+        return this.a_union;
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -229,6 +246,14 @@ class EventWrapper implements TBase {
         }
         break;
 
+      case A_UNION:
+        if(value == null) {
+          unsetA_union();
+        } else {
+          this.a_union = value;
+        }
+        break;
+
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -253,6 +278,8 @@ class EventWrapper implements TBase {
         return isSetEnums();
       case ABOOLFIELD:
         return isSetABoolField();
+      case A_UNION:
+        return isSetA_union();
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -366,6 +393,14 @@ class EventWrapper implements TBase {
             TProtocolUtil.skip(iprot, field.type);
           }
           break;
+        case A_UNION:
+          if(field.type == TType.STRUCT) {
+            a_union = new t_variety.TestingUnions();
+            a_union.read(iprot);
+          } else {
+            TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
         default:
           TProtocolUtil.skip(iprot, field.type);
           break;
@@ -445,6 +480,11 @@ class EventWrapper implements TBase {
     oprot.writeFieldBegin(_A_BOOL_FIELD_FIELD_DESC);
     oprot.writeBool(aBoolField);
     oprot.writeFieldEnd();
+    if(this.a_union != null) {
+      oprot.writeFieldBegin(_A_UNION_FIELD_DESC);
+      a_union.write(oprot);
+      oprot.writeFieldEnd();
+    }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
   }
@@ -508,6 +548,14 @@ class EventWrapper implements TBase {
     ret.write(", ");
     ret.write("aBoolField:");
     ret.write(this.aBoolField);
+
+    ret.write(", ");
+    ret.write("a_union:");
+    if(this.a_union == null) {
+      ret.write("null");
+    } else {
+      ret.write(this.a_union);
+    }
 
     ret.write(")");
 

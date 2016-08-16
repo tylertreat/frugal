@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -342,7 +343,7 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) 
 		case "double":
 			return "", fmt.Sprintf("%v", value)
 		case "string":
-			return "", fmt.Sprintf("\"%v\"", value)
+			return "", fmt.Sprintf("%v", strconv.Quote(value.(string)))
 		case "binary":
 			return "", fmt.Sprintf("java.nio.ByteBuffer.wrap(\"%v\".getBytes())", value)
 		}
@@ -1659,7 +1660,7 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 
 	contents += tabtab + "// check for sub-struct validity\n"
 	for _, field := range s.Fields {
-		if g.Frugal.IsStruct(field.Type) {
+		if g.Frugal.IsStruct(field.Type) && !g.Frugal.IsUnion(field.Type) {
 			contents += fmt.Sprintf(tabtab+"if (%s != null) {\n", field.Name)
 			contents += fmt.Sprintf(tabtabtab+"%s.validate();\n", field.Name)
 			contents += tabtab + "}\n"

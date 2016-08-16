@@ -66,8 +66,8 @@ public class FStatelessNatsServerTest {
                         .build();
 
         assertEquals(server.getQueue(), "myQueue");
-        assertEquals(server.getWorkQueue().remainingCapacity(), 7);
-        assertEquals(((ThreadPoolExecutor) server.getWorkerPool()).getMaximumPoolSize(), 10);
+        assertEquals(((ThreadPoolExecutor) server.getExecutorService()).getQueue().remainingCapacity(), 7);
+        assertEquals(((ThreadPoolExecutor) server.getExecutorService()).getMaximumPoolSize(), 10);
     }
 
     @Test
@@ -107,7 +107,9 @@ public class FStatelessNatsServerTest {
         ExecutorService executor = mock(ExecutorService.class);
         ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
         when(executor.submit(captor.capture())).thenReturn(null);
-        server.setWorkerPool(executor);
+        FStatelessNatsServer server =
+                new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+                        .withExecutorService(executor).build();
         MessageHandler handler = server.newRequestHandler();
         String reply = "reply";
         byte[] data = "this is a request".getBytes();
@@ -131,7 +133,9 @@ public class FStatelessNatsServerTest {
     public void testRequestHandler_noReply() {
         ExecutorService executor = mock(ExecutorService.class);
         when(executor.submit(any(Runnable.class))).thenReturn(null);
-        server.setWorkerPool(executor);
+        FStatelessNatsServer server =
+                new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+                .withExecutorService(executor).build();
         MessageHandler handler = server.newRequestHandler();
         byte[] data = "this is a request".getBytes();
         Message msg = new Message(subject, null, data);
