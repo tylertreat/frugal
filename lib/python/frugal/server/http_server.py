@@ -60,13 +60,13 @@ class FHttpServer(FServer):
 
                 # Encode response.
                 response = otrans.getvalue()
-                frame_length = pack('!I', len(response))
-                frame = b64encode(frame_length + response)
-
-                if len(frame) > response_limit > 0:
+                if len(response) > response_limit > 0:
                     self.send_response(413)
                     self.end_headers()
                     return
+
+                frame_length = pack('!I', len(response))
+                frame = b64encode(frame_length + response)
 
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/x-frugal')

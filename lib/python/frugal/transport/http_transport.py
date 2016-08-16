@@ -51,7 +51,7 @@ class FBaseHttpTransport(FSynchronousTransport):
 
     def write(self, buf):
         size = len(buf) + len(self._wbuff.getvalue())
-        if size > self._request_capacity > 0:
+        if size + 4 > self._request_capacity > 0:
             self._wbuff = BytesIO()
             raise FMessageSizeException('Message exceeds max message size')
 
