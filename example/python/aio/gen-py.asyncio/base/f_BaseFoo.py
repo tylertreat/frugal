@@ -6,16 +6,16 @@
 
 
 
+import asyncio
 from datetime import timedelta
 import inspect
+
+from frugal.aio.processor import FBaseProcessor
+from frugal.aio.processor import FProcessorFunction
+from frugal.aio.registry import FClientRegistry
 from frugal.middleware import Method
-from frugal.processor import FBaseProcessor
-from frugal.processor import FProcessorFunction
-from frugal.registry import FClientRegistry
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
-import asyncio
-
 from base.BaseFoo import *
 from base.ttypes import *
 
@@ -63,13 +63,13 @@ class Client(Iface):
         timeout = ctx.get_timeout() / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
-        self._transport.register(ctx, self._recv_basePing(ctx, future))
+        await self._transport.register(ctx, self._recv_basePing(ctx, future))
         await self._send_basePing(ctx)
 
         try:
             result = await timed_future
         finally:
-            self._transport.unregister(ctx)
+            await self._transport.unregister(ctx)
         return result
 
     async def _send_basePing(self, ctx):
@@ -109,7 +109,7 @@ class Processor(FBaseProcessor):
         Args:
             handler: Iface
         """
-        super(Processor, self).__init__(write_lock_constructor=asyncio.Lock)
+        super(Processor, self).__init__()
         self.add_to_processor_map('basePing', _basePing(handler, self.get_write_lock()))
 
 

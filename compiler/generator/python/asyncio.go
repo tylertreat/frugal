@@ -18,16 +18,16 @@ type AsyncIOGenerator struct {
 
 // GenerateServiceImports generates necessary imports for the given service.
 func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Service) error {
-	imports := "from datetime import timedelta\n"
-	imports += "import inspect\n"
+	imports := "import asyncio\n"
+	imports += "from datetime import timedelta\n"
+	imports += "import inspect\n\n"
 
+	imports += "from frugal.aio.processor import FBaseProcessor\n"
+	imports += "from frugal.aio.processor import FProcessorFunction\n"
+	imports += "from frugal.aio.registry import FClientRegistry\n"
 	imports += "from frugal.middleware import Method\n"
-	imports += "from frugal.processor import FBaseProcessor\n"
-	imports += "from frugal.processor import FProcessorFunction\n"
-	imports += "from frugal.registry import FClientRegistry\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
-	imports += "import asyncio\n\n"
 
 	// Import include modules.
 	for _, include := range s.ReferencedIncludes() {
@@ -162,12 +162,12 @@ func (a *AsyncIOGenerator) generateClientMethod(method *parser.Method) string {
 	contents += tabtab + "timeout = ctx.get_timeout() / 1000.0\n"
 	contents += tabtab + "future = asyncio.Future()\n"
 	contents += tabtab + "timed_future = asyncio.wait_for(future, timeout)\n"
-	contents += tabtab + fmt.Sprintf("self._transport.register(ctx, self._recv_%s(ctx, future))\n", method.Name)
+	contents += tabtab + fmt.Sprintf("await self._transport.register(ctx, self._recv_%s(ctx, future))\n", method.Name)
 	contents += tabtab + fmt.Sprintf("await self._send_%s(ctx%s)\n\n", method.Name, a.generateClientArgs(method.Arguments))
 	contents += tabtab + "try:\n"
 	contents += tabtabtab + "result = await timed_future\n"
 	contents += tabtab + "finally:\n"
-	contents += tabtabtab + "self._transport.unregister(ctx)\n"
+	contents += tabtabtab + "await self._transport.unregister(ctx)\n"
 	contents += tabtab + "return result\n\n"
 	contents += a.generateClientSendMethod(method)
 	contents += a.generateClientRecvMethod(method)
@@ -256,7 +256,7 @@ func (g *AsyncIOGenerator) generateProcessor(service *parser.Service) string {
 	if service.Extends != "" {
 		contents += tabtab + "super(Processor, self).__init__(handler)\n"
 	} else {
-		contents += tabtab + "super(Processor, self).__init__(write_lock_constructor=asyncio.Lock)\n"
+		contents += tabtab + "super(Processor, self).__init__()\n"
 	}
 	for _, method := range service.Methods {
 		contents += tabtab + fmt.Sprintf("self.add_to_processor_map('%s', _%s(handler, self.get_write_lock()))\n",

@@ -1,7 +1,9 @@
 import logging
-from threading import Lock
+from asyncio import Lock
 
 from thrift.Thrift import TApplicationException, TMessageType, TType
+
+from frugal.aio.processor import FProcessorFunction
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +13,7 @@ class FProcessor(object):
     writes to some output stream.
     """
 
-    def process(self, iprot, oprot):
+    async def process(self, iprot, oprot):
         pass
 
 
@@ -21,23 +23,21 @@ class FBaseProcessor(FProcessor):
         """Create new instance of FBaseProcessor that will process requests."""
         self._processor_function_map = {}
         self._write_lock = Lock()
-        self._function_map_lock = Lock()
 
-    def add_to_processor_map(self, key, proc):
+    def add_to_processor_map(self, key: str, proc: FProcessorFunction):
         """Register the given FProcessorFunction.
 
         Args:
             key: processor function name
             proc: FProcessorFunction
         """
-        with self._function_map_lock:
-            self._processor_function_map[key] = proc
+        self._processor_function_map[key] = proc
 
     def get_write_lock(self):
         """Return the write lock."""
         return self._write_lock
 
-    def process(self, iprot, oprot):
+    async def process(self, iprot, oprot):
         """Process an input protocol and output protocol
 
         Args:
@@ -51,13 +51,12 @@ class FBaseProcessor(FProcessor):
         context = iprot.read_request_headers()
         name, _, _ = iprot.readMessageBegin()
 
-        with self._function_map_lock:
-            processor_function = self._processor_function_map.get(name)
+        processor_function = self._processor_function_map.get(name)
 
         # If the function was in our dict, call process on it.
         if processor_function:
             try:
-                return processor_function.process(context, iprot, oprot)
+                return await processor_function.process(context, iprot, oprot)
             except Exception as e:
                 logging.warn('frugal: error processing request with ' +
                              'correlation id %s: %s' %
@@ -70,7 +69,7 @@ class FBaseProcessor(FProcessor):
         ex = TApplicationException(TApplicationException.UNKNOWN_METHOD,
                                    "Unknown function: {0}".format(name))
 
-        with self._write_lock:
+        async with self._write_lock:
             oprot.write_response_headers(context)
             oprot.writeMessageBegin(name, TMessageType.EXCEPTION, 0)
             ex.write(oprot)

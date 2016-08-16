@@ -49,8 +49,8 @@ class FNatsTransport(FRegistryTransport):
         )
         self._is_open = True
 
-    def _on_message_callback(self, message):
-        self.execute_frame(message.data[4:])
+    async def _on_message_callback(self, message):
+        await self.execute_frame(message.data[4:])
 
     async def close(self):
         """Unsubscribe from the inbox subject."""

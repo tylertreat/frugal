@@ -85,7 +85,7 @@ class FHttpTransport(FRegistryTransport):
             # One-way method, drop response
             return
 
-        self.execute_frame(decoded[4:])
+        await self.execute_frame(decoded[4:])
 
     async def _make_request(self, data):
         """

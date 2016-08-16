@@ -6,7 +6,7 @@ from thrift.Thrift import TException
 from thrift.transport.TTransport import TMemoryBuffer
 
 from frugal import _NATS_MAX_MESSAGE_SIZE
-from frugal.processor import FProcessor
+from frugal.aio.processor import FProcessor
 from frugal.protocol import FProtocolFactory
 from frugal.server import FServer
 from frugal.transport import FBoundedMemoryBuffer
@@ -57,7 +57,7 @@ class FNatsServer(FServer):
 
         # process frame, first four bytes are the frame size
         iprot = self._protocol_factory.get_protocol(
-                TMemoryBuffer(message.data[4:])
+            TMemoryBuffer(message.data[4:])
         )
         out_transport = FBoundedMemoryBuffer(_NATS_MAX_MESSAGE_SIZE - 4)
         oprot = self._protocol_factory.get_protocol(out_transport)

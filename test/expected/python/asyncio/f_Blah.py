@@ -6,16 +6,16 @@
 
 
 
+import asyncio
 from datetime import timedelta
 import inspect
+
+from frugal.aio.processor import FBaseProcessor
+from frugal.aio.processor import FProcessorFunction
+from frugal.aio.registry import FClientRegistry
 from frugal.middleware import Method
-from frugal.processor import FBaseProcessor
-from frugal.processor import FProcessorFunction
-from frugal.registry import FClientRegistry
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
-import asyncio
-
 import excepts
 import validStructs
 import ValidTypes
@@ -99,13 +99,13 @@ class Client(Iface):
         timeout = ctx.get_timeout() / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
-        self._transport.register(ctx, self._recv_ping(ctx, future))
+        await self._transport.register(ctx, self._recv_ping(ctx, future))
         await self._send_ping(ctx)
 
         try:
             result = await timed_future
         finally:
-            self._transport.unregister(ctx)
+            await self._transport.unregister(ctx)
         return result
 
     async def _send_ping(self, ctx):
@@ -151,13 +151,13 @@ class Client(Iface):
         timeout = ctx.get_timeout() / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
-        self._transport.register(ctx, self._recv_bleh(ctx, future))
+        await self._transport.register(ctx, self._recv_bleh(ctx, future))
         await self._send_bleh(ctx, one, Two, custom_ints)
 
         try:
             result = await timed_future
         finally:
-            self._transport.unregister(ctx)
+            await self._transport.unregister(ctx)
         return result
 
     async def _send_bleh(self, ctx, one, Two, custom_ints):
@@ -212,13 +212,13 @@ class Client(Iface):
         timeout = ctx.get_timeout() / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
-        self._transport.register(ctx, self._recv_getThing(ctx, future))
+        await self._transport.register(ctx, self._recv_getThing(ctx, future))
         await self._send_getThing(ctx)
 
         try:
             result = await timed_future
         finally:
-            self._transport.unregister(ctx)
+            await self._transport.unregister(ctx)
         return result
 
     async def _send_getThing(self, ctx):
@@ -264,13 +264,13 @@ class Client(Iface):
         timeout = ctx.get_timeout() / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
-        self._transport.register(ctx, self._recv_getMyInt(ctx, future))
+        await self._transport.register(ctx, self._recv_getMyInt(ctx, future))
         await self._send_getMyInt(ctx)
 
         try:
             result = await timed_future
         finally:
-            self._transport.unregister(ctx)
+            await self._transport.unregister(ctx)
         return result
 
     async def _send_getMyInt(self, ctx):
@@ -315,7 +315,7 @@ class Processor(FBaseProcessor):
         Args:
             handler: Iface
         """
-        super(Processor, self).__init__(write_lock_constructor=asyncio.Lock)
+        super(Processor, self).__init__()
         self.add_to_processor_map('ping', _ping(handler, self.get_write_lock()))
         self.add_to_processor_map('bleh', _bleh(handler, self.get_write_lock()))
         self.add_to_processor_map('getThing', _getThing(handler, self.get_write_lock()))
