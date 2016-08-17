@@ -150,8 +150,8 @@ class FContext(object):
         return self
 
     def _check_string(self, string):
-        if not isinstance(string, str):
-            raise TypeError("Value should be a string.")
+        if not (isinstance(string, str) or isinstance(string, unicode)):
+            raise TypeError("Value should either be a string or unicode.")
 
     def _generate_cid(self):
         return uuid.uuid4().hex

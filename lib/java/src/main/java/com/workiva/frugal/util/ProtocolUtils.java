@@ -26,4 +26,12 @@ public class ProtocolUtils {
         System.arraycopy(strBytes, 0, buff, offset, s.length());
     }
 
+    public static byte[] encodeString(String s) {
+        return s.getBytes(Charset.forName("UTF-8"));
+    }
+
+    public static void writeStringBytes(byte[] strBytes, byte[] buff, int offset) {
+        System.arraycopy(strBytes, 0, buff, offset, strBytes.length);
+    }
+
 }

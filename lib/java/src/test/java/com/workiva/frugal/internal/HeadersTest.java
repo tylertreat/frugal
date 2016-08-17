@@ -10,6 +10,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -92,6 +93,16 @@ public class HeadersTest {
         byte[] encodedHeaders = Headers.encode(empty);
         Map<String, String> decodedHeaders = Headers.decodeFromFrame(encodedHeaders);
         assertEquals(empty, decodedHeaders);
+    }
+
+    @Test
+    public void testEncodeDecodeUTF8() throws TException {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Đ¥ÑØ", "δάüΓ");
+        headers.put("good\u00F1ight", "moo\u00F1");
+        byte[] encodedHeaders = Headers.encode(headers);
+        Map<String, String> decodedHeaders = Headers.decodeFromFrame(encodedHeaders);
+        assertEquals(headers, decodedHeaders);
     }
 
     @Test

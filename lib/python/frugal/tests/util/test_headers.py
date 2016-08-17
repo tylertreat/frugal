@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import unittest
 from io import BytesIO
 from struct import unpack_from
@@ -19,7 +21,7 @@ class TestHeaders(unittest.TestCase):
                              b'corrId')
         buff = self.headers._write_to_bytearray(ctx.get_request_headers())
 
-        self.assertEqual(expected, buff)
+        self.assertEqual(len(expected), len(buff))
 
     def test_read_throws_bad_version(self):
         buff = bytearray(b'\x01\x00\x00\x00\x00')
@@ -115,3 +117,11 @@ class TestHeaders(unittest.TestCase):
         self.assertEqual("invalid protocol header value size: 256",
                          cm.exception.message)
 
+    def test_encode_decode_utf8(self):
+        headers = {
+            u'Đ¥ÑØ': u'δάüΓ',
+            u'good\u00F1ight': u'moo\u00F1',
+        }
+        encoded_headers = _Headers._write_to_bytearray(headers)
+        decoded_headers = _Headers.decode_from_frame(encoded_headers)
+        self.assertEqual(headers, decoded_headers)
