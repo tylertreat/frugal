@@ -87,19 +87,19 @@ func (t *TornadoGenerator) generateClientMethod(method *parser.Method) string {
 	contents += tabtab + fmt.Sprintf("return self._methods['%s']([ctx%s])\n\n",
 		method.Name, t.generateClientArgs(method.Arguments))
 
+	contents += tab + "@gen.coroutine\n"
+	contents += tab + fmt.Sprintf("def _%s(self, ctx%s):\n", method.Name, t.generateClientArgs(method.Arguments))
+
 	if method.Oneway {
-		contents += tab + fmt.Sprintf("def _%s(self, ctx%s):\n", method.Name, t.generateClientArgs(method.Arguments))
-		contents += tabtab + fmt.Sprintf("self._send_%s(ctx%s)\n\n", method.Name, t.generateClientArgs(method.Arguments))
+		contents += tabtab + fmt.Sprintf("yield self._send_%s(ctx%s)\n\n", method.Name, t.generateClientArgs(method.Arguments))
 		contents += t.generateClientSendMethod(method)
 		return contents
 	}
 
-	contents += tab + "@gen.coroutine\n"
-	contents += tab + fmt.Sprintf("def _%s(self, ctx%s):\n", method.Name, t.generateClientArgs(method.Arguments))
 	contents += tabtab + "delta = timedelta(milliseconds=ctx.get_timeout())\n"
 	contents += tabtab + "future = gen.with_timeout(delta, Future())\n"
 	contents += tabtab + fmt.Sprintf("self._transport.register(ctx, self._recv_%s(ctx, future))\n", method.Name)
-	contents += tabtab + fmt.Sprintf("self._send_%s(ctx%s)\n\n", method.Name, t.generateClientArgs(method.Arguments))
+	contents += tabtab + fmt.Sprintf("yield self._send_%s(ctx%s)\n\n", method.Name, t.generateClientArgs(method.Arguments))
 	contents += tabtab + "try:\n"
 	contents += tabtabtab + "result = yield future\n"
 	contents += tabtab + "finally:\n"
@@ -113,6 +113,7 @@ func (t *TornadoGenerator) generateClientMethod(method *parser.Method) string {
 
 func (t *TornadoGenerator) generateClientSendMethod(method *parser.Method) string {
 	contents := ""
+	contents += tab + "@gen.coroutine\n"
 	contents += tab + fmt.Sprintf("def _send_%s(self, ctx%s):\n", method.Name, t.generateClientArgs(method.Arguments))
 	contents += tabtab + "oprot = self._oprot\n"
 	contents += tabtab + "with self._write_lock:\n"
@@ -124,7 +125,7 @@ func (t *TornadoGenerator) generateClientSendMethod(method *parser.Method) strin
 	}
 	contents += tabtabtab + "args.write(oprot)\n"
 	contents += tabtabtab + "oprot.writeMessageEnd()\n"
-	contents += tabtabtab + "oprot.get_transport().flush()\n\n"
+	contents += tabtabtab + "yield oprot.get_transport().flush()\n\n"
 
 	return contents
 }

@@ -76,7 +76,7 @@ def run_client(nats_client, prot_factory, http=False):
                             middleware=logging_middleware)
 
     root.info('oneWay()')
-    foo_client.oneWay(FContext(), 99, {99: "request"})
+    yield foo_client.oneWay(FContext(), 99, {99: "request"})
 
     root.info('basePing()')
     yield foo_client.basePing(FContext(timeout=5 * 1000))
@@ -107,7 +107,7 @@ def run_client(nats_client, prot_factory, http=False):
     foo_client = FFooClient(http_transport, prot_factory,
                             middleware=logging_middleware)
     print 'oneWay()'
-    foo_client.oneWay(FContext(), 123, {123: 'request'})
+    yield foo_client.oneWay(FContext(), 123, {123: 'request'})
 
     print 'basePing()'
     yield foo_client.basePing(FContext())

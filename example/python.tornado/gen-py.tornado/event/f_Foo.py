@@ -97,7 +97,7 @@ class Client(base.f_BaseFoo.Client, Iface):
         delta = timedelta(milliseconds=ctx.get_timeout())
         future = gen.with_timeout(delta, Future())
         self._transport.register(ctx, self._recv_ping(ctx, future))
-        self._send_ping(ctx)
+        yield self._send_ping(ctx)
 
         try:
             result = yield future
@@ -105,6 +105,7 @@ class Client(base.f_BaseFoo.Client, Iface):
             self._transport.unregister(ctx)
         raise gen.Return(result)
 
+    @gen.coroutine
     def _send_ping(self, ctx):
         oprot = self._oprot
         with self._write_lock:
@@ -113,7 +114,7 @@ class Client(base.f_BaseFoo.Client, Iface):
             args = ping_args()
             args.write(oprot)
             oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            yield oprot.get_transport().flush()
 
     def _recv_ping(self, ctx, future):
         def ping_callback(transport):
@@ -149,7 +150,7 @@ class Client(base.f_BaseFoo.Client, Iface):
         delta = timedelta(milliseconds=ctx.get_timeout())
         future = gen.with_timeout(delta, Future())
         self._transport.register(ctx, self._recv_blah(ctx, future))
-        self._send_blah(ctx, num, Str, event)
+        yield self._send_blah(ctx, num, Str, event)
 
         try:
             result = yield future
@@ -157,6 +158,7 @@ class Client(base.f_BaseFoo.Client, Iface):
             self._transport.unregister(ctx)
         raise gen.Return(result)
 
+    @gen.coroutine
     def _send_blah(self, ctx, num, Str, event):
         oprot = self._oprot
         with self._write_lock:
@@ -168,7 +170,7 @@ class Client(base.f_BaseFoo.Client, Iface):
             args.event = event
             args.write(oprot)
             oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            yield oprot.get_transport().flush()
 
     def _recv_blah(self, ctx, future):
         def blah_callback(transport):
@@ -209,9 +211,11 @@ class Client(base.f_BaseFoo.Client, Iface):
         """
         return self._methods['oneWay']([ctx, id, req])
 
+    @gen.coroutine
     def _oneWay(self, ctx, id, req):
-        self._send_oneWay(ctx, id, req)
+        yield self._send_oneWay(ctx, id, req)
 
+    @gen.coroutine
     def _send_oneWay(self, ctx, id, req):
         oprot = self._oprot
         with self._write_lock:
@@ -222,7 +226,7 @@ class Client(base.f_BaseFoo.Client, Iface):
             args.req = req
             args.write(oprot)
             oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            yield oprot.get_transport().flush()
 
 
 class Processor(base.f_BaseFoo.Processor):
