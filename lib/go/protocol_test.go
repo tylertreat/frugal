@@ -272,6 +272,8 @@ func TestAddHeadersToFrameBadFrameSize(t *testing.T) {
 	assert.Equal(thrift.INVALID_DATA, err.(FProtocolException).TypeId())
 }
 
+// Ensures headers with non-ascii characters can be encodeded and decoded
+// properly.
 func TestMarshalUnmarshalHeadersUTF8(t *testing.T) {
 	assert := assert.New(t)
 	marshaler := v0Marshaler
