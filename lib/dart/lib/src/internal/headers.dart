@@ -26,6 +26,8 @@ class Headers {
         List<int> keyBytes = _encoder.convert(name);
         List<int> valueBytes = _encoder.convert(headers[name]);
         utf8Headers.add(new Pair(keyBytes, valueBytes));
+        
+        // 4 bytes each for name, value length
         size += 8 + keyBytes.length + valueBytes.length;
       }
     }
