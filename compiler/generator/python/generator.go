@@ -2,6 +2,7 @@ package python
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -757,8 +758,41 @@ func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) err
 
 // GenerateServiceImports generates necessary imports for the given service.
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
-	// TODO
-	return nil
+	imports := "from threading import Lock\n\n"
+
+	imports += "from frugal.middleware import Method\n"
+	imports += "from frugal.processor import FBaseProcessor\n"
+	imports += "from frugal.processor import FProcessorFunction\n"
+	imports += "from thrift.Thrift import TApplicationException\n"
+	imports += "from thrift.Thrift import TMessageType\n\n"
+
+	imports += g.generateServiceIncludeImports(s)
+
+	_, err := file.WriteString(imports)
+	return err
+}
+
+func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
+	imports := ""
+
+	// Import include modules.
+	for _, include := range s.ReferencedIncludes() {
+		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+		if !ok {
+			namespace = include
+		}
+		imports += fmt.Sprintf("import %s\n", namespace)
+	}
+
+	// Import this service's modules.
+	namespace, ok := g.Frugal.Thrift.Namespace(lang)
+	if !ok {
+		namespace = g.Frugal.Name
+	}
+	imports += fmt.Sprintf("from %s.%s import *\n", namespace, s.Name)
+	imports += fmt.Sprintf("from %s.ttypes import *\n", namespace)
+
+	return imports
 }
 
 // GenerateScopeImports generates necessary imports for the given scope.
@@ -898,9 +932,177 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 // GenerateService generates the given service.
 func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
-	// TODO
-	globals.PrintWarning(fmt.Sprintf("%s: service generation is not implemented for Python", s.Name))
-	return nil
+	if err := g.exposeServiceModule(filepath.Dir(file.Name()), s); err != nil {
+		return err
+	}
+	contents := ""
+	contents += g.generateServiceInterface(s)
+	contents += g.generateClient(s)
+	contents += g.generateServer(s)
+
+	_, err := file.WriteString(contents)
+	return err
+}
+
+func (g *Generator) generateClient(service *parser.Service) string {
+	contents := "\n"
+	contents += g.generateClientConstructor(service, false)
+	for _, method := range service.Methods {
+		contents += g.generateClientMethod(method)
+	}
+	return contents
+}
+
+func (g *Generator) generateClientMethod(method *parser.Method) string {
+	contents := ""
+	contents += g.generateMethodSignature(method)
+	contents += tabtab + fmt.Sprintf("return self._methods['%s']([ctx%s])\n\n",
+		method.Name, g.generateClientArgs(method.Arguments))
+
+	contents += tab + fmt.Sprintf("def _%s(self, ctx%s):\n", method.Name, g.generateClientArgs(method.Arguments))
+	contents += tabtab + fmt.Sprintf("self._send_%s(ctx%s)\n", method.Name, g.generateClientArgs(method.Arguments))
+	if method.Oneway {
+		contents += "\n"
+	} else {
+		contents += tabtab
+		if method.ReturnType != nil {
+			contents += "return "
+		}
+		contents += fmt.Sprintf("self._recv_%s(ctx)\n\n", method.Name)
+	}
+
+	contents += g.generateClientSendMethod(method)
+	contents += g.generateClientRecvMethod(method)
+
+	return contents
+}
+
+func (g *Generator) generateClientSendMethod(method *parser.Method) string {
+	contents := ""
+	contents += tab + fmt.Sprintf("def _send_%s(self, ctx%s):\n", method.Name, g.generateClientArgs(method.Arguments))
+	contents += tabtab + "oprot = self._oprot\n"
+	contents += tabtab + "with self._write_lock:\n"
+	contents += tabtabtab + "oprot.get_transport().set_timeout(ctx.get_timeout())\n"
+	contents += tabtabtab + "oprot.write_request_headers(ctx)\n"
+	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
+	contents += tabtabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
+	for _, arg := range method.Arguments {
+		contents += tabtabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
+	}
+	contents += tabtabtab + "args.write(oprot)\n"
+	contents += tabtabtab + "oprot.writeMessageEnd()\n"
+	contents += tabtabtab + "oprot.get_transport().flush()\n\n"
+
+	return contents
+}
+
+func (g *Generator) generateClientRecvMethod(method *parser.Method) string {
+	contents := tab + fmt.Sprintf("def _recv_%s(self, ctx):\n", method.Name)
+	contents += tabtab + "self._iprot.read_response_headers(ctx)\n"
+	contents += tabtab + "_, mtype, _ = self._iprot.readMessageBegin()\n"
+	contents += tabtab + "if mtype == TMessageType.EXCEPTION:\n"
+	contents += tabtabtab + "x = TApplicationException()\n"
+	contents += tabtabtab + "x.read(self._iprot)\n"
+	contents += tabtabtab + "self._iprot.readMessageEnd()\n"
+	contents += tabtabtab + "raise x\n"
+	contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
+	contents += tabtab + "result.read(self._iprot)\n"
+	contents += tabtab + "self._iprot.readMessageEnd()\n"
+	for _, err := range method.Exceptions {
+		contents += tabtab + fmt.Sprintf("if result.%s is not None:\n", err.Name)
+		contents += tabtabtab + fmt.Sprintf("raise result.%s\n", err.Name)
+	}
+	if method.ReturnType == nil {
+		contents += tabtab + "return\n\n"
+		return contents
+	}
+	contents += tabtab + "if result.success is not None:\n"
+	contents += tabtabtab + "return result.success\n"
+	contents += tabtab + fmt.Sprintf(
+		"x = TApplicationException(TApplicationException.MISSING_RESULT, \"%s failed: unknown result\")\n", method.Name)
+	contents += tabtab + "raise x\n\n"
+
+	return contents
+}
+
+func (g *Generator) generateClientConstructor(service *parser.Service, async bool) string {
+	contents := ""
+	if service.Extends != "" {
+		contents += fmt.Sprintf("class Client(%s.Client, Iface):\n\n", g.getServiceExtendsName(service))
+	} else {
+		contents += "class Client(Iface):\n\n"
+	}
+
+	contents += tab + "def __init__(self, transport, protocol_factory, middleware=None):\n"
+	docstring := []string{
+		"Create a new Client with a transport and protocol factory.\n",
+		"Args:",
+	}
+	if async {
+		docstring = append(docstring, tab+"transport: FTransport")
+	} else {
+		docstring = append(docstring, tab+"transport: FSynchronousTransport")
+	}
+	docstring = append(
+		docstring,
+		tab+"protocol_factory: FProtocolFactory",
+		tab+"middleware: ServiceMiddleware or list of ServiceMiddleware",
+	)
+	contents += g.generateDocString(docstring, tabtab)
+	contents += tabtab + "if middleware and not isinstance(middleware, list):\n"
+	contents += tabtabtab + "middleware = [middleware]\n"
+	if service.Extends != "" {
+		contents += tabtab + "super(Client, self).__init__(transport, protocol_factory,\n"
+		contents += tabtab + "                             middleware=middleware)\n"
+		contents += tabtab + "self._methods.update("
+	} else {
+		if async {
+			contents += tabtab + "transport.set_registry(FClientRegistry())\n"
+		}
+		contents += tabtab + "self._transport = transport\n"
+		contents += tabtab + "self._protocol_factory = protocol_factory\n"
+		contents += tabtab + "self._oprot = protocol_factory.get_protocol(transport)\n"
+		if !async {
+			contents += tabtab + "self._iprot = protocol_factory.get_protocol(transport)\n"
+		}
+		contents += tabtab + "self._write_lock = Lock()\n"
+		contents += tabtab + "self._methods = "
+	}
+	contents += "{\n"
+	for _, method := range service.Methods {
+		contents += tabtabtab + fmt.Sprintf("'%s': Method(self._%s, middleware),\n", method.Name, method.Name)
+	}
+	contents += tabtab + "}"
+	if service.Extends != "" {
+		contents += ")"
+	}
+	contents += "\n\n"
+	return contents
+}
+
+func (g *Generator) generateServer(service *parser.Service) string {
+	contents := ""
+	contents += g.generateProcessor(service)
+	for _, method := range service.Methods {
+		contents += g.generateProcessorFunction(method)
+	}
+
+	return contents
+}
+
+func (g *Generator) exposeServiceModule(path string, service *parser.Service) error {
+	// Expose service in __init__.py.
+	// TODO: Generate __init__.py ourselves once Thrift is removed.
+	initFile := fmt.Sprintf("%s%s__init__.py", path, string(os.PathSeparator))
+	init, err := ioutil.ReadFile(initFile)
+	if err != nil {
+		return err
+	}
+	initStr := string(init)
+	initStr += fmt.Sprintf("\nimport f_%s\n", service.Name)
+	initStr += fmt.Sprintf("from f_%s import *\n", service.Name)
+	init = []byte(initStr)
+	return ioutil.WriteFile(initFile, init, os.ModePerm)
 }
 
 func (g *Generator) generateServiceInterface(service *parser.Service) string {
@@ -959,6 +1161,49 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 			method.Name, method.Name)
 	}
 	contents += "\n\n"
+	return contents
+}
+
+func (g *Generator) generateProcessorFunction(method *parser.Method) string {
+	contents := ""
+	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
+	contents += tab + "def __init__(self, handler, lock):\n"
+	contents += tabtab + "self._handler = handler\n"
+	contents += tabtab + "self._lock = lock\n\n"
+
+	contents += tab + "def process(self, ctx, iprot, oprot):\n"
+	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
+	contents += tabtab + "args.read(iprot)\n"
+	contents += tabtab + "iprot.readMessageEnd()\n"
+	if !method.Oneway {
+		contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
+	}
+	indent := tabtab
+	if len(method.Exceptions) > 0 {
+		indent += tab
+		contents += tabtab + "try:\n"
+	}
+	if method.ReturnType == nil {
+		contents += indent + fmt.Sprintf("self._handler.%s(ctx%s)\n",
+			method.Name, g.generateServerArgs(method.Arguments))
+	} else {
+		contents += indent + fmt.Sprintf("result.success = self._handler.%s(ctx%s)\n",
+			method.Name, g.generateServerArgs(method.Arguments))
+	}
+	for _, err := range method.Exceptions {
+		contents += tabtab + fmt.Sprintf("except %s as %s:\n", g.qualifiedTypeName(err.Type), err.Name)
+		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
+	}
+	if !method.Oneway {
+		contents += tabtab + "with self._lock:\n"
+		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
+		contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", method.Name)
+		contents += tabtabtab + "result.write(oprot)\n"
+		contents += tabtabtab + "oprot.writeMessageEnd()\n"
+		contents += tabtabtab + "oprot.get_transport().flush()\n"
+	}
+	contents += "\n\n"
+
 	return contents
 }
 

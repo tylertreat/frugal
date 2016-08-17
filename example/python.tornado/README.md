@@ -1,4 +1,4 @@
-### Frugal Python Example
+### Frugal Python Tornado Example
 =====
 
 1. Highly recommend making a virtualenv with virtualenvwrapper:
@@ -11,9 +11,16 @@
     pip install -Ur requirements.txt
     ```
 
+1. Install and/or Start up NATS:
+    ```bash
+    brew install gnatsd
+    # Follow instructions to run as daemon or...
+    gnatsd -DV
+    ```
+
 1. Start up server:
     ```
-    python main.py -server
+    python run_server.py
     ```
 
 1. Run client:
