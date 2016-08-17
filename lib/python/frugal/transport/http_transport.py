@@ -29,7 +29,6 @@ class FBaseHttpTransport(FSynchronousTransport):
         """
 
         self._url = url
-        self._http = Http()
         self._wbuff = BytesIO()
         self._rbuff = BytesIO()
         self._request_capacity = request_capacity
@@ -96,6 +95,26 @@ class FBaseHttpTransport(FSynchronousTransport):
 
 class FHttpTransport(FBaseHttpTransport):
     """Synchronous transport implemented with httplib2."""
+
+    def __init__(self, url, request_capacity=0, response_capacity=0,
+                 headers=None, get_headers=None):
+        """Initialize a new FHttpTransport.
+
+        Args:
+            url: url of the Frugal server.
+            request_capacity: max size allowed to be written in a request. Set
+                              0 for no restriction.
+            response_capacity: max size allowed to be read in a response. Set
+                               0 for no restriction.
+            headers: dict containing static headers.
+            get_headers: func which returns dynamic headers per request.
+        """
+
+        self._http = Http()
+        super(FHttpTransport, self).__init__(
+            url, request_capacity=request_capacity,
+            response_capacity=response_capacity, headers=headers,
+            get_headers=get_headers)
 
     def flush(self):
         headers, body = self._get_headers_and_body()
