@@ -211,9 +211,11 @@ class Client(base.f_BaseFoo.Client, Iface):
         """
         return self._methods['oneWay']([ctx, id, req])
 
+    @gen.coroutine
     def _oneWay(self, ctx, id, req):
-        self._send_oneWay(ctx, id, req)
+        yield self._send_oneWay(ctx, id, req)
 
+    @gen.coroutine
     def _send_oneWay(self, ctx, id, req):
         oprot = self._oprot
         with self._write_lock:
@@ -224,7 +226,7 @@ class Client(base.f_BaseFoo.Client, Iface):
             args.req = req
             args.write(oprot)
             oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            yield oprot.get_transport().flush()
 
 
 class Processor(base.f_BaseFoo.Processor):
