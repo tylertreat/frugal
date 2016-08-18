@@ -44,7 +44,12 @@ class FrugalHttpResponse:
 
 
 class FHttpRequestHandler:
-    """FHttpRequestHandler provides functionality to process rpc requests."""
+    """
+    FHttpRequestHandler provides functionality to process rpcs from http.
+
+    Reading from/writing to the network of a library of choice is left up to
+    the caller.
+    """
     def __init__(self, processor, protocol_factory):
         """
         Initializes a FHttpRequestHandler.
