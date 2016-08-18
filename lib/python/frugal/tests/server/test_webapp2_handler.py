@@ -63,16 +63,3 @@ class FWebapp2HttpHandlerTest(unittest.TestCase):
         self.assertTrue(self.mock_processor.process.called)
         iprot, _ = self.mock_processor.process.call_args[0]
         self.assertEqual(request_data, iprot.get_transport().getvalue())
-
-# class AppTest(unittest.TestCase):
-#     def setUp(self):
-#         # Create a WSGI application.
-#         app = webapp2.WSGIApplication([('/', HelloWorldHandler)])
-#         self.testapp = webtest.TestApp(app)
-#
-#     # Test the handler.
-#     def testHelloWorldHandler(self):
-#         response = self.testapp.get('/')
-#         self.assertEqual(response.status_int, 200)
-#         self.assertEqual(response.normal_body, 'Hello World!')
-#         self.assertEqual(response.content_type, 'text/plain')
