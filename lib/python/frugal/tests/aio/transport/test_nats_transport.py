@@ -64,12 +64,16 @@ class TestFNatsTransport(utils.AsyncIOTestCase):
         )
         self.assertTrue(self.transport._is_open)
 
-    def test_on_message_callback(self):
+    @utils.async_runner
+    async def test_on_message_callback(self):
         message = mock.Mock()
         message.data = [1, 2, 3, 4, 5, 6, 7, 8, 9]
         callback = mock.Mock()
+        future = asyncio.Future()
+        future.set_result(None)
+        callback.return_value = future
         self.transport.execute_frame = callback
-        self.transport._on_message_callback(message)
+        await self.transport._on_message_callback(message)
         callback.assert_called_once_with(message.data[4:])
 
     @utils.async_runner

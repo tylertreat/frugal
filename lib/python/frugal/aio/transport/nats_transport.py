@@ -17,10 +17,11 @@ class FNatsTransport(FRegistryTransport):
     message.
     """
     def __init__(
-            self,
-            nats_client: Client,
-            subject: str,
-            inbox=''
+        self,
+        nats_client:
+        Client,
+        subject: str,
+        inbox=''
     ):
         super().__init__(_NATS_MAX_MESSAGE_SIZE)
         self._nats_client = nats_client
@@ -71,7 +72,7 @@ class FNatsTransport(FRegistryTransport):
         self.reset_write_buffer()
         self._wbuf = BytesIO()
         await self._nats_client.publish_request(
-                self._subject,
-                self._inbox,
-                frame
+            self._subject,
+            self._inbox,
+            frame
         )
