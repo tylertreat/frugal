@@ -112,6 +112,21 @@ class FHttpRequestHandler:
         }
         return FrugalHttpResponse(headers=headers, body=frame)
 
+    def _handle_processor_exception(self, e):
+        """
+        Handles an unexepcted exception from a processor.
+        TODO this isn't right, but it replicates what other implementations do.
+        We should check the exception type and return a potentially different
+        error code.
+
+        Args:
+            e: The exception.
+        Returns:
+            A FrugalHttpResponse.
+        """
+        logger.exception(e)
+        return FrugalHttpResponse(status_code=400)
+
     def handle_http_request(self, request):
         """
         Handles an http rpc. This must be implemented because of differences
@@ -137,8 +152,6 @@ class FSynchronousHttpRequestHandler(FHttpRequestHandler):
         try:
             self._processor.process(iprot, oprot)
         except Exception as e:
-            # TODO this isn't right, but replicates what other implementations do.
-            logger.exception(e)
-            return FrugalHttpResponse(status_code=400)
+            return self._handle_processor_exception(e)
 
         return self._postprocess_http_request(otrans, response_limit)
