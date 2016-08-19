@@ -37,18 +37,18 @@ class TestFNatsTransport(utils.AsyncIOTestCase):
     async def test_open_nats_not_connected(self):
         self.mock_nats_client.is_connected = False
 
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             await self.transport.open()
-            self.assertEqual(TTransportException.NOT_OPEN, e.type)
+        self.assertEqual(TTransportException.NOT_OPEN, cm.exception.type)
 
     @utils.async_runner
     async def test_open_already_open(self):
         self.mock_nats_client.is_connected = True
         self.transport._is_open = True
 
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             await self.transport.open()
-            self.assertEqual(TTransportException.ALREADY_OPEN, e.type)
+        self.assertEqual(TTransportException.ALREADY_OPEN, cm.exception.type)
 
     @utils.async_runner
     async def test_open_subscribes(self):
@@ -98,9 +98,9 @@ class TestFNatsTransport(utils.AsyncIOTestCase):
     @utils.async_runner
     async def test_flush_not_open(self):
         self.transport._is_open = False
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             await self.transport.flush()
-            self.assertEqual(TTransportException.NOT_OPEN, e.type)
+        self.assertEqual(TTransportException.NOT_OPEN, cm.exception.type)
 
     @utils.async_runner
     async def test_flush(self):
