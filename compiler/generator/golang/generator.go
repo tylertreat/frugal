@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -251,7 +252,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 		case "bool", "i8", "byte", "i16", "i32", "i64", "double":
 			return fmt.Sprintf("%v", value)
 		case "string":
-			return fmt.Sprintf("\"%s\"", value)
+			return fmt.Sprintf("%s", strconv.Quote(value.(string)))
 		case "binary":
 			return fmt.Sprintf("[]byte(\"%s\")", value)
 		case "list":

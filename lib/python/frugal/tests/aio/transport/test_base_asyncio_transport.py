@@ -13,9 +13,9 @@ class TestFTransportBase(utils.AsyncIOTestCase):
 
     def test_write_transport_not_open(self):
         self.transport.isOpen = lambda: False
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             self.transport.write(bytearray([]))
-            self.assertEqual(TTransportException.NOT_OPEN, e.type)
+        self.assertEqual(TTransportException.NOT_OPEN, cm.exception.type)
 
     def test_write(self):
         data = bytearray([1, 2, 3, 4, 5, 6])

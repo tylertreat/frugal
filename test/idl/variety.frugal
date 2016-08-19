@@ -36,6 +36,9 @@ const bool false_constant = false
 
 const HealthCondition const_hc = 2;
 
+const string evil_string = "thin'g\" \""
+const string evil_string2 = 'th\'ing"ad"f'
+
 struct TestBase {
     1: base.thing base_struct,
 }
@@ -103,6 +106,7 @@ struct EventWrapper {
     6: list<list<int>> Nums,
     7: list<ItsAnEnum> Enums,
     8: bool aBoolField,
+    9: TestingUnions a_union,
 }
 
 exception AwesomeException {

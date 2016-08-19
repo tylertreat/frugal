@@ -15,8 +15,8 @@ class TestFNatsScopeTransport(utils.AsyncIOTestCase):
         self.callback = mock.Mock()
         self.queue = 'foo'
         self.transport = FNatsScopeTransport(
-                self.mock_nats_client,
-                queue=self.queue
+            self.mock_nats_client,
+            queue=self.queue
         )
 
     @utils.async_runner
@@ -66,17 +66,17 @@ class TestFNatsScopeTransport(utils.AsyncIOTestCase):
     @utils.async_runner
     async def test_open_nats_not_connected(self):
         self.mock_nats_client.is_connected = False
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             await self.transport.open()
-            self.assertEqual(TTransportException.NOT_OPEN, e.type)
+        self.assertEqual(TTransportException.NOT_OPEN, cm.exception.type)
 
     @utils.async_runner
     async def test_open_already_open(self):
         self.mock_nats_client.is_connected = True
         self.transport._is_open = True
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             await self.transport.open()
-            self.assertEqual(TTransportException.ALREADY_OPEN, e.type)
+        self.assertEqual(TTransportException.ALREADY_OPEN, cm.exception.type)
 
     @utils.async_runner
     async def test_open_publisher(self):
@@ -86,9 +86,9 @@ class TestFNatsScopeTransport(utils.AsyncIOTestCase):
     @utils.async_runner
     async def test_open_subscriber_empty_subject(self):
         self.transport._pull = True
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             await self.transport.open()
-            self.assertEqual(TTransportException.UNKNOWN, e.type)
+        self.assertEqual(TTransportException.UNKNOWN, cm.exception.type)
 
     @utils.async_runner
     async def test_open_subscriber(self):
@@ -146,9 +146,9 @@ class TestFNatsScopeTransport(utils.AsyncIOTestCase):
     @utils.async_runner
     async def test_flush_not_open(self):
         self.transport._is_open = False
-        with self.assertRaises(TTransportException) as e:
+        with self.assertRaises(TTransportException) as cm:
             await self.transport.flush()
-            self.assertEqual(TTransportException.NOT_OPEN, e.type)
+        self.assertEqual(TTransportException.NOT_OPEN, cm.exception.type)
 
     @utils.async_runner
     async def test_flush(self):
