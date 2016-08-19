@@ -12,6 +12,6 @@ frugal -r --gen go:package_prefix=github.com/Workiva/frugal/example/go/gen-go/ -
 frugal -r --gen java:generated_annotations=undated -out='java/gen-java' event.frugal
 frugal -r --gen py -out='python/gen-py' event.frugal
 frugal -r --gen py:tornado -out='python.tornado/gen-py.tornado' event.frugal
-frugal -r --gen py:asyncio -out='python/aio/gen-py.asyncio' event.frugal
+frugal -r --gen py:asyncio -out='python.asyncio/gen-py.asyncio' event.frugal
 
 echo "Done!"
