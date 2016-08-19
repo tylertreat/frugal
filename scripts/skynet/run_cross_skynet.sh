@@ -49,11 +49,9 @@ else
     frugal --gen java -r --out='test/integration/java/frugal-integration-test/gen-java' test/integration/frugalTest.frugal
 fi
 
-# Build java
+# Build java tests using smithy java library
 cd $FRUGAL_HOME/lib/java
-mvn clean verify
-mv target/frugal-*.jar $FRUGAL_HOME/test/integration/java/frugal-integration-test/frugal.jar
-
+cp $SKYNET_APPLICATION_FRUGAL_ARTIFACTORY $FRUGAL_HOME/test/integration/java/frugal-integration-test/frugal.jar
 cd $FRUGAL_HOME/test/integration/java/frugal-integration-test
 mvn clean install:install-file -Dfile=frugal.jar -U
 mvn clean compile -U
