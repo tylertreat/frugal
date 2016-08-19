@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"unicode"
@@ -441,7 +442,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 		case "bool", "i8", "byte", "i16", "i32", "i64", "double":
 			return fmt.Sprintf("%v", value)
 		case "string":
-			return fmt.Sprintf("'%s'", value)
+			return fmt.Sprintf("%s", strconv.Quote(value.(string)))
 		case "binary":
 			return fmt.Sprintf("new Uint8List.fromList(UTF8.encode('%s'))", value)
 		case "list", "set":

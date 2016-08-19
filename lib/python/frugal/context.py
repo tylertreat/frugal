@@ -151,11 +151,12 @@ class FContext(object):
         return self
 
     def _check_string(self, string):
-        if _IS_PY2 and not isinstance(string, str):
-            raise TypeError("Value should be a string.")
+        if _IS_PY2 and not \
+                (isinstance(string, str) or isinstance(string, unicode)):
+            raise TypeError("Value should either be a string or unicode.")
         if not _IS_PY2 and not \
                 (isinstance(string, str) or isinstance(string, bytes)):
-            raise TypeError('Value should be a string or bytes')
+            raise TypeError("Value should be either a string or bytes.")
 
     def _generate_cid(self):
         return uuid.uuid4().hex
