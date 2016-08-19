@@ -1,12 +1,12 @@
 import webapp2
 
-from frugal.server.http_handler import FrugalHttpRequest
-from frugal.server.http_handler import FSynchronousHttpRequestHandler
+from frugal.server.http_handler import _FHttpRequest
+from frugal.server.http_handler import _FSynchronousHttpRequestHandler
 
 
 def new_webapp2_handler(processor, protocol_factory):
     """
-    Produces a class extending webap2.RequestHandler that can be used to handle
+    Produces a class extending webapp2.RequestHandler that can be used to handle
     frugal HTTP rpc requests.
 
     Args:
@@ -14,7 +14,7 @@ def new_webapp2_handler(processor, protocol_factory):
         protocol_factory: A protocol factory to serialize/deserialize frugal
                           requests.
     """
-    handler = FSynchronousHttpRequestHandler(processor, protocol_factory)
+    handler = _FSynchronousHttpRequestHandler(processor, protocol_factory)
 
     class FWebapp2Handler(webapp2.RequestHandler):
         """
@@ -22,7 +22,7 @@ def new_webapp2_handler(processor, protocol_factory):
         requests.
         """
         def post(self):
-            request = FrugalHttpRequest(
+            request = _FHttpRequest(
                 headers=self.request.headers,
                 body=self.request.body,
             )

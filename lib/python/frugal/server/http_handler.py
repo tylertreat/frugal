@@ -7,7 +7,13 @@ from thrift.transport.TTransport import TMemoryBuffer
 logger = logging.getLogger(__name__)
 
 
-class FrugalHttpRequest:
+class _FHttpException(Exception):
+    def __init__(self, code, message=None):
+        super(_FHttpException, self).__init__(message)
+        self.code = code
+
+
+class _FHttpRequest:
     """
     FrugalHttpRequest stores data from an http request in a generic format.
     """
@@ -18,7 +24,7 @@ class FrugalHttpRequest:
         self.body = body
 
 
-class FrugalHttpResponse:
+class _FHttpResponse:
     """
     FrugalHttpResponse returns data to be sent in an http response in a generic
     format.
@@ -43,7 +49,7 @@ class FrugalHttpResponse:
         return self._body
 
 
-class FHttpRequestHandler:
+class _FHttpRequestHandler:
     """
     FHttpRequestHandler provides functionality to process rpcs from http.
 
@@ -80,7 +86,8 @@ class FHttpRequestHandler:
         if len(payload) <= 4:
             logger.exception('invalid request frame length {}'.format(
                 len(payload)))
-            return FrugalHttpResponse(status_code=400)
+            # return _FHttpResponse(status_code=400)
+            raise _FHttpException(400)
 
         itrans = TMemoryBuffer(payload[4:])
         otrans = TMemoryBuffer()
@@ -101,7 +108,8 @@ class FHttpRequestHandler:
         """
         output_data = otrans.getvalue()
         if len(output_data) > response_limit > 0:
-            return FrugalHttpResponse(status_code=413)
+            logger.exception('response limit exceeded')
+            return _FHttpResponse(status_code=413)
 
         frame_len = struct.pack('!I', len(output_data))
         frame = base64.b64encode(frame_len + output_data)
@@ -109,8 +117,9 @@ class FHttpRequestHandler:
         headers = {
             'content-type': 'application/x-frugal',
             'content-transfer-encoding': 'base64',
+            'content-length': len(frame),
         }
-        return FrugalHttpResponse(headers=headers, body=frame)
+        return _FHttpResponse(headers=headers, body=frame)
 
     def _handle_processor_exception(self, e):
         """
@@ -125,7 +134,7 @@ class FHttpRequestHandler:
             A FrugalHttpResponse.
         """
         logger.exception(e)
-        return FrugalHttpResponse(status_code=400)
+        return _FHttpResponse(status_code=400)
 
     def handle_http_request(self, request):
         """
@@ -144,11 +153,15 @@ class FHttpRequestHandler:
         raise NotImplementedError()
 
 
-class FSynchronousHttpRequestHandler(FHttpRequestHandler):
+class _FSynchronousHttpRequestHandler(_FHttpRequestHandler):
     """An http request handler for synchronous processors."""
     def handle_http_request(self, request):
-        otrans, iprot, oprot, response_limit = self._preprocess_http_request(
-            request)
+        try:
+            otrans, iprot, oprot, response_limit = \
+                self._preprocess_http_request(request)
+        except _FHttpException as e:
+            return _FHttpResponse(status_code=e.code)
+
         try:
             self._processor.process(iprot, oprot)
         except Exception as e:
