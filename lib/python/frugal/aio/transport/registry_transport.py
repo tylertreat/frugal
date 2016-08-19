@@ -26,7 +26,7 @@ class FRegistryTransport(FTransportBase):
 
         self._registry = registry
 
-    def register(self, context: FContext, callback):
+    async def register(self, context: FContext, callback):
         """
         Register a callback with a context.
 
@@ -37,9 +37,9 @@ class FRegistryTransport(FTransportBase):
         if not self._registry:
             raise ValueError('registry must be set')
 
-        self._registry.register(context, callback)
+        await self._registry.register(context, callback)
 
-    def unregister(self, context: FContext):
+    async def unregister(self, context: FContext):
         """
         Unregister the given context.
 
@@ -49,9 +49,9 @@ class FRegistryTransport(FTransportBase):
         if not self._registry:
             raise ValueError('registry must be set')
 
-        self._registry.unregister(context)
+        await self._registry.unregister(context)
 
-    def execute_frame(self, frame):
+    async def execute_frame(self, frame):
         """
         Executes the callback associated with the data frame.
 
@@ -60,4 +60,4 @@ class FRegistryTransport(FTransportBase):
         """
         if not self._registry:
             raise ValueError('registry must be set')
-        self._registry.execute(frame)
+        await self._registry.execute(frame)

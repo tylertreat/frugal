@@ -4,9 +4,9 @@ import base64
 import mock
 from thrift.transport.TTransport import TTransportException
 
-from frugal.tests.aio import utils
 from frugal.aio.transport import FHttpTransport
 from frugal.exceptions import FMessageSizeException
+from frugal.tests.aio import utils
 
 
 class TestFHttpTransport(utils.AsyncIOTestCase):
@@ -50,6 +50,9 @@ class TestFHttpTransport(utils.AsyncIOTestCase):
     @utils.async_runner
     async def test_flush_success(self):
         registry_mock = mock.Mock()
+        registry_future = Future()
+        registry_future.set_result(None)
+        registry_mock.execute.return_value = registry_future
         self.transport.set_registry(registry_mock)
 
         request_data = bytearray([4, 5, 6, 7, 8, 9, 10, 11, 13, 12, 3])

@@ -4,7 +4,7 @@ import struct
 from aiohttp import web
 from thrift.transport.TTransport import TMemoryBuffer
 
-from frugal.processor import FProcessor
+from frugal.aio.processor import FProcessor
 from frugal.protocol import FProtocolFactory
 
 

@@ -92,7 +92,7 @@ class TestBase:
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
-            for key, value in self.__dict__.iteritems()]
+            for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
 
     def __eq__(self, other):
@@ -160,7 +160,7 @@ class Event:
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
-            for key, value in self.__dict__.iteritems()]
+            for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
 
     def __eq__(self, other):
@@ -304,10 +304,10 @@ class TestingDefaults:
             elif fid == 7:
                 if ftype == TType.LIST:
                     self.listfield = []
-                    (_, _elem0) = iprot.readListBegin()
-                    for _ in xrange(_elem0):
-                        _elem1 = iprot.readI32()
-                        self.listfield.append(_elem1)
+                    (_, _elem6) = iprot.readListBegin()
+                    for _ in range(_elem6):
+                        _elem7 = iprot.readI32()
+                        self.listfield.append(_elem7)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -339,41 +339,41 @@ class TestingDefaults:
             elif fid == 13:
                 if ftype == TType.LIST:
                     self.list2 = []
-                    (_, _elem2) = iprot.readListBegin()
-                    for _ in xrange(_elem2):
-                        _elem3 = iprot.readI32()
-                        self.list2.append(_elem3)
+                    (_, _elem8) = iprot.readListBegin()
+                    for _ in range(_elem8):
+                        _elem9 = iprot.readI32()
+                        self.list2.append(_elem9)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 14:
                 if ftype == TType.LIST:
                     self.list3 = []
-                    (_, _elem4) = iprot.readListBegin()
-                    for _ in xrange(_elem4):
-                        _elem5 = iprot.readI32()
-                        self.list3.append(_elem5)
+                    (_, _elem10) = iprot.readListBegin()
+                    for _ in range(_elem10):
+                        _elem11 = iprot.readI32()
+                        self.list3.append(_elem11)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 15:
                 if ftype == TType.LIST:
                     self.list4 = []
-                    (_, _elem6) = iprot.readListBegin()
-                    for _ in xrange(_elem6):
-                        _elem7 = iprot.readI32()
-                        self.list4.append(_elem7)
+                    (_, _elem12) = iprot.readListBegin()
+                    for _ in range(_elem12):
+                        _elem13 = iprot.readI32()
+                        self.list4.append(_elem13)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 16:
                 if ftype == TType.MAP:
                     self.a_map = {}
-                    (_, _, _elem8) = iprot.readMapBegin()
-                    for _ in xrange(_elem8):
-                        _elem10 = iprot.readString()
-                        _elem9 = iprot.readString()
-                        self.a_map[_elem10] = _elem9
+                    (_, _, _elem14) = iprot.readMapBegin()
+                    for _ in range(_elem14):
+                        _elem16 = iprot.readString()
+                        _elem15 = iprot.readString()
+                        self.a_map[_elem16] = _elem15
                     iprot.readMapEnd()
                 else:
                     iprot.skip(ftype)
@@ -421,8 +421,8 @@ class TestingDefaults:
         if self.listfield is not None:
             oprot.writeFieldBegin('listfield', TType.LIST, 7)
             oprot.writeListBegin(TType.I32, len(self.listfield))
-            for _elem11 in self.listfield:
-                oprot.writeI32(_elem11)
+            for _elem17 in self.listfield:
+                oprot.writeI32(_elem17)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.ID3 is not None:
@@ -448,30 +448,30 @@ class TestingDefaults:
         if self.list2 is not None:
             oprot.writeFieldBegin('list2', TType.LIST, 13)
             oprot.writeListBegin(TType.I32, len(self.list2))
-            for _elem12 in self.list2:
-                oprot.writeI32(_elem12)
+            for _elem18 in self.list2:
+                oprot.writeI32(_elem18)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.list3 is not None:
             oprot.writeFieldBegin('list3', TType.LIST, 14)
             oprot.writeListBegin(TType.I32, len(self.list3))
-            for _elem13 in self.list3:
-                oprot.writeI32(_elem13)
+            for _elem19 in self.list3:
+                oprot.writeI32(_elem19)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.list4 is not None:
             oprot.writeFieldBegin('list4', TType.LIST, 15)
             oprot.writeListBegin(TType.I32, len(self.list4))
-            for _elem14 in self.list4:
-                oprot.writeI32(_elem14)
+            for _elem20 in self.list4:
+                oprot.writeI32(_elem20)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.a_map is not None:
             oprot.writeFieldBegin('a_map', TType.MAP, 16)
             oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.a_map))
-            for _elem16, _elem15 in self.a_map.items():
-                oprot.writeString(_elem16)
-                oprot.writeString(_elem15)
+            for _elem22, _elem21 in self.a_map.items():
+                oprot.writeString(_elem22)
+                oprot.writeString(_elem21)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         if self.status is not None:
@@ -516,7 +516,7 @@ class TestingDefaults:
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
-            for key, value in self.__dict__.iteritems()]
+            for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
 
     def __eq__(self, other):
@@ -567,59 +567,59 @@ class EventWrapper:
             elif fid == 3:
                 if ftype == TType.LIST:
                     self.Events = []
-                    (_, _elem17) = iprot.readListBegin()
-                    for _ in xrange(_elem17):
-                        _elem18 = Event()
-                        _elem18.read(iprot)
-                        self.Events.append(_elem18)
+                    (_, _elem23) = iprot.readListBegin()
+                    for _ in range(_elem23):
+                        _elem24 = Event()
+                        _elem24.read(iprot)
+                        self.Events.append(_elem24)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 4:
                 if ftype == TType.SET:
                     self.Events2 = set()
-                    (_, _elem19) = iprot.readSetBegin()
-                    for _ in xrange(_elem19):
-                        _elem20 = Event()
-                        _elem20.read(iprot)
-                        self.Events2.add(_elem20)
+                    (_, _elem25) = iprot.readSetBegin()
+                    for _ in range(_elem25):
+                        _elem26 = Event()
+                        _elem26.read(iprot)
+                        self.Events2.add(_elem26)
                     iprot.readSetEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 5:
                 if ftype == TType.MAP:
                     self.EventMap = {}
-                    (_, _, _elem21) = iprot.readMapBegin()
-                    for _ in xrange(_elem21):
-                        _elem23 = iprot.readI64()
-                        _elem22 = Event()
-                        _elem22.read(iprot)
-                        self.EventMap[_elem23] = _elem22
+                    (_, _, _elem27) = iprot.readMapBegin()
+                    for _ in range(_elem27):
+                        _elem29 = iprot.readI64()
+                        _elem28 = Event()
+                        _elem28.read(iprot)
+                        self.EventMap[_elem29] = _elem28
                     iprot.readMapEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 6:
                 if ftype == TType.LIST:
                     self.Nums = []
-                    (_, _elem24) = iprot.readListBegin()
-                    for _ in xrange(_elem24):
-                        _elem25 = []
-                        (_, _elem26) = iprot.readListBegin()
-                        for _ in xrange(_elem26):
-                            _elem27 = iprot.readI32()
-                            _elem25.append(_elem27)
+                    (_, _elem30) = iprot.readListBegin()
+                    for _ in range(_elem30):
+                        _elem31 = []
+                        (_, _elem32) = iprot.readListBegin()
+                        for _ in range(_elem32):
+                            _elem33 = iprot.readI32()
+                            _elem31.append(_elem33)
                         iprot.readListEnd()
-                        self.Nums.append(_elem25)
+                        self.Nums.append(_elem31)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 7:
                 if ftype == TType.LIST:
                     self.Enums = []
-                    (_, _elem28) = iprot.readListBegin()
-                    for _ in xrange(_elem28):
-                        _elem29 = iprot.readI32()
-                        self.Enums.append(_elem29)
+                    (_, _elem34) = iprot.readListBegin()
+                    for _ in range(_elem34):
+                        _elem35 = iprot.readI32()
+                        self.Enums.append(_elem35)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -646,40 +646,40 @@ class EventWrapper:
         if self.Events is not None:
             oprot.writeFieldBegin('Events', TType.LIST, 3)
             oprot.writeListBegin(TType.STRUCT, len(self.Events))
-            for _elem30 in self.Events:
-                _elem30.write(oprot)
+            for _elem36 in self.Events:
+                _elem36.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.Events2 is not None:
             oprot.writeFieldBegin('Events2', TType.SET, 4)
             oprot.writeSetBegin(TType.STRUCT, len(self.Events2))
-            for _elem31 in self.Events2:
-                _elem31.write(oprot)
+            for _elem37 in self.Events2:
+                _elem37.write(oprot)
             oprot.writeSetEnd()
             oprot.writeFieldEnd()
         if self.EventMap is not None:
             oprot.writeFieldBegin('EventMap', TType.MAP, 5)
             oprot.writeMapBegin(TType.I64, TType.STRUCT, len(self.EventMap))
-            for _elem33, _elem32 in self.EventMap.items():
-                oprot.writeI64(_elem33)
-                _elem32.write(oprot)
+            for _elem39, _elem38 in self.EventMap.items():
+                oprot.writeI64(_elem39)
+                _elem38.write(oprot)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         if self.Nums is not None:
             oprot.writeFieldBegin('Nums', TType.LIST, 6)
             oprot.writeListBegin(TType.LIST, len(self.Nums))
-            for _elem34 in self.Nums:
-                oprot.writeListBegin(TType.I32, len(_elem34))
-                for _elem35 in _elem34:
-                    oprot.writeI32(_elem35)
+            for _elem40 in self.Nums:
+                oprot.writeListBegin(TType.I32, len(_elem40))
+                for _elem41 in _elem40:
+                    oprot.writeI32(_elem41)
                 oprot.writeListEnd()
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.Enums is not None:
             oprot.writeFieldBegin('Enums', TType.LIST, 7)
             oprot.writeListBegin(TType.I32, len(self.Enums))
-            for _elem36 in self.Enums:
-                oprot.writeI32(_elem36)
+            for _elem42 in self.Enums:
+                oprot.writeI32(_elem42)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.aBoolField is not None:
@@ -708,7 +708,7 @@ class EventWrapper:
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
-            for key, value in self.__dict__.iteritems()]
+            for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
 
     def __eq__(self, other):
@@ -762,11 +762,11 @@ class TestingUnions:
             elif fid == 5:
                 if ftype == TType.MAP:
                     self.Requests = {}
-                    (_, _, _elem37) = iprot.readMapBegin()
-                    for _ in xrange(_elem37):
-                        _elem39 = iprot.readI32()
-                        _elem38 = iprot.readString()
-                        self.Requests[_elem39] = _elem38
+                    (_, _, _elem43) = iprot.readMapBegin()
+                    for _ in range(_elem43):
+                        _elem45 = iprot.readI32()
+                        _elem44 = iprot.readString()
+                        self.Requests[_elem45] = _elem44
                     iprot.readMapEnd()
                 else:
                     iprot.skip(ftype)
@@ -796,9 +796,9 @@ class TestingUnions:
         if self.Requests is not None:
             oprot.writeFieldBegin('Requests', TType.MAP, 5)
             oprot.writeMapBegin(TType.I32, TType.STRING, len(self.Requests))
-            for _elem41, _elem40 in self.Requests.items():
-                oprot.writeI32(_elem41)
-                oprot.writeString(_elem40)
+            for _elem47, _elem46 in self.Requests.items():
+                oprot.writeI32(_elem47)
+                oprot.writeString(_elem46)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -818,7 +818,7 @@ class TestingUnions:
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
-            for key, value in self.__dict__.iteritems()]
+            for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
 
     def __eq__(self, other):
@@ -885,7 +885,7 @@ class AwesomeException(TException):
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
-            for key, value in self.__dict__.iteritems()]
+            for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
 
     def __eq__(self, other):

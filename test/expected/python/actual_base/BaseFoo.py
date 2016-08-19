@@ -6,7 +6,7 @@
 
 from thrift.Thrift import TType, TMessageType, TException, TApplicationException
 
-from ttypes import *
+from .ttypes import *
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol, TProtocol
 
@@ -37,7 +37,7 @@ class basePing_args:
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
-            for key, value in self.__dict__.iteritems()]
+            for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
 
     def __eq__(self, other):
@@ -72,7 +72,7 @@ class basePing_result:
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
-            for key, value in self.__dict__.iteritems()]
+            for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
 
     def __eq__(self, other):

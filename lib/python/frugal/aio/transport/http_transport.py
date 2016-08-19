@@ -63,7 +63,7 @@ class FHttpTransport(FRegistryTransport):
         status, text = await self._make_request(encoded)
         if status == 413:
             raise FMessageSizeException(
-                    'response was too large for the transport')
+                'response was too large for the transport')
 
         decoded = base64.b64decode(text)
         if status >= 300:
@@ -85,7 +85,7 @@ class FHttpTransport(FRegistryTransport):
             # One-way method, drop response
             return
 
-        self.execute_frame(decoded[4:])
+        await self.execute_frame(decoded[4:])
 
     async def _make_request(self, data):
         """
