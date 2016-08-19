@@ -86,7 +86,6 @@ class _FHttpRequestHandler:
         if len(payload) <= 4:
             logger.exception('invalid request frame length {}'.format(
                 len(payload)))
-            # return _FHttpResponse(status_code=400)
             raise _FHttpException(400)
 
         itrans = TMemoryBuffer(payload[4:])
@@ -117,7 +116,6 @@ class _FHttpRequestHandler:
         headers = {
             'content-type': 'application/x-frugal',
             'content-transfer-encoding': 'base64',
-            'content-length': len(frame),
         }
         return _FHttpResponse(headers=headers, body=frame)
 
