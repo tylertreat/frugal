@@ -42,10 +42,6 @@ class FTransportBase(FTransport):
         Args:
             buf: The data to write.
         """
-        if not self.isOpen():
-            raise TTransportException(TTransportException.NOT_OPEN,
-                                      'Transport is not open')
-
         size = len(buf) + len(self._wbuf.getvalue())
 
         if size > self._max_message_size > 0:
