@@ -537,8 +537,9 @@ class EventWrapper:
      - Enums
      - aBoolField
      - a_union
+     - typedefOfTypedef
     """
-    def __init__(self, ID=None, Ev=None, Events=None, Events2=None, EventMap=None, Nums=None, Enums=None, aBoolField=None, a_union=None):
+    def __init__(self, ID=None, Ev=None, Events=None, Events2=None, EventMap=None, Nums=None, Enums=None, aBoolField=None, a_union=None, typedefOfTypedef=None):
         self.ID = ID
         self.Ev = Ev
         self.Events = Events
@@ -548,6 +549,7 @@ class EventWrapper:
         self.Enums = Enums
         self.aBoolField = aBoolField
         self.a_union = a_union
+        self.typedefOfTypedef = typedefOfTypedef
 
     def read(self, iprot):
         iprot.readStructBegin()
@@ -636,6 +638,11 @@ class EventWrapper:
                     self.a_union.read(iprot)
                 else:
                     iprot.skip(ftype)
+            elif fid == 10:
+                if ftype == TType.STRING:
+                    self.typedefOfTypedef = iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -698,6 +705,10 @@ class EventWrapper:
             oprot.writeFieldBegin('a_union', TType.STRUCT, 9)
             self.a_union.write(oprot)
             oprot.writeFieldEnd()
+        if self.typedefOfTypedef is not None:
+            oprot.writeFieldBegin('typedefOfTypedef', TType.STRING, 10)
+            oprot.writeString(self.typedefOfTypedef)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -717,6 +728,7 @@ class EventWrapper:
         value = (value * 31) ^ hash(self.Enums)
         value = (value * 31) ^ hash(self.aBoolField)
         value = (value * 31) ^ hash(self.a_union)
+        value = (value * 31) ^ hash(self.typedefOfTypedef)
         return value
 
     def __repr__(self):
