@@ -7,7 +7,7 @@ import webapp2
 import webtest
 
 from frugal.protocol import FProtocolFactory
-from frugal.server.webapp2_handler import new_webapp2_handler
+from frugal.gae.server.webapp2_handler import new_webapp2_handler
 
 
 class FWebapp2HttpHandlerTest(unittest.TestCase):

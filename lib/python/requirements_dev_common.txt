@@ -3,6 +3,5 @@ nose-exclude==0.4.1
 rednose
 mock==1.0.1
 coverage
-WebTest==2.0.23
 
 -r requirements.txt
