@@ -66,7 +66,7 @@ class Client(Iface):
         delta = timedelta(milliseconds=ctx.get_timeout())
         future = gen.with_timeout(delta, Future())
         self._transport.register(ctx, self._recv_basePing(ctx, future))
-        self._send_basePing(ctx)
+        yield self._send_basePing(ctx)
 
         try:
             result = yield future
@@ -74,6 +74,7 @@ class Client(Iface):
             self._transport.unregister(ctx)
         raise gen.Return(result)
 
+    @gen.coroutine
     def _send_basePing(self, ctx):
         oprot = self._oprot
         with self._write_lock:
@@ -82,7 +83,7 @@ class Client(Iface):
             args = basePing_args()
             args.write(oprot)
             oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            yield oprot.get_transport().flush()
 
     def _recv_basePing(self, ctx, future):
         def basePing_callback(transport):

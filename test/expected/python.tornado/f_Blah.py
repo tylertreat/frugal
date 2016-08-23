@@ -102,7 +102,7 @@ class Client(Iface):
         delta = timedelta(milliseconds=ctx.get_timeout())
         future = gen.with_timeout(delta, Future())
         self._transport.register(ctx, self._recv_ping(ctx, future))
-        self._send_ping(ctx)
+        yield self._send_ping(ctx)
 
         try:
             result = yield future
@@ -110,6 +110,7 @@ class Client(Iface):
             self._transport.unregister(ctx)
         raise gen.Return(result)
 
+    @gen.coroutine
     def _send_ping(self, ctx):
         oprot = self._oprot
         with self._write_lock:
@@ -118,7 +119,7 @@ class Client(Iface):
             args = ping_args()
             args.write(oprot)
             oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            yield oprot.get_transport().flush()
 
     def _recv_ping(self, ctx, future):
         def ping_callback(transport):
@@ -154,7 +155,7 @@ class Client(Iface):
         delta = timedelta(milliseconds=ctx.get_timeout())
         future = gen.with_timeout(delta, Future())
         self._transport.register(ctx, self._recv_bleh(ctx, future))
-        self._send_bleh(ctx, one, Two, custom_ints)
+        yield self._send_bleh(ctx, one, Two, custom_ints)
 
         try:
             result = yield future
@@ -162,6 +163,7 @@ class Client(Iface):
             self._transport.unregister(ctx)
         raise gen.Return(result)
 
+    @gen.coroutine
     def _send_bleh(self, ctx, one, Two, custom_ints):
         oprot = self._oprot
         with self._write_lock:
@@ -173,7 +175,7 @@ class Client(Iface):
             args.custom_ints = custom_ints
             args.write(oprot)
             oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            yield oprot.get_transport().flush()
 
     def _recv_bleh(self, ctx, future):
         def bleh_callback(transport):
@@ -215,7 +217,7 @@ class Client(Iface):
         delta = timedelta(milliseconds=ctx.get_timeout())
         future = gen.with_timeout(delta, Future())
         self._transport.register(ctx, self._recv_getThing(ctx, future))
-        self._send_getThing(ctx)
+        yield self._send_getThing(ctx)
 
         try:
             result = yield future
@@ -223,6 +225,7 @@ class Client(Iface):
             self._transport.unregister(ctx)
         raise gen.Return(result)
 
+    @gen.coroutine
     def _send_getThing(self, ctx):
         oprot = self._oprot
         with self._write_lock:
@@ -231,7 +234,7 @@ class Client(Iface):
             args = getThing_args()
             args.write(oprot)
             oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            yield oprot.get_transport().flush()
 
     def _recv_getThing(self, ctx, future):
         def getThing_callback(transport):
@@ -267,7 +270,7 @@ class Client(Iface):
         delta = timedelta(milliseconds=ctx.get_timeout())
         future = gen.with_timeout(delta, Future())
         self._transport.register(ctx, self._recv_getMyInt(ctx, future))
-        self._send_getMyInt(ctx)
+        yield self._send_getMyInt(ctx)
 
         try:
             result = yield future
@@ -275,6 +278,7 @@ class Client(Iface):
             self._transport.unregister(ctx)
         raise gen.Return(result)
 
+    @gen.coroutine
     def _send_getMyInt(self, ctx):
         oprot = self._oprot
         with self._write_lock:
@@ -283,7 +287,7 @@ class Client(Iface):
             args = getMyInt_args()
             args.write(oprot)
             oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            yield oprot.get_transport().flush()
 
     def _recv_getMyInt(self, ctx, future):
         def getMyInt_callback(transport):
