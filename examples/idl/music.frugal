@@ -47,6 +47,7 @@ struct Album {
 
 /**@
  * Exceptions are converted to the native format for each compiled
+ * language.
  */
 exception PurchasingError {
     1: string       message
