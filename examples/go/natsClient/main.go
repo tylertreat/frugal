@@ -1,7 +1,7 @@
 package main
 
 import (
-	// "fmt"
+	"fmt"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/nats-io/nats"
@@ -33,20 +33,19 @@ func main() {
 
 	// Create a client using NATS to send messages with our desired
 	// protocol
-	// storeClient := music.NewFStoreClient(natsT, fProtocolFactory)
-	music.NewFStoreClient(natsT, fProtocolFactory)
+	storeClient := music.NewFStoreClient(natsT, fProtocolFactory)
 
-	// // Configure the context used for sending requests
-	// ctx := frugal.NewFContext("a-corr-id")
+	// Configure the context used for sending requests
+	ctx := frugal.NewFContext("a-corr-id")
 
-	// // Request to buy an album
-	// album, err := storeClient.BuyAlbum(ctx, "ASIN-1290AIUBOA89", "ACCOUNT-12345")
-	// if err != nil {
-	// 	panic(err)
-	// }
+	// Request to buy an album
+	album, err := storeClient.BuyAlbum(ctx, "ASIN-1290AIUBOA89", "ACCOUNT-12345")
+	if err != nil {
+		panic(err)
+	}
 
-	// fmt.Printf("Bought an album %s\n", album)
+	fmt.Printf("Bought an album %s\n", album)
 
-	// // Enter the contest
-	// storeClient.EnterAlbumGiveaway(ctx, "kevin@workiva.com", "Kevin")
+	// Enter the contest
+	storeClient.EnterAlbumGiveaway(ctx, "kevin@workiva.com", "Kevin")
 }
