@@ -8,7 +8,7 @@ JAVA = java/src/main/java/
 
 clean:
 	@-rm -rf $(GO)
-	@-rm -rf $(JAVA)/music/
+	@-rm -rf $(JAVA)/v1/music/
 	@-rm -rf $(PYTHON_TORNADO)
 	@-rm -rf $(PYTHON_ASYNCIO)
 	@-rm -rf $(DART)
