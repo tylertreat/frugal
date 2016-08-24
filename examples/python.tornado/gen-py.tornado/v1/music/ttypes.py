@@ -235,6 +235,7 @@ class Album:
 class PurchasingError(TException):
     """
     Exceptions are converted to the native format for each compiled
+    language.
     
     Attributes:
      - message

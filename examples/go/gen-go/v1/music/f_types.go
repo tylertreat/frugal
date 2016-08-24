@@ -532,6 +532,7 @@ func (p *Album) String() string {
 }
 
 // Exceptions are converted to the native format for each compiled
+// language.
 type PurchasingError struct {
 	Message   string `thrift:"message,1" db:"message" json:"message"`
 	ErrorCode int16  `thrift:"error_code,2" db:"error_code" json:"error_code"`
