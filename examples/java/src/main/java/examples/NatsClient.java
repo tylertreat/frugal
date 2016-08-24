@@ -36,16 +36,12 @@ public class NatsClient {
         // Create a new client for the music store
         FStore.Client storeClient = new FStore.Client(transport, protocolFactory);
 
-        // Configure the context used for sending requests
-        FContext context = new FContext();
-        context.setTimeout(1000);
-
         // Request to buy an album
-        Album album = storeClient.buyAlbum(context, "ASIN-1290AIUBOA89", "ACCOUNT-12345");
+        Album album = storeClient.buyAlbum(new FContext("corr-id-1"), "ASIN-1290AIUBOA89", "ACCOUNT-12345");
         System.out.println("Bought the album: " + album);
 
         // Enter the contest
-        storeClient.enterAlbumGiveaway(context, "kevin@workiva.com", "Kevin");
+        storeClient.enterAlbumGiveaway(new FContext("corr-id-2"), "kevin@workiva.com", "Kevin");
 
         // Close the transport
         transport.close();
