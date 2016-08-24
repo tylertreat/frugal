@@ -43,7 +43,14 @@ func (f *StoreHandler) BuyAlbum(ctx *frugal.FContext, ASIN string, acct string) 
 	album := &music.Album{
 		ASIN:     "c54d385a-5024-4f3f-86ef-6314546a7e7f",
 		Duration: 1200,
-		Tracks:   []*music.Track{},
+		Tracks: []*music.Track{&music.Track{
+			Title:     "Comme des enfants",
+			Artist:    "Coeur de pirate",
+			Publisher: "Grosse Boîte",
+			Composer:  "Béatrice Martin",
+			Duration:  169,
+			Pro:       music.PerfRightsOrg_ASCAP,
+		}},
 	}
 
 	return album, nil
