@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/nats-io/nats"
@@ -33,13 +34,10 @@ func main() {
 
 	// Create a client using NATS to send messages with our desired
 	// protocol
-	storeClient := music.NewFStoreClient(natsT, fProtocolFactory)
-
-	// Configure the context used for sending requests
-	ctx := frugal.NewFContext("a-corr-id")
+	storeClient := music.NewFStoreClient(natsT, fProtocolFactory, newLoggingMiddleware())
 
 	// Request to buy an album
-	album, err := storeClient.BuyAlbum(ctx, "ASIN-1290AIUBOA89", "ACCOUNT-12345")
+	album, err := storeClient.BuyAlbum(frugal.NewFContext("corr-id-1"), "ASIN-1290AIUBOA89", "ACCOUNT-12345")
 	if err != nil {
 		panic(err)
 	}
@@ -47,5 +45,16 @@ func main() {
 	fmt.Printf("Bought an album %s\n", album)
 
 	// Enter the contest
-	storeClient.EnterAlbumGiveaway(ctx, "kevin@workiva.com", "Kevin")
+	storeClient.EnterAlbumGiveaway(frugal.NewFContext("corr-id-2"), "kevin@workiva.com", "Kevin")
+}
+
+func newLoggingMiddleware() frugal.ServiceMiddleware {
+	return func(next frugal.InvocationHandler) frugal.InvocationHandler {
+		return func(service reflect.Value, method reflect.Method, args frugal.Arguments) frugal.Results {
+			fmt.Printf("==== CALLING %s.%s ====\n", service.Type(), method.Name)
+			ret := next(service, method, args)
+			fmt.Printf("==== CALLED  %s.%s ====\n", service.Type(), method.Name)
+			return ret
+		}
+	}
 }
