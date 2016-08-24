@@ -6,10 +6,10 @@ from mock import Mock
 from mock import patch
 from thrift.transport.TTransport import TTransportException
 
-from frugal.transport.urlfetch_transport import FUrlfetchTransport
+from frugal.gae.transport import FUrlfetchTransport
 
 
-@patch('frugal.transport.urlfetch_transport._urlfetch')
+@patch('frugal.gae.transport.urlfetch_transport._urlfetch')
 class TestFUrlfetchTransport(unittest.TestCase):
 
     def test_request(self, mock_urlfetch):
