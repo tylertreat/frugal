@@ -64,7 +64,6 @@ public class FNatsServer implements FServer {
 
     // Stateless utils
     private ExecutorService workerPool;
-    private final BlockingQueue<Runnable> workQueue;
 
     private final ScheduledExecutorService heartbeatExecutor = Executors.newScheduledThreadPool(1);
 
@@ -104,6 +103,18 @@ public class FNatsServer implements FServer {
     public FNatsServer(Connection conn, String[] subjects, long heartbeatInterval, int maxMissedHeartbeats,
                        int workerCount, int queueLength, FProcessorFactory processorFactory,
                        FTransportFactory transportFactory, FProtocolFactory protocolFactory) {
+        this(conn, subjects, heartbeatInterval, maxMissedHeartbeats,
+                processorFactory, transportFactory, protocolFactory, new ThreadPoolExecutor(
+                        1, Math.max(1, workerCount), 30, TimeUnit.SECONDS,
+                        new ArrayBlockingQueue<>(queueLength),
+                        new BlockingRejectedExecutionHandler()
+                ));
+    }
+
+    @Deprecated
+    public FNatsServer(Connection conn, String[] subjects, long heartbeatInterval, int maxMissedHeartbeats,
+                       FProcessorFactory processorFactory, FTransportFactory transportFactory,
+                       FProtocolFactory protocolFactory, ExecutorService executorService) {
         this.conn = conn;
         this.subjects = subjects;
         this.heartbeatSubject = conn.newInbox();
@@ -113,10 +124,7 @@ public class FNatsServer implements FServer {
         this.processorFactory = processorFactory;
         this.transportFactory = transportFactory;
         this.protocolFactory = protocolFactory;
-        this.workQueue = new ArrayBlockingQueue<>(queueLength);
-        workerCount = Math.max(1, workerCount);
-        this.workerPool = new ThreadPoolExecutor(1, workerCount, 30, TimeUnit.SECONDS, workQueue,
-                new BlockingRejectedExecutionHandler());
+        this.workerPool = executorService;
     }
 
     private class Client {
