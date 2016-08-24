@@ -54,6 +54,8 @@ class TestFmuxTornadoTransport(AsyncTestCase):
         self.transport.set_registry(mock_registry)
 
         self.assertEqual(mock_registry, self.transport._registry)
+        self.mock_thrift_transport.\
+            set_execute_callback.assert_called_once_with(mock_registry.execute)
 
     def test_register(self):
         mock_registry = mock.Mock()
