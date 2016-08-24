@@ -15,7 +15,7 @@ class _FHttpException(Exception):
 
 class _FHttpRequest:
     """
-    FrugalHttpRequest stores data from an http request in a generic format.
+    _FHttpRequest stores data from an http request in a generic format.
     """
     def __init__(self, headers=None, body=b''):
         if headers is None:
@@ -26,7 +26,7 @@ class _FHttpRequest:
 
 class _FHttpResponse:
     """
-    FrugalHttpResponse returns data to be sent in an http response in a generic
+    _FHttpResponse returns data to be sent in an http response in a generic
     format.
     """
     def __init__(self, status_code=200, headers=None, body=b''):
@@ -51,14 +51,14 @@ class _FHttpResponse:
 
 class _FHttpRequestHandler:
     """
-    FHttpRequestHandler provides functionality to process rpcs from http.
+    _FHttpRequestHandler provides functionality to process rpcs from http.
 
     Reading from/writing to the network of a library of choice is left up to
     the caller.
     """
     def __init__(self, processor, protocol_factory):
         """
-        Initializes a FHttpRequestHandler.
+        Initializes a _FHttpRequestHandler.
 
         Args:
             processor: The processor to use to handle requests.
@@ -73,7 +73,7 @@ class _FHttpRequestHandler:
         Performs some common preprocessing on an http request.
 
         Args:
-            request: A FrugalHttpRequest object.
+            request: A _FHttpRequest object.
         Returns:
             otrans: The output transport, used for getting the output data
             iprot: The input protocol, given to a processor.
@@ -103,7 +103,7 @@ class _FHttpRequestHandler:
             response_limit: The maximum allowed size of the response,
                             zero if unlimited.
         Returns:
-            A FrugalHttpResponse to write back to the client.
+            A _FHttpResponse to write back to the client.
         """
         output_data = otrans.getvalue()
         if len(output_data) > response_limit > 0:
@@ -129,7 +129,7 @@ class _FHttpRequestHandler:
         Args:
             e: The exception.
         Returns:
-            A FrugalHttpResponse.
+            A _FHttpResponse.
         """
         logger.exception(e)
         return _FHttpResponse(status_code=400)
@@ -144,9 +144,9 @@ class _FHttpRequestHandler:
         errors should be necessary for implementors.
 
         Args:
-            request: A FrugalHttpRequest object.
+            request: A _FHttpRequest object.
         Returns:
-            a FrugalHttpResponse object.
+            a _FHttpResponse object.
         """
         raise NotImplementedError()
 
