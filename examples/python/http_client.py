@@ -1,3 +1,4 @@
+import os
 import logging
 import sys
 import uuid
@@ -8,7 +9,7 @@ from frugal.context import FContext
 from frugal.protocol import FProtocolFactory
 from frugal.transport.http_transport import FHttpTransport
 
-sys.path.append('gen-py')
+sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py"))
 from v1.music.f_Store import Client as FStoreClient  # noqa
 from v1.music.ttypes import Album  # noqa
 
@@ -24,7 +25,7 @@ ch.setFormatter(formatter)
 root.addHandler(ch)
 
 
-URL = 'http://localhost:8090/frugal'
+URL = 'http://localhost:8080/frugal'
 
 
 def main():

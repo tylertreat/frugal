@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import logging
+import os
 import sys
 import uuid
 
@@ -9,7 +10,7 @@ from thrift.protocol import TBinaryProtocol
 from frugal.protocol import FProtocolFactory
 from frugal.server.http_server import FHttpServer
 
-sys.path.append('gen-py')
+sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py"))
 from v1.music.f_Store import Processor as FStoreProcessor  # noqa
 from v1.music.f_Store import Iface  # noqa
 from v1.music.ttypes import Album, Track, PerfRightsOrg  # noqa
@@ -69,7 +70,7 @@ def main():
 
     # Create a new music store server using the processor,
     # The sever will listen on the configured URL
-    server = FHttpServer(processor, ('', 8090), prot_factory)
+    server = FHttpServer(processor, ('', 8080), prot_factory)
     server.serve()
 
 
