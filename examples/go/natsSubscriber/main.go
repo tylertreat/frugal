@@ -11,7 +11,7 @@ import (
 	"github.com/Workiva/frugal/lib/go"
 )
 
-// Run a NATS publisher
+// Run a NATS subscriber
 func main() {
 	// Set the protocol used for serialization.
 	// The protocol stack must match between client and server
