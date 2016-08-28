@@ -22,6 +22,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer conn.Close()
 
 	// Create a NATS scoped transport for the PubSub scope
 	factory := frugal.NewFNatsScopeTransportFactory(conn)
