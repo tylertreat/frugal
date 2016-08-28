@@ -10,7 +10,7 @@ from frugal.protocol.protocol_factory import FProtocolFactory
 from frugal.provider import FScopeProvider
 from frugal.aio.transport import FNatsScopeTransportFactory
 
-sys.path.append('gen-py.asyncio')
+sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py.asyncio"))
 from v1.music.f_AlbumWinners_subscriber import AlbumWinnersSubscriber  # noqa
 
 
