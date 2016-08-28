@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import logging
 import sys
 
@@ -8,8 +9,7 @@ from thrift.protocol import TBinaryProtocol
 from frugal.protocol import FProtocolFactory
 from frugal.aio.server.http_handler import new_http_handler
 
-sys.path.append('gen-py.asyncio')
-
+sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py.asyncio"))
 from v1.music.f_Store import Processor as FStoreProcessor  # noqa
 from v1.music.f_Store import Iface  # noqa
 from v1.music.ttypes import Album, Track  # noqa

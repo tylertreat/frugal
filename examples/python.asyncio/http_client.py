@@ -1,3 +1,4 @@
+import os
 import logging
 import sys
 import uuid
@@ -10,7 +11,7 @@ from frugal.protocol import FProtocolFactory
 from frugal.provider import FScopeProvider
 from frugal.aio.transport import FHttpTransport
 
-sys.path.append('gen-py.asyncio')
+sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py.asyncio"))
 from v1.music.f_Store import Client as FStoreClient  # noqa
 from v1.music.ttypes import Album  # noqa
 
