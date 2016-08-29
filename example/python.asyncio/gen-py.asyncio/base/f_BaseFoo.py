@@ -57,7 +57,7 @@ class Client(Iface):
         Args:
             ctx: FContext
         """
-        await self._methods['basePing']([ctx])
+        return await self._methods['basePing']([ctx])
 
     async def _basePing(self, ctx):
         timeout = ctx.get_timeout() / 1000.0
