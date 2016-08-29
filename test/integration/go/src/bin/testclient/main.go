@@ -130,6 +130,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 	fmt.Printf(" = %v \n", d)
 
 	// This currently needs to be tested with a number divisible by 4 due to a json serialization issue between go and java
+	// https://github.com/Workiva/frugal/issues/412
 	// Using 400 for now, will change back to 42 (101010) once the Thrift fix is implemented
 	// TODO: Change back to 42
 	fmt.Printf("TestBinary(400)")

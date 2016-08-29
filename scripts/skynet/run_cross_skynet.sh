@@ -47,10 +47,27 @@ pip install -e ".[tornado]"
 pip install -r requirements_dev_tornado.txt
 
 # Dart Dependencies
-cd ${FRUGAL_HOME}/test/integration/dart/test_client
-pub upgrade
-cd ${FRUGAL_HOME}/test/integration/dart/gen-dart/frugal_test
-pub upgrade
+cd $FRUGAL_HOME/test/integration/dart/test_client
+pub get
+
+# Try pub get and ignore failures - it will fail on any release
+cd $FRUGAL_HOME/test/integration/dart/gen-dart/frugal_test
+if pub get ; then
+    echo 'pub get returned no error'
+else
+    echo 'Pub get returned an error we ignored'
+fi
+
+# get frugal version to use with manually placing package in pub-cache
+frugal_version=$(frugal --version | awk '{print $3}')
+
+# we need to manually install our package to match with the version of frugal
+# so delete existing package (if above pub get succeeded) and override with the
+# current version if not
+rm -rf  ~/.pub-cache/hosted/pub.workiva.org/frugal-${frugal_version}/
+mkdir -p ~/.pub-cache/hosted/pub.workiva.org/frugal-${frugal_version}/
+cp -r $FRUGAL_HOME/lib/dart/* ~/.pub-cache/hosted/pub.workiva.org/frugal-${frugal_version}/
+pub get --offline
 
 # Build and install java frugal library
 cd ${FRUGAL_HOME}/lib/java

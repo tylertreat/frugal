@@ -6,8 +6,8 @@ run:
 
 contact: messaging@workiva.com
 
-# Five Horsemen
-image: "drydock.workiva.org/workiva/skynet-images:64123"
+# https://github.com/Workiva/messaging-docker-images/commit/6561ce2b439cf8081838d879fdfc5d301a14c6cb
+image: drydock.workiva.org/workiva/messaging-docker-images:69150
 
 also-run:
   Workiva/messaging-sdk:go-tests:
@@ -39,8 +39,8 @@ run:
 
 contact: messaging@workiva.com
 
-# Five Horesmen
-image: "drydock.workiva.org/workiva/skynet-images:64123"
+# https://github.com/Workiva/messaging-docker-images/commit/6561ce2b439cf8081838d879fdfc5d301a14c6cb
+image: drydock.workiva.org/workiva/messaging-docker-images:69150
 
 
 scripts:
@@ -62,8 +62,8 @@ run:
 
 contact: messaging@workiva.com
 
-# Five Horsemen
-image: "drydock.workiva.org/workiva/skynet-images:64123"
+# https://github.com/Workiva/messaging-docker-images/commit/6561ce2b439cf8081838d879fdfc5d301a14c6cb
+image: drydock.workiva.org/workiva/messaging-docker-images:69150
 
 scripts:
   - ./scripts/skynet/run_cross_skynet.sh -gen_with_thrift
