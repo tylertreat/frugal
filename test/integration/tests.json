@@ -38,6 +38,7 @@
     "transports": [
       "stateless",
       "stateful",
+      "statefulless",
       "http"
     ],
     "sockets": [
@@ -70,6 +71,7 @@
       "transports": [
         "stateless",
         "stateful",
+        "statefulless",
         "http"
       ]
     },
@@ -84,7 +86,8 @@
       ],
       "transports": [
         "stateless",
-        "stateful"
+        "stateful",
+        "statefulless"
       ]
     },
     "sockets": [

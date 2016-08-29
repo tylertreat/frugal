@@ -93,7 +93,7 @@ func StartClient(
 	// RPC client
 	var trans frugal.FTransport
 	switch transport {
-	case "stateless":
+	case "stateless", "statefulless":
 		trans = frugal.NewFNatsTransport(conn, fmt.Sprintf("%d", port), "")
 	case "http":
 		trans = frugal.NewHttpFTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).Build()

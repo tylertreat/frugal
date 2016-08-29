@@ -79,7 +79,7 @@ def main():
         thread.start_new_thread(healthcheck, (port, ))
         print("Starting {} server...".format(args.transport_type))
         yield server.serve()
-    elif args.transport_type == "stateful":  # @Deprecated TODO: Remove in 2.0
+    elif args.transport_type == "stateful" or args.transport_type == "statefulless":  # @Deprecated TODO: Remove in 2.0
         transport_factory = FMuxTornadoTransportFactory()
         heartbeat_interval = 10000
         max_missed_heartbeats = 3

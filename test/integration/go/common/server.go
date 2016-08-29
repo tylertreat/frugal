@@ -89,7 +89,7 @@ func StartServer(
 				frugal.NewFProtocolFactory(protocolFactory),
 				frugal.NewFProtocolFactory(protocolFactory)))
 		server = &httpServer{hostPort: hostPort}
-	case "stateful": // @Deprecated TODO: Remove in 2.0
+	case "stateful", "statefulless": // @Deprecated TODO: Remove in 2.0
 		fTransportFactory := frugal.NewFMuxTransportFactory(2)
 		server = frugal.NewFNatsServer(
 			conn,
