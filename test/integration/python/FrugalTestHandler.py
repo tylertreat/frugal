@@ -64,6 +64,10 @@ class FrugalTestHandler(Iface):
         print "test_enum({})".format(thing)
         return thing
 
+    def testTypedef(self, ctx, thing):
+        print "test_type_def({})".format(thing)
+        return thing
+
     def testMapMap(self, ctx, hello):
         print "test_map_map({})".format(hello)
         d = {4: 4, 3: 3, 2: 2, 1: 1}

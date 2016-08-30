@@ -282,6 +282,15 @@ def test_rpc(client, ctx):
         return_code = 1
     print(result)
 
+    # RPC with typeDef
+    type_def = 42
+    print("testTypedef({}) = ".format(type_def), end="")
+    result = yield client.testTypedef(ctx,type_def)
+    if result != type_def:
+        print("\nUnexpected result ", end="")
+        return_code = 1
+    print(result)
+
     # # RPC with map of maps
     d = {4: 4, 3: 3, 2: 2, 1: 1}
     e = {-4: -4, -3: -3, -2: -2, -1: -1}

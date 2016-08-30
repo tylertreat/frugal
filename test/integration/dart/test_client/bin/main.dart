@@ -283,14 +283,13 @@ List<TTest> _createTests() {
     await _testEnum(Numberz.EIGHT);
   }));
 
-  // Python does not support typedefs
-//  tests.add(new TTest(1, 'testTypedef', () async {
-//    var input = 309858235082523;
-//    stdout.write("testTypedef(${input})");
-//    var result = await client.testTypedef(ctx, input);
-//    if (result != input) throw new TTestError(result, input);
-//    stdout.write(" = ${result} \n");
-//  }));
+  tests.add(new TTest(1, 'testTypedef', () async {
+    var input = 309858235082523;
+    stdout.write("testTypedef(${input})");
+    var result = await client.testTypedef(ctx, input);
+    if (result != input) throw new TTestError(result, input);
+    stdout.write(" = ${result} \n");
+  }));
 
   tests.add(new TTest(1, 'testMapMap', () async {
     stdout.write("testMapMap(ctx, 1)");

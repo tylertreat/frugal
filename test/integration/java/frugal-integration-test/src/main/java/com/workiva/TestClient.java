@@ -471,14 +471,13 @@ public class TestClient {
             /**
              * TYPEDEF TEST
              */
-//              Python does not support typedefs
-//            System.out.print("testTypedef(309858235082523)");
-//            long uid = testClient.testTypedef(context, 309858235082523L);
-//            System.out.print(" = " + uid + "\n");
-//            if (uid != 309858235082523L) {
-//                returnCode |= 1;
-//                System.out.println("*** FAILURE ***\n");
-//            }
+            System.out.print("testTypedef(309858235082523)");
+            long uid = testClient.testTypedef(context, 309858235082523L);
+            System.out.print(" = " + uid + "\n");
+            if (uid != 309858235082523L) {
+                returnCode |= 1;
+                System.out.println("*** FAILURE ***\n");
+            }
 
             /**
              * NESTED MAP TEST

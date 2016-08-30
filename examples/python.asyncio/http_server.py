@@ -2,15 +2,12 @@
 import os
 import logging
 import sys
-import asyncio
 
 from aiohttp import web
-from nats.aio.client import Client as NatsClient
 
 from thrift.protocol import TBinaryProtocol
 from frugal.protocol import FProtocolFactory
-from frugal.aio.server import FNatsServer
-
+from frugal.aio.server.http_handler import new_http_handler
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py.asyncio"))
 from v1.music.f_Store import Processor as FStoreProcessor  # noqa
@@ -40,7 +37,7 @@ class StoreHandler(Iface):
         Return an album; always buy the same one.
         """
         album = Album()
-        album.ASIN = uuid.uuid4()
+        album.ASIN = ASIN
         album.duration = 12000
         return album
 
@@ -51,34 +48,17 @@ class StoreHandler(Iface):
         return True
 
 
-async def main():
+if __name__ == '__main__':
     # Declare the protocol stack used for serialization.
     # Protocol stacks must match between clients and servers.
     prot_factory = FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
-
-    # Open a NATS connection to receive requests
-    nats_client = NATS()
-    options = {
-        "verbose": True,
-        "servers": ["nats://127.0.0.1:4222"]
-    }
-    await nats_client.connect(**options)
 
     # Create a new server processor.
     # Incoming requests to the processor are passed to the handler.
     # Results from the handler are returned back to the client.
     processor = FStoreProcessor(StoreHandler())
 
-    # Create a new music store server using the processor,
-    # The sever will listen on the music-service NATS topic
-    server = FNatsServer(nats_client, "music-service", processor, prot_factory)
-
-    root.info("Starting Nats server...")
-
-    await server.serve()
-
-
-if __name__ == '__main__':
-    io_loop = asyncio.get_event_loop()
-    asyncio.ensure_future(main())
-    io_loop.run_forever()
+    store_handler = new_http_handler(processor, prot_factory)
+    app = web.Application()
+    app.router.add_route("*", "/", store_handler)
+    web.run_app(app)
