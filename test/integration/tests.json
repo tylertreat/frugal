@@ -100,19 +100,13 @@
     ]
   },
   {
-    "name": "python",
-
+    "name": "python:tornado",
     "client": {
       "timeout": 7,
       "command": [
         "python",
         "-u",
         "client.py"
-      ],
-      "transports": [
-        "stateless",
-        "stateful",
-        "http"
       ]
     },
     "server": {
@@ -120,13 +114,14 @@
       "command": [
         "python",
         "server.py"
-      ],
-      "transports": [
-        "stateless",
-        "stateful",
-        "http"
       ]
     },
+    "transports": [
+      "stateless",
+      "stateful",
+      "stateless-stateful",
+      "http"
+    ],
     "sockets": [
       "ip"
     ],
