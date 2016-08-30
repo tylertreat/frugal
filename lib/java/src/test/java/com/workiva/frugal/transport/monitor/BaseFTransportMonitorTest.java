@@ -127,13 +127,19 @@ public class BaseFTransportMonitorTest {
         MockFTransport transport = new MockFTransport();
         FTransportMonitor monitor = mock(FTransportMonitor.class);
         Exception cause = new Exception("error");
-        CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch latch = new CountDownLatch(2);
         when(monitor.onClosedUncleanly(cause)).thenAnswer(new Answer<Long>() {
             public Long answer(InvocationOnMock invocation) {
                 latch.countDown();
                 return 0L;
             }
         });
+        Mockito.doAnswer(new Answer<Void>() {
+            public Void answer(InvocationOnMock invocation) {
+                latch.countDown();
+                return null;
+            }
+        }).when(monitor).onReopenSucceeded();
         transport.setMonitor(monitor);
 
         transport.close(cause);
