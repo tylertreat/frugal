@@ -71,7 +71,7 @@ public class TestClient {
                     System.out.println("  --help\t\t\tProduce help message");
                     System.out.println("  --host=arg (=" + host + ")\tHost to connect");
                     System.out.println("  --port=arg (=" + port + ")\tPort number to connect");
-                    System.out.println("  --transport=arg (=" + transport_type + ")\n\t\t\t\tTransport: stateless, stateful, http");
+                    System.out.println("  --transport=arg (=" + transport_type + ")\n\t\t\t\tTransport: stateless, stateful, stateless-stateful, http");
                     System.out.println("  --protocol=arg (=" + protocol_type + ")\tProtocol: binary, json, compact");
                     System.exit(0);
                 }
@@ -86,6 +86,7 @@ public class TestClient {
         List<String> validTransports = new ArrayList<>();
         validTransports.add("stateless");
         validTransports.add("stateful");
+        validTransports.add("stateless-stateful");
         validTransports.add("http");
 
         if (!validTransports.contains(transport_type)) {
@@ -109,6 +110,7 @@ public class TestClient {
                     fTransport = fTransportFactory.getTransport(tTransport);
                     break;
                 case "stateless":
+                case "stateless-stateful":
                     fTransport = new FNatsTransport(conn, Integer.toString(port));
                     break;
             }

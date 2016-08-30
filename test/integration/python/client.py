@@ -38,7 +38,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run a python client")
     parser.add_argument('--port', dest='port', default=9090)
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
-    parser.add_argument('--transport', dest='transport_type', default="stateless", choices="stateless, stateful, http")
+    parser.add_argument('--transport', dest='transport_type', default="stateless", choices="stateless, stateful, stateless-stateful, http")
 
     args = parser.parse_args()
 
@@ -63,7 +63,7 @@ def main():
 
     transport = None
 
-    if args.transport_type == "stateless":
+    if args.transport_type == "stateless" or args.transport_type == "stateless-stateful":
         transport = FNatsTransport(nats_client, str(args.port))
 
     elif args.transport_type == "stateful":  # @Deprecated TODO: Remove in 2.0
