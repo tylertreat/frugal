@@ -223,16 +223,15 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 	}
 	fmt.Printf(" = %v \n", eret)
 
-	// Python does not support typedefs
-	//fmt.Printf("TestTypedef(%v)", frugaltest.UserId(42))
-	//tret, err := client.TestTypedef(ctx, frugaltest.UserId(42))
-	//if err != nil {
-	//	log.Fatal("Unexpected error in TestTypedef() call: ", err)
-	//}
-	//if tret != frugaltest.UserId(42) {
-	//	log.Fatalf("Unexpected TestTypedef() result expected %#v, got %#v ", frugaltest.UserId(42), tret)
-	//}
-	//fmt.Printf(" = %v \n", tret)
+	fmt.Printf("TestTypedef(%v)", frugaltest.UserId(42))
+	tret, err := client.TestTypedef(ctx, frugaltest.UserId(42))
+	if err != nil {
+		log.Fatal("Unexpected error in TestTypedef() call: ", err)
+	}
+	if tret != frugaltest.UserId(42) {
+		log.Fatalf("Unexpected TestTypedef() result expected %#v, got %#v ", frugaltest.UserId(42), tret)
+	}
+	fmt.Printf(" = %v \n", tret)
 
 	fmt.Printf("TestMapMap(42)")
 	mapmap, err := client.TestMapMap(ctx, 42)
