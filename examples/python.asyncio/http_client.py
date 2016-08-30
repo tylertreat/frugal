@@ -46,9 +46,9 @@ async def main():
 
     root.info("Bought an album %s\n", album)
 
-    # await store_client.enterAlbumGiveaway(FContext(),
-    #                                       "kevin@workiva.com",
-    #                                       "Kevin")
+    await store_client.enterAlbumGiveaway(FContext(),
+                                          "kevin@workiva.com",
+                                          "Kevin")
 
     await transport.close()
 
