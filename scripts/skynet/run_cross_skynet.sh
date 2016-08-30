@@ -69,7 +69,6 @@ mkdir -p ~/.pub-cache/hosted/pub.workiva.org/frugal-${frugal_version}/
 cp -r $FRUGAL_HOME/lib/dart/* ~/.pub-cache/hosted/pub.workiva.org/frugal-${frugal_version}/
 pub get --offline
 
-
 # Build and install java frugal library
 cd ${FRUGAL_HOME}/lib/java
 mvn clean verify -q

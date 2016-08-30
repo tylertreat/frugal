@@ -66,7 +66,7 @@ public class TestServer {
                         System.out.println("  --help\t\t\tProduce help message");
                         System.out.println("  --port=arg (=" + port + ")\tPort number to connect");
                         System.out.println("  --protocol=arg (=" + protocol_type + ")\tProtocol: binary, json, compact");
-                        System.out.println("  --transport=arg (=" + transport_type + ")\tTransport: stateless, stateful, statefulless");
+                        System.out.println("  --transport=arg (=" + transport_type + ")\tTransport: stateless, stateful, stateless-stateful");
                         System.exit(0);
                     }
                 }
@@ -84,7 +84,7 @@ public class TestServer {
             List<String> validTransports = new ArrayList<>();
             validTransports.add("stateless");
             validTransports.add("stateful");
-            validTransports.add("statefulless");
+            validTransports.add("stateless-stateful");
 
             if (!validTransports.contains(transport_type)) {
                 throw new Exception("Unknown transport type! " + transport_type);
@@ -105,7 +105,7 @@ public class TestServer {
                             Integer.toString(port)).build();
                     break;
                 case "stateful":
-                case "statefulless":
+                case "stateless-stateful":
                     FTransportFactory fTransportFactory = new FMuxTransport.Factory(2);
                     server = new FNatsServer(
                             conn,
