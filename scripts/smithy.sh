@@ -16,7 +16,7 @@ GORACE="halt_on_error=1"
 
 # JAVA
 # Compile library code
-cd $ROOT/lib/java && mvn checkstyle:check && mvn clean verify
+cd $ROOT/lib/java && mvn clean verify
 mv target/frugal-*.jar $ROOT
 
 # GO
