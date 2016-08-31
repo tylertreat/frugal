@@ -1,7 +1,9 @@
-package com.workiva.frugal;
+package com.workiva.frugal.benchmarks;
 
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -13,20 +15,21 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@BenchmarkMode(Mode.Throughput)
-@Threads(1)
-@Fork(1)
+/**
+ * Benchmarks for JNATS.
+ */
 @State(Scope.Thread)
 public class NatsBenchmark {
 
-    private static final int NUM_SUBSCRIBERS = 4;
     Connection nc;
 
     @Setup
@@ -34,11 +37,6 @@ public class NatsBenchmark {
         ConnectionFactory cf = new ConnectionFactory(ConnectionFactory.DEFAULT_URL);
         try {
             nc = cf.createConnection();
-            for (int i = 0; i < NUM_SUBSCRIBERS; i++) {
-                nc.subscribe("topic", m -> {
-                    // do nothing
-                });
-            }
         } catch (IOException | TimeoutException e) {
             e.printStackTrace();
         }
@@ -50,11 +48,22 @@ public class NatsBenchmark {
     }
 
     @Benchmark
-    public void testPublishToSub() {
+    public void testPublisher() {
         try {
             nc.publish("topic", "Hello World".getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void main(String[] args) throws RunnerException {
+        Options opt = new OptionsBuilder()
+                .include(NatsBenchmark.class.getSimpleName())
+                .warmupIterations(5)
+                .measurementIterations(5)
+                .forks(1)
+                .build();
+
+        new Runner(opt).run();
     }
 }
