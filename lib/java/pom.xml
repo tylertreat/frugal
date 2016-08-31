@@ -139,6 +139,7 @@
                     <failOnViolation>true</failOnViolation>
                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     <includeResources>false</includeResources>
+                    <excludes>**/generated/**/*</excludes>
                 </configuration>
                 <executions>
                     <execution>
