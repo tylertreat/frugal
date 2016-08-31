@@ -118,7 +118,6 @@ public class TestClient {
                     fTransport.open();
                     break;
                 case "stateless":
-                case "stateless-stateful":
                     fTransport = new FNatsTransport(conn, Integer.toString(port));
                     break;
             }
