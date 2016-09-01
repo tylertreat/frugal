@@ -12,17 +12,7 @@ which godep > /dev/null || {
 
 ROOT=$PWD
 CODECOV_TOKEN='bQ4MgjJ0G2Y73v8JNX6L7yMK9679nbYB'
-THRIFT_TAG=0.9.3-wk-2
-THRIFT=thrift-$THRIFT_TAG-linux-amd64
 GORACE="halt_on_error=1"
-
-
-# Retrieve the thrift binary
-mkdir -p $ROOT/bin
-curl -L -O https://github.com/stevenosborne-wf/thrift/releases/download/$THRIFT_TAG/$THRIFT
-mv $THRIFT $ROOT/bin/thrift
-chmod 0755 $ROOT/bin/thrift
-export PATH=$PATH:$ROOT/bin
 
 # JAVA
 # Compile library code
