@@ -94,18 +94,6 @@ func StartServer(
 				frugal.NewFProtocolFactory(protocolFactory),
 				frugal.NewFProtocolFactory(protocolFactory)))
 		server = &httpServer{hostPort: hostPort}
-	case "stateful", "stateless-stateful": // @Deprecated TODO: Remove in 2.0
-		fTransportFactory := frugal.NewFMuxTransportFactory(2)
-		server = frugal.NewFNatsServer(
-			conn,
-			fmt.Sprintf("%d", port),
-			time.Minute,
-			processor,
-			fTransportFactory,
-			frugal.NewFProtocolFactory(protocolFactory),
-		)
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {})
-		go http.ListenAndServe(hostPort, nil)
 	}
 	fmt.Println("Starting %v server...", transport)
 	if err := server.Serve(); err != nil {
