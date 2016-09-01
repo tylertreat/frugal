@@ -29,12 +29,10 @@ import static com.workiva.frugal.transport.FNatsTransport.NATS_MAX_MESSAGE_SIZE;
 /**
  * An implementation of FServer which uses NATS as the underlying transport.
  * Clients must connect with the FNatsTransport.
- *
- * TODO: Rename this to FNatsServer with 2.0.
  */
-public class FStatelessNatsServer implements FServer {
+public class FNatsServer implements FServer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FStatelessNatsServer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FNatsServer.class);
     private static final int DEFAULT_WORK_QUEUE_LEN = 64;
 
     private final Connection conn;
@@ -49,7 +47,7 @@ public class FStatelessNatsServer implements FServer {
     private final ExecutorService executorService;
 
     /**
-     * Creates a new FStatelessNatsServer which receives requests on the given subject and queue.
+     * Creates a new FNatsServer which receives requests on the given subject and queue.
      * <p>
      * The worker count controls the size of the thread pool used to process requests. This uses a provided queue
      * length. If the queue fills up, newly received requests will block to be placed on the queue. If requests wait for
@@ -62,8 +60,8 @@ public class FStatelessNatsServer implements FServer {
      * @param subject      NATS subject to receive requests on
      * @param queue        NATS queue group to receive requests on
      */
-    private FStatelessNatsServer(Connection conn, FProcessor processor, FProtocolFactory protoFactory,
-                                 String subject, String queue, ExecutorService executorService) {
+    private FNatsServer(Connection conn, FProcessor processor, FProtocolFactory protoFactory,
+                        String subject, String queue, ExecutorService executorService) {
         this.conn = conn;
         this.processor = processor;
         this.inputProtoFactory = protoFactory;
@@ -74,7 +72,7 @@ public class FStatelessNatsServer implements FServer {
     }
 
     /**
-     * Builder for configuring and constructing FStatelessNatsServer instances.
+     * Builder for configuring and constructing FNatsServer instances.
      */
     public static class Builder {
 
@@ -174,19 +172,19 @@ public class FStatelessNatsServer implements FServer {
         }
 
         /**
-         * Creates a new configured FStatelessNatsServer.
+         * Creates a new configured FNatsServer.
          *
-         * @return FStatelessNatsServer
+         * @return FNatsServer
          */
-        public FStatelessNatsServer build() {
+        public FNatsServer build() {
             if (executorService == null) {
                 this.executorService = new ThreadPoolExecutor(
                         1, workerCount, 30, TimeUnit.SECONDS,
                         new ArrayBlockingQueue<>(queueLength),
                         new BlockingRejectedExecutionHandler());
             }
-            FStatelessNatsServer server =
-                    new FStatelessNatsServer(conn, processor, protoFactory, subject, queue, executorService);
+            FNatsServer server =
+                    new FNatsServer(conn, processor, protoFactory, subject, queue, executorService);
             server.setHighWatermark(highWatermark);
             return server;
         }
