@@ -38,7 +38,7 @@ public class FNatsTransportTest {
     @Before
     public void setUp() {
         conn = mock(Connection.class);
-        transport = new FNatsTransport(conn, subject, inbox);
+        transport = FNatsTransport.of(conn, subject).withInbox(inbox);
     }
 
     @Test(expected = TTransportException.class)
