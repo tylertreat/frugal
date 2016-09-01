@@ -25,7 +25,7 @@ import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
 import com.workiva.frugal.server.FServer;
-import com.workiva.frugal.server.FStatelessNatsServer;
+import com.workiva.frugal.server.FNatsServer;
 import com.workiva.frugal.transport.FNatsScopeTransport;
 import com.workiva.frugal.transport.FScopeTransportFactory;
 import com.workiva.frugal.transport.FTransportFactory;
@@ -112,7 +112,7 @@ public class TestServer {
             FServer server = null;
             switch (transport_type) {
                 case "stateless":
-                    server = new FStatelessNatsServer.Builder(
+                    server = new FNatsServer.Builder(
                             conn,
                             processor,
                             fProtocolFactory,
