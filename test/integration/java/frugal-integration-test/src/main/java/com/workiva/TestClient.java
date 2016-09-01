@@ -118,7 +118,7 @@ public class TestClient {
                     fTransport.open();
                     break;
                 case "stateless":
-                    fTransport = FNatsTransport.of(conn, Integer.toString(port));
+                    fTransport = new FNatsTransport(conn, Integer.toString(port));
                     break;
             }
         } catch (Exception x) {
