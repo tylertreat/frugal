@@ -15,5 +15,5 @@ cd $GOPATH/src/github.com/Workiva/frugal
 godep go install
 
 # Start gnatsd
-./gnatsd &
+gnatsd &
 
