@@ -366,7 +366,7 @@ func TestNatsServerExpiredConnections(t *testing.T) {
 
 	conn.PublishRequest("foo", "reply", []byte(`{"version": 0}`))
 	conn.Flush()
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 	assert.Equal(t, 0, len(server.(*FNatsServer).clients))
 
 	assert.Nil(t, server.Stop())
