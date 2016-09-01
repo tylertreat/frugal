@@ -241,7 +241,7 @@ public class FNatsScopeTransport extends FScopeTransport {
     @Override
     public void flush() throws TTransportException {
         if (!isOpen()) {
-            throw getClosedConditionException(conn, "flush:");
+            throw getClosedConditionException(conn.getState(), "flush:");
         }
         byte[] data = new byte[writeBuffer.position()];
         writeBuffer.flip();

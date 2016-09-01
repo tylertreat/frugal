@@ -120,10 +120,10 @@ public class FNatsTransport extends FTransport {
             return;
         }
 
+        byte[] data = getFramedWriteBytes();
         resetWriteBuffer();
 
         try {
-            byte[] data = getFramedWriteBytes();
             conn.publish(subject, inbox, data);
         } catch (IOException e) {
             throw new TTransportException("flush: unable to publish data: " + e.getMessage());
