@@ -12,7 +12,7 @@ class thing implements TBase {
   static final TField _AN_ID_FIELD_DESC = new TField("an_id", TType.I32, 1);
   static final TField _A_STRING_FIELD_DESC = new TField("a_string", TType.STRING, 2);
 
-  int _an_id;
+  int _an_id = 0;
   static const int AN_ID = 1;
   String _a_string;
   static const int A_STRING = 2;
