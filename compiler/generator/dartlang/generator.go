@@ -35,14 +35,14 @@ const (
 // Generator implements the LanguageGenerator interface for Dart.
 type Generator struct {
 	*generator.BaseGenerator
-	outputDir     string
+	outputDir string
 }
 
 // NewGenerator creates a new Dart LanguageGenerator.
 func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	return &Generator{
 		BaseGenerator: &generator.BaseGenerator{Options: options},
-		outputDir: "",
+		outputDir:     "",
 	}
 }
 
