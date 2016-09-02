@@ -104,14 +104,8 @@ public class TestClient {
                     fTransport = httpTransport.build();
                     fTransport.open();
                     break;
-                case "stateful":
-                    TTransport tTransport = TNatsServiceTransport.client(conn, ""+ port, socketTimeoutMs, 3);
-                    FTransportFactory fTransportFactory = new FMuxTransport.Factory(2);
-                    fTransport = fTransportFactory.getTransport(tTransport);
-                    break;
                 case "stateless":
-                case "stateless-stateful":
-                    fTransport = new FNatsTransport(conn, Integer.toString(port));
+                    fTransport = FNatsTransport.of(conn, Integer.toString(port));
                     break;
             }
         } catch (Exception x) {

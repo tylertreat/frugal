@@ -34,31 +34,31 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests for {@link FStatelessNatsServer}.
+ * Tests for {@link FNatsServer}.
  */
 @RunWith(JUnit4.class)
-public class FStatelessNatsServerTest {
+public class FNatsServerTest {
 
     private Connection mockConn;
     private FProcessor mockProcessor;
     private FProtocolFactory mockProtocolFactory;
     private String subject = "foo";
     private String queue = "bar";
-    private FStatelessNatsServer server;
+    private FNatsServer server;
 
     @Before
     public void setUp() {
         mockConn = mock(Connection.class);
         mockProcessor = mock(FProcessor.class);
         mockProtocolFactory = mock(FProtocolFactory.class);
-        server = new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+        server = new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
                 .withQueueGroup(queue).build();
     }
 
     @Test
     public void testBuilderConfiguresServer() {
-        FStatelessNatsServer server =
-                new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+        FNatsServer server =
+                new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
                         .withHighWatermark(7)
                         .withQueueGroup("myQueue")
                         .withQueueLength(7)
@@ -72,7 +72,7 @@ public class FStatelessNatsServerTest {
 
     @Test
     public void testServe() throws TException, IOException, InterruptedException {
-        server = new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+        server = new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
                 .withQueueGroup(queue).build();
         ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> queueCaptor = ArgumentCaptor.forClass(String.class);
@@ -107,8 +107,8 @@ public class FStatelessNatsServerTest {
         ExecutorService executor = mock(ExecutorService.class);
         ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
         when(executor.submit(captor.capture())).thenReturn(null);
-        FStatelessNatsServer server =
-                new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+        FNatsServer server =
+                new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
                         .withExecutorService(executor).build();
         MessageHandler handler = server.newRequestHandler();
         String reply = "reply";
@@ -118,8 +118,8 @@ public class FStatelessNatsServerTest {
         handler.onMessage(msg);
 
         verify(executor).submit(captor.getValue());
-        assertEquals(FStatelessNatsServer.Request.class, captor.getValue().getClass());
-        FStatelessNatsServer.Request request = (FStatelessNatsServer.Request) captor.getValue();
+        assertEquals(FNatsServer.Request.class, captor.getValue().getClass());
+        FNatsServer.Request request = (FNatsServer.Request) captor.getValue();
         assertArrayEquals(data, request.frameBytes);
         assertEquals(reply, request.reply);
         assertEquals(5000, request.highWatermark);
@@ -133,8 +133,8 @@ public class FStatelessNatsServerTest {
     public void testRequestHandler_noReply() {
         ExecutorService executor = mock(ExecutorService.class);
         when(executor.submit(any(Runnable.class))).thenReturn(null);
-        FStatelessNatsServer server =
-                new FStatelessNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+        FNatsServer server =
+                new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
                 .withExecutorService(executor).build();
         MessageHandler handler = server.newRequestHandler();
         byte[] data = "this is a request".getBytes();
@@ -153,7 +153,7 @@ public class FStatelessNatsServerTest {
         long highWatermark = 5000;
         MockFProcessor processor = new MockFProcessor(data, "blah".getBytes());
         mockProtocolFactory = new FProtocolFactory(new TJSONProtocol.Factory());
-        FStatelessNatsServer.Request request = new FStatelessNatsServer.Request(data, timestamp, reply, highWatermark,
+        FNatsServer.Request request = new FNatsServer.Request(data, timestamp, reply, highWatermark,
                 mockProtocolFactory, mockProtocolFactory, processor, mockConn);
 
         request.run();
@@ -170,7 +170,7 @@ public class FStatelessNatsServerTest {
         long highWatermark = 5000;
         MockFProcessor processor = new MockFProcessor(data, null);
         mockProtocolFactory = new FProtocolFactory(new TJSONProtocol.Factory());
-        FStatelessNatsServer.Request request = new FStatelessNatsServer.Request(data, timestamp, reply, highWatermark,
+        FNatsServer.Request request = new FNatsServer.Request(data, timestamp, reply, highWatermark,
                 mockProtocolFactory, mockProtocolFactory, processor, mockConn);
 
         request.run();
