@@ -14,7 +14,7 @@ class AwesomeException extends Error implements TBase {
   static final TField _REASON_FIELD_DESC = new TField("Reason", TType.STRING, 2);
 
   /// ID is a unique identifier for an awesome exception.
-  int _iD;
+  int _iD = 0;
   static const int ID = 1;
   /// Reason contains the error message.
   String _reason;

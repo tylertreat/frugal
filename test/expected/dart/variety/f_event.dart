@@ -16,7 +16,7 @@ class Event implements TBase {
   static final TField _MESSAGE_FIELD_DESC = new TField("Message", TType.STRING, 2);
 
   /// ID is a unique identifier for an event.
-  int _iD;
+  int _iD = 0;
   static const int ID = 1;
   /// Message contains the event payload.
   String _message;

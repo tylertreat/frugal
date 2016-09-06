@@ -156,7 +156,7 @@ class blah_args implements TBase {
   static final TField _STR_FIELD_DESC = new TField("Str", TType.STRING, 2);
   static final TField _EVENT_FIELD_DESC = new TField("event", TType.STRUCT, 3);
 
-  int _num;
+  int _num = 0;
   static const int NUM = 1;
   String _str;
   static const int STR = 2;
@@ -584,7 +584,7 @@ class oneWay_args implements TBase {
   static final TField _ID_FIELD_DESC = new TField("id", TType.I64, 1);
   static final TField _REQ_FIELD_DESC = new TField("req", TType.MAP, 2);
 
-  int _id;
+  int _id = 0;
   static const int ID = 1;
   Map<int, String> _req;
   static const int REQ = 2;
@@ -1094,11 +1094,11 @@ class param_modifiers_args implements TBase {
   static final TField _DEFAULT_NUM_FIELD_DESC = new TField("default_num", TType.I32, 2);
   static final TField _REQ_NUM_FIELD_DESC = new TField("req_num", TType.I32, 3);
 
-  int _opt_num;
+  int _opt_num = 0;
   static const int OPT_NUM = 1;
-  int _default_num;
+  int _default_num = 0;
   static const int DEFAULT_NUM = 2;
-  int _req_num;
+  int _req_num = 0;
   static const int REQ_NUM = 3;
 
   bool __isset_opt_num = false;

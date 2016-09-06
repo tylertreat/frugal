@@ -35,7 +35,7 @@ class TestingDefaults implements TBase {
   static const int EV1 = 2;
   t_variety.Event _ev2;
   static const int EV2 = 3;
-  int _iD;
+  int _iD = 0;
   static const int ID = 4;
   String _thing;
   static const int THING = 5;
@@ -43,7 +43,7 @@ class TestingDefaults implements TBase {
   static const int THING2 = 6;
   List<int> _listfield;
   static const int LISTFIELD = 7;
-  int _iD3;
+  int _iD3 = 0;
   static const int ID3 = 8;
   Uint8List _bin_field;
   static const int BIN_FIELD = 9;

@@ -35,7 +35,7 @@ class EventWrapper implements TBase {
   static const int NUMS = 6;
   List<int> _enums;
   static const int ENUMS = 7;
-  bool _aBoolField;
+  bool _aBoolField = false;
   static const int ABOOLFIELD = 8;
   t_variety.TestingUnions _a_union;
   static const int A_UNION = 9;
