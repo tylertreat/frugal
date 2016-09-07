@@ -46,7 +46,7 @@ func NewGenerator(options map[string]string, genWithFrugal bool) generator.Langu
 
 func (g *Generator) getLibraryName() string {
 	if ns, ok := g.Frugal.Thrift.Namespace(lang); ok {
-		return generator.LowercaseFirstLetter(toLibraryName((ns)))
+		return generator.LowercaseFirstLetter(toLibraryName(ns))
 	}
 	return generator.LowercaseFirstLetter(g.Frugal.Name)
 }
@@ -1118,13 +1118,7 @@ func (g *Generator) GenerateObjectPackage(file *os.File, name string) error {
 }
 
 func (g *Generator) generatePackage(file *os.File, name, suffix string) error {
-	pkg, ok := g.Frugal.Thrift.Namespace(lang)
-	if ok {
-		components := generator.GetPackageComponents(pkg)
-		pkg = components[len(components)-1]
-	} else {
-		pkg = g.Frugal.Name
-	}
+	pkg := g.getLibraryName()
 
 	libraryPrefix := g.getLibraryPrefix()
 	libraryDeclaration := "library " + libraryPrefix + pkg
@@ -1142,8 +1136,7 @@ func (g *Generator) GenerateThriftImports() string {
 	imports := "import 'dart:typed_data' show Uint8List;\n"
 	imports += "import 'package:thrift/thrift.dart';\n"
 	// Import the current package
-	pkgLower := strings.ToLower(g.getNamespaceOrName())
-	imports += g.getImportDeclaration(pkgLower)
+	imports += g.getImportDeclaration(g.getNamespaceOrName())
 
 	// Import includes
 	for _, include := range g.Frugal.Thrift.Includes {
@@ -1151,7 +1144,7 @@ func (g *Generator) GenerateThriftImports() string {
 		if !ok {
 			includeName = include.Name
 		}
-		includeName = strings.ToLower(toLibraryName(includeName))
+
 		imports += g.getImportDeclaration(includeName)
 	}
 
@@ -1171,7 +1164,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 		if !ok {
 			namespace = include
 		}
-		namespace = toLibraryName(namespace)
+
 		imports += g.getImportDeclaration(namespace)
 	}
 
@@ -1201,13 +1194,12 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 		if !ok {
 			namespace = include
 		}
-		namespace = toLibraryName(namespace)
+
 		imports += g.getImportDeclaration(namespace)
 	}
 
 	// Import same package.
-	pkgLower := strings.ToLower(g.getNamespaceOrName())
-	imports += g.getImportDeclaration(pkgLower)
+	imports += g.getImportDeclaration(g.getNamespaceOrName())
 
 	_, err := file.WriteString(imports)
 	return err
@@ -1763,6 +1755,7 @@ func (g *Generator) getPackagePrefix() string {
 }
 
 func (g *Generator) getImportDeclaration(namespace string) string {
+	namespace = toLibraryName(strings.ToLower(namespace))
 	prefix := g.getPackagePrefix()
 	if prefix == "" {
 		prefix += namespace + "/"
