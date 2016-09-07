@@ -32,6 +32,7 @@ class FNatsScopeTransport(FScopeTransport):
         self._pull = False
         self._is_open = False
         self._write_buffer = None
+        self._sub_id = None
 
     def lock_topic(self, topic):
         """Sets the publish topic and locks the transport for exclusive access.
@@ -70,13 +71,12 @@ class FNatsScopeTransport(FScopeTransport):
         self._subject = topic
         yield self.open(callback)
 
-    @gen.coroutine
     def isOpen(self):
-        raise gen.Return(self._nats_client.is_connected() and self._is_open)
+        return self._nats_client.is_connected() and self._is_open
 
     @gen.coroutine
     def open(self, callback=None):
-        """ Asynchronously opens the transport. Throws exception if the provided
+        """Asynchronously opens the transport. Throws exception if the provided
         NATS client is not connected or if the transport is already open.
 
         Args:
@@ -85,41 +85,40 @@ class FNatsScopeTransport(FScopeTransport):
             TTransportException: if NOT_OPEN or ALREADY_OPEN
         """
         if not self._nats_client.is_connected():
-            raise TTransportException(TTransportException.NOT_OPEN,
-                                      "Nats not connected!")
+            msg = "Nats not connected!"
+            raise TTransportException(TTransportException.NOT_OPEN, msg)
 
-        if (yield self.isOpen()):
-            raise TTransportException(TTransportException.ALREADY_OPEN,
-                                      "Nats is already open!")
+        if self.isOpen():
+            msg = "Nats is already open!"
+            raise TTransportException(TTransportException.ALREADY_OPEN, msg)
 
         # If _pull is False the transport belongs to a publisher.  Allocate a
         # write buffer, mark open and short circuit
-        with (yield self._open_lock.acquire()):
-            if not self._pull:
-                self._write_buffer = BytesIO()
-                self._is_open = True
-                return
+        if not self._pull:
+            self._write_buffer = BytesIO()
+            self._is_open = True
+            return
 
-            if not self._subject:
-                raise TTransportException(message="Subject cannot be empty.")
+        if not self._subject:
+            raise TTransportException(message="Subject cannot be empty.")
 
-        def on_message(msg):
+        def _cb(msg):
             callback(TMemoryBuffer(msg.data[4:]))
 
-        self._sub_id = yield self._nats_client.subscribe(
-            "frugal.{}".format(self._subject),
-            self._queue,
-            on_message
-        )
+        subject = self._get_formatted_subject()
+        queue = self._queue
+        self._sub_id = yield self._nats_client.subscribe(subject, queue, _cb)
 
         self._is_open = True
         logger.debug("FNatsScopeTransport open.")
 
     @gen.coroutine
     def close(self):
+        """Close the transport and unsubscribe from NATS."""
         logger.debug("Closing FNatsScopeTransport.")
 
-        if not (yield self.isOpen()):
+        if not self.isOpen():
+            # No harm in trying to close if already closed.
             return
 
         if not self._pull:
@@ -129,10 +128,9 @@ class FNatsScopeTransport(FScopeTransport):
         # Unsubscribe
         self._nats_client.unsubscribe(self._sub_id)
         self._sub_id = None
-
         self._is_open = False
 
-    def read(self, sz):
+    def read(self):
         raise NotImplementedError("Don't call this.")
 
     def write(self, buff):
@@ -150,25 +148,25 @@ class FNatsScopeTransport(FScopeTransport):
         size = len(buff) + len(self._write_buffer.getvalue())
 
         if size > MAX_MESSAGE_SIZE:
-            ex = FMessageSizeException("Message exceeds NATS max message size")
-            raise ex
+            msg = "Message exceeds NATS max message size"
+            raise FMessageSizeException(msg)
 
         self._write_buffer.write(buff)
 
     @gen.coroutine
     def flush(self):
-        if not (yield self.isOpen()):
-            raise TTransportException(TTransportException.NOT_OPEN,
-                                      "Nats not connected!")
+        if not self.isOpen():
+            msg = "Nats not connected!"
+            raise TTransportException(TTransportException.NOT_OPEN, msg)
 
         frame = self._write_buffer.getvalue()
         frame_length = struct.pack('!I', len(frame))
         self._write_buffer = BytesIO()
 
         formatted_subject = self._get_formatted_subject()
+        formatted_message = b'{}{}'.format(frame_length, frame)
 
-        yield self._nats_client.publish(formatted_subject,
-                                        '{0}{1}'.format(frame_length, frame))
+        yield self._nats_client.publish(formatted_subject, formatted_message)
 
     def _get_formatted_subject(self):
         return "{}{}".format(_FRUGAL_PREFIX, self._subject)

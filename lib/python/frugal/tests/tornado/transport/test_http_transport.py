@@ -97,7 +97,6 @@ class TestFHttpTransport(AsyncTestCase):
     @gen_test
     def test_flush_oneway(self):
         callback_mock = mock.Mock()
-        self.transport.set_execute_callback(callback_mock)
         self.transport._http = self.http_mock
 
         response_encoded = base64.b64encode(bytearray([0, 0, 0, 0]))

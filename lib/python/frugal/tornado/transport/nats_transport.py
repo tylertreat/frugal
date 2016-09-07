@@ -1,9 +1,11 @@
 from nats.io.utils import new_inbox
 from thrift.transport.TTransport import TTransportException
-from tornado import gen, locks
+from tornado import gen
 
-from frugal.exceptions import FExecuteCallbackNotSet
 from frugal.tornado.transport import FTornadoTransport
+
+_NOT_OPEN = u'NATS not connected.'
+_ALREAD_OPEN = u'NATS transport already open.'
 
 
 class FNatsTransport(FTornadoTransport):
@@ -13,7 +15,7 @@ class FNatsTransport(FTornadoTransport):
     subject. This assumes requests/responses fit within a single NATS message.
     """
 
-    def __init__(self, nats_client, subject, inbox="", is_ttransport=False):
+    def __init__(self, nats_client, subject, inbox=u''):
         """Create a new instance of FStatelessNatsTornadoServer
 
         Args:
@@ -27,47 +29,27 @@ class FNatsTransport(FTornadoTransport):
         self._is_open = False
         self._sub_id = None
 
-        # TODO: Remove with 2.0
-        self._open_lock = locks.Lock()
-        self._is_ttransport = is_ttransport
-
-    @gen.coroutine
     def isOpen(self):
-        with (yield self._open_lock.acquire()):
-            # Tornado requires we raise a special exception to return a value.
-            raise gen.Return(
-                self._is_open and self._nats_client.is_connected())
+        return self._is_open and self._nats_client.is_connected()
 
     @gen.coroutine
     def open(self):
         """Subscribes to the configured inbox subject"""
         if not self._nats_client.is_connected():
-            raise TTransportException(TTransportException.NOT_OPEN,
-                                      "NATS not connected.")
+            raise TTransportException(TTransportException.NOT_OPEN, _NOT_OPEN)
 
-        elif (yield self.isOpen()):
+        elif self.isOpen():
             raise TTransportException(TTransportException.ALREADY_OPEN,
                                       "NATS transport already open")
 
         handler = self._on_message_callback
-        if self._is_ttransport:
-            handler = self._ttransport_on_message_callback
+        inbox = self._inbox
+        self._sub_id = yield self._nats_client.subscribe(inbox, u'', handler)
 
-        self._sub_id = yield self._nats_client.subscribe(
-            self._inbox,
-            "",
-            handler,
-        )
         self._is_open = True
 
     def _on_message_callback(self, msg):
         self.execute_frame(msg.data)
-
-    def _ttransport_on_message_callback(self, msg):
-        if not self._execute:
-            raise FExecuteCallbackNotSet("Execute callback not set")
-
-        self._execute(msg.data)
 
     @gen.coroutine
     def close(self):
@@ -76,13 +58,12 @@ class FNatsTransport(FTornadoTransport):
             return
 
         yield self._nats_client.unsubscribe(self._sub_id)
-        with (yield self._open_lock.acquire()):
-            self._is_open = False
+        self._is_open = False
 
     @gen.coroutine
     def flush(self):
         """Sends the buffered bytes over NATS"""
-        if not (yield self.isOpen()):
+        if not self.isOpen():
             raise TTransportException(TTransportException.NOT_OPEN,
                                       "Nats not connected!")
 
@@ -91,5 +72,6 @@ class FNatsTransport(FTornadoTransport):
             return
 
         self.reset_write_buffer()
-        yield self._nats_client.publish_request(self._subject, self._inbox,
-                                                frame)
+        subject = self._subject
+        inbox = self._inbox
+        yield self._nats_client.publish_request(subject, inbox, frame)

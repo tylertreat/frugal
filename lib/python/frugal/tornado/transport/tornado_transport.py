@@ -1,12 +1,10 @@
 from io import BytesIO
 from struct import pack
 
-from thrift.transport.TTransport import TTransportException
 from tornado import gen, locks
 
 from frugal.exceptions import FMessageSizeException
 from frugal.transport import FTransport
-from frugal.util.deprecate import deprecated
 
 
 class FTornadoTransport(FTransport):
@@ -19,68 +17,68 @@ class FTornadoTransport(FTransport):
         self._max_message_size = max_message_size
         self._wbuf = BytesIO()
 
-        # TODO: Remove this with 2.0
-        self._execute = None
-        self._open_lock = locks.Lock()
+        self._registry_lock = locks.Lock()
 
-    # TODO: Remove with 2.0
-    @deprecated
-    def set_execute_callback(self, execute):
-        """Set the message callback execute function
-
-        Args:
-            execute: message callback execute function
-
-        @deprecated Construct transports which call execute_frame,
-                    triggering the registry directly.
-        """
-        self._execute = execute
-
-    # TODO: With 2.0, make this a gen.coroutine and protect registry access
-    # with a tornado lock
+    @gen.coroutine
     def set_registry(self, registry):
         """Set FRegistry on the transport.  No-Op if already set.
-        args:
+
+        Args:
             registry: FRegistry to set on the transport
         """
         if not registry:
             raise ValueError("registry cannot be null.")
 
-        # TODO: With 2.0, consider throwing a StandardError.
-        # Currently, the generated code sets the registry for each extending
-        # service for a particular base service.
-        if self._registry:
-            return
+        with (yield self._registry_lock.acquire()):
+            if self._registry:
+                raise StandardError("registry already set.")
 
-        self._registry = registry
-
-    # TODO: With 2.0, make this a gen.coroutine and protect registry access
-    # with a tornado lock
-    def register(self, context, callback):
-        if not self._registry:
-            raise StandardError("registry cannot be null.")
-
-        self._registry.register(context, callback)
-
-    # TODO: With 2.0, make this a gen.coroutine and protect registry access
-    # with a tornado lock
-    def unregister(self, context):
-        if not self._registry:
-            raise StandardError("registry cannot be null.")
-
-        self._registry.unregister(context)
+            self._registry = registry
 
     @gen.coroutine
+    def register(self, context, callback):
+        """Register a provided FContext and callback function with the
+        transport's internal FRegistry.
+
+        Args:
+            context: FContext to register.
+            callback: function to register.
+
+        Raises:
+            StandardError: if registry has not been set.
+        """
+        with (yield self._registry_lock.acquire()):
+            if not self._registry:
+                raise StandardError("registry cannot be null.")
+
+            self._registry.register(context, callback)
+
+    @gen.coroutine
+    def unregister(self, context):
+        """Unregsiter the given context from the transports internal registry.
+
+        Args:
+            context: FContext to remove from the registry.
+
+        Raises:
+            StandardError: if registry has not been set.
+        """
+        with (yield self._registry_lock.acquire()):
+            if not self._registry:
+                raise StandardError("registry cannot be null.")
+
+            self._registry.unregister(context)
+
     def isOpen(self):
-        raise gen.Return(NotImplementedError("You must override this."))
+        raise NotImplementedError("You must override this.")
 
     @gen.coroutine
     def open(self):
-        raise gen.Return(NotImplementedError("You must override this."))
+        raise NotImplementedError("You must override this.")
 
     @gen.coroutine
     def close(self):
-        raise gen.Return(NotImplementedError("You must override this."))
+        raise NotImplementedError("You must override this.")
 
     def read(self, size):
         raise NotImplementedError("Don't call this.")
@@ -101,7 +99,7 @@ class FTornadoTransport(FTransport):
 
     @gen.coroutine
     def flush(self):
-        raise gen.Return(NotImplementedError("You must override this."))
+        raise NotImplementedError("You must override this.")
 
     def get_write_bytes(self):
         """Get the framed bytes from the write buffer."""
@@ -110,7 +108,7 @@ class FTornadoTransport(FTransport):
             return None
 
         frame_length = pack('!I', len(frame))
-        return '{0}{1}'.format(frame_length, frame)
+        return b'{0}{1}'.format(frame_length, frame)
 
     def reset_write_buffer(self):
         """Reset the write buffer."""

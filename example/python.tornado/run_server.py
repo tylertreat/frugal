@@ -10,7 +10,7 @@ from tornado import gen, ioloop
 from nats.io.client import Client as NATS
 
 from frugal.protocol import FProtocolFactory
-from frugal.tornado.server import FStatelessNatsTornadoServer
+from frugal.tornado.server import FNatsTornadoServer
 
 from event.f_Foo import Processor as FFooProcessor
 from example_handler import ExampleHandler
@@ -45,10 +45,7 @@ def main():
 
     subject = "foo"
 
-    server = FStatelessNatsTornadoServer(nats_client,
-                                         subject,
-                                         processor,
-                                         prot_factory)
+    server = FNatsTornadoServer(nats_client, subject, processor, prot_factory)
 
     root.info("Starting server...")
 
