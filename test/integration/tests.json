@@ -3,21 +3,10 @@
     "name": "dart",
     "client": {
       "timeout": 15,
-      "transports": [
-        "http"
-      ],
-      "sockets": [
-        "ip"
-      ],
-      "protocols": [
-        "binary",
-        "compact",
-        "json"
-      ],
-      "command": [
-        "dart",
-        "test_client/bin/main.dart"
-      ]
+      "transports": [ "http" ],
+      "sockets": [ "ip" ],
+      "protocols": [ "binary", "compact", "json" ],
+      "command": [ "dart", "test_client/bin/main.dart" ]
     },
     "workdir": "dart"
   },
@@ -25,105 +14,55 @@
     "name": "go",
     "server": {
       "delay": 8,
-      "command": [
-        "testserver"
-      ]
+      "command": [ "testserver" ]
     },
     "client": {
       "timeout": 8,
-      "command": [
-        "testclient"
-      ]
+      "command": [ "testclient" ]
     },
-    "transports": [
-      "stateless",
-      "http"
-    ],
-    "sockets": [
-      "ip"
-    ],
-    "protocols": [
-      "binary",
-      "compact",
-      "json"
-    ],
+    "transports": [ "stateless", "http" ],
+    "sockets": [ "ip" ],
+    "protocols": [ "binary", "compact", "json" ],
     "workdir": "go/bin"
   },
   {
     "name": "java",
     "join_args": true,
-
-    "command": [
-      "mvn",
-      "exec:java"
-    ],
+    "command": [ "mvn", "exec:java" ],
     "client": {
       "timeout": 20,
-      "command": [
-        "\"-Dexec.mainClass=com.workiva.TestClient\""
-      ],
+      "command": [ "\"-Dexec.mainClass=com.workiva.TestClient\"" ],
       "extra_args": [
         "-f=\"java/frugal-integration-test/pom.xml\"",
         "-Djava.security.egd=file:///dev/urandom"
       ],
-      "transports": [
-        "stateless",
-        "http"
-      ]
+      "transports": [ "stateless", "http" ]
     },
     "server": {
       "delay": 15,
-      "command": [
-        "\"-Dexec.mainClass=com.workiva.TestServer\""
-      ],
+      "command": [ "\"-Dexec.mainClass=com.workiva.TestServer\"" ],
       "extra_args": [
         "-f=\"java/frugal-integration-test/pom.xml\"",
         "-Djava.security.egd=file:///dev/urandom"
       ],
-      "transports": [
-        "stateless"
-      ]
+      "transports": [ "stateless" ]
     },
-    "sockets": [
-      "ip"
-    ],
-    "protocols": [
-      "binary",
-      "compact",
-      "json"
-    ]
+    "sockets": [ "ip" ],
+    "protocols": [ "binary", "compact", "json" ]
   },
   {
     "name": "python:tornado",
     "client": {
       "timeout": 7,
-      "command": [
-        "python",
-        "-u",
-        "client.py"
-      ]
+      "command": [ "python", "-u", "client.py" ]
     },
     "server": {
       "delay": 7,
-      "command": [
-        "python",
-        "server.py"
-      ]
+      "command": [ "python", "server.py" ]
     },
-    "transports": [
-      "stateless",
-      "stateful",
-      "stateless-stateful",
-      "http"
-    ],
-    "sockets": [
-      "ip"
-    ],
-    "protocols": [
-      "binary",
-      "compact",
-      "json"
-    ],
+    "transports": [ "stateless", "http" ],
+    "sockets": [ "ip" ],
+    "protocols": [ "binary", "compact", "json" ],
     "workdir": "python"
   }
 ]

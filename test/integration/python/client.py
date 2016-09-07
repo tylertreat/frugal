@@ -11,10 +11,8 @@ from frugal.protocol import FProtocolFactory
 from frugal.provider import FScopeProvider
 
 from frugal.tornado.transport import (
-    FMuxTornadoTransportFactory,
     FNatsScopeTransportFactory,
     FNatsTransport,
-    TNatsServiceTransport,
     FHttpTransport
 )
 
@@ -25,7 +23,9 @@ from frugal_test.f_FrugalTest import Xtruct, Xtruct2, Numberz
 from frugal_test.f_FrugalTest import Client as FrugalTestClient
 
 from nats.io.client import Client as NATS
-from thrift.protocol import TBinaryProtocol, TCompactProtocol, TJSONProtocol
+from thrift.protocol.TBinaryProtocol import TBinaryProtocolFactory
+from thrift.protocol.TCompactProtocol import TCompactProtocolFactory
+from thrift.protocol.TJSONProtocol import TJSONProtocolFactory
 from thrift.transport.TTransport import TTransportException
 from tornado import ioloop, gen
 
@@ -38,17 +38,19 @@ middleware_called = False
 def main():
     parser = argparse.ArgumentParser(description="Run a python client")
     parser.add_argument('--port', dest='port', default=9090)
-    parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
-    parser.add_argument('--transport', dest='transport_type', default="stateless", choices="stateless, stateful, stateless-stateful, http")
+    parser.add_argument('--protocol', dest='protocol_type',
+                        default="binary", choices="binary, compact, json")
+    parser.add_argument('--transport', dest='transport_type',
+                        default="stateless", choices="stateless, http")
 
     args = parser.parse_args()
 
     if args.protocol_type == "binary":
-        protocol_factory = FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
+        protocol_factory = FProtocolFactory(TBinaryProtocolFactory())
     elif args.protocol_type == "compact":
-        protocol_factory = FProtocolFactory(TCompactProtocol.TCompactProtocolFactory())
+        protocol_factory = FProtocolFactory(TCompactProtocolFactory())
     elif args.protocol_type == "json":
-        protocol_factory = FProtocolFactory(TJSONProtocol.TJSONProtocolFactory())
+        protocol_factory = FProtocolFactory(TJSONProtocolFactory())
     else:
         logging.error("Unknown protocol type: %s", args.protocol_type)
         sys.exit(1)
@@ -64,20 +66,12 @@ def main():
 
     transport = None
 
-    if args.transport_type == "stateless" or args.transport_type == "stateless-stateful":
+    if args.transport_type == "stateless":
         transport = FNatsTransport(nats_client, str(args.port))
-
-    elif args.transport_type == "stateful":  # @Deprecated TODO: Remove in 2.0
-        transport_factory = FMuxTornadoTransportFactory()
-        nats_transport = TNatsServiceTransport.Client(
-            nats_client=nats_client,
-            connection_subject=str(args.port),
-            connection_timeout=2000,
-            io_loop=5)
-        transport = transport_factory.get_transport(nats_transport)
 
     elif args.transport_type == "http":
         transport = FHttpTransport("http://localhost:" + str(args.port))
+
     else:
         print("Unknown transport type: {}".format(args.transport_type))
 
@@ -115,7 +109,8 @@ def test_pub_sub(nats_client, protocol_factory, port):
 
     # Subscribe to response
     subscriber = EventsSubscriber(provider)
-    yield subscriber.subscribe_EventCreated("{}-response".format(port), subscribe_handler)
+    res = "{}-response".format(port)
+    yield subscriber.subscribe_EventCreated(res, subscribe_handler)
 
     event = Event(Message="Sending Call")
     context = FContext("Call")
