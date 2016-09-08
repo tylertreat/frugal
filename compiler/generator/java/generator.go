@@ -138,7 +138,7 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 		return fmt.Sprintf("%s%s = %s;\n", contents, fieldName, "null")
 	}
 
-	if parser.IsThriftPrimitive(underlyingType) || g.Frugal.IsEnum(underlyingType) {
+	if underlyingType.IsPrimitive() || g.Frugal.IsEnum(underlyingType) {
 		_, val := g.generateConstantValueRec(t, value)
 		return fmt.Sprintf("%s%s = %s;\n", contents, fieldName, val)
 	} else if g.Frugal.IsStruct(underlyingType) {
@@ -174,7 +174,7 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 		}
 
 		return contents
-	} else if parser.IsThriftContainer(underlyingType) {
+	} else if underlyingType.IsContainer() {
 		switch underlyingType.Name {
 		case "list":
 			contents += fmt.Sprintf("%s = new ArrayList<%s>();\n", fieldName, containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType)))
@@ -328,7 +328,7 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) 
 		panic("referenced constant doesn't exist: " + name)
 	}
 
-	if parser.IsThriftPrimitive(underlyingType) {
+	if underlyingType.IsPrimitive() {
 		switch underlyingType.Name {
 		case "bool":
 			return "", fmt.Sprintf("%v", value)
@@ -882,7 +882,7 @@ func (g *Generator) generateStruct(s *parser.Struct, isArg, isResult bool) strin
 
 	for _, field := range s.Fields {
 		underlyingType := g.Frugal.UnderlyingType(field.Type)
-		if parser.IsThriftContainer(underlyingType) {
+		if underlyingType.IsContainer() {
 			contents += g.generateContainerGetSize(field)
 			contents += g.generateContainerIterator(field)
 			contents += g.generateContainerAddTo(field)
@@ -1901,7 +1901,7 @@ func (g *Generator) generateCopyConstructorField(field *parser.Field, otherField
 		return fmt.Sprintf(ind+"%s%s = new %s(%s);\n", declPrefix, field.Name, g.getJavaTypeFromThriftType(underlyingType), otherFieldName)
 	} else if g.Frugal.IsEnum(underlyingType) {
 		return fmt.Sprintf(ind+"%s%s = %s;\n", declPrefix, field.Name, otherFieldName)
-	} else if parser.IsThriftContainer(underlyingType) {
+	} else if underlyingType.IsContainer() {
 		contents := ""
 		valueType := g.getJavaTypeFromThriftType(underlyingType.ValueType)
 		containerValType := containerType(valueType)
@@ -1956,7 +1956,7 @@ func (g *Generator) generateCopyConstructorField(field *parser.Field, otherField
 func (g *Generator) generateMetaDataMapEntry(t *parser.Type, ind string) string {
 	underlyingType := g.Frugal.UnderlyingType(t)
 	ttype := g.getTType(underlyingType)
-	isThriftPrimitive := parser.IsThriftPrimitive(underlyingType)
+	isThriftPrimitive := underlyingType.IsPrimitive()
 
 	// This indicates a typedef. For some reason java doesn't recurse on
 	// typedef'd types for meta data map entries
@@ -1980,7 +1980,7 @@ func (g *Generator) generateMetaDataMapEntry(t *parser.Type, ind string) string 
 		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, %s.class)", g.qualifiedTypeName(underlyingType))
 	} else if g.Frugal.IsEnum(underlyingType) {
 		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, %s.class)", g.qualifiedTypeName(underlyingType))
-	} else if parser.IsThriftContainer(underlyingType) {
+	} else if underlyingType.IsContainer() {
 		switch underlyingType.Name {
 		case "list":
 			valEntry := g.generateMetaDataMapEntry(underlyingType.ValueType, ind+tabtab)
@@ -2016,7 +2016,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, succin
 	}
 
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
-	if parser.IsThriftPrimitive(underlyingType) {
+	if underlyingType.IsPrimitive() {
 		thriftType := ""
 		switch underlyingType.Name {
 		case "bool":
@@ -2045,7 +2045,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, succin
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(ind+"%s%s = new %s();\n", declPrefix, field.Name, javaType)
 		contents += fmt.Sprintf(ind+"%s%s.read(iprot);\n", accessPrefix, field.Name)
-	} else if parser.IsThriftContainer(underlyingType) {
+	} else if underlyingType.IsContainer() {
 		containerElem := getElem()
 		counterElem := getElem()
 
@@ -2124,7 +2124,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, succi
 
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	isEnum := g.Frugal.IsEnum(underlyingType)
-	if parser.IsThriftPrimitive(underlyingType) || isEnum {
+	if underlyingType.IsPrimitive() || isEnum {
 		write := ind + "oprot.write"
 		switch underlyingType.Name {
 		case "bool":
@@ -2154,7 +2154,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, succi
 		contents += fmt.Sprintf(write, accessPrefix, field.Name)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(ind+"%s%s.write(oprot);\n", accessPrefix, field.Name)
-	} else if parser.IsThriftContainer(underlyingType) {
+	} else if underlyingType.IsContainer() {
 		iterElem := getElem()
 		valJavaType := g.getJavaTypeFromThriftType(underlyingType.ValueType)
 		valTType := g.getTType(underlyingType.ValueType)
