@@ -662,7 +662,7 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 
 func (g *Generator) generateInitValue(field *parser.Field) string {
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
-	if !parser.IsThriftPrimitive(underlyingType) || field.Modifier == parser.Optional {
+	if !underlyingType.IsPrimitive() || field.Modifier == parser.Optional {
 		return ""
 	}
 
