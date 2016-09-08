@@ -29,7 +29,6 @@ if [ "$gen_with_thrift" = true ]; then
     frugal --gen go:package_prefix=github.com/Workiva/frugal/,gen_with_frugal=false -r --out='test/integration/go/gen' test/integration/frugalTest.frugal
     frugal --gen java:gen_with_frugal=false -r --out='test/integration/java/frugal-integration-test/gen-java' test/integration/frugalTest.frugal
     frugal --gen py:tornado,gen_with_frugal=false -r --out='test/integration/python/tornado/gen_py_tornado' test/integration/frugalTest.frugal
-    frugal --gen py:asyncio,gen_with_frugal=false -r --out='test/integration/python/asyncio/gen_py_asyncio' test/integration/frugalTest.frugal
     frugal --gen dart:gen_with_frugal=false -r --out='test/integration/dart/gen-dart' test/integration/frugalTest.frugal
 else
     frugal --gen go:package_prefix=github.com/Workiva/frugal/ -r --out='test/integration/go/gen' test/integration/frugalTest.frugal
@@ -88,7 +87,7 @@ mvn clean compile -U -q
 # Run cross tests - want to report any failures, so don't allow command to exit
 # without cleaning up
 cd ${FRUGAL_HOME}
-if python test/integration/test.py ; then
+if python test/integration/test.py --gen_with_thrift $gen_with_thrift; then
     /testing/scripts/skynet/test_cleanup.sh
 else
     /testing/scripts/skynet/test_cleanup.sh
