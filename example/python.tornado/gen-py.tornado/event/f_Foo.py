@@ -95,12 +95,13 @@ class Client(base.f_BaseFoo.Client, Iface):
     @gen.coroutine
     def _ping(self, ctx):
         delta = timedelta(milliseconds=ctx.get_timeout())
-        future = gen.with_timeout(delta, Future())
-        self._transport.register(ctx, self._recv_ping(ctx, future))
+        callback_future = Future()
+        timeout_future = gen.with_timeout(delta, callback_future)
+        self._transport.register(ctx, self._recv_ping(ctx, callback_future))
         yield self._send_ping(ctx)
 
         try:
-            result = yield future
+            result = yield timeout_future
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -148,12 +149,13 @@ class Client(base.f_BaseFoo.Client, Iface):
     @gen.coroutine
     def _blah(self, ctx, num, Str, event):
         delta = timedelta(milliseconds=ctx.get_timeout())
-        future = gen.with_timeout(delta, Future())
-        self._transport.register(ctx, self._recv_blah(ctx, future))
+        callback_future = Future()
+        timeout_future = gen.with_timeout(delta, callback_future)
+        self._transport.register(ctx, self._recv_blah(ctx, callback_future))
         yield self._send_blah(ctx, num, Str, event)
 
         try:
-            result = yield future
+            result = yield timeout_future
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)

@@ -6,7 +6,7 @@ library variety.src.f_awesome_exception;
 import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart';
 import 'package:variety/variety.dart' as t_variety;
-import 'package:actual_base/actual_base.dart' as t_actual_base;
+import 'package:actual_base_dart/actual_base_dart.dart' as t_actual_base_dart;
 
 class AwesomeException extends Error implements TBase {
   static final TStruct _STRUCT_DESC = new TStruct("AwesomeException");
@@ -14,7 +14,7 @@ class AwesomeException extends Error implements TBase {
   static final TField _REASON_FIELD_DESC = new TField("Reason", TType.STRING, 2);
 
   /// ID is a unique identifier for an awesome exception.
-  int _iD;
+  int _iD = 0;
   static const int ID = 1;
   /// Reason contains the error message.
   String _reason;
