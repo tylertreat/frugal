@@ -1,13 +1,14 @@
 from __future__ import print_function
 
-import argparse
 import logging
 import sys
 
+import argparse
+
 sys.path.append('gen_py_tornado')
+sys.path.append('..')
 
 from frugal.context import FContext
-from frugal.protocol import FProtocolFactory
 from frugal.provider import FScopeProvider
 
 from frugal.tornado.transport import (
@@ -21,13 +22,14 @@ from frugal.tornado.transport import (
 from frugal_test import ttypes, Xception, Insanity, Xception2, Event
 from frugal_test.f_Events_publisher import EventsPublisher
 from frugal_test.f_Events_subscriber import EventsSubscriber
-from frugal_test.f_FrugalTest import Xtruct, Xtruct2, Numberz
 from frugal_test.f_FrugalTest import Client as FrugalTestClient
 
 from nats.io.client import Client as NATS
-from thrift.protocol import TBinaryProtocol, TCompactProtocol, TJSONProtocol
 from thrift.transport.TTransport import TTransportException
 from tornado import ioloop, gen
+
+from common.utils import *
+from common.test_definitions import rpc_test_definitions
 
 
 response_received = False
@@ -35,31 +37,19 @@ response_received = False
 
 @gen.coroutine
 def main():
-    parser = argparse.ArgumentParser(description="Run a python client")
+    parser = argparse.ArgumentParser(description="Run a python tornado client")
     parser.add_argument('--port', dest='port', default=9090)
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
     parser.add_argument('--transport', dest='transport_type', default="stateless", choices="stateless, stateful, stateless-stateful, http")
 
     args = parser.parse_args()
 
-    if args.protocol_type == "binary":
-        protocol_factory = FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
-    elif args.protocol_type == "compact":
-        protocol_factory = FProtocolFactory(TCompactProtocol.TCompactProtocolFactory())
-    elif args.protocol_type == "json":
-        protocol_factory = FProtocolFactory(TJSONProtocol.TJSONProtocolFactory())
-    else:
-        logging.error("Unknown protocol type: %s", args.protocol_type)
-        sys.exit(1)
+    protocol_factory = get_protocol_factory(args.protocol_type)
 
     nats_client = NATS()
-    options = {
-        "verbose": True,
-        "servers": ["nats://127.0.0.1:4222"]
-    }
 
     logging.debug("Connecting to NATS")
-    yield nats_client.connect(**options)
+    yield nats_client.connect(**get_nats_options())
 
     transport = None
 
@@ -79,14 +69,15 @@ def main():
         transport = FHttpTransport("http://localhost:" + str(args.port))
     else:
         print("Unknown transport type: {}".format(args.transport_type))
+        sys.exit(1)
 
     try:
         yield transport.open()
     except TTransportException as ex:
-        root.error(ex)
+        logging.error(ex)
         raise gen.Return()
 
-    client = FrugalTestClient(transport, protocol_factory)
+    client = FrugalTestClient(transport, protocol_factory, client_middleware)
 
     ctx = FContext("test")
 
@@ -142,242 +133,52 @@ def test_pub_sub(nats_client, protocol_factory, port):
 # test_rpc makes RPC calls with each type defined in FrugalTest.frugal
 @gen.coroutine
 def test_rpc(client, ctx):
-    return_code = 0
+    test_failed = False
 
-    # RPC with no type
-    print("test_void()", end="")
-    yield client.testVoid(ctx)
-    print(" = void")
+    # Iterate over all expected RPC results
+    for rpc, vals in rpc_test_definitions().items():
+        method = getattr(client, rpc)
+        args = vals['args']
+        expected_result = vals['expected_result']
+        result = None
 
-    # RPC with string
-    thing = "thing"
-    print('testString("{}") = '.format(thing), end="")
-    result = yield client.testString(ctx, "thing")
-    if result != thing:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
+        try:
+            if args:
+                result = yield method(ctx, *args)
+            else:
+                result = yield method(ctx)
+        except Exception as e:
+            result = e
 
-    # RPC with boolean
-    boolean = True
-    print("testBool({}) = ".format(boolean), end="")
-    result = yield client.testBool(ctx, boolean)
-    if result != boolean:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
+        test_failed = check_for_failure(result, expected_result) or test_failed
 
-    # RPC with byte
-    byte = 42
-    print("testByte({}) = ".format(byte), end="")
-    result = yield client.testByte(ctx, byte)
-    if result != byte:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with i32
-    i32 = 4242
-    print("testI32({}) = ".format(i32), end="")
-    result = yield client.testI32(ctx, i32)
-    if result != i32:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with i64
-    i64 = 424242
-    print("testI64({}) = ".format(i64), end="")
-    result = yield client.testI64(ctx, i64)
-    if result != i64:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with double
-    double = 42.42
-    print("testDouble({}) = ".format(double), end="")
-    result = yield client.testDouble(ctx, double)
-    if result != double:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with binary
-    binary = "0b101010"
-    print("testBinary({}) = ".format(binary), end="")
-    result = yield client.testBinary(ctx, binary)
-    if result != binary:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # # RPC with Xtruct
-    struct = Xtruct()
-    struct.string_thing = thing
-    struct.byte_thing = byte
-    struct.i32_thing = i32
-    struct.i64_thing = i64
-    print("testStruct({}) = ".format(struct), end="")
-    result = yield client.testStruct(ctx, struct)
-    if result != struct:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with Xtruct2
-    struct2 = Xtruct2()
-    struct2.struct_thing = struct
-    struct2.byte_thing = 0
-    struct2.i32_thing = 0
-    print("testNest({}) = ".format(struct2), end="")
-    result = yield client.testNest(ctx, struct2)
-    if result != struct2:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with map
-    dictionary = {1: 2, 3: 4, 5: 42}
-    print("testMap({}) = ".format(dictionary), end="")
-    result = yield client.testMap(ctx, dictionary)
-    if result != dictionary:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with map of strings
-    string_map = {"a": "2", "b": "blah", "some": "thing"}
-    print("testStringMap({}) = ".format(string_map), end="")
-    result = yield client.testStringMap(ctx, string_map)
-    if result != string_map:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with set
-    set = {1, 2, 2, 42}
-    print("testSet({}) = ".format(set), end="")
-    result = yield client.testSet(ctx, set)
-    if result != set:  # How to do this comparison?
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with list
-    list = [1, 2, 42]
-    print("testList({}) = ".format(list), end="")
-    result = yield client.testList(ctx, list)
-    if result != list:  # How to do this comparison?
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with enum
-    enum = Numberz.TWO
-    print("testEnum({}) = ".format(enum), end="")
-    result = yield client.testEnum(ctx, enum)
-    if result != enum:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with typeDef
-    type_def = 42
-    print("testTypedef({}) = ".format(type_def), end="")
-    result = yield client.testTypedef(ctx,type_def)
-    if result != type_def:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # # RPC with map of maps
-    d = {4: 4, 3: 3, 2: 2, 1: 1}
-    e = {-4: -4, -3: -3, -2: -2, -1: -1}
-    mapmap = {-4: e, 4: d}
-    print("testMapMap({}) = ".format(42), end="")
-    result = yield client.testMapMap(ctx, 42)
-    if result != mapmap:  # How to do this comparison?
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with Insanity (xtruct of xtructs)
-    truck1 = Xtruct("Goodbye4", 4, 4, 4)
-    truck2 = Xtruct("Hello2", 2, 2, 2)
-    insanity = Insanity()
-    insanity.userMap = {Numberz.FIVE: 5, Numberz.EIGHT: 8}
-    insanity.xtructs = [truck1, truck2]
-    print("testInsanity({}) = ".format(insanity), end="")
-    result = yield client.testInsanity(ctx, insanity)
-    expected_result = {1:
-                     {2: Insanity(
-                         xtructs=[Xtruct(string_thing='Goodbye4', byte_thing=4, i32_thing=4, i64_thing=4),
-                                  Xtruct(string_thing='Hello2', byte_thing=2, i32_thing=2, i64_thing=2)],
-                         userMap={8: 8, 5: 5}),
-                      3: Insanity(
-                         xtructs=[Xtruct(string_thing='Goodbye4', byte_thing=4, i32_thing=4, i64_thing=4),
-                                  Xtruct(string_thing='Hello2', byte_thing=2, i32_thing=2, i64_thing=2)],
-                         userMap={8: 8, 5: 5})}, 2: {}}
-    if result != expected_result:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with Multi type
-    multi = Xtruct()
-    multi.string_thing = "Hello2"
-    multi.byte_thing = 42
-    multi.i32_thing = 4242
-    multi.i64_thing = 424242
-    print("testMulti() = ", end="")
-    result = yield client.testMulti(ctx, 42, 4242, 424242, {1: "blah", 2: "thing"}, Numberz.EIGHT, 24)
-    if result != multi:
-        print("\nUnexpected result ", end="")
-        return_code = 1
-    print(result)
-
-    # RPC with Exception
-    message = "Xception"
-    print("testException({}) = ".format(message), end="")
-    try:
-        result = yield client.testException(ctx, message)
-    except Xception as exception:
-        if exception.errorCode == 1001 and exception.message == "Xception":
-            print(result)
-        else:
-            print("\nUnexpected result {}".format(result), end="")
-            return_code = 1
-
-    # RPC with MultiException
-    message = "Xception2"
-    print("testMultiException({}) = ".format(message), end="")
-    try:
-        result = yield client.testMultiException(ctx, message, "ignoreme")
-        print("\nUnexpected result {}".format(result), end="")
-        return_code = 1
-    except Xception as exception:
-        print("\nUnexpected result {}".format(exception), end="")
-        return_code = 1
-    except Xception2 as exception:
-        if exception.errorCode == 2002 and exception.struct_thing.string_thing == "This is an Xception2":
-            print(exception)
-        else:
-            print("\nUnexpected result {}".format(exception), end="")
-            return_code = 1
 
     # oneWay RPC call (no response)
     seconds = 1
-    print("testOneway({}) = ".format(seconds), end="")
     try:
         client.testOneway(ctx, seconds)
-        print(" - no error returned")
     except Exception as e:
         print("Unexpected error in testOneway() call: {}".format(e))
-        return_code = 1
+        test_failed = True
 
-    if return_code:
+    if test_failed:
         exit(1)
+
+
+def client_middleware(next):
+    def handler(method, args):
+        print("{}({}) = ".format(method.im_func.func_name, args[1:]), end="")
+        ret = next(method, args)
+        ret.add_done_callback(log_future)
+        return ret
+    return handler
+
+
+def log_future(future):
+    try:
+        print("{}".format(future.result()))
+    except Exception as ex:
+        print("{}".format(ex))
 
 
 if __name__ == '__main__':
