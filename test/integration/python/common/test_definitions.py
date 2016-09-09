@@ -28,7 +28,8 @@ def rpc_test_definitions():
     i64 = 424242
     tests['testI64'] = dict(args=[i64], expected_result=i64)
 
-    tests['testDouble'] = dict(args=[42.42], expected_result=42.42)
+    dbl = 42.42
+    tests['testDouble'] = dict(args=[dbl], expected_result=dbl)
 
     binary = "0b101010"
     tests['testBinary'] = dict(args=[binary], expected_result=binary)
@@ -87,10 +88,10 @@ def rpc_test_definitions():
 
     multi = Xtruct()
     multi.string_thing = "Hello2"
-    multi.byte_thing = 42
-    multi.i32_thing = 4242
-    multi.i64_thing = 424242
-    tests['testMulti'] = dict(args=[42, 4242, 424242, {1: "blah", 2: "thing"}, Numberz.EIGHT, 24], expected_result=multi)
+    multi.byte_thing = byte
+    multi.i32_thing = i32
+    multi.i64_thing = i64
+    tests['testMulti'] = dict(args=[byte, i32, i64, {1: "blah", 2: thing}, Numberz.EIGHT, 24], expected_result=multi)
 
     tests['testException'] = dict(
         args=['Xception'],

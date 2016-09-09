@@ -3,7 +3,7 @@ import sys
 import argparse
 
 sys.path.append('gen_py_asyncio')
-sys.path.append('gen_py_asyncio/frugal_test')   # todo: understand why this isn't working without this, shouldn't the package do this?
+# sys.path.append('gen_py_asyncio/frugal_test')   # todo: understand why this isn't working without this, shouldn't the package do this?
 sys.path.append('..')
 
 from frugal.context import FContext
@@ -32,7 +32,7 @@ async def main():
     parser = argparse.ArgumentParser(description="Run a python asyncio client")
     parser.add_argument('--port', dest='port', default=9090)
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
-    parser.add_argument('--transport', dest='transport_type', default="stateless", choices="stateless, stateful, stateless-stateful, http")
+    parser.add_argument('--transport', dest='transport_type', default="stateless", choices="stateless, stateless-stateful, http")
     args = parser.parse_args()
 
     protocol_factory = get_protocol_factory(args.protocol_type)
@@ -42,7 +42,7 @@ async def main():
 
     transport = None
 
-    if args.transport_type == "stateless":
+    if args.transport_type in ["stateless", "stateless-stateful"]:
         transport = FNatsTransport(nats_client, args.port)
         await transport.open()
     elif args.transport_type == "http":

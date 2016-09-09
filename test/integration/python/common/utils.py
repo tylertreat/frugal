@@ -2,7 +2,9 @@
 import logging
 import sys
 
-from thrift.protocol import TBinaryProtocol, TCompactProtocol, TJSONProtocol
+from thrift.protocol.TBinaryProtocol import TBinaryProtocolFactory
+from thrift.protocol.TJSONProtocol import TJSONProtocolFactory
+from thrift.protocol.TCompactProtocol import TCompactProtocolFactory
 
 from frugal.protocol import FProtocolFactory
 
@@ -23,11 +25,11 @@ def get_protocol_factory(protocol):
     :return: Protocol factory
     """
     if protocol == "binary":
-        return FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
+        return FProtocolFactory(TBinaryProtocolFactory())
     elif protocol == "compact":
-        return FProtocolFactory(TCompactProtocol.TCompactProtocolFactory())
+        return FProtocolFactory(TCompactProtocolFactory())
     elif protocol == "json":
-        return FProtocolFactory(TJSONProtocol.TJSONProtocolFactory())
+        return FProtocolFactory(TJSONProtocolFactory())
     else:
         logging.error("Unknown protocol type: %s", protocol)
         sys.exit(1)

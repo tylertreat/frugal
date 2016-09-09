@@ -144,7 +144,8 @@
     },
     "transports": [
       "stateless",
-      "http"
+      "http",
+      "stateless-stateful"
     ],
     "sockets": [
       "ip"
