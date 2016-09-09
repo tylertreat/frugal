@@ -39,12 +39,12 @@ func clientLoggingMiddleware(called chan<- bool) frugal.ServiceMiddleware {
 func serverLoggingMiddleware(called chan<- bool) frugal.ServiceMiddleware {
 	return func(next frugal.InvocationHandler) frugal.InvocationHandler {
 		return func(service reflect.Value, method reflect.Method, args frugal.Arguments) frugal.Results {
+			select {
+			case called<-true:
+			default:
+			}
 			fmt.Printf("%v(%v) \n", method.Name, args[1:])
 			ret := next(service, method, args)
-			// TestOneway is always the last RPC call, so we can indicate the middleware was called
-			if method.Name == "TestOneway" {
-				called <- true
-			}
 			return ret
 		}
 	}
