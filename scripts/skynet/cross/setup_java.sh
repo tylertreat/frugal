@@ -11,4 +11,4 @@ cd ${FRUGAL_HOME}/test/integration/java/frugal-integration-test
 mvn clean install:install-file -Dfile=frugal.jar -U -q
 
 # Compile java tests
-mvn clean compile -U -q
+mvn test -U -q
