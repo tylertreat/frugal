@@ -1,6 +1,6 @@
 name: cross
 
-size:large
+size: large
 
 run:
   when-branch-name-is:
