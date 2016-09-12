@@ -24,24 +24,14 @@ import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
-import com.workiva.frugal.transport.FHttpTransport;
-import com.workiva.frugal.transport.FTransport;
-import com.workiva.frugal.transport.FTransportFactory;
-import com.workiva.frugal.transport.TNatsServiceTransport;
-import com.workiva.frugal.transport.FNatsTransport;
-import com.workiva.frugal.transport.FMuxTransport;
-import com.workiva.frugal.transport.FScopeTransportFactory;
-import com.workiva.frugal.transport.FNatsScopeTransport;
-import com.workiva.utils;
+import com.workiva.frugal.transport.*;
 import frugal.test.*;
-import frugal.test.Numberz;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.protocol.TProtocolFactory;
-import org.apache.thrift.transport.TTransport;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -65,7 +55,6 @@ public class TestClient {
         String protocol_type = "binary";
         String transport_type = "stateless";
 
-        int socketTimeoutMs = 1000; // milliseconds
         ConnectionFactory cf = new ConnectionFactory("nats://localhost:4222");
         Connection conn = cf.createConnection();
 
@@ -84,7 +73,7 @@ public class TestClient {
                     System.out.println("  --help\t\t\tProduce help message");
                     System.out.println("  --host=arg (=" + host + ")\tHost to connect");
                     System.out.println("  --port=arg (=" + port + ")\tPort number to connect");
-                    System.out.println("  --transport=arg (=" + transport_type + ")\n\t\t\t\tTransport: stateless, stateful, stateless-stateful, http");
+                    System.out.println("  --transport=arg (=" + transport_type + ")\n\t\t\t\tTransport: stateless, http");
                     System.out.println("  --protocol=arg (=" + protocol_type + ")\tProtocol: binary, json, compact");
                     System.exit(0);
                 }
@@ -98,8 +87,6 @@ public class TestClient {
 
         List<String> validTransports = new ArrayList<>();
         validTransports.add("stateless");
-        validTransports.add("stateful");
-        validTransports.add("stateless-stateful");
         validTransports.add("http");
 
         if (!validTransports.contains(transport_type)) {
