@@ -6,7 +6,6 @@
     <groupId>com.workiva</groupId>
     <artifactId>frugal</artifactId>
     <version>1.17.0</version>
-    <version>1.16.0</version>
     <packaging>jar</packaging>
 
     <name>frugal</name>
@@ -170,7 +169,4 @@
             </build>
         </profile>
     </profiles>
-  <modules>
-    <module>benchmarks</module>
-  </modules>
 </project>
