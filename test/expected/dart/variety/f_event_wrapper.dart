@@ -6,7 +6,7 @@ library variety.src.f_event_wrapper;
 import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart';
 import 'package:variety/variety.dart' as t_variety;
-import 'package:actual_base/actual_base.dart' as t_actual_base;
+import 'package:actual_base_dart/actual_base_dart.dart' as t_actual_base_dart;
 
 class EventWrapper implements TBase {
   static final TStruct _STRUCT_DESC = new TStruct("EventWrapper");

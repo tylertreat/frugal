@@ -6,7 +6,7 @@ library variety.src.f_event;
 import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart';
 import 'package:variety/variety.dart' as t_variety;
-import 'package:actual_base/actual_base.dart' as t_actual_base;
+import 'package:actual_base_dart/actual_base_dart.dart' as t_actual_base_dart;
 
 /// This docstring gets added to the generated code because it has
 /// the @ sign.

@@ -4,7 +4,7 @@
 library variety.src.f_foo_structs;import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart';
 import 'package:variety/variety.dart' as t_variety;
-import 'package:actual_base/actual_base.dart' as t_actual_base;
+import 'package:actual_base_dart/actual_base_dart.dart' as t_actual_base_dart;
 
 class ping_args implements TBase {
   static final TStruct _STRUCT_DESC = new TStruct("ping_args");
@@ -370,7 +370,7 @@ class blah_result implements TBase {
   static const int SUCCESS = 0;
   t_variety.AwesomeException _awe;
   static const int AWE = 1;
-  t_actual_base.api_exception _api;
+  t_actual_base_dart.api_exception _api;
   static const int API = 2;
 
   bool __isset_success = false;
@@ -403,9 +403,9 @@ class blah_result implements TBase {
     this.awe = null;
   }
 
-  t_actual_base.api_exception get api => this._api;
+  t_actual_base_dart.api_exception get api => this._api;
 
-  set api(t_actual_base.api_exception api) {
+  set api(t_actual_base_dart.api_exception api) {
     this._api = api;
   }
 
@@ -500,7 +500,7 @@ class blah_result implements TBase {
           break;
         case API:
           if(field.type == TType.STRUCT) {
-            api = new t_actual_base.api_exception();
+            api = new t_actual_base_dart.api_exception();
             api.read(iprot);
           } else {
             TProtocolUtil.skip(iprot, field.type);
@@ -925,7 +925,7 @@ class bin_method_result implements TBase {
 
   Uint8List _success;
   static const int SUCCESS = 0;
-  t_actual_base.api_exception _api;
+  t_actual_base_dart.api_exception _api;
   static const int API = 1;
 
 
@@ -944,9 +944,9 @@ class bin_method_result implements TBase {
     this.success = null;
   }
 
-  t_actual_base.api_exception get api => this._api;
+  t_actual_base_dart.api_exception get api => this._api;
 
-  set api(t_actual_base.api_exception api) {
+  set api(t_actual_base_dart.api_exception api) {
     this._api = api;
   }
 
@@ -1020,7 +1020,7 @@ class bin_method_result implements TBase {
           break;
         case API:
           if(field.type == TType.STRUCT) {
-            api = new t_actual_base.api_exception();
+            api = new t_actual_base_dart.api_exception();
             api.read(iprot);
           } else {
             TProtocolUtil.skip(iprot, field.type);

@@ -6,7 +6,7 @@ library variety.src.f_testing_defaults;
 import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart';
 import 'package:variety/variety.dart' as t_variety;
-import 'package:actual_base/actual_base.dart' as t_actual_base;
+import 'package:actual_base_dart/actual_base_dart.dart' as t_actual_base_dart;
 
 class TestingDefaults implements TBase {
   static final TStruct _STRUCT_DESC = new TStruct("TestingDefaults");
@@ -1020,7 +1020,7 @@ class TestingDefaults implements TBase {
 
     ret.write(", ");
     ret.write("base_status:");
-    String base_status_name = t_actual_base.base_health_condition.VALUES_TO_NAMES[this.base_status];
+    String base_status_name = t_actual_base_dart.base_health_condition.VALUES_TO_NAMES[this.base_status];
     if(base_status_name != null) {
       ret.write(base_status_name);
       ret.write(" (");
@@ -1041,7 +1041,7 @@ class TestingDefaults implements TBase {
     if(isSetStatus() && !t_variety.HealthCondition.VALID_VALUES.contains(status)) {
       throw new TProtocolError(TProtocolErrorType.UNKNOWN, "The field 'status' has been assigned the invalid value $status");
     }
-    if(isSetBase_status() && !t_actual_base.base_health_condition.VALID_VALUES.contains(base_status)) {
+    if(isSetBase_status() && !t_actual_base_dart.base_health_condition.VALID_VALUES.contains(base_status)) {
       throw new TProtocolError(TProtocolErrorType.UNKNOWN, "The field 'base_status' has been assigned the invalid value $base_status");
     }
   }
