@@ -26,6 +26,9 @@ from valid.ttypes import *
 
 
 class Iface(object):
+    """
+    This is a service docstring.
+    """
 
     def ping(self, ctx):
         """
@@ -100,12 +103,13 @@ class Client(Iface):
     @gen.coroutine
     def _ping(self, ctx):
         delta = timedelta(milliseconds=ctx.get_timeout())
-        future = gen.with_timeout(delta, Future())
-        self._transport.register(ctx, self._recv_ping(ctx, future))
+        callback_future = Future()
+        timeout_future = gen.with_timeout(delta, callback_future)
+        self._transport.register(ctx, self._recv_ping(ctx, callback_future))
         yield self._send_ping(ctx)
 
         try:
-            result = yield future
+            result = yield timeout_future
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -153,12 +157,13 @@ class Client(Iface):
     @gen.coroutine
     def _bleh(self, ctx, one, Two, custom_ints):
         delta = timedelta(milliseconds=ctx.get_timeout())
-        future = gen.with_timeout(delta, Future())
-        self._transport.register(ctx, self._recv_bleh(ctx, future))
+        callback_future = Future()
+        timeout_future = gen.with_timeout(delta, callback_future)
+        self._transport.register(ctx, self._recv_bleh(ctx, callback_future))
         yield self._send_bleh(ctx, one, Two, custom_ints)
 
         try:
-            result = yield future
+            result = yield timeout_future
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -215,12 +220,13 @@ class Client(Iface):
     @gen.coroutine
     def _getThing(self, ctx):
         delta = timedelta(milliseconds=ctx.get_timeout())
-        future = gen.with_timeout(delta, Future())
-        self._transport.register(ctx, self._recv_getThing(ctx, future))
+        callback_future = Future()
+        timeout_future = gen.with_timeout(delta, callback_future)
+        self._transport.register(ctx, self._recv_getThing(ctx, callback_future))
         yield self._send_getThing(ctx)
 
         try:
-            result = yield future
+            result = yield timeout_future
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -268,12 +274,13 @@ class Client(Iface):
     @gen.coroutine
     def _getMyInt(self, ctx):
         delta = timedelta(milliseconds=ctx.get_timeout())
-        future = gen.with_timeout(delta, Future())
-        self._transport.register(ctx, self._recv_getMyInt(ctx, future))
+        callback_future = Future()
+        timeout_future = gen.with_timeout(delta, callback_future)
+        self._transport.register(ctx, self._recv_getMyInt(ctx, callback_future))
         yield self._send_getMyInt(ctx)
 
         try:
-            result = yield future
+            result = yield timeout_future
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)

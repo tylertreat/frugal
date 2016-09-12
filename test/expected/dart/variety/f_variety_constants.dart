@@ -6,7 +6,7 @@ library variety.src.f_variety_constants;
 import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart';
 import 'package:variety/variety.dart' as t_variety;
-import 'package:actual_base/actual_base.dart' as t_actual_base;
+import 'package:actual_base_dart/actual_base_dart.dart' as t_actual_base_dart;
 
 import 'dart:convert' show UTF8;
 
@@ -48,4 +48,6 @@ class VarietyConstants {
   static final int const_hc = 2;
   static final String evil_string = "thin'g\" \"";
   static final String evil_string2 = "th'ing\"ad\"f";
+  static final t_variety.TestLowercase const_lower = new t_variety.TestLowercase()
+    ..lowercaseInt = 2;
 }
