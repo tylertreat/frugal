@@ -37,7 +37,7 @@ else
 fi
 
 # Set everything up in parallel (code generation is fast enough to not require in parallel)
-go run scripts/skynet/cross/CrossSetup.go
+go run scripts/skynet/cross/cross_setup.go
 
 
 # Run cross tests - want to report any failures, so don't allow command to exit
