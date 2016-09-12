@@ -3,7 +3,6 @@ import sys
 import argparse
 
 sys.path.append('gen_py_asyncio')
-# sys.path.append('gen_py_asyncio/frugal_test')   # todo: understand why this isn't working without this, shouldn't the package do this?
 sys.path.append('..')
 
 from frugal.context import FContext
