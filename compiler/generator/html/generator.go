@@ -86,7 +86,6 @@ func (m Modules) Swap(i, j int) {
 
 func (g *Generator) generateIndex(file *os.File, frugal *parser.Frugal) error {
 	modules := transitiveIncludes(frugal, Modules{})
-	sort.Sort(modules)
 	funcMap := template.FuncMap{"css": g.stylesheet}
 	tpl, err := template.New("index").Funcs(funcMap).Parse(indexTemplate)
 	if err != nil {
@@ -101,6 +100,7 @@ func transitiveIncludes(module *parser.Frugal, modules Modules) Modules {
 	for _, include := range module.ParsedIncludes {
 		modules = transitiveIncludes(include, modules)
 	}
+	sort.Sort(modules)
 	return modules
 }
 
