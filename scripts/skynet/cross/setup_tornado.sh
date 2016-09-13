@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 # Python Dependencies
 cd $GOPATH/src/github.com/Workiva/frugal/lib/python
 pip install -e ".[tornado]"
