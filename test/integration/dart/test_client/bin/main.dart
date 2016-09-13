@@ -338,6 +338,10 @@ List<TTest> _createTests() {
     throw new TTestError(null, 'Xception2');
   }));
 
+  tests.add(new TTest(1, 'testOneway', () async {
+      await client.testOneway(ctx, 1);
+  }));
+
   return tests;
 }
 

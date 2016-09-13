@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+set -e
+
 export FRUGAL_HOME=$GOPATH/src/github.com/Workiva/frugal
 
 cd ${FRUGAL_HOME}
