@@ -127,31 +127,5 @@
       "json"
     ],
     "workdir": "python/tornado"
-  },
-  {
-    "name": "py:asyncio",
-    "client": {
-      "timeout": 7,
-      "command": [
-        "python3.5",
-        "-u",
-        "client.py"
-      ]
-    },
-    "transports": [
-      "stateless",
-      "http",
-      "stateless-stateful"
-    ],
-    "sockets": [
-      "ip"
-    ],
-    "protocols": [
-      "binary",
-      "compact",
-      "json"
-    ],
-    "workdir": "python/asyncio"
-
   }
 ]
