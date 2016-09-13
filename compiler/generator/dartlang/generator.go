@@ -437,7 +437,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 		panic("referenced constant doesn't exist: " + name)
 	}
 
-	if parser.IsThriftPrimitive(underlyingType) || parser.IsThriftContainer(underlyingType) {
+	if underlyingType.IsPrimitive() || underlyingType.IsContainer() {
 		switch underlyingType.Name {
 		case "bool", "i8", "byte", "i16", "i32", "i64", "double":
 			return fmt.Sprintf("%v", value)
@@ -662,7 +662,7 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 
 func (g *Generator) generateInitValue(field *parser.Field) string {
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
-	if !parser.IsThriftPrimitive(underlyingType) || field.Modifier == parser.Optional {
+	if !underlyingType.IsPrimitive() || field.Modifier == parser.Optional {
 		return ""
 	}
 
@@ -816,7 +816,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	primitive := g.isDartPrimitive(underlyingType)
 	isEnum := g.Frugal.IsEnum(underlyingType)
-	if parser.IsThriftPrimitive(underlyingType) || isEnum {
+	if underlyingType.IsPrimitive() || isEnum {
 		thriftType := ""
 		switch underlyingType.Name {
 		case "bool":
@@ -850,7 +850,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = new %s();\n", prefix, fName, dartType)
 		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s.read(iprot);\n", fName)
-	} else if parser.IsThriftContainer(underlyingType) {
+	} else if underlyingType.IsContainer() {
 		containerElem := getElem()
 		valElem := getElem()
 		valField := parser.FieldFromType(underlyingType.ValueType, valElem)
@@ -940,7 +940,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 	fName := toFieldName(field.Name)
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	isEnum := g.Frugal.IsEnum(underlyingType)
-	if parser.IsThriftPrimitive(underlyingType) || isEnum {
+	if underlyingType.IsPrimitive() || isEnum {
 		write := tabtab + ind + "oprot.write"
 		switch underlyingType.Name {
 		case "bool":
@@ -970,7 +970,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 		contents += fmt.Sprintf(write, fName)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(tabtab+ind+"%s.write(oprot);\n", fName)
-	} else if parser.IsThriftContainer(underlyingType) {
+	} else if underlyingType.IsContainer() {
 		valEnumType := g.getEnumFromThriftType(underlyingType.ValueType)
 
 		switch underlyingType.Name {
