@@ -87,7 +87,8 @@ class FHttpClientTransport extends FTransport {
 
     // If there are only 4 bytes, this is a one-way request
     if (data.length == 4) {
-      if (data[0] != 0) {
+      var bData = new ByteData.view(data.buffer);
+      if (bData.getUint32(0) != 0) {
         throw new TTransportError(
             TTransportErrorType.UNKNOWN, "invalid frame size");
       }
