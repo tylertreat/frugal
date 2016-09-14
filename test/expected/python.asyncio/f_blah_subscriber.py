@@ -6,6 +6,7 @@
 
 
 
+import inspect
 import sys
 import traceback
 
@@ -52,7 +53,7 @@ class blahSubscriber(object):
     def _recv_DoStuff(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
 
-        def callback(transport):
+        async def callback(transport):
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()
@@ -64,7 +65,9 @@ class blahSubscriber(object):
             req.read(iprot)
             iprot.readMessageEnd()
             try:
-                method([ctx, req])
+                ret = method([ctx, req])
+                if inspect.iscoroutine(ret):
+                    await ret
             except:
                 traceback.print_exc()
                 sys.exit(1)
