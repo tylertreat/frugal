@@ -41,13 +41,14 @@ from crossrunner.compat import path_join
 ROOT_DIR = os.path.dirname(os.path.realpath(os.path.dirname(__file__)))
 TEST_DIR_RELATIVE = 'integration'
 TEST_DIR = path_join(ROOT_DIR, TEST_DIR_RELATIVE)
-CONFIG_FILE = 'tests.json'
+DEFAULT_CONFIG_FILE = 'tests.json'
+GEN_WITH_THRIFT_CONFIG_FILE = 'tests_gen_with_thrift.json'
 
-
-def run_cross_tests(server_match, client_match, jobs, retry_count, regex):
+def run_cross_tests(server_match, client_match, jobs, retry_count, regex, config_file):
     logger = multiprocessing.get_logger()
     logger.debug('Collecting tests')
-    with open(path_join(TEST_DIR, CONFIG_FILE), 'r') as fp:
+
+    with open(path_join(TEST_DIR, config_file), 'r') as fp:
         j = json.load(fp)
     tests = crossrunner.collect_cross_tests(j, server_match, client_match, regex)
 
@@ -78,6 +79,9 @@ def main(argv):
                         help='list of clients to test')
     parser.add_argument('-R', '--regex', help='test name pattern to run')
 
+
+    parser.add_argument('--gen_with_thrift', dest='gen_with_thrift', help='Use config file for thrift tests')
+
     g = parser.add_argument_group(title='Advanced')
     g.add_argument('-v', '--verbose', action='store_const',
                    dest='log_level', const=logging.DEBUG, default=logging.WARNING,
@@ -93,7 +97,12 @@ def main(argv):
     options.jobs = int(multiprocessing.cpu_count()) - 1
     options.retry_count = 0
 
-    res = run_cross_tests(server_match, client_match, options.jobs, options.retry_count, options.regex)
+    config_file = DEFAULT_CONFIG_FILE
+    if options.gen_with_thrift == 'true':
+        print('Using Thrift Configuration file')
+        config_file = GEN_WITH_THRIFT_CONFIG_FILE
+
+    res = run_cross_tests(server_match, client_match, options.jobs, options.retry_count, options.regex, config_file)
     return 0 if res else 1
 
 

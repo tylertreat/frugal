@@ -60,6 +60,9 @@ var Languages = LanguageOptions{
 		"asyncio":         "Generate code for use with asyncio (compatible with Python 3.5 or above)",
 		"gen_with_frugal": "[true|false] Whether to generate thrift files with frugal (experimental, true by default). Will not work for asyncio if false",
 	},
+	"html": Options{
+		"standalone": "Self-contained mode, includes all CSS in the HTML files. Generates no style.css file, but HTML files will be larger",
+	},
 }
 
 // ValidateOption indicates if the language option is supported for the given

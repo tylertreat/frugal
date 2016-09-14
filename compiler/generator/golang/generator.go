@@ -168,7 +168,7 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 		cName := title(constant.Name)
 		value := g.generateConstantValue(constant.Type, constant.Value)
 		// Don't use underlying type so typedefs aren't consts
-		if (parser.IsThriftPrimitive(constant.Type) || g.Frugal.IsEnum(constant.Type)) && constant.Type.Name != "binary" {
+		if (constant.Type.IsPrimitive() || g.Frugal.IsEnum(constant.Type)) && constant.Type.Name != "binary" {
 			contents += fmt.Sprintf("const %s = %s\n\n", cName, value)
 		} else {
 			contents += fmt.Sprintf("var %s %s\n\n", cName, g.getGoTypeFromThriftType(constant.Type))
@@ -247,7 +247,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 		panic("referenced constant doesn't exist: " + name)
 	}
 
-	if parser.IsThriftPrimitive(underlyingType) || parser.IsThriftContainer(underlyingType) {
+	if underlyingType.IsPrimitive() || underlyingType.IsContainer() {
 		switch underlyingType.Name {
 		case "bool", "i8", "byte", "i16", "i32", "i64", "double":
 			return fmt.Sprintf("%v", value)
@@ -534,7 +534,7 @@ func (g *Generator) generateStruct(s *parser.Struct, serviceName string) string 
 
 			// Determines if the field is set
 			contents += fmt.Sprintf("func (p *%s) IsSet%s() bool {\n", sName, fName)
-			if isPointer || parser.IsThriftContainer(underlyingType) || (underlyingType.Name == "binary" && field.Default == nil) {
+			if isPointer || underlyingType.IsContainer() || (underlyingType.Name == "binary" && field.Default == nil) {
 				// Compare these to nil
 				contents += fmt.Sprintf("\treturn p.%s != nil\n", fName)
 			} else if underlyingType.Name == "binary" {
@@ -717,7 +717,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool) string
 	goUnderlyingType := g.getGoTypeFromThriftTypePtr(underlyingType, false)
 
 	isEnum := g.Frugal.IsEnum(underlyingType)
-	if parser.IsThriftPrimitive(underlyingType) || isEnum {
+	if underlyingType.IsPrimitive() || isEnum {
 		if !first {
 			contents += fmt.Sprintf("\tvar %s%s %s\n", prefix, field.Name, goOrigType)
 		}
@@ -785,7 +785,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool) string
 		contents += fmt.Sprintf("\tif err := %s%s.Read(iprot); err != nil {\n", prefix, fName)
 		contents += fmt.Sprintf("\t\treturn thrift.PrependError(fmt.Sprintf(\"%%T error reading struct: \", %s%s), err)\n", prefix, fName)
 		contents += "\t}\n"
-	} else if parser.IsThriftContainer(underlyingType) {
+	} else if underlyingType.IsContainer() {
 		maybePointer := ""
 		if isPointerField {
 			maybePointer = "*"
@@ -908,7 +908,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, prefix string) st
 	contents := ""
 
 	isEnum := g.Frugal.IsEnum(underlyingType)
-	if parser.IsThriftPrimitive(underlyingType) || isEnum {
+	if underlyingType.IsPrimitive() || isEnum {
 		if isPointerField {
 			prefix = "*" + prefix
 		}
@@ -947,7 +947,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, prefix string) st
 		contents += fmt.Sprintf("\tif err := %s.Write(oprot); err != nil {\n", prefix+fName)
 		contents += fmt.Sprintf("\t\treturn thrift.PrependError(fmt.Sprintf(\"%%T error writing struct: \", %s), err)\n", prefix+fName)
 		contents += "\t}\n"
-	} else if parser.IsThriftContainer(underlyingType) {
+	} else if underlyingType.IsContainer() {
 		if isPointerField {
 			prefix = "*" + prefix
 		}
@@ -1427,7 +1427,12 @@ func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 }
 
 func (g *Generator) generateServiceInterface(service *parser.Service) string {
-	contents := fmt.Sprintf("type F%s interface {\n", snakeToCamel(service.Name))
+	contents := ""
+	if service.Comment != nil {
+		contents += g.GenerateInlineComment(service.Comment, "")
+	}
+
+	contents += fmt.Sprintf("type F%s interface {\n", snakeToCamel(service.Name))
 	if service.Extends != "" {
 		contents += fmt.Sprintf("\t%s\n\n", g.getServiceExtendsName(service))
 	}
@@ -1484,8 +1489,12 @@ func (g *Generator) generateAsyncReturnArgs(method *parser.Method) string {
 
 func (g *Generator) generateClient(service *parser.Service) string {
 	servTitle := snakeToCamel(service.Name)
+	contents := ""
+	if service.Comment != nil {
+		contents += g.GenerateInlineComment(service.Comment, "")
+	}
 
-	contents := fmt.Sprintf("type F%sClient struct {\n", servTitle)
+	contents += fmt.Sprintf("type F%sClient struct {\n", servTitle)
 	if service.Extends != "" {
 		contents += fmt.Sprintf("\t*%sClient\n", g.getServiceExtendsName(service))
 	}

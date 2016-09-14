@@ -1,0 +1,131 @@
+[
+  {
+    "name": "dart",
+    "client": {
+      "timeout": 15,
+      "transports": [
+        "http"
+      ],
+      "sockets": [
+        "ip"
+      ],
+      "protocols": [
+        "binary",
+        "compact",
+        "json"
+      ],
+      "command": [
+        "dart",
+        "test_client/bin/main.dart"
+      ]
+    },
+    "workdir": "dart"
+  },
+  {
+    "name": "go",
+    "server": {
+      "delay": 8,
+      "command": [
+        "testserver"
+      ]
+    },
+    "client": {
+      "timeout": 8,
+      "command": [
+        "testclient"
+      ]
+    },
+    "transports": [
+      "stateless",
+      "stateful",
+      "stateless-stateful",
+      "http"
+    ],
+    "sockets": [
+      "ip"
+    ],
+    "protocols": [
+      "binary",
+      "compact",
+      "json"
+    ],
+    "workdir": "go/bin"
+  },
+   {
+    "name": "java",
+
+    "client": {
+      "timeout": 20,
+      "command": [
+        "/usr/bin/java",
+        "-Djava.security.egd=file:///dev/urandom",
+        "-cp",
+        "cross.jar",
+        "com.workiva.TestClient"
+      ],
+      "transports": [
+        "stateless",
+        "stateful",
+        "stateless-stateful",
+        "http"
+      ]
+    },
+    "server": {
+      "delay": 15,
+      "command": [
+        "/usr/bin/java",
+        "-Djava.security.egd=file:///dev/urandom",
+        "-cp",
+        "cross.jar",
+        "com.workiva.TestServer"
+      ],
+      "transports": [
+        "stateless",
+        "stateful",
+        "stateless-stateful"
+      ]
+    },
+    "sockets": [
+      "ip"
+    ],
+    "protocols": [
+      "binary",
+      "compact",
+      "json"
+    ],
+    "workdir": "java/frugal-integration-test"
+  },
+  {
+    "name": "py:tornado",
+    "client": {
+      "timeout": 7,
+      "command": [
+        "python",
+        "-u",
+        "client.py"
+      ]
+    },
+    "server": {
+      "delay": 7,
+      "command": [
+        "python",
+        "server.py"
+      ]
+    },
+    "transports": [
+      "stateless",
+      "stateful",
+      "stateless-stateful",
+      "http"
+    ],
+    "sockets": [
+      "ip"
+    ],
+    "protocols": [
+      "binary",
+      "compact",
+      "json"
+    ],
+    "workdir": "python/tornado"
+  }
+]
