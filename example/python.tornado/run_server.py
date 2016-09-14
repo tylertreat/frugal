@@ -9,7 +9,7 @@ from tornado import gen, ioloop
 
 from nats.io.client import Client as NATS
 
-from frugal.processor import FProcessorFactory
+# from frugal.processor import FProcessorFactory
 from frugal.protocol import FProtocolFactory
 from frugal.tornado.server import FStatelessNatsTornadoServer
 

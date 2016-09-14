@@ -87,15 +87,18 @@ class Client(Iface):
 
 class Processor(FBaseProcessor):
 
-    def __init__(self, handler):
+    def __init__(self, handler, middleware=None):
         """
         Create a new Processor.
 
         Args:
             handler: Iface
         """
+        if middleware and not isinstance(middleware, list):
+            middleware = [middleware]
+
         super(Processor, self).__init__()
-        self.add_to_processor_map('basePing', _basePing(handler, self.get_write_lock()))
+        self.add_to_processor_map('basePing', _basePing(Method(handler.basePing, middleware), self.get_write_lock()))
 
 
 class _basePing(FProcessorFunction):
@@ -109,7 +112,7 @@ class _basePing(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = basePing_result()
-        self._handler.basePing(ctx)
+        self._handler([ctx])
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('basePing', TMessageType.REPLY, 0)
