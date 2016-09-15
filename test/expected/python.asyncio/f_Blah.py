@@ -311,18 +311,21 @@ class Client(Iface):
 
 class Processor(FBaseProcessor):
 
-    def __init__(self, handler):
+    def __init__(self, handler, middleware=None):
         """
         Create a new Processor.
 
         Args:
             handler: Iface
         """
+        if middleware and not isinstance(middleware, list):
+            middleware = [middleware]
+
         super(Processor, self).__init__()
-        self.add_to_processor_map('ping', _ping(handler, self.get_write_lock()))
-        self.add_to_processor_map('bleh', _bleh(handler, self.get_write_lock()))
-        self.add_to_processor_map('getThing', _getThing(handler, self.get_write_lock()))
-        self.add_to_processor_map('getMyInt', _getMyInt(handler, self.get_write_lock()))
+        self.add_to_processor_map('ping', _ping(Method(handler.ping, middleware), self.get_write_lock()))
+        self.add_to_processor_map('bleh', _bleh(Method(handler.bleh, middleware), self.get_write_lock()))
+        self.add_to_processor_map('getThing', _getThing(Method(handler.getThing, middleware), self.get_write_lock()))
+        self.add_to_processor_map('getMyInt', _getMyInt(Method(handler.getMyInt, middleware), self.get_write_lock()))
 
 
 class _ping(FProcessorFunction):
@@ -336,7 +339,7 @@ class _ping(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = ping_result()
-        ret = self._handler.ping(ctx)
+        ret = self._handler([ctx])
         if inspect.iscoroutine(ret):
             ret = await ret
         async with self._write_lock:
@@ -359,7 +362,7 @@ class _bleh(FProcessorFunction):
         iprot.readMessageEnd()
         result = bleh_result()
         try:
-            ret = self._handler.bleh(ctx, args.one, args.Two, args.custom_ints)
+            ret = self._handler([ctx, args.one, args.Two, args.custom_ints])
             if inspect.iscoroutine(ret):
                 ret = await ret
             result.success = ret
@@ -386,7 +389,7 @@ class _getThing(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = getThing_result()
-        ret = self._handler.getThing(ctx)
+        ret = self._handler([ctx])
         if inspect.iscoroutine(ret):
             ret = await ret
         result.success = ret
@@ -409,7 +412,7 @@ class _getMyInt(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = getMyInt_result()
-        ret = self._handler.getMyInt(ctx)
+        ret = self._handler([ctx])
         if inspect.iscoroutine(ret):
             ret = await ret
         result.success = ret
