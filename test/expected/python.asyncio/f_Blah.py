@@ -103,9 +103,8 @@ class Client(Iface):
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
         await self._transport.register(ctx, self._recv_ping(ctx, future))
-        await self._send_ping(ctx)
-
         try:
+            await self._send_ping(ctx)
             result = await timed_future
         finally:
             await self._transport.unregister(ctx)
@@ -155,9 +154,8 @@ class Client(Iface):
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
         await self._transport.register(ctx, self._recv_bleh(ctx, future))
-        await self._send_bleh(ctx, one, Two, custom_ints)
-
         try:
+            await self._send_bleh(ctx, one, Two, custom_ints)
             result = await timed_future
         finally:
             await self._transport.unregister(ctx)
@@ -216,9 +214,8 @@ class Client(Iface):
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
         await self._transport.register(ctx, self._recv_getThing(ctx, future))
-        await self._send_getThing(ctx)
-
         try:
+            await self._send_getThing(ctx)
             result = await timed_future
         finally:
             await self._transport.unregister(ctx)
@@ -268,9 +265,8 @@ class Client(Iface):
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
         await self._transport.register(ctx, self._recv_getMyInt(ctx, future))
-        await self._send_getMyInt(ctx)
-
         try:
+            await self._send_getMyInt(ctx)
             result = await timed_future
         finally:
             await self._transport.unregister(ctx)

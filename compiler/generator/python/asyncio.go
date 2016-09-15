@@ -163,8 +163,8 @@ func (a *AsyncIOGenerator) generateClientMethod(method *parser.Method) string {
 	contents += tabtab + "future = asyncio.Future()\n"
 	contents += tabtab + "timed_future = asyncio.wait_for(future, timeout)\n"
 	contents += tabtab + fmt.Sprintf("await self._transport.register(ctx, self._recv_%s(ctx, future))\n", method.Name)
-	contents += tabtab + fmt.Sprintf("await self._send_%s(ctx%s)\n\n", method.Name, a.generateClientArgs(method.Arguments))
 	contents += tabtab + "try:\n"
+	contents += tabtabtab + fmt.Sprintf("await self._send_%s(ctx%s)\n", method.Name, a.generateClientArgs(method.Arguments))
 	contents += tabtabtab + "result = await timed_future\n"
 	contents += tabtab + "finally:\n"
 	contents += tabtabtab + "await self._transport.unregister(ctx)\n"

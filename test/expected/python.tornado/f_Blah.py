@@ -106,9 +106,8 @@ class Client(Iface):
         callback_future = Future()
         timeout_future = gen.with_timeout(delta, callback_future)
         self._transport.register(ctx, self._recv_ping(ctx, callback_future))
-        yield self._send_ping(ctx)
-
         try:
+            yield self._send_ping(ctx)
             result = yield timeout_future
         finally:
             self._transport.unregister(ctx)
@@ -160,9 +159,8 @@ class Client(Iface):
         callback_future = Future()
         timeout_future = gen.with_timeout(delta, callback_future)
         self._transport.register(ctx, self._recv_bleh(ctx, callback_future))
-        yield self._send_bleh(ctx, one, Two, custom_ints)
-
         try:
+            yield self._send_bleh(ctx, one, Two, custom_ints)
             result = yield timeout_future
         finally:
             self._transport.unregister(ctx)
@@ -223,9 +221,8 @@ class Client(Iface):
         callback_future = Future()
         timeout_future = gen.with_timeout(delta, callback_future)
         self._transport.register(ctx, self._recv_getThing(ctx, callback_future))
-        yield self._send_getThing(ctx)
-
         try:
+            yield self._send_getThing(ctx)
             result = yield timeout_future
         finally:
             self._transport.unregister(ctx)
@@ -277,9 +274,8 @@ class Client(Iface):
         callback_future = Future()
         timeout_future = gen.with_timeout(delta, callback_future)
         self._transport.register(ctx, self._recv_getMyInt(ctx, callback_future))
-        yield self._send_getMyInt(ctx)
-
         try:
+            yield self._send_getMyInt(ctx)
             result = yield timeout_future
         finally:
             self._transport.unregister(ctx)
