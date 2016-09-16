@@ -564,12 +564,10 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 	if underlyingType.IsPrimitive() || isEnum {
 		thriftType := ""
 		switch underlyingType.Name {
-		case "bool", "byte", "i16", "i32", "i64", "double", "string":
+		case "bool", "byte", "i16", "i32", "i64", "double", "string", "binary":
 			thriftType = strings.Title(underlyingType.Name)
 		case "i8":
 			thriftType = "Byte"
-		case "binary":
-			thriftType = "String"
 		default:
 			if isEnum {
 				thriftType = "I32"
@@ -631,12 +629,10 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 	if underlyingType.IsPrimitive() || isEnum {
 		thriftType := ""
 		switch underlyingType.Name {
-		case "bool", "byte", "i16", "i32", "i64", "double", "string":
+		case "bool", "byte", "i16", "i32", "i64", "double", "string", "binary":
 			thriftType = strings.Title(underlyingType.Name)
 		case "i8":
 			thriftType = "Byte"
-		case "binary":
-			thriftType = "String"
 		default:
 			if isEnum {
 				thriftType = "I32"
