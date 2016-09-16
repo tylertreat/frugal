@@ -109,6 +109,7 @@
       "delay": 7,
       "command": [
         "python",
+        "-u",
         "tornado_server.py"
       ]
     },
@@ -167,6 +168,7 @@
       "delay": 7,
       "command": [
         "python",
+        "-u",
         "vanilla_server.py"
       ]
     },

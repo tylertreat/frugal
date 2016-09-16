@@ -2,16 +2,16 @@ from __future__ import print_function
 
 import argparse
 import sys
+
 sys.path.append('gen-py')
 sys.path.append('..')
 
 from frugal.context import FContext
 from frugal.transport.http_transport import FHttpTransport
 
-from frugal_test.f_FrugalTest import Client as FrugalTestClient
-
-from common.utils import *
 from common.test_definitions import rpc_test_definitions
+from common.utils import *
+from frugal_test.f_FrugalTest import Client as FrugalTestClient
 
 middleware_called = False
 
@@ -25,12 +25,20 @@ def main():
     args = parser.parse_args()
 
     protocol_factory = get_protocol_factory(args.protocol_type)
-    transport = FHttpTransport("http://localhost:" + str(args.port))
+
+    if args.transport_type == "http":
+        transport = FHttpTransport("http://localhost:" + str(args.port))
+    else:
+        print("Unknown transport type: {}".format(args.transport_type))
+        sys.exit(1)
+
     transport.open()
 
     ctx = FContext("test")
     client = FrugalTestClient(transport, protocol_factory, client_middleware)
 
+    # Scope generation is not currently supported with vanilla python
+    # TODO: Add Pub/Sub test once scopes are supported
     test_rpc(client, ctx)
 
     global middleware_called

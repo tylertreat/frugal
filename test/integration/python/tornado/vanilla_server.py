@@ -7,24 +7,20 @@ import thread
 sys.path.append('..')
 sys.path.append('gen-py')
 
+from frugal.context import FContext
+from frugal.provider import FScopeProvider
+from frugal.server.http_server import FHttpServer
+from frugal.tornado.transport import FNatsScopeTransportFactory
+from nats.io.client import Client as NATS
+from tornado import gen, ioloop
+
 from common.FrugalTestHandler import FrugalTestHandler
 from common.utils import *
-
-from frugal.context import FContext
-from frugal.server.http_server import FHttpServer
-from frugal.provider import FScopeProvider
-from frugal.tornado.transport import FNatsScopeTransportFactory
-
-from gen_py_tornado.frugal_test.ttypes import Event
 from frugal_test.f_FrugalTest import Processor
+# Explicitly importing from gen_py_tornado
 from gen_py_tornado.frugal_test.f_Events_publisher import EventsPublisher
 from gen_py_tornado.frugal_test.f_Events_subscriber import EventsSubscriber
-
-from nats.io.client import Client as NATS
-from thrift.protocol.TBinaryProtocol import TBinaryProtocolFactory
-from thrift.protocol.TCompactProtocol import TCompactProtocolFactory
-from thrift.protocol.TJSONProtocol import TJSONProtocolFactory
-from tornado import ioloop, gen
+from gen_py_tornado.frugal_test.ttypes import Event
 
 
 @gen.coroutine
@@ -36,26 +32,21 @@ def main():
 
     args = parser.parse_args()
 
-    if args.protocol_type == "binary":
-        protocol_factory = FProtocolFactory(TBinaryProtocolFactory())
-    elif args.protocol_type == "compact":
-        protocol_factory = FProtocolFactory(TCompactProtocolFactory())
-    elif args.protocol_type == "json":
-        protocol_factory = FProtocolFactory(TJSONProtocolFactory())
-    else:
-        logging.error("Unknown protocol type: %s", args.protocol_type)
-        sys.exit(1)
+    protocol_factory = get_protocol_factory(args.protocol_type)
 
     handler = FrugalTestHandler()
     subject = args.port
     processor = Processor(handler)
+
+    if args.transport_type != "http":
+        print("Unknown transport type: {}".format(args.transport_type))
+        sys.exit(1)
 
     # Start up thread for pub/sub, see notes below
     thread.start_new_thread(tornado_thread, (subject, protocol_factory))
 
     server = FHttpServer(processor, ('', subject), protocol_factory)
     print("Starting {} server...".format(args.transport_type))
-    sys.stdout.flush()
     server.serve()
 
 
@@ -65,11 +56,7 @@ def main():
 @gen.coroutine
 def pub_sub(subject, protocol_factory):
     nats_client = NATS()
-    options = {
-        "verbose": True,
-        "servers": ["nats://127.0.0.1:4222"]
-    }
-    yield nats_client.connect(**options)
+    yield nats_client.connect(**get_nats_options())
 
     # Setup subscriber, send response upon receipt
     scope_transport_factory = FNatsScopeTransportFactory(nats_client)
