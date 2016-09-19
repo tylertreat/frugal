@@ -102,14 +102,15 @@
       "command": [
         "python",
         "-u",
-        "client.py"
+        "tornado_client.py"
       ]
     },
     "server": {
       "delay": 7,
       "command": [
         "python",
-        "server.py"
+        "-u",
+        "tornado_server.py"
       ]
     },
     "transports": [
@@ -152,6 +153,36 @@
       "json"
     ],
     "workdir": "python/asyncio"
-
+  },
+  {
+    "name": "py:vanilla",
+    "client": {
+      "timeout": 7,
+      "command": [
+        "python",
+        "-u",
+        "vanilla_client.py"
+      ]
+    },
+    "server": {
+      "delay": 7,
+      "command": [
+        "python",
+        "-u",
+        "vanilla_server.py"
+      ]
+    },
+    "transports": [
+      "http"
+    ],
+    "sockets": [
+      "ip"
+    ],
+    "protocols": [
+      "binary",
+      "compact",
+      "json"
+    ],
+    "workdir": "python/tornado"
   }
 ]

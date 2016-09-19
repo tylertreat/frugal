@@ -102,14 +102,15 @@
       "command": [
         "python",
         "-u",
-        "client.py"
+        "tornado_client.py"
       ]
     },
     "server": {
       "delay": 7,
       "command": [
         "python",
-        "server.py"
+        "-u",
+        "tornado_server.py"
       ]
     },
     "transports": [
