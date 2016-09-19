@@ -208,17 +208,20 @@ class Client(base.f_BaseFoo.Client, Iface):
 
 class Processor(base.f_BaseFoo.Processor):
 
-    def __init__(self, handler):
+    def __init__(self, handler, middleware=None):
         """
         Create a new Processor.
 
         Args:
             handler: Iface
         """
-        super(Processor, self).__init__(handler)
-        self.add_to_processor_map('ping', _ping(handler, self.get_write_lock()))
-        self.add_to_processor_map('blah', _blah(handler, self.get_write_lock()))
-        self.add_to_processor_map('oneWay', _oneWay(handler, self.get_write_lock()))
+        if middleware and not isinstance(middleware, list):
+            middleware = [middleware]
+
+        super(Processor, self).__init__(handler, middleware=middleware)
+        self.add_to_processor_map('ping', _ping(Method(handler.ping, middleware), self.get_write_lock()))
+        self.add_to_processor_map('blah', _blah(Method(handler.blah, middleware), self.get_write_lock()))
+        self.add_to_processor_map('oneWay', _oneWay(Method(handler.oneWay, middleware), self.get_write_lock()))
 
 
 class _ping(FProcessorFunction):
@@ -232,7 +235,7 @@ class _ping(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = ping_result()
-        self._handler.ping(ctx)
+        self._handler([ctx])
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
@@ -276,6 +279,6 @@ class _oneWay(FProcessorFunction):
         args = oneWay_args()
         args.read(iprot)
         iprot.readMessageEnd()
-        self._handler.oneWay(ctx, args.id, args.req)
+        self._handler([ctx, args.id, args.req])
 
 
