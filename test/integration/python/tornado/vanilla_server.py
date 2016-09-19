@@ -50,9 +50,9 @@ def main():
     server.serve()
 
 
-# Use the tornado pub/sub since vanilla python code generation doesn't support it yet
+# Use the tornado pub/sub since vanilla python code generation doesn't support it
 # Clients in the cross language tests will fail if they try to publish and don't receive a response
-# TODO: Remove this hackery when vanilla python supports scope generation
+# TODO: Modify the crossrunner to support running tests with or without scopes
 @gen.coroutine
 def pub_sub(subject, protocol_factory):
     nats_client = NATS()
