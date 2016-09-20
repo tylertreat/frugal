@@ -1,13 +1,15 @@
 name: cross
 
+size: large
+
 run:
   when-branch-name-is:
     - .+
 
 contact: messaging@workiva.com
 
-# https://github.com/Workiva/messaging-docker-images/commit/6561ce2b439cf8081838d879fdfc5d301a14c6cb
-image: drydock.workiva.org/workiva/messaging-docker-images:69150
+# https://dev.webfilings.org/zuul/release/282084
+image: drydock.workiva.org/workiva/messaging-docker-images:74936
 
 scripts:
   - ./scripts/skynet/run_cross_skynet.sh
@@ -27,8 +29,8 @@ run:
 
 contact: messaging@workiva.com
 
-# https://github.com/Workiva/messaging-docker-images/commit/6561ce2b439cf8081838d879fdfc5d301a14c6cb
-image: drydock.workiva.org/workiva/messaging-docker-images:69150
+# https://dev.webfilings.org/zuul/release/282084
+image: drydock.workiva.org/workiva/messaging-docker-images:74936
 
 scripts:
   - ./scripts/skynet/run_cross_skynet.sh -gen_with_thrift

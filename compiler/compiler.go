@@ -10,6 +10,7 @@ import (
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/generator/dartlang"
 	"github.com/Workiva/frugal/compiler/generator/golang"
+	"github.com/Workiva/frugal/compiler/generator/html"
 	"github.com/Workiva/frugal/compiler/generator/java"
 	"github.com/Workiva/frugal/compiler/generator/python"
 	"github.com/Workiva/frugal/compiler/globals"
@@ -153,6 +154,8 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 		// and is the default.
 		warnGenWithoutFrugal(genWithFrugal)
 		g = generator.NewProgramGenerator(python.NewGenerator(options), true)
+	case "html":
+		g = html.NewGenerator(options)
 	default:
 		return nil, fmt.Errorf("Invalid gen value %s", gen)
 	}

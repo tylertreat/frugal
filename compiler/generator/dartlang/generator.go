@@ -46,7 +46,7 @@ func NewGenerator(options map[string]string, genWithFrugal bool) generator.Langu
 
 func (g *Generator) getLibraryName() string {
 	if ns, ok := g.Frugal.Thrift.Namespace(lang); ok {
-		return generator.LowercaseFirstLetter(toLibraryName((ns)))
+		return generator.LowercaseFirstLetter(toLibraryName(ns))
 	}
 	return generator.LowercaseFirstLetter(g.Frugal.Name)
 }
@@ -437,7 +437,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 		panic("referenced constant doesn't exist: " + name)
 	}
 
-	if parser.IsThriftPrimitive(underlyingType) || parser.IsThriftContainer(underlyingType) {
+	if underlyingType.IsPrimitive() || underlyingType.IsContainer() {
 		switch underlyingType.Name {
 		case "bool", "i8", "byte", "i16", "i32", "i64", "double":
 			return fmt.Sprintf("%v", value)
@@ -616,7 +616,8 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 		if field.Comment != nil {
 			contents += g.GenerateInlineComment(field.Comment, tab+"/")
 		}
-		contents += fmt.Sprintf(tab+"%s _%s;\n", g.getDartTypeFromThriftType(field.Type), toFieldName(field.Name))
+		contents += fmt.Sprintf(tab+"%s _%s%s;\n",
+			g.getDartTypeFromThriftType(field.Type), toFieldName(field.Name), g.generateInitValue(field))
 		contents += fmt.Sprintf(tab+"static const int %s = %d;\n", strings.ToUpper(field.Name), field.ID)
 	}
 	contents += "\n"
@@ -657,6 +658,24 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 
 	contents += "}\n"
 	return contents
+}
+
+func (g *Generator) generateInitValue(field *parser.Field) string {
+	underlyingType := g.Frugal.UnderlyingType(field.Type)
+	if !underlyingType.IsPrimitive() || field.Modifier == parser.Optional {
+		return ""
+	}
+
+	switch underlyingType.Name {
+	case "bool":
+		return " = false"
+	case "byte", "i8", "i16", "i32", "i64":
+		return " = 0"
+	case "double":
+		return " = 0.0"
+	default:
+		return ""
+	}
 }
 
 func (g *Generator) generateFieldMethods(s *parser.Struct) string {
@@ -797,7 +816,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	primitive := g.isDartPrimitive(underlyingType)
 	isEnum := g.Frugal.IsEnum(underlyingType)
-	if parser.IsThriftPrimitive(underlyingType) || isEnum {
+	if underlyingType.IsPrimitive() || isEnum {
 		thriftType := ""
 		switch underlyingType.Name {
 		case "bool":
@@ -831,7 +850,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = new %s();\n", prefix, fName, dartType)
 		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s.read(iprot);\n", fName)
-	} else if parser.IsThriftContainer(underlyingType) {
+	} else if underlyingType.IsContainer() {
 		containerElem := getElem()
 		valElem := getElem()
 		valField := parser.FieldFromType(underlyingType.ValueType, valElem)
@@ -921,7 +940,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 	fName := toFieldName(field.Name)
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	isEnum := g.Frugal.IsEnum(underlyingType)
-	if parser.IsThriftPrimitive(underlyingType) || isEnum {
+	if underlyingType.IsPrimitive() || isEnum {
 		write := tabtab + ind + "oprot.write"
 		switch underlyingType.Name {
 		case "bool":
@@ -951,7 +970,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 		contents += fmt.Sprintf(write, fName)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(tabtab+ind+"%s.write(oprot);\n", fName)
-	} else if parser.IsThriftContainer(underlyingType) {
+	} else if underlyingType.IsContainer() {
 		valEnumType := g.getEnumFromThriftType(underlyingType.ValueType)
 
 		switch underlyingType.Name {
@@ -1099,13 +1118,7 @@ func (g *Generator) GenerateObjectPackage(file *os.File, name string) error {
 }
 
 func (g *Generator) generatePackage(file *os.File, name, suffix string) error {
-	pkg, ok := g.Frugal.Thrift.Namespace(lang)
-	if ok {
-		components := generator.GetPackageComponents(pkg)
-		pkg = components[len(components)-1]
-	} else {
-		pkg = g.Frugal.Name
-	}
+	pkg := g.getLibraryName()
 
 	libraryPrefix := g.getLibraryPrefix()
 	libraryDeclaration := "library " + libraryPrefix + pkg
@@ -1123,8 +1136,7 @@ func (g *Generator) GenerateThriftImports() string {
 	imports := "import 'dart:typed_data' show Uint8List;\n"
 	imports += "import 'package:thrift/thrift.dart';\n"
 	// Import the current package
-	pkgLower := strings.ToLower(g.getNamespaceOrName())
-	imports += g.getImportDeclaration(pkgLower)
+	imports += g.getImportDeclaration(g.getNamespaceOrName())
 
 	// Import includes
 	for _, include := range g.Frugal.Thrift.Includes {
@@ -1132,7 +1144,7 @@ func (g *Generator) GenerateThriftImports() string {
 		if !ok {
 			includeName = include.Name
 		}
-		includeName = strings.ToLower(toLibraryName(includeName))
+
 		imports += g.getImportDeclaration(includeName)
 	}
 
@@ -1152,7 +1164,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 		if !ok {
 			namespace = include
 		}
-		namespace = toLibraryName(namespace)
+
 		imports += g.getImportDeclaration(namespace)
 	}
 
@@ -1182,13 +1194,12 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 		if !ok {
 			namespace = include
 		}
-		namespace = toLibraryName(namespace)
+
 		imports += g.getImportDeclaration(namespace)
 	}
 
 	// Import same package.
-	pkgLower := strings.ToLower(g.getNamespaceOrName())
-	imports += g.getImportDeclaration(pkgLower)
+	imports += g.getImportDeclaration(g.getNamespaceOrName())
 
 	_, err := file.WriteString(imports)
 	return err
@@ -1744,6 +1755,7 @@ func (g *Generator) getPackagePrefix() string {
 }
 
 func (g *Generator) getImportDeclaration(namespace string) string {
+	namespace = toLibraryName(namespace)
 	prefix := g.getPackagePrefix()
 	if prefix == "" {
 		prefix += namespace + "/"

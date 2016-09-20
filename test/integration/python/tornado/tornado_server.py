@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import SimpleHTTPServer
 import SocketServer
 import argparse
@@ -5,6 +7,7 @@ import logging
 import sys
 import thread
 
+sys.path.append('..')
 sys.path.append('gen_py_tornado')
 
 
@@ -25,7 +28,7 @@ from frugal.tornado.transport import (
     TNatsServiceTransport,
 )
 
-from FrugalTestHandler import FrugalTestHandler
+from common.FrugalTestHandler import FrugalTestHandler
 
 from nats.io.client import Client as NATS
 from thrift.protocol import TBinaryProtocol, TCompactProtocol, TJSONProtocol
@@ -39,10 +42,11 @@ port = 0
 
 @gen.coroutine
 def main():
-    parser = argparse.ArgumentParser(description="Run a python server")
+    parser = argparse.ArgumentParser(description="Run a tornado python server")
     parser.add_argument('--port', dest='port', default=9090)
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
-    parser.add_argument('--transport', dest="transport_type", default="stateless", choices="stateless, stateful, stateless-stateful, http")
+    parser.add_argument('--transport', dest="transport_type", default="stateless",
+                        choices="stateless, stateful, stateless-stateful, http")
 
     args = parser.parse_args()
 
@@ -79,7 +83,8 @@ def main():
         thread.start_new_thread(healthcheck, (port, ))
         print("Starting {} server...".format(args.transport_type))
         yield server.serve()
-    elif args.transport_type == "stateful" or args.transport_type == "stateless-stateful":  # @Deprecated TODO: Remove in 2.0
+    # @Deprecated TODO: Remove in 2.0
+    elif args.transport_type == "stateful" or args.transport_type == "stateless-stateful":
         transport_factory = FMuxTornadoTransportFactory()
         heartbeat_interval = 10000
         max_missed_heartbeats = 3
@@ -128,6 +133,7 @@ def healthcheck(port):
     health_handler = SimpleHTTPServer.SimpleHTTPRequestHandler
     healthcheck = SocketServer.TCPServer(("", int(port)), health_handler)
     healthcheck.serve_forever()
+
 
 if __name__ == '__main__':
     io_loop = ioloop.IOLoop.instance()

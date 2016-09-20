@@ -40,7 +40,7 @@ async def run_nats_server():
     prot_factory = FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
 
     handler = ExampleHandler()
-    processor = FFooProcessor(handler)
+    processor = FFooProcessor(handler, middleware=[logging_middleware])
 
     subject = "foo"
     server = FNatsServer(nats_client, subject, processor, prot_factory)
@@ -48,6 +48,15 @@ async def run_nats_server():
     root.info("Starting Nats rpc server...")
 
     await server.serve()
+
+
+def logging_middleware(next):
+    def handler(method, args):
+        print('==== CALLING {} ===='.format(method.__name__))
+        ret = next(method, args)
+        print('==== CALLED  {} ===='.format(method.__name__))
+        return ret
+    return handler
 
 
 if __name__ == '__main__':
