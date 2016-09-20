@@ -46,7 +46,7 @@ class TestFNatsTransport(AsyncTestCase):
 
     @gen_test
     def test_open_throws_nats_not_connected_exception(self):
-        self.mock_nats_client.is_connected.return_value = False
+        self.mock_nats_client.is_connected = False
 
         with self.assertRaises(TTransportException) as cm:
             yield self.transport.open()
@@ -56,26 +56,26 @@ class TestFNatsTransport(AsyncTestCase):
 
     @gen_test
     def test_open_throws_transport_already_open_exception(self):
-        self.mock_nats_client.is_connected.return_value = True
+        self.mock_nats_client.is_connected = True
         self.transport._is_open = True
 
         with self.assertRaises(TTransportException) as cm:
             yield self.transport.open()
 
         self.assertEqual(TTransportException.ALREADY_OPEN, cm.exception.type)
-        self.assertEqual("NATS transport already open", cm.exception.message)
+        self.assertEqual("NATS transport already open.", cm.exception.message)
 
     @gen_test
     def test_open_subscribes_to_new_inbox(self):
         f = concurrent.Future()
         f.set_result(1)
-        self.mock_nats_client.subscribe.return_value = f
+        self.mock_nats_client.subscribe_async.return_value = f
 
         yield self.transport.open()
 
         self.assertEquals(1, self.transport._sub_id)
-        self.mock_nats_client.subscribe.assert_called_with(
-            "new_inbox", "", self.transport._on_message_callback)
+        self.mock_nats_client.subscribe_async.assert_called_with(
+            "new_inbox", cb=self.transport._on_message_callback)
 
     @gen_test
     def test_on_message_callback(self):
@@ -93,11 +93,13 @@ class TestFNatsTransport(AsyncTestCase):
         f = concurrent.Future()
         f.set_result(None)
         self.mock_nats_client.unsubscribe.return_value = f
+        self.mock_nats_client.flush.return_value = f
 
         yield self.transport.close()
 
         self.mock_nats_client.unsubscribe.assert_called_with(
             self.transport._sub_id)
+        self.mock_nats_client.flush.assert_called_with()
 
         self.assertFalse(self.transport._is_open)
 
@@ -107,7 +109,10 @@ class TestFNatsTransport(AsyncTestCase):
         f = concurrent.Future()
         f.set_result(None)
         self.mock_nats_client.unsubscribe.return_value = f
+        self.mock_nats_client.flush.return_value = f
+
         yield self.transport.close()
+
         self.mock_nats_client.unsubscribe.assert_not_called()
 
     def test_read_throws_exception(self):
@@ -116,7 +121,7 @@ class TestFNatsTransport(AsyncTestCase):
 
     def test_write_adds_to_write_buffer(self):
         b = bytearray('writetest')
-        self.mock_nats_client.is_connected.return_value = True
+        self.mock_nats_client.is_connected = True
         self.transport._is_open = True
 
         self.transport.write(b)
@@ -129,7 +134,7 @@ class TestFNatsTransport(AsyncTestCase):
             yield self.transport.flush()
 
         self.assertEquals(TTransportException.NOT_OPEN, cm.exception.type)
-        self.assertEquals("Nats not connected!", cm.exception.message)
+        self.assertEquals("NATS not connected.", cm.exception.message)
 
     @gen_test
     def test_flush_publishes_request_to_inbox(self):
@@ -143,6 +148,7 @@ class TestFNatsTransport(AsyncTestCase):
         f = concurrent.Future()
         f.set_result("")
         self.mock_nats_client.publish_request.return_value = f
+        self.mock_nats_client.flush.return_value = f
 
         yield self.transport.flush()
 
@@ -151,3 +157,4 @@ class TestFNatsTransport(AsyncTestCase):
             self.inbox,
             frame_length + b
         )
+        self.mock_nats_client.flush.assert_called_with()

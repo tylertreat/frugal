@@ -31,7 +31,7 @@ class TestFNatsTornadoServer(AsyncTestCase):
     def test_serve(self):
         f = concurrent.Future()
         f.set_result(123)
-        self.mock_nats_client.subscribe.return_value = f
+        self.mock_nats_client.subscribe_async.return_value = f
 
         yield self.server.serve()
 

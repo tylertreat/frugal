@@ -64,7 +64,7 @@ class TestFNatsScopeTransport(AsyncTestCase):
     @gen_test
     def test_open_throws_exception_if_nats_not_connected(self):
         mock_conn = mock.Mock()
-        mock_conn.is_connected.return_value = False
+        mock_conn.is_connected = False
 
         self.publisher_transport = FNatsScopeTransport(mock_conn)
 
@@ -76,7 +76,7 @@ class TestFNatsScopeTransport(AsyncTestCase):
 
     @gen_test
     def test_open_throws_exception_if_nats_already_open(self):
-        self.nats_client.is_connected.return_value = True
+        self.nats_client.is_connected = True
         self.publisher_transport._is_open = True
 
         with self.assertRaises(TTransportException) as cm:
@@ -87,7 +87,7 @@ class TestFNatsScopeTransport(AsyncTestCase):
 
     @gen_test
     def test_open_when_subscriber_throws_if_empty_subject(self):
-        self.nats_client.is_connected.return_value = True
+        self.nats_client.is_connected = True
         self.subscriber_transport._pull = True
 
         with self.assertRaises(TTransportException) as cm:
@@ -97,22 +97,22 @@ class TestFNatsScopeTransport(AsyncTestCase):
 
     @gen_test
     def test_open_when_subscriber_calls_subscribe(self):
-        self.nats_client.is_connected.return_value = True
+        self.nats_client.is_connected = True
         self.subscriber_transport._pull = True
         self.subscriber_transport._subject = "foo"
 
         f = concurrent.Future()
         f.set_result(1)
-        self.nats_client.subscribe.return_value = f
+        self.nats_client.subscribe_async.return_value = f
 
         yield self.subscriber_transport.open()
 
-        self.nats_client.subscribe.assert_called()
+        self.nats_client.subscribe_async.assert_called()
         self.assertTrue(self.subscriber_transport.isOpen())
 
     @gen_test
     def test_write_throws_if_max_message_size_exceeded(self):
-        self.nats_client.is_connected.return_value = True
+        self.nats_client.is_connected = True
         self.publisher_transport._is_open = True
         self.publisher_transport._write_buffer = BytesIO()
 
@@ -124,7 +124,7 @@ class TestFNatsScopeTransport(AsyncTestCase):
                           cm.exception.message)
 
     def test_write_writes_to_write_buffer(self):
-        self.nats_client.is_connected.return_value = True
+        self.nats_client.is_connected = True
         self.publisher_transport._is_open = True
         self.publisher_transport._write_buffer = BytesIO()
         buff = bytearray(b'\x00\x00\x00\x00\x01')
@@ -144,7 +144,7 @@ class TestFNatsScopeTransport(AsyncTestCase):
 
     @gen_test
     def test_flush_publishes_to_formatted_subject(self):
-        self.nats_client.is_connected.return_value = True
+        self.nats_client.is_connected = True
         self.publisher_transport._is_open = True
         self.publisher_transport._subject = "batman"
         self.publisher_transport._write_buffer = BytesIO()
@@ -158,12 +158,10 @@ class TestFNatsScopeTransport(AsyncTestCase):
         self.publisher_transport.write(buff)
         yield self.publisher_transport.flush()
 
-        self.nats_client.publish.assert_called_with("frugal.batman",
-                                                    "{0}{1}".format(size, buff)
-                                                    )
+        msg = "{}{}".format(size, buff)
+        self.nats_client.publish.assert_called_with("frugal.batman", msg)
 
     def test_get_formatted_subject(self):
         self.publisher_transport._subject = "robin"
-        self.assertEquals("frugal.robin",
-                          self.publisher_transport._get_formatted_subject())
-
+        formatted_sub = self.publisher_transport._get_formatted_subject()
+        self.assertEquals("frugal.robin", formatted_sub)

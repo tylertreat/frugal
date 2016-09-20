@@ -41,7 +41,7 @@ class FNatsTornadoServer(FServer):
         queue = self._queue
         cb = self._on_message_callback
 
-        self._sids = [(yield self._nats_client.subscribe(subject, queue, cb))
+        self._sids = [(yield self._nats_client.subscribe_async(subject, queue=queue, cb=cb))
                       for subject in self._subjects]
 
         logger.info("Frugal server running...")
@@ -60,6 +60,7 @@ class FNatsTornadoServer(FServer):
         Args:
             msg: request message published to server subject
         """
+        logger.info("MESSAGE CALLBACK CALLED")
         reply_to = msg.reply
         if not reply_to:
             logger.warn("Discarding invalid NATS request (no reply)")
@@ -90,4 +91,4 @@ class FNatsTornadoServer(FServer):
         data = out_transport.getvalue()
         buff = struct.pack('!I', len(data))
 
-        yield self._nats_client.publish(reply_to, buff + data)
+        yield self._nats_client.publish(reply_to, "{}{}".format(buff, data))
