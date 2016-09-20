@@ -1237,8 +1237,8 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 		contents += indent + fmt.Sprintf("self._handler([ctx%s])\n",
 			g.generateServerArgs(method.Arguments))
 	} else {
-		contents += indent + fmt.Sprintf("result.success = self._handler.%s(ctx%s)\n",
-			method.Name, g.generateServerArgs(method.Arguments))
+		contents += indent + fmt.Sprintf("result.success = self._handler([ctx%s])\n",
+			g.generateServerArgs(method.Arguments))
 	}
 	for _, err := range method.Exceptions {
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", g.qualifiedTypeName(err.Type), err.Name)
