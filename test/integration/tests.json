@@ -1,5 +1,5 @@
 [
-  {
+    {
     "name": "dart",
     "client": {
       "timeout": 15,
@@ -124,8 +124,7 @@
     ],
     "protocols": [
       "binary",
-      "compact",
-      "json"
+      "compact"
     ],
     "workdir": "python/tornado"
   },
@@ -139,6 +138,14 @@
         "client.py"
       ]
     },
+    "server": {
+      "timeout": 7,
+      "command": [
+        "python3.5",
+        "-u",
+        "server.py"
+      ]
+    },
     "transports": [
       "stateless",
       "http",
@@ -149,8 +156,7 @@
     ],
     "protocols": [
       "binary",
-      "compact",
-      "json"
+      "compact"
     ],
     "workdir": "python/asyncio"
   },

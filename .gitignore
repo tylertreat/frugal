@@ -47,6 +47,7 @@ test/integration/go/bin/*
 test/integration/java/frugal-integration-test/cross.jar
 test/integration/java/frugal-integration-test/gen-java
 test/integration/java/frugal-integration-test/frugal
+test/integration/java/frugal-integration-test/*.jar
 test/integration/java/frugal.jar
 test/integration/python/tornado/gen-py
 test/integration/python/tornado/gen_py_tornado
