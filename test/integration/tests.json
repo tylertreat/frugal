@@ -124,7 +124,8 @@
     ],
     "protocols": [
       "binary",
-      "compact"
+      "compact",
+      "json"
     ],
     "workdir": "python/tornado"
   },
@@ -156,7 +157,8 @@
     ],
     "protocols": [
       "binary",
-      "compact"
+      "compact",
+      "json"
     ],
     "workdir": "python/asyncio"
   },
