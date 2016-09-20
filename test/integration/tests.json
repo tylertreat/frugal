@@ -53,7 +53,7 @@
     },
     "transports": [ "stateless", "http" ],
     "sockets": [ "ip" ],
-    "protocols": [ "binary", "compact" ],
+    "protocols": [ "binary", "compact", "json" ],
     "workdir": "python/tornado"
   },
   {
@@ -68,7 +68,7 @@
     },
     "transports": [ "stateless", "http" ],
     "sockets": [ "ip" ],
-    "protocols": [ "binary", "compact" ],
+    "protocols": [ "binary", "compact", "json" ],
     "workdir": "python/asyncio"
   },
   {
