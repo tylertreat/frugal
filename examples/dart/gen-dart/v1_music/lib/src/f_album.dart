@@ -15,7 +15,7 @@ class Album implements TBase {
   static final TField _DURATION_FIELD_DESC = new TField("duration", TType.DOUBLE, 2);
   static final TField _ASIN_FIELD_DESC = new TField("ASIN", TType.STRING, 3);
 
-  List<t_v1.music.Track> _tracks;
+  List<t_v1_music.Track> _tracks;
   static const int TRACKS = 1;
   double _duration = 0.0;
   static const int DURATION = 2;
@@ -27,9 +27,9 @@ class Album implements TBase {
   Album() {
   }
 
-  List<t_v1.music.Track> get tracks => this._tracks;
+  List<t_v1_music.Track> get tracks => this._tracks;
 
-  set tracks(List<t_v1.music.Track> tracks) {
+  set tracks(List<t_v1_music.Track> tracks) {
     this._tracks = tracks;
   }
 
@@ -134,9 +134,9 @@ class Album implements TBase {
         case TRACKS:
           if(field.type == TType.LIST) {
             TList elem0 = iprot.readListBegin();
-            tracks = new List<t_v1.music.Track>();
+            tracks = new List<t_v1_music.Track>();
             for(int elem2 = 0; elem2 < elem0.length; ++elem2) {
-              t_v1.music.Track elem1 = new t_v1.music.Track();
+              t_v1_music.Track elem1 = new t_v1_music.Track();
               elem1.read(iprot);
               tracks.add(elem1);
             }

@@ -343,7 +343,7 @@ class Track implements TBase {
 
     ret.write(", ");
     ret.write("pro:");
-    String pro_name = t_v1.music.PerfRightsOrg.VALUES_TO_NAMES[this.pro];
+    String pro_name = t_v1_music.PerfRightsOrg.VALUES_TO_NAMES[this.pro];
     if(pro_name != null) {
       ret.write(pro_name);
       ret.write(" (");
@@ -361,7 +361,7 @@ class Track implements TBase {
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
-    if(isSetPro() && !t_v1.music.PerfRightsOrg.VALID_VALUES.contains(pro)) {
+    if(isSetPro() && !t_v1_music.PerfRightsOrg.VALID_VALUES.contains(pro)) {
       throw new TProtocolError(TProtocolErrorType.UNKNOWN, "The field 'pro' has been assigned the invalid value $pro");
     }
   }

@@ -17,7 +17,7 @@ import 'f_store_structs.dart' as t_store_file;
 /// Users can buy an album or enter a giveaway for a free album.
 abstract class FStore {
 
-  Future<t_v1.music.Album> buyAlbum(frugal.FContext ctx, String aSIN, String acct);
+  Future<t_v1_music.Album> buyAlbum(frugal.FContext ctx, String aSIN, String acct);
 
   Future<bool> enterAlbumGiveaway(frugal.FContext ctx, String email, String name);
 }
@@ -45,11 +45,11 @@ class FStoreClient implements FStore {
   frugal.FProtocol get oprot => _oprot;
   frugal.Lock writeLock;
 
-  Future<t_v1.music.Album> buyAlbum(frugal.FContext ctx, String aSIN, String acct) {
+  Future<t_v1_music.Album> buyAlbum(frugal.FContext ctx, String aSIN, String acct) {
     return this._methods['buyAlbum']([ctx, aSIN, acct]);
   }
 
-  Future<t_v1.music.Album> _buyAlbum(frugal.FContext ctx, String aSIN, String acct) async {
+  Future<t_v1_music.Album> _buyAlbum(frugal.FContext ctx, String aSIN, String acct) async {
     var controller = new StreamController();
     var closeSubscription = _transport.onClose.listen((_) {
       controller.addError(new thrift.TTransportError(

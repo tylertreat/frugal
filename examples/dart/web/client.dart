@@ -56,15 +56,15 @@ class EventUI {
 
   void _buildPublishComponent() {
     output.append(new HeadingElement.h3()
-      ..text = "Publish Event");
-    InputElement pubId = new InputElement()
-      ..id = "pubId"
-      ..type = "number";
-    output.append(pubId);
-    InputElement pubMsg = new InputElement()
-      ..id = "pubMsg"
+      ..text = "Publish Album Winner");
+    InputElement asin = new InputElement()
+      ..id = "asin"
       ..type = "string";
-    output.append(pubMsg);
+    output.append(asin);
+    InputElement duration = new InputElement()
+      ..id = "duration"
+      ..type = "number";
+    output.append(duration);
     ButtonElement publishButton = new ButtonElement()
       ..text = "Publish"
       ..onClick.listen(_onPublishClick);
@@ -72,17 +72,18 @@ class EventUI {
   }
 
   void _onPublishClick(MouseEvent e) {
-    InputElement pubId = querySelector("#pubId");
-    InputElement pubMsg = querySelector("#pubMsg");
-    var m = new music.Album();
-    m.ASIN = int.parse(pubId.value);
+    InputElement asin = querySelector("#asin");
+    InputElement duration = querySelector("#duration");
+    var album = new music.Album();
+    album.ASIN = asin.value;
+    album.duration = int.parse(duration.value);
     frugal.FContext ctx = new frugal.FContext(correlationId: 'an-id');
-    _albumWinnersPublisher.publishWinner(ctx, m);
+    _albumWinnersPublisher.publishWinner(ctx, album);
   }
 
   void _buildSubscribeComponent() {
     output.append(new HeadingElement.h3()
-      ..text = "Subscribe Event");
+      ..text = "Subscribe To Album Winner Event");
     ButtonElement subscribeButton = new ButtonElement()
       ..text = "Subscribe"
       ..onClick.listen(_onSubscribeClick);
@@ -108,11 +109,26 @@ class EventUI {
 
   void _buildRequestComponent() {
     output.append(new HeadingElement.h3()
-      ..text = "Foo Sevice");
+      ..text = "Music Service");
+
+    ButtonElement buyAlbumButton = new ButtonElement()
+      ..text  = "Buy Album"
+      ..onClick.listen(_onBuyAlbumClick);
+    output.append(buyAlbumButton);
+  }
+
+  void _onBuyAlbumClick(MouseEvent e) {
+    if (_fStoreClient == null) {
+      window.alert("Not connected to server");
+    }
+    var ctx = new frugal.FContext(correlationId:"corr-12345");
+    _fStoreClient.buyAlbum(ctx, "My-ASIN", "Account-12345").catchError( (e) {
+      window.alert("Ping errored! ${e.toString()}");
+    });
   }
 
   void onEvent(frugal.FContext ctx, music.Album m) {
-    window.alert(ctx.opId().toString() + ' : ' + m.toString());
+    window.alert(ctx.correlationId().toString() + ' : ' + m.toString());
   }
 }
 
