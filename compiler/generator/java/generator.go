@@ -279,53 +279,23 @@ func (g *Generator) generateEnumConstFromValue(t *parser.Type, value int) string
 func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) (string, string) {
 	underlyingType := g.Frugal.UnderlyingType(t)
 
-	// TODO consolidate this between generators
 	// If the value being referenced is of type Identifier, it's referencing
-	// another constant. Need to recurse to get that value.
+	// another constant.
 	identifier, ok := value.(parser.Identifier)
 	if ok {
-		name := string(identifier)
-
-		// split based on '.', if present, it should be from an include
-		pieces := strings.Split(name, ".")
-		if len(pieces) == 1 {
-			// From this file
-			for _, constant := range g.Frugal.Thrift.Constants {
-				if name == constant.Name {
-					return g.generateConstantValueRec(t, constant.Value)
-				}
-			}
-		} else if len(pieces) == 2 {
-			// Either from an include, or part of an enum
-			val, ok := g.generateEnumConstValue(g.Frugal, pieces, underlyingType)
-			if ok {
-				return "", val
-			}
-
-			// If not part of an enum, it's from an include
-			include, ok := g.Frugal.ParsedIncludes[pieces[0]]
-			if !ok {
-				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
-			}
-			for _, constant := range include.Thrift.Constants {
-				if pieces[1] == constant.Name {
-					return g.generateConstantValueRec(t, constant.Value)
-				}
-			}
-		} else if len(pieces) == 3 {
-			// enum from an include
-			include, ok := g.Frugal.ParsedIncludes[pieces[0]]
-			if !ok {
-				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
-			}
-
-			val, ok := g.generateEnumConstValue(include, pieces[1:], underlyingType)
-			if ok {
-				return "", val
-			}
+		idCtx := g.Frugal.ContextFromIdentifier(identifier)
+		switch idCtx.Type {
+		case parser.LocalConstant:
+			return "", fmt.Sprintf("%sConstants.%s", g.Frugal.Name, idCtx.Constant.Name)
+		case parser.LocalEnum:
+			return "", fmt.Sprintf("%s.%s", idCtx.Enum.Name, idCtx.EnumValue.Name)
+		case parser.IncludeConstant:
+			return "", fmt.Sprintf("%s.%sConstants.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang),
+				idCtx.Include.Name, idCtx.Constant.Name)
+		case parser.IncludeEnum:
+			return "", fmt.Sprintf("%s.%s.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang),
+				idCtx.Enum.Name, idCtx.EnumValue.Name)
 		}
-
-		panic("referenced constant doesn't exist: " + name)
 	}
 
 	if underlyingType.IsPrimitive() {
@@ -2627,12 +2597,7 @@ func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 	serviceName := "F" + service.ExtendsService()
 	include := service.ExtendsInclude()
 	if include != "" {
-		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
-			include = inc
-		} else {
-			return serviceName
-		}
-		serviceName = include + "." + serviceName
+		serviceName = g.Frugal.NamespaceForInclude(include, lang) + "." + serviceName
 	}
 	return serviceName
 }
@@ -3169,8 +3134,8 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 	param := t.ParamName()
 	include := t.IncludeName()
 	if include != "" {
-		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-		if ok {
+		parsed := g.Frugal.ParsedIncludes[include]
+		if namespace, ok := parsed.Thrift.Namespace(lang); ok {
 			return fmt.Sprintf("%s.%s", namespace, param)
 		}
 	}

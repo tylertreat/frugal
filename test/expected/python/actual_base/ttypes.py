@@ -37,6 +37,7 @@ class thing:
      - a_string
     """
     def __init__(self, an_id=None, a_string=None):
+        from .constants import *
         self.an_id = an_id
         self.a_string = a_string
 

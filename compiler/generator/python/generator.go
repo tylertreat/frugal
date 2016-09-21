@@ -94,6 +94,12 @@ func (g *Generator) TeardownGenerator() error {
 
 // GenerateConstantsContents generates constants.
 func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) error {
+	file, err := g.GenerateFile("constants", g.outputDir, generator.ObjectFile)
+	defer file.Close()
+	if err != nil {
+		return err
+	}
+
 	if len(constants) == 0 {
 		return nil
 	}
@@ -102,15 +108,16 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
 	contents += "from .ttypes import *\n\n"
 
+	for _, include := range g.Frugal.Thrift.Includes {
+		namespace := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
+		contents += fmt.Sprintf("import %s.ttypes\n", namespace)
+		contents += fmt.Sprintf("import %s.constants\n", namespace)
+		contents += "\n"
+	}
+
 	for _, constant := range constants {
 		value := g.generateConstantValue(constant.Type, constant.Value, "")
 		contents += fmt.Sprintf("%s = %s\n", constant.Name, value)
-	}
-
-	file, err := g.GenerateFile("constants", g.outputDir, generator.ObjectFile)
-	defer file.Close()
-	if err != nil {
-		return err
 	}
 
 	if err = g.GenerateDocStringComment(file); err != nil {
@@ -125,68 +132,24 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 		return "None"
 	}
 
-	underlyingType := g.Frugal.UnderlyingType(t)
 	// If the value being referenced is of type Identifier, it's referencing
-	// another constant. Need to recurse to get that value.
+	// another constant.
 	identifier, ok := value.(parser.Identifier)
-	// TODO consolidate this between generators
 	if ok {
-		name := string(identifier)
-
-		// split based on '.', if present, it should be from an include
-		pieces := strings.Split(name, ".")
-		switch len(pieces) {
-		case 1:
-			// From this file
-			for _, constant := range g.Frugal.Thrift.Constants {
-				if name == constant.Name {
-					return g.generateConstantValue(t, constant.Value, ind)
-				}
-			}
-		case 2:
-			// Either from an include, or part of an enum
-			for _, enum := range g.Frugal.Thrift.Enums {
-				if pieces[0] == enum.Name {
-					for _, value := range enum.Values {
-						if pieces[1] == value.Name {
-							return fmt.Sprintf("%v", value.Value)
-						}
-					}
-					panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))
-				}
-			}
-
-			// If not part of an enum , it's from an include
-			include, ok := g.Frugal.ParsedIncludes[pieces[0]]
-			if !ok {
-				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
-			}
-			for _, constant := range include.Thrift.Constants {
-				if pieces[1] == constant.Name {
-					return g.generateConstantValue(t, constant.Value, ind)
-				}
-			}
-		case 3:
-			// enum from an include
-			include, ok := g.Frugal.ParsedIncludes[pieces[0]]
-			if !ok {
-				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
-			}
-			for _, enum := range include.Thrift.Enums {
-				if pieces[1] == enum.Name {
-					for _, value := range enum.Values {
-						if pieces[2] == value.Name {
-							return fmt.Sprintf("%v", value.Value)
-						}
-					}
-					panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))
-				}
-			}
-		default:
-			panic("reference constant doesn't exist: " + name)
+		idCtx := g.Frugal.ContextFromIdentifier(identifier)
+		switch idCtx.Type {
+		case parser.LocalConstant:
+			return idCtx.Constant.Name
+		case parser.LocalEnum:
+			return fmt.Sprintf("%s.%s", idCtx.Enum.Name, idCtx.EnumValue.Name)
+		case parser.IncludeConstant:
+			return fmt.Sprintf("%s.constants.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang), idCtx.Constant.Name)
+		case parser.IncludeEnum:
+			return fmt.Sprintf("%s.ttypes.%s.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang), idCtx.Enum.Name, idCtx.EnumValue.Name)
 		}
 	}
 
+	underlyingType := g.Frugal.UnderlyingType(t)
 	if underlyingType.IsPrimitive() || underlyingType.IsContainer() {
 		switch underlyingType.Name {
 		case "bool":
@@ -364,8 +327,15 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 // constant as a class variable to avoid order of declaration issues.
 func (g *Generator) generateDefaultMarkers(s *parser.Struct) string {
 	contents := ""
+	importConstants := true
 	for _, field := range s.Fields {
 		if field.Default != nil {
+			// TODO: We could be more clever here and only import this if we
+			// reference a local constant
+			if importConstants {
+				contents += tab + "from .constants import *\n"
+				importConstants = false
+			}
 			underlyingType := g.Frugal.UnderlyingType(field.Type)
 			// use 'object()' as a marker value to avoid instantiating
 			// a class defined later in the file
@@ -395,6 +365,9 @@ func (g *Generator) generateInit(s *parser.Struct) string {
 		argList += fmt.Sprintf(", %s=%s", field.Name, defaultVal)
 	}
 	contents += fmt.Sprintf(tab+"def __init__(self%s):\n", argList)
+	// TODO: We could be more clever here and only import this if we reference
+	// a local constant
+	contents += fmt.Sprintf(tabtab + "from .constants import *\n")
 	for _, field := range s.Fields {
 		underlyingType := g.Frugal.UnderlyingType(field.Type)
 		if !underlyingType.IsPrimitive() && !g.Frugal.IsEnum(underlyingType) && field.Default != nil {
@@ -749,11 +722,9 @@ func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) err
 	contents := ""
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
 	for _, include := range g.Frugal.Thrift.Includes {
-		includeName, ok := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
-		if !ok {
-			includeName = include.Name
-		}
-		contents += fmt.Sprintf("import %s.ttypes\n", includeName)
+		namespace := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
+		contents += fmt.Sprintf("import %s.ttypes\n", namespace)
+		contents += fmt.Sprintf("import %s.constants\n", namespace)
 	}
 	contents += "\n"
 	if isArgsOrResult {
@@ -787,11 +758,7 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
 
 	// Import include modules.
 	for _, include := range s.ReferencedIncludes() {
-		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-		if !ok {
-			namespace = include
-		}
-		imports += fmt.Sprintf("import %s\n", namespace)
+		imports += fmt.Sprintf("import %s\n", g.Frugal.NamespaceForInclude(include, lang))
 	}
 
 	// Import this service's modules.
@@ -1175,10 +1142,7 @@ func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 	serviceName := "f_" + service.ExtendsService()
 	include := service.ExtendsInclude()
 	if include != "" {
-		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
-			include = inc
-		}
-		serviceName = include + "." + serviceName
+		serviceName = g.Frugal.NamespaceForInclude(include, lang) + "." + serviceName
 	}
 	return serviceName
 }
@@ -1343,11 +1307,7 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 		return param
 	}
 
-	namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-	if !ok {
-		namespace = include
-	}
-	return fmt.Sprintf("%s.ttypes.%s", namespace, param)
+	return fmt.Sprintf("%s.ttypes.%s", g.Frugal.NamespaceForInclude(include, lang), param)
 }
 
 func (g *Generator) getTType(t *parser.Type) string {
