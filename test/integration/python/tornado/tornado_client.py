@@ -10,10 +10,8 @@ from frugal.context import FContext
 from frugal.provider import FScopeProvider
 
 from frugal.tornado.transport import (
-    FMuxTornadoTransportFactory,
     FNatsScopeTransportFactory,
     FNatsTransport,
-    TNatsServiceTransport,
     FHttpTransport
 )
 
@@ -40,7 +38,7 @@ def main():
     parser.add_argument('--port', dest='port', default=9090)
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
     parser.add_argument('--transport', dest='transport_type', default="stateless",
-                        choices="stateless, stateful, stateless-stateful, http")
+                        choices="stateless, http")
 
     args = parser.parse_args()
 
@@ -53,18 +51,8 @@ def main():
 
     transport = None
 
-    if args.transport_type == "stateless" or args.transport_type == "stateless-stateful":
+    if args.transport_type == "stateless":
         transport = FNatsTransport(nats_client, str(args.port))
-
-    elif args.transport_type == "stateful":  # @Deprecated TODO: Remove in 2.0
-        transport_factory = FMuxTornadoTransportFactory()
-        nats_transport = TNatsServiceTransport.Client(
-            nats_client=nats_client,
-            connection_subject=str(args.port),
-            connection_timeout=2000,
-            io_loop=5)
-        transport = transport_factory.get_transport(nats_transport)
-
     elif args.transport_type == "http":
         transport = FHttpTransport("http://localhost:" + str(args.port))
     else:
