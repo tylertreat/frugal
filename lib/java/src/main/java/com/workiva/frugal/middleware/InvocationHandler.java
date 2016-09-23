@@ -9,7 +9,7 @@ import java.lang.reflect.Proxy;
  *
  * @param <T> the service handler type.
  */
-public abstract class InvocationHandler<T> implements java.lang.reflect.InvocationHandler /*MethodInterceptor*/ {
+public abstract class InvocationHandler<T> implements java.lang.reflect.InvocationHandler {
 
     private final T next;
 
