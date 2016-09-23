@@ -56,6 +56,8 @@ func TestValidDartFrugalCompiler(t *testing.T) {
 	compareFiles(t, "expected/dart/variety/f_testing_unions.dart", testingUnionsPath)
 	varietyConstantsPath := filepath.Join(outputDir, "variety", "lib", "src", "f_variety_constants.dart")
 	compareFiles(t, "expected/dart/variety/f_variety_constants.dart", varietyConstantsPath)
+	fooServicePath := filepath.Join(outputDir, "variety", "lib", "src", "f_foo_service.dart")
+	compareFiles(t, "expected/dart/variety/f_foo_service.dart", fooServicePath)
 	varietyExportPath := filepath.Join(outputDir, "variety", "lib", "variety.dart")
 	compareFiles(t, "expected/dart/variety/variety.dart", varietyExportPath)
 
@@ -67,6 +69,8 @@ func TestValidDartFrugalCompiler(t *testing.T) {
 	compareFiles(t, "expected/dart/actual_base/f_base_foo_structs.dart", baseFooStructs)
 	thingPath := filepath.Join(outputDir, "actual_base_dart", "lib", "src", "f_thing.dart")
 	compareFiles(t, "expected/dart/actual_base/f_thing.dart", thingPath)
+	nestedThingPath := filepath.Join(outputDir, "actual_base_dart", "lib", "src", "f_nested_thing.dart")
+	compareFiles(t, "expected/dart/actual_base/f_nested_thing.dart", nestedThingPath)
 	actualBaseExportPath := filepath.Join(outputDir, "actual_base_dart", "lib", "actual_base_dart.dart")
 	compareFiles(t, "expected/dart/actual_base/actual_base_dart.dart", actualBaseExportPath)
 }
