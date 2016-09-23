@@ -807,6 +807,8 @@ func (g *Generator) GenerateException(exception *parser.Struct) error {
 	return g.GenerateStruct(exception)
 }
 
+// generateServiceArgsResults generates the args and results objects for the
+// given service.
 func (g *Generator) generateServiceArgsResults(service *parser.Service) string {
 	contents := ""
 	for _, s := range g.GetServiceMethodTypes(service) {

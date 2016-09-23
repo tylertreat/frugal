@@ -571,7 +571,7 @@ func (g *Generator) GenerateException(s *parser.Struct) error {
 	return g.GenerateStruct(s)
 }
 
-// GenerateServiceArgsResults generates the args and results objects for the
+// generateServiceArgsResults generates the args and results objects for the
 // given service.
 func (g *Generator) generateServiceArgsResults(service *parser.Service) string {
 	contents := ""
