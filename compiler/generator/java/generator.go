@@ -2529,7 +2529,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscriber += tabtab + fmt.Sprintf(
 			"final %sHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, %sHandler.class, middleware);\n",
 			op.Name, op.Name)
-		subscriber += tabtab + "final FSubscription sub = new FSubscription(topic, transport);\n"
+		subscriber += tabtab + "final FSubscription sub = FSubscription.of(topic, transport);\n"
 		subscriber += tabtab + "new Thread(new Runnable() {\n"
 		subscriber += tabtabtab + "public void run() {\n"
 		subscriber += tabtabtabtab + "while (true) {\n"

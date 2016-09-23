@@ -78,7 +78,6 @@ def main(argv):
                         help='list of clients to test')
     parser.add_argument('-R', '--regex', help='test name pattern to run')
 
-
     g = parser.add_argument_group(title='Advanced')
     g.add_argument('-v', '--verbose', action='store_const',
                    dest='log_level', const=logging.DEBUG, default=logging.WARNING,

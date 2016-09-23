@@ -59,7 +59,7 @@ public class EventsSubscriber {
 		transport.subscribe(topic);
 
 		final EventCreatedHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, EventCreatedHandler.class, middleware);
-		final FSubscription sub = new FSubscription(topic, transport);
+		final FSubscription sub = FSubscription.of(topic, transport);
 		new Thread(new Runnable() {
 			public void run() {
 				while (true) {
