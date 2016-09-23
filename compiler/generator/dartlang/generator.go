@@ -1415,7 +1415,7 @@ func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 		}
 		prefix = "t_" + toLibraryName(include)
 	} else {
-		prefix = "t_" + toLibraryName(strings.ToLower(g.getNamespaceOrName()))
+		prefix = "t_" + toLibraryName(g.getNamespaceOrName())
 	}
 	return prefix + "." + serviceName
 }
