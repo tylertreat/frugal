@@ -2373,9 +2373,7 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
 	scopeTitle := strings.Title(scope.Name)
 	publisher := ""
-	if scope.Comment != nil {
-		publisher += g.GenerateBlockComment(scope.Comment, "")
-	}
+
 	if g.includeGeneratedAnnotation() {
 		publisher += g.generatedAnnotation()
 	}
@@ -2392,6 +2390,10 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 func (g *Generator) generatePublisherIface(scope *parser.Scope) string {
 	contents := ""
+
+	if scope.Comment != nil {
+		contents += g.GenerateBlockComment(scope.Comment, tab)
+	}
 	contents += tab + "public interface Iface {\n"
 
 	contents += tabtab + "public void open() throws TException;\n\n"
@@ -2400,6 +2402,9 @@ func (g *Generator) generatePublisherIface(scope *parser.Scope) string {
 	args := g.generateScopePrefixArgs(scope)
 
 	for _, op := range scope.Operations {
+		if op.Comment != nil {
+			contents += g.GenerateBlockComment(op.Comment, tabtab)
+		}
 		contents += fmt.Sprintf(tabtab+"public void publish%s(FContext ctx, %s%s req) throws TException;\n\n", op.Name, args, g.qualifiedTypeName(op.Type))
 	}
 
@@ -2411,6 +2416,10 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 	publisher := ""
 
 	scopeTitle := strings.Title(scope.Name)
+
+	if scope.Comment != nil {
+		publisher += g.GenerateBlockComment(scope.Comment, tab)
+	}
 	publisher += tab + "public static class Client implements Iface {\n"
 	publisher += fmt.Sprintf(tabtab+"private static final String DELIMITER = \"%s\";\n\n", globals.TopicDelimiter)
 	publisher += tabtab + "private final Iface target;\n"
@@ -2433,7 +2442,7 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 
 	for _, op := range scope.Operations {
 		if op.Comment != nil {
-			publisher += g.GenerateBlockComment(op.Comment, tab)
+			publisher += g.GenerateBlockComment(op.Comment, tabtab)
 		}
 		publisher += fmt.Sprintf(tabtab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 		publisher += fmt.Sprintf(tabtabtab+"proxy.publish%s(%s);\n", op.Name, g.generateScopeArgs(scope))
@@ -2515,9 +2524,6 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	subscriber := ""
-	if scope.Comment != nil {
-		subscriber += g.GenerateBlockComment(scope.Comment, "")
-	}
 	scopeName := strings.Title(scope.Name)
 	if g.includeGeneratedAnnotation() {
 		subscriber += g.generatedAnnotation()
@@ -2537,12 +2543,18 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 func (g *Generator) generateSubscriberIface(scope *parser.Scope) string {
 	contents := ""
 
+	if scope.Comment != nil {
+		contents += g.GenerateBlockComment(scope.Comment, tab)
+	}
 	contents += tab + "public interface Iface {\n"
 
 	args := g.generateScopePrefixArgs(scope)
 
 	for _, op := range scope.Operations {
-		contents += fmt.Sprintf(tabtab+"public FSubscription subscribe%s(%sfinal %sHandler handler) throws TException;\n",
+		if op.Comment != nil {
+			contents += g.GenerateBlockComment(op.Comment, tabtab)
+		}
+		contents += fmt.Sprintf(tabtab+"public FSubscription subscribe%s(%sfinal %sHandler handler) throws TException;\n\n",
 			op.Name, args, op.Name)
 	}
 
@@ -2568,6 +2580,9 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 	prefix := ""
 	args := g.generateScopePrefixArgs(scope)
 
+	if scope.Comment != nil {
+		subscriber += g.GenerateBlockComment(scope.Comment, tab)
+	}
 	subscriber += tab + "public static class Client implements Iface {\n"
 
 	subscriber += fmt.Sprintf(tabtab+"private static final String DELIMITER = \"%s\";\n", globals.TopicDelimiter)

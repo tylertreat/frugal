@@ -29,6 +29,7 @@ public class BlahSubscriber {
 
 	public interface Iface {
 		public FSubscription subscribeDoStuff(final DoStuffHandler handler) throws TException;
+
 	}
 
 	public interface DoStuffHandler {
