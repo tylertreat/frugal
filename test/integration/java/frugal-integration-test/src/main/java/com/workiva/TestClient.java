@@ -486,13 +486,13 @@ public class TestClient {
             FScopeTransportFactory factory = new FNatsScopeTransport.Factory(conn);
             FScopeProvider provider = new FScopeProvider(factory,  new FProtocolFactory(protocolFactory));
 
-            EventsSubscriber subscriber = new EventsSubscriber(provider);
+            EventsSubscriber.Iface subscriber = new EventsSubscriber.Client(provider);
             subscriber.subscribeEventCreated(Integer.toString(port)+"-response", (ctx, event) -> {
                 System.out.println("Response received " + event);
                 queue.add(1);
             });
 
-            EventsPublisher publisher = new EventsPublisher(provider);
+            EventsPublisher.Iface publisher = new EventsPublisher.Client(provider);
             publisher.open();
             Event event = new Event(1, "Sending Call");
             publisher.publishEventCreated(new FContext("Call"), Integer.toString(port)+"-call", event);
