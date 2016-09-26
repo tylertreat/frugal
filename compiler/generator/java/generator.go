@@ -2403,7 +2403,7 @@ func (g *Generator) generatePublisherIface(scope *parser.Scope) string {
 		contents += fmt.Sprintf(tabtab+"public void publish%s(FContext ctx, %s%s req) throws TException;\n\n", op.Name, args, g.qualifiedTypeName(op.Type))
 	}
 
-	contents += tab+"}\n\n"
+	contents += tab + "}\n\n"
 	return contents
 }
 
@@ -2413,12 +2413,12 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 	scopeTitle := strings.Title(scope.Name)
 	publisher += tab + "public static class Client implements Iface {\n"
 	publisher += fmt.Sprintf(tabtab+"private static final String DELIMITER = \"%s\";\n\n", globals.TopicDelimiter)
-	publisher += tabtab+"private final Iface target;\n"
-	publisher += tabtab+"private final Iface proxy;\n\n"
+	publisher += tabtab + "private final Iface target;\n"
+	publisher += tabtab + "private final Iface proxy;\n\n"
 
-	publisher += tabtab+"public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
+	publisher += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
 	publisher += fmt.Sprintf(tabtabtab+"target = new Internal%sPublisher(provider);\n", scopeTitle)
-	publisher += tabtabtab+"proxy = InvocationHandler.composeMiddleware(target, Iface.class, middleware);\n"
+	publisher += tabtabtab + "proxy = InvocationHandler.composeMiddleware(target, Iface.class, middleware);\n"
 	publisher += tabtab + "}\n\n"
 
 	publisher += tabtab + "public void open() throws TException {\n"
@@ -2576,7 +2576,7 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 	subscriber += tabtab + "private final FScopeProvider provider;\n"
 	subscriber += tabtab + "private final ServiceMiddleware[] middleware;\n\n"
 
-	subscriber += tabtab+"public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
+	subscriber += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
 	subscriber += tabtabtab + "this.provider = provider;\n"
 	subscriber += tabtabtab + "this.middleware = middleware;\n"
 	subscriber += tabtab + "}\n\n"
