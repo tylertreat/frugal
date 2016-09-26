@@ -10,6 +10,12 @@ from .ttypes import *
 import actual_base.python.ttypes
 import actual_base.python.constants
 
+import validStructs.ttypes
+import validStructs.constants
+
+import ValidTypes.ttypes
+import ValidTypes.constants
+
 redef_const = actual_base.python.constants.const_i32_from_base
 DEFAULT_ID = -1
 other_default = DEFAULT_ID

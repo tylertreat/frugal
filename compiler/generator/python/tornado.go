@@ -66,6 +66,7 @@ func (t *TornadoGenerator) GenerateService(file *os.File, s *parser.Service) err
 	contents += t.generateServiceInterface(s)
 	contents += t.generateClient(s)
 	contents += t.generateServer(s)
+	contents += t.generateServiceArgsResults(s)
 
 	_, err := file.WriteString(contents)
 	return err

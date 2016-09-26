@@ -40,7 +40,6 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	if !ok {
 		namespace = a.Frugal.Name
 	}
-	imports += fmt.Sprintf("from %s.%s import *\n", namespace, s.Name)
 	imports += fmt.Sprintf("from %s.ttypes import *\n", namespace)
 
 	_, err := file.WriteString(imports)
@@ -77,6 +76,7 @@ func (a *AsyncIOGenerator) GenerateService(file *os.File, s *parser.Service) err
 	contents += a.generateServiceInterface(s)
 	contents += a.generateClient(s)
 	contents += a.generateServer(s)
+	contents += a.generateServiceArgsResults(s)
 
 	_, err := file.WriteString(contents)
 	return err

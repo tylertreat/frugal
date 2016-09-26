@@ -7,6 +7,10 @@
 from thrift.Thrift import TType, TMessageType, TException, TApplicationException
 import actual_base.python.ttypes
 import actual_base.python.constants
+import validStructs.ttypes
+import validStructs.constants
+import ValidTypes.ttypes
+import ValidTypes.constants
 
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol, TProtocol
