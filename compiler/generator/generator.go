@@ -36,24 +36,24 @@ type LanguageOptions map[string]Options
 // it supports.
 var Languages = LanguageOptions{
 	"go": Options{
-		"thrift_import":   "Override Thrift package import path (default: git.apache.org/thrift.git/lib/go/thrift)",
-		"frugal_import":   "Override Frugal package import path (default: github.com/Workiva/frugal/lib/go)",
-		"package_prefix":  "Package prefix for generated files",
-		"async":           "Generate async client code using channels",
+		"thrift_import":  "Override Thrift package import path (default: git.apache.org/thrift.git/lib/go/thrift)",
+		"frugal_import":  "Override Frugal package import path (default: github.com/Workiva/frugal/lib/go)",
+		"package_prefix": "Package prefix for generated files",
+		"async":          "Generate async client code using channels",
 	},
 	"java": Options{
 		"generated_annotations": "[undated|suppress] " +
 			"undated: suppress the date at @Generated annotations, " +
 			"suppress: suppress @Generated annotations entirely",
-		"async":           "Generate async client code using futures",
+		"async": "Generate async client code using futures",
 	},
 	"dart": Options{
 		"library_prefix": "Generate code that can be used within an existing library. " +
 			"Use a dot-separated string, e.g. \"my_parent_lib.src.gen\"",
 	},
 	"py": Options{
-		"tornado":         "Generate code for use with Tornado (compatible with Python 2.7)",
-		"asyncio":         "Generate code for use with asyncio (compatible with Python 3.5 or above)",
+		"tornado": "Generate code for use with Tornado (compatible with Python 2.7)",
+		"asyncio": "Generate code for use with asyncio (compatible with Python 3.5 or above)",
 	},
 	"html": Options{
 		"standalone": "Self-contained mode, includes all CSS in the HTML files. Generates no style.css file, but HTML files will be larger",

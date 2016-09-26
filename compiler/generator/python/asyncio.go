@@ -255,8 +255,8 @@ func (g *AsyncIOGenerator) generateProcessor(service *parser.Service) string {
 		tab + "handler: Iface",
 	}, tabtab)
 
-	contents += tabtab+"if middleware and not isinstance(middleware, list):\n"
-	contents += tabtabtab+"middleware = [middleware]\n\n"
+	contents += tabtab + "if middleware and not isinstance(middleware, list):\n"
+	contents += tabtabtab + "middleware = [middleware]\n\n"
 
 	if service.Extends != "" {
 		contents += tabtab + "super(Processor, self).__init__(handler, middleware=middleware)\n"
