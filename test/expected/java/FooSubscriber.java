@@ -57,7 +57,7 @@ public class FooSubscriber {
 		transport.subscribe(topic);
 
 		final FooHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, FooHandler.class, middleware);
-		final FSubscription sub = new FSubscription(topic, transport);
+		final FSubscription sub = FSubscription.of(topic, transport);
 		new Thread(new Runnable() {
 			public void run() {
 				while (true) {
@@ -110,7 +110,7 @@ public class FooSubscriber {
 		transport.subscribe(topic);
 
 		final BarHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, BarHandler.class, middleware);
-		final FSubscription sub = new FSubscription(topic, transport);
+		final FSubscription sub = FSubscription.of(topic, transport);
 		new Thread(new Runnable() {
 			public void run() {
 				while (true) {

@@ -51,7 +51,7 @@ public class BlahSubscriber {
 		transport.subscribe(topic);
 
 		final DoStuffHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, DoStuffHandler.class, middleware);
-		final FSubscription sub = new FSubscription(topic, transport);
+		final FSubscription sub = FSubscription.of(topic, transport);
 		new Thread(new Runnable() {
 			public void run() {
 				while (true) {
