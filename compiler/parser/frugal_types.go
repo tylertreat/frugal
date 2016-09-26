@@ -60,10 +60,11 @@ func (s *Scope) assignScope() {
 }
 
 // IdentifierType indicates if a Identifier is a local/include constant/enum
-type IdentifierType int
+type IdentifierType uint8
 
 const (
-	LocalConstant IdentifierType = iota
+	NonIdentifier IdentifierType = iota
+	LocalConstant
 	LocalEnum
 	IncludeConstant
 	IncludeEnum

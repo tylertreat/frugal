@@ -91,7 +91,6 @@ class blah_args:
      - event
     """
     def __init__(self, num=None, Str=None, event=None):
-        from .constants import *
         self.num = num
         self.Str = Str
         self.event = event
@@ -169,7 +168,6 @@ class blah_result:
      - api
     """
     def __init__(self, success=None, awe=None, api=None):
-        from .constants import *
         self.success = success
         self.awe = awe
         self.api = api
@@ -247,7 +245,6 @@ class oneWay_args:
      - req
     """
     def __init__(self, id=None, req=None):
-        from .constants import *
         self.id = id
         self.req = req
 
@@ -322,7 +319,6 @@ class bin_method_args:
      - Str
     """
     def __init__(self, bin=None, Str=None):
-        from .constants import *
         self.bin = bin
         self.Str = Str
 
@@ -387,7 +383,6 @@ class bin_method_result:
      - api
     """
     def __init__(self, success=None, api=None):
-        from .constants import *
         self.success = success
         self.api = api
 
@@ -454,7 +449,6 @@ class param_modifiers_args:
      - req_num
     """
     def __init__(self, opt_num=None, default_num=None, req_num=None):
-        from .constants import *
         self.opt_num = opt_num
         self.default_num = default_num
         self.req_num = req_num
@@ -531,7 +525,6 @@ class param_modifiers_result:
      - success
     """
     def __init__(self, success=None):
-        from .constants import *
         self.success = success
 
     def read(self, iprot):
@@ -585,7 +578,6 @@ class underlying_types_test_args:
      - set_type
     """
     def __init__(self, list_type=None, set_type=None):
-        from .constants import *
         self.list_type = list_type
         self.set_type = set_type
 
@@ -665,7 +657,6 @@ class underlying_types_test_result:
      - success
     """
     def __init__(self, success=None):
-        from .constants import *
         self.success = success
 
     def read(self, iprot):

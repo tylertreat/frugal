@@ -295,6 +295,8 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) 
 		case parser.IncludeEnum:
 			return "", fmt.Sprintf("%s.%s.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang),
 				idCtx.Enum.Name, idCtx.EnumValue.Name)
+		default:
+			panic(fmt.Sprintf("The Identifier %s has unexpected type %d", identifier, idCtx.Type))
 		}
 	}
 

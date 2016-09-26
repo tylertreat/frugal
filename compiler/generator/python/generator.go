@@ -94,14 +94,14 @@ func (g *Generator) TeardownGenerator() error {
 
 // GenerateConstantsContents generates constants.
 func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) error {
+	if len(constants) == 0 {
+		return nil
+	}
+
 	file, err := g.GenerateFile("constants", g.outputDir, generator.ObjectFile)
 	defer file.Close()
 	if err != nil {
 		return err
-	}
-
-	if len(constants) == 0 {
-		return nil
 	}
 
 	contents := "\n\n"
@@ -116,7 +116,7 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	}
 
 	for _, constant := range constants {
-		value := g.generateConstantValue(constant.Type, constant.Value, "")
+		_, value := g.generateConstantValue(constant.Type, constant.Value, "")
 		contents += fmt.Sprintf("%s = %s\n", constant.Name, value)
 	}
 
@@ -127,9 +127,9 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	return err
 }
 
-func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind string) string {
+func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind string) (parser.IdentifierType, string) {
 	if value == nil {
-		return "None"
+		return parser.NonIdentifier, "None"
 	}
 
 	// If the value being referenced is of type Identifier, it's referencing
@@ -139,13 +139,15 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 		idCtx := g.Frugal.ContextFromIdentifier(identifier)
 		switch idCtx.Type {
 		case parser.LocalConstant:
-			return idCtx.Constant.Name
+			return idCtx.Type, idCtx.Constant.Name
 		case parser.LocalEnum:
-			return fmt.Sprintf("%s.%s", idCtx.Enum.Name, idCtx.EnumValue.Name)
+			return idCtx.Type, fmt.Sprintf("%s.%s", idCtx.Enum.Name, idCtx.EnumValue.Name)
 		case parser.IncludeConstant:
-			return fmt.Sprintf("%s.constants.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang), idCtx.Constant.Name)
+			return idCtx.Type, fmt.Sprintf("%s.constants.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang), idCtx.Constant.Name)
 		case parser.IncludeEnum:
-			return fmt.Sprintf("%s.ttypes.%s.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang), idCtx.Enum.Name, idCtx.EnumValue.Name)
+			return idCtx.Type, fmt.Sprintf("%s.ttypes.%s.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang), idCtx.Enum.Name, idCtx.EnumValue.Name)
+		default:
+			panic(fmt.Sprintf("The Identifier %s has unexpected type %d", identifier, idCtx.Type))
 		}
 	}
 
@@ -153,11 +155,11 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 	if underlyingType.IsPrimitive() || underlyingType.IsContainer() {
 		switch underlyingType.Name {
 		case "bool":
-			return strings.Title(fmt.Sprintf("%v", value))
+			return parser.NonIdentifier, strings.Title(fmt.Sprintf("%v", value))
 		case "i8", "byte", "i16", "i32", "i64", "double":
-			return fmt.Sprintf("%v", value)
+			return parser.NonIdentifier, fmt.Sprintf("%v", value)
 		case "string", "binary":
-			return fmt.Sprintf("%s", strconv.Quote(value.(string)))
+			return parser.NonIdentifier, fmt.Sprintf("%s", strconv.Quote(value.(string)))
 		case "list", "set":
 			contents := ""
 			if underlyingType.Name == "set" {
@@ -165,26 +167,26 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 			}
 			contents += "[\n"
 			for _, v := range value.([]interface{}) {
-				val := g.generateConstantValue(underlyingType.ValueType, v, ind+tab)
+				_, val := g.generateConstantValue(underlyingType.ValueType, v, ind+tab)
 				contents += fmt.Sprintf(ind+tab+"%s,\n", val)
 			}
 			contents += ind + "]"
 			if underlyingType.Name == "set" {
 				contents += ")"
 			}
-			return contents
+			return parser.NonIdentifier, contents
 		case "map":
 			contents := "{\n"
 			for _, pair := range value.([]parser.KeyValue) {
-				key := g.generateConstantValue(underlyingType.KeyType, pair.Key, ind+tab)
-				val := g.generateConstantValue(underlyingType.ValueType, pair.Value, ind+tab)
+				_, key := g.generateConstantValue(underlyingType.KeyType, pair.Key, ind+tab)
+				_, val := g.generateConstantValue(underlyingType.ValueType, pair.Value, ind+tab)
 				contents += fmt.Sprintf(ind+tab+"%s: %s,\n", key, val)
 			}
 			contents += ind + "}"
-			return contents
+			return parser.NonIdentifier, contents
 		}
 	} else if g.Frugal.IsEnum(underlyingType) {
-		return fmt.Sprintf("%d", value)
+		return parser.NonIdentifier, fmt.Sprintf("%d", value)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		var s *parser.Struct
 		for _, potential := range g.Frugal.Thrift.Structs {
@@ -201,13 +203,13 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 			name := pair.Key.(string)
 			for _, field := range s.Fields {
 				if name == field.Name {
-					val := g.generateConstantValue(field.Type, pair.Value, ind+tab)
+					_, val := g.generateConstantValue(field.Type, pair.Value, ind+tab)
 					contents += fmt.Sprintf(tab+ind+"\"%s\": %s,\n", name, val)
 				}
 			}
 		}
 		contents += ind + "})"
-		return contents
+		return parser.NonIdentifier, contents
 	}
 
 	panic("no entry for type " + underlyingType.Name)
@@ -327,24 +329,26 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 // constant as a class variable to avoid order of declaration issues.
 func (g *Generator) generateDefaultMarkers(s *parser.Struct) string {
 	contents := ""
-	importConstants := true
+	importConstants := false
 	for _, field := range s.Fields {
 		if field.Default != nil {
-			// TODO: We could be more clever here and only import this if we
-			// reference a local constant
-			if importConstants {
-				contents += tab + "from .constants import *\n"
-				importConstants = false
-			}
 			underlyingType := g.Frugal.UnderlyingType(field.Type)
 			// use 'object()' as a marker value to avoid instantiating
 			// a class defined later in the file
 			defaultVal := "object()"
+			idType := parser.NonIdentifier
 			if underlyingType.IsPrimitive() || g.Frugal.IsEnum(underlyingType) {
-				defaultVal = g.generateConstantValue(underlyingType, field.Default, tab)
+				idType, defaultVal = g.generateConstantValue(underlyingType, field.Default, tab)
+				if idType == parser.LocalConstant {
+					importConstants = true
+					defaultVal = fmt.Sprintf("constants.%s", defaultVal)
+				}
 			}
 			contents += fmt.Sprintf(tab+"_DEFAULT_%s_MARKER = %s\n", field.Name, defaultVal)
 		}
+	}
+	if importConstants {
+		contents = tab + "from . import constants\n" + contents
 	}
 	return contents
 }
@@ -365,18 +369,25 @@ func (g *Generator) generateInit(s *parser.Struct) string {
 		argList += fmt.Sprintf(", %s=%s", field.Name, defaultVal)
 	}
 	contents += fmt.Sprintf(tab+"def __init__(self%s):\n", argList)
-	// TODO: We could be more clever here and only import this if we reference
-	// a local constant
-	contents += fmt.Sprintf(tabtab + "from .constants import *\n")
+	fieldContents := ""
+	importConstants := false
 	for _, field := range s.Fields {
 		underlyingType := g.Frugal.UnderlyingType(field.Type)
 		if !underlyingType.IsPrimitive() && !g.Frugal.IsEnum(underlyingType) && field.Default != nil {
-			contents += fmt.Sprintf(tabtab+"if %s is self._DEFAULT_%s_MARKER:\n", field.Name, field.Name)
-			val := g.generateConstantValue(field.Type, field.Default, tabtabtab)
-			contents += fmt.Sprintf(tabtabtab+"%s = %s\n", field.Name, val)
+			fieldContents += fmt.Sprintf(tabtab+"if %s is self._DEFAULT_%s_MARKER:\n", field.Name, field.Name)
+			idType, val := g.generateConstantValue(field.Type, field.Default, tabtabtab)
+			if idType == parser.LocalConstant {
+				importConstants = true
+				val = fmt.Sprintf("constants.%s", val)
+			}
+			fieldContents += fmt.Sprintf(tabtabtab+"%s = %s\n", field.Name, val)
 		}
-		contents += fmt.Sprintf(tabtab+"self.%s = %s\n", field.Name, field.Name)
+		fieldContents += fmt.Sprintf(tabtab+"self.%s = %s\n", field.Name, field.Name)
 	}
+	if importConstants {
+		contents += tabtab + "from . import constants\n"
+	}
+	contents += fieldContents
 	contents += "\n"
 	return contents
 }

@@ -391,6 +391,8 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 		case parser.IncludeEnum:
 			return fmt.Sprintf("t_%s.%s.%s", toLibraryName(g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang)),
 				idCtx.Enum.Name, idCtx.EnumValue.Name)
+		default:
+			panic(fmt.Sprintf("The Identifier %s has unexpected type %d", identifier, idCtx.Type))
 		}
 	}
 
