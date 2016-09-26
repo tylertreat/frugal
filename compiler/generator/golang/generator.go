@@ -422,44 +422,14 @@ func (g *Generator) GenerateException(exception *parser.Struct) error {
 	return err
 }
 
-// GenerateServiceArgsResults generates the args and results objects for the
+// generateServiceArgsResults generates the args and results objects for the
 // given service.
-func (g *Generator) GenerateServiceArgsResults(serviceName string, outputDir string, structs []*parser.Struct) error {
-	file, err := g.GenerateFile(serviceName, outputDir, generator.ServiceArgsResultsFile)
-	defer file.Close()
-	if err != nil {
-		return err
-	}
-	if err = g.GenerateDocStringComment(file); err != nil {
-		return err
-	}
-	if err = g.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-	if err = g.generatePackage(file); err != nil {
-		return err
-	}
-	if err = g.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-	if err = g.GenerateServiceResultArgsImports(file); err != nil {
-		return err
-	}
-	if err = g.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-
+func (g *Generator) generateServiceArgsResults(service *parser.Service) string {
 	contents := ""
-	for _, s := range structs {
-		structContents := g.generateStruct(s, serviceName)
-		contents += structContents
+	for _, s := range g.GetServiceMethodTypes(service) {
+		contents += g.generateStruct(s, service.Name)
 	}
-
-	_, err = file.WriteString(contents)
-	if err != nil {
-		return err
-	}
-	return g.PostProcess(file)
+	return contents
 }
 
 func (g *Generator) generateStruct(s *parser.Struct, serviceName string) string {
@@ -1421,6 +1391,7 @@ func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 	contents += g.generateServiceInterface(s)
 	contents += g.generateClient(s)
 	contents += g.generateServer(s)
+	contents += g.generateServiceArgsResults(s)
 
 	_, err := file.WriteString(contents)
 	return err

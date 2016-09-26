@@ -807,14 +807,11 @@ func (g *Generator) GenerateException(exception *parser.Struct) error {
 	return g.GenerateStruct(exception)
 }
 
-func (g *Generator) GenerateServiceArgsResults(serviceName string, outputDir string, structs []*parser.Struct) error {
+// generateServiceArgsResults generates the args and results objects for the
+// given service.
+func (g *Generator) generateServiceArgsResults(service *parser.Service) string {
 	contents := ""
-	if g.includeGeneratedAnnotation() {
-		contents += g.generatedAnnotation()
-	}
-	contents += fmt.Sprintf("public class %s {\n", serviceName)
-
-	for _, s := range structs {
+	for _, s := range g.GetServiceMethodTypes(service) {
 		for _, field := range s.Fields {
 			if field.Modifier == parser.Optional {
 				field.Modifier = parser.Default
@@ -822,23 +819,7 @@ func (g *Generator) GenerateServiceArgsResults(serviceName string, outputDir str
 		}
 		contents += g.generateStruct(s, strings.HasSuffix(s.Name, "_args"), strings.HasSuffix(s.Name, "_result"))
 	}
-
-	contents += "}\n"
-
-	file, err := g.GenerateFile(strings.Title(serviceName), g.outputDir, generator.ObjectFile)
-	defer file.Close()
-	if err != nil {
-		return err
-	}
-
-	if err = g.initStructFile(file); err != nil {
-		return err
-	}
-	if _, err = file.WriteString(contents); err != nil {
-		return err
-	}
-
-	return nil
+	return contents
 }
 
 func (g *Generator) generateStruct(s *parser.Struct, isArg, isResult bool) string {
@@ -2291,6 +2272,11 @@ func (g *Generator) GenerateEnumImports(file *os.File) error {
 }
 
 func (g *Generator) GenerateStructImports(file *os.File) error {
+	_, err := file.WriteString(g.generateStructImports())
+	return err
+}
+
+func (g *Generator) generateStructImports() string {
 	imports := ""
 	imports += "import org.apache.thrift.scheme.IScheme;\n"
 	imports += "import org.apache.thrift.scheme.SchemeFactory;\n"
@@ -2320,12 +2306,15 @@ func (g *Generator) GenerateStructImports(file *os.File) error {
 
 	imports += "\n"
 
-	_, err := file.WriteString(imports)
-	return err
+	return imports
 }
 
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
-	imports := "import com.workiva.frugal.exception.FMessageSizeException;\n"
+	imports := ""
+
+	imports += g.generateStructImports()
+
+	imports += "import com.workiva.frugal.exception.FMessageSizeException;\n"
 	imports += "import com.workiva.frugal.exception.FTimeoutException;\n"
 	imports += "import com.workiva.frugal.middleware.InvocationHandler;\n"
 	imports += "import com.workiva.frugal.middleware.ServiceMiddleware;\n"
@@ -2678,6 +2667,8 @@ func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 	contents += g.generateServiceInterface(s)
 	contents += g.generateClient(s)
 	contents += g.generateServer(s)
+	contents += g.generateServiceArgsResults(s)
+	contents += "}"
 
 	_, err := file.WriteString(contents)
 	return err
@@ -2857,8 +2848,6 @@ func (g *Generator) generateInternalClient(service *parser.Service) string {
 }
 
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
-	servTitle := strings.Title(service.Name)
-
 	contents := ""
 	if method.Comment != nil {
 		contents += g.GenerateBlockComment(method.Comment, tabtab)
@@ -2880,7 +2869,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		msgType = "ONEWAY"
 	}
 	contents += indent + tab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", method.Name, msgType)
-	contents += indent + tab + fmt.Sprintf("%s.%s_args args = new %s.%s_args();\n", servTitle, method.Name, servTitle, method.Name)
+	contents += indent + tab + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
 	for _, arg := range method.Arguments {
 		contents += indent + tab + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
 	}
@@ -2909,7 +2898,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtab + "if (res instanceof TException) {\n"
 	contents += tabtabtabtabtab + "throw (TException) res;\n"
 	contents += tabtabtabtab + "}\n"
-	contents += tabtabtabtab + fmt.Sprintf("%s.%s_result r = (%s.%s_result) res;\n", servTitle, method.Name, servTitle, method.Name)
+	contents += tabtabtabtab + fmt.Sprintf("%s_result r = (%s_result) res;\n", method.Name, method.Name)
 	if method.ReturnType != nil {
 		contents += tabtabtabtab + "if (r.isSetSuccess()) {\n"
 		contents += tabtabtabtabtab + "return r.success;\n"
@@ -2969,7 +2958,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		"throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, \"%s failed: invalid message type\");\n",
 		method.Name)
 	contents += tabtabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtabtab + fmt.Sprintf("%s.%s_result res = new %s.%s_result();\n", servTitle, method.Name, servTitle, method.Name)
+	contents += tabtabtabtabtabtab + fmt.Sprintf("%s_result res = new %s_result();\n", method.Name, method.Name)
 	contents += tabtabtabtabtabtab + "res.read(iprot);\n"
 	contents += tabtabtabtabtabtab + "iprot.readMessageEnd();\n"
 	contents += tabtabtabtabtabtab + "try {\n"
@@ -3002,8 +2991,6 @@ func (g *Generator) generateExceptions(exceptions []*parser.Field) string {
 }
 
 func (g *Generator) generateServer(service *parser.Service) string {
-	servTitle := strings.Title(service.Name)
-
 	contents := ""
 	extends := "FBaseProcessor"
 	if service.Extends != "" {
@@ -3045,7 +3032,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtab + "}\n\n"
 
 		contents += tabtabtab + "public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {\n"
-		contents += tabtabtabtab + fmt.Sprintf("%s.%s_args args = new %s.%s_args();\n", servTitle, method.Name, servTitle, method.Name)
+		contents += tabtabtabtab + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
 		contents += tabtabtabtab + "try {\n"
 		contents += tabtabtabtabtab + "args.read(iprot);\n"
 		contents += tabtabtabtab + "} catch (TException e) {\n"
@@ -3067,7 +3054,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 			continue
 		}
 
-		contents += tabtabtabtab + fmt.Sprintf("%s.%s_result result = new %s.%s_result();\n", servTitle, method.Name, servTitle, method.Name)
+		contents += tabtabtabtab + fmt.Sprintf("%s_result result = new %s_result();\n", method.Name, method.Name)
 		contents += tabtabtabtab + "try {\n"
 		if method.ReturnType == nil {
 			contents += tabtabtabtabtab + fmt.Sprintf("this.handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
@@ -3118,8 +3105,6 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	contents += tabtab + "}\n\n"
 
 	contents += tab + "}\n\n"
-
-	contents += "}"
 
 	return contents
 }
