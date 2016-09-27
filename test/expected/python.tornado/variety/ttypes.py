@@ -6,8 +6,11 @@
 
 from thrift.Thrift import TType, TMessageType, TException, TApplicationException
 import actual_base.python.ttypes
+import actual_base.python.constants
 import validStructs.ttypes
+import validStructs.constants
 import ValidTypes.ttypes
+import ValidTypes.constants
 
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol, TProtocol
@@ -173,7 +176,8 @@ class Event:
      - ID: ID is a unique identifier for an event.
      - Message: Message contains the event payload.
     """
-    _DEFAULT_ID_MARKER = -1
+    from . import constants
+    _DEFAULT_ID_MARKER = constants.DEFAULT_ID
     def __init__(self, ID=_DEFAULT_ID_MARKER, Message=None):
         self.ID = ID
         self.Message = Message
@@ -254,25 +258,26 @@ class TestingDefaults:
      - status
      - base_status
     """
-    _DEFAULT_ID2_MARKER = -1
+    from . import constants
+    _DEFAULT_ID2_MARKER = constants.DEFAULT_ID
     _DEFAULT_ev1_MARKER = object()
     _DEFAULT_ev2_MARKER = object()
     _DEFAULT_ID_MARKER = -2
     _DEFAULT_thing_MARKER = "a constant"
     _DEFAULT_thing2_MARKER = "another constant"
     _DEFAULT_listfield_MARKER = object()
-    _DEFAULT_ID3_MARKER = -1
-    _DEFAULT_bin_field4_MARKER = "hello"
+    _DEFAULT_ID3_MARKER = constants.other_default
+    _DEFAULT_bin_field4_MARKER = constants.bin_const
     _DEFAULT_list2_MARKER = object()
     _DEFAULT_list4_MARKER = object()
     _DEFAULT_a_map_MARKER = object()
-    _DEFAULT_status_MARKER = 1
-    _DEFAULT_base_status_MARKER = 3
+    _DEFAULT_status_MARKER = HealthCondition.PASS
+    _DEFAULT_base_status_MARKER = actual_base.python.ttypes.base_health_condition.FAIL
     def __init__(self, ID2=_DEFAULT_ID2_MARKER, ev1=_DEFAULT_ev1_MARKER, ev2=_DEFAULT_ev2_MARKER, ID=_DEFAULT_ID_MARKER, thing=_DEFAULT_thing_MARKER, thing2=_DEFAULT_thing2_MARKER, listfield=_DEFAULT_listfield_MARKER, ID3=_DEFAULT_ID3_MARKER, bin_field=None, bin_field2=None, bin_field3=None, bin_field4=_DEFAULT_bin_field4_MARKER, list2=_DEFAULT_list2_MARKER, list3=None, list4=_DEFAULT_list4_MARKER, a_map=_DEFAULT_a_map_MARKER, status=_DEFAULT_status_MARKER, base_status=_DEFAULT_base_status_MARKER):
         self.ID2 = ID2
         if ev1 is self._DEFAULT_ev1_MARKER:
             ev1 = Event(**{
-                "ID": -1,
+                "ID": DEFAULT_ID,
                 "Message": "a message",
             })
         self.ev1 = ev1

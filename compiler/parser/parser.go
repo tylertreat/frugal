@@ -13,7 +13,6 @@ func ParseFrugal(filePath string) (*Frugal, error) {
 }
 
 func parseFrugal(filePath string, visitedIncludes []string) (*Frugal, error) {
-	println("parsing:", filePath)
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err

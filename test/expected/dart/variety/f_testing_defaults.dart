@@ -75,9 +75,9 @@ class TestingDefaults implements thrift.TBase {
   bool __isset_base_status = false;
 
   TestingDefaults() {
-    this.iD2 = -1;
+    this.iD2 = t_variety.VarietyConstants.DEFAULT_ID;
     this.ev1 = new t_variety.Event()
-      ..iD = -1
+      ..iD = t_variety.VarietyConstants.DEFAULT_ID
       ..message = "a message";
     this.ev2 = new t_variety.Event()
       ..iD = 5
@@ -92,8 +92,8 @@ class TestingDefaults implements thrift.TBase {
       4,
       5,
     ];
-    this.iD3 = -1;
-    this.bin_field4 = new Uint8List.fromList(UTF8.encode('hello'));
+    this.iD3 = t_variety.VarietyConstants.other_default;
+    this.bin_field4 = t_variety.VarietyConstants.bin_const;
     this.list2 = [
       1,
       3,
@@ -111,8 +111,8 @@ class TestingDefaults implements thrift.TBase {
       "k1": "v1",
       "k2": "v2",
     };
-    this.status = 1;
-    this.base_status = 3;
+    this.status = t_variety.HealthCondition.PASS;
+    this.base_status = t_actual_base_dart.base_health_condition.FAIL;
   }
 
   int get iD2 => this._iD2;
