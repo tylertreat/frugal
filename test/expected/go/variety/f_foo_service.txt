@@ -34,7 +34,7 @@ type FFoo interface {
 	OneWay(ctx *frugal.FContext, id ID, req Request) (err error)
 	BinMethod(ctx *frugal.FContext, bin []byte, Str string) (r []byte, err error)
 	ParamModifiers(ctx *frugal.FContext, opt_num int32, default_num int32, req_num int32) (r int64, err error)
-	UnderlyingTypesTest(ctx *frugal.FContext, list_type []int64, set_type map[int64]bool) (r []int64, err error)
+	UnderlyingTypesTest(ctx *frugal.FContext, list_type []ID, set_type map[ID]bool) (r []ID, err error)
 	GetThing(ctx *frugal.FContext) (r *validStructs.Thing, err error)
 	GetMyInt(ctx *frugal.FContext) (r ValidTypes.MyInt, err error)
 }
@@ -581,21 +581,21 @@ func (f *FFooClient) recvParamModifiersHandler(ctx *frugal.FContext, resultC cha
 	}
 }
 
-func (f *FFooClient) UnderlyingTypesTest(ctx *frugal.FContext, list_type []int64, set_type map[int64]bool) (r []int64, err error) {
+func (f *FFooClient) UnderlyingTypesTest(ctx *frugal.FContext, list_type []ID, set_type map[ID]bool) (r []ID, err error) {
 	ret := f.methods["underlying_types_test"].Invoke([]interface{}{ctx, list_type, set_type})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
 	}
-	r = ret[0].([]int64)
+	r = ret[0].([]ID)
 	if ret[1] != nil {
 		err = ret[1].(error)
 	}
 	return r, err
 }
 
-func (f *FFooClient) underlying_types_test(ctx *frugal.FContext, list_type []int64, set_type map[int64]bool) (r []int64, err error) {
+func (f *FFooClient) underlying_types_test(ctx *frugal.FContext, list_type []ID, set_type map[ID]bool) (r []ID, err error) {
 	errorC := make(chan error, 1)
-	resultC := make(chan []int64, 1)
+	resultC := make(chan []ID, 1)
 	if err = f.transport.Register(ctx, f.recvUnderlyingTypesTestHandler(ctx, resultC, errorC)); err != nil {
 		return
 	}
@@ -638,7 +638,7 @@ func (f *FFooClient) underlying_types_test(ctx *frugal.FContext, list_type []int
 	return
 }
 
-func (f *FFooClient) recvUnderlyingTypesTestHandler(ctx *frugal.FContext, resultC chan<- []int64, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FFooClient) recvUnderlyingTypesTestHandler(ctx *frugal.FContext, resultC chan<- []ID, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -1293,12 +1293,12 @@ func (p *fooFUnderlyingTypesTest) Process(ctx *frugal.FContext, iprot, oprot *fr
 	iprot.ReadMessageEnd()
 	result := FooUnderlyingTypesTestResult{}
 	var err2 error
-	var retval []int64
+	var retval []ID
 	ret := p.handler.Invoke([]interface{}{ctx, args.ListType, args.SetType})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
 	}
-	retval = ret[0].([]int64)
+	retval = ret[0].([]ID)
 	if ret[1] != nil {
 		err2 = ret[1].(error)
 	}
@@ -2659,19 +2659,19 @@ func (p *FooParamModifiersResult) String() string {
 }
 
 type FooUnderlyingTypesTestArgs struct {
-	ListType []int64        `thrift:"list_type,1" db:"list_type" json:"list_type"`
-	SetType  map[int64]bool `thrift:"set_type,2" db:"set_type" json:"set_type"`
+	ListType []ID        `thrift:"list_type,1" db:"list_type" json:"list_type"`
+	SetType  map[ID]bool `thrift:"set_type,2" db:"set_type" json:"set_type"`
 }
 
 func NewFooUnderlyingTypesTestArgs() *FooUnderlyingTypesTestArgs {
 	return &FooUnderlyingTypesTestArgs{}
 }
 
-func (p *FooUnderlyingTypesTestArgs) GetListType() []int64 {
+func (p *FooUnderlyingTypesTestArgs) GetListType() []ID {
 	return p.ListType
 }
 
-func (p *FooUnderlyingTypesTestArgs) GetSetType() map[int64]bool {
+func (p *FooUnderlyingTypesTestArgs) GetSetType() map[ID]bool {
 	return p.SetType
 }
 
@@ -2717,13 +2717,14 @@ func (p *FooUnderlyingTypesTestArgs) ReadField1(iprot thrift.TProtocol) error {
 	if err != nil {
 		return thrift.PrependError("error reading list begin: ", err)
 	}
-	p.ListType = make([]int64, 0, size)
+	p.ListType = make([]ID, 0, size)
 	for i := 0; i < size; i++ {
-		var elem17 int64
+		var elem17 ID
 		if v, err := iprot.ReadI64(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			elem17 = v
+			temp := ID(v)
+			elem17 = temp
 		}
 		p.ListType = append(p.ListType, elem17)
 	}
@@ -2738,13 +2739,14 @@ func (p *FooUnderlyingTypesTestArgs) ReadField2(iprot thrift.TProtocol) error {
 	if err != nil {
 		return thrift.PrependError("error reading set begin: ", err)
 	}
-	p.SetType = make(map[int64]bool, size)
+	p.SetType = make(map[ID]bool, size)
 	for i := 0; i < size; i++ {
-		var elem18 int64
+		var elem18 ID
 		if v, err := iprot.ReadI64(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			elem18 = v
+			temp := ID(v)
+			elem18 = temp
 		}
 		(p.SetType)[elem18] = true
 	}
@@ -2823,20 +2825,20 @@ func (p *FooUnderlyingTypesTestArgs) String() string {
 }
 
 type FooUnderlyingTypesTestResult struct {
-	Success []int64 `thrift:"success,0" db:"success" json:"success,omitempty"`
+	Success []ID `thrift:"success,0" db:"success" json:"success,omitempty"`
 }
 
 func NewFooUnderlyingTypesTestResult() *FooUnderlyingTypesTestResult {
 	return &FooUnderlyingTypesTestResult{}
 }
 
-var FooUnderlyingTypesTestResult_Success_DEFAULT []int64
+var FooUnderlyingTypesTestResult_Success_DEFAULT []ID
 
 func (p *FooUnderlyingTypesTestResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
 
-func (p *FooUnderlyingTypesTestResult) GetSuccess() []int64 {
+func (p *FooUnderlyingTypesTestResult) GetSuccess() []ID {
 	return p.Success
 }
 
@@ -2878,13 +2880,14 @@ func (p *FooUnderlyingTypesTestResult) ReadField0(iprot thrift.TProtocol) error 
 	if err != nil {
 		return thrift.PrependError("error reading list begin: ", err)
 	}
-	p.Success = make([]int64, 0, size)
+	p.Success = make([]ID, 0, size)
 	for i := 0; i < size; i++ {
-		var elem19 int64
+		var elem19 ID
 		if v, err := iprot.ReadI64(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			elem19 = v
+			temp := ID(v)
+			elem19 = temp
 		}
 		p.Success = append(p.Success, elem19)
 	}
