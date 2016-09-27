@@ -75,7 +75,7 @@ class EventUI {
     InputElement asin = querySelector("#asin");
     InputElement duration = querySelector("#duration");
     var album = new music.Album();
-    album.ASIN = asin.value;
+    album.aSIN = asin.value;
     album.duration = int.parse(duration.value);
     frugal.FContext ctx = new frugal.FContext(correlationId: 'an-id');
     _albumWinnersPublisher.publishWinner(ctx, album);
