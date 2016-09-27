@@ -20,7 +20,6 @@ var (
 	out                string
 	delim              string
 	audit              string
-	retainIntermediate bool
 	recurse            bool
 	verbose            bool
 	version            bool
@@ -105,7 +104,6 @@ func main() {
 			Gen:                gen,
 			Out:                out,
 			Delim:              delim,
-			RetainIntermediate: retainIntermediate,
 			Recurse:            recurse,
 			Verbose:            verbose,
 		}

@@ -20,11 +20,7 @@ var (
 	Recurse         bool
 	Verbose         bool
 	Now             = time.Now()
-	IntermediateIDL = []string{}
 	CompiledFiles   = make(map[string]*parser.Frugal)
-
-	// TODO: Remove once gen_with_frugal is the default.
-	GenWithFrugalWarn bool
 )
 
 // Reset global variables to initial state.
@@ -37,9 +33,7 @@ func Reset() {
 	Recurse = false
 	Verbose = false
 	Now = time.Now()
-	IntermediateIDL = []string{}
 	CompiledFiles = make(map[string]*parser.Frugal)
-	GenWithFrugalWarn = false
 }
 
 // PrintWarning prints the given message to stdout in yellow font.

@@ -22,7 +22,6 @@ type Options struct {
 	Gen                string // Language to generate
 	Out                string // Output location for generated code
 	Delim              string // Token delimiter for scope topics
-	RetainIntermediate bool   // Do not clean up generated intermediate IDL
 	DryRun             bool   // Do not generate code
 	Recurse            bool   // Generate includes
 	Verbose            bool   // Verbose mode
@@ -40,33 +39,103 @@ func Compile(options Options) error {
 	globals.Verbose = options.Verbose
 	globals.FileDir = filepath.Dir(options.File)
 
-	defer func() {
-		if !options.RetainIntermediate {
-			// Clean up intermediate IDL.
-			for _, file := range globals.IntermediateIDL {
-				// Only try to remove if file still exists.
-				if _, err := os.Stat(file); err == nil {
-					logv(fmt.Sprintf("Removing intermediate Thrift file %s", file))
-					if err := os.Remove(file); err != nil {
-						fmt.Printf("Failed to remove intermediate IDL %s\n", file)
-					}
-				}
-			}
-		}
-	}()
-
 	absFile, err := filepath.Abs(options.File)
 	if err != nil {
 		return err
 	}
 
-	_, err = compile(absFile, strings.HasSuffix(absFile, ".thrift"), true)
-	return err
+
+	frugal, err := parse2(absFile)
+	if err != nil {
+		return err
+	}
+
+	return compile2(frugal)
+}
+
+func parse2(file string) (*parser.Frugal, error) {
+	if !exists(file) {
+		return nil, fmt.Errorf("Frugal file not found: %s\n", file)
+	}
+	logv(fmt.Sprintf("Parsing %s", file))
+	return parser.ParseFrugal(file)
+}
+
+func compile2(f *parser.Frugal) error {
+	var (
+		gen    = globals.Gen
+		//out    = globals.Out
+		//dryRun = globals.DryRun
+	)
+
+	lang, options, err := cleanGenParam(gen)
+	if err != nil {
+		return err
+	}
+
+	// Resolve Frugal generator.
+	var g generator.ProgramGenerator
+	switch lang {
+	case "dart":
+		g = generator.NewProgramGenerator(dartlang.NewGenerator(options), false)
+	case "go":
+		// Make sure the package prefix ends with a "/"
+		if package_prefix, ok := options["package_prefix"]; ok {
+			if package_prefix != "" && !strings.HasSuffix(package_prefix, "/") {
+				options["package_prefix"] = package_prefix + "/"
+			}
+		}
+
+		g = generator.NewProgramGenerator(golang.NewGenerator(options), false)
+	case "java":
+		g = generator.NewProgramGenerator(java.NewGenerator(options), true)
+	case "py":
+		g = generator.NewProgramGenerator(python.NewGenerator(options), true)
+	case "html":
+		g = html.NewGenerator(options)
+	default:
+		return fmt.Errorf("Invalid gen value %s", gen)
+	}
+
+	out := globals.Out
+	if out == "" {
+		out = g.DefaultOutputDir()
+	}
+	fullOut := g.GetOutputDir(out, f)
+	if err := os.MkdirAll(out, 0777); err != nil {
+		return nil, err
+	}
+
+	// The parsed frugal contains everything needed to generate
+	if err := generate2(f, g, fullOut, true); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generate2(f *parser.Frugal, g generator.ProgramGenerator, fullOut string, generate bool) error {
+	logv(fmt.Sprintf("Generating \"%s\" Frugal code for %s", "TODO", f.File))
+	if globals.DryRun || !generate {
+		return nil
+	}
+
+	if err := g.Generate(f, fullOut); err != nil {
+		return err
+	}
+
+	for _, inclFrugal := range f.ParsedIncludes {
+		if err := generate2(inclFrugal, g, fullOut, globals.Recurse); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // compile parses the Frugal or Thrift IDL and generates code for it, returning
 // an error if something failed.
-func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
+func compile(file string, generate bool) (*parser.Frugal, error) {
 	var (
 		gen    = globals.Gen
 		out    = globals.Out
@@ -115,6 +184,7 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 
 	// Parse the Frugal file.
 	logv(fmt.Sprintf("Parsing %s", file))
+	println("parsing in compile: ", file)
 	frugal, err := parser.ParseFrugal(file)
 	if err != nil {
 		return nil, err
@@ -157,7 +227,7 @@ func generateInclude(frugal *parser.Frugal, incl *parser.Include) (string, error
 	}
 
 	file := filepath.Join(frugal.Dir, include)
-	parsed, err := compile(file, strings.HasSuffix(include, ".thrift"), globals.Recurse)
+	parsed, err := compile(file, globals.Recurse)
 	if err != nil {
 		return "", fmt.Errorf("Include %s: %s", file, err)
 	}
