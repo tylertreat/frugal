@@ -119,7 +119,3 @@ class TestFTornadoTranpsort(AsyncTestCase):
         self.transport.execute_frame(frame)
 
         mock_registry.execute.assert_called_with('g')
-
-
-
-

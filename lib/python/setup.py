@@ -14,7 +14,7 @@ setup(
         "w-thrift==1.0.0-dev5",
     ],
     extras_require={
-        'tornado': ["nats-client==0.2.4"],
+        'tornado': ["nats-client==0.3.0"],
         'asyncio': ["asyncio-nats-client==0.3.1", "aiohttp==0.22.3"],
         'gae': ["webapp2==2.5.2"],
     }

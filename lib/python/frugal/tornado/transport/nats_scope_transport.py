@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class FNatsScopeTransport(FScopeTransport):
 
-    def __init__(self, nats_client=None, queue=b''):
+    def __init__(self, nats_client=None, queue=""):
         """Create a new instance of an FNatsScopeTransport for pub/sub.
 
             Args:
@@ -72,7 +72,7 @@ class FNatsScopeTransport(FScopeTransport):
         yield self.open(callback)
 
     def isOpen(self):
-        return self._nats_client.is_connected() and self._is_open
+        return self._nats_client.is_connected and self._is_open
 
     @gen.coroutine
     def open(self, callback=None):
@@ -84,7 +84,7 @@ class FNatsScopeTransport(FScopeTransport):
         Throws:
             TTransportException: if NOT_OPEN or ALREADY_OPEN
         """
-        if not self._nats_client.is_connected():
+        if not self._nats_client.is_connected:
             msg = "Nats not connected!"
             raise TTransportException(TTransportException.NOT_OPEN, msg)
 
@@ -105,9 +105,11 @@ class FNatsScopeTransport(FScopeTransport):
         def _cb(msg):
             callback(TMemoryBuffer(msg.data[4:]))
 
-        subject = self._get_formatted_subject()
-        queue = self._queue
-        self._sub_id = yield self._nats_client.subscribe(subject, queue, _cb)
+        self._sub_id = yield self._nats_client.subscribe_async(
+            self._get_formatted_subject(),
+            queue=self._queue,
+            cb=_cb
+        )
 
         self._is_open = True
         logger.debug("FNatsScopeTransport open.")
@@ -122,11 +124,12 @@ class FNatsScopeTransport(FScopeTransport):
             return
 
         if not self._pull:
+            yield self._nats_client.flush()
             self._is_open = False
             return
 
         # Unsubscribe
-        self._nats_client.unsubscribe(self._sub_id)
+        yield self._nats_client.unsubscribe(self._sub_id)
         self._sub_id = None
         self._is_open = False
 
@@ -164,7 +167,7 @@ class FNatsScopeTransport(FScopeTransport):
         self._write_buffer = BytesIO()
 
         formatted_subject = self._get_formatted_subject()
-        formatted_message = b'{}{}'.format(frame_length, frame)
+        formatted_message = "{}{}".format(frame_length, frame)
 
         yield self._nats_client.publish(formatted_subject, formatted_message)
 
@@ -174,7 +177,7 @@ class FNatsScopeTransport(FScopeTransport):
 
 class FNatsScopeTransportFactory(FScopeTransportFactory):
 
-    def __init__(self, nats_client, queue=b''):
+    def __init__(self, nats_client, queue=""):
         self._nats_client = nats_client
         self._queue = queue
 
