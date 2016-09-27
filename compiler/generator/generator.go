@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -108,7 +107,6 @@ type LanguageGenerator interface {
 	GenerateStruct(*parser.Struct) error
 	GenerateUnion(*parser.Struct) error
 	GenerateException(*parser.Struct) error
-	GenerateServiceArgsResults(string, string, []*parser.Struct) error
 
 	// Service-specific methods
 	GenerateServicePackage(*os.File, *parser.Service) error
@@ -196,59 +194,7 @@ func (o *programGenerator) generateThrift(frugal *parser.Frugal, outputDir strin
 		}
 	}
 
-	for _, service := range frugal.Thrift.Services {
-		structs := o.generateServiceMethodTypes(service)
-		if err := o.GenerateServiceArgsResults(service.Name, outputDir, structs); err != nil {
-			return err
-		}
-	}
-
 	return nil
-}
-
-func (o *programGenerator) generateServiceMethodTypes(service *parser.Service) []*parser.Struct {
-	structs := []*parser.Struct{}
-	for _, method := range service.Methods {
-		arg := &parser.Struct{
-			Name:   fmt.Sprintf("%s_args", method.Name),
-			Fields: method.Arguments,
-			Type:   parser.StructTypeStruct,
-		}
-
-		// TODO 2.0.0: thrift doesn't support optional parameters in service
-		// methods we should see if this is feasible, but it will require
-		// changes to service methods, so would be a breaking change
-		for _, field := range arg.Fields {
-			if field.Modifier == parser.Optional {
-				field.Modifier = parser.Default
-			}
-		}
-		structs = append(structs, arg)
-
-		if !method.Oneway {
-			numReturns := 0
-			if method.ReturnType != nil {
-				numReturns = 1
-			}
-
-			fields := make([]*parser.Field, len(method.Exceptions)+numReturns, len(method.Exceptions)+numReturns)
-			if numReturns == 1 {
-				fields[0] = parser.FieldFromType(method.ReturnType, "success")
-			}
-			copy(fields[numReturns:], method.Exceptions)
-			for _, field := range fields {
-				field.Modifier = parser.Optional
-			}
-
-			result := &parser.Struct{
-				Name:   fmt.Sprintf("%s_result", method.Name),
-				Fields: fields,
-				Type:   parser.StructTypeStruct,
-			}
-			structs = append(structs, result)
-		}
-	}
-	return structs
 }
 
 func (o *programGenerator) generateFrugal(frugal *parser.Frugal, outputDir string) error {

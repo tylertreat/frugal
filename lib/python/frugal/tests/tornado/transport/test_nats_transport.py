@@ -20,6 +20,17 @@ class TestFNatsTransport(AsyncTestCase):
                                         self.subject,
                                         self.inbox)
 
+    def test_is_open_returns_true_when_nats_connected(self):
+        self.transport._is_open = True
+        self.mock_nats_client.is_connected.return_value = True
+
+        self.assertTrue(self.transport.isOpen())
+
+    def test_is_open_returns_false_when_nats_not_connected(self):
+        self.mock_nats_client.is_connected.return_value = True
+
+        self.assertFalse(self.transport.isOpen())
+
     @mock.patch('frugal.tornado.transport.nats_transport.new_inbox')
     def test_init(self, mock_new_inbox):
         self.assertEquals(self.mock_nats_client, self.transport._nats_client)

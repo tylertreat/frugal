@@ -304,35 +304,14 @@ func (g *Generator) GenerateException(exception *parser.Struct) error {
 	return err
 }
 
-// GenerateServiceArgsResults generates the args and results objects for the
+// generateServiceArgsResults generates the args and results objects for the
 // given service.
-func (g *Generator) GenerateServiceArgsResults(serviceName string, outputDir string, structs []*parser.Struct) error {
-	file, err := g.GenerateFile(serviceName, g.outputDir, generator.ObjectFile)
-	defer file.Close()
-	if err != nil {
-		return err
-	}
-
-	if err = g.GenerateDocStringComment(file); err != nil {
-		return err
-	}
-	if _, err = file.WriteString("\n\n"); err != nil {
-		return err
-	}
-	if err = g.GenerateTypesImports(file, true); err != nil {
-		return err
-	}
-	if _, err = file.WriteString("\n\n"); err != nil {
-		return err
-	}
-
+func (g *Generator) generateServiceArgsResults(service *parser.Service) string {
 	contents := ""
-	for _, s := range structs {
+	for _, s := range g.GetServiceMethodTypes(service) {
 		contents += g.generateStruct(s)
 	}
-
-	_, err = file.WriteString(contents)
-	return err
+	return contents
 }
 
 // generateStruct generates a python representation of a thrift struct
@@ -799,7 +778,6 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
 	if !ok {
 		namespace = g.Frugal.Name
 	}
-	imports += fmt.Sprintf("from %s.%s import *\n", namespace, s.Name)
 	imports += fmt.Sprintf("from %s.ttypes import *\n", namespace)
 
 	return imports
@@ -987,6 +965,7 @@ func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 	contents += g.generateServiceInterface(s)
 	contents += g.generateClient(s)
 	contents += g.generateServer(s)
+	contents += g.generateServiceArgsResults(s)
 
 	_, err := file.WriteString(contents)
 	return err

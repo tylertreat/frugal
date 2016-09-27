@@ -24,13 +24,10 @@ import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
-import com.workiva.frugal.server.FServer;
 import com.workiva.frugal.server.FNatsServer;
+import com.workiva.frugal.server.FServer;
 import com.workiva.frugal.transport.FNatsScopeTransport;
 import com.workiva.frugal.transport.FScopeTransportFactory;
-import com.workiva.frugal.transport.FTransportFactory;
-import com.workiva.HealthCheck;
-import com.workiva.utils;
 import frugal.test.Event;
 import frugal.test.EventsPublisher;
 import frugal.test.EventsSubscriber;
@@ -38,13 +35,11 @@ import frugal.test.FFrugalTest;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
 import io.nats.client.Constants;
-import main.java.com.workiva.FrugalTestHandler;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TProtocolFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -79,7 +74,7 @@ public class TestServer {
                         System.out.println("  --help\t\t\tProduce help message");
                         System.out.println("  --port=arg (=" + port + ")\tPort number to connect");
                         System.out.println("  --protocol=arg (=" + protocol_type + ")\tProtocol: binary, json, compact");
-                        System.out.println("  --transport=arg (=" + transport_type + ")\tTransport: stateless, stateful, stateless-stateful");
+                        System.out.println("  --transport=arg (=" + transport_type + ")\tTransport: stateless");
                         System.exit(0);
                     }
                 }
@@ -96,8 +91,6 @@ public class TestServer {
 
             List<String> validTransports = new ArrayList<>();
             validTransports.add("stateless");
-            validTransports.add("stateful");
-            validTransports.add("stateless-stateful");
 
             if (!validTransports.contains(transport_type)) {
                 throw new Exception("Unknown transport type! " + transport_type);

@@ -1,8 +1,4 @@
-from frugal.processor.processor import FProcessor, FBaseProcessor
-from frugal.processor.processor_function import FProcessorFunction
-from frugal.processor.processor_factory import FProcessorFactory
+from .processor import FProcessor, FBaseProcessor
+from .processor_function import FProcessorFunction
 
-__all__ = ['FProcessor',
-           'FBaseProcessor',
-           'FProcessorFunction',
-           'FProcessorFactory']
+__all__ = ['FProcessor', 'FBaseProcessor', 'FProcessorFunction']

@@ -4,7 +4,7 @@
 library actual_base_dart.src.f_actual_base_dart_constants;
 
 import 'dart:typed_data' show Uint8List;
-import 'package:thrift/thrift.dart';
+import 'package:thrift/thrift.dart' as thrift;
 import 'package:actual_base_dart/actual_base_dart.dart' as t_actual_base_dart;
 
 import 'dart:convert' show UTF8;

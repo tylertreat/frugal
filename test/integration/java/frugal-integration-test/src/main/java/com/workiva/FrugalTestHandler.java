@@ -1,4 +1,4 @@
-package main.java.com.workiva;
+package com.workiva;
 
 import com.workiva.frugal.protocol.FContext;
 import frugal.test.*;
