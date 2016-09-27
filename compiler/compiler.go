@@ -97,6 +97,15 @@ func compile2(f *parser.Frugal) error {
 		return fmt.Errorf("Invalid gen value %s", gen)
 	}
 
+	// The parsed frugal contains everything needed to generate
+	if err := generate2(f, g, true); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generate2(f *parser.Frugal, g generator.ProgramGenerator, generate bool) error {
 	out := globals.Out
 	if out == "" {
 		out = g.DefaultOutputDir()
@@ -106,15 +115,6 @@ func compile2(f *parser.Frugal) error {
 		return err
 	}
 
-	// The parsed frugal contains everything needed to generate
-	if err := generate2(f, g, fullOut, true); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func generate2(f *parser.Frugal, g generator.ProgramGenerator, fullOut string, generate bool) error {
 	logv(fmt.Sprintf("Generating \"%s\" Frugal code for %s", "TODO", f.File))
 	if globals.DryRun || !generate {
 		return nil
@@ -125,7 +125,7 @@ func generate2(f *parser.Frugal, g generator.ProgramGenerator, fullOut string, g
 	}
 
 	for _, inclFrugal := range f.ParsedIncludes {
-		if err := generate2(inclFrugal, g, fullOut, globals.Recurse); err != nil {
+		if err := generate2(inclFrugal, g, globals.Recurse); err != nil {
 			return err
 		}
 	}
