@@ -80,9 +80,9 @@ def _update_tests_and_recurse(version):
 
 def update_examples(version, root):
     """Update the examples."""
-    os.chdir('{0}/example'.format(root))
+    os.chdir('{0}/examples'.format(root))
     # TODO: Replace the generate example shell script
-    if call(['./generate_code.sh']) != 0:
+    if call(['make', 'generate']) != 0:
         raise Exception('Failed to generate example code')
 
 
