@@ -12,6 +12,7 @@ setup(
     packages=find_packages(exclude=('frugal.tests', 'frugal.tests.*')),
     install_requires=[
         "w-thrift==1.0.0-dev5",
+        "httplib2==0.9.2",
     ],
     extras_require={
         'tornado': ["nats-client==0.3.0"],

@@ -1,3 +1,29 @@
+name: cross-local
+
+size: large
+
+run:  # local tests only, never run in Skynet
+  on-promotion: false
+  on-pull-request: false
+
+contact: messaging@workiva.com
+
+# https://dev.webfilings.org/zuul/release/282084
+image: drydock.workiva.org/workiva/messaging-docker-images:74936
+
+env:
+  - IN_SKYNET_CLI=true
+
+scripts:
+  - ./scripts/skynet/run_cross_skynet.sh
+
+timeout: long
+
+artifacts:
+  - /testing/artifacts
+
+---
+
 name: cross
 
 size: large
@@ -5,6 +31,13 @@ size: large
 run:
   when-branch-name-is:
     - .+
+
+requires:
+  Workiva/frugal:
+    - artifactory
+    - release
+    - pub
+    - pypi
 
 contact: messaging@workiva.com
 

@@ -17,9 +17,9 @@ func TestValidJavaWithAsync(t *testing.T) {
 	globals.Now = time.Date(2015, 11, 24, 0, 0, 0, 0, time.UTC)
 
 	options := compiler.Options{
-		File: frugalGenFile,
-		Gen: "java:async",
-		Out: outputDir + "/async",
+		File:  frugalGenFile,
+		Gen:   "java:async",
+		Out:   outputDir + "/async",
 		Delim: delim,
 	}
 	if err := compiler.Compile(options); err != nil {
@@ -86,4 +86,6 @@ func TestValidJavaFrugalCompiler(t *testing.T) {
 	compareFiles(t, "expected/java/actual_base/base_health_condition.java", baseHealthConditionPath)
 	baseFooPath := filepath.Join(outputDir, "actual_base", "java", "FBaseFoo.java")
 	compareFiles(t, "expected/java/actual_base/FBaseFoo.java", baseFooPath)
+	nestedThingPath := filepath.Join(outputDir, "actual_base", "java", "nested_thing.java")
+	compareFiles(t, "expected/java/actual_base/nested_thing.java", nestedThingPath)
 }
