@@ -573,7 +573,6 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 	contents += "\n"
 
 	// Is set helpers for primitive types.
-	// TODO 2.0 don't use __isset helpers as primitives are nullable in dart
 	for _, field := range s.Fields {
 		if g.isDartPrimitive(field.Type) {
 			contents += fmt.Sprintf(tab+"bool __isset_%s = false;\n", toFieldName(field.Name))
@@ -1053,8 +1052,7 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 
 // GenerateServicePackage generates the package for the given service.
 func (g *Generator) GenerateServicePackage(file *os.File, s *parser.Service) error {
-	// TODO 2.0: change to serviceSuffix
-	return g.generatePackage(file, s.Name, scopeSuffix)
+	return g.generatePackage(file, s.Name, serviceSuffix)
 }
 
 // GenerateScopePackage generates the package for the given scope.

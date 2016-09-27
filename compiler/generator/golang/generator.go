@@ -738,10 +738,8 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool) string
 				contents += fmt.Sprintf("\t%s%s %s &temp\n", prefix, fName, eq)
 			}
 			contents += "\tfor i := 0; i < size; i++ {\n"
-			// TODO 2.0 don't use the underlying type for the value type of the list
-			underlyingValueType := g.Frugal.UnderlyingType(underlyingType.ValueType)
 			valElem := g.GetElem()
-			valField := parser.FieldFromType(underlyingValueType, valElem)
+			valField := parser.FieldFromType(underlyingType.ValueType, valElem)
 			valContents := g.generateReadFieldRec(valField, false)
 			contents += valContents
 			contents += fmt.Sprintf("\t\t%s%s%s = append(%s%s%s, %s)\n", maybePointer, prefix, fName, maybePointer, prefix, fName, valElem)
@@ -761,10 +759,8 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool) string
 				contents += fmt.Sprintf("\t%s%s %s &temp\n", prefix, fName, eq)
 			}
 			contents += "\tfor i := 0; i < size; i++ {\n"
-			// TODO 2.0 don't use the underlying type for the value type of the set
-			underlyingValueType := g.Frugal.UnderlyingType(underlyingType.ValueType)
 			valElem := g.GetElem()
-			valField := parser.FieldFromType(underlyingValueType, valElem)
+			valField := parser.FieldFromType(underlyingType.ValueType, valElem)
 			valContents := g.generateReadFieldRec(valField, false)
 			contents += valContents
 			contents += fmt.Sprintf("\t\t(%s%s%s)[%s] = true\n", maybePointer, prefix, fName, valElem)
@@ -1968,15 +1964,11 @@ func (g *Generator) getGoTypeFromThriftTypePtr(t *parser.Type, pointer bool) str
 	case "binary":
 		return maybePointer + "[]byte"
 	case "list":
-		// TODO 2.0: don't use the underlying type
-		typ := g.Frugal.UnderlyingType(t.ValueType)
 		return fmt.Sprintf("%s[]%s", maybePointer,
-			g.getGoTypeFromThriftTypePtr(typ, false))
+			g.getGoTypeFromThriftTypePtr(t.ValueType, false))
 	case "set":
-		// TODO 2.0: dont' use the underlying type
-		typ := g.Frugal.UnderlyingType(t.ValueType)
 		return fmt.Sprintf("%smap[%s]bool", maybePointer,
-			g.getGoTypeFromThriftTypePtr(typ, false))
+			g.getGoTypeFromThriftTypePtr(t.ValueType, false))
 	case "map":
 		return fmt.Sprintf("%smap[%s]%s", maybePointer,
 			g.getGoTypeFromThriftTypePtr(t.KeyType, false),

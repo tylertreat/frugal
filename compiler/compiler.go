@@ -22,7 +22,6 @@ type Options struct {
 	Gen                string // Language to generate
 	Out                string // Output location for generated code
 	Delim              string // Token delimiter for scope topics
-	RetainIntermediate bool   // Do not clean up generated intermediate IDL
 	DryRun             bool   // Do not generate code
 	Recurse            bool   // Generate includes
 	Verbose            bool   // Verbose mode
@@ -40,53 +39,38 @@ func Compile(options Options) error {
 	globals.Verbose = options.Verbose
 	globals.FileDir = filepath.Dir(options.File)
 
-	defer func() {
-		if !options.RetainIntermediate {
-			// Clean up intermediate IDL.
-			for _, file := range globals.IntermediateIDL {
-				// Only try to remove if file still exists.
-				if _, err := os.Stat(file); err == nil {
-					logv(fmt.Sprintf("Removing intermediate Thrift file %s", file))
-					if err := os.Remove(file); err != nil {
-						fmt.Printf("Failed to remove intermediate IDL %s\n", file)
-					}
-				}
-			}
-		}
-	}()
-
 	absFile, err := filepath.Abs(options.File)
 	if err != nil {
 		return err
 	}
 
-	_, err = compile(absFile, strings.HasSuffix(absFile, ".thrift"), true)
-	return err
-}
 
-// compile parses the Frugal or Thrift IDL and generates code for it, returning
-// an error if something failed.
-func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
-	var (
-		gen    = globals.Gen
-		out    = globals.Out
-		dryRun = globals.DryRun
-	)
-
-	if frugal, ok := globals.CompiledFiles[file]; ok {
-		// This file has already been compiled, skip it.
-		return frugal, nil
+	frugal, err := parseFrugal(absFile)
+	if err != nil {
+		return err
 	}
 
-	// Ensure Frugal file exists.
+	return generateFrugal(frugal)
+}
+
+// parseFrugal parses a frugal file.
+func parseFrugal(file string) (*parser.Frugal, error) {
 	if !exists(file) {
 		return nil, fmt.Errorf("Frugal file not found: %s\n", file)
 	}
+	logv(fmt.Sprintf("Parsing %s", file))
+	return parser.ParseFrugal(file)
+}
 
-	// Process options for specific generators.
+// generateFrugal generates code for a frugal struct.
+func generateFrugal(f *parser.Frugal) error {
+	var (
+		gen    = globals.Gen
+	)
+
 	lang, options, err := cleanGenParam(gen)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Resolve Frugal generator.
@@ -110,71 +94,57 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	case "html":
 		g = html.NewGenerator(options)
 	default:
-		return nil, fmt.Errorf("Invalid gen value %s", gen)
+		return fmt.Errorf("Invalid gen value %s", gen)
 	}
 
-	// Parse the Frugal file.
-	logv(fmt.Sprintf("Parsing %s", file))
-	frugal, err := parser.ParseFrugal(file)
-	if err != nil {
-		return nil, err
+	// The parsed frugal contains everything needed to generate
+	if err := generateFrugalRec(f, g, true, lang); err != nil {
+		return err
 	}
-	globals.CompiledFiles[file] = frugal
 
+	return nil
+}
+
+// generateFrugalRec generates code for a frugal struct, recursively generating
+// code for includes
+func generateFrugalRec(f *parser.Frugal, g generator.ProgramGenerator, generate bool, lang string) error {
+	if _, ok := globals.CompiledFiles[f.File]; ok {
+		// Already generated this file
+		return nil
+	}
+	globals.CompiledFiles[f.File] = f
+
+	out := globals.Out
 	if out == "" {
 		out = g.DefaultOutputDir()
 	}
-	fullOut := g.GetOutputDir(out, frugal)
+	fullOut := g.GetOutputDir(out, f)
 	if err := os.MkdirAll(out, 0777); err != nil {
-		return nil, err
+		return err
 	}
 
-	for _, include := range frugal.Thrift.Includes {
-		generateInclude(frugal, include)
+	logv(fmt.Sprintf("Generating \"%s\" Frugal code for %s", lang, f.File))
+	if globals.DryRun || !generate {
+		return nil
 	}
 
-	if dryRun || !generate {
-		return frugal, nil
+	if err := g.Generate(f, fullOut); err != nil {
+		return err
 	}
 
-	// Generate Frugal code.
-	logv(fmt.Sprintf("Generating \"%s\" Frugal code for %s", lang, frugal.File))
-	return frugal, g.Generate(frugal, fullOut)
+	for _, inclFrugal := range f.ParsedIncludes {
+		if err := generateFrugalRec(inclFrugal, g, globals.Recurse, lang); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // exists determines if the file at the given path exists.
 func exists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
-}
-
-func generateInclude(frugal *parser.Frugal, incl *parser.Include) (string, error) {
-	contents := ""
-	// Recurse on includes
-	include := incl.Value
-	if !strings.HasSuffix(include, ".thrift") && !strings.HasSuffix(include, ".frugal") {
-		return "", fmt.Errorf("Bad include name: %s", include)
-	}
-
-	file := filepath.Join(frugal.Dir, include)
-	parsed, err := compile(file, strings.HasSuffix(include, ".thrift"), globals.Recurse)
-	if err != nil {
-		return "", fmt.Errorf("Include %s: %s", file, err)
-	}
-
-	// Lop off extension (.frugal or .thrift)
-	includeBase := include[:len(include)-7]
-
-	// Lop off path
-	includeName := filepath.Base(includeBase)
-
-	frugal.ParsedIncludes[includeName] = parsed
-
-	// Replace .frugal with .thrift
-	include = includeBase + ".thrift"
-	contents += fmt.Sprintf("include \"%s\"\n", include)
-	contents += "\n"
-	return contents, nil
 }
 
 // cleanGenParam processes a string that includes an optional trailing

@@ -16,7 +16,6 @@ func TestCircularIncludes(t *testing.T) {
 		Out:                "out",
 		Delim:              ".",
 		DryRun:             true,
-		RetainIntermediate: true,
 	}
 	err := compiler.Compile(options)
 	assert.Error(t, err)

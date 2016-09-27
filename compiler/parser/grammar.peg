@@ -93,12 +93,10 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
         Thrift:             thrift,
         Scopes:             []*Scope{},
         ParsedIncludes:     make(map[string]*Frugal),
-        OrderedDefinitions: make([]interface{}, len(stmts)),
     }
 
-    for i, st := range stmts {
+    for _, st := range stmts {
         wrapper := st.([]interface{})[0].(*statementWrapper)
-        frugal.OrderedDefinitions[i] = wrapper.statement
         switch v := wrapper.statement.(type) {
         case *Namespace:
             thrift.Namespaces = append(thrift.Namespaces, v)
@@ -122,13 +120,11 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
             strct.Type = StructTypeException
             strct.Comment = wrapper.comment
             thrift.Exceptions = append(thrift.Exceptions, strct)
-            frugal.OrderedDefinitions[i] = strct
         case union:
             strct := unionToStruct(v)
             strct.Type = StructTypeUnion
             strct.Comment = wrapper.comment
             thrift.Unions = append(thrift.Unions, strct)
-            frugal.OrderedDefinitions[i] = strct
         case *Service:
             v.Comment = wrapper.comment
             thrift.Services = append(thrift.Services, v)
