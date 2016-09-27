@@ -202,10 +202,7 @@ func (g *Generator) addToPubspec(dir string) error {
 	sort.Strings(includes)
 
 	for _, include := range includes {
-		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-		if !ok {
-			namespace = include
-		}
+		namespace := g.Frugal.NamespaceForInclude(include, lang)
 		deps[toLibraryName(namespace)] = dep{Path: "../" + toLibraryName(namespace)}
 	}
 
@@ -377,66 +374,26 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 	underlyingType := g.Frugal.UnderlyingType(t)
 
 	// If the value being referenced is of type Identifier, it's referencing
-	// another constant. Need to recurse to get that value.
+	// another constant.
 	identifier, ok := value.(parser.Identifier)
-	// TODO this is essentially the same as the go generator, but I'm not
-	// sure the best way to consolidate, especially with possibly different
-	// generators to come. Maybe a post parse step to differentiate identifiers
-	// somehow? Or extract a method to a super class?
 	if ok {
-		name := string(identifier)
-
-		// split based on '.', if present, it should be from an include
-		pieces := strings.Split(name, ".")
-		if len(pieces) == 1 {
-			// From this file
-			for _, constant := range g.Frugal.Thrift.Constants {
-				if name == constant.Name {
-					return g.generateConstantValue(t, constant.Value, ind)
-				}
-			}
-		} else if len(pieces) == 2 {
-			// Either from an include, or part of an enum
-			for _, enum := range g.Frugal.Thrift.Enums {
-				if pieces[0] == enum.Name {
-					for _, value := range enum.Values {
-						if pieces[1] == value.Name {
-							return fmt.Sprintf("%v", value.Value)
-						}
-					}
-					panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))
-				}
-			}
-
-			// If not part of an enum , it's from an include
-			include, ok := g.Frugal.ParsedIncludes[pieces[0]]
-			if !ok {
-				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
-			}
-			for _, constant := range include.Thrift.Constants {
-				if pieces[1] == constant.Name {
-					return g.generateConstantValue(t, constant.Value, ind)
-				}
-			}
-		} else if len(pieces) == 3 {
-			// enum from an include
-			include, ok := g.Frugal.ParsedIncludes[pieces[0]]
-			if !ok {
-				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
-			}
-			for _, enum := range include.Thrift.Enums {
-				if pieces[1] == enum.Name {
-					for _, value := range enum.Values {
-						if pieces[2] == value.Name {
-							return fmt.Sprintf("%v", value.Value)
-						}
-					}
-					panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))
-				}
-			}
+		idCtx := g.Frugal.ContextFromIdentifier(identifier)
+		switch idCtx.Type {
+		case parser.LocalConstant:
+			return fmt.Sprintf("t_%s.%sConstants.%s", toLibraryName(g.getNamespaceOrName()),
+				snakeToCamel(g.getLibraryName()), idCtx.Constant.Name)
+		case parser.LocalEnum:
+			return fmt.Sprintf("t_%s.%s.%s", toLibraryName(g.getNamespaceOrName()),
+				idCtx.Enum.Name, idCtx.EnumValue.Name)
+		case parser.IncludeConstant:
+			nsLibName := toLibraryName(g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang))
+			return fmt.Sprintf("t_%s.%sConstants.%s", nsLibName, snakeToCamel(nsLibName), idCtx.Constant.Name)
+		case parser.IncludeEnum:
+			return fmt.Sprintf("t_%s.%s.%s", toLibraryName(g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang)),
+				idCtx.Enum.Name, idCtx.EnumValue.Name)
+		default:
+			panic(fmt.Sprintf("The Identifier %s has unexpected type %d", identifier, idCtx.Type))
 		}
-
-		panic("referenced constant doesn't exist: " + name)
 	}
 
 	if underlyingType.IsPrimitive() || underlyingType.IsContainer() {
@@ -1133,11 +1090,7 @@ func (g *Generator) GenerateThriftImports() string {
 
 	// Import includes
 	for _, include := range g.Frugal.Thrift.Includes {
-		includeName, ok := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
-		if !ok {
-			includeName = include.Name
-		}
-
+		includeName := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
 		imports += g.getImportDeclaration(includeName)
 	}
 
@@ -1153,12 +1106,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
 	// import included packages
 	for _, include := range s.ReferencedIncludes() {
-		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-		if !ok {
-			namespace = include
-		}
-
-		imports += g.getImportDeclaration(namespace)
+		imports += g.getImportDeclaration(g.Frugal.NamespaceForInclude(include, lang))
 	}
 
 	// Import same package.
@@ -1175,12 +1123,7 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
 	// import included packages
 	for _, include := range s.ReferencedIncludes() {
-		namespace, ok := s.Frugal.NamespaceForInclude(include, lang)
-		if !ok {
-			namespace = include
-		}
-
-		imports += g.getImportDeclaration(namespace)
+		imports += g.getImportDeclaration(s.Frugal.NamespaceForInclude(include, lang))
 	}
 
 	// Import same package.
@@ -1396,10 +1339,7 @@ func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 	prefix := ""
 	include := service.ExtendsInclude()
 	if include != "" {
-		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
-			include = inc
-		}
-		prefix = "t_" + include
+		prefix = "t_" + g.Frugal.NamespaceForInclude(include, lang)
 	} else {
 		prefix = "t_" + strings.ToLower(g.getNamespaceOrName())
 	}
@@ -1709,12 +1649,7 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 	param := t.ParamName()
 	include := t.IncludeName()
 	if include != "" {
-		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-		if !ok {
-			namespace = include
-		}
-		namespace = toLibraryName(namespace)
-		param = fmt.Sprintf("t_%s.%s", namespace, param)
+		param = fmt.Sprintf("t_%s.%s", toLibraryName(g.Frugal.NamespaceForInclude(include, lang)), param)
 	} else {
 		param = fmt.Sprintf("t_%s.%s", g.getNamespaceOrName(), param)
 	}

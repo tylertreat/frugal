@@ -160,14 +160,14 @@ func formatValue(value interface{}, module *parser.Frugal) template.HTML {
 	case string:
 		return template.HTML(fmt.Sprintf(`"%s"`, v))
 	case parser.Identifier:
-		refValue := module.ValueFromIdentifier(v)
-		switch val := refValue.(type) {
-		case *parser.Constant:
-			return template.HTML(fmt.Sprintf(`<a href="%s">%v</a>`, linkForConstant(val, v), value))
-		case *parser.Enum:
-			return template.HTML(fmt.Sprintf(`<a href="%s">%v</a>`, linkForEnum(val, v), value))
+		idCtx := module.ContextFromIdentifier(v)
+		switch idCtx.Type {
+		case parser.LocalConstant, parser.IncludeConstant:
+			return template.HTML(fmt.Sprintf(`<a href="%s">%v</a>`, linkForConstant(idCtx.Constant, v), value))
+		case parser.LocalEnum, parser.IncludeEnum:
+			return template.HTML(fmt.Sprintf(`<a href="%s">%v</a>`, linkForEnum(idCtx.Enum, v), value))
 		default:
-			panic(fmt.Sprintf("unexpected value %s referenced by %s", val, value))
+			panic(fmt.Sprintf("unexpected type %d referenced by %s", idCtx.Type, value))
 		}
 	case []parser.KeyValue:
 		display := "{ "

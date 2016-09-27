@@ -59,6 +59,27 @@ func (s *Scope) assignScope() {
 	}
 }
 
+// IdentifierType indicates if a Identifier is a local/include constant/enum
+type IdentifierType uint8
+
+const (
+	NonIdentifier IdentifierType = iota
+	LocalConstant
+	LocalEnum
+	IncludeConstant
+	IncludeEnum
+)
+
+// IdentifierContext gives information about the identifier for a given
+// contextual reference
+type IdentifierContext struct {
+	Type      IdentifierType
+	Constant  *Constant
+	Enum      *Enum
+	EnumValue *EnumValue
+	Include   *Frugal
+}
+
 // Frugal contains the complete IDL parse tree.
 type Frugal struct {
 	Name           string
@@ -81,13 +102,16 @@ type Frugal struct {
 
 // NamespaceForInclude returns the namespace value for the given inclue name
 // and language.
-func (f *Frugal) NamespaceForInclude(include, lang string) (string, bool) {
+func (f *Frugal) NamespaceForInclude(include, lang string) string {
 	parsed, ok := f.ParsedIncludes[include]
 	if !ok {
-		return "", ok
+		panic(fmt.Sprintf("Include %s not present", include))
 	}
 	namespace, ok := parsed.Thrift.Namespace(lang)
-	return namespace, ok
+	if ok {
+		return namespace
+	}
+	return include
 }
 
 // ContainsFrugalDefinitions indicates if the parse tree contains any
@@ -160,9 +184,8 @@ func (f *Frugal) ConstantFromField(field *Field, value interface{}) *Constant {
 	}
 }
 
-// ValueFromIdentifier returns either a *Constant or a *Enum depending on what
-// the given Identifier references.
-func (f *Frugal) ValueFromIdentifier(identifier Identifier) interface{} {
+// ContextFromIdentifier returns a IdentifierContext for the given Identifier.
+func (f *Frugal) ContextFromIdentifier(identifier Identifier) *IdentifierContext {
 	name := string(identifier)
 
 	// Split based on '.', if present, it should be from an include.
@@ -171,7 +194,10 @@ func (f *Frugal) ValueFromIdentifier(identifier Identifier) interface{} {
 		// From this file.
 		for _, constant := range f.Thrift.Constants {
 			if name == constant.Name {
-				return constant
+				return &IdentifierContext{
+					Type:     LocalConstant,
+					Constant: constant,
+				}
 			}
 		}
 	} else if len(pieces) == 2 {
@@ -180,7 +206,11 @@ func (f *Frugal) ValueFromIdentifier(identifier Identifier) interface{} {
 			if pieces[0] == enum.Name {
 				for _, value := range enum.Values {
 					if pieces[1] == value.Name {
-						return enum
+						return &IdentifierContext{
+							Type:      LocalEnum,
+							Enum:      enum,
+							EnumValue: value,
+						}
 					}
 				}
 			}
@@ -193,7 +223,11 @@ func (f *Frugal) ValueFromIdentifier(identifier Identifier) interface{} {
 		}
 		for _, constant := range include.Thrift.Constants {
 			if pieces[1] == constant.Name {
-				return constant
+				return &IdentifierContext{
+					Type:     IncludeConstant,
+					Constant: constant,
+					Include:  include,
+				}
 			}
 		}
 	} else if len(pieces) == 3 {
@@ -206,7 +240,12 @@ func (f *Frugal) ValueFromIdentifier(identifier Identifier) interface{} {
 			if pieces[1] == enum.Name {
 				for _, value := range enum.Values {
 					if pieces[2] == value.Name {
-						return enum
+						return &IdentifierContext{
+							Type:      IncludeEnum,
+							Enum:      enum,
+							EnumValue: value,
+							Include:   include,
+						}
 					}
 				}
 				panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))

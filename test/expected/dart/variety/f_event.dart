@@ -27,7 +27,7 @@ class Event implements thrift.TBase {
   bool __isset_iD = false;
 
   Event() {
-    this.iD = -1;
+    this.iD = t_variety.VarietyConstants.DEFAULT_ID;
   }
 
   /// ID is a unique identifier for an event.
