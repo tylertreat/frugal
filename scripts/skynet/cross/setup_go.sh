@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 
 export FRUGAL_HOME=$GOPATH/src/github.com/Workiva/frugal
 
