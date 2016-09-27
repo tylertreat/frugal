@@ -103,7 +103,7 @@ func compile2(f *parser.Frugal) error {
 	}
 	fullOut := g.GetOutputDir(out, f)
 	if err := os.MkdirAll(out, 0777); err != nil {
-		return nil, err
+		return err
 	}
 
 	// The parsed frugal contains everything needed to generate
