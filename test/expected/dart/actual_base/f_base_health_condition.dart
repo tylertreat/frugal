@@ -11,19 +11,27 @@ library actual_base_dart.src.f_base_health_condition;enum base_health_condition 
 int serializebase_health_condition(base_health_condition variant) {
   switch (variant) {
     case 1:
-      return base_health_condition.PASS    case 2:
-      return base_health_condition.WARN    case 3:
-      return base_health_condition.FAIL    case 4:
-      return base_health_condition.UNKNOWN  }
+      return base_health_condition.PASS;
+    case 2:
+      return base_health_condition.WARN;
+    case 3:
+      return base_health_condition.FAIL;
+    case 4:
+      return base_health_condition.UNKNOWN;
+  }
 }
 
 base_health_condition deserializebase_health_condition(int value) {
   switch (value) {
     case 1:
-      return base_health_condition.PASS    case 2:
-      return base_health_condition.WARN    case 3:
-      return base_health_condition.FAIL    case 4:
-      return base_health_condition.UNKNOWN    default:
+      return base_health_condition.PASS;
+    case 2:
+      return base_health_condition.WARN;
+    case 3:
+      return base_health_condition.FAIL;
+    case 4:
+      return base_health_condition.UNKNOWN;
+    default:
       throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "Invalid value '$value' for enum 'base_health_condition'");  }
 }
 

@@ -485,7 +485,7 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents += tab+"switch (variant) {\n"
 	for _, field := range enum.Values {
 		contents += fmt.Sprintf(tabtab+"case %d:\n", field.Value)
-		contents += fmt.Sprintf(tabtabtab+"return %s.%s", enum.Name, field.Name)
+		contents += fmt.Sprintf(tabtabtab+"return %s.%s;\n", enum.Name, field.Name)
 	}
 	contents += tab+"}\n"
 	contents += "}\n\n"
@@ -494,7 +494,7 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents += tab+"switch (value) {\n"
 	for _, field := range enum.Values {
 		contents += fmt.Sprintf(tabtab+"case %d:\n", field.Value)
-		contents += fmt.Sprintf(tabtabtab+"return %s.%s", enum.Name, field.Name)
+		contents += fmt.Sprintf(tabtabtab+"return %s.%s;\n", enum.Name, field.Name)
 	}
 	contents += tabtab+"default:\n"
 	contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, \"Invalid value '$value' for enum '%s'\");", enum.Name)

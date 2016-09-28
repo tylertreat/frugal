@@ -13,23 +13,35 @@ library variety.src.f_its_an_enum;enum ItsAnEnum {
 int serializeItsAnEnum(ItsAnEnum variant) {
   switch (variant) {
     case 2:
-      return ItsAnEnum.FIRST    case 3:
-      return ItsAnEnum.SECOND    case 4:
-      return ItsAnEnum.THIRD    case 5:
-      return ItsAnEnum.fourth    case 6:
-      return ItsAnEnum.Fifth    case 7:
-      return ItsAnEnum.sIxItH  }
+      return ItsAnEnum.FIRST;
+    case 3:
+      return ItsAnEnum.SECOND;
+    case 4:
+      return ItsAnEnum.THIRD;
+    case 5:
+      return ItsAnEnum.fourth;
+    case 6:
+      return ItsAnEnum.Fifth;
+    case 7:
+      return ItsAnEnum.sIxItH;
+  }
 }
 
 ItsAnEnum deserializeItsAnEnum(int value) {
   switch (value) {
     case 2:
-      return ItsAnEnum.FIRST    case 3:
-      return ItsAnEnum.SECOND    case 4:
-      return ItsAnEnum.THIRD    case 5:
-      return ItsAnEnum.fourth    case 6:
-      return ItsAnEnum.Fifth    case 7:
-      return ItsAnEnum.sIxItH    default:
+      return ItsAnEnum.FIRST;
+    case 3:
+      return ItsAnEnum.SECOND;
+    case 4:
+      return ItsAnEnum.THIRD;
+    case 5:
+      return ItsAnEnum.fourth;
+    case 6:
+      return ItsAnEnum.Fifth;
+    case 7:
+      return ItsAnEnum.sIxItH;
+    default:
       throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "Invalid value '$value' for enum 'ItsAnEnum'");  }
 }
 

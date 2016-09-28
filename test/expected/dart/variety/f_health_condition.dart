@@ -11,19 +11,27 @@ library variety.src.f_health_condition;enum HealthCondition {
 int serializeHealthCondition(HealthCondition variant) {
   switch (variant) {
     case 1:
-      return HealthCondition.PASS    case 2:
-      return HealthCondition.WARN    case 3:
-      return HealthCondition.FAIL    case 4:
-      return HealthCondition.UNKNOWN  }
+      return HealthCondition.PASS;
+    case 2:
+      return HealthCondition.WARN;
+    case 3:
+      return HealthCondition.FAIL;
+    case 4:
+      return HealthCondition.UNKNOWN;
+  }
 }
 
 HealthCondition deserializeHealthCondition(int value) {
   switch (value) {
     case 1:
-      return HealthCondition.PASS    case 2:
-      return HealthCondition.WARN    case 3:
-      return HealthCondition.FAIL    case 4:
-      return HealthCondition.UNKNOWN    default:
+      return HealthCondition.PASS;
+    case 2:
+      return HealthCondition.WARN;
+    case 3:
+      return HealthCondition.FAIL;
+    case 4:
+      return HealthCondition.UNKNOWN;
+    default:
       throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "Invalid value '$value' for enum 'HealthCondition'");  }
 }
 
