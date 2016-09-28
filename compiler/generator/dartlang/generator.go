@@ -484,8 +484,8 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents += fmt.Sprintf("int serialize%s(%s variant) {\n", enum.Name, enum.Name)
 	contents += tab+"switch (variant) {\n"
 	for _, field := range enum.Values {
-		contents += fmt.Sprintf(tabtab+"case %d:\n", field.Value)
-		contents += fmt.Sprintf(tabtabtab+"return %s.%s;\n", enum.Name, field.Name)
+		contents += fmt.Sprintf(tabtab+"case %s.%s:\n", enum.Name, field.Name)
+		contents += fmt.Sprintf(tabtabtab+"return %d;\n", field.Value)
 	}
 	contents += tab+"}\n"
 	contents += "}\n\n"
@@ -1039,17 +1039,17 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 		}
 	}
 
-	contents += tabtab + "// check that fields of type enum have valid values\n"
-	for _, field := range s.Fields {
-		if g.Frugal.IsEnum(field.Type) {
-			fName := toFieldName(field.Name)
-			isSetCheck := fmt.Sprintf("isSet%s()", strings.Title(field.Name))
-			contents += fmt.Sprintf(tabtab+"if(%s && !%s.VALID_VALUES.contains(%s)) {\n",
-				isSetCheck, g.qualifiedTypeName(field.Type), fName)
-			contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, \"The field '%s' has been assigned the invalid value $%s\");\n", fName, fName)
-			contents += tabtab + "}\n"
-		}
-	}
+	//contents += tabtab + "// check that fields of type enum have valid values\n"
+	//for _, field := range s.Fields {
+	//	if g.Frugal.IsEnum(field.Type) {
+	//		fName := toFieldName(field.Name)
+	//		isSetCheck := fmt.Sprintf("isSet%s()", strings.Title(field.Name))
+	//		contents += fmt.Sprintf(tabtab+"if(%s && !%s.VALID_VALUES.contains(%s)) {\n",
+	//			isSetCheck, g.qualifiedTypeName(field.Type), fName)
+	//		contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, \"The field '%s' has been assigned the invalid value $%s\");\n", fName, fName)
+	//		contents += tabtab + "}\n"
+	//	}
+	//}
 
 	contents += tab + "}\n"
 	return contents

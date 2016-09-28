@@ -10,14 +10,14 @@ library actual_base_dart.src.f_base_health_condition;enum base_health_condition 
 
 int serializebase_health_condition(base_health_condition variant) {
   switch (variant) {
-    case 1:
-      return base_health_condition.PASS;
-    case 2:
-      return base_health_condition.WARN;
-    case 3:
-      return base_health_condition.FAIL;
-    case 4:
-      return base_health_condition.UNKNOWN;
+    case base_health_condition.PASS:
+      return 1;
+    case base_health_condition.WARN:
+      return 2;
+    case base_health_condition.FAIL:
+      return 3;
+    case base_health_condition.UNKNOWN:
+      return 4;
   }
 }
 

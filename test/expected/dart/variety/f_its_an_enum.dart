@@ -12,18 +12,18 @@ library variety.src.f_its_an_enum;enum ItsAnEnum {
 
 int serializeItsAnEnum(ItsAnEnum variant) {
   switch (variant) {
-    case 2:
-      return ItsAnEnum.FIRST;
-    case 3:
-      return ItsAnEnum.SECOND;
-    case 4:
-      return ItsAnEnum.THIRD;
-    case 5:
-      return ItsAnEnum.fourth;
-    case 6:
-      return ItsAnEnum.Fifth;
-    case 7:
-      return ItsAnEnum.sIxItH;
+    case ItsAnEnum.FIRST:
+      return 2;
+    case ItsAnEnum.SECOND:
+      return 3;
+    case ItsAnEnum.THIRD:
+      return 4;
+    case ItsAnEnum.fourth:
+      return 5;
+    case ItsAnEnum.Fifth:
+      return 6;
+    case ItsAnEnum.sIxItH:
+      return 7;
   }
 }
 

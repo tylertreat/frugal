@@ -10,14 +10,14 @@ library variety.src.f_health_condition;enum HealthCondition {
 
 int serializeHealthCondition(HealthCondition variant) {
   switch (variant) {
-    case 1:
-      return HealthCondition.PASS;
-    case 2:
-      return HealthCondition.WARN;
-    case 3:
-      return HealthCondition.FAIL;
-    case 4:
-      return HealthCondition.UNKNOWN;
+    case HealthCondition.PASS:
+      return 1;
+    case HealthCondition.WARN:
+      return 2;
+    case HealthCondition.FAIL:
+      return 3;
+    case HealthCondition.UNKNOWN:
+      return 4;
   }
 }
 
