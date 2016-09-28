@@ -80,32 +80,36 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 
 	if len(g.Frugal.Thrift.Constants) > 0 {
 		constantsName := fmt.Sprintf("%sConstants", snakeToCamel(libraryName))
-		contents += g.createExport(constantsName)
+		contents += g.createExport(constantsName, false)
 	}
 	for _, s := range g.Frugal.Thrift.Structs {
-		contents += g.createExport(s.Name)
+		contents += g.createExport(s.Name, false)
 	}
 	for _, union := range g.Frugal.Thrift.Unions {
-		contents += g.createExport(union.Name)
+		contents += g.createExport(union.Name, false)
 	}
 	for _, exception := range g.Frugal.Thrift.Exceptions {
-		contents += g.createExport(exception.Name)
+		contents += g.createExport(exception.Name, false)
 	}
 	for _, enum := range g.Frugal.Thrift.Enums {
-		contents += g.createExport(enum.Name)
+		contents += g.createExport(enum.Name, true)
 	}
 
 	_, err = file.WriteString(contents)
 	return err
 }
 
-func (g *Generator) createExport(structName string) string {
+func (g *Generator) createExport(structName string, enum bool) string {
 	srcDir := "src"
 	if _, ok := g.Options["library_prefix"]; ok {
 		srcDir = g.getLibraryName()
 	}
-	return fmt.Sprintf("export '%s/f_%s.dart' show %s;\n",
-		srcDir, toFileName(structName), structName)
+	if !enum {
+		return fmt.Sprintf("export '%s/f_%s.dart' show %s;\n",
+			srcDir, toFileName(structName), structName)
+	}
+	return fmt.Sprintf("export '%s/f_%s.dart' show %s, serialize%s, deserialize%s;\n",
+		srcDir, toFileName(structName), structName, structName, structName)
 }
 
 // TeardownGenerator is run after generation.
@@ -802,7 +806,8 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 			contents += fmt.Sprintf(tabtabtabtabtabtab + ind + "this.__isset_%s = true;\n", fName)
 		}
 	} else if g.Frugal.IsEnum(underlyingType) {
-		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = deserialize%s(iprot.readI32());\n", prefix, fName, underlyingType.Name)
+		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = %s.deserialize%s(iprot.readI32());\n",
+			prefix, fName, g.includeQualifier(underlyingType), underlyingType.Name)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = new %s();\n", prefix, fName, dartType)
 		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s.read(iprot);\n", fName)
@@ -921,7 +926,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 
 		contents += fmt.Sprintf(write, fName)
 	} else if g.Frugal.IsEnum(underlyingType) {
-		contents += fmt.Sprintf(tabtab+"oprot.writeI32(serialize%s(%s));\n", underlyingType.Name, fName)
+		contents += fmt.Sprintf(tabtab+"oprot.writeI32(%s.serialize%s(%s));\n", g.includeQualifier(underlyingType), underlyingType.Name, fName)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(tabtab+ind+"%s.write(oprot);\n", fName)
 	} else if underlyingType.IsContainer() {
@@ -1657,6 +1662,14 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 		param = fmt.Sprintf("t_%s.%s", toLibraryName(g.getNamespaceOrName()), param)
 	}
 	return param
+}
+
+func (g *Generator) includeQualifier(t *parser.Type) string {
+	include := t.IncludeName()
+	if include != "" {
+		return fmt.Sprintf("t_%s", toLibraryName(g.Frugal.NamespaceForInclude(include, lang)))
+	}
+	return fmt.Sprintf("t_%s", toLibraryName(g.getNamespaceOrName()))
 }
 
 func (g *Generator) getLibraryPrefix() string {
