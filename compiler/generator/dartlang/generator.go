@@ -475,24 +475,33 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 		return err
 	}
 
-	contents += fmt.Sprintf("class %s {\n", enum.Name)
+	contents += fmt.Sprintf("enum %s {\n", enum.Name)
 	for _, field := range enum.Values {
-		contents += fmt.Sprintf(tab+"static const int %s = %d;\n", field.Name, field.Value)
+		contents += fmt.Sprintf(tab+"%s,\n", field.Name)
 	}
-	contents += "\n"
+	contents += "}\n\n"
 
-	contents += tab + "static final Set<int> VALID_VALUES = new Set.from([\n"
+	contents += fmt.Sprintf("int serialize%s(%s variant) {\n", enum.Name, enum.Name)
+	contents += tab+"switch (variant) {\n"
 	for _, field := range enum.Values {
-		contents += fmt.Sprintf(tabtab+"%s,\n", field.Name)
+		contents += fmt.Sprintf(tabtab+"case %d:\n", field.Value)
+		contents += fmt.Sprintf(tabtabtab+"return %s.%s", enum.Name, field.Name)
 	}
-	contents += tab + "]);\n\n"
+	contents += tab+"}\n"
+	contents += "}\n\n"
 
-	contents += tab + "static final Map<int, String> VALUES_TO_NAMES = {\n"
+	contents += fmt.Sprintf("%s deserialize%s(int value) {\n", enum.Name, enum.Name)
+	contents += tab+"switch (value) {\n"
 	for _, field := range enum.Values {
-		contents += fmt.Sprintf(tabtab+"%s: '%s',\n", field.Name, field.Name)
+		contents += fmt.Sprintf(tabtab+"case %d:\n", field.Value)
+		contents += fmt.Sprintf(tabtabtab+"return %s.%s", enum.Name, field.Name)
 	}
-	contents += tab + "};\n"
-	contents += "}\n"
+	contents += tabtab+"default:\n"
+	contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, \"Invalid value '$value' for enum '%s'\");", enum.Name)
+
+	contents += tab+"}\n"
+	contents += "}\n\n"
+
 	file.WriteString(contents)
 
 	return nil
@@ -764,8 +773,8 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 	fName := toFieldName(field.Name)
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	primitive := g.isDartPrimitive(underlyingType)
-	isEnum := g.Frugal.IsEnum(underlyingType)
-	if underlyingType.IsPrimitive() || isEnum {
+	//isEnum := g.Frugal.IsEnum(underlyingType)
+	if underlyingType.IsPrimitive() {
 		thriftType := ""
 		switch underlyingType.Name {
 		case "bool":
@@ -785,17 +794,15 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 		case "binary":
 			thriftType = "Binary"
 		default:
-			if isEnum {
-				thriftType = "I32"
-			} else {
-				panic("unkown thrift type: " + underlyingType.Name)
-			}
+			panic("unkown thrift type: " + underlyingType.Name)
 		}
 
-		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = iprot.read%s();\n", prefix, fName, thriftType)
+		contents += fmt.Sprintf(tabtabtabtabtabtab + ind + "%s%s = iprot.read%s();\n", prefix, fName, thriftType)
 		if primitive && first {
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"this.__isset_%s = true;\n", fName)
+			contents += fmt.Sprintf(tabtabtabtabtabtab + ind + "this.__isset_%s = true;\n", fName)
 		}
+	} else if g.Frugal.IsEnum(underlyingType) {
+		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = deserialize%s(iprot.readI32());\n", prefix, fName, underlyingType.Name)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = new %s();\n", prefix, fName, dartType)
 		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s.read(iprot);\n", fName)
@@ -888,8 +895,8 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 
 	fName := toFieldName(field.Name)
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
-	isEnum := g.Frugal.IsEnum(underlyingType)
-	if underlyingType.IsPrimitive() || isEnum {
+	//isEnum := g.Frugal.IsEnum(underlyingType)
+	if underlyingType.IsPrimitive() {
 		write := tabtab + ind + "oprot.write"
 		switch underlyingType.Name {
 		case "bool":
@@ -909,14 +916,12 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 		case "binary":
 			write += "Binary(%s);\n"
 		default:
-			if isEnum {
-				write += "I32(%s);\n"
-			} else {
-				panic("unknown thrift type: " + underlyingType.Name)
-			}
+			panic("unknown thrift type: " + underlyingType.Name)
 		}
 
 		contents += fmt.Sprintf(write, fName)
+	} else if g.Frugal.IsEnum(underlyingType) {
+		contents += fmt.Sprintf(tabtab+"oprot.writeI32(serialize%s(%s));\n", underlyingType.Name, fName)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(tabtab+ind+"%s.write(oprot);\n", fName)
 	} else if underlyingType.IsContainer() {

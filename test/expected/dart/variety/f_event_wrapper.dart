@@ -406,7 +406,7 @@ class EventWrapper implements thrift.TBase {
             thrift.TList elem37 = iprot.readListBegin();
             enums = new List<int>();
             for(int elem39 = 0; elem39 < elem37.length; ++elem39) {
-              int elem38 = iprot.readI32();
+              int elem38 = deserializeItsAnEnum(iprot.readI32());
               enums.add(elem38);
             }
             iprot.readListEnd();
@@ -508,7 +508,7 @@ class EventWrapper implements thrift.TBase {
       oprot.writeFieldBegin(_ENUMS_FIELD_DESC);
       oprot.writeListBegin(new thrift.TList(thrift.TType.I32, enums.length));
       for(var elem45 in enums) {
-        oprot.writeI32(elem45);
+    oprot.writeI32(serializeItsAnEnum(elem45));
       }
       oprot.writeListEnd();
       oprot.writeFieldEnd();
