@@ -733,14 +733,14 @@ class TestingDefaults implements thrift.TBase {
           break;
         case STATUS:
           if(field.type == thrift.TType.I32) {
-            status = deserializeHealthCondition(iprot.readI32());
+            status = t_variety.deserializeHealthCondition(iprot.readI32());
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case BASE_STATUS:
           if(field.type == thrift.TType.I32) {
-            base_status = deserializebase.base_health_condition(iprot.readI32());
+            base_status = t_actual_base_dart.deserializebase.base_health_condition(iprot.readI32());
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
@@ -865,10 +865,10 @@ class TestingDefaults implements thrift.TBase {
       oprot.writeFieldEnd();
     }
     oprot.writeFieldBegin(_STATUS_FIELD_DESC);
-    oprot.writeI32(serializeHealthCondition(status));
+    oprot.writeI32(t_variety.serializeHealthCondition(status));
     oprot.writeFieldEnd();
     oprot.writeFieldBegin(_BASE_STATUS_FIELD_DESC);
-    oprot.writeI32(serializebase.base_health_condition(base_status));
+    oprot.writeI32(t_actual_base_dart.serializebase.base_health_condition(base_status));
     oprot.writeFieldEnd();
     oprot.writeFieldStop();
     oprot.writeStructEnd();
