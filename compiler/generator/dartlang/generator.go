@@ -777,7 +777,6 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 	fName := toFieldName(field.Name)
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	primitive := g.isDartPrimitive(underlyingType)
-	//isEnum := g.Frugal.IsEnum(underlyingType)
 	if underlyingType.IsPrimitive() {
 		thriftType := ""
 		switch underlyingType.Name {
@@ -900,7 +899,6 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 
 	fName := toFieldName(field.Name)
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
-	//isEnum := g.Frugal.IsEnum(underlyingType)
 	if underlyingType.IsPrimitive() {
 		write := tabtab + ind + "oprot.write"
 		switch underlyingType.Name {
@@ -1043,18 +1041,6 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 			}
 		}
 	}
-
-	//contents += tabtab + "// check that fields of type enum have valid values\n"
-	//for _, field := range s.Fields {
-	//	if g.Frugal.IsEnum(field.Type) {
-	//		fName := toFieldName(field.Name)
-	//		isSetCheck := fmt.Sprintf("isSet%s()", strings.Title(field.Name))
-	//		contents += fmt.Sprintf(tabtab+"if(%s && !%s.VALID_VALUES.contains(%s)) {\n",
-	//			isSetCheck, g.qualifiedTypeName(field.Type), fName)
-	//		contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, \"The field '%s' has been assigned the invalid value $%s\");\n", fName, fName)
-	//		contents += tabtab + "}\n"
-	//	}
-	//}
 
 	contents += tab + "}\n"
 	return contents
