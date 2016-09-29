@@ -1413,9 +1413,9 @@ func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
 			include = inc
 		}
-		prefix = "t_" + include
+		prefix = "t_" + toLibraryName(include)
 	} else {
-		prefix = "t_" + strings.ToLower(g.getNamespaceOrName())
+		prefix = "t_" + toLibraryName(g.getNamespaceOrName())
 	}
 	return prefix + "." + serviceName
 }
@@ -1730,7 +1730,7 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 		namespace = toLibraryName(namespace)
 		param = fmt.Sprintf("t_%s.%s", namespace, param)
 	} else {
-		param = fmt.Sprintf("t_%s.%s", g.getNamespaceOrName(), param)
+		param = fmt.Sprintf("t_%s.%s", toLibraryName(g.getNamespaceOrName()), param)
 	}
 	return param
 }
