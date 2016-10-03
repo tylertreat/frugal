@@ -9,12 +9,20 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type mockFScopeTransportFactory struct {
+type mockFPublisherTransportFactory struct {
 	mock.Mock
 }
 
-func (m *mockFScopeTransportFactory) GetTransport() FScopeTransport {
-	return m.Called().Get(0).(FScopeTransport)
+func (m *mockFPublisherTransportFactory) GetTransport() FPublisherTransport {
+	return m.Called().Get(0).(FPublisherTransport)
+}
+
+type mockFSubscriberTransportFactory struct {
+	mock.Mock
+}
+
+func (m *mockFSubscriberTransportFactory) GetTransport() FSubscriberTransport {
+	return m.Called().Get(0).(FSubscriberTransport)
 }
 
 type mockTProtocolFactory struct {
@@ -52,18 +60,24 @@ func (m *mockFProcessor) AssertExpectations(t *testing.T) {
 }
 
 func TestScopeProviderNew(t *testing.T) {
-	mockScopeTransportFactory := new(mockFScopeTransportFactory)
+	mockPublisherTransportFactory := new(mockFPublisherTransportFactory)
+	mockSubscriberTransportFactory := new(mockFSubscriberTransportFactory)
 	mockTProtocolFactory := new(mockTProtocolFactory)
 	protoFactory := NewFProtocolFactory(mockTProtocolFactory)
-	provider := NewFScopeProvider(mockScopeTransportFactory, protoFactory)
-	scopeTransport := new(fNatsScopeTransport)
-	mockScopeTransportFactory.On("GetTransport").Return(scopeTransport)
-	proto := new(thrift.TBinaryProtocol)
-	mockTProtocolFactory.On("GetProtocol", scopeTransport).Return(proto)
+	provider := NewFScopeProvider(mockPublisherTransportFactory, mockSubscriberTransportFactory, protoFactory)
+	publisherTransport := new(fNatsPublisherTransport)
+	subscriberTransport := new(fNatsSubscriberTransport)
+	mockPublisherTransportFactory.On("GetTransport").Return(publisherTransport)
 
-	transport, protocol := provider.New()
-	assert.Equal(t, scopeTransport, transport)
+	proto := new(thrift.TBinaryProtocol)
+	mockTProtocolFactory.On("GetProtocol", publisherTransport).Return(proto)
+	mockTProtocolFactory.On("GetProtocol", subscriberTransport).Return(proto)
+
+	ptransport, protocol := provider.NewPublisher()
+	stransport, protocol := provider.NewSubscriber()
+	assert.Equal(t, publisherTransport, ptransport)
+	assert.Equal(t, subscriberTransport, stransport)
 	assert.Equal(t, proto, protocol.TProtocol)
-	mockScopeTransportFactory.AssertExpectations(t)
+	mockPublisherTransportFactory.AssertExpectations(t)
 	mockTProtocolFactory.AssertExpectations(t)
 }

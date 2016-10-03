@@ -6,14 +6,14 @@ package frugal
 // The FSubscription is used to unsubscribe from the topic.
 type FSubscription struct {
 	topic     string
-	transport FScopeTransport
+	transport FSubscriberTransport
 	errorC    chan error
 }
 
 // NewFSubscription creates a new FSubscription to the given topic which should
 // be subscribed on the given FScopeTransport. This is to be used by generated
 // code and should not be called directly.
-func NewFSubscription(topic string, transport FScopeTransport) *FSubscription {
+func NewFSubscription(topic string, transport FSubscriberTransport) *FSubscription {
 	return &FSubscription{
 		topic:     topic,
 		transport: transport,
