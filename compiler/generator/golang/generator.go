@@ -1097,14 +1097,14 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += "}\n\n"
 
 	publisher += fmt.Sprintf("type %sPublisher struct {\n", scopeLower)
-	publisher += "\ttransport frugal.FScopeTransport\n"
+	publisher += "\ttransport frugal.FPublisherTransport\n"
 	publisher += "\tprotocol  *frugal.FProtocol\n"
 	publisher += "\tmethods   map[string]*frugal.Method\n"
 	publisher += "}\n\n"
 
 	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) %sPublisher {\n",
 		scopeCamel, scopeCamel)
-	publisher += "\ttransport, protocol := provider.New()\n"
+	publisher += "\ttransport, protocol := provider.NewPublisher()\n"
 	publisher += "\tmethods := make(map[string]*frugal.Method)\n"
 	publisher += fmt.Sprintf("\tpublisher := &%sPublisher{\n", scopeLower)
 	publisher += "\t\ttransport: transport,\n"
@@ -1277,7 +1277,7 @@ func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Oper
 	subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 	subscriber += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 	subscriber += "\ttopic := fmt.Sprintf(\"%s" + scopeTitle + "%s%s\", prefix, delimiter, op)\n"
-	subscriber += "\ttransport, protocol := l.provider.New()\n"
+	subscriber += "\ttransport, protocol := l.provider.NewSubscriber()\n"
 	subscriber += "\tif err := transport.Subscribe(topic); err != nil {\n"
 	subscriber += "\t\treturn nil, err\n"
 	subscriber += "\t}\n\n"

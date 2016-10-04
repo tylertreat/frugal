@@ -23,13 +23,13 @@ type EventsPublisher interface {
 }
 
 type eventsPublisher struct {
-	transport frugal.FScopeTransport
+	transport frugal.FPublisherTransport
 	protocol  *frugal.FProtocol
 	methods   map[string]*frugal.Method
 }
 
 func NewEventsPublisher(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) EventsPublisher {
-	transport, protocol := provider.New()
+	transport, protocol := provider.NewPublisher()
 	methods := make(map[string]*frugal.Method)
 	publisher := &eventsPublisher{
 		transport: transport,
@@ -102,7 +102,7 @@ func (l *eventsSubscriber) SubscribeEventCreated(user string, handler func(*frug
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
-	transport, protocol := l.provider.New()
+	transport, protocol := l.provider.NewSubscriber()
 	if err := transport.Subscribe(topic); err != nil {
 		return nil, err
 	}
