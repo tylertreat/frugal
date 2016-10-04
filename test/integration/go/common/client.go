@@ -58,7 +58,6 @@ func StartClient(
 			panic(err)
 		}
 
-		//factory := frugal.NewFNatsScopeTransportFactory(conn)
 		pfactory := frugal.NewFNatsPublisherTransportFactory(conn)
 		sfactory := frugal.NewFNatsSubscriberTransportFactory(conn)
 		provider := frugal.NewFScopeProvider(pfactory, sfactory, frugal.NewFProtocolFactory(protocolFactory))

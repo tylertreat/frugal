@@ -42,7 +42,6 @@ func StartServer(
 	go func() {
 		pfactory := frugal.NewFNatsPublisherTransportFactory(conn)
 		sfactory := frugal.NewFNatsSubscriberTransportFactory(conn)
-		//factory := frugal.NewFNatsScopeTransportFactory(conn)
 		provider := frugal.NewFScopeProvider(pfactory, sfactory, frugal.NewFProtocolFactory(protocolFactory))
 		subscriber := frugaltest.NewEventsSubscriber(provider)
 

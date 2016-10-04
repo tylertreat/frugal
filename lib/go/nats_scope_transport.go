@@ -3,13 +3,13 @@ package frugal
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/nats-io/nats"
-	"errors"
 )
 
 // frameBufferSize is the number of message frames to buffer on the subscriber.
