@@ -23,7 +23,7 @@ class Java(LanguageBase):
         self._update_maven_version(version)
 
         # Update example pom
-        os.chdir('{0}/example/java'.format(root))
+        os.chdir('{0}/examples/java'.format(root))
         self._update_maven_version(version)
         self._update_maven_dep(_WORKIVA, 'frugal', version)
 

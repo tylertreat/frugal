@@ -24,7 +24,7 @@ class Dart(LanguageBase):
             data['dependencies']['frugal']['version'] = '^{0}'.format(
                 version
             )
-        os.chdir('{0}/example/dart/browser'.format(root))
+        os.chdir('{0}/examples/dart'.format(root))
         self._update(update_example, 'Dart example')
 
     def _update(self, update, prefix):
