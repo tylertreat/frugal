@@ -242,26 +242,6 @@ func TestNatsPublisherOpenAlreadyOpen(t *testing.T) {
 	assert.Equal(t, thrift.ALREADY_OPEN, trErr.TypeId())
 }
 
-// Ensures Open returns an ALREADY_OPEN TTransportException if the transport is
-// already open.
-func TestNatsSubscriberOpenAlreadyOpen(t *testing.T) {
-	s := runServer(nil)
-	defer s.Shutdown()
-	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer conn.Close()
-	tr := NewNatsFSubscriberTransport(conn)
-
-	assert.Nil(t, tr.Open())
-
-	err = tr.Open()
-
-	trErr := err.(thrift.TTransportException)
-	assert.Equal(t, thrift.ALREADY_OPEN, trErr.TypeId())
-}
-
 // Ensures subscribers discard invalid frames (size < 4).
 func TestNatsSubscriberDiscardInvalidFrame(t *testing.T) {
 	s := runServer(nil)

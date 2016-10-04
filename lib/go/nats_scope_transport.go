@@ -18,27 +18,17 @@ const frameBufferSize = 5
 // FNatsPublisherTransportFactory creates FNatsPublisherTransports.
 type FNatsPublisherTransportFactory struct {
 	conn  *nats.Conn
-	queue string
 }
 
 // NewFNatsPublisherTransportFactory creates an FNatsPublisherTransportFactory using
-// the provided NATS connection. Subscribers using this transport will not use
-// a queue.
+// the provided NATS connection.
 func NewFNatsPublisherTransportFactory(conn *nats.Conn) *FNatsPublisherTransportFactory {
 	return &FNatsPublisherTransportFactory{conn: conn}
 }
 
-// NewFNatsPublisherTransportFactoryWithQueue creates an FNatsPublisherTransportFactory
-// using the provided NATS connection. Subscribers using this transport will
-// subscribe to the provided queue, forming a queue group. When a queue group
-// is formed, only one member receives the message.
-func NewFNatsPublisherTransportFactoryWithQueue(conn *nats.Conn, queue string) *FNatsPublisherTransportFactory {
-	return &FNatsPublisherTransportFactory{conn: conn, queue: queue}
-}
-
 // GetTransport creates a new NATS FPublisherTransport.
 func (n *FNatsPublisherTransportFactory) GetTransport() FPublisherTransport {
-	return NewNatsFPublisherTransportWithQueue(n.conn, n.queue)
+	return NewNatsFPublisherTransport(n.conn)
 }
 
 // fNatsPublisherTransport implements FPublisherTransport.
@@ -55,17 +45,9 @@ type fNatsPublisherTransport struct {
 }
 
 // NewNatsFPublisherTransport creates a new FPublisherTransport which is used for
-// pub/sub. Subscribers using this transport will not use a queue.
+// publishing with scopes
 func NewNatsFPublisherTransport(conn *nats.Conn) FPublisherTransport {
 	return &fNatsPublisherTransport{conn: conn}
-}
-
-// NewNatsFPublisherTransportWithQueue creates a new FPublisherTransport which is used
-// for pub/sub. Subscribers using this transport will subscribe to the provided
-// queue, forming a queue group. When a queue group is formed, only one member
-// receives the message.
-func NewNatsFPublisherTransportWithQueue(conn *nats.Conn, queue string) FPublisherTransport {
-	return &fNatsPublisherTransport{conn: conn, queue: queue}
 }
 
 // LockTopic sets the publish topic and locks the transport for exclusive
