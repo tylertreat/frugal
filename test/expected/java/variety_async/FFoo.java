@@ -43,6 +43,7 @@ import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFunction;
 import com.workiva.frugal.protocol.*;
 import com.workiva.frugal.transport.FTransport;
+import com.workiva.frugal.transport.TMemoryOutputBuffer;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TMessage;
@@ -95,7 +96,7 @@ public class FFoo {
 
 		public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {
 			super(transport, protocolFactory, middleware);
-			Iface client = new InternalClient(transport, protocolFactory, writeLock);
+			Iface client = new InternalClient(transport, protocolFactory);
 			proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);
 		}
 
@@ -221,36 +222,27 @@ public class FFoo {
 
 		private FTransport transport;
 		private FProtocolFactory protocolFactory;
-		private FProtocol inputProtocol;
-		private FProtocol outputProtocol;
-		private final Object writeLock;
-
-		public InternalClient(FTransport transport, FProtocolFactory protocolFactory, Object writeLock) {
+		public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {
 			super(transport, protocolFactory);
 			this.transport = transport;
-			this.transport.setRegistry(new FClientRegistry());
 			this.protocolFactory = protocolFactory;
-			this.inputProtocol = this.protocolFactory.getProtocol(this.transport);
-			this.outputProtocol = this.protocolFactory.getProtocol(this.transport);
-			this.writeLock = writeLock;
 		}
 
 		/**
 		 * Ping the server.
 		 */
 		public void ping(FContext ctx) throws TException {
-			FProtocol oprot = this.outputProtocol;
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			this.transport.register(ctx, recvPingHandler(ctx, result));
+			transport.register(ctx, recvPingHandler(ctx, result));
 			try {
-				synchronized (writeLock) {
-					oprot.writeRequestHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("ping", TMessageType.CALL, 0));
-					ping_args args = new ping_args();
-					args.write(oprot);
-					oprot.writeMessageEnd();
-					oprot.getTransport().flush();
-				}
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage("ping", TMessageType.CALL, 0));
+				ping_args args = new ping_args();
+				args.write(oprot);
+				oprot.writeMessageEnd();
+				transport.send(memoryBuffer.getWriteBytes());
 
 				Object res = null;
 				try {
@@ -266,7 +258,7 @@ public class FFoo {
 				}
 				ping_result r = (ping_result) res;
 			} finally {
-				this.transport.unregister(ctx);
+				transport.unregister(ctx);
 			}
 		}
 
@@ -324,21 +316,20 @@ public class FFoo {
 		 * Blah the server.
 		 */
 		public long blah(FContext ctx, int num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception {
-			FProtocol oprot = this.outputProtocol;
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			this.transport.register(ctx, recvBlahHandler(ctx, result));
+			transport.register(ctx, recvBlahHandler(ctx, result));
 			try {
-				synchronized (writeLock) {
-					oprot.writeRequestHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("blah", TMessageType.CALL, 0));
-					blah_args args = new blah_args();
-					args.setNum(num);
-					args.setStr(Str);
-					args.setEvent(event);
-					args.write(oprot);
-					oprot.writeMessageEnd();
-					oprot.getTransport().flush();
-				}
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage("blah", TMessageType.CALL, 0));
+				blah_args args = new blah_args();
+				args.setNum(num);
+				args.setStr(Str);
+				args.setEvent(event);
+				args.write(oprot);
+				oprot.writeMessageEnd();
+				transport.send(memoryBuffer.getWriteBytes());
 
 				Object res = null;
 				try {
@@ -364,7 +355,7 @@ public class FFoo {
 				}
 				throw new TApplicationException(TApplicationException.MISSING_RESULT, "blah failed: unknown result");
 			} finally {
-				this.transport.unregister(ctx);
+				transport.unregister(ctx);
 			}
 		}
 
@@ -422,33 +413,31 @@ public class FFoo {
 		 * oneway methods don't receive a response from the server.
 		 */
 		public void oneWay(FContext ctx, long id, java.util.Map<Integer, String> req) throws TException {
-			FProtocol oprot = this.outputProtocol;
-			synchronized (writeLock) {
-				oprot.writeRequestHeader(ctx);
-				oprot.writeMessageBegin(new TMessage("oneWay", TMessageType.ONEWAY, 0));
-				oneWay_args args = new oneWay_args();
-				args.setId(id);
-				args.setReq(req);
-				args.write(oprot);
-				oprot.writeMessageEnd();
-				oprot.getTransport().flush();
-			}
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
+			oprot.writeRequestHeader(ctx);
+			oprot.writeMessageBegin(new TMessage("oneWay", TMessageType.ONEWAY, 0));
+			oneWay_args args = new oneWay_args();
+			args.setId(id);
+			args.setReq(req);
+			args.write(oprot);
+			oprot.writeMessageEnd();
+			transport.send(memoryBuffer.getWriteBytes());
 		}
 		public java.nio.ByteBuffer bin_method(FContext ctx, java.nio.ByteBuffer bin, String Str) throws TException, actual_base.java.api_exception {
-			FProtocol oprot = this.outputProtocol;
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			this.transport.register(ctx, recvBin_methodHandler(ctx, result));
+			transport.register(ctx, recvBin_methodHandler(ctx, result));
 			try {
-				synchronized (writeLock) {
-					oprot.writeRequestHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("bin_method", TMessageType.CALL, 0));
-					bin_method_args args = new bin_method_args();
-					args.setBin(bin);
-					args.setStr(Str);
-					args.write(oprot);
-					oprot.writeMessageEnd();
-					oprot.getTransport().flush();
-				}
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage("bin_method", TMessageType.CALL, 0));
+				bin_method_args args = new bin_method_args();
+				args.setBin(bin);
+				args.setStr(Str);
+				args.write(oprot);
+				oprot.writeMessageEnd();
+				transport.send(memoryBuffer.getWriteBytes());
 
 				Object res = null;
 				try {
@@ -471,7 +460,7 @@ public class FFoo {
 				}
 				throw new TApplicationException(TApplicationException.MISSING_RESULT, "bin_method failed: unknown result");
 			} finally {
-				this.transport.unregister(ctx);
+				transport.unregister(ctx);
 			}
 		}
 
@@ -526,21 +515,20 @@ public class FFoo {
 		}
 
 		public long param_modifiers(FContext ctx, int opt_num, int default_num, int req_num) throws TException {
-			FProtocol oprot = this.outputProtocol;
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			this.transport.register(ctx, recvParam_modifiersHandler(ctx, result));
+			transport.register(ctx, recvParam_modifiersHandler(ctx, result));
 			try {
-				synchronized (writeLock) {
-					oprot.writeRequestHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("param_modifiers", TMessageType.CALL, 0));
-					param_modifiers_args args = new param_modifiers_args();
-					args.setOpt_num(opt_num);
-					args.setDefault_num(default_num);
-					args.setReq_num(req_num);
-					args.write(oprot);
-					oprot.writeMessageEnd();
-					oprot.getTransport().flush();
-				}
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage("param_modifiers", TMessageType.CALL, 0));
+				param_modifiers_args args = new param_modifiers_args();
+				args.setOpt_num(opt_num);
+				args.setDefault_num(default_num);
+				args.setReq_num(req_num);
+				args.write(oprot);
+				oprot.writeMessageEnd();
+				transport.send(memoryBuffer.getWriteBytes());
 
 				Object res = null;
 				try {
@@ -560,7 +548,7 @@ public class FFoo {
 				}
 				throw new TApplicationException(TApplicationException.MISSING_RESULT, "param_modifiers failed: unknown result");
 			} finally {
-				this.transport.unregister(ctx);
+				transport.unregister(ctx);
 			}
 		}
 
@@ -615,20 +603,19 @@ public class FFoo {
 		}
 
 		public java.util.List<Long> underlying_types_test(FContext ctx, java.util.List<Long> list_type, java.util.Set<Long> set_type) throws TException {
-			FProtocol oprot = this.outputProtocol;
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			this.transport.register(ctx, recvUnderlying_types_testHandler(ctx, result));
+			transport.register(ctx, recvUnderlying_types_testHandler(ctx, result));
 			try {
-				synchronized (writeLock) {
-					oprot.writeRequestHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("underlying_types_test", TMessageType.CALL, 0));
-					underlying_types_test_args args = new underlying_types_test_args();
-					args.setList_type(list_type);
-					args.setSet_type(set_type);
-					args.write(oprot);
-					oprot.writeMessageEnd();
-					oprot.getTransport().flush();
-				}
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage("underlying_types_test", TMessageType.CALL, 0));
+				underlying_types_test_args args = new underlying_types_test_args();
+				args.setList_type(list_type);
+				args.setSet_type(set_type);
+				args.write(oprot);
+				oprot.writeMessageEnd();
+				transport.send(memoryBuffer.getWriteBytes());
 
 				Object res = null;
 				try {
@@ -648,7 +635,7 @@ public class FFoo {
 				}
 				throw new TApplicationException(TApplicationException.MISSING_RESULT, "underlying_types_test failed: unknown result");
 			} finally {
-				this.transport.unregister(ctx);
+				transport.unregister(ctx);
 			}
 		}
 
@@ -703,18 +690,17 @@ public class FFoo {
 		}
 
 		public Thing getThing(FContext ctx) throws TException {
-			FProtocol oprot = this.outputProtocol;
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			this.transport.register(ctx, recvGetThingHandler(ctx, result));
+			transport.register(ctx, recvGetThingHandler(ctx, result));
 			try {
-				synchronized (writeLock) {
-					oprot.writeRequestHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("getThing", TMessageType.CALL, 0));
-					getThing_args args = new getThing_args();
-					args.write(oprot);
-					oprot.writeMessageEnd();
-					oprot.getTransport().flush();
-				}
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage("getThing", TMessageType.CALL, 0));
+				getThing_args args = new getThing_args();
+				args.write(oprot);
+				oprot.writeMessageEnd();
+				transport.send(memoryBuffer.getWriteBytes());
 
 				Object res = null;
 				try {
@@ -734,7 +720,7 @@ public class FFoo {
 				}
 				throw new TApplicationException(TApplicationException.MISSING_RESULT, "getThing failed: unknown result");
 			} finally {
-				this.transport.unregister(ctx);
+				transport.unregister(ctx);
 			}
 		}
 
@@ -789,18 +775,17 @@ public class FFoo {
 		}
 
 		public int getMyInt(FContext ctx) throws TException {
-			FProtocol oprot = this.outputProtocol;
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			this.transport.register(ctx, recvGetMyIntHandler(ctx, result));
+			transport.register(ctx, recvGetMyIntHandler(ctx, result));
 			try {
-				synchronized (writeLock) {
-					oprot.writeRequestHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("getMyInt", TMessageType.CALL, 0));
-					getMyInt_args args = new getMyInt_args();
-					args.write(oprot);
-					oprot.writeMessageEnd();
-					oprot.getTransport().flush();
-				}
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage("getMyInt", TMessageType.CALL, 0));
+				getMyInt_args args = new getMyInt_args();
+				args.write(oprot);
+				oprot.writeMessageEnd();
+				transport.send(memoryBuffer.getWriteBytes());
 
 				Object res = null;
 				try {
@@ -820,7 +805,7 @@ public class FFoo {
 				}
 				throw new TApplicationException(TApplicationException.MISSING_RESULT, "getMyInt failed: unknown result");
 			} finally {
-				this.transport.unregister(ctx);
+				transport.unregister(ctx);
 			}
 		}
 

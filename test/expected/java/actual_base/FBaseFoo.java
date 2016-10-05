@@ -43,6 +43,7 @@ import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFunction;
 import com.workiva.frugal.protocol.*;
 import com.workiva.frugal.transport.FTransport;
+import com.workiva.frugal.transport.TMemoryOutputBuffer;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TMessage;
@@ -64,11 +65,10 @@ public class FBaseFoo {
 
 	public static class Client implements Iface {
 
-		protected final Object writeLock = new Object();
 		private Iface proxy;
 
 		public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {
-			Iface client = new InternalClient(transport, protocolFactory, writeLock);
+			Iface client = new InternalClient(transport, protocolFactory);
 			proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);
 		}
 
@@ -82,32 +82,23 @@ public class FBaseFoo {
 
 		private FTransport transport;
 		private FProtocolFactory protocolFactory;
-		private FProtocol inputProtocol;
-		private FProtocol outputProtocol;
-		private final Object writeLock;
-
-		public InternalClient(FTransport transport, FProtocolFactory protocolFactory, Object writeLock) {
+		public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {
 			this.transport = transport;
-			this.transport.setRegistry(new FClientRegistry());
 			this.protocolFactory = protocolFactory;
-			this.inputProtocol = this.protocolFactory.getProtocol(this.transport);
-			this.outputProtocol = this.protocolFactory.getProtocol(this.transport);
-			this.writeLock = writeLock;
 		}
 
 		public void basePing(FContext ctx) throws TException {
-			FProtocol oprot = this.outputProtocol;
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			this.transport.register(ctx, recvBasePingHandler(ctx, result));
+			transport.register(ctx, recvBasePingHandler(ctx, result));
 			try {
-				synchronized (writeLock) {
-					oprot.writeRequestHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("basePing", TMessageType.CALL, 0));
-					basePing_args args = new basePing_args();
-					args.write(oprot);
-					oprot.writeMessageEnd();
-					oprot.getTransport().flush();
-				}
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage("basePing", TMessageType.CALL, 0));
+				basePing_args args = new basePing_args();
+				args.write(oprot);
+				oprot.writeMessageEnd();
+				transport.send(memoryBuffer.getWriteBytes());
 
 				Object res = null;
 				try {
@@ -123,7 +114,7 @@ public class FBaseFoo {
 				}
 				basePing_result r = (basePing_result) res;
 			} finally {
-				this.transport.unregister(ctx);
+				transport.unregister(ctx);
 			}
 		}
 

@@ -19,6 +19,7 @@ public class FAdapterTransport extends FTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FAdapterTransport.class);
 
+    private final TTransport transport;
     private final TFramedTransport framedTransport;
     private ExecutorFactory executorFactory;
     private ExecutorService readExecutor;
@@ -40,6 +41,7 @@ public class FAdapterTransport extends FTransport {
      */
     public FAdapterTransport(TTransport tr) {
         super();
+        transport = tr;
         framedTransport = new TFramedTransport(tr);
         executorFactory = Executors::newSingleThreadExecutor;
     }
@@ -110,21 +112,14 @@ public class FAdapterTransport extends FTransport {
     }
 
     @Override
-    public void write(byte[] buff, int off, int len) throws TTransportException {
-        framedTransport.write(buff, off, len);
-    }
-
-    @Override
-    public void write(byte[] buff) throws TTransportException {
-        write(buff, 0, buff.length);
-    }
-
-    @Override
-    public void flush() throws TTransportException {
+    public synchronized void send(byte[] payload) throws TTransportException {
         if (!isOpen()) {
             throw new TTransportException(TTransportException.NOT_OPEN);
         }
-        framedTransport.flush();
+        // We need to write to the wrapped transport, not the framed transport, since
+        // data given to send is already framed.
+        transport.write(payload);
+        transport.flush();
     }
 
     protected Runnable newTransportReader() {
@@ -152,7 +147,7 @@ public class FAdapterTransport extends FTransport {
                 }
 
                 try {
-                    getRegistry().execute(frame);
+                    registry.execute(frame);
                 } catch (TException e) {
                     LOGGER.error("closing transport due to unrecoverable error processing frame: " + e.getMessage());
                     close(e);

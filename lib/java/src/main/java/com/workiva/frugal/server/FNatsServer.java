@@ -2,9 +2,8 @@ package com.workiva.frugal.server;
 
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.protocol.FProtocolFactory;
-import com.workiva.frugal.transport.FBoundedMemoryBuffer;
+import com.workiva.frugal.transport.TMemoryOutputBuffer;
 import com.workiva.frugal.util.BlockingRejectedExecutionHandler;
-import com.workiva.frugal.util.ProtocolUtils;
 import io.nats.client.Connection;
 import io.nats.client.MessageHandler;
 import io.nats.client.Subscription;
@@ -293,8 +292,8 @@ public class FNatsServer implements FServer {
             // Read and process frame (exclude first 4 bytes which represent frame size).
             byte[] frame = Arrays.copyOfRange(frameBytes, 4, frameBytes.length);
             TTransport input = new TMemoryInputTransport(frame);
-            // Buffer 1MB - 4 bytes since frame size is copied directly.
-            FBoundedMemoryBuffer output = new FBoundedMemoryBuffer(NATS_MAX_MESSAGE_SIZE - 4);
+
+            TMemoryOutputBuffer output = new TMemoryOutputBuffer(NATS_MAX_MESSAGE_SIZE);
             try {
                 processor.process(inputProtoFactory.getProtocol(input), outputProtoFactory.getProtocol(output));
             } catch (TException e) {
@@ -302,18 +301,13 @@ public class FNatsServer implements FServer {
                 return;
             }
 
-            if (output.length() == 0) {
+            if (!output.hasWriteData()) {
                 return;
             }
 
-            // Add frame size (4-byte int32).
-            byte[] response = new byte[output.length() + 4];
-            ProtocolUtils.writeInt(output.length(), response, 0);
-            System.arraycopy(output.getArray(), 0, response, 4, output.length());
-
             // Send response.
             try {
-                conn.publish(reply, response);
+                conn.publish(reply, output.getWriteBytes());
             } catch (IOException e) {
                 LOGGER.warn("failed to send response: " + e.getMessage());
             }
