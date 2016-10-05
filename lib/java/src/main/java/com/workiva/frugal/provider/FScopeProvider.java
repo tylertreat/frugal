@@ -2,29 +2,32 @@ package com.workiva.frugal.provider;
 
 import com.workiva.frugal.protocol.FProtocol;
 import com.workiva.frugal.protocol.FProtocolFactory;
-import com.workiva.frugal.transport.FScopeTransport;
-import com.workiva.frugal.transport.FScopeTransportFactory;
+import com.workiva.frugal.transport.FPublisherTransport;
+import com.workiva.frugal.transport.FPublisherTransportFactory;
+import com.workiva.frugal.transport.FSubscriberTransport;
+import com.workiva.frugal.transport.FSubscriberTransportFactory;
 
 /**
- * FScopeProvider produces FScopeTransports and FProtocols for use by pub/sub
- * scopes. It does this by wrapping an FScopeTransportFactory and
+ * FScopeProvider produces FPublisherTransports, FSubscriberTransports, and
+ * FProtocols for use by pub/sub scopes. It does this by wrapping an
+ * FPublisherTransportFactory, an FSubscriberTransportFactory, and an
  * FProtocolFactory.
  */
 public class FScopeProvider {
 
     /**
-     * Client of this scope.
+     * PublisherClient of this scope.
      */
-    public class Client {
-        private FScopeTransport transport;
+    public class PublisherClient {
+        private FPublisherTransport transport;
         private FProtocol protocol;
 
-        public Client(FScopeTransport t, FProtocol p) {
+        public PublisherClient(FPublisherTransport t, FProtocol p) {
             transport = t;
             protocol = p;
         }
 
-        public FScopeTransport getTransport() {
+        public FPublisherTransport getTransport() {
             return transport;
         }
 
@@ -33,22 +36,58 @@ public class FScopeProvider {
         }
     }
 
-    private FScopeTransportFactory transportFactory;
+    /**
+     * SubscriberClient of this scope.
+     */
+    public class SubscriberClient {
+        private FSubscriberTransport transport;
+        private FProtocolFactory protocolFactory;
+
+        public SubscriberClient(FSubscriberTransport t, FProtocolFactory pf) {
+            transport = t;
+            protocolFactory = pf;
+        }
+
+        public FSubscriberTransport getTransport() {
+            return transport;
+        }
+
+        public FProtocolFactory getProtocolFactory() {
+            return protocolFactory;
+        }
+    }
+
+    private FPublisherTransportFactory publisherTransportFactory;
+    private FSubscriberTransportFactory subscriberTransportFactory;
     private FProtocolFactory protocolFactory;
 
-    public FScopeProvider(FScopeTransportFactory f, FProtocolFactory p) {
-        transportFactory = f;
-        protocolFactory = p;
+    public FScopeProvider(FPublisherTransportFactory ptf, FSubscriberTransportFactory stf,
+                          FProtocolFactory pf) {
+        publisherTransportFactory = ptf;
+        subscriberTransportFactory = stf;
+        protocolFactory = pf;
     }
 
     /**
-     * Returns a new Client containing a FScopeTransport and FProtocol used for pub/sub.
+     * Returns a new PublisherClient containing an FPublisherTransport and FProtocol
+     * used for publishing.
      *
-     * @return Client with FScopeTransport and FProtocol.
+     * @return PublisherClient with FPublisherTransport and FProtocol.
      */
-    public Client build() {
-        FScopeTransport transport = transportFactory.getTransport();
+    public PublisherClient buildPublisher() {
+        FPublisherTransport transport = publisherTransportFactory.getTransport();
         FProtocol protocol = protocolFactory.getProtocol(transport);
-        return new Client(transport, protocol);
+        return new PublisherClient(transport, protocol);
+    }
+
+    /**
+     * Returns a new SubscriberClient containing an FSubscriberTransport and
+     * FProtocolFactory used for subscribing.
+     *
+     * @return SubscriberClient with FSubscriberTransport and FProtocol.
+     */
+    public SubscriberClient buildSubscriber() {
+        FSubscriberTransport transport = subscriberTransportFactory.getTransport();
+        return new SubscriberClient(transport, protocolFactory);
     }
 }
