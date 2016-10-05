@@ -1151,7 +1151,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += tab + "frugal.Lock _writeLock;\n\n"
 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
-	publishers += tabtab + "fTransport = provider.fTransportFactory.getTransport();\n"
+	publishers += tabtab + "fTransport = provider.fPublisherTransportFactory.getTransport();\n"
 	publishers += tabtab + "fProtocol = provider.fProtocolFactory.getProtocol(fTransport);\n"
 	publishers += tabtab + "_writeLock = new frugal.Lock();\n"
 	publishers += tabtab + "this._methods = {};\n"
@@ -1263,7 +1263,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		subscribers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		subscribers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
-		subscribers += tabtab + "var transport = provider.fTransportFactory.getTransport();\n"
+		subscribers += tabtab + "var transport = provider.fSubscriberTransportFactory.getTransport();\n"
 		subscribers += fmt.Sprintf(tabtab+"await transport.subscribe(topic, _recv%s(op, provider.fProtocolFactory, on%s));\n",
 			op.Name, op.Type.ParamName())
 		subscribers += tabtab + "return new frugal.FSubscription(topic, transport);\n"

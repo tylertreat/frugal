@@ -1,13 +1,16 @@
 part of frugal;
 
-/// FScopeProvider produces FScopeTransports and FProtocols for use by pub/sub
-/// scopes. It does this by wrapping an FScopeTransportFactory and
+/// FScopeProvider produces FPublisherTransports, FSubscriberTransports, and
+/// FProtocols for use by pub/sub scopes. It does this by wrapping an
+/// FPublisherTransportFactory, an FSubscriberTransportFactory, and an
 /// FProtocolFactory.
 class FScopeProvider {
-  final FScopeTransportFactory fTransportFactory;
+  final FPublisherTransportFactory fPublisherTransportFactory;
+  final FSubscriberTransportFactory fSubscriberTransportFactory;
   final FProtocolFactory fProtocolFactory;
 
-  FScopeProvider(this.fTransportFactory, this.fProtocolFactory);
+  FScopeProvider(this.fPublisherTransportFactory,
+      this.fSubscriberTransportFactory, this.fProtocolFactory);
 }
 
 /// FServiceProvider is the service equivalent of FScopeProvider. It produces

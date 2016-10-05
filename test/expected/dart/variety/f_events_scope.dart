@@ -23,7 +23,7 @@ class EventsPublisher {
   frugal.Lock _writeLock;
 
   EventsPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
-    fTransport = provider.fTransportFactory.getTransport();
+    fTransport = provider.fPublisherTransportFactory.getTransport();
     fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
     _writeLock = new frugal.Lock();
     this._methods = {};
@@ -78,7 +78,7 @@ class EventsSubscriber {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
-    var transport = provider.fTransportFactory.getTransport();
+    var transport = provider.fSubscriberTransportFactory.getTransport();
     await transport.subscribe(topic, _recvEventCreated(op, provider.fProtocolFactory, onEvent));
     return new frugal.FSubscription(topic, transport);
   }
