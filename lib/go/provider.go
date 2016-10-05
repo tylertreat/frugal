@@ -27,10 +27,9 @@ func (p *FScopeProvider) NewPublisher() (FPublisherTransport, *FProtocol) {
 	return transport, protocol
 }
 
-// NewSubscriber returns a new FSubscriberTransport and FProtocol used by
+// NewSubscriber returns a new FSubscriberTransport and FProtocolFactory used by
 // scope subscribers.
-func (p *FScopeProvider) NewSubscriber() (FSubscriberTransport, *FProtocol) {
+func (p *FScopeProvider) NewSubscriber() (FSubscriberTransport, *FProtocolFactory) {
 	transport := p.subscriberTransportFactory.GetTransport()
-	protocol := p.protocolFactory.GetProtocol(transport)
-	return transport, protocol
+	return transport, p.protocolFactory
 }

@@ -23,7 +23,7 @@ func NewFSubscription(topic string, transport FSubscriberTransport) *FSubscripti
 
 // Unsubscribe from the topic.
 func (s *FSubscription) Unsubscribe() error {
-	return s.transport.Close()
+	return s.transport.Unsubscribe()
 }
 
 // Topic returns the subscription topic name.

@@ -67,16 +67,11 @@ type FSubscriberTransportFactory interface {
 // FSubscriberTransport extends Thrift's TTransport and is used exclusively for
 // pub/sub scopes. Subscribers use it to subscribe to a pub/sub topic.
 type FSubscriberTransport interface {
-	thrift.TTransport
-
 	// Subscribe sets the subscribe topic and opens the transport.
-	Subscribe(string) error
+	Subscribe(string, FAsyncCallback) error
 
-	// DiscardFrame discards the current message frame the transport is
-	// reading, if any. After calling this, a subsequent call to Read will read
-	// from the next frame. This must be called from the same goroutine as the
-	// goroutine calling Read.
-	DiscardFrame()
+	// Unsubscribe unsubscribes from the topic and closes the transport.
+	Unsubscribe() error
 }
 
 // FTransport is Frugal's equivalent of Thrift's TTransport. FTransport extends

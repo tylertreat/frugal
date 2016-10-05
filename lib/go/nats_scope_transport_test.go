@@ -79,7 +79,7 @@ func TestNatsPublisherLockUnlockTopic(t *testing.T) {
 // Ensures Subscribe subscribes to the topic on NATS and puts received frames
 // on the read buffer and received in Read calls. All subscribers receive the
 // message when they aren't subscribed to a queue.
-func TestNatsSubscriberRead(t *testing.T) {
+func TestNatsSubscriberSubscribe(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
 	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
@@ -90,32 +90,34 @@ func TestNatsSubscriberRead(t *testing.T) {
 	tr1 := NewNatsFSubscriberTransport(conn)
 	tr2 := NewNatsFSubscriberTransport(conn)
 
-	assert.Nil(t, tr1.Subscribe("foo"))
-	assert.Nil(t, tr2.Subscribe("foo"))
+	cb1Called := make(chan bool, 1)
+	cb1 := func(transport thrift.TTransport) error {
+		cb1Called <- true
+		return nil
+	}
+	cb2Called := make(chan bool, 1)
+	cb2 := func(transport thrift.TTransport) error {
+		cb2Called <- true
+		return nil
+	}
+
+	assert.Nil(t, tr1.Subscribe("foo", cb1))
+	assert.Nil(t, tr2.Subscribe("foo", cb2))
 
 	frame := make([]byte, 50)
 	assert.Nil(t, conn.Publish("frugal.foo", append(make([]byte, 4), frame...))) // Add 4 bytes for frame size
 
-	// Both transports should receive the frame.
-	frameBuff := []byte{}
-	buff := make([]byte, 10)
-	for i := 0; i < 5; i++ {
-		n, err := tr1.Read(buff)
-		assert.Nil(t, err)
-		assert.Equal(t, 10, n)
-		frameBuff = append(frameBuff, buff...)
+	select {
+	case <-cb1Called:
+	case <-time.After(time.Second):
+		assert.True(t, false, "Callback1 was not called")
 	}
-	assert.Equal(t, frame, frameBuff)
 
-	frameBuff = []byte{}
-	buff = make([]byte, 10)
-	for i := 0; i < 5; i++ {
-		n, err := tr2.Read(buff)
-		assert.Nil(t, err)
-		assert.Equal(t, 10, n)
-		frameBuff = append(frameBuff, buff...)
+	select {
+	case <-cb2Called:
+	case <-time.After(time.Second):
+		assert.True(t, false, "Callback2 was not called")
 	}
-	assert.Equal(t, frame, frameBuff)
 }
 
 // Ensures Subscribe subscribes to the topic on NATS and puts received frames
@@ -132,8 +134,18 @@ func TestNatsSubscriberSubscribeQueue(t *testing.T) {
 	tr1 := NewNatsFSubscriberTransportWithQueue(conn, "fooqueue")
 	tr2 := NewNatsFSubscriberTransportWithQueue(conn, "fooqueue")
 
-	assert.Nil(t, tr1.Subscribe("foo"))
-	assert.Nil(t, tr2.Subscribe("foo"))
+	cb1Called := make(chan bool, 1)
+	cb1 := func(transport thrift.TTransport) error {
+		cb1Called <- true
+		return nil
+	}
+	cb2Called := make(chan bool, 1)
+	cb2 := func(transport thrift.TTransport) error {
+		cb2Called <- true
+		return nil
+	}
+	assert.Nil(t, tr1.Subscribe("foo", cb1))
+	assert.Nil(t, tr2.Subscribe("foo", cb2))
 
 	frame := make([]byte, 50)
 	assert.Nil(t, conn.Publish("frugal.foo", append(make([]byte, 4), frame...))) // Add 4 bytes for frame size
@@ -141,39 +153,8 @@ func TestNatsSubscriberSubscribeQueue(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	// Only one of the two transports should have received the frame.
-	received := false
-	select {
-	case fr := <-tr1.(*fNatsSubscriberTransport).frameBuffer:
-		assert.Equal(t, frame, fr)
-		received = true
-	default:
-	}
-	select {
-	case fr := <-tr2.(*fNatsSubscriberTransport).frameBuffer:
-		assert.False(t, received)
-		assert.Equal(t, frame, fr)
-		received = true
-	default:
-	}
 
-	assert.True(t, received)
-}
-
-// Ensures Read returns an EOF if the transport is not open.
-func TestNatsSubscriberReadNotOpen(t *testing.T) {
-	s := runServer(nil)
-	defer s.Shutdown()
-	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer conn.Close()
-	tr := NewNatsFSubscriberTransport(conn)
-
-	n, err := tr.Read(make([]byte, 5))
-	assert.Equal(t, 0, n)
-	trErr := err.(thrift.TTransportException)
-	assert.Equal(t, thrift.END_OF_FILE, trErr.TypeId())
+	assert.True(t, len(cb1Called) != len(cb2Called))
 }
 
 // Ensures Subscribe returns an error if the NATS connection is not open.
@@ -187,7 +168,9 @@ func TestNatsSubscriberSubscribeConnectionNotOpen(t *testing.T) {
 	tr := NewNatsFSubscriberTransport(conn)
 	conn.Close()
 
-	assert.Error(t, tr.Subscribe("foo"))
+	assert.Error(t, tr.Subscribe("foo", func(thrift.TTransport) error {
+		return nil
+	}))
 }
 
 // Ensures Open returns nil on success and writes work.
@@ -252,27 +235,19 @@ func TestNatsSubscriberDiscardInvalidFrame(t *testing.T) {
 	}
 	defer conn.Close()
 	tr := NewNatsFSubscriberTransport(conn)
-	assert.Nil(t, tr.Subscribe("blah"))
 
-	closed := make(chan bool)
-	go func() {
-		buff := make([]byte, 3)
-		n, err := tr.Read(buff)
-		assert.Equal(t, 0, n)
-		trErr := err.(thrift.TTransportException)
-		assert.Equal(t, thrift.END_OF_FILE, trErr.TypeId())
-		closed <- true
-	}()
+	cbCalled := false
+	cb := func(transport thrift.TTransport) error {
+		cbCalled = true
+		return nil
+	}
+	assert.Nil(t, tr.Subscribe("blah", cb))
 
 	assert.Nil(t, conn.Publish("frugal.blah", make([]byte, 2)))
 	assert.Nil(t, conn.Flush())
 	time.Sleep(10 * time.Millisecond)
-	assert.Nil(t, tr.Close())
-	select {
-	case <-closed:
-	case <-time.After(time.Second):
-		t.Fatal("expected transport to close")
-	}
+	assert.Nil(t, tr.Unsubscribe())
+	assert.False(t, cbCalled)
 }
 
 // Ensures Close returns nil if the transport is not open.
@@ -284,7 +259,6 @@ func TestNatsPublisherCloseNotOpen(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer conn.Close()
-	// TODO
 	tr := NewNatsFPublisherTransport(conn)
 	assert.Nil(t, tr.Close())
 	assert.False(t, tr.IsOpen())
@@ -316,9 +290,11 @@ func TestNatsCloseSubscriberError(t *testing.T) {
 		t.Fatal(err)
 	}
 	tr := NewNatsFSubscriberTransport(conn)
-	assert.Nil(t, tr.Subscribe("foo"))
+	assert.Nil(t, tr.Subscribe("foo", func(thrift.TTransport) error {
+		return nil
+	}))
 	conn.Close()
-	assert.Error(t, tr.Close())
+	assert.Error(t, tr.Unsubscribe())
 }
 
 // Ensures Write returns an ErrTooLarge if the written frame exceeds 1MB.
@@ -378,10 +354,4 @@ func TestNatsPublisherFlushNoData(t *testing.T) {
 	assert.Nil(t, tr.Flush())
 	assert.Nil(t, conn.Flush())
 	time.Sleep(10 * time.Millisecond)
-}
-
-// Ensures RemainingBytes returns max uint64.
-func TestNatsSubscriberRemainingBytes(t *testing.T) {
-	tr := NewNatsFSubscriberTransport(nil)
-	assert.Equal(t, ^uint64(0), tr.RemainingBytes())
 }

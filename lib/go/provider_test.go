@@ -72,13 +72,13 @@ func TestScopeProviderNew(t *testing.T) {
 
 	proto := new(thrift.TBinaryProtocol)
 	mockTProtocolFactory.On("GetProtocol", publisherTransport).Return(proto)
-	mockTProtocolFactory.On("GetProtocol", subscriberTransport).Return(proto)
 
 	ptransport, protocol := provider.NewPublisher()
-	stransport, protocol := provider.NewSubscriber()
+	stransport, protocolFactory := provider.NewSubscriber()
 	assert.Equal(t, publisherTransport, ptransport)
 	assert.Equal(t, subscriberTransport, stransport)
 	assert.Equal(t, proto, protocol.TProtocol)
+	assert.Equal(t, protocolFactory, protoFactory)
 	mockPublisherTransportFactory.AssertExpectations(t)
 	mockSubscriberTransportFactory.AssertExpectations(t)
 	mockTProtocolFactory.AssertExpectations(t)

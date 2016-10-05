@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"sync"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -186,9 +185,7 @@ type fNatsSubscriberTransport struct {
 	conn         *nats.Conn
 	subject      string
 	queue        string
-	frameBuffer  chan []byte
-	closeChan    chan struct{}
-	currentFrame []byte
+	callback     FAsyncCallback
 	sub          *nats.Subscription
 	openMu       sync.RWMutex
 	isOpen       bool
@@ -210,15 +207,16 @@ func NewNatsFSubscriberTransportWithQueue(conn *nats.Conn, queue string) FSubscr
 }
 
 // Subscribe sets the subscribe topic and opens the transport.
-func (n *fNatsSubscriberTransport) Subscribe(topic string) error {
+func (n *fNatsSubscriberTransport) Subscribe(topic string, callback FAsyncCallback) error {
 	n.subject = topic
-	return n.Open()
+	n.callback = callback
+	return n.open()
 }
 
 // Open initializes the transport based on whether it's a publisher or
 // subscriber. If Open is called before Subscribe, the transport is assumed to
 // be a publisher.
-func (n *fNatsSubscriberTransport) Open() error {
+func (n *fNatsSubscriberTransport) open() error {
 	n.openMu.Lock()
 	defer n.openMu.Unlock()
 	if n.conn.Status() != nats.CONNECTED {
@@ -235,9 +233,6 @@ func (n *fNatsSubscriberTransport) Open() error {
 			"cannot subscribe to empty subject")
 	}
 
-	n.closeChan = make(chan struct{})
-	n.frameBuffer = make(chan []byte, frameBufferSize)
-
 	sub, err := n.conn.QueueSubscribe(n.formattedSubject(), n.queue, n.handleMessage)
 	if err != nil {
 		return thrift.NewTTransportExceptionFromError(err)
@@ -252,10 +247,9 @@ func (n *fNatsSubscriberTransport) handleMessage(msg *nats.Msg) {
 		logger().Warn("frugal: Discarding invalid scope message frame")
 		return
 	}
-	// Discard frame size.
-	select {
-	case n.frameBuffer <- msg.Data[4:]:
-	case <-n.closeChan:
+	transport := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(msg.Data[4:])}
+	if err := n.callback(transport); err != nil {
+		logger().Warn("frugal: error executing callback: ", err)
 	}
 }
 
@@ -276,7 +270,7 @@ func (n *fNatsSubscriberTransport) getClosedConditionError(prefix string) error 
 
 // Close unsubscribes in the case of a subscriber and clears the buffer in the
 // case of a publisher.
-func (n *fNatsSubscriberTransport) Close() error {
+func (n *fNatsSubscriberTransport) Unsubscribe() error {
 	n.openMu.Lock()
 	defer n.openMu.Unlock()
 	if !n.isOpen {
@@ -287,50 +281,8 @@ func (n *fNatsSubscriberTransport) Close() error {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	n.sub = nil
-	close(n.closeChan)
 	n.isOpen = false
 	return nil
-}
-
-func (n *fNatsSubscriberTransport) Read(p []byte) (int, error) {
-	if !n.IsOpen() {
-		return 0, thrift.NewTTransportExceptionFromError(io.EOF)
-	}
-	if len(n.currentFrame) == 0 {
-		select {
-		case frame := <-n.frameBuffer:
-			n.currentFrame = frame
-		case <-n.closeChan:
-			return 0, thrift.NewTTransportExceptionFromError(io.EOF)
-		}
-	}
-	num := copy(p, n.currentFrame)
-	// TODO: We could be more efficient here. If the provided buffer isn't
-	// full, we could attempt to get the next frame.
-
-	n.currentFrame = n.currentFrame[num:]
-	return num, nil
-}
-
-// DiscardFrame discards the current message frame the transport is reading, if
-// any. After calling this, a subsequent call to Read will read from the next
-// frame. This must be called from the same goroutine as the goroutine calling
-// Read.
-func (n *fNatsSubscriberTransport) DiscardFrame() {
-	n.currentFrame = nil
-}
-
-func (n *fNatsSubscriberTransport) Write(p []byte) (int, error) {
-	return 0, errors.New("subscriber: can't call flush")
-}
-
-func (n *fNatsSubscriberTransport) Flush() error {
-	return errors.New("subscriber: can't call flush")
-}
-
-
-func (n *fNatsSubscriberTransport) RemainingBytes() uint64 {
-	return ^uint64(0) // We don't know unless framed is used.
 }
 
 func (n *fNatsSubscriberTransport) formattedSubject() string {
