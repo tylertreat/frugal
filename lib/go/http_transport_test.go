@@ -44,6 +44,8 @@ func (m *mockFProcessorForHttp) Process(iprot, oprot *FProtocol) error {
 	return nil
 }
 
+func (m *mockFProcessorForHttp) AddMiddleware(middleware ServiceMiddleware) {}
+
 type mockWriteCloser struct {
 	writeErr error
 	closeErr error

@@ -1807,7 +1807,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	}
 	for _, method := range service.Methods {
 		contents += fmt.Sprintf(
-			"\tp.AddToProcessorMap(\"%s\", &%sF%s{handler: frugal.NewMethod(handler, handler.%s, \"%s\", middleware), writeMu: p.GetWriteMutex()})\n",
+			"\tp.AddToProcessorMap(\"%s\", &%sF%s{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.%s, \"%s\", middleware))})\n",
 			generator.LowercaseFirstLetter(method.Name), servLower, snakeToCamel(method.Name), snakeToCamel(method.Name), snakeToCamel(method.Name))
 	}
 
@@ -1826,8 +1826,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	)
 
 	contents := fmt.Sprintf("type %sF%s struct {\n", servLower, nameTitle)
-	contents += "\thandler *frugal.Method\n"
-	contents += "\twriteMu *sync.Mutex\n"
+	contents += "\t*frugal.FBaseProcessorFunction\n"
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf("func (p *%sF%s) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {\n", servLower, nameTitle)
@@ -1836,9 +1835,9 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\tif err = args.Read(iprot); err != nil {\n"
 	contents += "\t\tiprot.ReadMessageEnd()\n"
 	if !method.Oneway {
-		contents += "\t\tp.writeMu.Lock()\n"
+		contents += "\t\tp.GetWriteMutex().Lock()\n"
 		contents += fmt.Sprintf("\t\t%sWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, \"%s\", err.Error())\n", servLower, nameLower)
-		contents += "\t\tp.writeMu.Unlock()\n"
+		contents += "\t\tp.GetWriteMutex().Unlock()\n"
 	}
 	contents += "\t\treturn err\n"
 	contents += "\t}\n\n"
@@ -1851,7 +1850,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	if method.ReturnType != nil {
 		contents += fmt.Sprintf("\tvar retval %s\n", g.getGoTypeFromThriftType(method.ReturnType))
 	}
-	contents += fmt.Sprintf("\tret := p.handler.Invoke(%s)\n", g.generateHandlerArgs(method))
+	contents += fmt.Sprintf("\tret := p.InvokeMethod(%s)\n", g.generateHandlerArgs(method))
 	numReturn := "2"
 	if method.ReturnType == nil {
 		numReturn = "1"
@@ -1898,8 +1897,8 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 		return contents
 	}
 
-	contents += "\tp.writeMu.Lock()\n"
-	contents += "\tdefer p.writeMu.Unlock()\n"
+	contents += "\tp.GetWriteMutex().Lock()\n"
+	contents += "\tdefer p.GetWriteMutex().Unlock()\n"
 	contents += "\tif err2 = oprot.WriteResponseHeader(ctx); err2 != nil {\n"
 	contents += g.generateErrTooLarge(service, method)
 	contents += "\t}\n"
@@ -1975,11 +1974,11 @@ func (g *Generator) generateMethodException(prefix string, service *parser.Servi
 	servLower := strings.ToLower(service.Name)
 	nameLower := generator.LowercaseFirstLetter(method.Name)
 	if !method.Oneway {
-		contents += prefix + "p.writeMu.Lock()\n"
+		contents += prefix + "p.GetWriteMutex().Lock()\n"
 		msg := fmt.Sprintf("\"Internal error processing %s: \"+err2.Error()", nameLower)
 		contents += fmt.Sprintf(
 			prefix+"%sWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, \"%s\", %s)\n", servLower, nameLower, msg)
-		contents += prefix + "p.writeMu.Unlock()\n"
+		contents += prefix + "p.GetWriteMutex().Unlock()\n"
 	}
 	contents += prefix + "return err2\n"
 	return contents
