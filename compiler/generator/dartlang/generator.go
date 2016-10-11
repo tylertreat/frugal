@@ -1145,14 +1145,14 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += g.GenerateInlineComment(scope.Comment, "/")
 	}
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
-	publishers += tab + "frugal.FScopeTransport fTransport;\n"
-	publishers += tab + "frugal.FProtocol fProtocol;\n"
+	publishers += tab + "frugal.FScopeTransport transport;\n"
+	publishers += tab + "frugal.FProtocol protocol;\n"
 	publishers += tab + "Map<String, frugal.FMethod> _methods;\n"
 	publishers += tab + "frugal.Lock _writeLock;\n\n"
 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
-	publishers += tabtab + "fTransport = provider.fPublisherTransportFactory.getTransport();\n"
-	publishers += tabtab + "fProtocol = provider.fProtocolFactory.getProtocol(fTransport);\n"
+	publishers += tabtab + "transport = provider.publisherTransportFactory.getTransport();\n"
+	publishers += tabtab + "protocol = provider.protocolFactory.getProtocol(transport);\n"
 	publishers += tabtab + "_writeLock = new frugal.Lock();\n"
 	publishers += tabtab + "this._methods = {};\n"
 	for _, operation := range scope.Operations {
@@ -1162,11 +1162,11 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += tab + "}\n\n"
 
 	publishers += tab + "Future open() {\n"
-	publishers += tabtab + "return fTransport.open();\n"
+	publishers += tabtab + "return transport.open();\n"
 	publishers += tab + "}\n\n"
 
 	publishers += tab + "Future close() {\n"
-	publishers += tabtab + "return fTransport.close();\n"
+	publishers += tabtab + "return transport.close();\n"
 	publishers += tab + "}\n\n"
 
 	args := ""
@@ -1195,8 +1195,8 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += fmt.Sprintf(tabtabtab+"var op = \"%s\";\n", op.Name)
 		publishers += fmt.Sprintf(tabtabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
-		publishers += tabtabtab + "fTransport.setTopic(topic);\n"
-		publishers += tabtabtab + "var oprot = fProtocol;\n"
+		publishers += tabtabtab + "transport.setTopic(topic);\n"
+		publishers += tabtabtab + "var oprot = protocol;\n"
 		publishers += tabtabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);\n"
 		publishers += tabtabtab + "oprot.writeRequestHeader(ctx);\n"
 		publishers += tabtabtab + "oprot.writeMessageBegin(msg);\n"
@@ -1263,8 +1263,8 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		subscribers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		subscribers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
-		subscribers += tabtab + "var transport = provider.fSubscriberTransportFactory.getTransport();\n"
-		subscribers += fmt.Sprintf(tabtab+"await transport.subscribe(topic, _recv%s(op, provider.fProtocolFactory, on%s));\n",
+		subscribers += tabtab + "var transport = provider.subscriberTransportFactory.getTransport();\n"
+		subscribers += fmt.Sprintf(tabtab+"await transport.subscribe(topic, _recv%s(op, provider.protocolFactory, on%s));\n",
 			op.Name, op.Type.ParamName())
 		subscribers += tabtab + "return new frugal.FSubscription(topic, transport);\n"
 		subscribers += tab + "}\n\n"

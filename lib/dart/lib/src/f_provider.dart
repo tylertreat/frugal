@@ -5,19 +5,19 @@ part of frugal;
 /// FPublisherTransportFactory, an FSubscriberTransportFactory, and an
 /// FProtocolFactory.
 class FScopeProvider {
-  final FPublisherTransportFactory fPublisherTransportFactory;
-  final FSubscriberTransportFactory fSubscriberTransportFactory;
-  final FProtocolFactory fProtocolFactory;
+  final FPublisherTransportFactory publisherTransportFactory;
+  final FSubscriberTransportFactory subscriberTransportFactory;
+  final FProtocolFactory protocolFactory;
 
-  FScopeProvider(this.fPublisherTransportFactory,
-      this.fSubscriberTransportFactory, this.fProtocolFactory);
+  FScopeProvider(this.publisherTransportFactory,
+      this.subscriberTransportFactory, this.protocolFactory);
 }
 
 /// FServiceProvider is the service equivalent of FScopeProvider. It produces
 /// FTransports and FProtocols for use by RPC service clients.
 class FServiceProvider {
-  final FTransport fTransport;
-  final FProtocolFactory fProtocolFactory;
+  final FTransport transport;
+  final FProtocolFactory protocolFactory;
 
-  FServiceProvider(this.fTransport, this.fProtocolFactory);
+  FServiceProvider(this.transport, this.protocolFactory);
 }

@@ -17,25 +17,25 @@ const String delimiter = '.';
 /// the @ sign. Prefix specifies topic prefix tokens, which can be static or
 /// variable.
 class EventsPublisher {
-  frugal.FScopeTransport fTransport;
-  frugal.FProtocol fProtocol;
+  frugal.FScopeTransport transport;
+  frugal.FProtocol protocol;
   Map<String, frugal.FMethod> _methods;
   frugal.Lock _writeLock;
 
   EventsPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
-    fTransport = provider.fPublisherTransportFactory.getTransport();
-    fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
+    transport = provider.publisherTransportFactory.getTransport();
+    protocol = provider.protocolFactory.getProtocol(transport);
     _writeLock = new frugal.Lock();
     this._methods = {};
     this._methods['EventCreated'] = new frugal.FMethod(this._publishEventCreated, 'Events', 'publishEventCreated', middleware);
   }
 
   Future open() {
-    return fTransport.open();
+    return transport.open();
   }
 
   Future close() {
-    return fTransport.close();
+    return transport.close();
   }
 
   /// This is a docstring.
@@ -49,8 +49,8 @@ class EventsPublisher {
       var op = "EventCreated";
       var prefix = "foo.${user}.";
       var topic = "${prefix}Events${delimiter}${op}";
-      fTransport.setTopic(topic);
-      var oprot = fProtocol;
+      transport.setTopic(topic);
+      var oprot = protocol;
       var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(msg);
@@ -78,8 +78,8 @@ class EventsSubscriber {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
-    var transport = provider.fSubscriberTransportFactory.getTransport();
-    await transport.subscribe(topic, _recvEventCreated(op, provider.fProtocolFactory, onEvent));
+    var transport = provider.subscriberTransportFactory.getTransport();
+    await transport.subscribe(topic, _recvEventCreated(op, provider.protocolFactory, onEvent));
     return new frugal.FSubscription(topic, transport);
   }
 
