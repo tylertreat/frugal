@@ -79,7 +79,7 @@ func (n *fNatsPublisherTransport) Open() error {
 		return thrift.NewTTransportException(thrift.ALREADY_OPEN, "frugal: NATS transport already open")
 	}
 
-	n.writeBuffer = bytes.NewBuffer(make([]byte, 0, natsMaxMessageSize))
+	n.writeBuffer = bytes.NewBuffer([]byte{})
 	n.sizeBuffer = make([]byte, 4)
 	n.isOpen = true
 	return nil
