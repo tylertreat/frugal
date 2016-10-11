@@ -28,17 +28,16 @@ func TestFStatelessNatsServer(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 	defer server.Stop()
 
-	tr := NewFNatsTransport(conn, "foo", "bar")
+	tr := NewFNatsTransport(conn, "foo", "bar").(*fNatsTransport)
 	r := &mockFRegistry{}
 	r.On("Execute", []byte{0, 0, 0, 3, 102, 111, 111}).Return(nil)
-	tr.SetRegistry(r)
+	tr.registry = r
 
 	assert.Nil(t, tr.Open())
 
 	// Send a request.
-	_, err = tr.Write([]byte("xxxxhello"))
-	assert.Nil(t, err)
-	assert.Nil(t, tr.Flush())
+	message := []byte{0, 0, 0, 5, 1, 2, 3, 4, 5}
+	assert.Nil(t, tr.Send(message))
 	time.Sleep(50 * time.Millisecond)
 	r.AssertExpectations(t)
 }
@@ -48,7 +47,7 @@ type processor struct {
 }
 
 func (p *processor) Process(in, out *FProtocol) error {
-	assert.Equal(p.t, "xxxxhello", string(in.Transport().(*thrift.TMemoryBuffer).Bytes()))
+	assert.Equal(p.t, []byte{1, 2, 3, 4, 5}, in.Transport().(*thrift.TMemoryBuffer).Bytes())
 	out.WriteString("foo")
 	return nil
 }

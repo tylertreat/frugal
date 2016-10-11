@@ -1,10 +1,8 @@
 package frugal
 
 import (
-	"errors"
 	"io"
 	"sync"
-	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
@@ -26,7 +24,7 @@ func (f *fAdapterTransportFactory) GetTransport(tr thrift.TTransport) FTransport
 }
 
 type fAdapterTransport struct {
-	*TFramedTransport
+	transport          thrift.TTransport
 	isOpen             bool
 	mu                 sync.RWMutex
 	closeSignal        chan struct{}
@@ -42,11 +40,12 @@ type fAdapterTransport struct {
 // the registry on received frames.
 func NewAdapterTransport(tr thrift.TTransport) FTransport {
 	return &fAdapterTransport{
-		TFramedTransport: NewTFramedTransport(tr),
-		closeSignal:      make(chan struct{}, 1),
+		transport:   tr,
+		closeSignal: make(chan struct{}, 1),
 	}
 }
 
+// Open prepares the transport to send data.
 func (f *fAdapterTransport) Open() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -55,7 +54,7 @@ func (f *fAdapterTransport) Open() error {
 			"frugal: transport already open")
 	}
 
-	if err := f.TFramedTransport.Open(); err != nil {
+	if err := f.transport.Open(); err != nil {
 		// It's OK if the underlying transport is already open.
 		if e, ok := err.(thrift.TTransportException); !(ok && e.TypeId() == thrift.ALREADY_OPEN) {
 			return err
@@ -69,8 +68,9 @@ func (f *fAdapterTransport) Open() error {
 }
 
 func (f *fAdapterTransport) readLoop() {
+	framedTransport := NewTFramedTransport(f.transport)
 	for {
-		frame, err := f.readFrame()
+		frame, err := f.readFrame(framedTransport)
 		if err != nil {
 			// First check if the transport was closed.
 			select {
@@ -100,25 +100,27 @@ func (f *fAdapterTransport) readLoop() {
 	}
 }
 
-func (f *fAdapterTransport) readFrame() ([]byte, error) {
-	_, err := f.TFramedTransport.Read([]byte{})
+func (f *fAdapterTransport) readFrame(framedTransport *TFramedTransport) ([]byte, error) {
+	_, err := framedTransport.Read([]byte{})
 	if err != nil {
 		return nil, err
 	}
-	buff := make([]byte, f.RemainingBytes())
-	_, err = io.ReadFull(f.TFramedTransport, buff)
+	buff := make([]byte, framedTransport.RemainingBytes())
+	_, err = io.ReadFull(framedTransport, buff)
 	if err != nil {
 		return nil, err
 	}
 	return buff, nil
 }
 
+// IsOpen returns true if the transport is open, false otherwise.
 func (f *fAdapterTransport) IsOpen() bool {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
-	return f.isOpen && f.TFramedTransport.IsOpen()
+	return f.isOpen && f.transport.IsOpen()
 }
 
+// Close closes the transport.
 func (f *fAdapterTransport) Close() error {
 	return f.close(nil)
 }
@@ -132,7 +134,7 @@ func (f *fAdapterTransport) close(cause error) error {
 	}
 
 	f.closeSignal <- struct{}{}
-	if err := f.TFramedTransport.Close(); err != nil {
+	if err := f.transport.Close(); err != nil {
 		// Close failed, drain close signal.
 		select {
 		case <-f.closeSignal:
@@ -163,23 +165,19 @@ func (f *fAdapterTransport) close(cause error) error {
 	return nil
 }
 
-// Read returns an error as it should not be called directly. The adapter
-// transport handles reading from the underlying transport and is responsible
-// for invoking callbacks on received frames.
-func (f *fAdapterTransport) Read(buf []byte) (int, error) {
-	return 0, errors.New("Do not call Read directly on FTransport")
+// Send transmits the given data.
+func (f *fAdapterTransport) Send(payload []byte) error {
+	if _, err := f.transport.Write(payload); err != nil {
+		return err
+	}
+	return f.transport.Flush()
 }
 
-func (f *fAdapterTransport) SetRegistry(registry FRegistry) {
-	if registry == nil {
-		panic("frugal: registry cannot be nil")
-	}
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	if f.registry != nil {
-		return
-	}
-	f.registry = registry
+// GetMaxRequestSize returns the maximum number of bytes that can be
+// transmitted. Returns a non-positive number to indicate an unbounded
+// allowable size.
+func (f *fAdapterTransport) GetMaxRequestSize() int {
+	return 0
 }
 
 func (f *fAdapterTransport) Register(ctx *FContext, cb FAsyncCallback) error {
@@ -216,8 +214,4 @@ func (f *fAdapterTransport) Closed() <-chan error {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	return f.closeChan
-}
-
-func (f *fAdapterTransport) SetHighWatermark(watermark time.Duration) {
-	// No-op
 }

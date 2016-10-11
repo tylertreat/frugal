@@ -45,18 +45,20 @@ type FFooClient struct {
 	*actual_base.FBaseFooClient
 	transport       frugal.FTransport
 	protocolFactory *frugal.FProtocolFactory
+	buffer          *frugal.FBoundedMemoryBuffer
 	oprot           *frugal.FProtocol
 	methods         map[string]*frugal.Method
 }
 
 func NewFFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FFooClient {
-	t.SetRegistry(frugal.NewFClientRegistry())
 	methods := make(map[string]*frugal.Method)
+	buffer := frugal.NewFBoundedMemoryBuffer(t.GetMaxRequestSize())
 	client := &FFooClient{
 		FBaseFooClient:  actual_base.NewFBaseFooClient(t, p, middleware...),
 		transport:       t,
 		protocolFactory: p,
-		oprot:           p.GetProtocol(t),
+		buffer:          buffer,
+		oprot:           p.GetProtocol(buffer),
 		methods:         methods,
 	}
 	methods["ping"] = frugal.NewMethod(client, client.ping, "ping", middleware)
@@ -91,27 +93,38 @@ func (f *FFooClient) ping(ctx *frugal.FContext) (err error) {
 	defer f.transport.Unregister(ctx)
 	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("ping", thrift.CALL, 0); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	args := FooPingArgs{}
 	if err = args.Write(f.oprot); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
+	data := f.buffer.Bytes()
+	f.buffer.Reset()
 	f.GetWriteMutex().Unlock()
+
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -203,10 +216,12 @@ func (f *FFooClient) blah(ctx *frugal.FContext, num int32, str string, event *Ev
 	defer f.transport.Unregister(ctx)
 	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("blah", thrift.CALL, 0); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
@@ -216,18 +231,27 @@ func (f *FFooClient) blah(ctx *frugal.FContext, num int32, str string, event *Ev
 		Event: event,
 	}
 	if err = args.Write(f.oprot); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
+	data := f.buffer.Bytes()
+	f.buffer.Reset()
 	f.GetWriteMutex().Unlock()
+
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -320,10 +344,12 @@ func (f *FFooClient) OneWay(ctx *frugal.FContext, id ID, req Request) (err error
 func (f *FFooClient) oneWay(ctx *frugal.FContext, id ID, req Request) (err error) {
 	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("oneWay", thrift.ONEWAY, 0); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
@@ -332,18 +358,27 @@ func (f *FFooClient) oneWay(ctx *frugal.FContext, id ID, req Request) (err error
 		Req: req,
 	}
 	if err = args.Write(f.oprot); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
+	data := f.buffer.Bytes()
+	f.buffer.Reset()
 	f.GetWriteMutex().Unlock()
+
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	return
 }
@@ -369,10 +404,12 @@ func (f *FFooClient) bin_method(ctx *frugal.FContext, bin []byte, str string) (r
 	defer f.transport.Unregister(ctx)
 	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("bin_method", thrift.CALL, 0); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
@@ -381,18 +418,27 @@ func (f *FFooClient) bin_method(ctx *frugal.FContext, bin []byte, str string) (r
 		Str: str,
 	}
 	if err = args.Write(f.oprot); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
+	data := f.buffer.Bytes()
+	f.buffer.Reset()
 	f.GetWriteMutex().Unlock()
+
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -487,10 +533,12 @@ func (f *FFooClient) param_modifiers(ctx *frugal.FContext, opt_num int32, defaul
 	defer f.transport.Unregister(ctx)
 	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("param_modifiers", thrift.CALL, 0); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
@@ -500,18 +548,27 @@ func (f *FFooClient) param_modifiers(ctx *frugal.FContext, opt_num int32, defaul
 		ReqNum:     req_num,
 	}
 	if err = args.Write(f.oprot); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
+	data := f.buffer.Bytes()
+	f.buffer.Reset()
 	f.GetWriteMutex().Unlock()
+
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -602,10 +659,12 @@ func (f *FFooClient) underlying_types_test(ctx *frugal.FContext, list_type []ID,
 	defer f.transport.Unregister(ctx)
 	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("underlying_types_test", thrift.CALL, 0); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
@@ -614,18 +673,27 @@ func (f *FFooClient) underlying_types_test(ctx *frugal.FContext, list_type []ID,
 		SetType:  set_type,
 	}
 	if err = args.Write(f.oprot); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
+	data := f.buffer.Bytes()
+	f.buffer.Reset()
 	f.GetWriteMutex().Unlock()
+
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -716,27 +784,38 @@ func (f *FFooClient) getThing(ctx *frugal.FContext) (r *validStructs.Thing, err 
 	defer f.transport.Unregister(ctx)
 	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("getThing", thrift.CALL, 0); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	args := FooGetThingArgs{}
 	if err = args.Write(f.oprot); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
+	data := f.buffer.Bytes()
+	f.buffer.Reset()
 	f.GetWriteMutex().Unlock()
+
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -827,27 +906,38 @@ func (f *FFooClient) getMyInt(ctx *frugal.FContext) (r ValidTypes.MyInt, err err
 	defer f.transport.Unregister(ctx)
 	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("getMyInt", thrift.CALL, 0); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	args := FooGetMyIntArgs{}
 	if err = args.Write(f.oprot); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
+	data := f.buffer.Bytes()
+	f.buffer.Reset()
 	f.GetWriteMutex().Unlock()
+
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:

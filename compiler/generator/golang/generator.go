@@ -1406,7 +1406,8 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	}
 	contents += "\ttransport       frugal.FTransport\n"
 	contents += "\tprotocolFactory *frugal.FProtocolFactory\n"
-	contents += "\toprot           *frugal.FProtocol\n"
+	contents += "\tbuffer *frugal.FBoundedMemoryBuffer\n"
+	contents += "\toprot *frugal.FProtocol\n"
 	if service.Extends == "" {
 		contents += "\tmu              sync.Mutex\n"
 	}
@@ -1416,8 +1417,8 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += fmt.Sprintf(
 		"func NewF%sClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *F%sClient {\n",
 		servTitle, servTitle)
-	contents += "\tt.SetRegistry(frugal.NewFClientRegistry())\n"
 	contents += "\tmethods := make(map[string]*frugal.Method)\n"
+	contents += "\tbuffer := frugal.NewFBoundedMemoryBuffer(t.GetMaxRequestSize())\n"
 	contents += fmt.Sprintf("\tclient := &F%sClient{\n", servTitle)
 	if service.Extends != "" {
 		contents += fmt.Sprintf("\t\tF%sClient: %sNewF%sClient(t, p, middleware...),\n",
@@ -1425,7 +1426,8 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	}
 	contents += "\t\ttransport:       t,\n"
 	contents += "\t\tprotocolFactory: p,\n"
-	contents += "\t\toprot:           p.GetProtocol(t),\n"
+	contents += "\t\tbuffer:          buffer,\n"
+	contents += "\t\toprot:           p.GetProtocol(buffer),\n"
 	contents += "\t\tmethods:         methods,\n"
 	contents += "\t}\n"
 	for _, method := range service.Methods {
@@ -1551,7 +1553,8 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 		contents += "\tdefer f.transport.Unregister(ctx)\n"
 	}
 	contents += "\tf.GetWriteMutex().Lock()\n"
-	contents += fmt.Sprintf("\tif err = f.oprot.WriteRequestHeader(ctx); err != nil {\n")
+	contents += "\tif err = f.oprot.WriteRequestHeader(ctx); err != nil {\n"
+	contents += "\t\tf.buffer.Reset()\n"
 	contents += "\t\tf.GetWriteMutex().Unlock()\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
@@ -1561,6 +1564,7 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	}
 	contents += fmt.Sprintf(
 		"\tif err = f.oprot.WriteMessageBegin(\"%s\", thrift.%s, 0); err != nil {\n", nameLower, msgType)
+	contents += "\t\tf.buffer.Reset()\n"
 	contents += "\t\tf.GetWriteMutex().Unlock()\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
@@ -1568,18 +1572,28 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	contents += g.generateStructArgs(method.Arguments)
 	contents += "\t}\n"
 	contents += "\tif err = args.Write(f.oprot); err != nil {\n"
+	contents += "\t\tf.buffer.Reset()\n"
 	contents += "\t\tf.GetWriteMutex().Unlock()\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += "\tif err = f.oprot.WriteMessageEnd(); err != nil {\n"
+	contents += "\t\tf.buffer.Reset()\n"
 	contents += "\t\tf.GetWriteMutex().Unlock()\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += "\tif err = f.oprot.Flush(); err != nil {\n"
+	contents += "\t\tf.buffer.Reset()\n"
 	contents += "\t\tf.GetWriteMutex().Unlock()\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
+
+	contents += "\tdata := f.buffer.Bytes()\n"
+	contents += "\tf.buffer.Reset()\n"
 	contents += "\tf.GetWriteMutex().Unlock()\n\n"
+
+	contents += "\tif err = f.transport.Send(data); err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n\n"
 
 	if method.Oneway {
 		contents += "\treturn\n"

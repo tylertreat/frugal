@@ -54,7 +54,7 @@ func TestClientRegistry(t *testing.T) {
 
 	// Unregister the context
 	registry.Unregister(ctx)
-	_, ok := registry.(*clientRegistry).handlers[ctx.opID()]
+	_, ok := registry.(*fRegistry).handlers[ctx.opID()]
 	assert.False(ok)
 	// But make sure execute sill returns nil when executing a frame with the
 	// same opID (it will just drop the frame)
@@ -75,20 +75,4 @@ func (p *mockProcessor) Process(in, out *FProtocol) error {
 	p.iprot = in
 	p.oprot = out
 	return nil
-}
-
-// Ensures registry Execute properly hands off frugal frames to the registry
-// Processor.
-func TestServerRegistry(t *testing.T) {
-	assert := assert.New(t)
-	processor := &mockProcessor{}
-	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
-	oprot := protocolFactory.GetProtocol(&mockFTransport{})
-
-	registry := NewServerRegistry(processor, protocolFactory, oprot)
-	assert.Nil(registry.Execute(frugalFrame))
-
-	ctx, err := processor.iprot.ReadRequestHeader()
-	assert.Nil(err)
-	assert.Equal(ctx.CorrelationID(), frugalHeaders[cid])
 }

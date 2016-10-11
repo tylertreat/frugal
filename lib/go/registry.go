@@ -43,7 +43,7 @@ type FRegistry interface {
 	Execute([]byte) error
 }
 
-type clientRegistry struct {
+type fRegistry struct {
 	mu       sync.RWMutex
 	handlers map[uint64]FAsyncCallback
 }
@@ -51,11 +51,11 @@ type clientRegistry struct {
 // NewFClientRegistry creates a Registry intended for use by Frugal clients.
 // This is only to be called by generated code.
 func NewFClientRegistry() FRegistry {
-	return &clientRegistry{handlers: make(map[uint64]FAsyncCallback)}
+	return &fRegistry{handlers: make(map[uint64]FAsyncCallback)}
 }
 
 // Register a callback for the given Context.
-func (c *clientRegistry) Register(ctx *FContext, callback FAsyncCallback) error {
+func (c *fRegistry) Register(ctx *FContext, callback FAsyncCallback) error {
 	// An FContext can be reused for multiple requests. Because of this, every
 	// time an FContext is registered, it must be assigned a new op id to
 	// ensure we can properly correlate responses. We use a monotonically
@@ -76,7 +76,7 @@ func (c *clientRegistry) Register(ctx *FContext, callback FAsyncCallback) error 
 }
 
 // Unregister a callback for the given Context.
-func (c *clientRegistry) Unregister(ctx *FContext) {
+func (c *fRegistry) Unregister(ctx *FContext) {
 	opID := ctx.opID()
 	c.mu.Lock()
 	delete(c.handlers, opID)
@@ -84,7 +84,7 @@ func (c *clientRegistry) Unregister(ctx *FContext) {
 }
 
 // Execute dispatches a single Thrift message frame.
-func (c *clientRegistry) Execute(frame []byte) error {
+func (c *fRegistry) Execute(frame []byte) error {
 	headers, err := getHeadersFromFrame(frame)
 	if err != nil {
 		logger().Warn("frugal: invalid protocol frame headers:", err)
@@ -106,36 +106,4 @@ func (c *clientRegistry) Execute(frame []byte) error {
 	c.mu.RUnlock()
 
 	return handler(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(frame)})
-}
-
-type serverRegistry struct {
-	processor            FProcessor
-	inputProtocolFactory *FProtocolFactory
-	outputProtocol       *FProtocol
-}
-
-// NewServerRegistry creates a Registry intended for use by Frugal servers.
-// This is only to be called by generated code.
-func NewServerRegistry(processor FProcessor, inputProtocolFactory *FProtocolFactory,
-	outputProtocol *FProtocol) FRegistry {
-
-	return &serverRegistry{
-		processor:            processor,
-		inputProtocolFactory: inputProtocolFactory,
-		outputProtocol:       outputProtocol,
-	}
-}
-
-// Register is a no-op for serverRegistry.
-func (s *serverRegistry) Register(*FContext, FAsyncCallback) error {
-	return nil
-}
-
-// Unregister is a no-op for serverRegistry.
-func (s *serverRegistry) Unregister(*FContext) {}
-
-// Execute dispatches a single Thrift message frame.
-func (s *serverRegistry) Execute(frame []byte) error {
-	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(frame)}
-	return s.processor.Process(s.inputProtocolFactory.GetProtocol(tr), s.outputProtocol)
 }

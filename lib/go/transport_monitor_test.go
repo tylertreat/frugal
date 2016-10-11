@@ -310,6 +310,18 @@ func (m *mockFTransport) IsOpen() bool {
 	return args.Get(0).(bool)
 }
 
+func (m *mockFTransport) Send(data []byte) error {
+	m.Lock()
+	defer m.Unlock()
+	return m.Called().Error(0)
+}
+
+func (m *mockFTransport) GetMaxRequestSize() int {
+	m.Lock()
+	defer m.Unlock()
+	return m.Called().Get(0).(int)
+}
+
 func (m *mockFTransport) RemainingBytes() uint64 {
 	m.Lock()
 	defer m.Unlock()

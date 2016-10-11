@@ -68,24 +68,14 @@ type FScopeTransport interface {
 	DiscardFrame()
 }
 
-// FTransport is Frugal's equivalent of Thrift's TTransport. FTransport extends
-// TTransport and exposes some additional methods. An FTransport typically has
-// an FRegistry, so it provides methods for setting the FRegistry and
-// registering and unregistering an FAsyncCallback to an FContext. It also
-// allows a way for setting an FTransportMonitor.
-//
-// FTransport wraps a TTransport, meaning all existing TTransport
-// implementations will work in Frugal. However, all FTransports must used a
-// framed protocol, typically implemented by wrapping a TFramedTransport.
-//
-// Most Frugal language libraries include an FMuxTransport implementation,
-// which uses a worker pool to handle messages in parallel.
+// FTransport is Frugal's equivalent of Thrift's TTransport. FTransport is
+// comparable to Thrift's TTransport in that it represents the transport layer
+// for frugal clients. However, frugal is callback based and sends only framed
+// data. Due to this, instead of read, write, and flush methods, FTransport has
+// a send method that sends framed frugal messages. To handle callback data, an
+// FTransport also has an FRegistry, so it provides methods for registering
+// and unregistering an FAsyncCallback to an FContext.
 type FTransport interface {
-	thrift.TTransport
-
-	// SetRegistry sets the Registry on the FTransport.
-	SetRegistry(FRegistry)
-
 	// Register a callback for the given Context.
 	Register(*FContext, FAsyncCallback) error
 
@@ -99,6 +89,23 @@ type FTransport interface {
 	// Closed channel receives the cause of an FTransport close (nil if clean
 	// close).
 	Closed() <-chan error
+
+	// Open prepares the transport to send data.
+	Open() error
+
+	// IsOpen returns true if the transport is open, false otherwise.
+	IsOpen() bool
+
+	// Close closes the transport.
+	Close() error
+
+	// Send transmits the given data.
+	Send([]byte) error
+
+	// GetMaxRequestSize returns the maximum number of bytes that can be
+	// transmitted. Returns a non-positive number to indicate an unbounded
+	// allowable size.
+	GetMaxRequestSize() int
 }
 
 // FTransportFactory produces FTransports by wrapping a provided TTransport.
@@ -115,7 +122,10 @@ type fBaseTransport struct {
 
 // Initialize a new fBaseTransport
 func newFBaseTransport(requestSizeLimit uint) *fBaseTransport {
-	return &fBaseTransport{requestSizeLimit: requestSizeLimit}
+	return &fBaseTransport{
+		requestSizeLimit: requestSizeLimit,
+		registry: NewFClientRegistry(),
+	}
 }
 
 // Intialize the close channels
@@ -133,50 +143,9 @@ func (f *fBaseTransport) Close(cause error) {
 	close(f.closed)
 }
 
-// Read should not be called, it will return an error
-func (f *fBaseTransport) Read(buf []byte) (int, error) {
-	return 0, errors.New("don't call read")
-}
-
-// Write the bytes to a buffer. Returns ErrTooLarge if the buffer exceeds the
-// request size limit.
-func (f *fBaseTransport) Write(buf []byte) (int, error) {
-	if f.requestSizeLimit > 0 && len(buf)+f.writeBuffer.Len() > int(f.requestSizeLimit) {
-		f.writeBuffer.Reset()
-		return 0, ErrTooLarge
-	}
-	num, err := f.writeBuffer.Write(buf)
-	return num, thrift.NewTTransportExceptionFromError(err)
-}
-
-func (f *fBaseTransport) RemainingBytes() uint64 {
-	return ^uint64(0)
-}
-
-// Get the write bytes
-func (f *fBaseTransport) GetWriteBytes() []byte {
-	return f.writeBuffer.Bytes()
-}
-
-// Reset the write buffer
-func (f *fBaseTransport) ResetWriteBuffer() {
-	f.writeBuffer.Reset()
-}
-
 // Execute a frugal frame (NOTE: this frame must include the frame size).
 func (f *fBaseTransport) ExecuteFrame(frame []byte) error {
 	return f.registry.Execute(frame[4:])
-}
-
-// SetRegistry sets the Registry on the FTransport.
-func (f *fBaseTransport) SetRegistry(registry FRegistry) {
-	if registry == nil {
-		panic("frugal: registry cannot be nil")
-	}
-	if f.registry != nil {
-		return
-	}
-	f.registry = registry
 }
 
 // Register a callback for the given Context. Only called by generated code.

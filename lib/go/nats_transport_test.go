@@ -77,7 +77,7 @@ func TestNatsTransportOpen(t *testing.T) {
 		frameC: frameC,
 		err:    fmt.Errorf("foo"),
 	}
-	tr.SetRegistry(registry)
+	tr.registry = registry
 
 	sizedFrame := prependFrameSize(frame)
 	assert.Nil(t, conn.Publish(tr.inbox, sizedFrame))
@@ -88,13 +88,6 @@ func TestNatsTransportOpen(t *testing.T) {
 	case <-time.After(time.Second):
 		assert.True(t, false)
 	}
-}
-
-// Ensures Read throws an error whenever called.
-func TestNatsTransportRead(t *testing.T) {
-	tr := NewFNatsTransport(nil, "foo", "bar")
-	_, err := tr.Read(make([]byte, 0))
-	assert.Error(t, err)
 }
 
 // Ensures Write buffers data. If the buffer exceeds 1MB, ErrTooLarge is
@@ -110,14 +103,9 @@ func TestNatsTransportWrite(t *testing.T) {
 	assert.True(t, tr.IsOpen())
 
 	buff := make([]byte, 5)
-	n, err := tr.Write(buff)
-	assert.Nil(t, err)
-	assert.Equal(t, 5, n)
-	assert.Equal(t, 5, tr.writeBuffer.Len())
-	buff = make([]byte, 1024*1024)
-	n, err = tr.Write(buff)
+	buff = make([]byte, 1024*1024+1)
+	err := tr.Send(buff)
 	assert.Equal(t, ErrTooLarge, err)
-	assert.Equal(t, 0, n)
 	assert.Equal(t, 0, tr.writeBuffer.Len())
 }
 
@@ -134,7 +122,7 @@ func TestNatsTransportFlushNotOpen(t *testing.T) {
 
 	tr := NewFNatsTransport(conn, "foo", "bar")
 
-	err = tr.Flush()
+	err = tr.Send([]byte{})
 	trErr := err.(thrift.TTransportException)
 	assert.Equal(t, thrift.NOT_OPEN, trErr.TypeId())
 }
@@ -153,7 +141,7 @@ func TestNatsTransportFlushNatsDisconnected(t *testing.T) {
 
 	conn.Close()
 
-	err := tr.Flush()
+	err := tr.Send([]byte{})
 	trErr := err.(thrift.TTransportException)
 	assert.Equal(t, thrift.NOT_OPEN, trErr.TypeId())
 }
@@ -171,7 +159,7 @@ func TestNatsTransportFlushNoData(t *testing.T) {
 
 	sub, err := conn.SubscribeSync(tr.subject)
 	assert.Nil(t, err)
-	assert.Nil(t, tr.Flush())
+	assert.Nil(t, tr.Send([]byte{0, 0, 0, 0}))
 	conn.Flush()
 	_, err = sub.NextMsg(5 * time.Millisecond)
 	assert.Equal(t, nats.ErrTimeout, err)
@@ -189,11 +177,9 @@ func TestNatsTransportFlush(t *testing.T) {
 	assert.True(t, tr.IsOpen())
 
 	frame := []byte("helloworld")
-	_, err := tr.Write(frame)
-	assert.Nil(t, err)
 	sub, err := conn.SubscribeSync(tr.subject)
 	assert.Nil(t, err)
-	assert.Nil(t, tr.Flush())
+	assert.Nil(t, tr.Send(prependFrameSize(frame)))
 	conn.Flush()
 	msg, err := sub.NextMsg(5 * time.Millisecond)
 	assert.Nil(t, err)

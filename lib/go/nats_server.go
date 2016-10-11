@@ -2,7 +2,6 @@ package frugal
 
 import (
 	"bytes"
-	"encoding/binary"
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -11,7 +10,7 @@ import (
 
 const (
 	defaultWorkQueueLen = 64
-	defaultWatermark = 5 * time.Second
+	defaultWatermark    = 5 * time.Second
 )
 
 type frameWrapper struct {
@@ -170,23 +169,18 @@ func (f *fNatsServer) worker() {
 func (f *fNatsServer) processFrame(frame []byte, reply string) error {
 	// Read and process frame.
 	input := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(frame[4:])} // Discard frame size
-	// Buffer 1MB - 4 bytes since frame size is copied directly.
-	output := NewFBoundedMemoryBuffer(natsMaxMessageSize - 4)
+	// Only allow 1MB to be buffered.
+	output := NewFBoundedMemoryBuffer(natsMaxMessageSize)
 	if err := f.processor.Process(
 		f.inputProtoFactory.GetProtocol(input),
 		f.outputProtoFactory.GetProtocol(output)); err != nil {
 		return err
 	}
 
-	if output.Len() == 0 {
+	if !output.HasWriteData() {
 		return nil
 	}
 
-	// Add frame size (4-byte uint32).
-	response := make([]byte, output.Len()+4)
-	binary.BigEndian.PutUint32(response, uint32(output.Len()))
-	copy(response[4:], output.Bytes())
-
 	// Send response.
-	return f.conn.Publish(reply, response)
+	return f.conn.Publish(reply, output.Bytes())
 }

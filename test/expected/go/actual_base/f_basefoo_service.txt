@@ -25,18 +25,20 @@ type FBaseFoo interface {
 type FBaseFooClient struct {
 	transport       frugal.FTransport
 	protocolFactory *frugal.FProtocolFactory
+	buffer          *frugal.FBoundedMemoryBuffer
 	oprot           *frugal.FProtocol
 	mu              sync.Mutex
 	methods         map[string]*frugal.Method
 }
 
 func NewFBaseFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FBaseFooClient {
-	t.SetRegistry(frugal.NewFClientRegistry())
 	methods := make(map[string]*frugal.Method)
+	buffer := frugal.NewFBoundedMemoryBuffer(t.GetMaxRequestSize())
 	client := &FBaseFooClient{
 		transport:       t,
 		protocolFactory: p,
-		oprot:           p.GetProtocol(t),
+		buffer:          buffer,
+		oprot:           p.GetProtocol(buffer),
 		methods:         methods,
 	}
 	methods["basePing"] = frugal.NewMethod(client, client.basePing, "basePing", middleware)
@@ -68,27 +70,38 @@ func (f *FBaseFooClient) basePing(ctx *frugal.FContext) (err error) {
 	defer f.transport.Unregister(ctx)
 	f.GetWriteMutex().Lock()
 	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageBegin("basePing", thrift.CALL, 0); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	args := BaseFooBasePingArgs{}
 	if err = args.Write(f.oprot); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.WriteMessageEnd(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
 	if err = f.oprot.Flush(); err != nil {
+		f.buffer.Reset()
 		f.GetWriteMutex().Unlock()
 		return
 	}
+	data := f.buffer.Bytes()
+	f.buffer.Reset()
 	f.GetWriteMutex().Unlock()
+
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:

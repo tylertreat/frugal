@@ -189,18 +189,19 @@ func (h *fHttpTransport) Read(buf []byte) (int, error) {
 	return 0, errors.New("Cannot read on FTransport")
 }
 
-// Flush sends the buffered bytes over HTTP.
-func (h *fHttpTransport) Flush() error {
+// Send transmits the given data. The data is expected to already be framed.
+func (h *fHttpTransport) Send(data []byte) error {
 	if !h.IsOpen() {
 		return h.getClosedConditionError("flush:")
 	}
-	data := h.GetWriteBytes()
-	if len(data) == 0 {
+
+	if len(data) == 4 {
 		return nil
 	}
 
-	h.ResetWriteBuffer()
-	data = prependFrameSize(data)
+	if h.requestSizeLimit > 0 && len(data) > int(h.requestSizeLimit) {
+		return thrift.NewTTransportExceptionFromError(ErrTooLarge)
+	}
 
 	// Make the HTTP request
 	response, err := h.makeRequest(data)
@@ -226,6 +227,13 @@ func (h *fHttpTransport) Flush() error {
 	}
 
 	return thrift.NewTTransportExceptionFromError(h.fBaseTransport.ExecuteFrame(response))
+}
+
+// GetMaxRequestSize returns the maximum number of bytes that can be
+// transmitted. Returns a non-positive number to indicate an unbounded
+// allowable size.
+func (h *fHttpTransport) GetMaxRequestSize() int {
+	return int(h.requestSizeLimit)
 }
 
 // This is a no-op for fHttpTransport
