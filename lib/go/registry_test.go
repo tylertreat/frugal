@@ -11,7 +11,7 @@ import (
 // Ensures Execute returns an error if a bad frugal frame is passed.
 func TestClientRegistryBadFrame(t *testing.T) {
 	assert := assert.New(t)
-	registry := NewFClientRegistry()
+	registry := NewFRegistry()
 	assert.Error(registry.Execute([]byte{0}))
 }
 
@@ -19,7 +19,7 @@ func TestClientRegistryBadFrame(t *testing.T) {
 // opID.
 func TestClientRegistryMissingOpID(t *testing.T) {
 	assert := assert.New(t)
-	registry := NewFClientRegistry()
+	registry := NewFRegistry()
 	assert.Error(registry.Execute(basicFrame))
 }
 
@@ -32,7 +32,7 @@ func TestClientRegistry(t *testing.T) {
 		called++
 		return nil
 	}
-	registry := NewFClientRegistry()
+	registry := NewFRegistry()
 	ctx := NewFContext("")
 
 	// Register the context for the first time

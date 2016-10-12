@@ -50,7 +50,7 @@ type fRegistry struct {
 
 // NewFClientRegistry creates a Registry intended for use by Frugal clients.
 // This is only to be called by generated code.
-func NewFClientRegistry() FRegistry {
+func NewFRegistry() FRegistry {
 	return &fRegistry{handlers: make(map[uint64]FAsyncCallback)}
 }
 

@@ -176,7 +176,7 @@ func (f *fAdapterTransport) Send(payload []byte) error {
 // GetMaxRequestSize returns the maximum number of bytes that can be
 // transmitted. Returns a non-positive number to indicate an unbounded
 // allowable size.
-func (f *fAdapterTransport) GetMaxRequestSize() int {
+func (f *fAdapterTransport) GetMaxRequestSize() uint {
 	return 0
 }
 

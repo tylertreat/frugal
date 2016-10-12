@@ -105,7 +105,7 @@ type FTransport interface {
 	// GetMaxRequestSize returns the maximum number of bytes that can be
 	// transmitted. Returns a non-positive number to indicate an unbounded
 	// allowable size.
-	GetMaxRequestSize() int
+	GetMaxRequestSize() uint
 }
 
 // FTransportFactory produces FTransports by wrapping a provided TTransport.
@@ -124,7 +124,7 @@ type fBaseTransport struct {
 func newFBaseTransport(requestSizeLimit uint) *fBaseTransport {
 	return &fBaseTransport{
 		requestSizeLimit: requestSizeLimit,
-		registry: NewFClientRegistry(),
+		registry: NewFRegistry(),
 	}
 }
 

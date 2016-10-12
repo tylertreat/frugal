@@ -232,8 +232,8 @@ func (h *fHttpTransport) Send(data []byte) error {
 // GetMaxRequestSize returns the maximum number of bytes that can be
 // transmitted. Returns a non-positive number to indicate an unbounded
 // allowable size.
-func (h *fHttpTransport) GetMaxRequestSize() int {
-	return int(h.requestSizeLimit)
+func (h *fHttpTransport) GetMaxRequestSize() uint {
+	return h.requestSizeLimit
 }
 
 // This is a no-op for fHttpTransport

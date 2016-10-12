@@ -316,10 +316,10 @@ func (m *mockFTransport) Send(data []byte) error {
 	return m.Called().Error(0)
 }
 
-func (m *mockFTransport) GetMaxRequestSize() int {
+func (m *mockFTransport) GetMaxRequestSize() uint {
 	m.Lock()
 	defer m.Unlock()
-	return m.Called().Get(0).(int)
+	return m.Called().Get(0).(uint)
 }
 
 func (m *mockFTransport) RemainingBytes() uint64 {
