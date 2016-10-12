@@ -4,7 +4,7 @@ part of frugal;
 class MonitorRunner {
   final Logger log = new Logger('FTransportMonitor');
   FTransportMonitor _monitor;
-  TTransport _transport;
+  FTransport _transport;
   int _attempts = 0;
   int _wait = 0;
   bool _failed = false;

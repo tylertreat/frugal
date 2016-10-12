@@ -1,94 +1,60 @@
 part of frugal;
 
-/// FTransport is Frugal's equivalent of Thrift's TTransport. FTransport
-/// extends TTransport and exposes some additional methods. An FTransport
-/// has an FRegistry, so it provides methods for setting the FRegistry and
-/// registering and unregistering an FAsyncCallback to an FContext.
-abstract class FTransport extends TTransport {
+/// FTransport is comparable to Thrift's TTransport in that it represent the
+/// transport layer for frugal clients. However, frugal is callback based and
+/// sends only framed data. Therefore, instead of exposing read, write, and
+/// flush, the transport has a simple send method that sends framed frugal
+/// messages. To handle callback data, an FTransport also has an FRegistry,
+/// so it provides methods for registering and unregistering an FAsyncCallback
+/// to an FContext.
+abstract class FTransport {
   static const REQUEST_TOO_LARGE = 100;
   static const RESPONSE_TOO_LARGE = 101;
 
-  FRegistry _registry;
   MonitorRunner _monitor;
   StreamController _closeController = new StreamController.broadcast();
   Stream<Object> get onClose => _closeController.stream;
 
-  int _capacity;
-  List<int> _writeBuffer;
-  List<int> get writeBuffer => _writeBuffer;
+  FRegistry _registry;
+  int _requestSizeLimit;
+  int get requestSizeLimit => _requestSizeLimit;
 
-  FTransport({int capacity: 0}) {
-    this._capacity = capacity;
-    this._writeBuffer = [];
-  }
-
-  void clearWriteBuffer() {
-    this._writeBuffer = [];
-  }
+  FTransport({FRegistry registry, int requestSizeLimit})
+      : _registry = registry ?? new FRegistryImpl(),
+        _requestSizeLimit = requestSizeLimit ?? 0;
 
   /// Set an FTransportMonitor on the transport
   void set monitor(FTransportMonitor monitor) {
     _monitor = new MonitorRunner(monitor, this);
   }
 
-  @override
-  Future close() => closeWithException(null);
+  /// Queries whether the transport is open.
+  /// Returns [true] if the transport is open.
+  bool get isOpen;
 
-  /// Close transport with the given exception
-  Future closeWithException(cause) async {
-    await _signalClose(cause);
-  }
+  /// Opens the transport for reading/writing.
+  /// Throws [TTransportError] if the transport could not be opened.
+  Future open();
 
-  @override
-  int read(Uint8List buffer, int offset, int length) {
-    throw new UnsupportedError("Cannot call read on FTransport");
-  }
+  /// Closes the transport.
+  Future close([Error error]) => _signalClose(error);
 
-  @override
-  void write(Uint8List buffer, int offset, int length) {
-    if (offset + length > buffer.length) {
-      throw new ArgumentError('The range exceeds the buffer length');
-    }
-
-    if (_capacity > 0 && length + _writeBuffer.length > _capacity) {
-      throw new FMessageSizeError.request();
-    }
-
-    _writeBuffer.addAll(buffer.sublist(offset, offset + length));
-  }
-
-  /// Set the Registry on the transport.
-  void setRegistry(FRegistry registry) {
-    if (registry == null) {
-      throw new FError.withMessage('registry cannot be null');
-    }
-    if (_registry != null) {
-      return;
-    }
-    _registry = registry;
-  }
+  /// Send the given framed frugal payload over the transport.
+  /// Throws [TTransportError] if the payload could not be sent.
+  Future send(Uint8List payload);
 
   /// Register a callback for the given Context.
   void register(FContext ctx, FAsyncCallback callback) {
-    if (_registry == null) {
-      throw new FError.withMessage('transport registry not set');
-    }
     _registry.register(ctx, callback);
   }
 
   /// Unregister a callback for the given Context.
   void unregister(FContext ctx) {
-    if (_registry == null) {
-      throw new FError.withMessage('transport registry not set');
-    }
     _registry.unregister(ctx);
   }
 
   /// Execute a frugal frame (NOTE: this frame must include the frame size).
   void executeFrame(Uint8List frame) {
-    if (_registry == null) {
-      throw new FError.withMessage('transport registry not set');
-    }
     _registry.execute(frame.sublist(4));
   }
 

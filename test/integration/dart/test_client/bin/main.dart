@@ -172,7 +172,7 @@ Future _initTestClient(
 //  Nats is not available without the SDK in dart, so HTTP is the only transport we can test
   var uri = Uri.parse('http://$host:$port');
   var config = new FHttpConfig(uri, {});
-  transport = new FHttpClientTransport(new wt.Client(), config);
+  transport = new FHttpTransport(new wt.Client(), config);
   await transport.open();
 
   fProtocolFactory = new FProtocolFactory(getProtocolFactory(protocolType));
