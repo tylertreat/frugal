@@ -10,7 +10,7 @@ import (
 // Writes which cause the buffer to exceed its size return ErrTooLarge.
 // The FBoundedMemoryBuffer handles framing data.
 type FBoundedMemoryBuffer struct {
-	limit int
+	limit uint
 	*thrift.TMemoryBuffer
 }
 
@@ -19,7 +19,7 @@ var emptyFrameSize []byte = []byte{0, 0, 0, 0}
 // NewFBoundedMemoryBuffer returns a new FBoundedMemoryBuffer with the given
 // size limit. If the provided limit is non-positive, the buffer is allowed
 // to grow unbounded.
-func NewFBoundedMemoryBuffer(size int) *FBoundedMemoryBuffer {
+func NewFBoundedMemoryBuffer(size uint) *FBoundedMemoryBuffer {
 	buffer := &FBoundedMemoryBuffer{size, thrift.NewTMemoryBuffer()}
 	buffer.Write(emptyFrameSize)
 	return buffer
@@ -28,7 +28,7 @@ func NewFBoundedMemoryBuffer(size int) *FBoundedMemoryBuffer {
 // Write the data to the buffer. Returns ErrTooLarge if the write would cause
 // the buffer to exceed its limit.
 func (f *FBoundedMemoryBuffer) Write(buf []byte) (int, error) {
-	if f.limit > 0 && len(buf)+f.Len() > f.limit {
+	if f.limit > 0 && uint(len(buf)+f.Len()) > f.limit {
 		f.Reset()
 		return 0, ErrTooLarge
 	}
