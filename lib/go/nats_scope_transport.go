@@ -85,6 +85,7 @@ func (n *fNatsPublisherTransport) Open() error {
 	return nil
 }
 
+// IsOpen returns true if the transport is open, false otherwise.
 func (n *fNatsPublisherTransport) IsOpen() bool {
 	n.openMu.RLock()
 	defer n.openMu.RUnlock()
@@ -113,6 +114,8 @@ func (n *fNatsPublisherTransport) Close() error {
 	return nil
 }
 
+// Read is an invalid operation for publisher transports, so will always
+// return an error.
 func (n *fNatsPublisherTransport) Read(p []byte) (int, error) {
 	return 0, errors.New("publisher: can't call Read")
 }
@@ -145,6 +148,8 @@ func (n *fNatsPublisherTransport) Flush() error {
 	return thrift.NewTTransportExceptionFromError(err)
 }
 
+// RemainingBytes returns the number of bytes left to be read. Read is an
+// invalid operation though, so this shouldn't be called.
 func (n *fNatsPublisherTransport) RemainingBytes() uint64 {
 	return ^uint64(0) // We don't know unless framed is used.
 }
@@ -253,6 +258,7 @@ func (n *fNatsSubscriberTransport) handleMessage(msg *nats.Msg) {
 	}
 }
 
+// IsOpen returns true if the transport is open, false otherwise.
 func (n *fNatsSubscriberTransport) IsOpen() bool {
 	n.openMu.RLock()
 	defer n.openMu.RUnlock()
