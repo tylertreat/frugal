@@ -58,8 +58,9 @@ func StartClient(
 			panic(err)
 		}
 
-		factory := frugal.NewFNatsScopeTransportFactory(conn)
-		provider := frugal.NewFScopeProvider(factory, frugal.NewFProtocolFactory(protocolFactory))
+		pfactory := frugal.NewFNatsPublisherTransportFactory(conn)
+		sfactory := frugal.NewFNatsSubscriberTransportFactory(conn)
+		provider := frugal.NewFScopeProvider(pfactory, sfactory, frugal.NewFProtocolFactory(protocolFactory))
 		publisher := frugaltest.NewEventsPublisher(provider)
 		if err := publisher.Open(); err != nil {
 			panic(err)

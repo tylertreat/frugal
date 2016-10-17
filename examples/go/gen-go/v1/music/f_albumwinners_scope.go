@@ -5,7 +5,6 @@ package music
 
 import (
 	"fmt"
-	"log"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"
@@ -23,13 +22,13 @@ type AlbumWinnersPublisher interface {
 }
 
 type albumWinnersPublisher struct {
-	transport frugal.FScopeTransport
+	transport frugal.FPublisherTransport
 	protocol  *frugal.FProtocol
 	methods   map[string]*frugal.Method
 }
 
 func NewAlbumWinnersPublisher(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) AlbumWinnersPublisher {
-	transport, protocol := provider.New()
+	transport, protocol := provider.NewPublisher()
 	methods := make(map[string]*frugal.Method)
 	publisher := &albumWinnersPublisher{
 		transport: transport,
@@ -100,51 +99,42 @@ func (l *albumWinnersSubscriber) SubscribeWinner(handler func(*frugal.FContext, 
 	op := "Winner"
 	prefix := "v1.music."
 	topic := fmt.Sprintf("%sAlbumWinners%s%s", prefix, delimiter, op)
-	transport, protocol := l.provider.New()
-	if err := transport.Subscribe(topic); err != nil {
+	transport, protocolFactory := l.provider.NewSubscriber()
+	cb := l.recvWinner(op, protocolFactory, handler)
+	if err := transport.Subscribe(topic, cb); err != nil {
 		return nil, err
 	}
 
-	method := frugal.NewMethod(l, handler, "SubscribeWinner", l.middleware)
 	sub := frugal.NewFSubscription(topic, transport)
-	go func() {
-		for {
-			ctx, received, err := l.recvWinner(op, protocol)
-			if err != nil {
-				if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
-					return
-				}
-				log.Printf("frugal: error receiving %s, discarding frame: %s\n", topic, err.Error())
-				transport.DiscardFrame()
-				continue
-			}
-			method.Invoke([]interface{}{ctx, received})
-		}
-	}()
-
 	return sub, nil
 }
 
-func (l *albumWinnersSubscriber) recvWinner(op string, iprot *frugal.FProtocol) (*frugal.FContext, *Album, error) {
-	ctx, err := iprot.ReadRequestHeader()
-	if err != nil {
-		return nil, nil, err
-	}
-	name, _, _, err := iprot.ReadMessageBegin()
-	if err != nil {
-		return nil, nil, err
-	}
-	if name != op {
-		iprot.Skip(thrift.STRUCT)
-		iprot.ReadMessageEnd()
-		x9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
-		return nil, nil, x9
-	}
-	req := &Album{}
-	if err := req.Read(iprot); err != nil {
-		return nil, nil, err
-	}
+func (l *albumWinnersSubscriber) recvWinner(op string, pf *frugal.FProtocolFactory, handler func(*frugal.FContext, *Album)) frugal.FAsyncCallback {
+	method := frugal.NewMethod(l, handler, "SubscribeWinner", l.middleware)
+	return func(transport thrift.TTransport) error {
+		iprot := pf.GetProtocol(transport)
+		ctx, err := iprot.ReadRequestHeader()
+		if err != nil {
+			return err
+		}
 
-	iprot.ReadMessageEnd()
-	return ctx, req, nil
+		name, _, _, err := iprot.ReadMessageBegin()
+		if err != nil {
+			return err
+		}
+
+		if name != op {
+			iprot.Skip(thrift.STRUCT)
+			iprot.ReadMessageEnd()
+			return thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function"+name)
+		}
+		req := &Album{}
+		if err := req.Read(iprot); err != nil {
+			return err
+		}
+		iprot.ReadMessageEnd()
+
+		method.Invoke([]interface{}{ctx, req})
+		return nil
+	}
 }
