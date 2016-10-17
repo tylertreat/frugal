@@ -1528,7 +1528,7 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 		contents += "\t}\n"
 		contents += "\tdefer f.transport.Unregister(ctx)\n"
 	}
-	contents += "\tbuffer := frugal.NewTFramedMemoryBuffer(f.transport.GetMaxRequestSize())\n"
+	contents += "\tbuffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())\n"
 	contents += "\toprot := f.protocolFactory.GetProtocol(buffer)\n"
 	contents += "\tif err = oprot.WriteRequestHeader(ctx); err != nil {\n"
 	contents += "\t\treturn\n"
@@ -1550,9 +1550,9 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	contents += "\tif err = oprot.WriteMessageEnd(); err != nil {\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
-	contents += "\tif err = oprot.Flush(); err != nil {\n"
-	contents += "\t\treturn\n"
-	contents += "\t}\n"
+	//contents += "\tif err = oprot.Flush(); err != nil {\n"
+	//contents += "\t\treturn\n"
+	//contents += "\t}\n"
 
 	contents += "\tdata := buffer.Bytes()\n"
 

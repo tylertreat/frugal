@@ -184,11 +184,6 @@ func (h *fHttpTransport) Close() error {
 	return nil
 }
 
-// Read should not be called, it will return an error
-func (h *fHttpTransport) Read(buf []byte) (int, error) {
-	return 0, errors.New("Cannot read on FTransport")
-}
-
 // Send transmits the given data. The data is expected to already be framed.
 func (h *fHttpTransport) Send(data []byte) error {
 	if !h.IsOpen() {
@@ -232,7 +227,7 @@ func (h *fHttpTransport) Send(data []byte) error {
 // GetMaxRequestSize returns the maximum number of bytes that can be
 // transmitted. Returns a non-positive number to indicate an unbounded
 // allowable size.
-func (h *fHttpTransport) GetMaxRequestSize() uint {
+func (h *fHttpTransport) GetRequestSizeLimit() uint {
 	return h.requestSizeLimit
 }
 

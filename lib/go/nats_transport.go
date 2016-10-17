@@ -113,7 +113,7 @@ func (f *fNatsTransport) Send(data []byte) error {
 // GetMaxRequestSize returns the maximum number of bytes that can be
 // transmitted. Returns a non-positive number to indicate an unbounded
 // allowable size.
-func (f *fNatsTransport) GetMaxRequestSize() uint {
+func (f *fNatsTransport) GetRequestSizeLimit() uint {
 	return uint(natsMaxMessageSize)
 }
 

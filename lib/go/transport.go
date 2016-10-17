@@ -111,7 +111,7 @@ type FTransport interface {
 	// GetMaxRequestSize returns the maximum number of bytes that can be
 	// transmitted. Returns a non-positive number to indicate an unbounded
 	// allowable size.
-	GetMaxRequestSize() uint
+	GetRequestSizeLimit() uint
 }
 
 // FTransportFactory produces FTransports by wrapping a provided TTransport.

@@ -203,7 +203,7 @@ func newClientAndServer(t *testing.T, isTTransport bool) (*fNatsTransport, *fNat
 	mockTransport := new(mockFTransport)
 	proto := thrift.NewTJSONProtocol(mockTransport)
 	mockTProtocolFactory.On("GetProtocol", mock.AnythingOfType("*thrift.TMemoryBuffer")).Return(proto).Once()
-	mockTProtocolFactory.On("GetProtocol", mock.AnythingOfType("*frugal.TFramedMemoryBuffer")).Return(proto).Once()
+	mockTProtocolFactory.On("GetProtocol", mock.AnythingOfType("*frugal.TMemoryOutputBuffer")).Return(proto).Once()
 	fproto := &FProtocol{proto}
 	mockProcessor.On("Process", fproto, fproto).Return(nil)
 

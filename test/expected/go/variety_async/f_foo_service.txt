@@ -85,7 +85,7 @@ func (f *FFooClient) ping(ctx *frugal.FContext) (err error) {
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	buffer := frugal.NewTFramedMemoryBuffer(f.transport.GetMaxRequestSize())
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
@@ -98,9 +98,6 @@ func (f *FFooClient) ping(ctx *frugal.FContext) (err error) {
 		return
 	}
 	if err = oprot.WriteMessageEnd(); err != nil {
-		return
-	}
-	if err = oprot.Flush(); err != nil {
 		return
 	}
 	data := buffer.Bytes()
@@ -205,7 +202,7 @@ func (f *FFooClient) blah(ctx *frugal.FContext, num int32, str string, event *Ev
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	buffer := frugal.NewTFramedMemoryBuffer(f.transport.GetMaxRequestSize())
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
@@ -222,9 +219,6 @@ func (f *FFooClient) blah(ctx *frugal.FContext, num int32, str string, event *Ev
 		return
 	}
 	if err = oprot.WriteMessageEnd(); err != nil {
-		return
-	}
-	if err = oprot.Flush(); err != nil {
 		return
 	}
 	data := buffer.Bytes()
@@ -336,7 +330,7 @@ func (f *FFooClient) OneWay(ctx *frugal.FContext, id ID, req Request) (err error
 }
 
 func (f *FFooClient) oneWay(ctx *frugal.FContext, id ID, req Request) (err error) {
-	buffer := frugal.NewTFramedMemoryBuffer(f.transport.GetMaxRequestSize())
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
@@ -352,9 +346,6 @@ func (f *FFooClient) oneWay(ctx *frugal.FContext, id ID, req Request) (err error
 		return
 	}
 	if err = oprot.WriteMessageEnd(); err != nil {
-		return
-	}
-	if err = oprot.Flush(); err != nil {
 		return
 	}
 	data := buffer.Bytes()
@@ -393,7 +384,7 @@ func (f *FFooClient) bin_method(ctx *frugal.FContext, bin []byte, str string) (r
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	buffer := frugal.NewTFramedMemoryBuffer(f.transport.GetMaxRequestSize())
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
@@ -409,9 +400,6 @@ func (f *FFooClient) bin_method(ctx *frugal.FContext, bin []byte, str string) (r
 		return
 	}
 	if err = oprot.WriteMessageEnd(); err != nil {
-		return
-	}
-	if err = oprot.Flush(); err != nil {
 		return
 	}
 	data := buffer.Bytes()
@@ -524,7 +512,7 @@ func (f *FFooClient) param_modifiers(ctx *frugal.FContext, opt_num int32, defaul
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	buffer := frugal.NewTFramedMemoryBuffer(f.transport.GetMaxRequestSize())
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
@@ -541,9 +529,6 @@ func (f *FFooClient) param_modifiers(ctx *frugal.FContext, opt_num int32, defaul
 		return
 	}
 	if err = oprot.WriteMessageEnd(); err != nil {
-		return
-	}
-	if err = oprot.Flush(); err != nil {
 		return
 	}
 	data := buffer.Bytes()
@@ -652,7 +637,7 @@ func (f *FFooClient) underlying_types_test(ctx *frugal.FContext, list_type []ID,
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	buffer := frugal.NewTFramedMemoryBuffer(f.transport.GetMaxRequestSize())
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
@@ -668,9 +653,6 @@ func (f *FFooClient) underlying_types_test(ctx *frugal.FContext, list_type []ID,
 		return
 	}
 	if err = oprot.WriteMessageEnd(); err != nil {
-		return
-	}
-	if err = oprot.Flush(); err != nil {
 		return
 	}
 	data := buffer.Bytes()
@@ -779,7 +761,7 @@ func (f *FFooClient) getThing(ctx *frugal.FContext) (r *validStructs.Thing, err 
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	buffer := frugal.NewTFramedMemoryBuffer(f.transport.GetMaxRequestSize())
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
@@ -792,9 +774,6 @@ func (f *FFooClient) getThing(ctx *frugal.FContext) (r *validStructs.Thing, err 
 		return
 	}
 	if err = oprot.WriteMessageEnd(); err != nil {
-		return
-	}
-	if err = oprot.Flush(); err != nil {
 		return
 	}
 	data := buffer.Bytes()
@@ -903,7 +882,7 @@ func (f *FFooClient) getMyInt(ctx *frugal.FContext) (r ValidTypes.MyInt, err err
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	buffer := frugal.NewTFramedMemoryBuffer(f.transport.GetMaxRequestSize())
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
@@ -916,9 +895,6 @@ func (f *FFooClient) getMyInt(ctx *frugal.FContext) (r ValidTypes.MyInt, err err
 		return
 	}
 	if err = oprot.WriteMessageEnd(); err != nil {
-		return
-	}
-	if err = oprot.Flush(); err != nil {
 		return
 	}
 	data := buffer.Bytes()

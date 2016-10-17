@@ -9,7 +9,7 @@ import (
 // Ensures Write writes to the buffer until its size limit is reached, after
 // which ErrTooLarge is returned and the buffer is reset.
 func TestTFramedMemoryBufferWrite(t *testing.T) {
-	buff := NewTFramedMemoryBuffer(100)
+	buff := NewTMemoryOutputBuffer(100)
 	assert.Equal(t, 4, buff.Len())
 	n, err := buff.Write(make([]byte, 50))
 	assert.Nil(t, err)

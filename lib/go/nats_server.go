@@ -170,7 +170,7 @@ func (f *fNatsServer) processFrame(frame []byte, reply string) error {
 	// Read and process frame.
 	input := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(frame[4:])} // Discard frame size
 	// Only allow 1MB to be buffered.
-	output := NewTFramedMemoryBuffer(natsMaxMessageSize)
+	output := NewTMemoryOutputBuffer(natsMaxMessageSize)
 	if err := f.processor.Process(
 		f.inputProtoFactory.GetProtocol(input),
 		f.outputProtoFactory.GetProtocol(output)); err != nil {
