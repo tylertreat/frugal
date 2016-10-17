@@ -1,5 +1,6 @@
 package com.workiva.frugal.transport;
 
+import com.workiva.frugal.exception.FMessageSizeException;
 import io.nats.client.Connection;
 import io.nats.client.Constants;
 import io.nats.client.Message;
@@ -32,8 +33,8 @@ public class FNatsTransport extends FTransport {
     private Subscription sub;
 
     private FNatsTransport(Connection conn, String subject, String inbox) {
-        // Leave room for the frame size
-        super(NATS_MAX_MESSAGE_SIZE - 4);
+        super();
+        this.requestSizeLimit = NATS_MAX_MESSAGE_SIZE;
         this.conn = conn;
         this.subject = subject;
         this.inbox = inbox;
@@ -106,27 +107,25 @@ public class FNatsTransport extends FTransport {
     }
 
     /**
-     * Sends any buffered bytes over NATS.
+     * Sends framed request bytes over NATS.
      *
      * @throws TTransportException
      */
-    @Override
-    public void flush() throws TTransportException {
+    public void send(byte[] payload) throws TTransportException {
         if (!isOpen()) {
-            throw getClosedConditionException(conn.getState(), "flush:");
+            throw getClosedConditionException(conn.getState(), "send:");
         }
 
-        if (!hasWriteData()) {
-            return;
+        if (payload.length > NATS_MAX_MESSAGE_SIZE) {
+            throw new FMessageSizeException(
+                    String.format("Message exceeds %d bytes, was %d bytes",
+                            NATS_MAX_MESSAGE_SIZE, payload.length));
         }
-
-        byte[] data = getFramedWriteBytes();
-        resetWriteBuffer();
 
         try {
-            conn.publish(subject, inbox, data);
+            conn.publish(subject, inbox, payload);
         } catch (IOException e) {
-            throw new TTransportException("flush: unable to publish data: " + e.getMessage());
+            throw new TTransportException("send: unable to publish data: " + e.getMessage());
         }
     }
 

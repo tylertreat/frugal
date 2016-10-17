@@ -1,6 +1,5 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.protocol.FAsyncCallback;
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FRegistry;
@@ -12,7 +11,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -36,44 +34,20 @@ public class FTransportTest {
         transport = new FTransportTester();
     }
 
-    public void testSetRegistryMultipleTimes() throws Exception {
-        FRegistry registry = mock(FRegistry.class);
-        transport.setRegistry(registry);
-        transport.setRegistry(registry);
-    }
-
     @Test
     public void testRegister() throws Exception {
         FRegistry registry = mock(FRegistry.class);
-        transport.setRegistry(registry);
+        transport.registry = registry;
         transport.register(context, callback);
         verify(registry).register(context, callback);
     }
 
     @Test
-    public void testRegisterThrowsFExceptionIfRegistryNotSet() throws Exception {
-        try {
-            transport.register(context, callback);
-        } catch (FException ex) {
-            assertEquals("registry not set", ex.getMessage());
-        }
-    }
-
-    @Test
     public void testUnregister() throws Exception {
         FRegistry registry = mock(FRegistry.class);
-        transport.setRegistry(registry);
+        transport.registry = registry;
         transport.unregister(context);
         verify(registry).unregister(context);
-    }
-
-    @Test
-    public void testUnregisterThrowsFExceptionIfRegistryNotSet() throws Exception {
-        try {
-            transport.unregister(context);
-        } catch (FException ex) {
-            assertEquals("registry not set", ex.getMessage());
-        }
     }
 
     class FTransportTester extends FTransport {
@@ -93,12 +67,7 @@ public class FTransportTest {
         }
 
         @Override
-        public int read(byte[] bytes, int i, int i1) throws TTransportException {
-            return 0;
-        }
-
-        @Override
-        public void write(byte[] bytes, int i, int i1) throws TTransportException {
+        public void send(byte[] payload) throws TTransportException {
         }
     }
 }

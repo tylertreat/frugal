@@ -3,19 +3,19 @@ package com.workiva.frugal.server;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.protocol.FProtocol;
 import com.workiva.frugal.protocol.FProtocolFactory;
-import com.workiva.frugal.protocol.FServerRegistry;
-import com.workiva.frugal.transport.FTransport;
-import com.workiva.frugal.transport.FTransportFactory;
 import org.apache.thrift.TException;
+import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TServerTransport;
 import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Simple multi-threaded server.
+ * Simple single-threaded server for testing that may be used used to serve clients using TTransports
+ * wrapped with the FAdapterTransport.
  */
 public class FSimpleServer implements FServer {
 
@@ -23,15 +23,13 @@ public class FSimpleServer implements FServer {
 
     private final FProcessor fProcessor;
     private final TServerTransport tServerTransport;
-    private final FTransportFactory fTransportFactory;
     private final FProtocolFactory fProtocolFactory;
     private final AtomicBoolean isStopped = new AtomicBoolean(false);
 
-    private FSimpleServer(FProcessor fProcessor, TServerTransport fServerTransport,
-                          FTransportFactory fTransportFactory, FProtocolFactory fProtocolFactory) {
+    private FSimpleServer(FProcessor fProcessor, TServerTransport tServerTransport,
+                          FProtocolFactory fProtocolFactory) {
         this.fProcessor = fProcessor;
-        this.tServerTransport = fServerTransport;
-        this.fTransportFactory = fTransportFactory;
+        this.tServerTransport = tServerTransport;
         this.fProtocolFactory = fProtocolFactory;
     }
 
@@ -39,15 +37,14 @@ public class FSimpleServer implements FServer {
      * Create a new FSimpleServer.
      *
      * @param fProcessor Processor for incoming requests.
-     * @param fServerTransport Server transport listening to requests.
-     * @param fTransportFactory Factory for creating transports
+     * @param tServerTransport Server transport listening to requests.
      * @param fProtocolFactory Protocol factory
      *
      * @return FSimpleServer
      */
-    public static FSimpleServer of(FProcessor fProcessor, TServerTransport fServerTransport,
-                                   FTransportFactory fTransportFactory, FProtocolFactory fProtocolFactory) {
-        return new FSimpleServer(fProcessor, fServerTransport, fTransportFactory, fProtocolFactory);
+    public static FSimpleServer of(FProcessor fProcessor, TServerTransport tServerTransport,
+                                   FProtocolFactory fProtocolFactory) {
+        return new FSimpleServer(fProcessor, tServerTransport, fProtocolFactory);
     }
 
     /**
@@ -88,6 +85,7 @@ public class FSimpleServer implements FServer {
                 throw e;
             }
             if (client != null) {
+                // TODO: Could make this multi-threaded by processing client messages in another thread.
                 try {
                     accept(client);
                 } catch (TException e) {
@@ -98,12 +96,18 @@ public class FSimpleServer implements FServer {
     }
 
     /**
-     * Open the transport and set the server callback registry.
+     * Processes messages from the given client. Will block until the client disconnects.
      */
     void accept(TTransport client) throws TException {
-        FTransport transport = fTransportFactory.getTransport(client);
-        FProtocol protocol = fProtocolFactory.getProtocol(transport);
-        transport.setRegistry(new FServerRegistry(fProcessor, fProtocolFactory, protocol));
-        transport.open();
+        TTransport transport = new TFramedTransport(client);
+        FProtocol inputProtocol = fProtocolFactory.getProtocol(transport);
+        FProtocol outputProtocol = fProtocolFactory.getProtocol(transport);
+        try {
+            while (!isStopped.get()) {
+                fProcessor.process(inputProtocol, outputProtocol);
+            }
+        } catch (TTransportException ttx) {
+            // Client died, just move on
+        }
     }
 }

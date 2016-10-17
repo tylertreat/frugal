@@ -1,6 +1,5 @@
 package com.workiva.frugal.transport.monitor;
 
-import com.workiva.frugal.protocol.FRegistry;
 import com.workiva.frugal.transport.FTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Test;
@@ -229,11 +228,6 @@ public class BaseFTransportMonitorTest {
         }
 
         @Override
-        public void setRegistry(FRegistry registry) {
-
-        }
-
-        @Override
         public boolean isOpen() {
             return false;
         }
@@ -251,18 +245,13 @@ public class BaseFTransportMonitorTest {
             signalClose(null);
         }
 
-        @Override
-        public int read(byte[] bytes, int i, int i1) throws TTransportException {
-            return 0;
-        }
-
-        @Override
-        public void write(byte[] bytes, int i, int i1) throws TTransportException {
-
-        }
-
         public void close(Exception cause) {
             signalClose(cause);
+        }
+
+        @Override
+        public void send(byte[] payload) throws TTransportException {
+
         }
 
     }

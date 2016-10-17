@@ -25,8 +25,9 @@ func main() {
 	}
 
 	// Create a NATS scoped transport for the PubSub scope
-	factory := frugal.NewFNatsScopeTransportFactory(conn)
-	provider := frugal.NewFScopeProvider(factory, fProtocolFactory)
+	pfactory := frugal.NewFNatsPublisherTransportFactory(conn)
+	sfactory := frugal.NewFNatsSubscriberTransportFactory(conn)
+	provider := frugal.NewFScopeProvider(pfactory, sfactory, fProtocolFactory)
 	subscriber := music.NewAlbumWinnersSubscriber(provider)
 
 	// Subscribe to messages

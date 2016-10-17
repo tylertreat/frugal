@@ -1097,14 +1097,14 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += "}\n\n"
 
 	publisher += fmt.Sprintf("type %sPublisher struct {\n", scopeLower)
-	publisher += "\ttransport frugal.FScopeTransport\n"
+	publisher += "\ttransport frugal.FPublisherTransport\n"
 	publisher += "\tprotocol  *frugal.FProtocol\n"
 	publisher += "\tmethods   map[string]*frugal.Method\n"
 	publisher += "}\n\n"
 
 	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) %sPublisher {\n",
 		scopeCamel, scopeCamel)
-	publisher += "\ttransport, protocol := provider.New()\n"
+	publisher += "\ttransport, protocol := provider.NewPublisher()\n"
 	publisher += "\tmethods := make(map[string]*frugal.Method)\n"
 	publisher += fmt.Sprintf("\tpublisher := &%sPublisher{\n", scopeLower)
 	publisher += "\t\ttransport: transport,\n"
@@ -1277,53 +1277,44 @@ func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Oper
 	subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 	subscriber += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 	subscriber += "\ttopic := fmt.Sprintf(\"%s" + scopeTitle + "%s%s\", prefix, delimiter, op)\n"
-	subscriber += "\ttransport, protocol := l.provider.New()\n"
-	subscriber += "\tif err := transport.Subscribe(topic); err != nil {\n"
+	subscriber += "\ttransport, protocolFactory := l.provider.NewSubscriber()\n"
+	subscriber += fmt.Sprintf("\tcb := l.recv%s(op, protocolFactory, handler)\n", op.Name)
+	subscriber += "\tif err := transport.Subscribe(topic, cb); err != nil {\n"
 	subscriber += "\t\treturn nil, err\n"
 	subscriber += "\t}\n\n"
 
-	subscriber += fmt.Sprintf("\tmethod := frugal.NewMethod(l, handler, \"Subscribe%s\", l.middleware)\n", op.Name)
 	subscriber += "\tsub := frugal.NewFSubscription(topic, transport)\n"
-	subscriber += "\tgo func() {\n"
-	subscriber += "\t\tfor {\n"
-	subscriber += fmt.Sprintf("\t\t\tctx, received, err := l.recv%s(op, protocol)\n", op.Name)
-	subscriber += "\t\t\tif err != nil {\n"
-	subscriber += "\t\t\t\tif e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {\n"
-	subscriber += "\t\t\t\t\treturn\n"
-	subscriber += "\t\t\t\t}\n"
-	subscriber += "\t\t\t\tlog.Printf(\"frugal: error receiving %s, discarding frame: %s\\n\", topic, err.Error())\n"
-	subscriber += "\t\t\t\ttransport.DiscardFrame()\n"
-	subscriber += "\t\t\t\tcontinue\n"
-	subscriber += "\t\t\t}\n"
-	subscriber += "\t\t\tmethod.Invoke([]interface{}{ctx, received})\n"
-	subscriber += "\t\t}\n"
-	subscriber += "\t}()\n\n"
 	subscriber += "\treturn sub, nil\n"
 	subscriber += "}\n\n"
 
-	subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, iprot *frugal.FProtocol) (*frugal.FContext, *%s, error) {\n",
+	subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, pf *frugal.FProtocolFactory, handler func(*frugal.FContext, *%s)) frugal.FAsyncCallback {\n",
 		scopeLower, op.Name, g.qualifiedTypeName(op.Type))
-	subscriber += "\tctx, err := iprot.ReadRequestHeader()\n"
-	subscriber += "\tif err != nil {\n"
-	subscriber += "\t\treturn nil, nil, err\n"
+	subscriber += fmt.Sprintf("\tmethod := frugal.NewMethod(l, handler, \"Subscribe%s\", l.middleware)\n", op.Name)
+	subscriber += "\treturn func(transport thrift.TTransport) error {\n"
+	subscriber += "\t\tiprot := pf.GetProtocol(transport)\n"
+	subscriber += "\t\tctx, err := iprot.ReadRequestHeader()\n"
+	subscriber += "\t\tif err != nil {\n"
+	subscriber += "\t\t\treturn err\n"
+	subscriber += "\t\t}\n\n"
+	subscriber += "\t\tname, _, _, err := iprot.ReadMessageBegin()\n"
+	subscriber += "\t\tif err != nil {\n"
+	subscriber += "\t\t\treturn err\n"
+	subscriber += "\t\t}\n\n"
+	subscriber += "\t\tif name != op {\n"
+	subscriber += "\t\t\tiprot.Skip(thrift.STRUCT)\n"
+	subscriber += "\t\t\tiprot.ReadMessageEnd()\n"
+	subscriber += "\t\t\treturn thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function\"+name)\n"
+	subscriber += "\t\t}\n"
+	subscriber += fmt.Sprintf("\t\treq := &%s{}\n", g.qualifiedTypeName(op.Type))
+	subscriber += "\t\tif err := req.Read(iprot); err != nil {\n"
+	subscriber += "\t\t\treturn err\n"
+	subscriber += "\t\t}\n"
+	subscriber += "\t\tiprot.ReadMessageEnd()\n\n"
+	subscriber += "\t\tmethod.Invoke([]interface{}{ctx, req})\n"
+	subscriber += "\t\treturn nil\n"
 	subscriber += "\t}\n"
-	subscriber += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
-	subscriber += "\tif err != nil {\n"
-	subscriber += "\t\treturn nil, nil, err\n"
-	subscriber += "\t}\n"
-	subscriber += "\tif name != op {\n"
-	subscriber += "\t\tiprot.Skip(thrift.STRUCT)\n"
-	subscriber += "\t\tiprot.ReadMessageEnd()\n"
-	subscriber += "\t\tx9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
-	subscriber += "\t\treturn nil, nil, x9\n"
-	subscriber += "\t}\n"
-	subscriber += fmt.Sprintf("\treq := &%s{}\n", g.qualifiedTypeName(op.Type))
-	subscriber += "\tif err := req.Read(iprot); err != nil {\n"
-	subscriber += "\t\treturn nil, nil, err\n"
-	subscriber += "\t}\n\n"
-	subscriber += "\tiprot.ReadMessageEnd()\n"
-	subscriber += "\treturn ctx, req, nil\n"
 	subscriber += "}"
+
 	return subscriber
 }
 

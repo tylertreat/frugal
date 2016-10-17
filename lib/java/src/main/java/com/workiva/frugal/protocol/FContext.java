@@ -10,17 +10,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * can be used to set request headers, response headers, and the request timeout.
  * The default timeout is five seconds. An FContext is also sent with every publish
  * message which is then received by subscribers.
- * <p/>
+ * <p>
  * In addition to headers, the FContext also contains a correlation ID which can
  * be used for distributed tracing purposes. A random correlation ID is generated
  * for each FContext if one is not provided.
- * <p/>
+ * <p>
  * FContext also plays a key role in Frugal's multiplexing support. A unique,
  * per-request operation ID is set on every FContext before a request is made.
  * This operation ID is sent in the request and included in the response, which is
  * then used to correlate a response to a request. The operation ID is an internal
  * implementation detail and is not exposed to the user.
- * <p/>
+ * <p>
  * This object is not thread-safe.
  */
 public class FContext {
@@ -64,10 +64,8 @@ public class FContext {
      * @return FContext
      */
     protected static FContext withRequestHeaders(Map<String, String> headers) {
-        if (headers.get(CID) == null) {
-            headers.put(CID, generateCorrelationId());
-        }
-        return new FContext(headers, new HashMap<String, String>());
+        headers.putIfAbsent(CID, generateCorrelationId());
+        return new FContext(headers, new HashMap<>());
     }
 
     private static String generateCorrelationId() {
