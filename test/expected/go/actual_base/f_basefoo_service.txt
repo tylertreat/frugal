@@ -6,7 +6,6 @@ package actual_base
 import (
 	"bytes"
 	"fmt"
-	"sync"
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -25,7 +24,6 @@ type FBaseFoo interface {
 type FBaseFooClient struct {
 	transport       frugal.FTransport
 	protocolFactory *frugal.FProtocolFactory
-	mu              sync.Mutex
 	methods         map[string]*frugal.Method
 }
 
@@ -38,11 +36,6 @@ func NewFBaseFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middlewa
 	}
 	methods["basePing"] = frugal.NewMethod(client, client.basePing, "basePing", middleware)
 	return client
-}
-
-// Do Not Use. To be called only by generated code.
-func (f *FBaseFooClient) GetWriteMutex() *sync.Mutex {
-	return &f.mu
 }
 
 func (f *FBaseFooClient) BasePing(ctx *frugal.FContext) (err error) {
@@ -63,7 +56,7 @@ func (f *FBaseFooClient) basePing(ctx *frugal.FContext) (err error) {
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	buffer := frugal.NewFBoundedMemoryBuffer(f.transport.GetMaxRequestSize())
+	buffer := frugal.NewTFramedMemoryBuffer(f.transport.GetMaxRequestSize())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
@@ -160,13 +153,12 @@ type FBaseFooProcessor struct {
 
 func NewFBaseFooProcessor(handler FBaseFoo, middleware ...frugal.ServiceMiddleware) *FBaseFooProcessor {
 	p := &FBaseFooProcessor{frugal.NewFBaseProcessor()}
-	p.AddToProcessorMap("basePing", &basefooFBasePing{handler: frugal.NewMethod(handler, handler.BasePing, "BasePing", middleware), writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("basePing", &basefooFBasePing{handler: frugal.NewMethod(handler, handler.BasePing, "BasePing", middleware)})
 	return p
 }
 
 type basefooFBasePing struct {
 	handler *frugal.Method
-	writeMu *sync.Mutex
 }
 
 func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
@@ -174,9 +166,7 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		p.writeMu.Lock()
 		basefooWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "basePing", err.Error())
-		p.writeMu.Unlock()
 		return err
 	}
 
@@ -191,13 +181,9 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 		err2 = ret[0].(error)
 	}
 	if err2 != nil {
-		p.writeMu.Lock()
 		basefooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "basePing", "Internal error processing basePing: "+err2.Error())
-		p.writeMu.Unlock()
 		return err2
 	}
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
 			basefooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "basePing", "response too large: "+err2.Error())
