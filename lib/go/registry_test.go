@@ -77,6 +77,8 @@ func (p *mockProcessor) Process(in, out *FProtocol) error {
 	return nil
 }
 
+func (p *mockProcessor) AddMiddleware(middleware ServiceMiddleware) {}
+
 // Ensures registry Execute properly hands off frugal frames to the registry
 // Processor.
 func TestServerRegistry(t *testing.T) {

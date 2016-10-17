@@ -302,14 +302,13 @@ type FStoreProcessor struct {
 
 func NewFStoreProcessor(handler FStore, middleware ...frugal.ServiceMiddleware) *FStoreProcessor {
 	p := &FStoreProcessor{frugal.NewFBaseProcessor()}
-	p.AddToProcessorMap("buyAlbum", &storeFBuyAlbum{handler: frugal.NewMethod(handler, handler.BuyAlbum, "BuyAlbum", middleware), writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("enterAlbumGiveaway", &storeFEnterAlbumGiveaway{handler: frugal.NewMethod(handler, handler.EnterAlbumGiveaway, "EnterAlbumGiveaway", middleware), writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("buyAlbum", &storeFBuyAlbum{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.BuyAlbum, "BuyAlbum", middleware))})
+	p.AddToProcessorMap("enterAlbumGiveaway", &storeFEnterAlbumGiveaway{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.EnterAlbumGiveaway, "EnterAlbumGiveaway", middleware))})
 	return p
 }
 
 type storeFBuyAlbum struct {
-	handler *frugal.Method
-	writeMu *sync.Mutex
+	*frugal.FBaseProcessorFunction
 }
 
 func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
@@ -317,16 +316,16 @@ func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FPro
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		p.writeMu.Lock()
+		p.GetWriteMutex().Lock()
 		storeWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "buyAlbum", err.Error())
-		p.writeMu.Unlock()
+		p.GetWriteMutex().Unlock()
 		return err
 	}
 
 	iprot.ReadMessageEnd()
 	result := StoreBuyAlbumResult{}
 	var err2 error
-	ret := p.handler.Invoke([]interface{}{ctx, args.ASIN, args.Acct})
+	ret := p.InvokeMethod([]interface{}{ctx, args.ASIN, args.Acct})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
 	}
@@ -335,26 +334,26 @@ func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FPro
 	}
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
-			p.writeMu.Lock()
+			p.GetWriteMutex().Lock()
 			storeWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "buyAlbum", "Rate limit exceeded")
-			p.writeMu.Unlock()
+			p.GetWriteMutex().Unlock()
 			return nil
 		}
 		switch v := err2.(type) {
 		case *PurchasingError:
 			result.Error = v
 		default:
-			p.writeMu.Lock()
+			p.GetWriteMutex().Lock()
 			storeWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "buyAlbum", "Internal error processing buyAlbum: "+err2.Error())
-			p.writeMu.Unlock()
+			p.GetWriteMutex().Unlock()
 			return err2
 		}
 	} else {
 		var retval *Album = ret[0].(*Album)
 		result.Success = retval
 	}
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
+	p.GetWriteMutex().Lock()
+	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
 			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: "+err2.Error())
@@ -394,8 +393,7 @@ func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FPro
 }
 
 type storeFEnterAlbumGiveaway struct {
-	handler *frugal.Method
-	writeMu *sync.Mutex
+	*frugal.FBaseProcessorFunction
 }
 
 func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
@@ -403,16 +401,16 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		p.writeMu.Lock()
+		p.GetWriteMutex().Lock()
 		storeWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "enterAlbumGiveaway", err.Error())
-		p.writeMu.Unlock()
+		p.GetWriteMutex().Unlock()
 		return err
 	}
 
 	iprot.ReadMessageEnd()
 	result := StoreEnterAlbumGiveawayResult{}
 	var err2 error
-	ret := p.handler.Invoke([]interface{}{ctx, args.Email, args.Name})
+	ret := p.InvokeMethod([]interface{}{ctx, args.Email, args.Name})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
 	}
@@ -421,21 +419,21 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 	}
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
-			p.writeMu.Lock()
+			p.GetWriteMutex().Lock()
 			storeWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", "Rate limit exceeded")
-			p.writeMu.Unlock()
+			p.GetWriteMutex().Unlock()
 			return nil
 		}
-		p.writeMu.Lock()
+		p.GetWriteMutex().Lock()
 		storeWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "enterAlbumGiveaway", "Internal error processing enterAlbumGiveaway: "+err2.Error())
-		p.writeMu.Unlock()
+		p.GetWriteMutex().Unlock()
 		return err2
 	} else {
 		var retval bool = ret[0].(bool)
 		result.Success = &retval
 	}
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
+	p.GetWriteMutex().Lock()
+	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
 			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: "+err2.Error())
