@@ -39,16 +39,15 @@ func IsErrTooLarge(err error) bool {
 	return false
 }
 
-// FScopeTransportFactory produces FScopeTransports and is typically used by an
-// FScopeProvider.
-type FScopeTransportFactory interface {
-	GetTransport() FScopeTransport
+// FPublisherTransportFactory produces FPublisherTransports and is typically
+// used by an FScopeProvider.
+type FPublisherTransportFactory interface {
+	GetTransport() FPublisherTransport
 }
 
-// FScopeTransport extends Thrift's TTransport and is used exclusively for
-// pub/sub scopes. Subscribers use an FScopeTransport to subscribe to a pub/sub
-// topic. Publishers use it to publish to a topic.
-type FScopeTransport interface {
+// FPublisherTransport extends Thrift's TTransport and is used exclusively for
+// pub/sub scopes. Publishers use it to publish to a topic.
+type FPublisherTransport interface {
 	thrift.TTransport
 
 	// LockTopic sets the publish topic and locks the transport for exclusive
@@ -57,15 +56,22 @@ type FScopeTransport interface {
 
 	// UnlockTopic unsets the publish topic and unlocks the transport.
 	UnlockTopic() error
+}
 
+// FSubscriberTransportFactory produces FSubscriberTransports and is typically
+// used by an FScopeProvider.
+type FSubscriberTransportFactory interface {
+	GetTransport() FSubscriberTransport
+}
+
+// FSubscriberTransport extends Thrift's TTransport and is used exclusively for
+// pub/sub scopes. Subscribers use it to subscribe to a pub/sub topic.
+type FSubscriberTransport interface {
 	// Subscribe sets the subscribe topic and opens the transport.
-	Subscribe(string) error
+	Subscribe(string, FAsyncCallback) error
 
-	// DiscardFrame discards the current message frame the transport is
-	// reading, if any. After calling this, a subsequent call to Read will read
-	// from the next frame. This must be called from the same goroutine as the
-	// goroutine calling Read.
-	DiscardFrame()
+	// Unsubscribe unsubscribes from the topic and closes the transport.
+	Unsubscribe() error
 }
 
 // FTransport is Frugal's equivalent of Thrift's TTransport. FTransport extends

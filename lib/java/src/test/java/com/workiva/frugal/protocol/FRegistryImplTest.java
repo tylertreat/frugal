@@ -26,10 +26,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 /**
- * Tests for {@link FClientRegistry}.
+ * Tests for {@link FRegistryImpl}.
  */
 @RunWith(JUnit4.class)
-public class FClientRegistryTest {
+public class FRegistryImplTest {
 
     /**
      * Returns a mock message frame.
@@ -46,7 +46,7 @@ public class FClientRegistryTest {
     @Test
     public void testRegisterAddsToCallbackList() throws Exception {
         // given
-        FClientRegistry registry = new FClientRegistry();
+        FRegistryImpl registry = new FRegistryImpl();
         FContext context = new FContext();
 
         // when
@@ -59,7 +59,7 @@ public class FClientRegistryTest {
     @Test(expected = FException.class)
     public void testRegisterThrowsExceptionForMultipleOpIds() throws Exception {
         // given
-        FClientRegistry registry = new FClientRegistry();
+        FRegistryImpl registry = new FRegistryImpl();
         FContext context = new FContext();
         FAsyncCallback callback = transport -> { };
 
@@ -73,7 +73,7 @@ public class FClientRegistryTest {
     @Test
     public void testRegisterAssignsOpId() throws Exception {
         // given
-        FClientRegistry registry = new FClientRegistry();
+        FRegistryImpl registry = new FRegistryImpl();
         FContext context = new FContext();
 
         // when
@@ -86,7 +86,7 @@ public class FClientRegistryTest {
     @Test
     public void testRegisterAssignsIncreasingOpId() throws Exception {
         // given
-        FClientRegistry registry = new FClientRegistry();
+        FRegistryImpl registry = new FRegistryImpl();
 
         // when
         FContext context1 = new FContext();
@@ -101,7 +101,7 @@ public class FClientRegistryTest {
     @Test
     public void testUnregisterRemovesFromHandlers() throws Exception {
         // given
-        FClientRegistry registry = new FClientRegistry();
+        FRegistryImpl registry = new FRegistryImpl();
         FContext context = new FContext();
         registry.register(context, transport -> {});
 
@@ -115,7 +115,7 @@ public class FClientRegistryTest {
     @Test
     public void testUnregisterMissingContextSucceeds() throws Exception {
         // given
-        FClientRegistry registry = new FClientRegistry();
+        FRegistryImpl registry = new FRegistryImpl();
 
         // when
         registry.unregister(new FContext());
@@ -127,7 +127,7 @@ public class FClientRegistryTest {
     @Test
     public void testExecuteDropsUnregisteredOpId() throws TException, UnsupportedEncodingException {
         // given
-        FClientRegistry registry = new FClientRegistry();
+        FRegistryImpl registry = new FRegistryImpl();
         registry.handlers = spy(registry.handlers);
 
         FContext context = new FContext();
@@ -146,7 +146,7 @@ public class FClientRegistryTest {
         CountDownLatch readySignal = new CountDownLatch(1);
         CountDownLatch interruptSignal = new CountDownLatch(1);
 
-        FClientRegistry registry = new FClientRegistry();
+        FRegistryImpl registry = new FRegistryImpl();
         FContext context = new FContext();
         ThreadPoolExecutor executorService = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         executorService.execute(() -> {
@@ -196,7 +196,7 @@ public class FClientRegistryTest {
         final int nConsumers = 100; // Number of concurrent consumers
         final CyclicBarrier barrier = new CyclicBarrier(nConsumers + 1 + 1); // + 1 producer, + 1 for main thread;
         final BlockingQueue<Long> opIds = new ArrayBlockingQueue<>(nRegistrations); // Store all operations registered
-        final FClientRegistry registry = new FClientRegistry();
+        final FRegistryImpl registry = new FRegistryImpl();
 
         class Producer implements Runnable {
             @Override
