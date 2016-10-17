@@ -100,6 +100,9 @@ func (f *FFooClient) ping(ctx *frugal.FContext) (err error) {
 	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
+	if err = oprot.Flush(); err != nil {
+		return
+	}
 	data := buffer.Bytes()
 	if err = f.transport.Send(data); err != nil {
 		return
@@ -210,6 +213,9 @@ func (f *FFooClient) blah(ctx *frugal.FContext, num int32, str string, event *Ev
 		return
 	}
 	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	if err = oprot.Flush(); err != nil {
 		return
 	}
 	data := buffer.Bytes()
@@ -324,6 +330,9 @@ func (f *FFooClient) oneWay(ctx *frugal.FContext, id ID, req Request) (err error
 	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
+	if err = oprot.Flush(); err != nil {
+		return
+	}
 	data := buffer.Bytes()
 	if err = f.transport.Send(data); err != nil {
 		return
@@ -367,6 +376,9 @@ func (f *FFooClient) bin_method(ctx *frugal.FContext, bin []byte, str string) (r
 		return
 	}
 	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	if err = oprot.Flush(); err != nil {
 		return
 	}
 	data := buffer.Bytes()
@@ -484,6 +496,9 @@ func (f *FFooClient) param_modifiers(ctx *frugal.FContext, opt_num int32, defaul
 	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
+	if err = oprot.Flush(); err != nil {
+		return
+	}
 	data := buffer.Bytes()
 	if err = f.transport.Send(data); err != nil {
 		return
@@ -594,6 +609,9 @@ func (f *FFooClient) underlying_types_test(ctx *frugal.FContext, list_type []ID,
 	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
+	if err = oprot.Flush(); err != nil {
+		return
+	}
 	data := buffer.Bytes()
 	if err = f.transport.Send(data); err != nil {
 		return
@@ -701,6 +719,9 @@ func (f *FFooClient) getThing(ctx *frugal.FContext) (r *validStructs.Thing, err 
 	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
+	if err = oprot.Flush(); err != nil {
+		return
+	}
 	data := buffer.Bytes()
 	if err = f.transport.Send(data); err != nil {
 		return
@@ -806,6 +827,9 @@ func (f *FFooClient) getMyInt(ctx *frugal.FContext) (r ValidTypes.MyInt, err err
 		return
 	}
 	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	if err = oprot.Flush(); err != nil {
 		return
 	}
 	data := buffer.Bytes()

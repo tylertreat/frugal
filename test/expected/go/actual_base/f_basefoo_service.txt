@@ -71,6 +71,9 @@ func (f *FBaseFooClient) basePing(ctx *frugal.FContext) (err error) {
 	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
+	if err = oprot.Flush(); err != nil {
+		return
+	}
 	data := buffer.Bytes()
 	if err = f.transport.Send(data); err != nil {
 		return

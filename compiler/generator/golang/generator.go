@@ -1550,9 +1550,9 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	contents += "\tif err = oprot.WriteMessageEnd(); err != nil {\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
-	//contents += "\tif err = oprot.Flush(); err != nil {\n"
-	//contents += "\t\treturn\n"
-	//contents += "\t}\n"
+	contents += "\tif err = oprot.Flush(); err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
 
 	contents += "\tdata := buffer.Bytes()\n"
 
