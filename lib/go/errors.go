@@ -8,15 +8,17 @@ import (
 const (
 	// REQUEST_TOO_LARGE is a TTransportException error type indicating the
 	// request exceeded the size limit.
+	// TODO: should indicate TApplicationException error type in 2.0.
 	REQUEST_TOO_LARGE = 100
 
 	// RESPONSE_TOO_LARGE is a TTransportException error type indicating the
 	// response exceeded the size limit.
+	// TODO: should indicate TApplicationException error type in 2.0.
 	RESPONSE_TOO_LARGE = 101
 
 	// RATE_LIMIT_EXCEEDED is a TApplicationException error type indicating the
 	// client exceeded its rate limit.
-	RATE_LIMIT_EXCEEDED = 100
+	RATE_LIMIT_EXCEEDED = 102
 )
 
 var (
@@ -28,6 +30,7 @@ var (
 
 	// ErrTooLarge is returned when attempting to write a message which exceeds
 	// the transport's message size limit.
+	// TODO: make REQUEST_TOO_LARGE a TApplicationException in 2.0.
 	ErrTooLarge = thrift.NewTTransportException(REQUEST_TOO_LARGE,
 		"request was too large for the transport")
 
