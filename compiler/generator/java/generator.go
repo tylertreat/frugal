@@ -2295,6 +2295,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import com.workiva.frugal.processor.FProcessorFunction;\n"
 	imports += "import com.workiva.frugal.protocol.*;\n"
 	imports += "import com.workiva.frugal.transport.FTransport;\n"
+	imports += "import com.workiva.frugal.transport.TMemoryOutputBuffer;\n"
 	imports += "import org.apache.thrift.TApplicationException;\n"
 	imports += "import org.apache.thrift.TException;\n"
 	imports += "import org.apache.thrift.protocol.TMessage;\n"
@@ -2721,7 +2722,6 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += tab + "public static class Client implements Iface {\n\n"
 	}
 	if service.Extends == "" {
-		contents += tabtab + "protected final Object writeLock = new Object();\n"
 		if g.generateAsync() {
 			contents += tabtab + "protected ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);\n"
 		}
@@ -2732,7 +2732,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	if service.Extends != "" {
 		contents += tabtabtab + "super(transport, protocolFactory, middleware);\n"
 	}
-	contents += tabtabtab + "Iface client = new InternalClient(transport, protocolFactory, writeLock);\n"
+	contents += tabtabtab + "Iface client = new InternalClient(transport, protocolFactory);\n"
 	contents += tabtabtab + "proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);\n"
 	contents += tabtab + "}\n\n"
 
@@ -2790,20 +2790,13 @@ func (g *Generator) generateInternalClient(service *parser.Service) string {
 
 	contents += tabtab + "private FTransport transport;\n"
 	contents += tabtab + "private FProtocolFactory protocolFactory;\n"
-	contents += tabtab + "private FProtocol inputProtocol;\n"
-	contents += tabtab + "private FProtocol outputProtocol;\n"
-	contents += tabtab + "private final Object writeLock;\n\n"
 
-	contents += tabtab + "public InternalClient(FTransport transport, FProtocolFactory protocolFactory, Object writeLock) {\n"
+	contents += tabtab + "public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {\n"
 	if service.Extends != "" {
 		contents += tabtabtab + "super(transport, protocolFactory);\n"
 	}
 	contents += tabtabtab + "this.transport = transport;\n"
-	contents += tabtabtab + "this.transport.setRegistry(new FClientRegistry());\n"
 	contents += tabtabtab + "this.protocolFactory = protocolFactory;\n"
-	contents += tabtabtab + "this.inputProtocol = this.protocolFactory.getProtocol(this.transport);\n"
-	contents += tabtabtab + "this.outputProtocol = this.protocolFactory.getProtocol(this.transport);\n"
-	contents += tabtabtab + "this.writeLock = writeLock;\n"
 	contents += tabtab + "}\n\n"
 
 	for _, method := range service.Methods {
@@ -2821,29 +2814,28 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 	contents += tabtab + fmt.Sprintf("public %s %s(FContext ctx%s) %s {\n",
 		g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments, false), g.generateExceptions(method.Exceptions))
-	contents += tabtabtab + "FProtocol oprot = this.outputProtocol;\n"
+	contents += tabtabtab + "TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());\n"
+	contents += tabtabtab + "FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);\n"
 	indent := tabtabtab
 	if !method.Oneway {
 		contents += tabtabtab + "BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);\n"
-		contents += tabtabtab + fmt.Sprintf("this.transport.register(ctx, recv%sHandler(ctx, result));\n", strings.Title(method.Name))
+		contents += tabtabtab + fmt.Sprintf("transport.register(ctx, recv%sHandler(ctx, result));\n", strings.Title(method.Name))
 		contents += tabtabtab + "try {\n"
 		indent += tab
 	}
-	contents += indent + "synchronized (writeLock) {\n"
-	contents += indent + tab + "oprot.writeRequestHeader(ctx);\n"
+	contents += indent + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
 		msgType = "ONEWAY"
 	}
-	contents += indent + tab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", method.Name, msgType)
-	contents += indent + tab + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
+	contents += indent + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", method.Name, msgType)
+	contents += indent + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
 	for _, arg := range method.Arguments {
-		contents += indent + tab + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
+		contents += indent + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
 	}
-	contents += indent + tab + "args.write(oprot);\n"
-	contents += indent + tab + "oprot.writeMessageEnd();\n"
-	contents += indent + tab + "oprot.getTransport().flush();\n"
-	contents += indent + "}\n"
+	contents += indent + "args.write(oprot);\n"
+	contents += indent + "oprot.writeMessageEnd();\n"
+	contents += indent + "transport.send(memoryBuffer.getWriteBytes());\n"
 
 	if method.Oneway {
 		contents += tabtab + "}\n"
@@ -2882,7 +2874,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 			method.Name)
 	}
 	contents += tabtabtab + "} finally {\n"
-	contents += tabtabtabtab + "this.transport.unregister(ctx);\n"
+	contents += tabtabtabtab + "transport.unregister(ctx);\n"
 	contents += tabtabtab + "}\n"
 	contents += tabtab + "}\n\n"
 

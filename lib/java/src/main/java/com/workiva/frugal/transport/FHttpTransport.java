@@ -37,9 +37,10 @@ public class FHttpTransport extends FTransport {
 
     private FHttpTransport(CloseableHttpClient httpClient, String url,
                            int requestSizeLimit, int responseSizeLimit) {
-        super(requestSizeLimit - 4);
+        super();
         this.httpClient = httpClient;
         this.url = url;
+        this.requestSizeLimit = requestSizeLimit;
         this.responseSizeLimit = responseSizeLimit;
     }
 
@@ -124,18 +125,20 @@ public class FHttpTransport extends FTransport {
     }
 
     /**
-     * Sends the buffered bytes over HTTP.
+     * Sends the framed frugal payload over HTTP.
      *
      * @throws TTransportException if there was an error writing out data.
      */
     @Override
-    public void flush() throws TTransportException {
-        if (!hasWriteData()) {
-            return;
+    public void send(byte[] payload) throws TTransportException {
+        int requestSizeLimit = getRequestSizeLimit();
+        if (requestSizeLimit > 0 && payload.length > requestSizeLimit) {
+            throw new FMessageSizeException(
+                    String.format("Message exceeds %d bytes, was %d bytes",
+                            requestSizeLimit, payload.length));
         }
-        byte[] data = getFramedWriteBytes();
-        resetWriteBuffer();
-        byte[] response = makeRequest(data);
+
+        byte[] response = makeRequest(payload);
 
         // All responses should be framed with 4 bytes
         if (response.length < 4) {
