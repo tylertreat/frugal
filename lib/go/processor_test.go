@@ -30,6 +30,8 @@ func (p *pingProcessor) Process(ctx *FContext, iprot, oprot *FProtocol) error {
 	return p.err
 }
 
+func (p *pingProcessor) AddMiddleware(ServiceMiddleware) {}
+
 // Ensures FBaseProcessor invokes the correct FProcessorFunction and returns
 // nil on success.
 func TestFBaseProcessorHappyPath(t *testing.T) {
