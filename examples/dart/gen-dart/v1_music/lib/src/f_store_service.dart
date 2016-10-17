@@ -92,6 +92,10 @@ class FStoreClient implements FStore {
             controller.addError(new frugal.FMessageSizeError.response());
             return;
           }
+          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError());
+            return;
+          }
           throw error;
         }
 
@@ -163,6 +167,10 @@ class FStoreClient implements FStore {
           iprot.readMessageEnd();
           if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
             controller.addError(new frugal.FMessageSizeError.response());
+            return;
+          }
+          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError());
             return;
           }
           throw error;

@@ -106,6 +106,10 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response());
             return;
           }
+          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError());
+            return;
+          }
           throw error;
         }
 
@@ -168,6 +172,10 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
           iprot.readMessageEnd();
           if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
             controller.addError(new frugal.FMessageSizeError.response());
+            return;
+          }
+          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError());
             return;
           }
           throw error;
@@ -268,6 +276,10 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response());
             return;
           }
+          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError());
+            return;
+          }
           throw error;
         }
 
@@ -342,6 +354,10 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response());
             return;
           }
+          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError());
+            return;
+          }
           throw error;
         }
 
@@ -409,6 +425,10 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
           iprot.readMessageEnd();
           if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
             controller.addError(new frugal.FMessageSizeError.response());
+            return;
+          }
+          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError());
             return;
           }
           throw error;

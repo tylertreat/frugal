@@ -5,6 +5,8 @@ part of frugal;
 /// has an FRegistry, so it provides methods for setting the FRegistry and
 /// registering and unregistering an FAsyncCallback to an FContext.
 abstract class FTransport extends TTransport {
+  // TODO: REQUEST_TOO_LARGE and RESPONSE_TOO_LARGE should be used to indicate
+  // a TApplicationError in 2.0.
   static const REQUEST_TOO_LARGE = 100;
   static const RESPONSE_TOO_LARGE = 101;
 
