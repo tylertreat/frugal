@@ -1,30 +1,24 @@
 package com.workiva.frugal.exception;
 
-import com.workiva.frugal.transport.FTransport;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.thrift.TApplicationException;
 
 /**
  * This exception indicates that a rate limit threshold has been exceeded.
  */
-public class FRateLimitException extends TTransportException {
+public class FRateLimitException extends TApplicationException {
+
+    public static final int RATE_LIMIT_EXCEEDED = 102;
 
     public FRateLimitException() {
-        super(FTransport.RATE_LIMIT_EXCEEDED);
+        super(RATE_LIMIT_EXCEEDED);
     }
 
     public FRateLimitException(String message) {
-        super(FTransport.RATE_LIMIT_EXCEEDED, message);
+        super(RATE_LIMIT_EXCEEDED, message);
     }
 
     public FRateLimitException(int type, String message) {
         super(type, message);
     }
 
-    public FRateLimitException(Throwable cause) {
-        super(FTransport.RATE_LIMIT_EXCEEDED, cause);
-    }
-
-    public FRateLimitException(String message, Throwable cause) {
-        super(FTransport.RATE_LIMIT_EXCEEDED, message, cause);
-    }
 }

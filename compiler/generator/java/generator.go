@@ -2339,8 +2339,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import org.apache.thrift.TException;\n"
 	imports += "import org.apache.thrift.protocol.TMessage;\n"
 	imports += "import org.apache.thrift.protocol.TMessageType;\n"
-	imports += "import org.apache.thrift.transport.TTransport;\n"
-	imports += "import org.apache.thrift.transport.TTransportException;\n\n"
+	imports += "import org.apache.thrift.transport.TTransport;\n\n"
 
 	imports += "import javax.annotation.Generated;\n"
 	imports += "import java.util.concurrent.*;\n"
@@ -2867,13 +2866,13 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtabtab + "if (message.type == TMessageType.EXCEPTION) {\n"
 	contents += tabtabtabtabtabtabtab + "TApplicationException e = TApplicationException.read(iprot);\n"
 	contents += tabtabtabtabtabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtabtabtabtabtab + "if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FTransport.RATE_LIMIT_EXCEEDED) {\n"
-	contents += tabtabtabtabtabtabtabtab + "TTransportException ex;\n"
+	contents += tabtabtabtabtabtabtab + "if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {\n"
+	contents += tabtabtabtabtabtabtabtab + "TException ex;\n"
 	contents += tabtabtabtabtabtabtabtab + "if (e.getType() == FTransport.RESPONSE_TOO_LARGE){\n"
 	contents += tabtabtabtabtabtabtabtabtab + "ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, \"response too large for transport\");\n"
 	contents += tabtabtabtabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtabtabtabtab + "else {\n"
-	contents += tabtabtabtabtabtabtabtabtab + "ex = new FRateLimitException(FTransport.RATE_LIMIT_EXCEEDED, \"rate limit exceeded for transport\");\n"
+	contents += tabtabtabtabtabtabtabtabtab + "ex = new FRateLimitException(\"rate limit exceeded\");\n"
 	contents += tabtabtabtabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtabtabtabtab + "try {\n"
 	contents += tabtabtabtabtabtabtabtabtab + "result.put(ex);\n"
@@ -3006,7 +3005,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 			contents += tabtabtabtabtab + fmt.Sprintf("result.%s = %s;\n", exception.Name, exception.Name)
 		}
 		contents += tabtabtabtab + "} catch (FRateLimitException e) {\n"
-		contents += tabtabtabtabtab + fmt.Sprintf("writeApplicationException(ctx, oprot, FTransport.RATE_LIMIT_EXCEEDED, \"%s\", \"rate limit exceeded\");\n",
+		contents += tabtabtabtabtab + fmt.Sprintf("writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", \"rate limit exceeded\");\n",
 			method.Name)
 		contents += tabtabtabtab + "} catch (TException e) {\n"
 		contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"

@@ -29,9 +29,10 @@ public abstract class FTransport extends TTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FTransport.class);
 
+    // TODO: REQUEST_TOO_LARGE AND RESPONSE_TOO_LARGE should be used to indicate
+    // a TApplicationException instead of a TTransport exception in SDK 2.0.
     public static final int REQUEST_TOO_LARGE = 100;
     public static final int RESPONSE_TOO_LARGE = 101;
-    public static final int RATE_LIMIT_EXCEEDED = 102;
 
     private volatile FTransportClosedCallback closedCallback;
     private volatile FTransportClosedCallback monitor;

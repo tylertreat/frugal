@@ -22,7 +22,6 @@ import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TMessage;
 import org.apache.thrift.protocol.TMessageType;
 import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
 
 import javax.annotation.Generated;
 import java.util.concurrent.*;
@@ -191,13 +190,13 @@ public class FBlah {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FTransport.RATE_LIMIT_EXCEEDED) {
-								TTransportException ex;
+							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
+								TException ex;
 								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
 									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
 								}
 								else {
-									ex = new FRateLimitException(FTransport.RATE_LIMIT_EXCEEDED, "rate limit exceeded for transport");
+									ex = new FRateLimitException("rate limit exceeded");
 								}
 								try {
 									result.put(ex);
@@ -295,13 +294,13 @@ public class FBlah {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FTransport.RATE_LIMIT_EXCEEDED) {
-								TTransportException ex;
+							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
+								TException ex;
 								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
 									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
 								}
 								else {
-									ex = new FRateLimitException(FTransport.RATE_LIMIT_EXCEEDED, "rate limit exceeded for transport");
+									ex = new FRateLimitException("rate limit exceeded");
 								}
 								try {
 									result.put(ex);
@@ -387,13 +386,13 @@ public class FBlah {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FTransport.RATE_LIMIT_EXCEEDED) {
-								TTransportException ex;
+							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
+								TException ex;
 								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
 									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
 								}
 								else {
-									ex = new FRateLimitException(FTransport.RATE_LIMIT_EXCEEDED, "rate limit exceeded for transport");
+									ex = new FRateLimitException("rate limit exceeded");
 								}
 								try {
 									result.put(ex);
@@ -479,13 +478,13 @@ public class FBlah {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FTransport.RATE_LIMIT_EXCEEDED) {
-								TTransportException ex;
+							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
+								TException ex;
 								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
 									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
 								}
 								else {
-									ex = new FRateLimitException(FTransport.RATE_LIMIT_EXCEEDED, "rate limit exceeded for transport");
+									ex = new FRateLimitException("rate limit exceeded");
 								}
 								try {
 									result.put(ex);
@@ -568,7 +567,7 @@ public class FBlah {
 				try {
 					this.handler.ping(ctx);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FTransport.RATE_LIMIT_EXCEEDED, "ping", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "ping", "rate limit exceeded");
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
 						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "ping", "Internal error processing ping: " + e.getMessage());
@@ -623,7 +622,7 @@ public class FBlah {
 				} catch (InvalidData err2) {
 					result.err2 = err2;
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FTransport.RATE_LIMIT_EXCEEDED, "bleh", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "bleh", "rate limit exceeded");
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
 						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "bleh", "Internal error processing bleh: " + e.getMessage());
@@ -674,7 +673,7 @@ public class FBlah {
 					result.success = this.handler.getThing(ctx);
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FTransport.RATE_LIMIT_EXCEEDED, "getThing", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getThing", "rate limit exceeded");
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
 						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "getThing", "Internal error processing getThing: " + e.getMessage());
@@ -725,7 +724,7 @@ public class FBlah {
 					result.success = this.handler.getMyInt(ctx);
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FTransport.RATE_LIMIT_EXCEEDED, "getMyInt", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getMyInt", "rate limit exceeded");
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
 						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "getMyInt", "Internal error processing getMyInt: " + e.getMessage());
