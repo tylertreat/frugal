@@ -25,20 +25,15 @@ type FBaseFoo interface {
 type FBaseFooClient struct {
 	transport       frugal.FTransport
 	protocolFactory *frugal.FProtocolFactory
-	buffer          *frugal.FBoundedMemoryBuffer
-	oprot           *frugal.FProtocol
 	mu              sync.Mutex
 	methods         map[string]*frugal.Method
 }
 
 func NewFBaseFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FBaseFooClient {
 	methods := make(map[string]*frugal.Method)
-	buffer := frugal.NewFBoundedMemoryBuffer(t.GetMaxRequestSize())
 	client := &FBaseFooClient{
 		transport:       t,
 		protocolFactory: p,
-		buffer:          buffer,
-		oprot:           p.GetProtocol(buffer),
 		methods:         methods,
 	}
 	methods["basePing"] = frugal.NewMethod(client, client.basePing, "basePing", middleware)
@@ -68,37 +63,25 @@ func (f *FBaseFooClient) basePing(ctx *frugal.FContext) (err error) {
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.GetWriteMutex().Lock()
-	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.buffer.Reset()
-		f.GetWriteMutex().Unlock()
+	buffer := frugal.NewFBoundedMemoryBuffer(f.transport.GetMaxRequestSize())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageBegin("basePing", thrift.CALL, 0); err != nil {
-		f.buffer.Reset()
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageBegin("basePing", thrift.CALL, 0); err != nil {
 		return
 	}
 	args := BaseFooBasePingArgs{}
-	if err = args.Write(f.oprot); err != nil {
-		f.buffer.Reset()
-		f.GetWriteMutex().Unlock()
+	if err = args.Write(oprot); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.buffer.Reset()
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
-	if err = f.oprot.Flush(); err != nil {
-		f.buffer.Reset()
-		f.GetWriteMutex().Unlock()
+	if err = oprot.Flush(); err != nil {
 		return
 	}
-	data := f.buffer.Bytes()
-	f.buffer.Reset()
-	f.GetWriteMutex().Unlock()
-
+	data := buffer.Bytes()
 	if err = f.transport.Send(data); err != nil {
 		return
 	}
