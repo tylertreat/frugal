@@ -773,6 +773,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.processor import FBaseProcessor\n"
 	imports += "from frugal.processor import FProcessorFunction\n"
+	imports += "from frugal.exceptions import FRateLimitException\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n\n"
 
@@ -1052,6 +1053,8 @@ func (g *Generator) generateClientRecvMethod(method *parser.Method) string {
 	contents += tabtabtab + "x = TApplicationException()\n"
 	contents += tabtabtab + "x.read(self._iprot)\n"
 	contents += tabtabtab + "self._iprot.readMessageEnd()\n"
+	contents += tabtabtab + "if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:\n"
+	contents += tabtabtabtab + "raise FRateLimitException()\n"
 	contents += tabtabtab + "raise x\n"
 	contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	contents += tabtab + "result.read(self._iprot)\n"
@@ -1134,6 +1137,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	for _, method := range service.Methods {
 		contents += g.generateProcessorFunction(method)
 	}
+	contents += g.generateServiceHelpers()
 
 	return contents
 }
@@ -1230,11 +1234,8 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	if !method.Oneway {
 		contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	}
-	indent := tabtab
-	if len(method.Exceptions) > 0 {
-		indent += tab
-		contents += tabtab + "try:\n"
-	}
+	indent := tabtabtab
+	contents += tabtab + "try:\n"
 	if method.ReturnType == nil {
 		contents += indent + fmt.Sprintf("self._handler([ctx%s])\n",
 			g.generateServerArgs(method.Arguments))
@@ -1246,6 +1247,10 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", g.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
+	contents += tabtab + "except FRateLimitException as ex:\n"
+	contents += tabtabtab +
+		fmt.Sprintf("_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
+			method.Name)
 	if !method.Oneway {
 		contents += tabtab + "with self._lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
@@ -1254,6 +1259,19 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 		contents += tabtabtab + "oprot.writeMessageEnd()\n"
 		contents += tabtabtab + "oprot.get_transport().flush()\n"
 	}
+	contents += "\n\n"
+
+	return contents
+}
+
+func (g *Generator) generateServiceHelpers() string {
+	contents := "def _write_application_exception(ctx, oprot, type, method, message):\n"
+	contents += tab + "x = TApplicationException(type=type, message=message)\n"
+	contents += tab + "oprot.write_response_headers(ctx)\n"
+	contents += tab + "oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)\n"
+	contents += tab + "x.write(oprot)\n"
+	contents += tab + "oprot.writeMessageEnd()\n"
+	contents += tab + "oprot.get_transport().flush()\n"
 	contents += "\n\n"
 
 	return contents
