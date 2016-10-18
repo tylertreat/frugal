@@ -7,6 +7,8 @@ all: deps
 clean:
 	find . -name "*.py[co]" -delete
 
+deps: deps-tornado deps-gae
+
 distclean: clean
 	rm -rf $(BUILD_DIR)
 	rm -rf $(LIBS_DIR)
