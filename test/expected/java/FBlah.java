@@ -528,6 +528,7 @@ public class FBlah {
 					this.handler.ping(ctx);
 				} catch (FRateLimitException e) {
 					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "ping", "rate limit exceeded");
+					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
 						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "ping", "Internal error processing ping: " + e.getMessage());
@@ -583,6 +584,7 @@ public class FBlah {
 					result.err2 = err2;
 				} catch (FRateLimitException e) {
 					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "bleh", "rate limit exceeded");
+					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
 						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "bleh", "Internal error processing bleh: " + e.getMessage());
@@ -634,6 +636,7 @@ public class FBlah {
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
 					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getThing", "rate limit exceeded");
+					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
 						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "getThing", "Internal error processing getThing: " + e.getMessage());
@@ -685,6 +688,7 @@ public class FBlah {
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
 					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getMyInt", "rate limit exceeded");
+					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
 						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "getMyInt", "Internal error processing getMyInt: " + e.getMessage());

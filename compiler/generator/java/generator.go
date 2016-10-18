@@ -3007,6 +3007,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtab + "} catch (FRateLimitException e) {\n"
 		contents += tabtabtabtabtab + fmt.Sprintf("writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", \"rate limit exceeded\");\n",
 			method.Name)
+		contents += tabtabtabtabtab + "return;\n"
 		contents += tabtabtabtab + "} catch (TException e) {\n"
 		contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"
 		contents += tabtabtabtabtabtab + fmt.Sprintf(
