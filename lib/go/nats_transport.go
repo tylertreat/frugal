@@ -110,7 +110,7 @@ func (f *fNatsTransport) Send(data []byte) error {
 	return thrift.NewTTransportExceptionFromError(err)
 }
 
-// GetMaxRequestSize returns the maximum number of bytes that can be
+// GetRequestSizeLimit returns the maximum number of bytes that can be
 // transmitted. Returns a non-positive number to indicate an unbounded
 // allowable size.
 func (f *fNatsTransport) GetRequestSizeLimit() uint {
