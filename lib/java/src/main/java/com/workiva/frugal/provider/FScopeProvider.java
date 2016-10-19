@@ -1,6 +1,5 @@
 package com.workiva.frugal.provider;
 
-import com.workiva.frugal.protocol.FProtocol;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.transport.FPublisherTransport;
 import com.workiva.frugal.transport.FPublisherTransportFactory;
@@ -20,19 +19,19 @@ public class FScopeProvider {
      */
     public class PublisherClient {
         private FPublisherTransport transport;
-        private FProtocol protocol;
+        private FProtocolFactory protocolFactory;
 
-        public PublisherClient(FPublisherTransport t, FProtocol p) {
+        public PublisherClient(FPublisherTransport t, FProtocolFactory pf) {
             transport = t;
-            protocol = p;
+            protocolFactory = pf;
         }
 
         public FPublisherTransport getTransport() {
             return transport;
         }
 
-        public FProtocol getProtocol() {
-            return protocol;
+        public FProtocolFactory getProtocolFactory() {
+            return protocolFactory;
         }
     }
 
@@ -76,8 +75,7 @@ public class FScopeProvider {
      */
     public PublisherClient buildPublisher() {
         FPublisherTransport transport = publisherTransportFactory.getTransport();
-        FProtocol protocol = protocolFactory.getProtocol(transport);
-        return new PublisherClient(transport, protocol);
+        return new PublisherClient(transport, protocolFactory);
     }
 
     /**

@@ -3,8 +3,6 @@ package com.workiva.frugal.transport;
 import com.workiva.frugal.protocol.FAsyncCallback;
 import io.nats.client.Connection;
 import io.nats.client.Constants;
-import io.nats.client.Message;
-import io.nats.client.MessageHandler;
 import io.nats.client.Subscription;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
@@ -21,9 +19,9 @@ import static com.workiva.frugal.transport.FNatsTransport.FRUGAL_PREFIX;
  * FNatsSubscriberTransport implements FSubscriberTransport by using NATS as the pub/sub message broker.
  * Messages are limited to 1MB in size.
  */
-public class FNatsSubscriberTransport extends FSubscriberTransport {
+public class FNatsSubscriberTransport implements FSubscriberTransport {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FNatsScopeTransport.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FNatsSubscriberTransport.class);
 
     private final Connection conn;
     protected String subject;
@@ -85,6 +83,11 @@ public class FNatsSubscriberTransport extends FSubscriberTransport {
     }
 
     @Override
+    public boolean isSubscribed() {
+        return conn.getState() == Constants.ConnState.CONNECTED && sub != null;
+    }
+
+    @Override
     public void subscribe(String topic, FAsyncCallback callback) throws TException {
         if (conn.getState() != Constants.ConnState.CONNECTED) {
             throw new TTransportException(TTransportException.NOT_OPEN,
@@ -96,17 +99,16 @@ public class FNatsSubscriberTransport extends FSubscriberTransport {
             throw new TTransportException("Subject cannot be empty.");
         }
 
-        sub = conn.subscribe(getFormattedSubject(), queue, new MessageHandler() {
-            @Override
-            public void onMessage(Message msg) {
-                if (msg.getData().length < 4) {
-                    LOGGER.warn("discarding invalid scope message frame");
-                    return;
-                }
-                try {
-                    callback.onMessage(new TMemoryInputTransport(Arrays.copyOfRange(msg.getData(), 4, msg.getData().length)));
-                } catch (TException ignored) {
-                }
+        sub = conn.subscribe(getFormattedSubject(), queue, msg -> {
+            if (msg.getData().length < 4) {
+                LOGGER.warn("discarding invalid scope message frame");
+                return;
+            }
+            try {
+                callback.onMessage(
+                        new TMemoryInputTransport(Arrays.copyOfRange(msg.getData(), 4, msg.getData().length))
+                );
+            } catch (TException ignored) {
             }
         });
     }

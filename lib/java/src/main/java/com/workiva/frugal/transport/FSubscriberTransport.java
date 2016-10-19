@@ -6,19 +6,26 @@ import org.apache.thrift.TException;
 /**
  * FSubscriberTransport is used exclusively for scope publishers.
  */
-public abstract class FSubscriberTransport {
+public interface FSubscriberTransport {
+
+    /**
+     * Queries whether the transport is subscribed to a topic.
+     *
+     * @return True if the transport is subscribed to a topic.
+     */
+    boolean isSubscribed();
 
     /**
      * Opens the Transport to receive messages on the subscription.
      *
      * @param topic the pub/sub topic to subscribe to.
-     * @throws TException
+     * @throws TException if there was a problem subscribing.
      */
-    public abstract void subscribe(String topic, FAsyncCallback callback) throws TException;
+    void subscribe(String topic, FAsyncCallback callback) throws TException;
 
     /**
      * Closes the transport by unsubscribing from the set topic.
      */
-    public abstract void unsubscribe();
+    void unsubscribe();
 
 }

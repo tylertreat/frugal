@@ -2,16 +2,16 @@ package com.workiva.frugal.transport;
 
 /**
  * FSubscription is a subscription to a pub/sub topic created by a scope. The
- * topic subscription is actually handled by an FScopeTransport, which the
- * FSubscription wraps. Each FSubscription should have its own FScopeTransport.
+ * topic subscription is actually handled by an FSubscriberTransport, which the
+ * FSubscription wraps. Each FSubscription should have its own FSubscriberTransport.
  * The FSubscription is used to unsubscribe from the topic.
  */
 public final class FSubscription {
 
     private final String topic;
-    private final FScopeTransport transport;
+    private final FSubscriberTransport transport;
 
-    private FSubscription(String topic, FScopeTransport transport) {
+    private FSubscription(String topic, FSubscriberTransport transport) {
         this.topic = topic;
         this.transport = transport;
     }
@@ -25,7 +25,7 @@ public final class FSubscription {
      *
      * @return FSubscription
      */
-    public static FSubscription of(String topic, FScopeTransport transport) {
+    public static FSubscription of(String topic, FSubscriberTransport transport) {
         return new FSubscription(topic, transport);
     }
 
@@ -42,7 +42,7 @@ public final class FSubscription {
      * Unsubscribe from the topic.
      */
     public void unsubscribe() {
-        transport.close();
+        transport.unsubscribe();
     }
 
 }

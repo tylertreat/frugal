@@ -1,34 +1,46 @@
 package com.workiva.frugal.transport;
 
-import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
 /**
- * FPublisherTransport extends Thrift's TTransport and is used exclusively
- * for scope publishers.
+ * FPublisherTransport is used exclusively for scope publishers.
  */
-public abstract class FPublisherTransport extends TTransport {
-    /**
-     * FPublsiherTransports do not support read.
-     * This will throw an UnsupportedOperationException when called.
-     */
-    public int read(byte[] buf, int off, int len) throws TTransportException {
-        throw new UnsupportedOperationException("FPublisherTransport does not support read.");
-    }
+public interface FPublisherTransport {
 
     /**
-     * Sets the publish topic and locks the transport for exclusive access.
+     * Queries whether the transport is open.
      *
-     * @param topic the pub/sub topic to publish on.
-     * @throws TException
+     * @return True if the transport is open.
      */
-    public abstract void lockTopic(String topic) throws TException;
+    boolean isOpen();
 
     /**
-     * Unsets the publish topic and unlocks the transport.
+     * Opens the transport.
      *
-     * @throws TException
+     * @throws TTransportException if the transport could not be opened.
      */
-    public abstract void unlockTopic() throws TException;
+    void open() throws TTransportException;
+
+    /**
+     * Closes the transport.
+     */
+    void close();
+
+    /**
+     * Get the maximum publish size permitted by the transport. If <code>getPublishSizeLimit</code>
+     * returns a non-positive number, the transport is assumed to have no publish size limit.
+     *
+     * @return the publish size limit
+     */
+    int getPublishSizeLimit();
+
+    /**
+     * Publish the given framed frugal payload over the transport. Implementations of <code>publish</code>
+     * should be thread-safe.
+     *
+     * @param topic the topic on which to publish the payload
+     * @param payload framed frugal bytes
+     * @throws TTransportException if publishing the payload failed
+     */
+    void publish(String topic, byte[] payload) throws TTransportException;
 }

@@ -11,10 +11,13 @@ import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.*;
 import com.workiva.frugal.provider.FScopeProvider;
-import com.workiva.frugal.transport.FScopeTransport;
+import com.workiva.frugal.transport.FPublisherTransport;
+import com.workiva.frugal.transport.FSubscriberTransport;
 import com.workiva.frugal.transport.FSubscription;
+import com.workiva.frugal.transport.TMemoryOutputBuffer;
 import org.apache.thrift.TException;
 import org.apache.thrift.TApplicationException;
+import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.thrift.protocol.*;
 
@@ -78,8 +81,8 @@ public class EventsPublisher {
 		protected static class InternalEventsPublisher implements Iface {
 
 			private FScopeProvider provider;
-			private FScopeTransport transport;
-			private FProtocol protocol;
+			private FPublisherTransport transport;
+			private FProtocolFactory protocolFactory;
 
 			protected InternalEventsPublisher() {
 			}
@@ -89,9 +92,9 @@ public class EventsPublisher {
 			}
 
 			public void open() throws TException {
-				FScopeProvider.Client client = provider.build();
+				FScopeProvider.PublisherClient client = provider.buildPublisher();
 				transport = client.getTransport();
-				protocol = client.getProtocol();
+				protocolFactory = client.getProtocolFactory();
 				transport.open();
 			}
 
@@ -106,16 +109,13 @@ public class EventsPublisher {
 				String op = "EventCreated";
 				String prefix = String.format("foo.%s.", user);
 				String topic = String.format("%sEvents%s%s", prefix, DELIMITER, op);
-				transport.lockTopic(topic);
-				try {
-					protocol.writeRequestHeader(ctx);
-					protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
-					req.write(protocol);
-					protocol.writeMessageEnd();
-					transport.flush();
-				} finally {
-					transport.unlockTopic();
-				}
+				TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getPublishSizeLimit());
+				FProtocol protocol = protocolFactory.getProtocol(memoryBuffer);
+				protocol.writeRequestHeader(ctx);
+				protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
+				req.write(protocol);
+				protocol.writeMessageEnd();
+				transport.publish(topic, memoryBuffer.getWriteBytes());
 			}
 		}
 	}

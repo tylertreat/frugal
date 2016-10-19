@@ -2,7 +2,10 @@ package com.workiva.frugal.provider;
 
 import com.workiva.frugal.protocol.FProtocol;
 import com.workiva.frugal.protocol.FProtocolFactory;
-import com.workiva.frugal.transport.*;
+import com.workiva.frugal.transport.FPublisherTransport;
+import com.workiva.frugal.transport.FPublisherTransportFactory;
+import com.workiva.frugal.transport.FSubscriberTransport;
+import com.workiva.frugal.transport.FSubscriberTransportFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -34,12 +37,11 @@ public class FScopeProviderTest {
         FProtocol fProtocol = mock(FProtocol.class);
 
         when(publisherTransportFactory.getTransport()).thenReturn(publisherTransport);
-        when(protocolFactory.getProtocol(publisherTransport)).thenReturn(fProtocol);
 
         FScopeProvider.PublisherClient publisherClient = provider.buildPublisher();
 
         assertEquals(publisherTransport, publisherClient.getTransport());
-        assertEquals(fProtocol, publisherClient.getProtocol());
+        assertEquals(protocolFactory, publisherClient.getProtocolFactory());
 
         // Validate buildSubscriber works as intended
         FSubscriberTransport subscriberTransport = mock(FSubscriberTransport.class);
