@@ -1,5 +1,6 @@
 package examples;
 
+import com.workiva.frugal.exception.FRateLimitException;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 

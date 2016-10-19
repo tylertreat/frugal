@@ -3,6 +3,8 @@ package com.workiva.frugal.exception;
 import com.workiva.frugal.transport.FTransport;
 import org.apache.thrift.transport.TTransportException;
 
+// TODO: FMessageSizeException should be used to indicate
+// a TApplicationException instead of a TTransport exception in SDK 2.0.
 
 /**
  * This exception indicates a message was too large for a transport to handle.
