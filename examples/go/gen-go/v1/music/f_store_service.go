@@ -6,7 +6,6 @@ package music
 import (
 	"bytes"
 	"fmt"
-	"sync"
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -30,28 +29,19 @@ type FStore interface {
 type FStoreClient struct {
 	transport       frugal.FTransport
 	protocolFactory *frugal.FProtocolFactory
-	oprot           *frugal.FProtocol
-	mu              sync.Mutex
 	methods         map[string]*frugal.Method
 }
 
 func NewFStoreClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FStoreClient {
-	t.SetRegistry(frugal.NewFClientRegistry())
 	methods := make(map[string]*frugal.Method)
 	client := &FStoreClient{
 		transport:       t,
 		protocolFactory: p,
-		oprot:           p.GetProtocol(t),
 		methods:         methods,
 	}
 	methods["buyAlbum"] = frugal.NewMethod(client, client.buyAlbum, "buyAlbum", middleware)
 	methods["enterAlbumGiveaway"] = frugal.NewMethod(client, client.enterAlbumGiveaway, "enterAlbumGiveaway", middleware)
 	return client
-}
-
-// Do Not Use. To be called only by generated code.
-func (f *FStoreClient) GetWriteMutex() *sync.Mutex {
-	return &f.mu
 }
 
 func (f *FStoreClient) BuyAlbum(ctx *frugal.FContext, asin string, acct string) (r *Album, err error) {
@@ -73,32 +63,31 @@ func (f *FStoreClient) buyAlbum(ctx *frugal.FContext, asin string, acct string) 
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.GetWriteMutex().Lock()
-	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.GetWriteMutex().Unlock()
+	buffer := frugal.TMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageBegin("buyAlbum", thrift.CALL, 0); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageBegin("buyAlbum", thrift.CALL, 0); err != nil {
 		return
 	}
 	args := StoreBuyAlbumArgs{
 		ASIN: asin,
 		Acct: acct,
 	}
-	if err = args.Write(f.oprot); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = args.Write(oprot); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
-	if err = f.oprot.Flush(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.Flush(); err != nil {
 		return
 	}
-	f.GetWriteMutex().Unlock()
+	data := buffer.Bytes()
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -191,32 +180,31 @@ func (f *FStoreClient) enterAlbumGiveaway(ctx *frugal.FContext, email string, na
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.GetWriteMutex().Lock()
-	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.GetWriteMutex().Unlock()
+	buffer := frugal.TMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageBegin("enterAlbumGiveaway", thrift.CALL, 0); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageBegin("enterAlbumGiveaway", thrift.CALL, 0); err != nil {
 		return
 	}
 	args := StoreEnterAlbumGiveawayArgs{
 		Email: email,
 		Name:  name,
 	}
-	if err = args.Write(f.oprot); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = args.Write(oprot); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
-	if err = f.oprot.Flush(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.Flush(); err != nil {
 		return
 	}
-	f.GetWriteMutex().Unlock()
+	data := buffer.Bytes()
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -292,14 +280,13 @@ type FStoreProcessor struct {
 
 func NewFStoreProcessor(handler FStore, middleware ...frugal.ServiceMiddleware) *FStoreProcessor {
 	p := &FStoreProcessor{frugal.NewFBaseProcessor()}
-	p.AddToProcessorMap("buyAlbum", &storeFBuyAlbum{handler: frugal.NewMethod(handler, handler.BuyAlbum, "BuyAlbum", middleware), writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("enterAlbumGiveaway", &storeFEnterAlbumGiveaway{handler: frugal.NewMethod(handler, handler.EnterAlbumGiveaway, "EnterAlbumGiveaway", middleware), writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("buyAlbum", &storeFBuyAlbum{handler: frugal.NewMethod(handler, handler.BuyAlbum, "BuyAlbum", middleware)})
+	p.AddToProcessorMap("enterAlbumGiveaway", &storeFEnterAlbumGiveaway{handler: frugal.NewMethod(handler, handler.EnterAlbumGiveaway, "EnterAlbumGiveaway", middleware)})
 	return p
 }
 
 type storeFBuyAlbum struct {
 	handler *frugal.Method
-	writeMu *sync.Mutex
 }
 
 func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
@@ -307,9 +294,7 @@ func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FPro
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		p.writeMu.Lock()
 		storeWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "buyAlbum", err.Error())
-		p.writeMu.Unlock()
 		return err
 	}
 
@@ -330,16 +315,12 @@ func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FPro
 		case *PurchasingError:
 			result.Error = v
 		default:
-			p.writeMu.Lock()
 			storeWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "buyAlbum", "Internal error processing buyAlbum: "+err2.Error())
-			p.writeMu.Unlock()
 			return err2
 		}
 	} else {
 		result.Success = retval
 	}
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
 			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: "+err2.Error())
@@ -380,7 +361,6 @@ func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FPro
 
 type storeFEnterAlbumGiveaway struct {
 	handler *frugal.Method
-	writeMu *sync.Mutex
 }
 
 func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
@@ -388,9 +368,7 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		p.writeMu.Lock()
 		storeWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "enterAlbumGiveaway", err.Error())
-		p.writeMu.Unlock()
 		return err
 	}
 
@@ -407,15 +385,11 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		p.writeMu.Lock()
 		storeWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "enterAlbumGiveaway", "Internal error processing enterAlbumGiveaway: "+err2.Error())
-		p.writeMu.Unlock()
 		return err2
 	} else {
 		result.Success = &retval
 	}
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
 			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: "+err2.Error())

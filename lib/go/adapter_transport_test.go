@@ -66,12 +66,12 @@ func TestAdapterTransportOpenReadClose(t *testing.T) {
 	mockTr.reads = make(chan []byte, 1)
 	mockTr.reads <- frame
 	close(mockTr.reads)
-	tr := NewAdapterTransport(mockTr)
+	tr := NewAdapterTransport(mockTr).(*fAdapterTransport)
 	mockRegistry := new(mockFRegistry)
 	executeCalled := make(chan struct{}, 1)
 	mockRegistry.executeCalled = executeCalled
 	mockRegistry.On("Execute", frame[4:]).Return(nil)
-	tr.SetRegistry(mockRegistry)
+	tr.registry = mockRegistry
 	mockTr.On("Open").Return(nil)
 	mockTr.On("Close").Return(nil)
 	assert.Nil(tr.Open())
@@ -133,8 +133,8 @@ func TestAdapterTransportExecuteError(t *testing.T) {
 	mockRegistry.executeCalled = executeCalled
 	err := errors.New("error")
 	mockRegistry.On("Execute", frame[4:]).Return(err)
-	tr := NewAdapterTransport(mockTr)
-	tr.SetRegistry(mockRegistry)
+	tr := NewAdapterTransport(mockTr).(*fAdapterTransport)
+	tr.registry = mockRegistry
 	assert.Nil(tr.Open())
 
 	select {
@@ -213,36 +213,11 @@ func TestAdapterTransportSetMonitor(t *testing.T) {
 	mockMonitor2.AssertExpectations(t)
 }
 
-// Ensures SetRegistry panics when the registry is nil.
-func TestAdapterTransportSetRegistryNilPanic(t *testing.T) {
-	tr := NewAdapterTransport(nil)
-	defer func() {
-		assert.NotNil(t, recover())
-	}()
-	tr.SetRegistry(nil)
-}
-
-// Ensures SetRegistry does nothing if the registry is already set.
-func TestAdapterTransportSetRegistryAlreadySet(t *testing.T) {
-	registry := NewFClientRegistry()
-	tr := NewAdapterTransport(nil)
-	tr.SetRegistry(registry)
-	assert.Equal(t, registry, tr.(*fAdapterTransport).registry)
-	tr.SetRegistry(NewServerRegistry(nil, nil, nil))
-}
-
-// Ensures a direct Read returns an error.
-func TestAdapterTransportDirectReadError(t *testing.T) {
-	tr := NewAdapterTransport(nil)
-	_, err := tr.Read(make([]byte, 5))
-	assert.Error(t, err)
-}
-
 // Ensures Register calls through to the registry to register a callback.
 func TestAdapterTransportRegister(t *testing.T) {
-	tr := NewAdapterTransport(nil)
+	tr := NewAdapterTransport(nil).(*fAdapterTransport)
 	mockRegistry := new(mockFRegistry)
-	tr.SetRegistry(mockRegistry)
+	tr.registry = mockRegistry
 	ctx := NewFContext("")
 	cb := func(thrift.TTransport) error {
 		return nil
@@ -256,9 +231,9 @@ func TestAdapterTransportRegister(t *testing.T) {
 
 // Ensures Unregister calls through to the registry to unregister a callback.
 func TestAdapterTransportUnregister(t *testing.T) {
-	tr := NewAdapterTransport(nil)
+	tr := NewAdapterTransport(nil).(*fAdapterTransport)
 	mockRegistry := new(mockFRegistry)
-	tr.SetRegistry(mockRegistry)
+	tr.registry = mockRegistry
 	ctx := NewFContext("")
 	mockRegistry.On("Unregister", ctx).Return(nil)
 
