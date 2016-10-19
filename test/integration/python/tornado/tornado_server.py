@@ -122,11 +122,11 @@ def main():
         response_context = FContext("Call")
         global publisher
         global port
-        publisher.publish_EventCreated(response_context, "{}-response".format(port), response_event)
+        publisher.publish_EventCreated(response_context, "foo", "Client", "response", "{}".format(port), response_event)
         print("Published event={}".format(response_event))
 
     subscriber = EventsSubscriber(provider)
-    yield subscriber.subscribe_EventCreated("{}-call".format(args.port), response_handler)
+    yield subscriber.subscribe_EventCreated("foo", "Client", "call", "{}".format(args.port), response_handler)
 
 
 def healthcheck(port):
