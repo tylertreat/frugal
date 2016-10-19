@@ -14,6 +14,7 @@ from frugal.aio.processor import FBaseProcessor
 from frugal.aio.processor import FProcessorFunction
 from frugal.aio.registry import FClientRegistry
 from frugal.middleware import Method
+from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 import actual_base.python
@@ -151,14 +152,16 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return result
 
     async def _send_ping(self, ctx):
-        oprot = self._oprot
+        buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
         async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.CALL, 0)
             args = ping_args()
             args.write(oprot)
             oprot.writeMessageEnd()
-            await oprot.get_transport().flush()
+            data = buffer.getvalue()
+        await self._transport.send(data)
 
     def _recv_ping(self, ctx, future):
         def ping_callback(transport):
@@ -202,7 +205,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return result
 
     async def _send_blah(self, ctx, num, Str, event):
-        oprot = self._oprot
+        buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
         async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('blah', TMessageType.CALL, 0)
@@ -212,7 +216,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             args.event = event
             args.write(oprot)
             oprot.writeMessageEnd()
-            await oprot.get_transport().flush()
+            data = buffer.getvalue()
+        await self._transport.send(data)
 
     def _recv_blah(self, ctx, future):
         def blah_callback(transport):
@@ -257,7 +262,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         await self._send_oneWay(ctx, id, req)
 
     async def _send_oneWay(self, ctx, id, req):
-        oprot = self._oprot
+        buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
         async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('oneWay', TMessageType.CALL, 0)
@@ -266,7 +272,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             args.req = req
             args.write(oprot)
             oprot.writeMessageEnd()
-            await oprot.get_transport().flush()
+            data = buffer.getvalue()
+        await self._transport.send(data)
 
     async def bin_method(self, ctx, bin, Str):
         """
@@ -290,7 +297,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return result
 
     async def _send_bin_method(self, ctx, bin, Str):
-        oprot = self._oprot
+        buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
         async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('bin_method', TMessageType.CALL, 0)
@@ -299,7 +307,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             args.Str = Str
             args.write(oprot)
             oprot.writeMessageEnd()
-            await oprot.get_transport().flush()
+            data = buffer.getvalue()
+        await self._transport.send(data)
 
     def _recv_bin_method(self, ctx, future):
         def bin_method_callback(transport):
@@ -349,7 +358,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return result
 
     async def _send_param_modifiers(self, ctx, opt_num, default_num, req_num):
-        oprot = self._oprot
+        buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
         async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('param_modifiers', TMessageType.CALL, 0)
@@ -359,7 +369,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             args.req_num = req_num
             args.write(oprot)
             oprot.writeMessageEnd()
-            await oprot.get_transport().flush()
+            data = buffer.getvalue()
+        await self._transport.send(data)
 
     def _recv_param_modifiers(self, ctx, future):
         def param_modifiers_callback(transport):
@@ -405,7 +416,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return result
 
     async def _send_underlying_types_test(self, ctx, list_type, set_type):
-        oprot = self._oprot
+        buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
         async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('underlying_types_test', TMessageType.CALL, 0)
@@ -414,7 +426,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             args.set_type = set_type
             args.write(oprot)
             oprot.writeMessageEnd()
-            await oprot.get_transport().flush()
+            data = buffer.getvalue()
+        await self._transport.send(data)
 
     def _recv_underlying_types_test(self, ctx, future):
         def underlying_types_test_callback(transport):
@@ -458,14 +471,16 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return result
 
     async def _send_getThing(self, ctx):
-        oprot = self._oprot
+        buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
         async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.CALL, 0)
             args = getThing_args()
             args.write(oprot)
             oprot.writeMessageEnd()
-            await oprot.get_transport().flush()
+            data = buffer.getvalue()
+        await self._transport.send(data)
 
     def _recv_getThing(self, ctx, future):
         def getThing_callback(transport):
@@ -509,14 +524,16 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return result
 
     async def _send_getMyInt(self, ctx):
-        oprot = self._oprot
+        buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
         async with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.CALL, 0)
             args = getMyInt_args()
             args.write(oprot)
             oprot.writeMessageEnd()
-            await oprot.get_transport().flush()
+            data = buffer.getvalue()
+        await self._transport.send(data)
 
     def _recv_getMyInt(self, ctx, future):
         def getMyInt_callback(transport):

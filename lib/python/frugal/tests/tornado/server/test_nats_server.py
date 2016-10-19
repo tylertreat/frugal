@@ -84,6 +84,9 @@ class TestFNatsTornadoServer(AsyncTestCase):
         frame_size = struct.pack('!I', len(data))
 
         msg = TestMsg(subject="foo", reply="inbox", data=frame_size + data)
+        publish_future = concurrent.Future()
+        publish_future.set_result(None)
+        self.mock_nats_client.publish.return_value = publish_future
 
         yield self.server._on_message_callback(msg)
 

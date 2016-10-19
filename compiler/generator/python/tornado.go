@@ -24,6 +24,7 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from frugal.processor import FBaseProcessor\n"
 	imports += "from frugal.processor import FProcessorFunction\n"
 	imports += "from frugal.registry import FClientRegistry\n"
+	imports += "from frugal.transport import TMemoryOutputBuffer\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "from tornado import gen\n"
@@ -117,7 +118,8 @@ func (t *TornadoGenerator) generateClientSendMethod(method *parser.Method) strin
 	contents := ""
 	contents += tab + "@gen.coroutine\n"
 	contents += tab + fmt.Sprintf("def _send_%s(self, ctx%s):\n", method.Name, t.generateClientArgs(method.Arguments))
-	contents += tabtab + "oprot = self._oprot\n"
+	contents += tabtab + "buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())\n"
+	contents += tabtab + "oprot = self._protocol_factory.get_protocol(buffer)\n"
 	contents += tabtab + "with self._write_lock:\n"
 	contents += tabtabtab + "oprot.write_request_headers(ctx)\n"
 	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
@@ -127,7 +129,8 @@ func (t *TornadoGenerator) generateClientSendMethod(method *parser.Method) strin
 	}
 	contents += tabtabtab + "args.write(oprot)\n"
 	contents += tabtabtab + "oprot.writeMessageEnd()\n"
-	contents += tabtabtab + "yield oprot.get_transport().flush()\n\n"
+	contents += tabtabtab + "data = buffer.getvalue()\n"
+	contents += tabtab+"yield self._transport.send(data)\n\n"
 
 	return contents
 }

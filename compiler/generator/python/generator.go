@@ -1061,9 +1061,6 @@ func (g *Generator) generateClientConstructor(service *parser.Service, async boo
 		contents += tabtab + "                             middleware=middleware)\n"
 		contents += tabtab + "self._methods.update("
 	} else {
-		if async {
-			contents += tabtab + "transport.set_registry(FClientRegistry())\n"
-		}
 		contents += tabtab + "self._transport = transport\n"
 		contents += tabtab + "self._protocol_factory = protocol_factory\n"
 		contents += tabtab + "self._oprot = protocol_factory.get_protocol(transport)\n"

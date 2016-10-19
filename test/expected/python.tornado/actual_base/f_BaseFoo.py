@@ -13,6 +13,7 @@ from frugal.middleware import Method
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
 from frugal.registry import FClientRegistry
+from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from tornado import gen
@@ -44,7 +45,6 @@ class Client(Iface):
         """
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
-        transport.set_registry(FClientRegistry())
         self._transport = transport
         self._protocol_factory = protocol_factory
         self._oprot = protocol_factory.get_protocol(transport)
@@ -75,14 +75,16 @@ class Client(Iface):
 
     @gen.coroutine
     def _send_basePing(self, ctx):
-        oprot = self._oprot
+        buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
         with self._write_lock:
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('basePing', TMessageType.CALL, 0)
             args = basePing_args()
             args.write(oprot)
             oprot.writeMessageEnd()
-            yield oprot.get_transport().flush()
+            data = buffer.getvalue()
+        yield self._transport.send(data)
 
     def _recv_basePing(self, ctx, future):
         def basePing_callback(transport):

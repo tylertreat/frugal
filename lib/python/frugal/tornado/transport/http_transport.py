@@ -8,6 +8,7 @@ from tornado.httpclient import AsyncHTTPClient
 from tornado.httpclient import HTTPError
 from tornado.httpclient import HTTPRequest
 
+from frugal.exceptions import FMessageSizeException
 from frugal.tornado.transport import FTornadoTransport
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ class FHttpTransport(FTornadoTransport):
         self._execute = None
 
     @gen.coroutine
-    def isOpen(self):
+    def is_open(self):
         """Always returns True"""
         # Tornado requires we raise a special exception to return a value.
         raise gen.Return(True)
@@ -57,17 +58,18 @@ class FHttpTransport(FTornadoTransport):
         pass
 
     @gen.coroutine
-    def flush(self):
+    def send(self, data):
         """
         Write the current buffer and execute the set callback with the
         response.
         """
-        frame = self.get_write_bytes()
-        if not frame:
+        if len(data) == 4:
             return
 
-        self.reset_write_buffer()
-        encoded = base64.b64encode(frame)
+        if len(data) > self._max_message_size > 0:
+            raise FMessageSizeException()
+
+        encoded = base64.b64encode(data)
         request = HTTPRequest(self._url, method='POST', body=encoded,
                               headers=self._headers)
 

@@ -77,3 +77,4 @@ class AlbumWinnersPublisher(object):
             oprot.get_transport().flush()
         finally:
             self._transport.unlock_topic()
+

@@ -78,3 +78,7 @@ class AlbumWinnersSubscriber(object):
                 sys.exit(1)
 
         return callback
+
+
+
+

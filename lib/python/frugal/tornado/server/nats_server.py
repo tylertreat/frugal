@@ -6,7 +6,7 @@ from thrift.transport.TTransport import TMemoryBuffer
 from tornado import gen
 
 from frugal.server import FServer
-from frugal.transport import FBoundedMemoryBuffer
+from frugal.transport import TMemoryOutputBuffer
 from frugal.tornado.transport.nats_scope_transport import MAX_MESSAGE_SIZE
 
 logger = logging.getLogger(__name__)
@@ -77,8 +77,8 @@ class FNatsTornadoServer(FServer):
         iprot = self._iprot_factory.get_protocol(
             TMemoryBuffer(msg.data[4:])
         )
-        out_transport = FBoundedMemoryBuffer(MAX_MESSAGE_SIZE - 4)
-        oprot = self._oprot_factory.get_protocol(out_transport)
+        otrans = TMemoryOutputBuffer(MAX_MESSAGE_SIZE)
+        oprot = self._oprot_factory.get_protocol(otrans)
 
         try:
             self._processor.process(iprot, oprot)
@@ -86,10 +86,7 @@ class FNatsTornadoServer(FServer):
             logger.exception(ex)
             return
 
-        if len(out_transport) == 0:
+        if len(otrans) == 4:
             return
 
-        data = out_transport.getvalue()
-        buff = struct.pack('!I', len(data))
-
-        yield self._nats_client.publish(reply_to, "{}{}".format(buff, data))
+        yield self._nats_client.publish(reply_to, otrans.getvalue())

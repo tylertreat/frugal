@@ -59,9 +59,11 @@ async def main():
     await publisher.open()
 
     async def response_handler(context, event):
+        print('************************** response_handler entry')
         response_event = Event(Message="Sending Response")
         response_context = FContext("Call")
         await publisher.publish_EventCreated(response_context, "{}-response".format(port), response_event)
+        print('^^^^^^^^^^^^^^^^^^^^^^^^^^ response_handler return')
 
     subscriber = EventsSubscriber(provider)
     await subscriber.subscribe_EventCreated("{}-call".format(args.port), response_handler)

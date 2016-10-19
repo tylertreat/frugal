@@ -1,14 +1,15 @@
 from asyncio.locks import Lock
-import asyncio
 import inspect
+from io import BytesIO
+import struct
 
 from nats.aio.client import Client
 from thrift.transport.TTransport import TTransportException
 from thrift.transport.TTransport import TMemoryBuffer
+from thrift.transport.TTransport import TTransportBase
 
 from frugal import _NATS_MAX_MESSAGE_SIZE
-from frugal.aio.transport import FTransportBase
-from frugal.exceptions import FException
+from frugal.exceptions import FException, FMessageSizeException
 from frugal.transport import FScopeTransport
 from frugal.transport import FScopeTransportFactory
 
@@ -41,7 +42,7 @@ class FNatsScopeTransportFactory(FScopeTransportFactory):
         )
 
 
-class FNatsScopeTransport(FScopeTransport, FTransportBase):
+class FNatsScopeTransport(FScopeTransport, TTransportBase):
     """
     FNatsScopeTransport implements FScopeTransport using nats as the underlying
     message broker. Messages are limited to 1MB in size.
@@ -61,7 +62,8 @@ class FNatsScopeTransport(FScopeTransport, FTransportBase):
                    receive a message sent to that queue group. The empty string
                    indicates NOT to join a queue group.
         """
-        FTransportBase.__init__(self, _NATS_MAX_MESSAGE_SIZE)
+        TTransportBase.__init__(self)
+        self._max_message_size = _NATS_MAX_MESSAGE_SIZE
         self._nats_client = nats_client
         self._queue = queue
         self._subject = ''
@@ -70,6 +72,7 @@ class FNatsScopeTransport(FScopeTransport, FTransportBase):
         self._is_open = False
         self._sub_id = None
         self._callback = None
+        self._wbuf = BytesIO()
 
     async def lock_topic(self, topic: str):
         """
@@ -166,6 +169,21 @@ class FNatsScopeTransport(FScopeTransport, FTransportBase):
         self._sub_id = None
         self._is_open = False
 
+    def write(self, buf):
+        """
+        Writes the given data to a buffer. Throws FMessageSizeException if
+        this will cause the buffer to exceed the message size limit.
+
+        Args:
+            buf: The data to write.
+        """
+        size = len(buf) + len(self._wbuf.getvalue())
+
+        if size > self._max_message_size > 0:
+            self._wbuf = BytesIO()
+            raise FMessageSizeException('Message exceeds max message size')
+        self._wbuf.write(buf)
+
     async def flush(self):
         """Flushes buffered write data over the network."""
         if not self.isOpen():
@@ -174,8 +192,23 @@ class FNatsScopeTransport(FScopeTransport, FTransportBase):
 
         frame = self.get_write_bytes()
         self.reset_write_buffer()
+        if len(frame) == 4:
+            return
 
         await self._nats_client.publish(
             'frugal.{0}'.format(self._subject),
             frame
         )
+
+    def get_write_bytes(self):
+        """Get the framed bytes from the write buffer."""
+        data = self._wbuf.getvalue()
+        if len(data) == 0:
+            return None
+
+        data_length = struct.pack('!I', len(data))
+        return data_length + data
+
+    def reset_write_buffer(self):
+        """Reset the write buffer."""
+        self._wbuf = BytesIO()
