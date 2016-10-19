@@ -1365,12 +1365,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware]) {\n", servTitle)
 	}
 	contents += tabtab + "_transport = transport;\n"
-	contents += tabtab + "_transport.setRegistry(new frugal.FClientRegistry());\n"
 	contents += tabtab + "_protocolFactory = protocolFactory;\n"
-	contents += tabtab + "_oprot = _protocolFactory.getProtocol(_transport);\n\n"
-	if service.Extends == "" {
-		contents += tabtab + "writeLock = new frugal.Lock();\n"
-	}
 	contents += tabtab + "this._methods = {};\n"
 	for _, method := range service.Methods {
 		nameLower := generator.LowercaseFirstLetter(method.Name)
@@ -1380,11 +1375,6 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += tab + "}\n\n"
 	contents += tab + "frugal.FTransport _transport;\n"
 	contents += tab + "frugal.FProtocolFactory _protocolFactory;\n"
-	contents += tab + "frugal.FProtocol _oprot;\n"
-	contents += tab + "frugal.FProtocol get oprot => _oprot;\n"
-	if service.Extends == "" {
-		contents += tab + "frugal.Lock writeLock;\n"
-	}
 	contents += "\n"
 
 	for _, method := range service.Methods {
@@ -1423,34 +1413,31 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += tabtabtab + "});\n"
 		contents += fmt.Sprintf(tabtab+"_transport.register(ctx, _recv%sHandler(ctx, controller));\n", nameTitle)
 	}
-	contents += indent + "await writeLock.lock();\n"
 
 	if !method.Oneway {
 		contents += tabtab + "try {\n"
 		indent = tabtabtab
 	}
-	contents += indent + "try {\n"
 
-	contents += indent + tab + "oprot.writeRequestHeader(ctx);\n"
+	contents += indent + "var memoryTransport = new frugal.TMemoryOutputTransport(_transport.requestSizeLimit);\n"
+	contents += indent + "var oprot = _protocolFactory.getProtocol(memoryTransport);\n"
+	contents += indent + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
 		msgType = "ONEWAY"
 	}
-	contents += fmt.Sprintf(indent+tab+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.%s, 0));\n",
+	contents += fmt.Sprintf(indent+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.%s, 0));\n",
 		nameLower, msgType)
-	contents += fmt.Sprintf(indent+tab+"%s_args args = new %s_args();\n",
+	contents += fmt.Sprintf(indent+"%s_args args = new %s_args();\n",
 		nameLower, nameLower)
 	for _, arg := range method.Arguments {
 		argLower := generator.LowercaseFirstLetter(arg.Name)
-		contents += fmt.Sprintf(indent+tab+"args.%s = %s;\n", argLower, argLower)
+		contents += fmt.Sprintf(indent+"args.%s = %s;\n", argLower, argLower)
 	}
-	contents += indent + tab + "args.write(oprot);\n"
-	contents += indent + tab + "oprot.writeMessageEnd();\n"
-	contents += indent + tab + "await oprot.transport.flush();\n"
+	contents += indent + "args.write(oprot);\n"
+	contents += indent + "oprot.writeMessageEnd();\n"
+	contents += indent + "await _transport.send(memoryTransport.writeBytes);\n"
 
-	contents += indent + "} finally {\n"
-	contents += indent + tab + "writeLock.unlock();\n"
-	contents += indent + "}\n"
 	// Nothing more to do for oneway
 	if method.Oneway {
 		contents += tab + "}\n\n"

@@ -22,20 +22,13 @@ class FBaseFooClient implements FBaseFoo {
 
   FBaseFooClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware]) {
     _transport = transport;
-    _transport.setRegistry(new frugal.FClientRegistry());
     _protocolFactory = protocolFactory;
-    _oprot = _protocolFactory.getProtocol(_transport);
-
-    writeLock = new frugal.Lock();
     this._methods = {};
     this._methods['basePing'] = new frugal.FMethod(this._basePing, 'BaseFoo', 'basePing', middleware);
   }
 
   frugal.FTransport _transport;
   frugal.FProtocolFactory _protocolFactory;
-  frugal.FProtocol _oprot;
-  frugal.FProtocol get oprot => _oprot;
-  frugal.Lock writeLock;
 
   Future basePing(frugal.FContext ctx) {
     return this._methods['basePing']([ctx]);
@@ -49,18 +42,15 @@ class FBaseFooClient implements FBaseFoo {
         "Transport closed before request completed."));
       });
     _transport.register(ctx, _recvBasePingHandler(ctx, controller));
-    await writeLock.lock();
     try {
-      try {
-        oprot.writeRequestHeader(ctx);
-        oprot.writeMessageBegin(new thrift.TMessage("basePing", thrift.TMessageType.CALL, 0));
-        basePing_args args = new basePing_args();
-        args.write(oprot);
-        oprot.writeMessageEnd();
-        await oprot.transport.flush();
-      } finally {
-        writeLock.unlock();
-      }
+      var memoryTransport = new frugal.TMemoryOutputTransport(_transport.requestSizeLimit);
+      var oprot = _protocolFactory.getProtocol(memoryTransport);
+      oprot.writeRequestHeader(ctx);
+      oprot.writeMessageBegin(new thrift.TMessage("basePing", thrift.TMessageType.CALL, 0));
+      basePing_args args = new basePing_args();
+      args.write(oprot);
+      oprot.writeMessageEnd();
+      await _transport.send(memoryTransport.writeBytes);
 
       return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
         throw new frugal.FTimeoutError.withMessage("BaseFoo.basePing timed out after ${ctx.timeout}");
