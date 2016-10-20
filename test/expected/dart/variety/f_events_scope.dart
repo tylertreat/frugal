@@ -17,15 +17,12 @@ const String delimiter = '.';
 /// the @ sign. Prefix specifies topic prefix tokens, which can be static or
 /// variable.
 class EventsPublisher {
-  frugal.FScopeTransport transport;
-  frugal.FProtocol protocol;
+  frugal.FPublisherTransport transport;
+  frugal.FProtocolFactory protocolFactory;
   Map<String, frugal.FMethod> _methods;
-  frugal.Lock _writeLock;
-
   EventsPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
     transport = provider.publisherTransportFactory.getTransport();
-    protocol = provider.protocolFactory.getProtocol(transport);
-    _writeLock = new frugal.Lock();
+    protocolFactory = provider.protocolFactory;
     this._methods = {};
     this._methods['EventCreated'] = new frugal.FMethod(this._publishEventCreated, 'Events', 'publishEventCreated', middleware);
   }
@@ -44,22 +41,17 @@ class EventsPublisher {
   }
 
   Future _publishEventCreated(frugal.FContext ctx, String user, t_variety.Event req) async {
-    await _writeLock.lock();
-    try {
-      var op = "EventCreated";
-      var prefix = "foo.${user}.";
-      var topic = "${prefix}Events${delimiter}${op}";
-      transport.setTopic(topic);
-      var oprot = protocol;
-      var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(msg);
-      req.write(oprot);
-      oprot.writeMessageEnd();
-      await oprot.transport.flush();
-    } finally {
-      _writeLock.unlock();
-    }
+    var op = "EventCreated";
+    var prefix = "foo.${user}.";
+    var topic = "${prefix}Events${delimiter}${op}";
+    var memoryTransport = new frugal.TMemoryOutputTransport(transport.publishSizeLimit);
+    var oprot = protocolFactory.getProtocol(memoryTransport);
+    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(msg);
+    req.write(oprot);
+    oprot.writeMessageEnd();
+    await transport.publish(topic, memoryTransport.writeBytes);
   }
 }
 

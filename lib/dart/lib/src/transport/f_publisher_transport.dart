@@ -1,16 +1,26 @@
 part of frugal;
 
-/// FPublisherTransport extends Thrift's TTransport and is used exclusively
-/// for scope publishers.
-abstract class FPublisherTransport extends TTransport {
-  @override
-  int read(Uint8List buffer, int offset, int length) {
-    throw new TTransportError(
-        TTransportErrorType.UNKNOWN, 'Cannot read from FPublisherTransport');
-  }
+/// FPublisherTransport is used exclusively for scope publishers.
+abstract class FPublisherTransport {
+  /// Queries whether the transport is open.
+  /// Returns [true] if the transport is open.
+  bool get isOpen;
 
-  /// set the publish topic.
-  void setTopic(String topic);
+  /// Opens the transport for reading/writing.
+  /// Throws [TTransportError] if the transport could not be opened.
+  Future open();
+
+  /// Closes the transport.
+  Future close();
+
+  /// The maximum publish size permitted by the transport. If [publishSizeLimit]
+  /// is a non-positive number, the transport is assumed to have no publish size
+  /// limit.
+  int get publishSizeLimit;
+
+  /// Publish the given framed frugal payload over the transport.
+  /// Throws [TTransportError] if publishing the payload failed.
+  void publish(String topic, Uint8List payload);
 }
 
 /// FPublisherTransportFactory produces FPublisherTransports.
