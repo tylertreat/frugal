@@ -1,7 +1,6 @@
-package com.workiva.frugal.internal;
+package com.workiva.frugal.protocol;
 
 import com.workiva.frugal.exception.FProtocolException;
-import com.workiva.frugal.protocol.HeaderUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.apache.thrift.transport.TTransport;
