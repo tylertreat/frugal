@@ -76,14 +76,14 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       });
     _transport.register(ctx, _recvPingHandler(ctx, controller));
     try {
-      var memoryTransport = new frugal.TMemoryOutputTransport(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryTransport);
+      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+      var oprot = _protocolFactory.getProtocol(memoryBuffer);
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
       ping_args args = new ping_args();
       args.write(oprot);
       oprot.writeMessageEnd();
-      await _transport.send(memoryTransport.writeBytes);
+      await _transport.send(memoryBuffer.writeBytes);
 
       return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
         throw new frugal.FTimeoutError.withMessage("Foo.ping timed out after ${ctx.timeout}");
@@ -136,8 +136,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       });
     _transport.register(ctx, _recvBlahHandler(ctx, controller));
     try {
-      var memoryTransport = new frugal.TMemoryOutputTransport(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryTransport);
+      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+      var oprot = _protocolFactory.getProtocol(memoryBuffer);
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("blah", thrift.TMessageType.CALL, 0));
       blah_args args = new blah_args();
@@ -146,7 +146,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       args.event = event;
       args.write(oprot);
       oprot.writeMessageEnd();
-      await _transport.send(memoryTransport.writeBytes);
+      await _transport.send(memoryBuffer.writeBytes);
 
       return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
         throw new frugal.FTimeoutError.withMessage("Foo.blah timed out after ${ctx.timeout}");
@@ -206,8 +206,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   }
 
   Future _oneWay(frugal.FContext ctx, int id, Map<int, String> req) async {
-    var memoryTransport = new frugal.TMemoryOutputTransport(_transport.requestSizeLimit);
-    var oprot = _protocolFactory.getProtocol(memoryTransport);
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+    var oprot = _protocolFactory.getProtocol(memoryBuffer);
     oprot.writeRequestHeader(ctx);
     oprot.writeMessageBegin(new thrift.TMessage("oneWay", thrift.TMessageType.ONEWAY, 0));
     oneWay_args args = new oneWay_args();
@@ -215,7 +215,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     args.req = req;
     args.write(oprot);
     oprot.writeMessageEnd();
-    await _transport.send(memoryTransport.writeBytes);
+    await _transport.send(memoryBuffer.writeBytes);
   }
 
   Future<Uint8List> bin_method(frugal.FContext ctx, Uint8List bin, String str) {
@@ -231,8 +231,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       });
     _transport.register(ctx, _recvBin_methodHandler(ctx, controller));
     try {
-      var memoryTransport = new frugal.TMemoryOutputTransport(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryTransport);
+      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+      var oprot = _protocolFactory.getProtocol(memoryBuffer);
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("bin_method", thrift.TMessageType.CALL, 0));
       bin_method_args args = new bin_method_args();
@@ -240,7 +240,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       args.str = str;
       args.write(oprot);
       oprot.writeMessageEnd();
-      await _transport.send(memoryTransport.writeBytes);
+      await _transport.send(memoryBuffer.writeBytes);
 
       return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
         throw new frugal.FTimeoutError.withMessage("Foo.bin_method timed out after ${ctx.timeout}");
@@ -303,8 +303,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       });
     _transport.register(ctx, _recvParam_modifiersHandler(ctx, controller));
     try {
-      var memoryTransport = new frugal.TMemoryOutputTransport(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryTransport);
+      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+      var oprot = _protocolFactory.getProtocol(memoryBuffer);
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("param_modifiers", thrift.TMessageType.CALL, 0));
       param_modifiers_args args = new param_modifiers_args();
@@ -313,7 +313,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       args.req_num = req_num;
       args.write(oprot);
       oprot.writeMessageEnd();
-      await _transport.send(memoryTransport.writeBytes);
+      await _transport.send(memoryBuffer.writeBytes);
 
       return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
         throw new frugal.FTimeoutError.withMessage("Foo.param_modifiers timed out after ${ctx.timeout}");
@@ -372,8 +372,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       });
     _transport.register(ctx, _recvUnderlying_types_testHandler(ctx, controller));
     try {
-      var memoryTransport = new frugal.TMemoryOutputTransport(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryTransport);
+      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+      var oprot = _protocolFactory.getProtocol(memoryBuffer);
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("underlying_types_test", thrift.TMessageType.CALL, 0));
       underlying_types_test_args args = new underlying_types_test_args();
@@ -381,7 +381,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       args.set_type = set_type;
       args.write(oprot);
       oprot.writeMessageEnd();
-      await _transport.send(memoryTransport.writeBytes);
+      await _transport.send(memoryBuffer.writeBytes);
 
       return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
         throw new frugal.FTimeoutError.withMessage("Foo.underlying_types_test timed out after ${ctx.timeout}");
@@ -440,14 +440,14 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       });
     _transport.register(ctx, _recvGetThingHandler(ctx, controller));
     try {
-      var memoryTransport = new frugal.TMemoryOutputTransport(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryTransport);
+      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+      var oprot = _protocolFactory.getProtocol(memoryBuffer);
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("getThing", thrift.TMessageType.CALL, 0));
       getThing_args args = new getThing_args();
       args.write(oprot);
       oprot.writeMessageEnd();
-      await _transport.send(memoryTransport.writeBytes);
+      await _transport.send(memoryBuffer.writeBytes);
 
       return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
         throw new frugal.FTimeoutError.withMessage("Foo.getThing timed out after ${ctx.timeout}");
@@ -506,14 +506,14 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       });
     _transport.register(ctx, _recvGetMyIntHandler(ctx, controller));
     try {
-      var memoryTransport = new frugal.TMemoryOutputTransport(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryTransport);
+      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+      var oprot = _protocolFactory.getProtocol(memoryBuffer);
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("getMyInt", thrift.TMessageType.CALL, 0));
       getMyInt_args args = new getMyInt_args();
       args.write(oprot);
       oprot.writeMessageEnd();
-      await _transport.send(memoryTransport.writeBytes);
+      await _transport.send(memoryBuffer.writeBytes);
 
       return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
         throw new frugal.FTimeoutError.withMessage("Foo.getMyInt timed out after ${ctx.timeout}");

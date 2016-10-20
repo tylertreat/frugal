@@ -43,14 +43,14 @@ class FBaseFooClient implements FBaseFoo {
       });
     _transport.register(ctx, _recvBasePingHandler(ctx, controller));
     try {
-      var memoryTransport = new frugal.TMemoryOutputTransport(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryTransport);
+      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+      var oprot = _protocolFactory.getProtocol(memoryBuffer);
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("basePing", thrift.TMessageType.CALL, 0));
       basePing_args args = new basePing_args();
       args.write(oprot);
       oprot.writeMessageEnd();
-      await _transport.send(memoryTransport.writeBytes);
+      await _transport.send(memoryBuffer.writeBytes);
 
       return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
         throw new frugal.FTimeoutError.withMessage("BaseFoo.basePing timed out after ${ctx.timeout}");

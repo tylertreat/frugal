@@ -44,14 +44,14 @@ class EventsPublisher {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
-    var memoryTransport = new frugal.TMemoryOutputTransport(transport.publishSizeLimit);
-    var oprot = protocolFactory.getProtocol(memoryTransport);
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(transport.publishSizeLimit);
+    var oprot = protocolFactory.getProtocol(memoryBuffer);
     var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
     oprot.writeRequestHeader(ctx);
     oprot.writeMessageBegin(msg);
     req.write(oprot);
     oprot.writeMessageEnd();
-    await transport.publish(topic, memoryTransport.writeBytes);
+    await transport.publish(topic, memoryBuffer.writeBytes);
   }
 }
 

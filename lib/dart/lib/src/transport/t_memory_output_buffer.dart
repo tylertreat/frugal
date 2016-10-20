@@ -4,7 +4,7 @@ part of frugal;
 /// exclusively for writing. The size of this buffer is optionally limited. If
 /// limited, writes which cause the buffer to exceed its size limit throw an
 /// FMessageSizeError.
-class TMemoryOutputTransport extends TTransport {
+class TMemoryOutputBuffer extends TTransport {
   final List<int> _writeBuffer = [];
   final int _limit;
 
@@ -12,7 +12,7 @@ class TMemoryOutputTransport extends TTransport {
   ///
   /// [size] is size limit of the buffer. Note: If [size] is non-positive,
   /// no limit will be enforced on the buffer.
-  TMemoryOutputTransport([int size]) : _limit = size ?? 0;
+  TMemoryOutputBuffer([int size]) : _limit = size ?? 0;
 
   @override
   bool get isOpen => true;

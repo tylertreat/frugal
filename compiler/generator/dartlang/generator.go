@@ -1191,14 +1191,14 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += tabtab + fmt.Sprintf("var op = \"%s\";\n", op.Name)
 		publishers += tabtab + fmt.Sprintf("var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
-		publishers += tabtab + "var memoryTransport = new frugal.TMemoryOutputTransport(transport.publishSizeLimit);\n"
-		publishers += tabtab + "var oprot = protocolFactory.getProtocol(memoryTransport);\n"
+		publishers += tabtab + "var memoryBuffer = new frugal.TMemoryOutputBuffer(transport.publishSizeLimit);\n"
+		publishers += tabtab + "var oprot = protocolFactory.getProtocol(memoryBuffer);\n"
 		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);\n"
 		publishers += tabtab + "oprot.writeRequestHeader(ctx);\n"
 		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
 		publishers += tabtab + "req.write(oprot);\n"
 		publishers += tabtab + "oprot.writeMessageEnd();\n"
-		publishers += tabtab + "await transport.publish(topic, memoryTransport.writeBytes);\n"
+		publishers += tabtab + "await transport.publish(topic, memoryBuffer.writeBytes);\n"
 		publishers += tab + "}\n"
 	}
 
@@ -1412,8 +1412,8 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		indent = tabtabtab
 	}
 
-	contents += indent + "var memoryTransport = new frugal.TMemoryOutputTransport(_transport.requestSizeLimit);\n"
-	contents += indent + "var oprot = _protocolFactory.getProtocol(memoryTransport);\n"
+	contents += indent + "var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);\n"
+	contents += indent + "var oprot = _protocolFactory.getProtocol(memoryBuffer);\n"
 	contents += indent + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
@@ -1429,7 +1429,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 	contents += indent + "args.write(oprot);\n"
 	contents += indent + "oprot.writeMessageEnd();\n"
-	contents += indent + "await _transport.send(memoryTransport.writeBytes);\n"
+	contents += indent + "await _transport.send(memoryBuffer.writeBytes);\n"
 
 	// Nothing more to do for oneway
 	if method.Oneway {
