@@ -57,25 +57,6 @@ func runServer(opts *server.Options) *server.Server {
 
 }
 
-// Ensures LockTopic returns nil when a publisher successfully locks a topic.
-// Subsequent calls will wait on the mutex. Unlock releases the topic.
-func TestNatsPublisherLockUnlockTopic(t *testing.T) {
-	tr := NewNatsFPublisherTransport(nil)
-	assert.Nil(t, tr.LockTopic("foo"))
-	acquired := make(chan bool)
-	go func() {
-		assert.Nil(t, tr.LockTopic("bar"))
-		assert.Equal(t, "bar", tr.(*fNatsPublisherTransport).subject)
-		acquired <- true
-	}()
-	assert.Equal(t, "foo", tr.(*fNatsPublisherTransport).subject)
-	tr.UnlockTopic()
-	<-acquired
-
-	tr.UnlockTopic()
-	assert.Equal(t, "", tr.(*fNatsPublisherTransport).subject)
-}
-
 // Ensures Subscribe subscribes to the topic on NATS and puts received frames
 // on the read buffer and received in Read calls. All subscribers receive the
 // message when they aren't subscribed to a queue.
@@ -174,7 +155,7 @@ func TestNatsSubscriberSubscribeConnectionNotOpen(t *testing.T) {
 }
 
 // Ensures Open returns nil on success and writes work.
-func TestNatsPublisherOpenWriteFlush(t *testing.T) {
+func TestNatsPublisherOpenPublish(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
 	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
@@ -186,18 +167,15 @@ func TestNatsPublisherOpenWriteFlush(t *testing.T) {
 
 	assert.Nil(t, tr.Open())
 	assert.True(t, tr.IsOpen())
-	assert.Nil(t, tr.LockTopic("foo"))
-	frame := make([]byte, 10)
-	n, err := tr.Write(frame)
-	assert.Nil(t, err)
-	assert.Equal(t, 10, n)
+	data := make([]byte, 10)
+	frame := append([]byte{0, 0, 0, 10}, data...)
 	received := make(chan bool)
 	_, err = conn.Subscribe("frugal.foo", func(msg *nats.Msg) {
-		assert.Equal(t, append([]byte{0, 0, 0, 10}, frame...), msg.Data)
+		assert.Equal(t, append([]byte{0, 0, 0, 10}, data...), msg.Data)
 		received <- true
 	})
 	assert.Nil(t, err)
-	assert.Nil(t, tr.Flush())
+	assert.Nil(t, tr.Publish("foo", frame))
 	select {
 	case <-received:
 	case <-time.After(time.Second):
@@ -274,7 +252,6 @@ func TestNatsPublisherClosePublisher(t *testing.T) {
 	}
 	defer conn.Close()
 	tr := NewNatsFPublisherTransport(conn)
-	assert.Nil(t, tr.LockTopic("foo"))
 	assert.Nil(t, tr.Open())
 	assert.True(t, tr.IsOpen())
 	assert.Nil(t, tr.Close())
@@ -309,11 +286,7 @@ func TestNatsPublisherWriteTooLarge(t *testing.T) {
 	tr := NewNatsFPublisherTransport(conn)
 	assert.Nil(t, tr.Open())
 
-	n, err := tr.Write(make([]byte, 5))
-	assert.Equal(t, 5, n)
-	assert.Nil(t, err)
-	n, err = tr.Write(make([]byte, 1024*1024+10))
-	assert.Equal(t, 0, n)
+	err = tr.Publish("foo", make([]byte, 1024*1024+1))
 	assert.Equal(t, ErrTooLarge, err)
 	assert.Equal(t, 0, tr.(*fNatsPublisherTransport).writeBuffer.Len())
 }
@@ -329,7 +302,7 @@ func TestNatsPublisherFlushNotOpen(t *testing.T) {
 	defer conn.Close()
 	tr := NewNatsFPublisherTransport(conn)
 
-	err = tr.Flush()
+	err = tr.Publish("foo", []byte{})
 	trErr := err.(thrift.TTransportException)
 	assert.Equal(t, thrift.NOT_OPEN, trErr.TypeId())
 }
@@ -346,12 +319,11 @@ func TestNatsPublisherFlushNoData(t *testing.T) {
 	defer conn.Close()
 	tr := NewNatsFPublisherTransport(conn)
 	assert.Nil(t, tr.Open())
-	assert.Nil(t, tr.LockTopic("foo"))
 	_, err = conn.Subscribe("frugal.foo", func(msg *nats.Msg) {
 		t.Fatal("did not expect to receive message")
 	})
 	assert.Nil(t, err)
-	assert.Nil(t, tr.Flush())
+	assert.Nil(t, tr.Publish("foo", make([]byte, 4)))
 	assert.Nil(t, conn.Flush())
 	time.Sleep(10 * time.Millisecond)
 }

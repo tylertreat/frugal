@@ -22,18 +22,18 @@ type EventsPublisher interface {
 }
 
 type eventsPublisher struct {
-	transport frugal.FPublisherTransport
-	protocol  *frugal.FProtocol
-	methods   map[string]*frugal.Method
+	transport       frugal.FPublisherTransport
+	protocolFactory *frugal.FProtocolFactory
+	methods         map[string]*frugal.Method
 }
 
 func NewEventsPublisher(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) EventsPublisher {
-	transport, protocol := provider.NewPublisher()
+	transport, protocolFactory := provider.NewPublisher()
 	methods := make(map[string]*frugal.Method)
 	publisher := &eventsPublisher{
-		transport: transport,
-		protocol:  protocol,
-		methods:   methods,
+		transport:       transport,
+		protocolFactory: protocolFactory,
+		methods:         methods,
 	}
 	methods["publishEventCreated"] = frugal.NewMethod(publisher, publisher.publishEventCreated, "publishEventCreated", middleware)
 	return publisher
@@ -60,11 +60,8 @@ func (l *eventsPublisher) publishEventCreated(ctx *frugal.FContext, user string,
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
-	if err := l.transport.LockTopic(topic); err != nil {
-		return err
-	}
-	defer l.transport.UnlockTopic()
-	oprot := l.protocol
+	buffer := frugal.NewTMemoryOutputBuffer(l.transport.GetPublishSizeLimit())
+	oprot := l.protocolFactory.GetProtocol(buffer)
 	if err := oprot.WriteRequestHeader(ctx); err != nil {
 		return err
 	}
@@ -77,7 +74,11 @@ func (l *eventsPublisher) publishEventCreated(ctx *frugal.FContext, user string,
 	if err := oprot.WriteMessageEnd(); err != nil {
 		return err
 	}
-	return oprot.Flush()
+	if err := oprot.Flush(); err != nil {
+		return err
+	}
+	data := buffer.Bytes()
+	return l.transport.Publish(topic, data)
 }
 
 // This docstring gets added to the generated code because it has
