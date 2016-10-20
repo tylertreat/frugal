@@ -222,8 +222,9 @@ func (n *fNatsSubscriberTransport) handleMessage(msg *nats.Msg) {
 	}
 }
 
-// IsOpen returns true if the transport is open, false otherwise.
-func (n *fNatsSubscriberTransport) IsOpen() bool {
+// IsSubscribed returns true if the transport is subscribed to a topic, false
+// otherwise.
+func (n *fNatsSubscriberTransport) IsSubscribed() bool {
 	n.openMu.RLock()
 	defer n.openMu.RUnlock()
 	return n.conn.Status() == nats.CONNECTED && n.isOpen

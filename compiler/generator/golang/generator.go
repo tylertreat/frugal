@@ -1189,8 +1189,7 @@ func (g *Generator) generateInternalPublishMethod(scope *parser.Scope, op *parse
 	publisher += "\tif err := oprot.Flush(); err != nil {\n"
 	publisher += "\t\treturn err\n"
 	publisher += "\t}\n"
-	publisher += "\tdata := buffer.Bytes()\n"
-	publisher += "\treturn l.transport.Publish(topic, data)\n"
+	publisher += "\treturn l.transport.Publish(topic, buffer.Bytes())\n"
 	publisher += "}\n"
 	return publisher
 }

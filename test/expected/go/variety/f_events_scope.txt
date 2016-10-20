@@ -77,8 +77,7 @@ func (l *eventsPublisher) publishEventCreated(ctx *frugal.FContext, user string,
 	if err := oprot.Flush(); err != nil {
 		return err
 	}
-	data := buffer.Bytes()
-	return l.transport.Publish(topic, data)
+	return l.transport.Publish(topic, buffer.Bytes())
 }
 
 // This docstring gets added to the generated code because it has

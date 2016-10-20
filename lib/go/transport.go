@@ -82,8 +82,9 @@ type FSubscriberTransport interface {
 	// Unsubscribe unsubscribes from the topic and closes the transport.
 	Unsubscribe() error
 
-	// IsOpen returns true if the transport is open, false otherwise.
-	IsOpen() bool
+	// IsSubscribed returns true if the transport is subscribed to a topic,
+	// false otherwise.
+	IsSubscribed() bool
 }
 
 // FTransport is Frugal's equivalent of Thrift's TTransport. FTransport is
