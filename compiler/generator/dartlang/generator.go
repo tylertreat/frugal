@@ -1562,6 +1562,10 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtabtab + "controller.addError(new frugal.FMessageSizeError.response());\n"
 	contents += tabtabtabtabtabtab + "return;\n"
 	contents += tabtabtabtabtab + "}\n"
+	contents += tabtabtabtabtab + "if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {\n"
+	contents += tabtabtabtabtabtab + "controller.addError(new frugal.FRateLimitError());\n"
+	contents += tabtabtabtabtabtab + "return;\n"
+	contents += tabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtab + "throw error;\n"
 	contents += tabtabtabtab + "}\n\n"
 
