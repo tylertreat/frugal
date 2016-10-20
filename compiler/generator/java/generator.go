@@ -2428,9 +2428,9 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 	publisher += tabtabtab + "}\n\n"
 
 	publisher += tabtabtab + "public void open() throws TException {\n"
-	publisher += tabtabtabtab + "FScopeProvider.PublisherClient client = provider.buildPublisher();\n"
-	publisher += tabtabtabtab + "transport = client.getTransport();\n"
-	publisher += tabtabtabtab + "protocolFactory = client.getProtocolFactory();\n"
+	publisher += tabtabtabtab + "FScopeProvider.Publisher publisher = provider.buildPublisher();\n"
+	publisher += tabtabtabtab + "transport = publisher.getTransport();\n"
+	publisher += tabtabtabtab + "protocolFactory = publisher.getProtocolFactory();\n"
 	publisher += tabtabtabtab + "transport.open();\n"
 	publisher += tabtabtab + "}\n\n"
 
@@ -2568,13 +2568,13 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 		subscriber += tabtabtab + fmt.Sprintf("final String op = \"%s\";\n", op.Name)
 		subscriber += tabtabtab + fmt.Sprintf("String prefix = %s;\n", generatePrefixStringTemplate(scope))
 		subscriber += tabtabtab + "final String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, DELIMITER, op);\n"
-		subscriber += tabtabtab + "final FScopeProvider.SubscriberClient client = provider.buildSubscriber();\n"
-		subscriber += tabtabtab + "final FSubscriberTransport transport = client.getTransport();\n"
+		subscriber += tabtabtab + "final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();\n"
+		subscriber += tabtabtab + "final FSubscriberTransport transport = subscriber.getTransport();\n"
 		subscriber += tabtabtab + fmt.Sprintf(
 			"final %sHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, %sHandler.class, middleware);\n",
 			op.Name, op.Name)
 
-		subscriber += tabtabtab + fmt.Sprintf("transport.subscribe(topic, recv%s(op, client.getProtocolFactory(), proxiedHandler));\n", op.Name)
+		subscriber += tabtabtab + fmt.Sprintf("transport.subscribe(topic, recv%s(op, subscriber.getProtocolFactory(), proxiedHandler));\n", op.Name)
 		subscriber += tabtabtab + "return FSubscription.of(topic, transport);\n"
 		subscriber += tabtab + "}\n\n"
 

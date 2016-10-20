@@ -1,6 +1,5 @@
 package com.workiva.frugal.provider;
 
-import com.workiva.frugal.protocol.FProtocol;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.transport.FPublisherTransport;
 import com.workiva.frugal.transport.FPublisherTransportFactory;
@@ -34,23 +33,21 @@ public class FScopeProviderTest {
 
         // Validate buildPublisher works as intended
         FPublisherTransport publisherTransport = mock(FPublisherTransport.class);
-        FProtocol fProtocol = mock(FProtocol.class);
-
         when(publisherTransportFactory.getTransport()).thenReturn(publisherTransport);
 
-        FScopeProvider.PublisherClient publisherClient = provider.buildPublisher();
+        FScopeProvider.Publisher publisher = provider.buildPublisher();
 
-        assertEquals(publisherTransport, publisherClient.getTransport());
-        assertEquals(protocolFactory, publisherClient.getProtocolFactory());
+        assertEquals(publisherTransport, publisher.getTransport());
+        assertEquals(protocolFactory, publisher.getProtocolFactory());
 
         // Validate buildSubscriber works as intended
         FSubscriberTransport subscriberTransport = mock(FSubscriberTransport.class);
         when(subscriberTransportFactory.getTransport()).thenReturn(subscriberTransport);
 
-        FScopeProvider.SubscriberClient subscriberClient = provider.buildSubscriber();
+        FScopeProvider.Subscriber subscriber = provider.buildSubscriber();
 
-        assertEquals(subscriberTransport, subscriberClient.getTransport());
-        assertEquals(protocolFactory, subscriberClient.getProtocolFactory());
+        assertEquals(subscriberTransport, subscriber.getTransport());
+        assertEquals(protocolFactory, subscriber.getProtocolFactory());
 
 
     }

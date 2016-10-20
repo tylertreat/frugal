@@ -92,9 +92,9 @@ public class EventsPublisher {
 			}
 
 			public void open() throws TException {
-				FScopeProvider.PublisherClient client = provider.buildPublisher();
-				transport = client.getTransport();
-				protocolFactory = client.getProtocolFactory();
+				FScopeProvider.Publisher publisher = provider.buildPublisher();
+				transport = publisher.getTransport();
+				protocolFactory = publisher.getProtocolFactory();
 				transport.open();
 			}
 

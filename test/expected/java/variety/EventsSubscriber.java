@@ -71,10 +71,10 @@ public class EventsSubscriber {
 			final String op = "EventCreated";
 			String prefix = String.format("foo.%s.", user);
 			final String topic = String.format("%sEvents%s%s", prefix, DELIMITER, op);
-			final FScopeProvider.SubscriberClient client = provider.buildSubscriber();
-			final FSubscriberTransport transport = client.getTransport();
+			final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();
+			final FSubscriberTransport transport = subscriber.getTransport();
 			final EventCreatedHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, EventCreatedHandler.class, middleware);
-			transport.subscribe(topic, recvEventCreated(op, client.getProtocolFactory(), proxiedHandler));
+			transport.subscribe(topic, recvEventCreated(op, subscriber.getProtocolFactory(), proxiedHandler));
 			return FSubscription.of(topic, transport);
 		}
 

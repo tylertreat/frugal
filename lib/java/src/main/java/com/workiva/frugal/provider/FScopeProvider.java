@@ -15,13 +15,13 @@ import com.workiva.frugal.transport.FSubscriberTransportFactory;
 public class FScopeProvider {
 
     /**
-     * PublisherClient of this scope.
+     * Publisher of this scope.
      */
-    public class PublisherClient {
+    public static class Publisher {
         private FPublisherTransport transport;
         private FProtocolFactory protocolFactory;
 
-        public PublisherClient(FPublisherTransport t, FProtocolFactory pf) {
+        private Publisher(FPublisherTransport t, FProtocolFactory pf) {
             transport = t;
             protocolFactory = pf;
         }
@@ -36,13 +36,13 @@ public class FScopeProvider {
     }
 
     /**
-     * SubscriberClient of this scope.
+     * Subscriber of this scope.
      */
-    public class SubscriberClient {
+    public static class Subscriber {
         private FSubscriberTransport transport;
         private FProtocolFactory protocolFactory;
 
-        public SubscriberClient(FSubscriberTransport t, FProtocolFactory pf) {
+        public Subscriber (FSubscriberTransport t, FProtocolFactory pf) {
             transport = t;
             protocolFactory = pf;
         }
@@ -68,24 +68,24 @@ public class FScopeProvider {
     }
 
     /**
-     * Returns a new PublisherClient containing an FPublisherTransport and FProtocol
+     * Returns a new Publisher containing an FPublisherTransport and FProtocolFactory
      * used for publishing.
      *
-     * @return PublisherClient with FPublisherTransport and FProtocol.
+     * @return Publisher with FPublisherTransport and FProtocol.
      */
-    public PublisherClient buildPublisher() {
+    public Publisher buildPublisher() {
         FPublisherTransport transport = publisherTransportFactory.getTransport();
-        return new PublisherClient(transport, protocolFactory);
+        return new Publisher(transport, protocolFactory);
     }
 
     /**
-     * Returns a new SubscriberClient containing an FSubscriberTransport and
-     * FProtocolFactory used for subscribing.
+     * Returns a new Subscriber containing an FSubscriberTransport and FProtocolFactory
+     * used for subscribing.
      *
      * @return SubscriberClient with FSubscriberTransport and FProtocol.
      */
-    public SubscriberClient buildSubscriber() {
+    public Subscriber buildSubscriber() {
         FSubscriberTransport transport = subscriberTransportFactory.getTransport();
-        return new SubscriberClient(transport, protocolFactory);
+        return new Subscriber(transport, protocolFactory);
     }
 }
