@@ -63,9 +63,6 @@ class FHttpTransport(FTornadoTransport):
         Write the current buffer and execute the set callback with the
         response.
         """
-        if len(data) == 4:
-            return
-
         if len(data) > self._max_message_size > 0:
             raise FMessageSizeException()
 

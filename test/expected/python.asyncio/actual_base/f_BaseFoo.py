@@ -45,7 +45,6 @@ class Client(Iface):
             middleware = [middleware]
         self._transport = transport
         self._protocol_factory = protocol_factory
-        self._write_lock = asyncio.Lock()
         self._methods = {
             'basePing': Method(self._basePing, middleware),
         }
@@ -72,14 +71,12 @@ class Client(Iface):
     async def _send_basePing(self, ctx):
         buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
         oprot = self._protocol_factory.get_protocol(buffer)
-        async with self._write_lock:
-            oprot.write_request_headers(ctx)
-            oprot.writeMessageBegin('basePing', TMessageType.CALL, 0)
-            args = basePing_args()
-            args.write(oprot)
-            oprot.writeMessageEnd()
-            data = buffer.getvalue()
-        await self._transport.send(data)
+        oprot.write_request_headers(ctx)
+        oprot.writeMessageBegin('basePing', TMessageType.CALL, 0)
+        args = basePing_args()
+        args.write(oprot)
+        oprot.writeMessageEnd()
+        await self._transport.send(buffer.getvalue())
 
     def _recv_basePing(self, ctx, future):
         def basePing_callback(transport):

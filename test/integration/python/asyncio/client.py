@@ -102,7 +102,6 @@ async def test_pub_sub(nats_client, protocol_factory, port):
     await publisher.open()
 
     def subscribe_handler(context, event):
-        print('HERE')
         print("Response received {}".format(event))
         global response_received
         if context:
