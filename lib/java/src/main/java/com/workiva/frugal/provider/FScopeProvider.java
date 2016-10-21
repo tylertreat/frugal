@@ -42,7 +42,7 @@ public class FScopeProvider {
         private FSubscriberTransport transport;
         private FProtocolFactory protocolFactory;
 
-        public Subscriber (FSubscriberTransport t, FProtocolFactory pf) {
+        private Subscriber (FSubscriberTransport t, FProtocolFactory pf) {
             transport = t;
             protocolFactory = pf;
         }
