@@ -25,8 +25,9 @@ func main() {
 	defer conn.Close()
 
 	// Create a NATS scoped transport for the PubSub scope
-	factory := frugal.NewFNatsScopeTransportFactory(conn)
-	provider := frugal.NewFScopeProvider(factory, fProtocolFactory)
+	pfactory := frugal.NewFNatsPublisherTransportFactory(conn)
+	sfactory := frugal.NewFNatsSubscriberTransportFactory(conn)
+	provider := frugal.NewFScopeProvider(pfactory, sfactory, fProtocolFactory)
 	publisher := music.NewAlbumWinnersPublisher(provider)
 
 	// Open the publisher to receive traffic

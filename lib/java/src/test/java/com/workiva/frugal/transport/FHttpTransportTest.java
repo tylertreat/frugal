@@ -27,7 +27,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,25 +54,17 @@ public class FHttpTransportTest {
         assertTrue(transport.isOpen());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testRead() throws TTransportException {
-        transport.read(new byte[0], 0, 0);
-    }
-
     @Test(expected = FMessageSizeException.class)
-    public void testWrite_sizeException() throws TTransportException {
+    public void testSend_sizeException() throws TTransportException {
         int requestSizeLimit = 1024 * 4;
         transport = new FHttpTransport.Builder(client, url).withRequestSizeLimit(requestSizeLimit).build();
-        transport.write(new byte[requestSizeLimit + 1]);
+        transport.send(new byte[requestSizeLimit + 1]);
     }
 
     @Test
-    public void testWriteFlush() throws TException, IOException {
+    public void testSend() throws TException, IOException {
         int responseSizeLimit = 1024 * 4;
         transport = new FHttpTransport.Builder(client, url).withResponseSizeLimit(responseSizeLimit).build();
-
-        byte[] buff = "helloserver".getBytes();
-        transport.write(buff);
 
         StatusLine statusLine = new StatusLineImpl(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, null);
         byte[] framedResponsePayload = new byte[]{0, 1, 2, 3, 4, 5, 6, 7};
@@ -88,43 +79,30 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         FRegistry mockRegistry = mock(FRegistry.class);
-        transport.setRegistry(mockRegistry);
-        transport.flush();
+        transport.registry = mockRegistry;
+        byte[] buff = "helloserver".getBytes();
+        transport.send(buff);
 
         verify(mockRegistry).execute(responsePayload);
 
-        byte[] requestBuff = new byte[4 + buff.length];
-        requestBuff[3] = (byte) buff.length;
-        System.arraycopy(buff, 0, requestBuff, 4, buff.length);
         HttpPost actual = topicCaptor.getValue();
-        HttpPost expected = validRequest(requestBuff, responseSizeLimit);
+        HttpPost expected = validRequest(buff, responseSizeLimit);
         assertEquals(EntityUtils.toString(expected.getEntity()), EntityUtils.toString(actual.getEntity()));
         assertEquals(expected.getFirstHeader("content-type"), actual.getFirstHeader("content-type"));
         assertEquals(expected.getURI(), actual.getURI());
     }
 
-    @Test
-    public void testFlush_noData() throws TTransportException, IOException {
-        transport.flush();
-        verify(client, times(0)).execute(any(HttpPost.class));
-    }
-
     @Test(expected = TTransportException.class)
-    public void testFlush_requestIOException() throws TTransportException, IOException {
+    public void testSend_requestIOException() throws TTransportException, IOException {
         byte[] buff = "helloserver".getBytes();
-        transport.write(buff);
-
         when(client.execute(any(HttpPost.class))).thenThrow(new IOException());
-        transport.flush();
+        transport.send(buff);
     }
 
     @Test(expected = FMessageSizeException.class)
-    public void testFlush_responseTooLarge() throws TTransportException, IOException {
+    public void testSend_responseTooLarge() throws TTransportException, IOException {
         int responseSizeLimit = 1024 * 4;
         transport = new FHttpTransport.Builder(client, url).withResponseSizeLimit(responseSizeLimit).build();
-
-        byte[] buff = "helloserver".getBytes();
-        transport.write(buff);
 
         StatusLine statusLine = new StatusLineImpl(HttpVersion.HTTP_1_1, HttpStatus.SC_REQUEST_TOO_LONG, null);
         CloseableHttpResponse response = new BasicClosableHttpResponse(statusLine);
@@ -132,15 +110,13 @@ public class FHttpTransportTest {
         ArgumentCaptor<HttpPost> topicCaptor = ArgumentCaptor.forClass(HttpPost.class);
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
-        transport.flush();
+        byte[] buff = "helloserver".getBytes();
+        transport.send(buff);
     }
 
     @Test(expected = TTransportException.class)
-    public void testFlush_responseBadStatus() throws TTransportException, IOException {
+    public void testSend_responseBadStatus() throws TTransportException, IOException {
         transport = new FHttpTransport.Builder(client, url).build();
-
-        byte[] buff = "helloserver".getBytes();
-        transport.write(buff);
 
         StatusLine statusLine = new StatusLineImpl(HttpVersion.HTTP_1_1, HttpStatus.SC_BAD_REQUEST, null);
         CloseableHttpResponse response = new BasicClosableHttpResponse(statusLine);
@@ -148,15 +124,13 @@ public class FHttpTransportTest {
         ArgumentCaptor<HttpPost> topicCaptor = ArgumentCaptor.forClass(HttpPost.class);
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
-        transport.flush();
+        byte[] buff = "helloserver".getBytes();
+        transport.send(buff);
     }
 
     @Test(expected = TTransportException.class)
-    public void testFlush_badResponseLength() throws TTransportException, IOException {
+    public void testSend_badResponseLength() throws TTransportException, IOException {
         transport = new FHttpTransport.Builder(client, url).build();
-
-        byte[] buff = "helloserver".getBytes();
-        transport.write(buff);
 
         StatusLine statusLine = new StatusLineImpl(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, null);
         byte[] responsePayload = new byte[1];
@@ -169,15 +143,13 @@ public class FHttpTransportTest {
         ArgumentCaptor<HttpPost> topicCaptor = ArgumentCaptor.forClass(HttpPost.class);
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
-        transport.flush();
+        byte[] buff = "helloserver".getBytes();
+        transport.send(buff);
     }
 
     @Test(expected = TTransportException.class)
-    public void testFlush_missingData() throws TTransportException, IOException {
+    public void testSend_missingData() throws TTransportException, IOException {
         transport = new FHttpTransport.Builder(client, url).build();
-
-        byte[] buff = "helloserver".getBytes();
-        transport.write(buff);
 
         StatusLine statusLine = new StatusLineImpl(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, null);
         byte[] responsePayload = new byte[] {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01};
@@ -190,15 +162,13 @@ public class FHttpTransportTest {
         ArgumentCaptor<HttpPost> topicCaptor = ArgumentCaptor.forClass(HttpPost.class);
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
-        transport.flush();
+        byte[] buff = "helloserver".getBytes();
+        transport.send(buff);
     }
 
     @Test
-    public void testFlush_oneWay() throws TException, IOException {
+    public void testSend_oneWay() throws TException, IOException {
         transport = new FHttpTransport.Builder(client, url).build();
-
-        byte[] buff = "helloserver".getBytes();
-        transport.write(buff);
 
         StatusLine statusLine = new StatusLineImpl(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, null);
         byte[] responsePayload = new byte[] {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
@@ -212,8 +182,9 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         FRegistry mockRegistry = mock(FRegistry.class);
-        transport.setRegistry(mockRegistry);
-        transport.flush();
+        transport.registry = mockRegistry;
+        byte[] buff = "helloserver".getBytes();
+        transport.send(buff);
 
         verify(mockRegistry, never()).execute(any(byte[].class));
     }

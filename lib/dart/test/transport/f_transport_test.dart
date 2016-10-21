@@ -8,31 +8,18 @@ import 'package:mockito/mockito.dart';
 
 void main() {
   group('FTransport', () {
+    int requestSizeLimit = 5;
     MockFRegistry registry;
-    FTransport transport;
+    FTransportImpl transport;
     FContext context;
 
     setUp(() {
-      transport = new FTransportImpl();
       registry = new MockFRegistry();
+      transport = new FTransportImpl(requestSizeLimit, registry);
       context = new FContext();
     });
 
-    test('test setting null registry throws FError', () async {
-      expect(() => transport.setRegistry(null),
-          throwsA(new isInstanceOf<FError>()));
-    });
-
-    test('test registering/unregistering beforw setting registry throws FError',
-        () async {
-      expect(() => transport.register(context, callback),
-          throwsA(new isInstanceOf<FError>()));
-      expect(() => transport.unregister(context),
-          throwsA(new isInstanceOf<FError>()));
-    });
-
     test('test register/unregister call through to registry', () async {
-      transport.setRegistry(registry);
       expect(registry.context, isNull);
       expect(registry.callback, isNull);
       transport.register(context, callback);
@@ -43,11 +30,19 @@ void main() {
       expect(registry.callback, isNull);
     });
 
+    test('test executeFrame calls through to registry execute', () async {
+      var response = new Uint8List.fromList([1, 2, 3, 4, 5]);
+      var responseFramed = new Uint8List.fromList([0, 0, 0, 5, 1, 2, 3, 4, 5]);
+      transport.executeFrame(responseFramed);
+      expect(registry.data[0], equals(response));
+    });
+
     test(
-        'test closeWithException add the exeption to the onClose stream '
-        'and properly triggers the transport monitor', () async {
+        'test closeWithException adds the exeption to the onClose stream and properly triggers the transport monitor',
+        () async {
       var monitor = new MockTransportMonitor();
       transport.monitor = monitor;
+      transport.errors = [null, new FError.withMessage('reopen failed'), null];
 
       var completer = new Completer<Error>();
       var err = new TTransportError();
@@ -55,12 +50,19 @@ void main() {
         completer.complete(e);
       });
 
-      when(monitor.onClosedUncleanly(any)).thenReturn(-1);
-      await transport.closeWithException(err);
+      // Open the transport
+      await transport.open();
+
+      // Close the transport with an error
+      when(monitor.onClosedUncleanly(any)).thenReturn(1);
+      when(monitor.onReopenFailed(any, any)).thenReturn(1);
+      await transport.close(err);
 
       var timeout = new Duration(seconds: 1);
       expect(await completer.future.timeout(timeout), equals(err));
       verify(monitor.onClosedUncleanly(err)).called(1);
+      verify(monitor.onReopenFailed(1, 1)).called(1);
+      verify(monitor.onReopenSucceeded()).called(1);
     });
   });
 }
@@ -71,12 +73,25 @@ void callback(TTransport transport) {
 
 class FTransportImpl extends FTransport {
   // Default implementations of non-implemented methods
+  List<Error> errors = [];
+  int openCalls = 0;
+
+  FTransportImpl(int requestSizeLimit, FRegistry registry)
+      : super(requestSizeLimit: requestSizeLimit, registry: registry);
 
   @override
-  Future flush() => new Future.value();
+  Future send(Uint8List payload) => new Future.value();
 
   @override
-  Future open() => new Future.value();
+  Future open() async {
+    if (openCalls <= errors.length) {
+      if (errors[openCalls] != null) {
+        openCalls++;
+        throw errors[openCalls];
+      }
+    }
+    openCalls++;
+  }
 
   bool get isOpen => false;
 }

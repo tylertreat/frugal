@@ -39,4 +39,6 @@ class TMemoryTransport extends TTransport {
   Future flush() {
     return new Future.value();
   }
+
+  Uint8List get buffer => _buff.asUint8List();
 }

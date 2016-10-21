@@ -21,8 +21,12 @@ func (m *mockFScopeTransport) UnlockTopic() error {
 	return m.Called().Error(0)
 }
 
-func (m *mockFScopeTransport) Subscribe(topic string) error {
-	return m.Called(topic).Error(0)
+func (m *mockFScopeTransport) Subscribe(topic string, callback FAsyncCallback) error {
+	return m.Called(topic, callback).Error(0)
+}
+
+func (m *mockFScopeTransport) Unsubscribe() error {
+	return m.Called().Error(0)
 }
 
 func (m *mockFScopeTransport) DiscardFrame() {
@@ -32,7 +36,7 @@ func (m *mockFScopeTransport) DiscardFrame() {
 // Ensures Unsubscribe closes the transport and returns nil on success.
 func TestSubscriptionUnsubscribe(t *testing.T) {
 	mockTransport := new(mockFScopeTransport)
-	mockTransport.mockTTransport.On("Close").Return(nil)
+	mockTransport.On("Unsubscribe").Return(nil)
 	sub := NewFSubscription("foo", mockTransport)
 	assert.Nil(t, sub.Unsubscribe())
 	mockTransport.AssertExpectations(t)
@@ -43,7 +47,7 @@ func TestSubscriptionUnsubscribe(t *testing.T) {
 func TestSubscriptionUnsubscribeError(t *testing.T) {
 	mockTransport := new(mockFScopeTransport)
 	err := errors.New("error")
-	mockTransport.mockTTransport.On("Close").Return(err)
+	mockTransport.On("Unsubscribe").Return(err)
 	sub := NewFSubscription("foo", mockTransport)
 	assert.Equal(t, err, sub.Unsubscribe())
 	mockTransport.AssertExpectations(t)

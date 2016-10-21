@@ -4,15 +4,15 @@ int _globalOpId = 0;
 
 /// Responsible for multiplexing received client messages to the
 /// appropriate callback.
-class FClientRegistry implements FRegistry {
-  final Logger log = new Logger('ClientRegistry');
+class FRegistryImpl implements FRegistry {
+  final Logger log = new Logger('FRegistryImpl');
   Map<int, FAsyncCallback> _handlers;
 
-  FClientRegistry() {
+  FRegistryImpl() {
     _handlers = {};
   }
 
-  /// Register a callback for the given Context.
+  @override
   void register(FContext ctx, FAsyncCallback callback) {
     // An FContext can be reused for multiple requests. Because of this, every
     // time an FContext is registered, it must be assigned a new op id to
@@ -28,12 +28,12 @@ class FClientRegistry implements FRegistry {
     _handlers[opId] = callback;
   }
 
-  /// Unregister a callback for the given Context.
+  @override
   void unregister(FContext ctx) {
     _handlers.remove(ctx._opId());
   }
 
-  /// Dispatch a single Frugal message frame.
+  @override
   void execute(Uint8List frame) {
     var headers = Headers.decodeFromFrame(frame);
     var opId;

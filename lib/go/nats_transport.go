@@ -1,7 +1,6 @@
 package frugal
 
 import (
-	"errors"
 	"fmt"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -10,7 +9,7 @@ import (
 
 const (
 	natsMaxMessageSize = 1024 * 1024
-	frugalPrefix = "frugal."
+	frugalPrefix       = "frugal."
 )
 
 // NewFNatsTransport returns a new FTransport which uses the NATS messaging
@@ -93,26 +92,29 @@ func (f *fNatsTransport) Close() error {
 	return nil
 }
 
-// Read should not be called, it will return an error
-func (f *fNatsTransport) Read(buf []byte) (int, error) {
-	return 0, errors.New("Cannot read on FTransport")
-}
-
-// Flush sends the buffered bytes over NATS.
-func (f *fNatsTransport) Flush() error {
+// Send transmits the given data. The data is expected to already be framed.
+func (f *fNatsTransport) Send(data []byte) error {
 	if !f.IsOpen() {
 		return f.getClosedConditionError("flush:")
 	}
-	data := f.GetWriteBytes()
-	if len(data) == 0 {
+
+	if len(data) == 4 {
 		return nil
 	}
 
-	f.ResetWriteBuffer()
-	data = prependFrameSize(data)
+	if len(data) > natsMaxMessageSize {
+		return thrift.NewTTransportExceptionFromError(ErrTooLarge)
+	}
 
 	err := f.conn.PublishRequest(f.subject, f.inbox, data)
 	return thrift.NewTTransportExceptionFromError(err)
+}
+
+// GetRequestSizeLimit returns the maximum number of bytes that can be
+// transmitted. Returns a non-positive number to indicate an unbounded
+// allowable size.
+func (f *fNatsTransport) GetRequestSizeLimit() uint {
+	return uint(natsMaxMessageSize)
 }
 
 // This is a no-op for fNatsTransport

@@ -1,7 +1,7 @@
 part of frugal;
 
-/// FHttpClientTransport is a client FTransport that makes frugal requests via http.
-class FHttpClientTransport extends FTransport {
+/// FHttpTransport is an [FTransport] that makes frugal requests via http.
+class FHttpTransport extends FTransport {
   static const int UNAUTHORIZED = 401;
   static const int REQUEST_ENTITY_TOO_LARGE = 413;
 
@@ -9,8 +9,8 @@ class FHttpClientTransport extends FTransport {
   final wt.Client client;
   final FHttpConfig config;
 
-  FHttpClientTransport(this.client, config)
-      : super(capacity: config.requestSizeLimit),
+  FHttpTransport(this.client, config, {FRegistry registry})
+      : super(registry: registry, requestSizeLimit: config.requestSizeLimit),
         this.config = config;
 
   @override
@@ -20,11 +20,16 @@ class FHttpClientTransport extends FTransport {
   Future open() => new Future.value();
 
   @override
-  Future close() => new Future.value();
+  Future close([Error error]) => new Future.value();
 
-  Future _flushData(Uint8List bytes) async {
+  @override
+  Future send(Uint8List payload) async {
+    if (requestSizeLimit > 0 && payload.length > requestSizeLimit) {
+      throw new FMessageSizeError.request();
+    }
+
     // Encode request payload
-    var requestBody = BASE64.encode(bytes);
+    var requestBody = BASE64.encode(payload);
 
     // Configure the request
     wt.Request request = client.newRequest()
@@ -78,22 +83,7 @@ class FHttpClientTransport extends FTransport {
       return;
     }
 
-    // Process the request, but drop the frame size
     executeFrame(data);
-  }
-
-  @override
-  Future flush() {
-    // Swap out the write buffer before yielding the thread via a future,
-    // otherwise other writes could get into the buffer before this one is sent.
-
-    // Frame the request body per frugal spec
-    Uint8List bytes = new Uint8List(4 + writeBuffer.length);
-    bytes.buffer.asByteData().setUint32(0, writeBuffer.length);
-    bytes.setAll(4, writeBuffer);
-    clearWriteBuffer();
-
-    return _flushData(bytes);
   }
 }
 

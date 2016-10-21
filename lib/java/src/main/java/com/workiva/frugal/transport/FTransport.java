@@ -1,31 +1,27 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.exception.FException;
-import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.protocol.FAsyncCallback;
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FRegistry;
+import com.workiva.frugal.protocol.FRegistryImpl;
 import com.workiva.frugal.transport.monitor.FTransportMonitor;
 import com.workiva.frugal.transport.monitor.MonitorRunner;
-import com.workiva.frugal.util.ProtocolUtils;
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
 /**
- * FTransport is Frugal's equivalent of Thrift's TTransport.
- * <p>
- * FTransport extends
- * TTransport and exposes some additional methods. An FTransport has an FRegistry,
- * so it provides methods for setting the FRegistry and registering and unregistering
- * an FAsyncCallback to an FContext.
+ * FTransport is comparable to Thrift's TTransport in that it represent the transport
+ * layer for frugal clients. However, frugal is callback based and sends only framed data.
+ * Therefore, instead of exposing <code>read</code>, <code>write</code>, and <code>flush</code>,
+ * the transport has a simple <code>send</code> method that sends framed frugal messages.
+ * To handle callback data, an FTransport also has an FRegistry, so it provides methods for
+ * registering and unregistering an FAsyncCallback to an FContext.
  */
-public abstract class FTransport extends TTransport {
+public abstract class FTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FTransport.class);
 
@@ -34,45 +30,20 @@ public abstract class FTransport extends TTransport {
 
     private volatile FTransportClosedCallback closedCallback;
     private volatile FTransportClosedCallback monitor;
-    protected FRegistry registry;
     private boolean isOpen;
 
-    // Write buffer
-    private final int writeBufferSize;
-    private final ByteArrayOutputStream writeBuffer;
+    protected FRegistry registry = new FRegistryImpl();
+    protected int requestSizeLimit;
 
-    /**
-     * Default constructor for FTransport with no inherent read/write capabilities.
-     */
-    protected FTransport() {
-        this.writeBufferSize = 0;
-        this.writeBuffer = null;
-    }
-
-    /**
-     * Construct an FTransport with the given writeBufferSize.
-     *
-     * @param writeBufferSize maximum number of bytes allowed to be written to
-     *                        the transport before getWriteBytes is called
-     */
-    protected FTransport(int writeBufferSize) {
-        if (writeBufferSize <= 0) {
-            // No size limit
-            this.writeBufferSize = 0;
-            this.writeBuffer = new ByteArrayOutputStream();
-        } else {
-            // Cap the size of the buffer
-            this.writeBufferSize = writeBufferSize;
-            this.writeBuffer = new ByteArrayOutputStream(writeBufferSize);
-        }
-    }
-
-    @Override
     public synchronized boolean isOpen() {
         return isOpen;
     }
 
-    @Override
+    /**
+     * Opens the transport.
+     *
+     * @throws TTransportException
+     */
     public synchronized void open() throws TTransportException {
         isOpen = true;
     }
@@ -80,75 +51,38 @@ public abstract class FTransport extends TTransport {
     /**
      * Closes the transport.
      */
-    @Override
     public void close() {
         close(null);
     }
 
     /**
-     * Close the frame buffer and signal close.
+     * Close registry and signal close.
      *
      * @param cause Exception if not a clean close (null otherwise)
      */
     protected synchronized void close(final Exception cause) {
-        if (registry != null) {
-            registry.close();
-        }
+        registry.close();
         isOpen = false;
         signalClose(cause);
     }
 
     /**
-     * FTransports do not support read.
-     * This will throw an UnsupportedOperationException when called.
-     * <p>
-     * Reads up to len bytes into the buffer.
+     * Send the given framed frugal payload over the transport. Implementations of <code>send</code>
+     * should be thread-safe.
      *
-     * @throws UnsupportedOperationException
+     * @param payload framed frugal bytes
      * @throws TTransportException
      */
-    @Override
-    public int read(byte[] bytes, int off, int len) throws TTransportException {
-        throw new UnsupportedOperationException("FTransports do not support read. Provide a callback instead.");
-    }
+    public abstract void send(byte[] payload) throws TTransportException;
 
     /**
-     * Writes the bytes to a buffer. Throws FMessageSizeException if the buffer exceeds
-     * {@code writeBufferSize}.
+     * Get the maximum request size permitted by the transport. If <code>getRequestSizeLimit</code>
+     * returns a non-positive number, the transport is assumed to have no request size limit.
      *
-     * @throws TTransportException
+     * @return the request size limit
      */
-    @Override
-    public void write(byte[] bytes, int off, int len) throws TTransportException {
-        if (writeBuffer == null) {
-            throw new UnsupportedOperationException("No write buffer set on FTransport.");
-        }
-
-        if (writeBufferSize > 0 && writeBuffer.size() + len > writeBufferSize) {
-            int size = writeBuffer.size() + len;
-            writeBuffer.reset();
-            throw new FMessageSizeException(
-                    String.format("Message exceeds %d bytes, was %d bytes",
-                            writeBufferSize, size));
-        }
-        writeBuffer.write(bytes, off, len);
-    }
-
-    /**
-     * Set the FRegistry on the FTransport.
-     *
-     * @param registry FRegistry to set on the FTransport.
-     */
-    public synchronized void setRegistry(FRegistry registry) {
-        if (registry == null) {
-            throw new IllegalArgumentException("Registry cannot be null.");
-        }
-        // Currently, the generated code sets the registry for each
-        // extending service for a particular base service.
-        if (this.registry != null) {
-            return;
-        }
-        this.registry = registry;
+    public int getRequestSizeLimit() {
+        return requestSizeLimit;
     }
 
     /**
@@ -158,9 +92,6 @@ public abstract class FTransport extends TTransport {
      * @param callback the callback to register.
      */
     public synchronized void register(FContext context, FAsyncCallback callback) throws TException {
-        if (registry == null) {
-            throw new FException("registry not set");
-        }
         registry.register(context, callback);
     }
 
@@ -170,14 +101,7 @@ public abstract class FTransport extends TTransport {
      * @param context the FContext to unregister.
      */
     public synchronized void unregister(FContext context) throws TException {
-        if (registry == null) {
-            throw new FException("registry not set");
-        }
         registry.unregister(context);
-    }
-
-    protected synchronized FRegistry getRegistry() {
-        return registry;
     }
 
     /**
@@ -200,51 +124,12 @@ public abstract class FTransport extends TTransport {
     }
 
     /**
-     * Queries whether there is write data.
-     */
-    protected boolean hasWriteData() {
-        if (writeBuffer == null) {
-            throw new UnsupportedOperationException("No write buffer set on FTransport");
-        }
-        return writeBuffer.size() > 0;
-    }
-
-    /**
-     * Get the framed write bytes.
-     *
-     * @return framed write bytes
-     */
-    protected byte[] getFramedWriteBytes() {
-        if (writeBuffer == null) {
-            throw new UnsupportedOperationException("No write buffer set on FTransport");
-        }
-        int numBytes = writeBuffer.size();
-        byte[] data = new byte[numBytes + 4];
-        ProtocolUtils.writeInt(numBytes, data, 0);
-        System.arraycopy(writeBuffer.toByteArray(), 0, data, 4, numBytes);
-        return data;
-    }
-
-    /**
-     * Reset the write buffer.
-     */
-    protected void resetWriteBuffer() {
-        if (writeBuffer == null) {
-            throw new UnsupportedOperationException("No write buffer set on FTransport");
-        }
-        writeBuffer.reset();
-    }
-
-    /**
      * Execute a frugal frame (NOTE: this frame must include the frame size).
      *
      * @param frame frugal frame
      * @throws TException
      */
     protected void executeFrame(byte[] frame) throws TException {
-        if (registry == null) {
-            throw new FException("registry not set");
-        }
         registry.execute(Arrays.copyOfRange(frame, 4, frame.length));
     }
 
@@ -256,5 +141,4 @@ public abstract class FTransport extends TTransport {
             new Thread(() -> monitor.onClose(cause), "transport-monitor").start();
         }
     }
-
 }
