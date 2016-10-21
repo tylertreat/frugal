@@ -110,12 +110,12 @@ def test_pub_sub(nats_client, protocol_factory, port):
 
     # Subscribe to response
     subscriber = EventsSubscriber(provider)
-    yield subscriber.subscribe_EventCreated("{}-response".format(port), subscribe_handler)
+    yield subscriber.subscribe_EventCreated("foo", "Client", "response", "{}".format(port), subscribe_handler)
 
     event = Event(Message="Sending Call")
     context = FContext("Call")
     print("Publishing...")
-    publisher.publish_EventCreated(context, "{}-call".format(port), event)
+    publisher.publish_EventCreated(context, "foo", "Client", "call", "{}".format(port), event)
 
     # Loop with sleep interval. Fail if not received within 3 seconds
     total_time = 0

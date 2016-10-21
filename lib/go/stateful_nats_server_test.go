@@ -25,6 +25,8 @@ func (m *mockFProcessor) Process(in, out *FProtocol) error {
 	return m.Called(in, out).Error(0)
 }
 
+func (m *mockFProcessor) AddMiddleware(middleware ServiceMiddleware) {}
+
 func (m *mockFProcessor) AssertExpectations(t *testing.T) {
 	m.Lock()
 	defer m.Unlock()

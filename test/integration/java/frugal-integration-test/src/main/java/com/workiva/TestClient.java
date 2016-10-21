@@ -495,7 +495,7 @@ public class TestClient {
             FScopeProvider provider = new FScopeProvider(factory,  new FProtocolFactory(protocolFactory));
 
             EventsSubscriber subscriber = new EventsSubscriber(provider);
-            subscriber.subscribeEventCreated(Integer.toString(port)+"-response", (ctx, event) -> {
+            subscriber.subscribeEventCreated("foo", "Client", "response", Integer.toString(port), (ctx, event) -> {
                 System.out.println("Response received " + event);
                 queue.add(1);
             });
@@ -503,7 +503,7 @@ public class TestClient {
             EventsPublisher publisher = new EventsPublisher(provider);
             publisher.open();
             Event event = new Event(1, "Sending Call");
-            publisher.publishEventCreated(new FContext("Call"), Integer.toString(port)+"-call", event);
+            publisher.publishEventCreated(new FContext("Call"), "foo", "Client", "call", Integer.toString(port), event);
             System.out.print("Publishing...    ");
 
             try {
