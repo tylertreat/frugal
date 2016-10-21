@@ -1,29 +1,32 @@
-part of frugal;
+part of frugal.frugal;
 
-/// FTransport is comparable to Thrift's TTransport in that it represent the
-/// transport layer for frugal clients. However, frugal is callback based and
-/// sends only framed data. Therefore, instead of exposing read, write, and
-/// flush, the transport has a simple send method that sends framed frugal
-/// messages. To handle callback data, an FTransport also has an FRegistry,
-/// so it provides methods for registering and unregistering an FAsyncCallback
-/// to an FContext.
+/// Comparable to Thrift's TTransport in that it represent the transport layer
+/// for frugal clients. However, frugal is callback based and sends only framed
+/// data. Therefore, instead of exposing read, write, and flush, the transport
+/// has a simple [send] method that sends framed frugal messages. To handle
+/// callback data, also has an [FRegistry], so it provides methods for
+/// registering and unregistering an [FAsyncCallback] to an [FContext].
 abstract class FTransport {
   static const REQUEST_TOO_LARGE = 100;
   static const RESPONSE_TOO_LARGE = 101;
 
   MonitorRunner _monitor;
   StreamController _closeController = new StreamController.broadcast();
+
+  /// Listen to close events on the transport.
   Stream<Object> get onClose => _closeController.stream;
 
   FRegistry _registry;
   int _requestSizeLimit;
+
+  /// The maximum request size permitted by the transport.
   int get requestSizeLimit => _requestSizeLimit;
 
   FTransport({FRegistry registry, int requestSizeLimit})
       : _registry = registry ?? new FRegistryImpl(),
         _requestSizeLimit = requestSizeLimit ?? 0;
 
-  /// Set an FTransportMonitor on the transport
+  /// Set an [FTransportMonitor] on the transport.
   void set monitor(FTransportMonitor monitor) {
     _monitor = new MonitorRunner(monitor, this);
   }
@@ -43,12 +46,12 @@ abstract class FTransport {
   /// Throws [TTransportError] if the payload could not be sent.
   Future send(Uint8List payload);
 
-  /// Register a callback for the given Context.
+  /// Register an [FAsyncCallback] to the given [FContext].
   void register(FContext ctx, FAsyncCallback callback) {
     _registry.register(ctx, callback);
   }
 
-  /// Unregister a callback for the given Context.
+  /// Unregister any associated [FAsyncCallback] from the given [FContext].
   void unregister(FContext ctx) {
     _registry.unregister(ctx);
   }

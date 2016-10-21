@@ -1,20 +1,19 @@
-part of frugal;
+part of frugal.frugal;
 
-/// InvocationHandler processes a method invocation on a proxied method and
-/// returns the result. The arguments should match the arity of the proxied
-/// method, and have the same types. The first argument will always be the
-/// FContext.
+/// Processes a method invocation on a proxied method and returns the result.
+/// The arguments should match the arity of the proxied method, and have the
+/// same types. The first argument will always be the [FContext].
 typedef Future InvocationHandler(
     String serviceName, String methodName, List<Object> args);
 
-/// Middleware is used to implement interceptor logic around API calls. This can
-/// be used, for example, to implement retry policies on service calls, logging,
-/// telemetry, or authentication and authorization. Middleware me be applied to
-/// both RPC services and pub/sub scopes. Middleware returns an
-/// InvocationHandler which proxies the given InvocationHandler.
+/// Used to implement interceptor logic around API calls. This can be used, for
+/// example, to implement retry policies on service calls, logging, telemetry,
+/// or authentication and authorization. Middleware me be applied to both RPC
+/// services and pub/sub scopes. Middleware returns an [InvocationHandler] which
+/// proxies the given [InvocationHandler].
 typedef InvocationHandler Middleware(InvocationHandler);
 
-/// FMethod contains an InvocationHandler used to proxy the given service method
+/// Contains an [InvocationHandler] used to proxy the given service method
 /// This should only be used by generated code.
 class FMethod {
   String _serviceName;
@@ -28,13 +27,13 @@ class FMethod {
     this._handler = _composeMiddleware(f, middleware);
   }
 
-  /// Call invokes the proxied InvocationHandler with the given arguments
+  /// Call invokes the proxied [InvocationHandler] with the given arguments
   /// and returns the results.
   Future call(List<Object> args) {
     return this._handler(this._serviceName, this._methodName, args);
   }
 
-  /// ComposeMiddleware applies the Middleware to the provided method.
+  /// Applies the [Middleware] to the provided method.
   InvocationHandler _composeMiddleware(f, List<Middleware> middleware) {
     InvocationHandler handler = (serviceName, methodName, args) {
       return Function.apply(f, args);
@@ -47,7 +46,8 @@ class FMethod {
   }
 }
 
-/// Middleware for debugging that logs the requests and responses in json format
+/// [Middleware] for debugging that logs the requests and responses in json
+/// format.
 InvocationHandler debugMiddleware(InvocationHandler next) {
   return (String serviceName, String methodName, List<Object> args) async {
     // Logging the request in one block and the request + response in another

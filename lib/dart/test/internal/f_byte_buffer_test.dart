@@ -1,6 +1,7 @@
 import "dart:typed_data";
 import "package:test/test.dart";
-import "package:frugal/frugal.dart";
+
+import "../../lib/src/frugal.dart";
 
 var list = [
   0,

@@ -1,6 +1,6 @@
-part of frugal;
+part of frugal.frugal;
 
-/// A ReadByteBuffer-backed implementation of TTransport.
+/// An [FByteBuffer]-backed implementation of [TTransport].
 class TMemoryTransport extends TTransport {
   static const _DEFAULT_BUFFER_LENGTH = 1024;
 
@@ -40,5 +40,6 @@ class TMemoryTransport extends TTransport {
     return new Future.value();
   }
 
+  /// The bytes currently stored in the transport.
   Uint8List get buffer => _buff.asUint8List();
 }

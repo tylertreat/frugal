@@ -1,9 +1,9 @@
-part of frugal;
+part of frugal.frugal;
 
-/// FAdapterTransport returns an FTransport which uses the given
-/// TSocketTransport for send/callback operations in a way that is compatible
-/// with Frugal. Messages received on the TSocket (i.e. Frugal frames) are
-/// routed to the FRegistry's execute method.
+/// Wraps a [TSocketTransport] to produce an [FTransport] which uses the given
+/// socket for send/callback operations in a way that is compatible with Frugal.
+/// Messages received on the [TSocket] (i.e. Frugal frames) are routed to the
+/// [FRegistry]'s execute method.
 class FAdapterTransport extends FTransport {
   final Logger log = new Logger('FAdapterTransport');
   _TFramedTransport _framedTransport;

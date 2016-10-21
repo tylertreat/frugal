@@ -1,5 +1,6 @@
-part of frugal;
+part of frugal.frugal;
 
+/// Generic extension of [TError] used for frugal-specific errors.
 class FError extends TError {
   FError() : super(0, "");
 
@@ -8,9 +9,7 @@ class FError extends TError {
   FError.withType(int type, String message) : super(type, message);
 }
 
-/**
- * This exception indicates a message was too large for a transport to handle.
- */
+/// Indicates a message was too large for a transport to handle.
 class FMessageSizeError extends TTransportError {
   FMessageSizeError(int type, String message) : super(type, message);
 
@@ -23,8 +22,15 @@ class FMessageSizeError extends TTransportError {
             "response was too large for the transport");
 }
 
+/// Indicates a frugal request timed out.
 class FTimeoutError extends FError {
   FTimeoutError() : super();
 
   FTimeoutError.withMessage(String message) : super.withMessage(message);
+}
+
+/// Indicates a problem with an [FProtocol].
+class FProtocolError extends TProtocolError {
+  FProtocolError([int type = TProtocolErrorType.UNKNOWN, String message = ""])
+      : super(type, message);
 }

@@ -1,4 +1,4 @@
-part of frugal;
+part of frugal.frugal;
 
 /**
  * This is an internal-only class. Don't use it!

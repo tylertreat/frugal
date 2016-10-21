@@ -1,4 +1,4 @@
-part of frugal;
+part of frugal.frugal;
 
 var _encoder = new Utf8Encoder();
 var _decoder = new Utf8Decoder();

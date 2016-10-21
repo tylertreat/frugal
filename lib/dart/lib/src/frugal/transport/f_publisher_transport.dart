@@ -1,6 +1,6 @@
-part of frugal;
+part of frugal.frugal;
 
-/// FPublisherTransport is used exclusively for scope publishers.
+/// Transport layer for scope publishers.
 abstract class FPublisherTransport {
   /// Queries whether the transport is open.
   /// Returns [true] if the transport is open.
@@ -23,7 +23,7 @@ abstract class FPublisherTransport {
   void publish(String topic, Uint8List payload);
 }
 
-/// FPublisherTransportFactory produces FPublisherTransports.
+/// Produces [FPublisherTransport] instances.
 abstract class FPublisherTransportFactory {
   FPublisherTransport getTransport();
 }

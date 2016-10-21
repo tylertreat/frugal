@@ -10,7 +10,7 @@ void main() {
     var tProtocol = new TBinaryProtocol(transport);
     var fProtocol = new FProtocol(tProtocol);
 
-    var ctx = new FContext(correlationId: "sweet-corid");
+    var ctx = new FContext(correlationID: "sweet-corid");
     ctx.addRequestHeader("foo", "bar");
     fProtocol.writeRequestHeader(ctx);
 

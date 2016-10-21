@@ -1,6 +1,6 @@
-part of frugal;
+part of frugal.frugal;
 
-/// FHttpTransport is an [FTransport] that makes frugal requests via http.
+/// An [FTransport] that makes frugal requests via http.
 class FHttpTransport extends FTransport {
   static const int UNAUTHORIZED = 401;
   static const int REQUEST_ENTITY_TOO_LARGE = 413;

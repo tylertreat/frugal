@@ -1,6 +1,7 @@
 import "package:test/test.dart";
-import "package:frugal/frugal.dart";
 import "package:thrift/thrift.dart";
+
+import "../../lib/src/frugal.dart";
 
 void main() {
   group('fObjToJson', () {
@@ -10,7 +11,7 @@ void main() {
     });
 
     test('Serializes an FContext', () {
-      String json = fObjToJson(new FContext(correlationId: "cid"));
+      String json = fObjToJson(new FContext(correlationID: "cid"));
       expect(json, '{"_cid":"cid","_opid":"0"}');
     });
 

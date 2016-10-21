@@ -1,6 +1,6 @@
-part of frugal;
+part of frugal.frugal;
 
-/// A framed implementation of TTransport. Has stream for consuming
+/// A framed implementation of [TTransport]. Has stream for consuming
 /// entire frames. Disallows direct reads.
 class _TFramedTransport extends TTransport {
   final Logger log = new Logger('frugal.transport._TFramedTransport');
@@ -21,7 +21,7 @@ class _TFramedTransport extends TTransport {
 
   StreamSubscription _messageSub;
 
-  /// Instantiate new TFramedTransport for the given TSocket.
+  /// Instantiate new [TFramedTransport] for the given [TSocket].
   /// Add a listener to the socket state that opens/closes the
   /// transport in response to socket state changes.
   _TFramedTransport(this.socket) {
@@ -58,8 +58,8 @@ class _TFramedTransport extends TTransport {
   bool get isOpen => _isOpen;
 
   /// Opens the transport.
-  /// Will reset the write/read buffers and socket onMessage listener.
-  /// Will also open the underlying TSocket (if not already open).
+  /// Will reset the write/read buffers and socket [onMessage] listener.
+  /// Will also open the underlying [TSocket] (if not already open).
   @override
   Future open() async {
     _reset(isOpen: true);
@@ -68,8 +68,8 @@ class _TFramedTransport extends TTransport {
   }
 
   /// Closes the transport.
-  /// Will reset the write/read buffers and socket onMessage listener.
-  /// Will also close the underlying TSocket (if not already closed).
+  /// Will reset the write/read buffers and socket [onMessage] listener.
+  /// Will also close the underlying [Socket] (if not already closed).
   @override
   Future close() async {
     _reset(isOpen: false);
@@ -77,13 +77,13 @@ class _TFramedTransport extends TTransport {
   }
 
   /// Direct reading is not allowed. To consume read data listen
-  /// to onFrame.
+  /// to [onFrame].
   int read(Uint8List buffer, int offset, int length) {
     throw new TTransportError(TTransportErrorType.UNKNOWN,
         'frugal: cannot read directly from _TFramedSocket.');
   }
 
-  /// Handler for messages received on the TSocket.
+  /// Handler for messages received on the [TSocket].
   void messageHandler(Uint8List list) {
     var offset = 0;
     if (_frameSize == null) {
@@ -151,8 +151,8 @@ class _TFramedTransport extends TTransport {
   }
 }
 
-/// _FrameWrapper wraps a _TFramedTransport frame with a timestamp indicating
-/// when it was placed in the frame buffer.
+/// Wraps a _TFramedTransport frame with a timestamp indicating when it was
+/// placed in the frame buffer.
 class _FrameWrapper {
   Uint8List frameBytes;
   DateTime timestamp;

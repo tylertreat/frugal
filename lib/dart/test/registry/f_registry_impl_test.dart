@@ -1,13 +1,14 @@
 import "package:test/test.dart";
-import "package:frugal/frugal.dart";
 import "package:thrift/thrift.dart";
+
+import "../../lib/src/frugal.dart";
 
 void main() {
   group('FRegistryImpl', () {
     test(
         'test the registry sucessfully executes an FAsyncCallback registered to an FContext',
         () {
-      var ctx = new FContext(correlationId: 'sweet-corid');
+      var ctx = new FContext(correlationID: 'sweet-corid');
       var mockCallback = new MockCallback();
       FRegistry registry = new FRegistryImpl();
       registry.register(ctx, mockCallback.callback);
@@ -51,7 +52,7 @@ void main() {
     test(
         'test register throws an exception if the contest is already bound to a callback',
         () {
-      var ctx = new FContext(correlationId: 'sweet-corid');
+      var ctx = new FContext(correlationID: 'sweet-corid');
       var mockCallback = new MockCallback();
       FRegistry registry = new FRegistryImpl();
       registry.register(ctx, mockCallback.callback);

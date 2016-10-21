@@ -1,6 +1,6 @@
-part of frugal;
+part of frugal.frugal;
 
-/// MonitorRunner runs an FTransportMonitor when a transport is closed.
+/// Runs an [FTransportMonitor] when a transport is closed.
 class MonitorRunner {
   final Logger log = new Logger('FTransportMonitor');
   FTransportMonitor _monitor;
