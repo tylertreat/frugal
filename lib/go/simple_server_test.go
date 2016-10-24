@@ -38,7 +38,7 @@ func TestSimpleServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := NewFSimpleServerFactory4(
+	server := NewFSimpleServer(
 		mockFProcessorFactory,
 		serverTr,
 		NewFProtocolFactory(protoFactory),

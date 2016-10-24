@@ -17,13 +17,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type mockFProcessorForHttp struct {
+type mockFProcessorForHTTP struct {
 	err             error
 	expectedPayload []byte
 	response        []byte
 }
 
-func (m *mockFProcessorForHttp) Process(iprot, oprot *FProtocol) error {
+func (m *mockFProcessorForHTTP) Process(iprot, oprot *FProtocol) error {
 	if m.expectedPayload != nil {
 		actual := make([]byte, len(m.expectedPayload))
 		if _, err := io.ReadFull(iprot.TProtocol.Transport(), actual); err != nil {
@@ -70,9 +70,9 @@ func TestFrugalHandlerFuncHeaderError(t *testing.T) {
 	r.Header.Add(payloadLimitHeader, "foo")
 	assert.Nil(err)
 
-	mockProcessor := &mockFProcessorForHttp{}
+	mockProcessor := &mockFProcessorForHTTP{}
 	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
-	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory, protocolFactory)
+	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory)
 
 	handler(w, r)
 
@@ -94,9 +94,9 @@ func TestFrugalHandlerFuncFrameSizeError(t *testing.T) {
 	r, err := http.NewRequest("POST", "fooUrl", strings.NewReader(encodedBody))
 	assert.Nil(err)
 
-	mockProcessor := &mockFProcessorForHttp{}
+	mockProcessor := &mockFProcessorForHTTP{}
 	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
-	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory, protocolFactory)
+	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory)
 
 	handler(w, r)
 
@@ -120,9 +120,9 @@ func TestFrugalHandlerFuncProcessorError(t *testing.T) {
 	assert.Nil(err)
 
 	processorErr := fmt.Errorf("processor error")
-	mockProcessor := &mockFProcessorForHttp{expectedPayload: expectedBody, err: processorErr}
+	mockProcessor := &mockFProcessorForHTTP{expectedPayload: expectedBody, err: processorErr}
 	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
-	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory, protocolFactory)
+	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory)
 
 	handler(w, r)
 
@@ -147,9 +147,9 @@ func TestFrugalHandlerFuncTooLargeError(t *testing.T) {
 	assert.Nil(err)
 
 	response := make([]byte, 10)
-	mockProcessor := &mockFProcessorForHttp{expectedPayload: expectedBody, response: response}
+	mockProcessor := &mockFProcessorForHTTP{expectedPayload: expectedBody, response: response}
 	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
-	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory, protocolFactory)
+	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory)
 
 	handler(w, r)
 
@@ -173,9 +173,9 @@ func TestFrugalHandlerFuncBase64WriteError(t *testing.T) {
 	assert.Nil(err)
 
 	response := []byte("Hello")
-	mockProcessor := &mockFProcessorForHttp{expectedPayload: expectedBody, response: response}
+	mockProcessor := &mockFProcessorForHTTP{expectedPayload: expectedBody, response: response}
 	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
-	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory, protocolFactory)
+	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory)
 
 	oldNewEncoder := newEncoder
 	writeErr := fmt.Errorf("write err")
@@ -207,9 +207,9 @@ func TestFrugalHandlerFuncBase64CloseError(t *testing.T) {
 	assert.Nil(err)
 
 	response := []byte("Hello")
-	mockProcessor := &mockFProcessorForHttp{expectedPayload: expectedBody, response: response}
+	mockProcessor := &mockFProcessorForHTTP{expectedPayload: expectedBody, response: response}
 	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
-	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory, protocolFactory)
+	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory)
 
 	oldNewEncoder := newEncoder
 	closeErr := fmt.Errorf("close err")
@@ -240,9 +240,9 @@ func TestFrugalHandlerFunc(t *testing.T) {
 	assert.Nil(err)
 
 	response := []byte{9, 10, 11, 12}
-	mockProcessor := &mockFProcessorForHttp{expectedPayload: expectedBody, response: response}
+	mockProcessor := &mockFProcessorForHTTP{expectedPayload: expectedBody, response: response}
 	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
-	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory, protocolFactory)
+	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory)
 
 	handler(w, r)
 
@@ -258,7 +258,7 @@ func TestFrugalHandlerFunc(t *testing.T) {
 
 // Ensures the transport opens, writes, flushes, excecutes, and closes as
 // expected
-func TestHttpTransportLifecycle(t *testing.T) {
+func TestHTTPTransportLifecycle(t *testing.T) {
 	assert := assert.New(t)
 	// Setup test data
 	requestBytes := []byte("Hello from the other side")
@@ -279,7 +279,7 @@ func TestHttpTransportLifecycle(t *testing.T) {
 	}))
 
 	// Instantiate http transport
-	transport := NewFHttpTransportBuilder(&http.Client{}, ts.URL).Build().(*fHttpTransport)
+	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).Build().(*fHTTPTransport)
 	frameC := make(chan []byte, 1)
 	flushErr := fmt.Errorf("foo")
 	registry := &mockRegistry{
@@ -308,7 +308,7 @@ func TestHttpTransportLifecycle(t *testing.T) {
 }
 
 // Ensures the transport handles one-way functions correctly
-func TestHttpTransportOneway(t *testing.T) {
+func TestHTTPTransportOneway(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup test data
@@ -322,7 +322,7 @@ func TestHttpTransportOneway(t *testing.T) {
 	}))
 
 	// Instantiate http transpor
-	transport := NewFHttpTransportBuilder(&http.Client{}, ts.URL).Build().(*fHttpTransport)
+	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).Build().(*fHTTPTransport)
 	frameC := make(chan []byte, 1)
 	flushErr := fmt.Errorf("foo")
 	registry := &mockRegistry{
@@ -349,7 +349,7 @@ func TestHttpTransportOneway(t *testing.T) {
 }
 
 // Ensures the transport flush returns an error on a bad request
-func TestHttpTransportBadRequest(t *testing.T) {
+func TestHTTPTransportBadRequest(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup test data
@@ -362,7 +362,7 @@ func TestHttpTransportBadRequest(t *testing.T) {
 	}))
 
 	// Instantiate and open http transport
-	transport := NewFHttpTransportBuilder(&http.Client{}, ts.URL).Build()
+	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).Build()
 	assert.Nil(transport.Open())
 
 	// Flush
@@ -377,7 +377,7 @@ func TestHttpTransportBadRequest(t *testing.T) {
 }
 
 // Ensures the transport flush returns an error on a bad server data
-func TestHttpTransportBadResponseData(t *testing.T) {
+func TestHTTPTransportBadResponseData(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup test data
@@ -389,7 +389,7 @@ func TestHttpTransportBadResponseData(t *testing.T) {
 	}))
 
 	// Instantiate and open http transport
-	transport := NewFHttpTransportBuilder(&http.Client{}, ts.URL).Build()
+	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).Build()
 	assert.Nil(transport.Open())
 
 	// Flush
@@ -404,7 +404,7 @@ func TestHttpTransportBadResponseData(t *testing.T) {
 
 // Ensures the transport flush returns an a Request Too Large error with
 // request data exceeds limit
-func TestHttpTransportRequestTooLarge(t *testing.T) {
+func TestHTTPTransportRequestTooLarge(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup test data
@@ -416,7 +416,7 @@ func TestHttpTransportRequestTooLarge(t *testing.T) {
 	}))
 
 	// Instantiate and open http transport
-	transport := NewFHttpTransportBuilder(&http.Client{}, ts.URL).WithRequestSizeLimit(10).Build()
+	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).WithRequestSizeLimit(10).Build()
 	assert.Nil(transport.Open())
 
 	// Write request
@@ -432,7 +432,7 @@ func TestHttpTransportRequestTooLarge(t *testing.T) {
 
 // Ensures the transport flush returns an Response Too Large error when
 // requesting too much data from the server
-func TestHttpTransportResponseTooLarge(t *testing.T) {
+func TestHTTPTransportResponseTooLarge(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup test data
@@ -445,7 +445,7 @@ func TestHttpTransportResponseTooLarge(t *testing.T) {
 	}))
 
 	// Instantiate and open http transport
-	transport := NewFHttpTransportBuilder(&http.Client{}, ts.URL).WithResponseSizeLimit(10).Build()
+	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).WithResponseSizeLimit(10).Build()
 	assert.Nil(transport.Open())
 
 	// Flush
@@ -460,7 +460,7 @@ func TestHttpTransportResponseTooLarge(t *testing.T) {
 
 // Ensures the transport flush returns an error when server doesn't return
 // enough data
-func TestHttpTransportResponseNotEnoughData(t *testing.T) {
+func TestHTTPTransportResponseNotEnoughData(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup test data
@@ -473,7 +473,7 @@ func TestHttpTransportResponseNotEnoughData(t *testing.T) {
 	}))
 
 	// Instantiate and open http transport
-	transport := NewFHttpTransportBuilder(&http.Client{}, ts.URL).Build()
+	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).Build()
 	assert.Nil(transport.Open())
 
 	// Flush
@@ -489,7 +489,7 @@ func TestHttpTransportResponseNotEnoughData(t *testing.T) {
 
 // Ensures the transport flush returns an error when server doesn't return
 // an entire frame
-func TestHttpTransportResponseMissingFrameData(t *testing.T) {
+func TestHTTPTransportResponseMissingFrameData(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup test data
@@ -502,7 +502,7 @@ func TestHttpTransportResponseMissingFrameData(t *testing.T) {
 	}))
 
 	// Instantiate and open http transport
-	transport := NewFHttpTransportBuilder(&http.Client{}, ts.URL).Build()
+	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).Build()
 	assert.Nil(transport.Open())
 
 	// Flush
@@ -517,14 +517,14 @@ func TestHttpTransportResponseMissingFrameData(t *testing.T) {
 }
 
 // Ensures the transport flush returns an error when given a bad url
-func TestHttpTransportBadURL(t *testing.T) {
+func TestHTTPTransportBadURL(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup test data
 	requestBytes := []byte("Hello from the other side")
 
 	// Instantiate and open http transport
-	transport := NewFHttpTransportBuilder(&http.Client{}, "nobody/home").Build()
+	transport := NewFHTTPTransportBuilder(&http.Client{}, "nobody/home").Build()
 	assert.Nil(transport.Open())
 
 	// Flush

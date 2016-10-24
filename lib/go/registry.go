@@ -48,7 +48,7 @@ type fRegistry struct {
 	handlers map[uint64]FAsyncCallback
 }
 
-// NewFClientRegistry creates a Registry intended for use by Frugal clients.
+// NewFRegistry creates a Registry intended for use by Frugal clients.
 // This is only to be called by generated code.
 func NewFRegistry() FRegistry {
 	return &fRegistry{handlers: make(map[uint64]FAsyncCallback)}
