@@ -45,17 +45,26 @@ type FPublisherTransportFactory interface {
 	GetTransport() FPublisherTransport
 }
 
-// FPublisherTransport extends Thrift's TTransport and is used exclusively for
-// pub/sub scopes. Publishers use it to publish to a topic.
+// FPublisherTransport is used exclusively for pub/sub scopes. Publishers use it
+// to publish messages to a topic.
 type FPublisherTransport interface {
-	thrift.TTransport
+	// Open opens the transport.
+	Open() error
 
-	// LockTopic sets the publish topic and locks the transport for exclusive
-	// access.
-	LockTopic(string) error
+	// Close closes the transport.
+	Close() error
 
-	// UnlockTopic unsets the publish topic and unlocks the transport.
-	UnlockTopic() error
+	// IsOpen returns true if the transport is open, false otherwise.
+	IsOpen() bool
+
+	// GetPublishSizeLimit returns the maximum allowable size of a payload
+	// to be published. A non-positive number is returned to indicate an
+	// unbounded allowable size.
+	GetPublishSizeLimit() uint
+
+	// Publish sends the given payload with the transport. Implementations
+	// of publish should be threadsafe.
+	Publish(string, []byte) error
 }
 
 // FSubscriberTransportFactory produces FSubscriberTransports and is typically
@@ -64,14 +73,18 @@ type FSubscriberTransportFactory interface {
 	GetTransport() FSubscriberTransport
 }
 
-// FSubscriberTransport extends Thrift's TTransport and is used exclusively for
-// pub/sub scopes. Subscribers use it to subscribe to a pub/sub topic.
+// FSubscriberTransport is used exclusively for pub/sub scopes. Subscribers use
+// it to subscribe to a pub/sub topic.
 type FSubscriberTransport interface {
-	// Subscribe sets the subscribe topic and opens the transport.
+	// Subscribe opens the transport and sets the subscribe topic.
 	Subscribe(string, FAsyncCallback) error
 
 	// Unsubscribe unsubscribes from the topic and closes the transport.
 	Unsubscribe() error
+
+	// IsSubscribed returns true if the transport is subscribed to a topic,
+	// false otherwise.
+	IsSubscribed() bool
 }
 
 // FTransport is Frugal's equivalent of Thrift's TTransport. FTransport is
@@ -105,7 +118,8 @@ type FTransport interface {
 	// Close closes the transport.
 	Close() error
 
-	// Send transmits the given data.
+	// Send transmits the given data. Implementations of send should be
+	// threadsafe.
 	Send([]byte) error
 
 	// GetRequestSizeLimit returns the maximum number of bytes that can be
@@ -130,7 +144,7 @@ type fBaseTransport struct {
 func newFBaseTransport(requestSizeLimit uint) *fBaseTransport {
 	return &fBaseTransport{
 		requestSizeLimit: requestSizeLimit,
-		registry: NewFRegistry(),
+		registry:         NewFRegistry(),
 	}
 }
 

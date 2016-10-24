@@ -13,9 +13,9 @@ type FSimpleServer struct {
 	protocolFactory  *FProtocolFactory
 }
 
-// NewFSimpleServerFactory4 creates a new FSimpleServer which is a simple
-// FServer that starts a goroutine for each connection.
-func NewFSimpleServerFactory4(
+// NewFSimpleServer creates a new FSimpleServer which is a simple FServer that
+// starts a goroutine for each connection.
+func NewFSimpleServer(
 	processorFactory FProcessorFactory,
 	serverTransport thrift.TServerTransport,
 	protocolFactory *FProtocolFactory) *FSimpleServer {
@@ -91,6 +91,4 @@ func (p *FSimpleServer) accept(client thrift.TTransport) error {
 			continue
 		}
 	}
-
-	return nil
 }

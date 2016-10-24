@@ -14,7 +14,7 @@ type TMemoryOutputBuffer struct {
 	*thrift.TMemoryBuffer
 }
 
-var emptyFrameSize []byte = []byte{0, 0, 0, 0}
+var emptyFrameSize = []byte{0, 0, 0, 0}
 
 // NewTMemoryOutputBuffer returns a new TFramedMemoryBuffer with the given
 // size limit. If the provided limit is non-positive, the buffer is allowed

@@ -63,10 +63,13 @@ type FProtocolFactory struct {
 	protoFactory thrift.TProtocolFactory
 }
 
+// NewFProtocolFactory creates a new FProtocolFactory with the given
+// TProtocolFactory.
 func NewFProtocolFactory(protoFactory thrift.TProtocolFactory) *FProtocolFactory {
 	return &FProtocolFactory{protoFactory}
 }
 
+// GetProtocol returns a new FProtocol instance using the given TTransport.
 func (f *FProtocolFactory) GetProtocol(tr thrift.TTransport) *FProtocol {
 	return &FProtocol{f.protoFactory.GetProtocol(tr)}
 }
@@ -156,7 +159,7 @@ func readHeader(reader io.Reader) (map[string]string, error) {
 		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 			return nil, err
 		}
-		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers: %s"))
+		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers: %s", err))
 	}
 
 	marshaler, err := getMarshaler(buff[0])
@@ -265,7 +268,7 @@ func (v *v0ProtocolMarshaler) unmarshalHeaders(reader io.Reader) (map[string]str
 		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 			return nil, err
 		}
-		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers: %s"))
+		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers: %s", err))
 	}
 	size := int32(binary.BigEndian.Uint32(buff))
 	buff = make([]byte, size)

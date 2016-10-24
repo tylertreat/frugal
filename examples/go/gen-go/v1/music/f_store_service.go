@@ -63,7 +63,7 @@ func (f *FStoreClient) buyAlbum(ctx *frugal.FContext, asin string, acct string) 
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	buffer := frugal.TMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
@@ -180,7 +180,7 @@ func (f *FStoreClient) enterAlbumGiveaway(ctx *frugal.FContext, email string, na
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	buffer := frugal.TMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return

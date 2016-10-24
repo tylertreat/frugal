@@ -2,6 +2,7 @@ package com.workiva.frugal.protocol;
 
 import org.apache.thrift.TException;
 
+
 /**
  * FRegistry is responsible for multiplexing and handling messages received
  * from the server. An FRegistry is used by an FTransport.
@@ -10,7 +11,7 @@ import org.apache.thrift.TException;
  * response for the FContext is received, the FAsyncCallback is looked up,
  * executed, and unregistered.
  */
-public interface FRegistry {
+public interface FRegistry extends AutoCloseable {
 
     /**
      * Register a callback for the given FContext.

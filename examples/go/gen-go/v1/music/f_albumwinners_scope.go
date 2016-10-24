@@ -22,18 +22,18 @@ type AlbumWinnersPublisher interface {
 }
 
 type albumWinnersPublisher struct {
-	transport frugal.FPublisherTransport
-	protocol  *frugal.FProtocol
-	methods   map[string]*frugal.Method
+	transport       frugal.FPublisherTransport
+	protocolFactory *frugal.FProtocolFactory
+	methods         map[string]*frugal.Method
 }
 
 func NewAlbumWinnersPublisher(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) AlbumWinnersPublisher {
-	transport, protocol := provider.NewPublisher()
+	transport, protocolFactory := provider.NewPublisher()
 	methods := make(map[string]*frugal.Method)
 	publisher := &albumWinnersPublisher{
-		transport: transport,
-		protocol:  protocol,
-		methods:   methods,
+		transport:       transport,
+		protocolFactory: protocolFactory,
+		methods:         methods,
 	}
 	methods["publishWinner"] = frugal.NewMethod(publisher, publisher.publishWinner, "publishWinner", middleware)
 	return publisher
@@ -59,11 +59,8 @@ func (l *albumWinnersPublisher) publishWinner(ctx *frugal.FContext, req *Album) 
 	op := "Winner"
 	prefix := "v1.music."
 	topic := fmt.Sprintf("%sAlbumWinners%s%s", prefix, delimiter, op)
-	if err := l.transport.LockTopic(topic); err != nil {
-		return err
-	}
-	defer l.transport.UnlockTopic()
-	oprot := l.protocol
+	buffer := frugal.NewTMemoryOutputBuffer(l.transport.GetPublishSizeLimit())
+	oprot := l.protocolFactory.GetProtocol(buffer)
 	if err := oprot.WriteRequestHeader(ctx); err != nil {
 		return err
 	}
@@ -76,7 +73,11 @@ func (l *albumWinnersPublisher) publishWinner(ctx *frugal.FContext, req *Album) 
 	if err := oprot.WriteMessageEnd(); err != nil {
 		return err
 	}
-	return oprot.Flush()
+	if err := oprot.Flush(); err != nil {
+		return err
+	}
+	data := buffer.Bytes()
+	return l.transport.Publish(topic, data)
 }
 
 // Scopes are a Frugal extension to the IDL for declaring PubSub

@@ -85,7 +85,7 @@ func StartClient(
 		timeout := time.After(time.Second * 3)
 
 		select {
-		case <-resp:  // Response received is logged in the subscribe
+		case <-resp: // Response received is logged in the subscribe
 		case <-timeout:
 			log.Fatal("Pub/Sub response timed out!")
 		}
@@ -98,7 +98,7 @@ func StartClient(
 	case "stateless":
 		trans = frugal.NewFNatsTransport(conn, fmt.Sprintf("%d", port), "")
 	case "http":
-		trans = frugal.NewFHttpTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).Build()
+		trans = frugal.NewFHTTPTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).Build()
 	default:
 		return nil, fmt.Errorf("Invalid transport specified %s", transport)
 	}
