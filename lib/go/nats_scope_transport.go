@@ -2,8 +2,6 @@ package frugal
 
 import (
 	"bytes"
-	"encoding/binary"
-	"errors"
 	"fmt"
 	"sync"
 
@@ -33,7 +31,6 @@ func (n *FNatsPublisherTransportFactory) GetTransport() FPublisherTransport {
 // fNatsPublisherTransport implements FPublisherTransport.
 type fNatsPublisherTransport struct {
 	conn         *nats.Conn
-	subject      string
 	queue        string
 	closeChan    chan struct{}
 	writeBuffer  *bytes.Buffer
@@ -44,29 +41,12 @@ type fNatsPublisherTransport struct {
 }
 
 // NewNatsFPublisherTransport creates a new FPublisherTransport which is used for
-// publishing with scopes
+// publishing with scopes.
 func NewNatsFPublisherTransport(conn *nats.Conn) FPublisherTransport {
 	return &fNatsPublisherTransport{conn: conn}
 }
 
-// LockTopic sets the publish topic and locks the transport for exclusive
-// access.
-func (n *fNatsPublisherTransport) LockTopic(topic string) error {
-	n.topicMu.Lock()
-	n.subject = topic
-	return nil
-}
-
-// UnlockTopic unsets the publish topic and unlocks the transport.
-func (n *fNatsPublisherTransport) UnlockTopic() error {
-	n.subject = ""
-	n.topicMu.Unlock()
-	return nil
-}
-
-// Open initializes the transport based on whether it's a publisher or
-// subscriber. If Open is called before Subscribe, the transport is assumed to
-// be a publisher.
+// Open initializes the transport.
 func (n *fNatsPublisherTransport) Open() error {
 	n.openMu.Lock()
 	defer n.openMu.Unlock()
@@ -101,8 +81,7 @@ func (n *fNatsPublisherTransport) getClosedConditionError(prefix string) error {
 		fmt.Sprintf("%s NATS FPublisherTransport not open", prefix))
 }
 
-// Close unsubscribes in the case of a subscriber and clears the buffer in the
-// case of a publisher.
+// Close closes the transport.
 func (n *fNatsPublisherTransport) Close() error {
 	n.openMu.Lock()
 	defer n.openMu.Unlock()
@@ -114,48 +93,29 @@ func (n *fNatsPublisherTransport) Close() error {
 	return nil
 }
 
-// Read is an invalid operation for publisher transports, so will always
-// return an error.
-func (n *fNatsPublisherTransport) Read(p []byte) (int, error) {
-	return 0, errors.New("publisher: can't call Read")
+// GetPublishSizeLimit returns the maximum allowable size of a payload
+// to be published. A non-positive number is returned to indicate an
+// unbounded allowable size.
+func (n *fNatsPublisherTransport) GetPublishSizeLimit() uint {
+	return uint(natsMaxMessageSize)
 }
 
-// Write bytes to publish. If buffered bytes exceeds 1MB, ErrTooLarge is
-// returned.
-func (n *fNatsPublisherTransport) Write(p []byte) (int, error) {
-	// Include 4 bytes for frame size.
-	if len(p)+n.writeBuffer.Len()+4 > natsMaxMessageSize {
-		n.writeBuffer.Reset() // Clear any existing bytes.
-		return 0, ErrTooLarge
-	}
-
-	num, err := n.writeBuffer.Write(p)
-	return num, thrift.NewTTransportExceptionFromError(err)
-}
-
-// Flush publishes the buffered message.
-func (n *fNatsPublisherTransport) Flush() error {
+// Publish sends the given payload with the transport.
+func (n *fNatsPublisherTransport) Publish(topic string, data []byte) error {
 	if !n.IsOpen() {
 		return n.getClosedConditionError("flush:")
 	}
-	defer n.writeBuffer.Reset()
-	data := n.writeBuffer.Bytes()
-	if len(data) == 0 {
-		return nil
+
+	if len(data) > natsMaxMessageSize {
+		return ErrTooLarge
 	}
-	binary.BigEndian.PutUint32(n.sizeBuffer, uint32(len(data)))
-	err := n.conn.Publish(n.formattedSubject(), append(n.sizeBuffer, data...))
+
+	err := n.conn.Publish(n.formattedSubject(topic), data)
 	return thrift.NewTTransportExceptionFromError(err)
 }
 
-// RemainingBytes returns the number of bytes left to be read. Read is an
-// invalid operation though, so this shouldn't be called.
-func (n *fNatsPublisherTransport) RemainingBytes() uint64 {
-	return ^uint64(0) // We don't know unless framed is used.
-}
-
-func (n *fNatsPublisherTransport) formattedSubject() string {
-	return fmt.Sprintf("%s%s", frugalPrefix, n.subject)
+func (n *fNatsPublisherTransport) formattedSubject(subject string) string {
+	return fmt.Sprintf("%s%s", frugalPrefix, subject)
 }
 
 
@@ -218,7 +178,7 @@ func (n *fNatsSubscriberTransport) Subscribe(topic string, callback FAsyncCallba
 	return n.open()
 }
 
-// Open initializes the transport based on whether it's a publisher or
+// open initializes the transport based on whether it's a publisher or
 // subscriber. If Open is called before Subscribe, the transport is assumed to
 // be a publisher.
 func (n *fNatsSubscriberTransport) open() error {
@@ -258,8 +218,9 @@ func (n *fNatsSubscriberTransport) handleMessage(msg *nats.Msg) {
 	}
 }
 
-// IsOpen returns true if the transport is open, false otherwise.
-func (n *fNatsSubscriberTransport) IsOpen() bool {
+// IsSubscribed returns true if the transport is subscribed to a topic, false
+// otherwise.
+func (n *fNatsSubscriberTransport) IsSubscribed() bool {
 	n.openMu.RLock()
 	defer n.openMu.RUnlock()
 	return n.conn.Status() == nats.CONNECTED && n.isOpen

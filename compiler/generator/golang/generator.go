@@ -1098,17 +1098,17 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 	publisher += fmt.Sprintf("type %sPublisher struct {\n", scopeLower)
 	publisher += "\ttransport frugal.FPublisherTransport\n"
-	publisher += "\tprotocol  *frugal.FProtocol\n"
+	publisher += "\tprotocolFactory *frugal.FProtocolFactory\n"
 	publisher += "\tmethods   map[string]*frugal.Method\n"
 	publisher += "}\n\n"
 
 	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) %sPublisher {\n",
 		scopeCamel, scopeCamel)
-	publisher += "\ttransport, protocol := provider.NewPublisher()\n"
+	publisher += "\ttransport, protocolFactory := provider.NewPublisher()\n"
 	publisher += "\tmethods := make(map[string]*frugal.Method)\n"
 	publisher += fmt.Sprintf("\tpublisher := &%sPublisher{\n", scopeLower)
 	publisher += "\t\ttransport: transport,\n"
-	publisher += "\t\tprotocol:  protocol,\n"
+	publisher += "\t\tprotocolFactory:  protocolFactory,\n"
 	publisher += "\t\tmethods:   methods,\n"
 	publisher += "\t}\n"
 	for _, op := range scope.Operations {
@@ -1172,11 +1172,8 @@ func (g *Generator) generateInternalPublishMethod(scope *parser.Scope, op *parse
 	publisher += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 	publisher += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 	publisher += "\ttopic := fmt.Sprintf(\"%s" + scopeTitle + "%s%s\", prefix, delimiter, op)\n"
-	publisher += "\tif err := l.transport.LockTopic(topic); err != nil {\n"
-	publisher += "\t\treturn err\n"
-	publisher += "\t}\n"
-	publisher += "\tdefer l.transport.UnlockTopic()\n"
-	publisher += "\toprot := l.protocol\n"
+	publisher += "\tbuffer := frugal.NewTMemoryOutputBuffer(l.transport.GetPublishSizeLimit())\n"
+	publisher += "\toprot := l.protocolFactory.GetProtocol(buffer)\n"
 	publisher += "\tif err := oprot.WriteRequestHeader(ctx); err != nil {\n"
 	publisher += "\t\treturn err\n"
 	publisher += "\t}\n"
@@ -1189,8 +1186,11 @@ func (g *Generator) generateInternalPublishMethod(scope *parser.Scope, op *parse
 	publisher += "\tif err := oprot.WriteMessageEnd(); err != nil {\n"
 	publisher += "\t\treturn err\n"
 	publisher += "\t}\n"
-	publisher += "\treturn oprot.Flush()\n"
-	publisher += "}"
+	publisher += "\tif err := oprot.Flush(); err != nil {\n"
+	publisher += "\t\treturn err\n"
+	publisher += "\t}\n"
+	publisher += "\treturn l.transport.Publish(topic, buffer.Bytes())\n"
+	publisher += "}\n"
 	return publisher
 }
 

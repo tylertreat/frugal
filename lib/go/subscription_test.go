@@ -33,6 +33,10 @@ func (m *mockFScopeTransport) DiscardFrame() {
 	m.Called()
 }
 
+func (m *mockFScopeTransport) IsSubscribed() bool {
+	return m.Called().Bool(0)
+}
+
 // Ensures Unsubscribe closes the transport and returns nil on success.
 func TestSubscriptionUnsubscribe(t *testing.T) {
 	mockTransport := new(mockFScopeTransport)
