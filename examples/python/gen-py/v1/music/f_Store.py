@@ -9,9 +9,9 @@
 from threading import Lock
 
 from frugal.middleware import Method
+from frugal.exceptions import FRateLimitException
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
-from frugal.exceptions import FRateLimitException
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 
@@ -101,7 +101,7 @@ class Client(Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
-                raise FRateLimitException(message: x.message)
+                raise FRateLimitException(x.message)
             raise x
         result = buyAlbum_result()
         result.read(self._iprot)
@@ -147,7 +147,7 @@ class Client(Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
-                raise FRateLimitException(message: x.message)
+                raise FRateLimitException(x.message)
             raise x
         result = enterAlbumGiveaway_result()
         result.read(self._iprot)
