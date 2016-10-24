@@ -106,10 +106,6 @@ func (n *fNatsPublisherTransport) Publish(topic string, data []byte) error {
 		return n.getClosedConditionError("flush:")
 	}
 
-	if len(data) == 4 {
-		return nil
-	}
-
 	if len(data) > natsMaxMessageSize {
 		return ErrTooLarge
 	}

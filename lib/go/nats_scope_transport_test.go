@@ -292,7 +292,7 @@ func TestNatsPublisherWriteTooLarge(t *testing.T) {
 }
 
 // Ensures Flush returns an error if the transport is not open.
-func TestNatsPublisherFlushNotOpen(t *testing.T) {
+func TestNatsPublishNotOpen(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
 	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
@@ -305,25 +305,4 @@ func TestNatsPublisherFlushNotOpen(t *testing.T) {
 	err = tr.Publish("foo", []byte{})
 	trErr := err.(thrift.TTransportException)
 	assert.Equal(t, thrift.NOT_OPEN, trErr.TypeId())
-}
-
-// Ensures Flush returns nil and nothing is sent to NATS when there is no data
-// to flush.
-func TestNatsPublisherFlushNoData(t *testing.T) {
-	s := runServer(nil)
-	defer s.Shutdown()
-	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer conn.Close()
-	tr := NewNatsFPublisherTransport(conn)
-	assert.Nil(t, tr.Open())
-	_, err = conn.Subscribe("frugal.foo", func(msg *nats.Msg) {
-		t.Fatal("did not expect to receive message")
-	})
-	assert.Nil(t, err)
-	assert.Nil(t, tr.Publish("foo", make([]byte, 4)))
-	assert.Nil(t, conn.Flush())
-	time.Sleep(10 * time.Millisecond)
 }
