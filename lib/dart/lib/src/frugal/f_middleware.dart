@@ -20,6 +20,8 @@ class FMethod {
   String _methodName;
   InvocationHandler _handler;
 
+  /// Creates an [FMethod] with the given function, service name, and method
+  /// name.
   FMethod(dynamic f, String serviceName, String methodName,
       List<Middleware> middleware) {
     this._serviceName = serviceName;
@@ -27,8 +29,8 @@ class FMethod {
     this._handler = _composeMiddleware(f, middleware);
   }
 
-  /// Call invokes the proxied [InvocationHandler] with the given arguments
-  /// and returns the results.
+  /// Invokes the proxied [InvocationHandler] with the given arguments and
+  /// returns the results.
   Future call(List<Object> args) {
     return this._handler(this._serviceName, this._methodName, args);
   }

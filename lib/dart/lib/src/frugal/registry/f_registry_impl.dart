@@ -5,9 +5,10 @@ int _globalOPID = 0;
 /// Responsible for multiplexing received client messages to the appropriate
 /// callback.
 class FRegistryImpl implements FRegistry {
-  final Logger log = new Logger('FRegistryImpl');
+  final Logger _log = new Logger('FRegistryImpl');
   Map<int, FAsyncCallback> _handlers;
 
+  /// Create an [FRegistryImpl] instance.
   FRegistryImpl() {
     _handlers = {};
   }
@@ -40,12 +41,12 @@ class FRegistryImpl implements FRegistry {
     try {
       opID = int.parse(headers[_opid]);
     } catch (e) {
-      log.warning("Frame headers does not have an opId");
+      _log.warning("Frame headers does not have an opId");
       return;
     }
 
     if (!_handlers.containsKey(opID)) {
-      log.info("No handler for op $opID}. Dropping frame.");
+      _log.info("No handler for op $opID}. Dropping frame.");
       return;
     }
     _handlers[opID](new TMemoryTransport.fromUint8List(frame));

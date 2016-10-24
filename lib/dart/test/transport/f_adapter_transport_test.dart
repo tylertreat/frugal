@@ -135,6 +135,8 @@ void main() {
   });
 }
 
+/// Mock socket transport.
 class MockSocketTransport extends Mock implements TSocketTransport {}
 
+/// Mock socket.
 class MockSocket extends Mock implements TSocket {}

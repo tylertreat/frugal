@@ -8,6 +8,7 @@ part of frugal.src.frugal;
 class FProtocolFactory {
   TProtocolFactory _tProtocolFactory;
 
+  /// Create an [FProtocolFactory] wrapping the given [TProtocolFactory].
   FProtocolFactory(this._tProtocolFactory);
 
   /// Construct a new [FProtocol] instance from the given [TTransport].

@@ -63,10 +63,15 @@ void main() {
   });
 }
 
+/// Mock callback.
 class MockCallback {
+  /// Number of calls.
   int calls = 0;
+
+  /// Transport used by the callback.
   TTransport transport;
 
+  /// Mock callback function.
   void callback(TTransport transport) {
     calls++;
     this.transport = transport;

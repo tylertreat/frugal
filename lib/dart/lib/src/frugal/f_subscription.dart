@@ -5,9 +5,11 @@ part of frugal.src.frugal;
 /// wraps. Each [FSubscription] should have its own [FSubscriberTransport]. The
 /// [FSubscription] is used to unsubscribe from the topic.
 class FSubscription {
+  /// Scope topic for the subscription.
   final String topic;
   FSubscriberTransport _transport;
 
+  /// Create a new [FSubscription] with the given topic and transport.
   FSubscription(this.topic, this._transport);
 
   /// Unsubscribe from the topic.

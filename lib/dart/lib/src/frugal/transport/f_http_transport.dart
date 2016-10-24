@@ -2,10 +2,13 @@ part of frugal.src.frugal;
 
 /// An [FTransport] that makes frugal requests via HTTP.
 class FHttpTransport extends FTransport {
+  /// HTTP status code for an unauthorized reqeuest.
   static const int unauthorized = 401;
+
+  /// HTTP status code for requesting too much data.
   static const int requestEntityTooLarge = 413;
 
-  final Logger log = new Logger('FHttpTransport');
+  final Logger _log = new Logger('FHttpTransport');
 
   /// Client used by the transport to make HTTP requests.
   final wt.Client client;
@@ -19,6 +22,8 @@ class FHttpTransport extends FTransport {
 
   Map<String, String> _headers;
 
+  /// Create an [FHttpTransport] instance with the given w_transport [Client],
+  /// uri, and optional size restrictions, headers, and [FRegistry].
   FHttpTransport(this.client, this.uri,
       {int requestSizeLimit: 0,
       this.responseSizeLimit: 0,

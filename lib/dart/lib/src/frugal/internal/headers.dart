@@ -3,11 +3,11 @@ part of frugal.src.frugal;
 var _encoder = new Utf8Encoder();
 var _decoder = new Utf8Decoder();
 
-class Pair<A, B> {
+class _Pair<A, B> {
   A one;
   B two;
 
-  Pair(this.one, this.two);
+  _Pair(this.one, this.two);
 }
 
 /// This is an internal-only class. Don't use it!
@@ -18,12 +18,12 @@ class Headers {
   static Uint8List encode(Map<String, String> headers) {
     var size = 0;
     // Get total frame size headers
-    List<Pair<List<int>, List<int>>> utf8Headers = new List();
+    List<_Pair<List<int>, List<int>>> utf8Headers = new List();
     if (headers != null && headers.length > 0) {
       for (var name in headers.keys) {
         List<int> keyBytes = _encoder.convert(name);
         List<int> valueBytes = _encoder.convert(headers[name]);
-        utf8Headers.add(new Pair(keyBytes, valueBytes));
+        utf8Headers.add(new _Pair(keyBytes, valueBytes));
 
         // 4 bytes each for name, value length
         size += 8 + keyBytes.length + valueBytes.length;

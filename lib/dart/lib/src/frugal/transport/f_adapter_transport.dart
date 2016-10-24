@@ -5,9 +5,11 @@ part of frugal.src.frugal;
 /// Messages received on the [TSocket] (i.e. Frugal frames) are routed to the
 /// [FRegistry]'s execute method.
 class FAdapterTransport extends FTransport {
-  final Logger log = new Logger('FAdapterTransport');
+  final Logger _log = new Logger('FAdapterTransport');
   _TFramedTransport _framedTransport;
 
+  /// Create an [FAdapterTransport] with the given [TSocketTransport] and
+  /// optional [FRegistry].
   FAdapterTransport(TSocketTransport transport, {FRegistry registry})
       : _framedTransport = new _TFramedTransport(transport.socket),
         super(registry: registry) {
@@ -32,7 +34,7 @@ class FAdapterTransport extends FTransport {
         _registry.execute(frame.frameBytes);
       } catch (e) {
         // Fatal error. Close the transport.
-        log.severe("FAsyncCallback had a fatal error ${e.toString()}." +
+        _log.severe("FAsyncCallback had a fatal error ${e.toString()}." +
             "Closing transport.");
         close(e);
       }

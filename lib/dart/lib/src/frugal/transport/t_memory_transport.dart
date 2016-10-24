@@ -6,9 +6,11 @@ class TMemoryTransport extends TTransport {
 
   final FByteBuffer _buff;
 
+  /// Create a new [TMemoryTransport] instance with the optional size capacity.
   TMemoryTransport([int capacity])
       : _buff = new FByteBuffer(capacity ?? _defaultBufferLength);
 
+  /// Create a new [TMemoryTransport] instance from the given buffer.
   TMemoryTransport.fromUint8List(Uint8List buffer)
       : _buff = new FByteBuffer.fromUint8List(buffer);
 

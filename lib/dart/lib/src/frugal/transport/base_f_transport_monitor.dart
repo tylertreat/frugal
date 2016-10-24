@@ -5,8 +5,13 @@ part of frugal.src.frugal;
 /// behavior can be customized by extending this class and overriding desired
 /// callbacks.
 class BaseFTransportMonitor extends FTransportMonitor {
+  /// Default maximum reopen attempts.
   static const int defaultMaxReopenAttempts = 60;
+
+  /// Default number of milliseconds to wait before reopening.
   static const int defaultInitialWait = 2000;
+
+  /// Default maximum amount of milliseconds to wait between reopen attempts.
   static const int defaultMaxWait = 2000;
 
   int _maxReopenAttempts;
@@ -28,8 +33,13 @@ class BaseFTransportMonitor extends FTransportMonitor {
     this._maxWait = maxWait;
   }
 
+  /// Listen to connect events.
   Stream get onConnect => _onConnectController.stream;
+
+  /// Listen to disconnect events.
   Stream get onDisconnect => _onDisconnectController.stream;
+
+  /// Queries the state of the [FTransport].
   bool get isConnected => _isConnected;
 
   @override

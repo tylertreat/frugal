@@ -15,5 +15,6 @@ abstract class FSubscriberTransport {
 
 /// Produces [FSubscriberTransport] instances.
 abstract class FSubscriberTransportFactory {
+  /// Return a new [FSubscriberTransport] instance.
   FSubscriberTransport getTransport();
 }
