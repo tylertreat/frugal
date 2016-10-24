@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// Generic extension of [TError] used for frugal-specific errors.
 class FError extends TError {

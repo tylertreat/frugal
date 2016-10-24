@@ -135,10 +135,6 @@ void main() {
   });
 }
 
-class MockSocketTransport extends Mock implements TSocketTransport {
-  noSuchMethod(i) => super.noSuchMethod(i);
-}
+class MockSocketTransport extends Mock implements TSocketTransport {}
 
-class MockSocket extends Mock implements TSocket {
-  noSuchMethod(i) => super.noSuchMethod(i);
-}
+class MockSocket extends Mock implements TSocket {}

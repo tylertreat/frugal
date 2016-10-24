@@ -1,9 +1,9 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// An [FTransport] that makes frugal requests via HTTP.
 class FHttpTransport extends FTransport {
-  static const int UNAUTHORIZED = 401;
-  static const int REQUEST_ENTITY_TOO_LARGE = 413;
+  static const int unauthorized = 401;
+  static const int requestEntityTooLarge = 413;
 
   final Logger log = new Logger('FHttpTransport');
 
@@ -69,11 +69,11 @@ class FHttpTransport extends FTransport {
       if (ex.response == null) {
         throw new TTransportError(TTransportErrorType.UNKNOWN, ex.message);
       }
-      if (ex.response.status == UNAUTHORIZED) {
+      if (ex.response.status == unauthorized) {
         throw new TTransportError(TTransportErrorType.UNKNOWN,
             'Frugal http request failed - unauthorized ${ex.message}');
       }
-      if (ex.response.status == REQUEST_ENTITY_TOO_LARGE) {
+      if (ex.response.status == requestEntityTooLarge) {
         throw new FMessageSizeError.response();
       }
       throw new TTransportError(TTransportErrorType.UNKNOWN, ex.message);

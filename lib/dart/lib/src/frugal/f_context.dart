@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 String _cid = "_cid";
 String _opid = "_opid";
@@ -25,17 +25,11 @@ class FContext {
   Map<String, String> _requestHeaders;
   Map<String, String> _responseHeaders;
 
-  // Default timeout to 5 seconds
-  Duration _timeout = new Duration(seconds: 5);
-
   /// The request timeout for any method call using this context.
-  Duration get timeout => _timeout;
+  /// The default is 5 seconds.
+  Duration timeout = new Duration(seconds: 5);
 
-  /// Set the request timeout for any method call using this context.
-  void set timeout(timeout) {
-    _timeout = timeout;
-  }
-
+  /// Create a new [FContext] with the optionally specified [correlationID].
   FContext({String correlationID: ""}) {
     if (correlationID == "") {
       correlationID = _generateCorrelationID();
@@ -47,6 +41,7 @@ class FContext {
     _responseHeaders = {};
   }
 
+  /// Create a new [FContext] with the given request headers.
   FContext.withRequestHeaders(Map<String, String> headers) {
     if (!headers.containsKey(_cid) || headers[_cid] == "") {
       headers[_cid] = _generateCorrelationID();
@@ -74,7 +69,7 @@ class FContext {
 
   /// Add a request header to the context for the given name.
   /// Will overwrite existing header of the same name.
-  void addRequestHeader(String name, value) {
+  void addRequestHeader(String name, String value) {
     _requestHeaders[name] = value;
   }
 
@@ -101,7 +96,7 @@ class FContext {
 
   /// Add a response header to the context for the given name
   /// Will overwrite existing header of the same name.
-  void addResponseHeader(String name, value) {
+  void addResponseHeader(String name, String value) {
     _responseHeaders[name] = value;
   }
 

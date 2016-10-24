@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// Produces [FPublisherTransport], [FSubscriberTransport], and [FProtocol]
 /// instances for use by pub/sub scopes. It does this by wrapping an

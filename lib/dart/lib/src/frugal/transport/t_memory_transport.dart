@@ -1,13 +1,13 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// An [FByteBuffer]-backed implementation of [TTransport].
 class TMemoryTransport extends TTransport {
-  static const _DEFAULT_BUFFER_LENGTH = 1024;
+  static const _defaultBufferLength = 1024;
 
   final FByteBuffer _buff;
 
   TMemoryTransport([int capacity])
-      : _buff = new FByteBuffer(capacity ?? _DEFAULT_BUFFER_LENGTH);
+      : _buff = new FByteBuffer(capacity ?? _defaultBufferLength);
 
   TMemoryTransport.fromUint8List(Uint8List buffer)
       : _buff = new FByteBuffer.fromUint8List(buffer);
@@ -16,14 +16,10 @@ class TMemoryTransport extends TTransport {
   bool get isOpen => true;
 
   @override
-  Future open() {
-    return new Future.value();
-  }
+  Future open() async {}
 
   @override
-  Future close() {
-    return new Future.value();
-  }
+  Future close() async {}
 
   @override
   int read(Uint8List buffer, int offset, int length) {
@@ -36,9 +32,7 @@ class TMemoryTransport extends TTransport {
   }
 
   @override
-  Future flush() {
-    return new Future.value();
-  }
+  Future flush() async {}
 
   /// The bytes currently stored in the transport.
   Uint8List get buffer => _buff.asUint8List();

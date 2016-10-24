@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// Runs an [FTransportMonitor] when a transport is closed.
 class MonitorRunner {
@@ -16,7 +16,7 @@ class MonitorRunner {
   /// Indicates if the monitor is waiting to run or gave up.
   bool get _sleeping => (_reopenTimer != null || _failed);
 
-  Future onClose(cause) async {
+  Future onClose(Object cause) async {
     if (cause == null) {
       _handleCleanClose();
     } else {

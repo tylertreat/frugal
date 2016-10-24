@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// A framed implementation of [TTransport]. Has stream for consuming
 /// entire frames. Disallows direct reads.
@@ -58,7 +58,7 @@ class _TFramedTransport extends TTransport {
   bool get isOpen => _isOpen;
 
   /// Opens the transport.
-  /// Will reset the write/read buffers and socket [onMessage] listener.
+  /// Will reset the write/read buffers and socket onMessage listener.
   /// Will also open the underlying [TSocket] (if not already open).
   @override
   Future open() async {
@@ -68,8 +68,8 @@ class _TFramedTransport extends TTransport {
   }
 
   /// Closes the transport.
-  /// Will reset the write/read buffers and socket [onMessage] listener.
-  /// Will also close the underlying [Socket] (if not already closed).
+  /// Will reset the write/read buffers and socket onMessagelistener.
+  /// Will also close the underlying [TSocket] (if not already closed).
   @override
   Future close() async {
     _reset(isOpen: false);
@@ -78,6 +78,7 @@ class _TFramedTransport extends TTransport {
 
   /// Direct reading is not allowed. To consume read data listen
   /// to [onFrame].
+  @override
   int read(Uint8List buffer, int offset, int length) {
     throw new TTransportError(TTransportErrorType.UNKNOWN,
         'frugal: cannot read directly from _TFramedSocket.');
@@ -157,5 +158,5 @@ class _FrameWrapper {
   Uint8List frameBytes;
   DateTime timestamp;
 
-  _FrameWrapper(this.frameBytes, this.timestamp) {}
+  _FrameWrapper(this.frameBytes, this.timestamp);
 }

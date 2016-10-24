@@ -10,27 +10,25 @@ void main() {
   });
 
   test('isConnected', () {
-    var futures = [];
-
     var monitor = new BaseFTransportMonitor();
     expect(monitor.isConnected, equals(true));
 
-    futures.add(monitor.onDisconnect.first);
+    var one = monitor.onDisconnect.first;
     monitor.onClosedCleanly();
     expect(monitor.isConnected, isFalse);
 
     monitor.onReopenFailed(1, 1);
     expect(monitor.isConnected, isFalse);
 
-    futures.add(monitor.onConnect.first);
+    var two = monitor.onConnect.first;
     monitor.onReopenSucceeded();
     expect(monitor.isConnected, isTrue);
 
-    futures.add(monitor.onDisconnect.first);
+    var three = monitor.onDisconnect.first;
     monitor.onClosedUncleanly(new Exception('error'));
     expect(monitor.isConnected, isFalse);
 
-    return Future.wait(futures);
+    return Future.wait([one, two, three]);
   });
 
   test(
@@ -61,6 +59,7 @@ void main() {
 
   test('close cleanly provides no cause', () async {
     var monitor = new BaseFTransportMonitor();
+    // ignore: strong_mode_down_cast_composite
     monitor.onDisconnect.listen(expectAsync((cause) {
       expect(cause, isNull);
     }));
@@ -71,6 +70,7 @@ void main() {
     var monitor =
         new BaseFTransportMonitor(initialWait: 1, maxReopenAttempts: 0);
     var error = new StateError("fake error");
+    // ignore: strong_mode_down_cast_composite
     monitor.onDisconnect.listen(expectAsync((cause) {
       expect(cause, error);
     }));

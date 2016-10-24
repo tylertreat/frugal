@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// Transport layer for scope subscribers.
 abstract class FSubscriberTransport {

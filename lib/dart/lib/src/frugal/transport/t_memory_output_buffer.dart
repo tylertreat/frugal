@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// An implementation of a framed [TTransport] using a memory buffer and is used
 /// exclusively for writing. The size of this buffer is optionally limited. If

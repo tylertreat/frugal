@@ -1,4 +1,4 @@
-library frugal.frugal;
+library frugal.src.frugal;
 
 import 'dart:async';
 import 'dart:collection';

@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// Wraps a [TSocketTransport] to produce an [FTransport] which uses the given
 /// socket for send/callback operations in a way that is compatible with Frugal.
@@ -9,8 +9,8 @@ class FAdapterTransport extends FTransport {
   _TFramedTransport _framedTransport;
 
   FAdapterTransport(TSocketTransport transport, {FRegistry registry})
-      : super(registry: registry),
-        _framedTransport = new _TFramedTransport(transport.socket) {
+      : _framedTransport = new _TFramedTransport(transport.socket),
+        super(registry: registry) {
     // If there is an error on the socket, close the transport pessimistically.
     // This error is already logged upstream in TSocketTransport.
     transport.socket.onError.listen((e) => close(e));

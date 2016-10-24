@@ -18,7 +18,7 @@ void main() {
     MockFRegistry registry;
     FHttpTransport transport;
 
-    Map expectedRequestHeaders = {
+    Map<String, String> expectedRequestHeaders = {
       'x-frugal-payload-limit': '10',
       // TODO: When w_transport supports content-type overrides, enable this.
       // 'content-type': 'application/x-frugal',
@@ -26,7 +26,7 @@ void main() {
       'accept': 'application/x-frugal',
       'foo': 'bar'
     };
-    Map responseHeaders = {
+    Map<String, String> responseHeaders = {
       'content-type': 'application/x-frugal',
       'content-transfer-encoding': 'base64'
     };
@@ -50,14 +50,14 @@ void main() {
     test('Test transport sends body and receives response', () async {
       MockTransports.http.when(transport.uri, (FinalizedRequest request) async {
         if (request.method == 'POST') {
-          HttpBody body = request.body as HttpBody;
+          HttpBody body = request.body;
           if (body == null || body.asString() != transportRequestB64)
             return new MockResponse.badRequest();
-          expectedRequestHeaders.forEach((K, V) {
-            if (request.headers[K] != V) {
+          for (var key in expectedRequestHeaders.keys) {
+            if (request.headers[key] != expectedRequestHeaders[key]) {
               return new MockResponse.badRequest();
             }
-          });
+          }
           return new MockResponse.ok(
               body: transportResponseB64, headers: responseHeaders);
         } else {
@@ -72,14 +72,14 @@ void main() {
     test('Multiple writes are not coalesced', () async {
       MockTransports.http.when(transport.uri, (FinalizedRequest request) async {
         if (request.method == 'POST') {
-          HttpBody body = request.body as HttpBody;
+          HttpBody body = request.body;
           if (body == null || body.asString() != transportRequestB64)
             return new MockResponse.badRequest();
-          expectedRequestHeaders.forEach((K, V) {
-            if (request.headers[K] != V) {
+          for (var key in expectedRequestHeaders.keys) {
+            if (request.headers[key] != expectedRequestHeaders[key]) {
               return new MockResponse.badRequest();
             }
-          });
+          }
           return new MockResponse.ok(
               body: transportResponseB64, headers: responseHeaders);
         } else {
@@ -170,7 +170,7 @@ void main() {
     test('Test transport receives response too large error on 413 response',
         () async {
       Response response =
-          new MockResponse(FHttpTransport.REQUEST_ENTITY_TOO_LARGE);
+          new MockResponse(FHttpTransport.requestEntityTooLarge);
       MockTransports.http.expect('POST', transport.uri, respondWith: response);
       expect(transport.send(utf8Codec.encode('my request')),
           throwsA(new isInstanceOf<FMessageSizeError>()));

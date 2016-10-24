@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// Processes a method invocation on a proxied method and returns the result.
 /// The arguments should match the arity of the proxied method, and have the
@@ -11,7 +11,7 @@ typedef Future InvocationHandler(
 /// or authentication and authorization. Middleware me be applied to both RPC
 /// services and pub/sub scopes. Middleware returns an [InvocationHandler] which
 /// proxies the given [InvocationHandler].
-typedef InvocationHandler Middleware(InvocationHandler);
+typedef InvocationHandler Middleware(InvocationHandler handler);
 
 /// Contains an [InvocationHandler] used to proxy the given service method
 /// This should only be used by generated code.
@@ -34,14 +34,17 @@ class FMethod {
   }
 
   /// Applies the [Middleware] to the provided method.
-  InvocationHandler _composeMiddleware(f, List<Middleware> middleware) {
-    InvocationHandler handler = (serviceName, methodName, args) {
-      return Function.apply(f, args);
+  InvocationHandler _composeMiddleware(dynamic f, List<Middleware> middleware) {
+    InvocationHandler handler =
+        (String serviceName, String methodName, List<Object> args) {
+      Future actual = Function.apply(f, args);
+      return actual;
     };
 
     if (middleware == null) {
       return handler;
     }
+    // ignore: STRONG_MODE_DOWN_CAST_COMPOSITE
     return middleware.fold(handler, (prev, element) => element(prev));
   }
 }

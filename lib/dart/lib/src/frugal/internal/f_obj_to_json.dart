@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 final TSerializer _serializer =
     new TSerializer(protocolFactory: new TJsonProtocolFactory());

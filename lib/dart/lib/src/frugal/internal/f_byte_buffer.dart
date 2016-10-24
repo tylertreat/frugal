@@ -1,15 +1,15 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
-/**
- * This is an internal-only class. Don't use it!
- */
+/// This is an internal-only class. Don't use it!
 class FByteBuffer {
   final Uint8List _buff;
   int _writeIndex = 0;
   int _readIndex = 0;
 
+  /// Create an [FByteBuffer] with the given capacity.
   FByteBuffer(int capacity) : this._buff = new Uint8List(capacity);
 
+  /// Create an [FByteBuffer] from the given buffer.
   FByteBuffer.fromUint8List(Uint8List buff) : this._buff = buff;
 
   int get writeRemaining => _buff.length - _writeIndex;

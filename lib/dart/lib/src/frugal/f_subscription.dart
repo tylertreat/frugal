@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// A subscription to a pub/sub topic created by a scope. The topic subscription
 /// is actually handled by an [FSubscriberTransport], which the [FSubscription]

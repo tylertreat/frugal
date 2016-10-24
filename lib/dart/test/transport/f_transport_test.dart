@@ -93,6 +93,7 @@ class FTransportImpl extends FTransport {
     openCalls++;
   }
 
+  @override
   bool get isOpen => false;
 }
 
@@ -111,11 +112,13 @@ class MockFRegistry extends FRegistry {
     executeCompleter = new Completer();
   }
 
+  @override
   void register(FContext ctx, FAsyncCallback callback) {
     this.context = ctx;
     this.callback = callback;
   }
 
+  @override
   void unregister(FContext ctx) {
     if (this.context == ctx) {
       this.context = null;
@@ -123,6 +126,7 @@ class MockFRegistry extends FRegistry {
     }
   }
 
+  @override
   void execute(Uint8List data) {
     this.data.add(data);
     if (executeCompleter != null && !executeCompleter.isCompleted) {
@@ -134,6 +138,4 @@ class MockFRegistry extends FRegistry {
   }
 }
 
-class MockTransportMonitor extends Mock implements FTransportMonitor {
-  noSuchMethod(i) => super.noSuchMethod(i);
-}
+class MockTransportMonitor extends Mock implements FTransportMonitor {}

@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// Comparable to Thrift's TTransport in that it represent the transport layer
 /// for frugal clients. However, frugal is callback based and sends only framed
@@ -7,26 +7,30 @@ part of frugal.frugal;
 /// callback data, also has an [FRegistry], so it provides methods for
 /// registering and unregistering an [FAsyncCallback] to an [FContext].
 abstract class FTransport {
-  static const REQUEST_TOO_LARGE = 100;
-  static const RESPONSE_TOO_LARGE = 101;
+  /// Indicates the request was too large for the transport.
+  static const int REQUEST_TOO_LARGE = 100;
+
+  /// Indicates the response was too large for the transport.
+  static const int RESPONSE_TOO_LARGE = 101;
 
   MonitorRunner _monitor;
   StreamController _closeController = new StreamController.broadcast();
-
-  /// Listen to close events on the transport.
-  Stream<Object> get onClose => _closeController.stream;
-
   FRegistry _registry;
 
   /// Limits the size of requests to the server.
   /// No limit will be enforced if set to a non-positive value (i.e. <1).
   final int requestSizeLimit;
 
+  /// Create an [FTransport] with the optional [FRegistry] and
+  /// [requestSizeLimit].
   FTransport({FRegistry registry, this.requestSizeLimit})
       : _registry = registry ?? new FRegistryImpl();
 
+  /// Listen to close events on the transport.
+  Stream<Object> get onClose => _closeController.stream;
+
   /// Set an [FTransportMonitor] on the transport.
-  void set monitor(FTransportMonitor monitor) {
+  set monitor(FTransportMonitor monitor) {
     _monitor = new MonitorRunner(monitor, this);
   }
 

@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// An internal callback which is constructed by generated code and invoked by
 /// an [FRegistry] when a RPC response is received. In other words, an
@@ -7,7 +7,7 @@ part of frugal.frugal;
 /// in-memory [TTransport] which wraps the complete message. The callback
 /// returns an error or throws an exception if an unrecoverable error occurs and
 /// the transport needs to be shutdown.
-typedef void FAsyncCallback(TTransport);
+typedef void FAsyncCallback(TTransport transport);
 
 /// Responsible for multiplexing and handling messages received from the server.
 /// An FRegistry is used by an FTransport.
@@ -20,8 +20,8 @@ abstract class FRegistry {
   void register(FContext ctx, FAsyncCallback callback);
 
   /// Unregister a callback for the given Context.
-  void unregister(FContext);
+  void unregister(FContext ctx);
 
   /// Dispatch a single Frugal message frame.
-  void execute(Uint8List);
+  void execute(Uint8List ctx);
 }

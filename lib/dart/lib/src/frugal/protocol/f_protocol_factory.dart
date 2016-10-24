@@ -1,4 +1,4 @@
-part of frugal.frugal;
+part of frugal.src.frugal;
 
 /// Creates new [FProtocol] instances. It takes a [TProtocolFactory] and a
 /// [TTransport] and returns an [FProtocol] which wraps a [TProtocol] produced
@@ -8,7 +8,7 @@ part of frugal.frugal;
 class FProtocolFactory {
   TProtocolFactory _tProtocolFactory;
 
-  FProtocolFactory(this._tProtocolFactory) {}
+  FProtocolFactory(this._tProtocolFactory);
 
   /// Construct a new [FProtocol] instance from the given [TTransport].
   FProtocol getProtocol(TTransport transport) {
