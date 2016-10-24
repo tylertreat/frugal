@@ -8,10 +8,10 @@ from httplib2 import Http
 from thrift.transport.TTransport import TTransportException
 
 from frugal.exceptions import FMessageSizeException
-from frugal.transport import FSynchronousTransport
+from frugal.transport import TSynchronousTransport
 
 
-class FBaseHttpTransport(FSynchronousTransport):
+class TBaseHttpTransport(TSynchronousTransport):
     """Base synchronous transport implemented with HTTP."""
 
     def __init__(self, url, request_capacity=0, response_capacity=0,
@@ -93,7 +93,7 @@ class FBaseHttpTransport(FSynchronousTransport):
         return headers, body
 
 
-class FHttpTransport(FBaseHttpTransport):
+class FHttpTransport(TBaseHttpTransport):
     """Synchronous transport implemented with httplib2."""
 
     def __init__(self, url, request_capacity=0, response_capacity=0,

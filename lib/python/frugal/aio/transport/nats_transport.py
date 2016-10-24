@@ -1,5 +1,3 @@
-from io import BytesIO
-
 from nats.aio.client import Client
 from nats.aio.utils import new_inbox
 from thrift.transport.TTransport import TTransportException
@@ -30,7 +28,7 @@ class FNatsTransport(FRegistryTransport):
         self._is_open = False
         self._sub_id = None
 
-    def isOpen(self):
+    def is_open(self):
         """Check whether the transport is open."""
         return self._is_open and self._nats_client.is_connected
 
@@ -40,7 +38,7 @@ class FNatsTransport(FRegistryTransport):
             raise TTransportException(TTransportException.NOT_OPEN,
                                       'Nats not connected')
 
-        if self.isOpen():
+        if self.is_open():
             raise TTransportException(TTransportException.ALREADY_OPEN,
                                       'Transport is already open')
 
@@ -62,17 +60,13 @@ class FNatsTransport(FRegistryTransport):
         self._is_open = False
         self._sub_id = None
 
-    async def flush(self):
-        """Send buffered data over nats."""
+    async def send(self, data):
         if not self._is_open:
             raise TTransportException(TTransportException.NOT_OPEN,
                                       'Transport is not open')
 
-        frame = self.get_write_bytes()
-        self.reset_write_buffer()
-        self._wbuf = BytesIO()
         await self._nats_client.publish_request(
             self._subject,
             self._inbox,
-            frame
+            data
         )

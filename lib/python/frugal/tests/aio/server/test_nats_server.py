@@ -90,9 +90,13 @@ class TestFNatsServer(utils.AsyncIOTestCase):
             oprot,
         ]
 
-        future = asyncio.Future()
-        future.set_result(None)
-        self.mock_processor.process.return_value = future
+        process_future = asyncio.Future()
+        process_future.set_result(None)
+        self.mock_processor.process.return_value = process_future
+
+        publish_future = asyncio.Future()
+        publish_future.set_result(None)
+        self.mock_nats_client.publish.return_value = publish_future
 
         await self.server._on_message_callback(message)
         self.mock_processor.process.assert_called_once_with(iprot, oprot)

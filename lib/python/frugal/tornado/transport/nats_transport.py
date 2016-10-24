@@ -29,7 +29,7 @@ class FNatsTransport(FTornadoTransport):
         self._is_open = False
         self._sub_id = None
 
-    def isOpen(self):
+    def is_open(self):
         return self._is_open and self._nats_client.is_connected
 
     @gen.coroutine
@@ -38,7 +38,7 @@ class FNatsTransport(FTornadoTransport):
         if not self._nats_client.is_connected:
             raise TTransportException(TTransportException.NOT_OPEN, _NOT_OPEN)
 
-        elif self.isOpen():
+        elif self.is_open():
             already_open = TTransportException.ALREADY_OPEN
             raise TTransportException(already_open, _ALREAD_OPEN)
 
@@ -61,18 +61,13 @@ class FNatsTransport(FTornadoTransport):
         self._is_open = False
 
     @gen.coroutine
-    def flush(self):
+    def send(self, data):
         """Sends the buffered bytes over NATS"""
-        if not self.isOpen():
+        if not self.is_open():
             raise TTransportException(TTransportException.NOT_OPEN, _NOT_OPEN)
 
-        frame = self.get_write_bytes()
-        if not frame:
-            return
-
-        self.reset_write_buffer()
         subject = self._subject
         inbox = self._inbox
-        yield self._nats_client.publish_request(subject, inbox, frame)
+        yield self._nats_client.publish_request(subject, inbox, data)
         # If we don't flush here the ioloop waits for 2 minutes before flushing
         yield self._nats_client.flush()

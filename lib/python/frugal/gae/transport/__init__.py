@@ -1,5 +1,5 @@
-from frugal.gae.transport.urlfetch_transport import FUrlfetchTransport
+from frugal.gae.transport.urlfetch_transport import TUrlfetchTransport
 
 __all__ = [
-    'FUrlfetchTransport',
+    'TUrlfetchTransport',
 ]

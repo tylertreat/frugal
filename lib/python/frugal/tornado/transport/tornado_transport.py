@@ -4,6 +4,7 @@ from struct import pack
 from tornado import gen, locks
 
 from frugal.exceptions import FException, FMessageSizeException
+from frugal.registry import FClientRegistry
 from frugal.transport import FTransport
 
 
@@ -15,25 +16,9 @@ class FTornadoTransport(FTransport):
     def __init__(self, max_message_size=1024 * 1024):
         super(FTornadoTransport, self).__init__()
         self._max_message_size = max_message_size
-        self._wbuf = BytesIO()
 
         self._registry_lock = locks.Lock()
-
-    @gen.coroutine
-    def set_registry(self, registry):
-        """Set FRegistry on the transport.  No-Op if already set.
-
-        Args:
-            registry: FRegistry to set on the transport
-        """
-        if not registry:
-            raise ValueError("registry cannot be null.")
-
-        with (yield self._registry_lock.acquire()):
-            if self._registry:
-                raise FException("registry already set.")
-
-            self._registry = registry
+        self._registry = FClientRegistry()
 
     @gen.coroutine
     def register(self, context, callback):
@@ -69,7 +54,7 @@ class FTornadoTransport(FTransport):
 
             self._registry.unregister(context)
 
-    def isOpen(self):
+    def is_open(self):
         raise NotImplementedError("You must override this.")
 
     @gen.coroutine
@@ -80,39 +65,12 @@ class FTornadoTransport(FTransport):
     def close(self):
         raise NotImplementedError("You must override this.")
 
-    def read(self, size):
-        raise NotImplementedError("Don't call this.")
-
-    def write(self, buff):
-        """Writes the bytes to a buffer. Throws FMessageSizeException if the
-        buffer exceeds limit.
-
-        Args:
-            buff: buffer to append to the write buffer.
-        """
-        size = len(buff) + len(self._wbuf.getvalue())
-
-        if size > self._max_message_size > 0:
-            raise FMessageSizeException("Message exceeds max message size")
-
-        self._wbuf.write(buff)
+    def get_request_size_limit(self):
+        return self._max_message_size
 
     @gen.coroutine
-    def flush(self):
-        raise NotImplementedError("You must override this.")
-
-    def get_write_bytes(self):
-        """Get the framed bytes from the write buffer."""
-        frame = self._wbuf.getvalue()
-        if len(frame) == 0:
-            return None
-
-        frame_length = pack('!I', len(frame))
-        return b'{0}{1}'.format(frame_length, frame)
-
-    def reset_write_buffer(self):
-        """Reset the write buffer."""
-        self._wbuf = BytesIO()
+    def send(self, data):
+        raise NotImplementedError('You must override this.')
 
     def execute_frame(self, frame):
         """Execute a frugal frame.

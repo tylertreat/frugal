@@ -1,6 +1,6 @@
 from frugal.aio.transport import FTransportBase
 from frugal.context import FContext
-from frugal.registry import FRegistry
+from frugal.aio.registry import FClientRegistry
 
 
 class FRegistryTransport(FTransportBase):
@@ -9,22 +9,7 @@ class FRegistryTransport(FTransportBase):
     """
     def __init__(self, max_message_size):
         super().__init__(max_message_size)
-        self._registry = None
-
-    def set_registry(self, registry: FRegistry):
-        """
-        Set the registry for the transport.
-
-        Args:
-             registry: The registry to set, must be non-null.
-        """
-        if not registry:
-            raise ValueError('registry must be non-null')
-
-        if self._registry:
-            return
-
-        self._registry = registry
+        self._registry = FClientRegistry()
 
     async def register(self, context: FContext, callback):
         """
@@ -34,9 +19,6 @@ class FRegistryTransport(FTransportBase):
             context: The context to register.
             callback: The function associated with the given context.
         """
-        if not self._registry:
-            raise ValueError('registry must be set')
-
         await self._registry.register(context, callback)
 
     async def unregister(self, context: FContext):
@@ -46,9 +28,6 @@ class FRegistryTransport(FTransportBase):
         Args:
             context: The context to unregister.
         """
-        if not self._registry:
-            raise ValueError('registry must be set')
-
         await self._registry.unregister(context)
 
     async def execute_frame(self, frame):
@@ -58,6 +37,4 @@ class FRegistryTransport(FTransportBase):
         Args:
             frame: The frame to be executed.
         """
-        if not self._registry:
-            raise ValueError('registry must be set')
         await self._registry.execute(frame)

@@ -24,6 +24,7 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from frugal.processor import FBaseProcessor\n"
 	imports += "from frugal.processor import FProcessorFunction\n"
 	imports += "from frugal.registry import FClientRegistry\n"
+	imports += "from frugal.transport import TMemoryOutputBuffer\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "from tornado import gen\n"
@@ -117,17 +118,17 @@ func (t *TornadoGenerator) generateClientSendMethod(method *parser.Method) strin
 	contents := ""
 	contents += tab + "@gen.coroutine\n"
 	contents += tab + fmt.Sprintf("def _send_%s(self, ctx%s):\n", method.Name, t.generateClientArgs(method.Arguments))
-	contents += tabtab + "oprot = self._oprot\n"
-	contents += tabtab + "with self._write_lock:\n"
-	contents += tabtabtab + "oprot.write_request_headers(ctx)\n"
-	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
-	contents += tabtabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
+	contents += tabtab + "buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())\n"
+	contents += tabtab + "oprot = self._protocol_factory.get_protocol(buffer)\n"
+	contents += tabtab + "oprot.write_request_headers(ctx)\n"
+	contents += tabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
+	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
 	for _, arg := range method.Arguments {
-		contents += tabtabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
+		contents += tabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
 	}
-	contents += tabtabtab + "args.write(oprot)\n"
-	contents += tabtabtab + "oprot.writeMessageEnd()\n"
-	contents += tabtabtab + "yield oprot.get_transport().flush()\n\n"
+	contents += tabtab + "args.write(oprot)\n"
+	contents += tabtab + "oprot.writeMessageEnd()\n"
+	contents += tabtab+"yield self._transport.send(buffer.getvalue())\n\n"
 
 	return contents
 }

@@ -4,10 +4,10 @@ from struct import unpack
 
 from thrift.transport.TTransport import TTransportException
 
-from frugal.transport.http_transport import FBaseHttpTransport
+from frugal.transport.http_transport import TBaseHttpTransport
 
 
-class FUrlfetchTransport(FBaseHttpTransport):
+class TUrlfetchTransport(TBaseHttpTransport):
     """Synchronous transport implemented with urlfetch."""
 
     def __init__(self, url, headers=None, get_headers=None):
@@ -20,7 +20,7 @@ class FUrlfetchTransport(FBaseHttpTransport):
         """
 
         self._timeout = None
-        super(FUrlfetchTransport, self).__init__(url, headers=headers,
+        super(TUrlfetchTransport, self).__init__(url, headers=headers,
                                                  get_headers=get_headers)
 
     def set_timeout(self, timeout):

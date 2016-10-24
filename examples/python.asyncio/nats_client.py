@@ -6,6 +6,7 @@ import asyncio
 from nats.aio.client import Client as NatsClient
 from thrift.protocol import TBinaryProtocol
 from thrift.transport.TTransport import TTransportException
+import uuid
 from frugal.context import FContext
 from frugal.protocol import FProtocolFactory
 from frugal.provider import FScopeProvider
@@ -63,7 +64,7 @@ async def main():
 
     root.info("Bought an album %s\n", album)
 
-    await store_client.EnterAlbumGiveaway(FContext(),
+    await store_client.enterAlbumGiveaway(FContext(),
                                           "kevin@workiva.com",
                                           "Kevin")
 

@@ -10,7 +10,7 @@ from frugal import _NATS_MAX_MESSAGE_SIZE
 from frugal.aio.processor import FProcessor
 from frugal.protocol import FProtocolFactory
 from frugal.server import FServer
-from frugal.transport import FBoundedMemoryBuffer
+from frugal.transport import TMemoryOutputBuffer
 
 logger = logging.getLogger(__name__)
 
@@ -63,8 +63,8 @@ class FNatsServer(FServer):
         iprot = self._protocol_factory.get_protocol(
             TMemoryBuffer(message.data[4:])
         )
-        out_transport = FBoundedMemoryBuffer(_NATS_MAX_MESSAGE_SIZE - 4)
-        oprot = self._protocol_factory.get_protocol(out_transport)
+        otrans = TMemoryOutputBuffer(_NATS_MAX_MESSAGE_SIZE)
+        oprot = self._protocol_factory.get_protocol(otrans)
 
         try:
             await self._processor.process(iprot, oprot)
@@ -72,9 +72,7 @@ class FNatsServer(FServer):
             logger.exception(e)
             return
 
-        if len(out_transport) == 0:
+        if len(otrans) == 4:
             return
 
-        data = out_transport.getvalue()
-        data_length = struct.pack('!I', len(data))
-        await self._nats_client.publish(message.reply, data_length + data)
+        await self._nats_client.publish(message.reply, otrans.getvalue())

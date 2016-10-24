@@ -33,7 +33,7 @@ class PerfRightsOrg:
 class Track:
     """
     Comments (with an @ symbol) will be added to generated code.
-
+    
     Attributes:
      - title
      - artist
@@ -148,7 +148,7 @@ class Album:
     """
     The IDL provides set, list, and map types for representing collections
     of data.  Our Album struct contains a list of Tracks.
-
+    
     Attributes:
      - tracks
      - duration
@@ -168,11 +168,11 @@ class Album:
             if fid == 1:
                 if ftype == TType.LIST:
                     self.tracks = []
-                    (_, _elem0) = iprot.readListBegin()
-                    for _ in range(_elem0):
-                        _elem1 = Track()
-                        _elem1.read(iprot)
-                        self.tracks.append(_elem1)
+                    (_, elem0) = iprot.readListBegin()
+                    for _ in range(elem0):
+                        elem1 = Track()
+                        elem1.read(iprot)
+                        self.tracks.append(elem1)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -196,8 +196,8 @@ class Album:
         if self.tracks is not None:
             oprot.writeFieldBegin('tracks', TType.LIST, 1)
             oprot.writeListBegin(TType.STRUCT, len(self.tracks))
-            for _elem2 in self.tracks:
-                _elem2.write(oprot)
+            for elem2 in self.tracks:
+                elem2.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.duration is not None:
@@ -236,7 +236,7 @@ class PurchasingError(TException):
     """
     Exceptions are converted to the native format for each compiled
     language.
-
+    
     Attributes:
      - message
      - error_code
@@ -301,3 +301,4 @@ class PurchasingError(TException):
 
     def __ne__(self, other):
         return not (self == other)
+
