@@ -1234,13 +1234,12 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	if !method.Oneway {
 		contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	}
-	indent := tabtabtab
 	contents += tabtab + "try:\n"
 	if method.ReturnType == nil {
-		contents += indent + fmt.Sprintf("self._handler([ctx%s])\n",
+		contents += tabtabtab + fmt.Sprintf("self._handler([ctx%s])\n",
 			g.generateServerArgs(method.Arguments))
 	} else {
-		contents += indent + fmt.Sprintf("result.success = self._handler([ctx%s])\n",
+		contents += tabtabtab + fmt.Sprintf("result.success = self._handler([ctx%s])\n",
 			g.generateServerArgs(method.Arguments))
 	}
 	for _, err := range method.Exceptions {
