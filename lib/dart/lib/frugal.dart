@@ -9,7 +9,6 @@ export 'src/frugal.dart'
         BaseFTransportMonitor,
         FAdapterTransport,
         FHttpTransport,
-        FHttpConfig,
         FPublisherTransport,
         FPublisherTransportFactory,
         FSubscriberTransport,

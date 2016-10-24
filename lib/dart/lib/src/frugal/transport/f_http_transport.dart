@@ -1,17 +1,38 @@
 part of frugal.frugal;
 
-/// An [FTransport] that makes frugal requests via http.
+/// An [FTransport] that makes frugal requests via HTTP.
 class FHttpTransport extends FTransport {
   static const int UNAUTHORIZED = 401;
   static const int REQUEST_ENTITY_TOO_LARGE = 413;
 
   final Logger log = new Logger('FHttpTransport');
-  final wt.Client client;
-  final FHttpConfig config;
 
-  FHttpTransport(this.client, config, {FRegistry registry})
-      : super(registry: registry, requestSizeLimit: config.requestSizeLimit),
-        this.config = config;
+  /// Client used by the transport to make HTTP requests.
+  final wt.Client client;
+
+  /// URI of the frugal HTTP server.
+  final Uri uri;
+
+  /// Limits the size of responses from the server.
+  /// No limit will be enforced if set to a non-positive value (i.e. <1).
+  final int responseSizeLimit;
+
+  Map<String, String> _headers;
+
+  FHttpTransport(this.client, this.uri,
+      {int requestSizeLimit: 0,
+      this.responseSizeLimit: 0,
+      Map<String, String> additionalHeaders,
+      FRegistry registry})
+      : super(registry: registry, requestSizeLimit: requestSizeLimit) {
+    _headers = additionalHeaders ?? {};
+    _headers['content-type'] = 'application/x-frugal';
+    _headers['content-transfer-encoding'] = 'base64';
+    _headers['accept'] = 'application/x-frugal';
+    if (responseSizeLimit > 0) {
+      _headers['x-frugal-payload-limit'] = responseSizeLimit.toString();
+    }
+  }
 
   @override
   bool get isOpen => true;
@@ -33,8 +54,8 @@ class FHttpTransport extends FTransport {
 
     // Configure the request
     wt.Request request = client.newRequest()
-      ..headers = config.headers
-      ..uri = config.uri
+      ..headers = _headers
+      ..uri = uri
       ..body = requestBody;
 
     // Attempt the request
@@ -84,49 +105,5 @@ class FHttpTransport extends FTransport {
     }
 
     executeFrame(data);
-  }
-}
-
-/// FHttpConfig wraps request configuration information,
-/// such as server URL and request headers.
-class FHttpConfig {
-  final Uri uri;
-
-  /// Limits the size of Frugal frame size for requests to the server.
-  /// No limit will be enforced if set to a non-positive value (i.e. <1).
-  final int requestSizeLimit;
-
-  /// Limits the size of Frugal frame size for responses from the server.
-  /// No limit will be enforced if set to a non-positive value (i.e. <1).
-  final int responseSizeLimit;
-
-  Map<String, String> _headers;
-  get headers => _headers;
-
-  FHttpConfig(this.uri, Map<String, String> headers,
-      {this.requestSizeLimit: 0, this.responseSizeLimit: 0}) {
-    if (uri == null || !uri.hasAuthority) {
-      throw new ArgumentError('Invalid uri');
-    }
-
-    _initHeaders(headers);
-  }
-
-  void _initHeaders(Map<String, String> initial) {
-    var h = {};
-
-    if (initial != null) {
-      h.addAll(initial);
-    }
-
-    h['content-type'] = 'application/x-frugal';
-    h['content-transfer-encoding'] = 'base64';
-    h['accept'] = 'application/x-frugal';
-
-    if (responseSizeLimit > 0) {
-      h['x-frugal-payload-limit'] = responseSizeLimit.toString();
-    }
-
-    _headers = new Map.unmodifiable(h);
   }
 }

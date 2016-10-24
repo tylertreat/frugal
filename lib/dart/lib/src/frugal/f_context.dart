@@ -30,6 +30,7 @@ class FContext {
 
   /// The request timeout for any method call using this context.
   Duration get timeout => _timeout;
+
   /// Set the request timeout for any method call using this context.
   void set timeout(timeout) {
     _timeout = timeout;

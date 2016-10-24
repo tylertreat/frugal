@@ -17,14 +17,13 @@ abstract class FTransport {
   Stream<Object> get onClose => _closeController.stream;
 
   FRegistry _registry;
-  int _requestSizeLimit;
 
-  /// The maximum request size permitted by the transport.
-  int get requestSizeLimit => _requestSizeLimit;
+  /// Limits the size of requests to the server.
+  /// No limit will be enforced if set to a non-positive value (i.e. <1).
+  final int requestSizeLimit;
 
-  FTransport({FRegistry registry, int requestSizeLimit})
-      : _registry = registry ?? new FRegistryImpl(),
-        _requestSizeLimit = requestSizeLimit ?? 0;
+  FTransport({FRegistry registry, this.requestSizeLimit})
+      : _registry = registry ?? new FRegistryImpl();
 
   /// Set an [FTransportMonitor] on the transport.
   void set monitor(FTransportMonitor monitor) {
