@@ -19,7 +19,7 @@ type frameWrapper struct {
 	reply      string
 }
 
-// FNatsServerBuilder configures and builds "stateless" nats servers instances.
+// FNatsServerBuilder configures and builds NATS server instances.
 type FNatsServerBuilder struct {
 	conn               *nats.Conn
 	processor          FProcessor
@@ -32,8 +32,8 @@ type FNatsServerBuilder struct {
 	highWatermark      time.Duration
 }
 
-// NewFStatelessNatsServerBuilder creates a builder which configures and builds
-// "stateless" nats servers instances.
+// NewFNatsServerBuilder creates a builder which configures and builds NATS
+// server instances.
 func NewFNatsServerBuilder(conn *nats.Conn, processor FProcessor,
 	protoFactory *FProtocolFactory, subject string) *FNatsServerBuilder {
 	return &FNatsServerBuilder{

@@ -73,7 +73,7 @@ type FSubscriberTransportFactory interface {
 	GetTransport() FSubscriberTransport
 }
 
-// FSubscriberTranport is used exclusively for pub/sub scopes. Subscribers use
+// FSubscriberTransport is used exclusively for pub/sub scopes. Subscribers use
 // it to subscribe to a pub/sub topic.
 type FSubscriberTransport interface {
 	// Subscribe opens the transport and sets the subscribe topic.
@@ -144,7 +144,7 @@ type fBaseTransport struct {
 func newFBaseTransport(requestSizeLimit uint) *fBaseTransport {
 	return &fBaseTransport{
 		requestSizeLimit: requestSizeLimit,
-		registry: NewFRegistry(),
+		registry:         NewFRegistry(),
 	}
 }
 

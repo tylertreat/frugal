@@ -180,18 +180,22 @@ func (f *fAdapterTransport) GetRequestSizeLimit() uint {
 	return 0
 }
 
+// Register a callback for the given Context.
 func (f *fAdapterTransport) Register(ctx *FContext, cb FAsyncCallback) error {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	return f.registry.Register(ctx, cb)
 }
 
+// Unregister a callback for the given Context.
 func (f *fAdapterTransport) Unregister(ctx *FContext) {
 	f.mu.RLock()
 	f.registry.Unregister(ctx)
 	f.mu.RUnlock()
 }
 
+// SetMonitor starts a monitor that can watch the health of, and reopen,
+// the transport.
 func (f *fAdapterTransport) SetMonitor(monitor FTransportMonitor) {
 	// Stop the previous monitor, if any.
 	select {
@@ -210,6 +214,8 @@ func (f *fAdapterTransport) SetMonitor(monitor FTransportMonitor) {
 	go runner.run()
 }
 
+// Closed channel receives the cause of an FTransport close (nil if clean
+// close).
 func (f *fAdapterTransport) Closed() <-chan error {
 	f.mu.RLock()
 	defer f.mu.RUnlock()

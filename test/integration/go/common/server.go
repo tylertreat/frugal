@@ -91,7 +91,6 @@ func StartServer(
 	case "http":
 		http.HandleFunc("/",
 			frugal.NewFrugalHandlerFunc(processor,
-				frugal.NewFProtocolFactory(protocolFactory),
 				frugal.NewFProtocolFactory(protocolFactory)))
 		server = &httpServer{hostPort: hostPort}
 	}
