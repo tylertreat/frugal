@@ -1145,15 +1145,13 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += g.GenerateInlineComment(scope.Comment, "/")
 	}
 	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
-	publishers += tab + "frugal.FScopeTransport transport;\n"
-	publishers += tab + "frugal.FProtocol protocol;\n"
+	publishers += tab + "frugal.FPublisherTransport transport;\n"
+	publishers += tab + "frugal.FProtocolFactory protocolFactory;\n"
 	publishers += tab + "Map<String, frugal.FMethod> _methods;\n"
-	publishers += tab + "frugal.Lock _writeLock;\n\n"
 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "transport = provider.publisherTransportFactory.getTransport();\n"
-	publishers += tabtab + "protocol = provider.protocolFactory.getProtocol(transport);\n"
-	publishers += tabtab + "_writeLock = new frugal.Lock();\n"
+	publishers += tabtab + "protocolFactory = provider.protocolFactory;\n"
 	publishers += tabtab + "this._methods = {};\n"
 	for _, operation := range scope.Operations {
 		publishers += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._publish%s, '%s', 'publish%s', middleware);\n",
@@ -1190,22 +1188,17 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
 
-		publishers += tabtab + "await _writeLock.lock();\n"
-		publishers += tabtab + "try {\n"
-		publishers += fmt.Sprintf(tabtabtab+"var op = \"%s\";\n", op.Name)
-		publishers += fmt.Sprintf(tabtabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
-		publishers += tabtabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
-		publishers += tabtabtab + "transport.setTopic(topic);\n"
-		publishers += tabtabtab + "var oprot = protocol;\n"
-		publishers += tabtabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);\n"
-		publishers += tabtabtab + "oprot.writeRequestHeader(ctx);\n"
-		publishers += tabtabtab + "oprot.writeMessageBegin(msg);\n"
-		publishers += tabtabtab + "req.write(oprot);\n"
-		publishers += tabtabtab + "oprot.writeMessageEnd();\n"
-		publishers += tabtabtab + "await oprot.transport.flush();\n"
-		publishers += tabtab + "} finally {\n"
-		publishers += tabtabtab + "_writeLock.unlock();\n"
-		publishers += tabtab + "}\n"
+		publishers += tabtab + fmt.Sprintf("var op = \"%s\";\n", op.Name)
+		publishers += tabtab + fmt.Sprintf("var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
+		publishers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
+		publishers += tabtab + "var memoryBuffer = new frugal.TMemoryOutputBuffer(transport.publishSizeLimit);\n"
+		publishers += tabtab + "var oprot = protocolFactory.getProtocol(memoryBuffer);\n"
+		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);\n"
+		publishers += tabtab + "oprot.writeRequestHeader(ctx);\n"
+		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
+		publishers += tabtab + "req.write(oprot);\n"
+		publishers += tabtab + "oprot.writeMessageEnd();\n"
+		publishers += tabtab + "await transport.publish(topic, memoryBuffer.writeBytes);\n"
 		publishers += tab + "}\n"
 	}
 
@@ -1419,8 +1412,8 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		indent = tabtabtab
 	}
 
-	contents += indent + "var memoryTransport = new frugal.TMemoryOutputTransport(_transport.requestSizeLimit);\n"
-	contents += indent + "var oprot = _protocolFactory.getProtocol(memoryTransport);\n"
+	contents += indent + "var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);\n"
+	contents += indent + "var oprot = _protocolFactory.getProtocol(memoryBuffer);\n"
 	contents += indent + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
@@ -1436,7 +1429,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 	contents += indent + "args.write(oprot);\n"
 	contents += indent + "oprot.writeMessageEnd();\n"
-	contents += indent + "await _transport.send(memoryTransport.writeBytes);\n"
+	contents += indent + "await _transport.send(memoryBuffer.writeBytes);\n"
 
 	// Nothing more to do for oneway
 	if method.Oneway {
