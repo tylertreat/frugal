@@ -206,7 +206,7 @@ func (a *AsyncIOGenerator) generateClientRecvMethod(method *parser.Method) strin
 	contents += tabtabtabtab + "x.read(iprot)\n"
 	contents += tabtabtabtab + "iprot.readMessageEnd()\n"
 	contents += tabtabtabtab + "if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:\n"
-	contents += tabtabtabtabtab + "future.set_exception(FRateLimitException())\n"
+	contents += tabtabtabtabtab + "future.set_exception(FRateLimitException(x.message))\n"
 	contents += tabtabtabtabtab + "return\n"
 	contents += tabtabtabtab + "future.set_exception(x)\n"
 	contents += tabtabtabtab + "raise x\n"

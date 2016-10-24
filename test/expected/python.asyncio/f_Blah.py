@@ -131,7 +131,7 @@ class Client(Iface):
                 x.read(iprot)
                 iprot.readMessageEnd()
                 if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException())
+                    future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
                 raise x
@@ -188,7 +188,7 @@ class Client(Iface):
                 x.read(iprot)
                 iprot.readMessageEnd()
                 if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException())
+                    future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
                 raise x
@@ -248,7 +248,7 @@ class Client(Iface):
                 x.read(iprot)
                 iprot.readMessageEnd()
                 if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException())
+                    future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
                 raise x
@@ -302,7 +302,7 @@ class Client(Iface):
                 x.read(iprot)
                 iprot.readMessageEnd()
                 if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException())
+                    future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
                 raise x

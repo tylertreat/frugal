@@ -101,7 +101,7 @@ class Client(Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
-                raise FRateLimitException()
+                raise FRateLimitException(message: x.message)
             raise x
         result = buyAlbum_result()
         result.read(self._iprot)
@@ -147,7 +147,7 @@ class Client(Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
-                raise FRateLimitException()
+                raise FRateLimitException(message: x.message)
             raise x
         result = enterAlbumGiveaway_result()
         result.read(self._iprot)
@@ -190,7 +190,9 @@ class _buyAlbum(FProcessorFunction):
         except PurchasingError as error:
             result.error = error
         except FRateLimitException as ex:
-            _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "buyAlbum", ex.message)
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "buyAlbum", ex.message)
+                return
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('buyAlbum', TMessageType.REPLY, 0)
@@ -213,7 +215,9 @@ class _enterAlbumGiveaway(FProcessorFunction):
         try:
             result.success = self._handler([ctx, args.email, args.name])
         except FRateLimitException as ex:
-            _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", ex.message)
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", ex.message)
+                return
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.REPLY, 0)

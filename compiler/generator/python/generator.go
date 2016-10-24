@@ -771,9 +771,9 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports := "from threading import Lock\n\n"
 
 	imports += "from frugal.middleware import Method\n"
+	imports += "from frugal.exceptions import FRateLimitException\n"
 	imports += "from frugal.processor import FBaseProcessor\n"
 	imports += "from frugal.processor import FProcessorFunction\n"
-	imports += "from frugal.exceptions import FRateLimitException\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n\n"
 
@@ -1054,7 +1054,7 @@ func (g *Generator) generateClientRecvMethod(method *parser.Method) string {
 	contents += tabtabtab + "x.read(self._iprot)\n"
 	contents += tabtabtab + "self._iprot.readMessageEnd()\n"
 	contents += tabtabtab + "if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:\n"
-	contents += tabtabtabtab + "raise FRateLimitException()\n"
+	contents += tabtabtabtab + "raise FRateLimitException(x.message)\n"
 	contents += tabtabtab + "raise x\n"
 	contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	contents += tabtab + "result.read(self._iprot)\n"
@@ -1247,9 +1247,11 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
 	contents += tabtab + "except FRateLimitException as ex:\n"
-	contents += tabtabtab +
+	contents += tabtabtab + "with self._lock:\n"
+	contents += tabtabtabtab +
 		fmt.Sprintf("_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
 			method.Name)
+	contents += tabtabtabtab + "return\n"
 	if !method.Oneway {
 		contents += tabtab + "with self._lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
