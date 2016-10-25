@@ -85,7 +85,7 @@ class FNatsSubscriberTransport(FSubscriberTransport):
             raise TTransportException(TTransportException.NOT_OPEN, msg)
 
         if self.is_subscribed():
-            msg = "Nats is already open!"
+            msg = "Already subscribed to nats topic!"
             raise TTransportException(TTransportException.ALREADY_OPEN, msg)
 
         self._sub_id = yield self._nats_client.subscribe_async(

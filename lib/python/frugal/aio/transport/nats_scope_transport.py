@@ -84,7 +84,7 @@ class FNatsSubscriberTransport(FSubscriberTransport):
                                       'Nats is not connected')
         if self.is_subscribed():
             raise TTransportException(TTransportException.ALREADY_OPEN,
-                                      'Nats is already open')
+                                      'Already subscribed to nats topic')
 
         async def nats_callback(message):
             ret = callback(TMemoryBuffer(message.data[4:]))
