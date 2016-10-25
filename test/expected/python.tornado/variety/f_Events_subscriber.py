@@ -65,7 +65,6 @@ class EventsSubscriber(object):
         method = Method(handler, self._middleware)
 
         def callback(transport):
-            print('handling callback')
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()
