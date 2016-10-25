@@ -28,8 +28,10 @@ import com.workiva.frugal.transport.FHttpTransport;
 import com.workiva.frugal.transport.FTransport;
 import com.workiva.frugal.transport.FTransportFactory;
 import com.workiva.frugal.transport.FNatsTransport;
-import com.workiva.frugal.transport.FScopeTransportFactory;
-import com.workiva.frugal.transport.FNatsScopeTransport;
+import com.workiva.frugal.transport.FPublisherTransportFactory;
+import com.workiva.frugal.transport.FNatsPublisherTransport;
+import com.workiva.frugal.transport.FNatsSubscriberTransport;
+import com.workiva.frugal.transport.FSubscriberTransportFactory;
 import com.workiva.utils;
 import frugal.test.*;
 import io.nats.client.Connection;
@@ -478,8 +480,9 @@ public class TestClient {
              */
             BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(1);
             Object o = null;
-            FScopeTransportFactory factory = new FNatsScopeTransport.Factory(conn);
-            FScopeProvider provider = new FScopeProvider(factory,  new FProtocolFactory(protocolFactory));
+            FPublisherTransportFactory publisherFactory = new FNatsPublisherTransport.Factory(conn);
+            FSubscriberTransportFactory subscriberFactory = new FNatsSubscriberTransport.Factory(conn);
+            FScopeProvider provider = new FScopeProvider(publisherFactory, subscriberFactory, new FProtocolFactory(protocolFactory));
 
             EventsSubscriber.Iface subscriber = new EventsSubscriber.Client(provider);
             subscriber.subscribeEventCreated(Integer.toString(port)+"-response", (ctx, event) -> {
