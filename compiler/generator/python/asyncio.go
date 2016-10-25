@@ -57,7 +57,8 @@ func (a *AsyncIOGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "from thrift.Thrift import TType\n"
 	imports += "from frugal.middleware import Method\n"
-	imports += "from frugal.subscription import FSubscription\n\n"
+	imports += "from frugal.subscription import FSubscription\n"
+	imports += "from frugal.transport import TMemoryOutputBuffer\n\n"
 
 	namespace, ok := a.Frugal.Thrift.Namespace(lang)
 	if !ok {
@@ -334,7 +335,7 @@ func (a *AsyncIOGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope
 	subscriber += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	subscriber += tabtabtab + "middleware = [middleware]\n"
 	subscriber += tabtab + "self._middleware = middleware\n"
-	subscriber += tabtab + "self._transport, self._protocol_factory = provider.new()\n\n"
+	subscriber += tabtab + "self._transport, self._protocol_factory = provider.new_subscriber()\n\n"
 
 	for _, op := range scope.Operations {
 		subscriber += a.generateSubscribeMethod(scope, op)

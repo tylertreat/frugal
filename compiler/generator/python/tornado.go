@@ -47,7 +47,8 @@ func (t *TornadoGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from thrift.Thrift import TType\n"
 	imports += "from tornado import gen\n"
 	imports += "from frugal.middleware import Method\n"
-	imports += "from frugal.subscription import FSubscription\n\n"
+	imports += "from frugal.subscription import FSubscription\n"
+	imports += "from frugal.transport import TMemoryOutputBuffer\n\n"
 
 	namespace, ok := t.Frugal.Thrift.Namespace(lang)
 	if !ok {
@@ -247,7 +248,7 @@ func (t *TornadoGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope
 	subscriber += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	subscriber += tabtabtab + "middleware = [middleware]\n"
 	subscriber += tabtab + "self._middleware = middleware\n"
-	subscriber += tabtab + "self._transport, self._protocol_factory = provider.new()\n\n"
+	subscriber += tabtab + "self._transport, self._protocol_factory = provider.new_subscriber()\n\n"
 
 	for _, op := range scope.Operations {
 		subscriber += t.generateSubscribeMethod(scope, op)
@@ -293,6 +294,7 @@ func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	method += tabtab + "method = Method(handler, self._middleware)\n\n"
 
 	method += tabtab + "def callback(transport):\n"
+	method += tabtabtab+"print('handling callback')\n"
 	method += tabtabtab + "iprot = protocol_factory.get_protocol(transport)\n"
 	method += tabtabtab + "ctx = iprot.read_request_headers()\n"
 	method += tabtabtab + "mname, _, _ = iprot.readMessageBegin()\n"

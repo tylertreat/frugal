@@ -10,7 +10,8 @@ from frugal.provider import FScopeProvider
 from frugal.aio.transport import (
     FNatsTransport,
     FHttpTransport,
-    FNatsScopeTransportFactory,
+    FNatsPublisherTransportFactory,
+    FNatsSubscriberTransportFactory,
 )
 
 from nats.aio.client import Client as NatsClient
@@ -95,8 +96,10 @@ async def test_rpc(client, ctx):
 # test_pub_sub publishes an event and verifies that a response is received
 async def test_pub_sub(nats_client, protocol_factory, port):
     global response_received
-    scope_transport_factory = FNatsScopeTransportFactory(nats_client)
-    provider = FScopeProvider(scope_transport_factory, protocol_factory)
+    pub_transport_factory = FNatsPublisherTransportFactory(nats_client)
+    sub_transport_factory = FNatsSubscriberTransportFactory(nats_client)
+    provider = FScopeProvider(
+        pub_transport_factory, sub_transport_factory, protocol_factory)
     publisher = EventsPublisher(provider)
 
     await publisher.open()
