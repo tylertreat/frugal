@@ -122,7 +122,6 @@ func (a *AsyncIOGenerator) generateClient(service *parser.Service) string {
 	} else {
 		contents += tabtab + "self._transport = transport\n"
 		contents += tabtab + "self._protocol_factory = protocol_factory\n"
-		contents += tabtab + "self._write_lock = asyncio.Lock()\n"
 		contents += tabtab + "self._methods = "
 	}
 	contents += "{\n"
@@ -178,17 +177,15 @@ func (a *AsyncIOGenerator) generateClientSendMethod(method *parser.Method) strin
 	contents += tab + fmt.Sprintf("async def _send_%s(self, ctx%s):\n", method.Name, a.generateClientArgs(method.Arguments))
 	contents += tabtab + "buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())\n"
 	contents += tabtab + "oprot = self._protocol_factory.get_protocol(buffer)\n"
-	contents += tabtab + "async with self._write_lock:\n"
-	contents += tabtabtab + "oprot.write_request_headers(ctx)\n"
-	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
-	contents += tabtabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
+	contents += tabtab + "oprot.write_request_headers(ctx)\n"
+	contents += tabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
+	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
 	for _, arg := range method.Arguments {
-		contents += tabtabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
+		contents += tabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
 	}
-	contents += tabtabtab + "args.write(oprot)\n"
-	contents += tabtabtab + "oprot.writeMessageEnd()\n"
-	contents += tabtabtab + "data = buffer.getvalue()\n"
-	contents += tabtab + "await self._transport.send(data)\n\n"
+	contents += tabtab + "args.write(oprot)\n"
+	contents += tabtab + "oprot.writeMessageEnd()\n"
+	contents += tabtab + "await self._transport.send(buffer.getvalue())\n\n"
 
 	return contents
 }

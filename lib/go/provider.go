@@ -4,21 +4,31 @@ package frugal
 // scopes. It does this by wrapping an FScopeTransportFactory and
 // FProtocolFactory.
 type FScopeProvider struct {
-	scopeTransportFactory FScopeTransportFactory
+	//scopeTransportFactory FScopeTransportFactory
+	publisherTransportFactory FPublisherTransportFactory
+	subscriberTransportFactory FSubscriberTransportFactory
 	protocolFactory       *FProtocolFactory
 }
 
 // NewFScopeProvider creates a new FScopeProvider using the given factories.
-func NewFScopeProvider(t FScopeTransportFactory, p *FProtocolFactory) *FScopeProvider {
+func NewFScopeProvider(pub FPublisherTransportFactory, sub FSubscriberTransportFactory, prot *FProtocolFactory) *FScopeProvider {
 	return &FScopeProvider{
-		scopeTransportFactory: t,
-		protocolFactory:       p,
+		publisherTransportFactory: pub,
+		subscriberTransportFactory: sub,
+		protocolFactory: prot,
 	}
 }
 
-// New returns a new FScopeTransport and TProtocol used by pub/sub scopes.
-func (p *FScopeProvider) New() (FScopeTransport, *FProtocol) {
-	transport := p.scopeTransportFactory.GetTransport()
-	protocol := p.protocolFactory.GetProtocol(transport)
-	return transport, protocol
+// NewPublisher returns a new FPublisherTransport and FProtocol used by
+// scope publishers.
+func (p *FScopeProvider) NewPublisher() (FPublisherTransport, *FProtocolFactory) {
+	transport := p.publisherTransportFactory.GetTransport()
+	return transport, p.protocolFactory
+}
+
+// NewSubscriber returns a new FSubscriberTransport and FProtocolFactory used by
+// scope subscribers.
+func (p *FScopeProvider) NewSubscriber() (FSubscriberTransport, *FProtocolFactory) {
+	transport := p.subscriberTransportFactory.GetTransport()
+	return transport, p.protocolFactory
 }

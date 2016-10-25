@@ -1,8 +1,6 @@
 package frugal
 
 import (
-	"sync"
-
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
 
@@ -12,23 +10,19 @@ type FSimpleServer struct {
 	quit             chan struct{}
 	processorFactory FProcessorFactory
 	serverTransport  thrift.TServerTransport
-	transportFactory FTransportFactory
 	protocolFactory  *FProtocolFactory
-	waterMu          sync.RWMutex
 }
 
-// NewFSimpleServerFactory4 creates a new FSimpleServer which is a simple
-// FServer that starts a goroutine for each connection.
-func NewFSimpleServerFactory4(
+// NewFSimpleServer creates a new FSimpleServer which is a simple FServer that
+// starts a goroutine for each connection.
+func NewFSimpleServer(
 	processorFactory FProcessorFactory,
 	serverTransport thrift.TServerTransport,
-	transportFactory FTransportFactory,
 	protocolFactory *FProtocolFactory) *FSimpleServer {
 
 	return &FSimpleServer{
 		processorFactory: processorFactory,
 		serverTransport:  serverTransport,
-		transportFactory: transportFactory,
 		protocolFactory:  protocolFactory,
 		quit:             make(chan struct{}, 1),
 	}
@@ -78,15 +72,23 @@ func (p *FSimpleServer) Stop() error {
 }
 
 func (p *FSimpleServer) accept(client thrift.TTransport) error {
-	processor := p.processorFactory.GetProcessor(client)
-	transport := p.transportFactory.GetTransport(client)
-	protocol := p.protocolFactory.GetProtocol(transport)
-	transport.SetRegistry(NewServerRegistry(processor, p.protocolFactory, protocol))
-
-	if err := transport.Open(); err != nil {
-		return err
-	}
+	framed := NewTFramedTransport(client)
+	iprot := p.protocolFactory.GetProtocol(framed)
+	oprot := p.protocolFactory.GetProtocol(framed)
+	processor := p.processorFactory.GetProcessor(framed)
 
 	logger().Debug("frugal: client connection accepted")
-	return nil
+
+	for {
+		err := processor.Process(iprot, oprot)
+		if err, ok := err.(thrift.TTransportException); ok && err.TypeId() == thrift.END_OF_FILE {
+			return nil
+		} else if err != nil {
+			logger().Printf("error processing request: %s", err)
+			return err
+		}
+		if err, ok := err.(thrift.TApplicationException); ok && err.TypeId() == thrift.UNKNOWN_METHOD {
+			continue
+		}
+	}
 }

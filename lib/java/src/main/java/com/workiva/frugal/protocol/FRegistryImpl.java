@@ -13,17 +13,16 @@ import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
- * FClientRegistry is intended for use only by Frugal clients.
- * This is only to be used by generated code.
+ * FRegistryImpl is intended for use only by Frugal clients.
  */
-public class FClientRegistry implements FRegistry {
+public class FRegistryImpl implements FRegistry {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FClientRegistry.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FRegistryImpl.class);
     private static final AtomicLong NEXT_OP_ID = new AtomicLong(0);
 
     protected Map<Long, Pair<FAsyncCallback, Thread>> handlers;
 
-    public FClientRegistry() {
+    public FRegistryImpl() {
         handlers = new ConcurrentHashMap<>();
     }
 

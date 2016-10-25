@@ -53,9 +53,6 @@ class FHttpTransport(FRegistryTransport):
         Write the current buffer over the network and execute the callback set
         in the registry with the response.
         """
-        if len(data) == 4:
-            return
-
         if len(data) > self._max_message_size > 0:
             raise FMessageSizeException()
 

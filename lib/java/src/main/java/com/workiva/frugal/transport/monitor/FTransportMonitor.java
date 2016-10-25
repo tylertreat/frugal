@@ -5,7 +5,7 @@ package com.workiva.frugal.transport.monitor;
  * which can be used to add logic around FTransport events, such as unexpected
  * disconnects, expected disconnects, failed reconnects, and successful
  * reconnects.
- * <p/>
+ * <p>
  * Most Frugal implementations include a base FTransportMonitor which implements
  * basic reconnect logic with backoffs and max attempts. This can be extended or
  * reimplemented to provide custom logic.

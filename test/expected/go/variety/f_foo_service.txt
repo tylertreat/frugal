@@ -6,7 +6,6 @@ package variety
 import (
 	"bytes"
 	"fmt"
-	"sync"
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -45,18 +44,15 @@ type FFooClient struct {
 	*actual_base.FBaseFooClient
 	transport       frugal.FTransport
 	protocolFactory *frugal.FProtocolFactory
-	oprot           *frugal.FProtocol
 	methods         map[string]*frugal.Method
 }
 
 func NewFFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FFooClient {
-	t.SetRegistry(frugal.NewFClientRegistry())
 	methods := make(map[string]*frugal.Method)
 	client := &FFooClient{
 		FBaseFooClient:  actual_base.NewFBaseFooClient(t, p, middleware...),
 		transport:       t,
 		protocolFactory: p,
-		oprot:           p.GetProtocol(t),
 		methods:         methods,
 	}
 	methods["ping"] = frugal.NewMethod(client, client.ping, "ping", middleware)
@@ -89,29 +85,28 @@ func (f *FFooClient) ping(ctx *frugal.FContext) (err error) {
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.GetWriteMutex().Lock()
-	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.GetWriteMutex().Unlock()
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageBegin("ping", thrift.CALL, 0); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageBegin("ping", thrift.CALL, 0); err != nil {
 		return
 	}
 	args := FooPingArgs{}
-	if err = args.Write(f.oprot); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = args.Write(oprot); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
-	if err = f.oprot.Flush(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.Flush(); err != nil {
 		return
 	}
-	f.GetWriteMutex().Unlock()
+	data := buffer.Bytes()
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -201,13 +196,12 @@ func (f *FFooClient) blah(ctx *frugal.FContext, num int32, str string, event *Ev
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.GetWriteMutex().Lock()
-	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.GetWriteMutex().Unlock()
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageBegin("blah", thrift.CALL, 0); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageBegin("blah", thrift.CALL, 0); err != nil {
 		return
 	}
 	args := FooBlahArgs{
@@ -215,19 +209,19 @@ func (f *FFooClient) blah(ctx *frugal.FContext, num int32, str string, event *Ev
 		Str:   str,
 		Event: event,
 	}
-	if err = args.Write(f.oprot); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = args.Write(oprot); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
-	if err = f.oprot.Flush(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.Flush(); err != nil {
 		return
 	}
-	f.GetWriteMutex().Unlock()
+	data := buffer.Bytes()
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -318,32 +312,31 @@ func (f *FFooClient) OneWay(ctx *frugal.FContext, id ID, req Request) (err error
 }
 
 func (f *FFooClient) oneWay(ctx *frugal.FContext, id ID, req Request) (err error) {
-	f.GetWriteMutex().Lock()
-	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.GetWriteMutex().Unlock()
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageBegin("oneWay", thrift.ONEWAY, 0); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageBegin("oneWay", thrift.ONEWAY, 0); err != nil {
 		return
 	}
 	args := FooOneWayArgs{
 		ID:  id,
 		Req: req,
 	}
-	if err = args.Write(f.oprot); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = args.Write(oprot); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
-	if err = f.oprot.Flush(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.Flush(); err != nil {
 		return
 	}
-	f.GetWriteMutex().Unlock()
+	data := buffer.Bytes()
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	return
 }
@@ -367,32 +360,31 @@ func (f *FFooClient) bin_method(ctx *frugal.FContext, bin []byte, str string) (r
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.GetWriteMutex().Lock()
-	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.GetWriteMutex().Unlock()
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageBegin("bin_method", thrift.CALL, 0); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageBegin("bin_method", thrift.CALL, 0); err != nil {
 		return
 	}
 	args := FooBinMethodArgs{
 		Bin: bin,
 		Str: str,
 	}
-	if err = args.Write(f.oprot); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = args.Write(oprot); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
-	if err = f.oprot.Flush(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.Flush(); err != nil {
 		return
 	}
-	f.GetWriteMutex().Unlock()
+	data := buffer.Bytes()
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -485,13 +477,12 @@ func (f *FFooClient) param_modifiers(ctx *frugal.FContext, opt_num int32, defaul
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.GetWriteMutex().Lock()
-	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.GetWriteMutex().Unlock()
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageBegin("param_modifiers", thrift.CALL, 0); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageBegin("param_modifiers", thrift.CALL, 0); err != nil {
 		return
 	}
 	args := FooParamModifiersArgs{
@@ -499,19 +490,19 @@ func (f *FFooClient) param_modifiers(ctx *frugal.FContext, opt_num int32, defaul
 		DefaultNum: default_num,
 		ReqNum:     req_num,
 	}
-	if err = args.Write(f.oprot); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = args.Write(oprot); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
-	if err = f.oprot.Flush(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.Flush(); err != nil {
 		return
 	}
-	f.GetWriteMutex().Unlock()
+	data := buffer.Bytes()
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -600,32 +591,31 @@ func (f *FFooClient) underlying_types_test(ctx *frugal.FContext, list_type []ID,
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.GetWriteMutex().Lock()
-	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.GetWriteMutex().Unlock()
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageBegin("underlying_types_test", thrift.CALL, 0); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageBegin("underlying_types_test", thrift.CALL, 0); err != nil {
 		return
 	}
 	args := FooUnderlyingTypesTestArgs{
 		ListType: list_type,
 		SetType:  set_type,
 	}
-	if err = args.Write(f.oprot); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = args.Write(oprot); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
-	if err = f.oprot.Flush(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.Flush(); err != nil {
 		return
 	}
-	f.GetWriteMutex().Unlock()
+	data := buffer.Bytes()
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -714,29 +704,28 @@ func (f *FFooClient) getThing(ctx *frugal.FContext) (r *validStructs.Thing, err 
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.GetWriteMutex().Lock()
-	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.GetWriteMutex().Unlock()
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageBegin("getThing", thrift.CALL, 0); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageBegin("getThing", thrift.CALL, 0); err != nil {
 		return
 	}
 	args := FooGetThingArgs{}
-	if err = args.Write(f.oprot); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = args.Write(oprot); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
-	if err = f.oprot.Flush(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.Flush(); err != nil {
 		return
 	}
-	f.GetWriteMutex().Unlock()
+	data := buffer.Bytes()
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -825,29 +814,28 @@ func (f *FFooClient) getMyInt(ctx *frugal.FContext) (r ValidTypes.MyInt, err err
 		return
 	}
 	defer f.transport.Unregister(ctx)
-	f.GetWriteMutex().Lock()
-	if err = f.oprot.WriteRequestHeader(ctx); err != nil {
-		f.GetWriteMutex().Unlock()
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageBegin("getMyInt", thrift.CALL, 0); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageBegin("getMyInt", thrift.CALL, 0); err != nil {
 		return
 	}
 	args := FooGetMyIntArgs{}
-	if err = args.Write(f.oprot); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = args.Write(oprot); err != nil {
 		return
 	}
-	if err = f.oprot.WriteMessageEnd(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.WriteMessageEnd(); err != nil {
 		return
 	}
-	if err = f.oprot.Flush(); err != nil {
-		f.GetWriteMutex().Unlock()
+	if err = oprot.Flush(); err != nil {
 		return
 	}
-	f.GetWriteMutex().Unlock()
+	data := buffer.Bytes()
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
 
 	select {
 	case err = <-errorC:
@@ -923,20 +911,19 @@ type FFooProcessor struct {
 
 func NewFFooProcessor(handler FFoo, middleware ...frugal.ServiceMiddleware) *FFooProcessor {
 	p := &FFooProcessor{actual_base.NewFBaseFooProcessor(handler, middleware...)}
-	p.AddToProcessorMap("ping", &fooFPing{handler: frugal.NewMethod(handler, handler.Ping, "Ping", middleware), writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("blah", &fooFBlah{handler: frugal.NewMethod(handler, handler.Blah, "Blah", middleware), writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("oneWay", &fooFOneWay{handler: frugal.NewMethod(handler, handler.OneWay, "OneWay", middleware), writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("bin_method", &fooFBinMethod{handler: frugal.NewMethod(handler, handler.BinMethod, "BinMethod", middleware), writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("param_modifiers", &fooFParamModifiers{handler: frugal.NewMethod(handler, handler.ParamModifiers, "ParamModifiers", middleware), writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("underlying_types_test", &fooFUnderlyingTypesTest{handler: frugal.NewMethod(handler, handler.UnderlyingTypesTest, "UnderlyingTypesTest", middleware), writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("getThing", &fooFGetThing{handler: frugal.NewMethod(handler, handler.GetThing, "GetThing", middleware), writeMu: p.GetWriteMutex()})
-	p.AddToProcessorMap("getMyInt", &fooFGetMyInt{handler: frugal.NewMethod(handler, handler.GetMyInt, "GetMyInt", middleware), writeMu: p.GetWriteMutex()})
+	p.AddToProcessorMap("ping", &fooFPing{handler: frugal.NewMethod(handler, handler.Ping, "Ping", middleware)})
+	p.AddToProcessorMap("blah", &fooFBlah{handler: frugal.NewMethod(handler, handler.Blah, "Blah", middleware)})
+	p.AddToProcessorMap("oneWay", &fooFOneWay{handler: frugal.NewMethod(handler, handler.OneWay, "OneWay", middleware)})
+	p.AddToProcessorMap("bin_method", &fooFBinMethod{handler: frugal.NewMethod(handler, handler.BinMethod, "BinMethod", middleware)})
+	p.AddToProcessorMap("param_modifiers", &fooFParamModifiers{handler: frugal.NewMethod(handler, handler.ParamModifiers, "ParamModifiers", middleware)})
+	p.AddToProcessorMap("underlying_types_test", &fooFUnderlyingTypesTest{handler: frugal.NewMethod(handler, handler.UnderlyingTypesTest, "UnderlyingTypesTest", middleware)})
+	p.AddToProcessorMap("getThing", &fooFGetThing{handler: frugal.NewMethod(handler, handler.GetThing, "GetThing", middleware)})
+	p.AddToProcessorMap("getMyInt", &fooFGetMyInt{handler: frugal.NewMethod(handler, handler.GetMyInt, "GetMyInt", middleware)})
 	return p
 }
 
 type fooFPing struct {
 	handler *frugal.Method
-	writeMu *sync.Mutex
 }
 
 func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
@@ -944,9 +931,7 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		p.writeMu.Lock()
 		fooWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "ping", err.Error())
-		p.writeMu.Unlock()
 		return err
 	}
 
@@ -961,13 +946,9 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 		err2 = ret[0].(error)
 	}
 	if err2 != nil {
-		p.writeMu.Lock()
 		fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "ping", "Internal error processing ping: "+err2.Error())
-		p.writeMu.Unlock()
 		return err2
 	}
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
 			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
@@ -1008,7 +989,6 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 
 type fooFBlah struct {
 	handler *frugal.Method
-	writeMu *sync.Mutex
 }
 
 func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
@@ -1016,9 +996,7 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		p.writeMu.Lock()
 		fooWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "blah", err.Error())
-		p.writeMu.Unlock()
 		return err
 	}
 
@@ -1041,16 +1019,12 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 		case *actual_base.APIException:
 			result.API = v
 		default:
-			p.writeMu.Lock()
 			fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "blah", "Internal error processing blah: "+err2.Error())
-			p.writeMu.Unlock()
 			return err2
 		}
 	} else {
 		result.Success = &retval
 	}
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
 			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
@@ -1091,7 +1065,6 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 
 type fooFOneWay struct {
 	handler *frugal.Method
-	writeMu *sync.Mutex
 }
 
 func (p *fooFOneWay) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
@@ -1119,7 +1092,6 @@ func (p *fooFOneWay) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtoco
 
 type fooFBinMethod struct {
 	handler *frugal.Method
-	writeMu *sync.Mutex
 }
 
 func (p *fooFBinMethod) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
@@ -1127,9 +1099,7 @@ func (p *fooFBinMethod) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProt
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		p.writeMu.Lock()
 		fooWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "bin_method", err.Error())
-		p.writeMu.Unlock()
 		return err
 	}
 
@@ -1150,16 +1120,12 @@ func (p *fooFBinMethod) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProt
 		case *actual_base.APIException:
 			result.API = v
 		default:
-			p.writeMu.Lock()
 			fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "bin_method", "Internal error processing bin_method: "+err2.Error())
-			p.writeMu.Unlock()
 			return err2
 		}
 	} else {
 		result.Success = retval
 	}
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
 			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "bin_method", "response too large: "+err2.Error())
@@ -1200,7 +1166,6 @@ func (p *fooFBinMethod) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProt
 
 type fooFParamModifiers struct {
 	handler *frugal.Method
-	writeMu *sync.Mutex
 }
 
 func (p *fooFParamModifiers) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
@@ -1208,9 +1173,7 @@ func (p *fooFParamModifiers) Process(ctx *frugal.FContext, iprot, oprot *frugal.
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		p.writeMu.Lock()
 		fooWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "param_modifiers", err.Error())
-		p.writeMu.Unlock()
 		return err
 	}
 
@@ -1227,15 +1190,11 @@ func (p *fooFParamModifiers) Process(ctx *frugal.FContext, iprot, oprot *frugal.
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		p.writeMu.Lock()
 		fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "param_modifiers", "Internal error processing param_modifiers: "+err2.Error())
-		p.writeMu.Unlock()
 		return err2
 	} else {
 		result.Success = &retval
 	}
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
 			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: "+err2.Error())
@@ -1276,7 +1235,6 @@ func (p *fooFParamModifiers) Process(ctx *frugal.FContext, iprot, oprot *frugal.
 
 type fooFUnderlyingTypesTest struct {
 	handler *frugal.Method
-	writeMu *sync.Mutex
 }
 
 func (p *fooFUnderlyingTypesTest) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
@@ -1284,9 +1242,7 @@ func (p *fooFUnderlyingTypesTest) Process(ctx *frugal.FContext, iprot, oprot *fr
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		p.writeMu.Lock()
 		fooWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "underlying_types_test", err.Error())
-		p.writeMu.Unlock()
 		return err
 	}
 
@@ -1303,15 +1259,11 @@ func (p *fooFUnderlyingTypesTest) Process(ctx *frugal.FContext, iprot, oprot *fr
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		p.writeMu.Lock()
 		fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "underlying_types_test", "Internal error processing underlying_types_test: "+err2.Error())
-		p.writeMu.Unlock()
 		return err2
 	} else {
 		result.Success = retval
 	}
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
 			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: "+err2.Error())
@@ -1352,7 +1304,6 @@ func (p *fooFUnderlyingTypesTest) Process(ctx *frugal.FContext, iprot, oprot *fr
 
 type fooFGetThing struct {
 	handler *frugal.Method
-	writeMu *sync.Mutex
 }
 
 func (p *fooFGetThing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
@@ -1360,9 +1311,7 @@ func (p *fooFGetThing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		p.writeMu.Lock()
 		fooWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "getThing", err.Error())
-		p.writeMu.Unlock()
 		return err
 	}
 
@@ -1379,15 +1328,11 @@ func (p *fooFGetThing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		p.writeMu.Lock()
 		fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "getThing", "Internal error processing getThing: "+err2.Error())
-		p.writeMu.Unlock()
 		return err2
 	} else {
 		result.Success = retval
 	}
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
 			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getThing", "response too large: "+err2.Error())
@@ -1428,7 +1373,6 @@ func (p *fooFGetThing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 
 type fooFGetMyInt struct {
 	handler *frugal.Method
-	writeMu *sync.Mutex
 }
 
 func (p *fooFGetMyInt) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
@@ -1436,9 +1380,7 @@ func (p *fooFGetMyInt) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 	var err error
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
-		p.writeMu.Lock()
 		fooWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "getMyInt", err.Error())
-		p.writeMu.Unlock()
 		return err
 	}
 
@@ -1455,15 +1397,11 @@ func (p *fooFGetMyInt) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		p.writeMu.Lock()
 		fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "getMyInt", "Internal error processing getMyInt: "+err2.Error())
-		p.writeMu.Unlock()
 		return err2
 	} else {
 		result.Success = &retval
 	}
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
 			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getMyInt", "response too large: "+err2.Error())

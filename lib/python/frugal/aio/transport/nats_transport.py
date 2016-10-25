@@ -65,9 +65,6 @@ class FNatsTransport(FRegistryTransport):
             raise TTransportException(TTransportException.NOT_OPEN,
                                       'Transport is not open')
 
-        if len(data) == 4:
-            return
-
         await self._nats_client.publish_request(
             self._subject,
             self._inbox,

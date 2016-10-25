@@ -40,8 +40,9 @@ func StartServer(
 		Subscribe to events, publish response upon receipt
 	*/
 	go func() {
-		factory := frugal.NewFNatsScopeTransportFactory(conn)
-		provider := frugal.NewFScopeProvider(factory, frugal.NewFProtocolFactory(protocolFactory))
+		pfactory := frugal.NewFNatsPublisherTransportFactory(conn)
+		sfactory := frugal.NewFNatsSubscriberTransportFactory(conn)
+		provider := frugal.NewFScopeProvider(pfactory, sfactory, frugal.NewFProtocolFactory(protocolFactory))
 		subscriber := frugaltest.NewEventsSubscriber(provider)
 
 		// TODO: Document SubscribeEventCreated "user" cannot contain spaces
@@ -90,7 +91,6 @@ func StartServer(
 	case "http":
 		http.HandleFunc("/",
 			frugal.NewFrugalHandlerFunc(processor,
-				frugal.NewFProtocolFactory(protocolFactory),
 				frugal.NewFProtocolFactory(protocolFactory)))
 		server = &httpServer{hostPort: hostPort}
 	}

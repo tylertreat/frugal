@@ -58,8 +58,9 @@ func StartClient(
 			panic(err)
 		}
 
-		factory := frugal.NewFNatsScopeTransportFactory(conn)
-		provider := frugal.NewFScopeProvider(factory, frugal.NewFProtocolFactory(protocolFactory))
+		pfactory := frugal.NewFNatsPublisherTransportFactory(conn)
+		sfactory := frugal.NewFNatsSubscriberTransportFactory(conn)
+		provider := frugal.NewFScopeProvider(pfactory, sfactory, frugal.NewFProtocolFactory(protocolFactory))
 		publisher := frugaltest.NewEventsPublisher(provider)
 		if err := publisher.Open(); err != nil {
 			panic(err)
@@ -84,7 +85,7 @@ func StartClient(
 		timeout := time.After(time.Second * 3)
 
 		select {
-		case <-resp:  // Response received is logged in the subscribe
+		case <-resp: // Response received is logged in the subscribe
 		case <-timeout:
 			log.Fatal("Pub/Sub response timed out!")
 		}
@@ -97,7 +98,7 @@ func StartClient(
 	case "stateless":
 		trans = frugal.NewFNatsTransport(conn, fmt.Sprintf("%d", port), "")
 	case "http":
-		trans = frugal.NewFHttpTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).Build()
+		trans = frugal.NewFHTTPTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).Build()
 	default:
 		return nil, fmt.Errorf("Invalid transport specified %s", transport)
 	}

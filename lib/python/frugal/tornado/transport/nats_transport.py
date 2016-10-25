@@ -66,9 +66,6 @@ class FNatsTransport(FTornadoTransport):
         if not self.is_open():
             raise TTransportException(TTransportException.NOT_OPEN, _NOT_OPEN)
 
-        if not data or len(data) <= 4:
-            return
-
         subject = self._subject
         inbox = self._inbox
         yield self._nats_client.publish_request(subject, inbox, data)
