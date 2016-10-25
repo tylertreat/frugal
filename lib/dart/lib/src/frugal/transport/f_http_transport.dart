@@ -3,10 +3,10 @@ part of frugal.src.frugal;
 /// An [FTransport] that makes frugal requests via HTTP.
 class FHttpTransport extends FTransport {
   /// HTTP status code for an unauthorized reqeuest.
-  static const int unauthorized = 401;
+  static const int UNAUTHORIZED = 401;
 
   /// HTTP status code for requesting too much data.
-  static const int requestEntityTooLarge = 413;
+  static const int REQUEST_ENTITY_TOO_LARGE = 413;
 
   final Logger _log = new Logger('FHttpTransport');
 
@@ -24,6 +24,13 @@ class FHttpTransport extends FTransport {
 
   /// Create an [FHttpTransport] instance with the given w_transport [Client],
   /// uri, and optional size restrictions, headers, and [FRegistry].
+  ///
+  /// If specifying headers, note that the
+  ///   * content-type
+  ///   * content-transfer-encoding
+  ///   * accept
+  ///   * x-frugal-payload-limit
+  /// headers will be overwritten.
   FHttpTransport(this.client, this.uri,
       {int requestSizeLimit: 0,
       this.responseSizeLimit: 0,
@@ -74,11 +81,11 @@ class FHttpTransport extends FTransport {
       if (ex.response == null) {
         throw new TTransportError(TTransportErrorType.UNKNOWN, ex.message);
       }
-      if (ex.response.status == unauthorized) {
+      if (ex.response.status == UNAUTHORIZED) {
         throw new TTransportError(TTransportErrorType.UNKNOWN,
             'Frugal http request failed - unauthorized ${ex.message}');
       }
-      if (ex.response.status == requestEntityTooLarge) {
+      if (ex.response.status == REQUEST_ENTITY_TOO_LARGE) {
         throw new FMessageSizeError.response();
       }
       throw new TTransportError(TTransportErrorType.UNKNOWN, ex.message);

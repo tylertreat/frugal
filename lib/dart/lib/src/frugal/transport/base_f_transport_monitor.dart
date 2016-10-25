@@ -6,13 +6,13 @@ part of frugal.src.frugal;
 /// callbacks.
 class BaseFTransportMonitor extends FTransportMonitor {
   /// Default maximum reopen attempts.
-  static const int defaultMaxReopenAttempts = 60;
+  static const int DEFAULT_MAX_REOPEN_ATTEMPTS = 60;
 
   /// Default number of milliseconds to wait before reopening.
-  static const int defaultInitialWait = 2000;
+  static const int DEFAULT_INITIAL_WAIT = 2000;
 
   /// Default maximum amount of milliseconds to wait between reopen attempts.
-  static const int defaultMaxWait = 2000;
+  static const int DEFAULT_MAX_WAIT = 2000;
 
   int _maxReopenAttempts;
   int _initialWait;
@@ -25,9 +25,9 @@ class BaseFTransportMonitor extends FTransportMonitor {
 
   /// Create a [BaseFTransportMonitor] with default parameters.
   BaseFTransportMonitor(
-      {maxReopenAttempts: defaultMaxReopenAttempts,
-      initialWait: defaultInitialWait,
-      maxWait: defaultMaxWait}) {
+      {maxReopenAttempts: DEFAULT_MAX_REOPEN_ATTEMPTS,
+      initialWait: DEFAULT_INITIAL_WAIT,
+      maxWait: DEFAULT_MAX_WAIT}) {
     this._maxReopenAttempts = maxReopenAttempts;
     this._initialWait = initialWait;
     this._maxWait = maxWait;

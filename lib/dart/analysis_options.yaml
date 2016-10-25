@@ -1,4 +1,7 @@
 analyzer:
+  exclude:
+    - test/internal/f_obj_to_json_test.dart
+    - tool/dev.dart
   strong-mode: true
 
 linter:
@@ -24,14 +27,12 @@ linter:
     - avoid_return_types_on_setters
     - await_only_futures
     - camel_case_types
-    - constant_identifier_names
     - empty_catches
     - empty_constructor_bodies
     - implementation_imports
     - library_names
     - library_prefixes
     - non_constant_identifier_names
-    - one_member_abstracts
     - only_throw_errors
     - overridden_fields
     - package_prefixed_library_names

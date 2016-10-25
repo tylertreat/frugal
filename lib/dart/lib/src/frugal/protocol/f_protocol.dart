@@ -4,7 +4,6 @@ part of frugal.src.frugal;
 /// protocol used for messages, such as JSON, binary, etc. [FProtocol] actually
 /// extends [TProtocol] and adds support for serializing [FContext]. In
 /// practice, [FProtocol] simply wraps a [TProtocol] and uses Thrift's
-///
 /// built-in serialization. [FContext] is encoded before the [TProtocol]
 /// serialization of the message using a simple binary protocol. See the
 /// protocol documentation for more details.

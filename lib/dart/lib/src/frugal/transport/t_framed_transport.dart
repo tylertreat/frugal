@@ -4,21 +4,17 @@ part of frugal.src.frugal;
 /// entire frames. Disallows direct reads.
 class _TFramedTransport extends TTransport {
   final Logger log = new Logger('frugal.transport._TFramedTransport');
-  static const int headerByteCount = 4;
-  final Uint8List writeHeaderBytes = new Uint8List(headerByteCount);
+  static const int _headerByteCount = 4;
 
   final TSocket socket;
   final List<int> _writeBuffer = [];
   final List<int> _readBuffer = [];
   final List<int> _readHeaderBytes = [];
   int _frameSize;
-
-  StreamController<_FrameWrapper> _frameStream = new StreamController();
-
   bool _isOpen = false;
 
-  final Uint8List headerBytes = new Uint8List(headerByteCount);
-
+  StreamController<_FrameWrapper> _frameStream = new StreamController();
+  final Uint8List _headerBytes = new Uint8List(_headerByteCount);
   StreamSubscription _messageSub;
 
   /// Instantiate new [TFramedTransport] for the given [TSocket].
@@ -68,7 +64,7 @@ class _TFramedTransport extends TTransport {
   }
 
   /// Closes the transport.
-  /// Will reset the write/read buffers and socket onMessagelistener.
+  /// Will reset the write/read buffers and socket onMessage listener.
   /// Will also close the underlying [TSocket] (if not already closed).
   @override
   Future close() async {
@@ -76,8 +72,7 @@ class _TFramedTransport extends TTransport {
     await socket.close();
   }
 
-  /// Direct reading is not allowed. To consume read data listen
-  /// to [onFrame].
+  /// Direct reading is not allowed. To consume read data listen to [onFrame].
   @override
   int read(Uint8List buffer, int offset, int length) {
     throw new TTransportError(TTransportErrorType.UNKNOWN,
@@ -89,13 +84,13 @@ class _TFramedTransport extends TTransport {
     var offset = 0;
     if (_frameSize == null) {
       // Not enough bytes to get the frame length. Add these and move on.
-      if ((_readHeaderBytes.length + list.length) < headerByteCount) {
+      if ((_readHeaderBytes.length + list.length) < _headerByteCount) {
         _readHeaderBytes.addAll(list);
         return;
       }
 
       // Get the frame size
-      var headerBytesToGet = headerByteCount - _readHeaderBytes.length;
+      var headerBytesToGet = _headerByteCount - _readHeaderBytes.length;
       _readHeaderBytes.addAll(list.getRange(0, headerBytesToGet));
       var frameBuffer = new Uint8List.fromList(_readHeaderBytes).buffer;
       _frameSize = frameBuffer.asByteData().getInt32(0);
@@ -144,8 +139,8 @@ class _TFramedTransport extends TTransport {
   @override
   Future flush() {
     int length = _writeBuffer.length;
-    headerBytes.buffer.asByteData().setUint32(0, length);
-    _writeBuffer.insertAll(0, headerBytes);
+    _headerBytes.buffer.asByteData().setUint32(0, length);
+    _writeBuffer.insertAll(0, _headerBytes);
     var buff = new Uint8List.fromList(_writeBuffer);
     _writeBuffer.clear();
     return new Future.value(socket.send(buff));

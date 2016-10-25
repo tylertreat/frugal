@@ -12,6 +12,7 @@ class _Pair<A, B> {
 
 /// This is an internal-only class. Don't use it!
 class Headers {
+  /// Frugal protocol version V0
   static const _v0 = 0x00;
 
   /// Encode the headers

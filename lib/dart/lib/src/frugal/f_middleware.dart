@@ -6,10 +6,10 @@ part of frugal.src.frugal;
 typedef Future InvocationHandler(
     String serviceName, String methodName, List<Object> args);
 
-/// Used to implement interceptor logic around API calls. This can be used, for
+/// Implements interceptor logic around API calls. This can be used, for
 /// example, to implement retry policies on service calls, logging, telemetry,
-/// or authentication and authorization. Middleware me be applied to both RPC
-/// services and pub/sub scopes. Middleware returns an [InvocationHandler] which
+/// or authentication and authorization. Middleware may be applied to either RPC
+/// services or pub/sub scopes. Middleware returns an [InvocationHandler] which
 /// proxies the given [InvocationHandler].
 typedef InvocationHandler Middleware(InvocationHandler handler);
 

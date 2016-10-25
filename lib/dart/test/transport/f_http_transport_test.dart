@@ -170,7 +170,7 @@ void main() {
     test('Test transport receives response too large error on 413 response',
         () async {
       Response response =
-          new MockResponse(FHttpTransport.requestEntityTooLarge);
+          new MockResponse(FHttpTransport.REQUEST_ENTITY_TOO_LARGE);
       MockTransports.http.expect('POST', transport.uri, respondWith: response);
       expect(transport.send(utf8Codec.encode('my request')),
           throwsA(new isInstanceOf<FMessageSizeError>()));

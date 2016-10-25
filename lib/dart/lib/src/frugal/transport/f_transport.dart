@@ -1,10 +1,10 @@
 part of frugal.src.frugal;
 
-/// Comparable to Thrift's TTransport in that it represent the transport layer
-/// for frugal clients. However, frugal is callback based and sends only framed
-/// data. Therefore, instead of exposing read, write, and flush, the transport
-/// has a simple [send] method that sends framed frugal messages. To handle
-/// callback data, also has an [FRegistry], so it provides methods for
+/// Comparable to Thrift's [TTransport] in that it represents the transport
+/// layer for frugal clients. However, frugal is callback based and sends only
+/// framed data. Therefore, instead of exposing read, write, and flush, the
+/// transport has a simple [send] method that sends framed frugal messages. To
+/// handle callback data, also has an [FRegistry], so it provides methods for
 /// registering and unregistering an [FAsyncCallback] to an [FContext].
 abstract class FTransport {
   /// Indicates the request was too large for the transport.
