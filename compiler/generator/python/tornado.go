@@ -292,7 +292,6 @@ func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	method += tabtab + "method = Method(handler, self._middleware)\n\n"
 
 	method += tabtab + "def callback(transport):\n"
-	method += tabtabtab+"print('handling callback')\n"
 	method += tabtabtab + "iprot = protocol_factory.get_protocol(transport)\n"
 	method += tabtabtab + "ctx = iprot.read_request_headers()\n"
 	method += tabtabtab + "mname, _, _ = iprot.readMessageBegin()\n"

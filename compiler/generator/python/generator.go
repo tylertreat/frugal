@@ -907,7 +907,7 @@ func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operat
 	method += tabtab + "oprot.writeMessageEnd()\n"
 
 	method += tabtab
-	switch getAsyncOpt(g.Options) {
+	switch asyncOpt {
 	case tornado:
 		method += "yield "
 	case asyncio:
