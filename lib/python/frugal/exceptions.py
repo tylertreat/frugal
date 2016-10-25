@@ -50,9 +50,9 @@ class FRateLimitException(TApplicationException):
 
     def __init__(self, message="rate limit exceeded"):
         """
-            Args:
-                message: exception message to provide with the rate limit error.
-                 Defaults to "rate limit exceeded".
+        Args:
+            message: exception message to provide with the rate limit error.
+            Defaults to "rate limit exceeded".
         """
         super(FRateLimitException, self).__init__(type=FRateLimitException.RATE_LIMIT_EXCEEDED, message=message)
 
