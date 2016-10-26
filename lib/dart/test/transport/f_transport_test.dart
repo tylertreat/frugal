@@ -10,21 +10,21 @@ void main() {
   group('FTransport', () {
     int requestSizeLimit = 5;
     MockFRegistry registry;
-    FTransportImpl transport;
+    _FTransportImpl transport;
     FContext context;
 
     setUp(() {
       registry = new MockFRegistry();
-      transport = new FTransportImpl(requestSizeLimit, registry);
+      transport = new _FTransportImpl(requestSizeLimit, registry);
       context = new FContext();
     });
 
     test('test register/unregister call through to registry', () async {
       expect(registry.context, isNull);
       expect(registry.callback, isNull);
-      transport.register(context, callback);
+      transport.register(context, _callback);
       expect(registry.context, equals(context));
-      expect(registry.callback, equals(callback));
+      expect(registry.callback, equals(_callback));
       transport.unregister(context);
       expect(registry.context, isNull);
       expect(registry.callback, isNull);
@@ -67,16 +67,16 @@ void main() {
   });
 }
 
-void callback(TTransport transport) {
+void _callback(TTransport transport) {
   return;
 }
 
-class FTransportImpl extends FTransport {
+class _FTransportImpl extends FTransport {
   // Default implementations of non-implemented methods
   List<Error> errors = [];
   int openCalls = 0;
 
-  FTransportImpl(int requestSizeLimit, FRegistry registry)
+  _FTransportImpl(int requestSizeLimit, FRegistry registry)
       : super(requestSizeLimit: requestSizeLimit, registry: registry);
 
   @override
@@ -93,29 +93,44 @@ class FTransportImpl extends FTransport {
     openCalls++;
   }
 
+  @override
   bool get isOpen => false;
 }
 
+/// Mock registry for testing.
 class MockFRegistry extends FRegistry {
+  /// Data excuted by the registry.
   List<Uint8List> data;
+
+  /// Context registered to the registry.
   FContext context;
+
+  /// Callback registered to the registry.
   FAsyncCallback callback;
+
+  /// Execute completer.
   Completer executeCompleter;
+
+  /// Error to be thrown on execute.
   Error executeError;
 
+  /// Create a new mock.
   MockFRegistry() {
     data = new List();
   }
 
+  /// Initialize the execute completer.
   void initCompleter() {
     executeCompleter = new Completer();
   }
 
+  @override
   void register(FContext ctx, FAsyncCallback callback) {
     this.context = ctx;
     this.callback = callback;
   }
 
+  @override
   void unregister(FContext ctx) {
     if (this.context == ctx) {
       this.context = null;
@@ -123,6 +138,7 @@ class MockFRegistry extends FRegistry {
     }
   }
 
+  @override
   void execute(Uint8List data) {
     this.data.add(data);
     if (executeCompleter != null && !executeCompleter.isCompleted) {
@@ -134,6 +150,5 @@ class MockFRegistry extends FRegistry {
   }
 }
 
-class MockTransportMonitor extends Mock implements FTransportMonitor {
-  noSuchMethod(i) => super.noSuchMethod(i);
-}
+/// Mock transport monitor.
+class MockTransportMonitor extends Mock implements FTransportMonitor {}

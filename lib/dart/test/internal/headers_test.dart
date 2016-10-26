@@ -1,9 +1,10 @@
 import "dart:typed_data";
 import "package:test/test.dart";
-import "package:frugal/frugal.dart";
 
-var headers = {"foo": "bar", "blah": "baz"};
-var list = [
+import "../../lib/src/frugal.dart";
+
+var _headers = {"foo": "bar", "blah": "baz"};
+var _list = [
   0,
   0,
   0,
@@ -42,10 +43,10 @@ var list = [
 
 void main() {
   test("read reads the headers out of the transport", () {
-    var encodedHeaders = new Uint8List.fromList(list);
+    var encodedHeaders = new Uint8List.fromList(_list);
     var transport = new TMemoryTransport.fromUint8List(encodedHeaders);
     var decodedHeaders = Headers.read(transport);
-    expect(decodedHeaders, headers);
+    expect(decodedHeaders, _headers);
   });
 
   test("read throws error for unsupported version", () {
@@ -56,15 +57,15 @@ void main() {
   });
 
   test("decodeFromFrame decodes headers from a fixed frame", () {
-    var encodedHeaders = new Uint8List.fromList(list);
+    var encodedHeaders = new Uint8List.fromList(_list);
     var decodedHeaders = Headers.decodeFromFrame(encodedHeaders);
-    expect(decodedHeaders, headers);
+    expect(decodedHeaders, _headers);
   });
 
   test("encode encodes headers and decodeFromFrame decodes them", () {
-    var encodedHeaders = Headers.encode(headers);
+    var encodedHeaders = Headers.encode(_headers);
     var decodedHeaders = Headers.decodeFromFrame(encodedHeaders);
-    expect(decodedHeaders, headers);
+    expect(decodedHeaders, _headers);
   });
 
   test("encode encodes null headers and decodeFromFrame decodes them", () {
