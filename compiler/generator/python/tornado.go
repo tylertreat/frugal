@@ -21,9 +21,8 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from threading import Lock\n\n"
 
 	imports += "from frugal.middleware import Method\n"
-	imports += "from frugal.processor import FBaseProcessor\n"
-	imports += "from frugal.processor import FProcessorFunction\n"
-	imports += "from frugal.registry import FClientRegistry\n"
+	imports += "from frugal.tornado.processor import FBaseProcessor\n"
+	imports += "from frugal.tornado.processor import FProcessorFunction\n"
 	imports += "from frugal.transport import TMemoryOutputBuffer\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
@@ -212,7 +211,7 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
 	if !method.Oneway {
-		contents += tabtab + "with self._lock:\n"
+		contents += tabtab + "with (yield self._lock.acquire()):\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
 		contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", method.Name)
 		contents += tabtabtab + "result.write(oprot)\n"

@@ -50,6 +50,9 @@ class TestFHttpTransport(AsyncTestCase):
     @gen_test
     def test_send_success(self):
         registry_mock = mock.Mock()
+        execute_future = Future()
+        execute_future.set_result(None)
+        registry_mock.execute.return_value = execute_future
         self.transport._registry = registry_mock
         self.transport._http = self.http_mock
 

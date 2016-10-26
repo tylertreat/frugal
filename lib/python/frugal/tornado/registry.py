@@ -1,7 +1,8 @@
-from asyncio import Lock
 import logging
 
 from thrift.transport.TTransport import TMemoryBuffer
+from tornado import gen
+from tornado.locks import Lock
 
 from frugal.context import _OP_ID
 from frugal.exceptions import FException
@@ -15,8 +16,8 @@ class FRegistry(object):
     Registry is responsible for multiplexing received
     messages to the appropriate callback.
     """
-
-    async def register(self, context, callback):
+    @gen.coroutine
+    def register(self, context, callback):
         """Register a callback for a given FContext.
 
         Args:
@@ -25,7 +26,8 @@ class FRegistry(object):
         """
         pass
 
-    async def unregister(self, context):
+    @gen.coroutine
+    def unregister(self, context):
         """Unregister the callback for a given FContext.
 
         Args:
@@ -33,7 +35,8 @@ class FRegistry(object):
         """
         pass
 
-    async def execute(self, frame):
+    @gen.coroutine
+    def execute(self, frame):
         """Dispatch a single Frugal message frame.
 
         Args:
@@ -54,7 +57,8 @@ class FRegistryImpl(FRegistry):
         self._next_opid = 0
         self._opid_lock = Lock()
 
-    async def register(self, context, callback):
+    @gen.coroutine
+    def register(self, context, callback):
         """Register a callback for a given FContext.
 
         Args:
@@ -67,26 +71,28 @@ class FRegistryImpl(FRegistry):
         # increasing atomic uint64 for this purpose. If the FContext already
         # has an op id, it has been used for a request. We check the handlers
         # map to ensure that request is not still in-flight.
-        async with self._handlers_lock:
+        with (yield self._handlers_lock.acquire()):
             if str(context._get_op_id()) in self._handlers:
                 raise FException("context already registered")
 
-        op_id = await self._increment_and_get_next_op_id()
+        op_id = yield self._increment_and_get_next_op_id()
         context._set_op_id(op_id)
 
-        async with self._handlers_lock:
+        with (yield self._handlers_lock.acquire()):
             self._handlers[str(op_id)] = callback
 
-    async def unregister(self, context):
+    @gen.coroutine
+    def unregister(self, context):
         """Unregister the callback for a given FContext.
 
         Args:
             context: FContext to unregister.
         """
-        async with self._handlers_lock:
+        with (yield self._handlers_lock.acquire()):
             self._handlers.pop(str(context._get_op_id()), None)
 
-    async def execute(self, frame):
+    @gen.coroutine
+    def execute(self, frame):
         """Dispatch a single Frugal message frame.
 
         Args:
@@ -100,7 +106,7 @@ class FRegistryImpl(FRegistry):
         if not op_id:
             raise FException("Frame missing op_id")
 
-        async with self._handlers_lock:
+        with (yield self._handlers_lock.acquire()):
             handler = self._handlers.get(op_id, None)
             if not handler:
                 logger.warning("Got a message for unregistered context."
@@ -109,8 +115,9 @@ class FRegistryImpl(FRegistry):
 
             handler(TMemoryBuffer(frame))
 
-    async def _increment_and_get_next_op_id(self):
-        async with self._opid_lock:
+    @gen.coroutine
+    def _increment_and_get_next_op_id(self):
+        with (yield self._opid_lock.acquire()):
             self._next_opid += 1
             op_id = self._next_opid
-        return op_id
+        raise gen.Return(op_id)

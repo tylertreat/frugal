@@ -12,7 +12,6 @@ import inspect
 
 from frugal.aio.processor import FBaseProcessor
 from frugal.aio.processor import FProcessorFunction
-from frugal.aio.registry import FClientRegistry
 from frugal.middleware import Method
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException

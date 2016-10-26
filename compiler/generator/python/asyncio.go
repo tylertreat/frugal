@@ -24,7 +24,6 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 
 	imports += "from frugal.aio.processor import FBaseProcessor\n"
 	imports += "from frugal.aio.processor import FProcessorFunction\n"
-	imports += "from frugal.aio.registry import FClientRegistry\n"
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.transport import TMemoryOutputBuffer\n"
 	imports += "from thrift.Thrift import TApplicationException\n"

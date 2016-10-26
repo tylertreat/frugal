@@ -1,7 +1,7 @@
 import base64
-import struct
 
 from thrift.transport.TTransport import TMemoryBuffer
+from tornado import gen
 from tornado.web import RequestHandler
 
 from frugal.transport import TMemoryOutputBuffer
@@ -23,6 +23,7 @@ class FTornadoHttpHandler(RequestHandler):
         self._processor = processor
         self._protocol_factory = protocol_factory
 
+    @gen.coroutine
     def post(self):
         self.set_header('content-type', 'application/x-frugal')
 
@@ -41,7 +42,7 @@ class FTornadoHttpHandler(RequestHandler):
         oprot = self._protocol_factory.get_protocol(otrans)
         # TODO 2.0 this should probably be in a try/catch but we need to decide
         # what to do here
-        self._processor.process(iprot, oprot)
+        yield self._processor.process(iprot, oprot)
 
         # write back response
         output_data = otrans.getvalue()

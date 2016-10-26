@@ -1,6 +1,6 @@
 from frugal.aio.transport import FTransportBase
 from frugal.context import FContext
-from frugal.aio.registry import FClientRegistry
+from frugal.aio.registry import FRegistryImpl
 
 
 class FRegistryTransport(FTransportBase):
@@ -9,7 +9,7 @@ class FRegistryTransport(FTransportBase):
     """
     def __init__(self, max_message_size):
         super().__init__(max_message_size)
-        self._registry = FClientRegistry()
+        self._registry = FRegistryImpl()
 
     async def register(self, context: FContext, callback):
         """

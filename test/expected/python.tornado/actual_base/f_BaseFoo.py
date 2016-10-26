@@ -10,9 +10,8 @@ from datetime import timedelta
 from threading import Lock
 
 from frugal.middleware import Method
-from frugal.processor import FBaseProcessor
-from frugal.processor import FProcessorFunction
-from frugal.registry import FClientRegistry
+from frugal.tornado.processor import FBaseProcessor
+from frugal.tornado.processor import FProcessorFunction
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
@@ -131,7 +130,7 @@ class _basePing(FProcessorFunction):
         iprot.readMessageEnd()
         result = basePing_result()
         yield gen.maybe_future(self._handler([ctx]))
-        with self._lock:
+        with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('basePing', TMessageType.REPLY, 0)
             result.write(oprot)

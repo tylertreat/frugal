@@ -48,8 +48,9 @@ class FNatsTransport(FTornadoTransport):
 
         self._is_open = True
 
+    @gen.coroutine
     def _on_message_callback(self, msg):
-        self.execute_frame(msg.data)
+        yield self.execute_frame(msg.data)
 
     @gen.coroutine
     def close(self):
