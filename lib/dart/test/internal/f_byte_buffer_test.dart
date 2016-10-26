@@ -1,8 +1,9 @@
 import "dart:typed_data";
 import "package:test/test.dart";
-import "package:frugal/frugal.dart";
 
-var list = [
+import "../../lib/src/frugal.dart";
+
+var _list = [
   0,
   0,
   0,
@@ -41,25 +42,25 @@ var list = [
 
 void main() {
   test('test that write properly writes the bytes from the given buffer', () {
-    var buffList = new Uint8List.fromList(list);
+    var buffList = new Uint8List.fromList(_list);
     var buff = new FByteBuffer(10);
     expect(10, buff.writeRemaining);
     var n = buff.write(buffList, 0, buffList.length);
     expect(n, 10);
-    var expected = new Uint8List.fromList(list.sublist(0, 10));
+    var expected = new Uint8List.fromList(_list.sublist(0, 10));
     expect(buff.asUint8List(), expected);
     expect(0, buff.writeRemaining);
   });
 
   test('test that read properly reads the bytes into the given buffer', () {
-    var buffList = new Uint8List.fromList(list);
+    var buffList = new Uint8List.fromList(_list);
     var buff = new FByteBuffer.fromUint8List(buffList);
     var readBuff = new Uint8List(10);
-    expect(list.length, buff.readRemaining);
+    expect(_list.length, buff.readRemaining);
     var n = buff.read(readBuff, 0, 15);
     expect(10, n);
-    var expected = new Uint8List.fromList(list.sublist(0, 10));
+    var expected = new Uint8List.fromList(_list.sublist(0, 10));
     expect(readBuff, expected);
-    expect(list.length - 10, buff.readRemaining);
+    expect(_list.length - 10, buff.readRemaining);
   });
 }

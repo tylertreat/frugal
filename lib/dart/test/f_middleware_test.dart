@@ -3,17 +3,27 @@ import "dart:async";
 import "package:frugal/frugal.dart";
 import "package:test/test.dart";
 
+/// Test class.
 class MiddlewareTestingService {
+  /// A field.
   String str;
+
+  /// Handle something.
   Future<int> handleSomething(int first, int second, String str) {
     this.str = str;
     return new Future.value(first + second);
   }
 }
 
+/// Test struct.
 class MiddlewareDataStruct {
+  /// An arg.
   int arg;
+
+  /// A method name.
   String methodName;
+
+  /// A service name.
   String serviceName;
 }
 
@@ -68,7 +78,7 @@ void main() {
         print('hello world');
       };
       await debugMiddleware(handler)(
-          'Service', 'method', [new FContext(correlationId: 'cid'), 1]);
+          'Service', 'method', [new FContext(correlationID: 'cid'), 1]);
       // It would be nice to expect that print ...hello world... was called, but that does not seem possible
       // Next best thing is to just see that the handler was called without throwing an error
       expect(handlerRan, true);

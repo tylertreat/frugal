@@ -1,27 +1,23 @@
-part of frugal;
+part of frugal.src.frugal;
 
-/// A framed implementation of TTransport. Has stream for consuming
+/// A framed implementation of [TTransport]. Has stream for consuming
 /// entire frames. Disallows direct reads.
 class _TFramedTransport extends TTransport {
   final Logger log = new Logger('frugal.transport._TFramedTransport');
-  static const int headerByteCount = 4;
-  final Uint8List writeHeaderBytes = new Uint8List(headerByteCount);
+  static const int _headerByteCount = 4;
 
   final TSocket socket;
   final List<int> _writeBuffer = [];
   final List<int> _readBuffer = [];
   final List<int> _readHeaderBytes = [];
   int _frameSize;
-
-  StreamController<_FrameWrapper> _frameStream = new StreamController();
-
   bool _isOpen = false;
 
-  final Uint8List headerBytes = new Uint8List(headerByteCount);
-
+  StreamController<_FrameWrapper> _frameStream = new StreamController();
+  final Uint8List _headerBytes = new Uint8List(_headerByteCount);
   StreamSubscription _messageSub;
 
-  /// Instantiate new TFramedTransport for the given TSocket.
+  /// Instantiate new [TFramedTransport] for the given [TSocket].
   /// Add a listener to the socket state that opens/closes the
   /// transport in response to socket state changes.
   _TFramedTransport(this.socket) {
@@ -59,7 +55,7 @@ class _TFramedTransport extends TTransport {
 
   /// Opens the transport.
   /// Will reset the write/read buffers and socket onMessage listener.
-  /// Will also open the underlying TSocket (if not already open).
+  /// Will also open the underlying [TSocket] (if not already open).
   @override
   Future open() async {
     _reset(isOpen: true);
@@ -69,32 +65,32 @@ class _TFramedTransport extends TTransport {
 
   /// Closes the transport.
   /// Will reset the write/read buffers and socket onMessage listener.
-  /// Will also close the underlying TSocket (if not already closed).
+  /// Will also close the underlying [TSocket] (if not already closed).
   @override
   Future close() async {
     _reset(isOpen: false);
     await socket.close();
   }
 
-  /// Direct reading is not allowed. To consume read data listen
-  /// to onFrame.
+  /// Direct reading is not allowed. To consume read data listen to [onFrame].
+  @override
   int read(Uint8List buffer, int offset, int length) {
     throw new TTransportError(TTransportErrorType.UNKNOWN,
         'frugal: cannot read directly from _TFramedSocket.');
   }
 
-  /// Handler for messages received on the TSocket.
+  /// Handler for messages received on the [TSocket].
   void messageHandler(Uint8List list) {
     var offset = 0;
     if (_frameSize == null) {
       // Not enough bytes to get the frame length. Add these and move on.
-      if ((_readHeaderBytes.length + list.length) < headerByteCount) {
+      if ((_readHeaderBytes.length + list.length) < _headerByteCount) {
         _readHeaderBytes.addAll(list);
         return;
       }
 
       // Get the frame size
-      var headerBytesToGet = headerByteCount - _readHeaderBytes.length;
+      var headerBytesToGet = _headerByteCount - _readHeaderBytes.length;
       _readHeaderBytes.addAll(list.getRange(0, headerBytesToGet));
       var frameBuffer = new Uint8List.fromList(_readHeaderBytes).buffer;
       _frameSize = frameBuffer.asByteData().getInt32(0);
@@ -143,19 +139,19 @@ class _TFramedTransport extends TTransport {
   @override
   Future flush() {
     int length = _writeBuffer.length;
-    headerBytes.buffer.asByteData().setUint32(0, length);
-    _writeBuffer.insertAll(0, headerBytes);
+    _headerBytes.buffer.asByteData().setUint32(0, length);
+    _writeBuffer.insertAll(0, _headerBytes);
     var buff = new Uint8List.fromList(_writeBuffer);
     _writeBuffer.clear();
     return new Future.value(socket.send(buff));
   }
 }
 
-/// _FrameWrapper wraps a _TFramedTransport frame with a timestamp indicating
-/// when it was placed in the frame buffer.
+/// Wraps a _TFramedTransport frame with a timestamp indicating when it was
+/// placed in the frame buffer.
 class _FrameWrapper {
   Uint8List frameBytes;
   DateTime timestamp;
 
-  _FrameWrapper(this.frameBytes, this.timestamp) {}
+  _FrameWrapper(this.frameBytes, this.timestamp);
 }

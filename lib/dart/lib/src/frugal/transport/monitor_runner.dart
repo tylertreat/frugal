@@ -1,8 +1,8 @@
-part of frugal;
+part of frugal.src.frugal;
 
-/// MonitorRunner runs an FTransportMonitor when a transport is closed.
+/// Runs an [FTransportMonitor] when a transport is closed.
 class MonitorRunner {
-  final Logger log = new Logger('FTransportMonitor');
+  final Logger _log = new Logger('FTransportMonitor');
   FTransportMonitor _monitor;
   FTransport _transport;
   int _attempts = 0;
@@ -11,12 +11,15 @@ class MonitorRunner {
   Completer _reopenCompleter;
   Timer _reopenTimer;
 
+  /// Create a new [MonitorRunner] with the given [FTransportMonitor] and
+  /// [FTransport].
   MonitorRunner(this._monitor, this._transport);
 
   /// Indicates if the monitor is waiting to run or gave up.
   bool get _sleeping => (_reopenTimer != null || _failed);
 
-  Future onClose(cause) async {
+  /// Handle close event.
+  Future onClose(Object cause) async {
     if (cause == null) {
       _handleCleanClose();
     } else {
@@ -24,12 +27,13 @@ class MonitorRunner {
     }
   }
 
+  /// Signal that the transport is now open.
   void signalOpen() {
     if (_sleeping) _signalOpen();
   }
 
   void _signalOpen() {
-    log.log(Level.INFO, 'successfully reopened transport');
+    _log.log(Level.INFO, 'successfully reopened transport');
     _stop();
     _monitor.onReopenSucceeded();
     return;
@@ -46,7 +50,7 @@ class MonitorRunner {
   }
 
   void _handleCleanClose() {
-    log.log(Level.INFO, 'transport was closed cleanly');
+    _log.log(Level.INFO, 'transport was closed cleanly');
     _monitor.onClosedCleanly();
   }
 
@@ -54,14 +58,14 @@ class MonitorRunner {
     if (_reopenCompleter != null) {
       // TODO: Should we reset _attemps/_wait? Or does this indicate something
       // bigger is wrong?
-      log.log(Level.WARNING, 'received multiple unclean close calls!');
+      _log.log(Level.WARNING, 'received multiple unclean close calls!');
       return;
     }
 
-    log.log(Level.WARNING, 'transport was closed uncleanly because: $cause');
+    _log.log(Level.WARNING, 'transport was closed uncleanly because: $cause');
     _wait = _monitor.onClosedUncleanly(cause);
     if (_wait < 0) {
-      log.log(Level.WARNING, 'instructed not to reopen');
+      _log.log(Level.WARNING, 'instructed not to reopen');
       _stop(failed: true);
       return;
     }
@@ -71,7 +75,7 @@ class MonitorRunner {
   }
 
   void _startReopenTimer() {
-    log.log(Level.INFO, 'attempting to reopen after $_wait ms');
+    _log.log(Level.INFO, 'attempting to reopen after $_wait ms');
     _reopenTimer = new Timer(new Duration(milliseconds: _wait), _attemptReopen);
   }
 
@@ -82,7 +86,7 @@ class MonitorRunner {
       await _transport.open();
       _signalOpen();
     } catch (e) {
-      log.log(Level.WARNING, 'failed to reopen transport due to: $e');
+      _log.log(Level.WARNING, 'failed to reopen transport due to: $e');
       _attempts++;
       _wait = _monitor.onReopenFailed(_attempts, _wait);
       if (_wait >= 0) {
@@ -90,7 +94,7 @@ class MonitorRunner {
         return;
       }
       _stop(failed: true);
-      log.log(Level.WARNING,
+      _log.log(Level.WARNING,
           'ReopenFailed callback instructed not to reopen, terminating');
     }
   }

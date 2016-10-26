@@ -1,26 +1,32 @@
-part of frugal;
+part of frugal.src.frugal;
 
-/**
- * This is an internal-only class. Don't use it!
- */
+/// This is an internal-only class. Don't use it!
 class FByteBuffer {
   final Uint8List _buff;
   int _writeIndex = 0;
   int _readIndex = 0;
 
+  /// Creates an [FByteBuffer] with the given capacity.
   FByteBuffer(int capacity) : this._buff = new Uint8List(capacity);
 
+  /// Creates an [FByteBuffer] from the given buffer.
   FByteBuffer.fromUint8List(Uint8List buff) : this._buff = buff;
 
+  /// Number of write bytes remaining in the buffer.
   int get writeRemaining => _buff.length - _writeIndex;
+
+  /// Number of read bytes remaining in the buffer.
   int get readRemaining => _buff.length - _readIndex;
 
+  /// Reads up to [length] bytes into [buffer], starting at [offset].
+  /// Returns the number of bytes actually read.
   int read(Uint8List buffer, int offset, int length) {
     var n = _transfer(_buff, buffer, _readIndex, offset, length);
     _readIndex += n;
     return n;
   }
 
+  /// Writes up to [length] bytes from the buffer.
   int write(Uint8List buffer, int offset, int length) {
     var n = _transfer(buffer, _buff, offset, _writeIndex, length);
     _writeIndex += n;
@@ -47,10 +53,12 @@ class FByteBuffer {
     return amtToCopy;
   }
 
+  /// Returns the buffer as a [Uint8List].
   Uint8List asUint8List() {
     return new Uint8List.fromList(_buff.sublist(0, _writeIndex));
   }
 
+  /// Resets the read/write indices.
   void reset() {
     _writeIndex = 0;
     _readIndex = 0;
