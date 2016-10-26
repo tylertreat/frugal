@@ -26,8 +26,10 @@ import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
 import com.workiva.frugal.server.FNatsServer;
 import com.workiva.frugal.server.FServer;
-import com.workiva.frugal.transport.FNatsScopeTransport;
-import com.workiva.frugal.transport.FScopeTransportFactory;
+import com.workiva.frugal.transport.FPublisherTransportFactory;
+import com.workiva.frugal.transport.FNatsPublisherTransport;
+import com.workiva.frugal.transport.FNatsSubscriberTransport;
+import com.workiva.frugal.transport.FSubscriberTransportFactory;
 import frugal.test.Event;
 import frugal.test.EventsPublisher;
 import frugal.test.EventsSubscriber;
@@ -202,8 +204,9 @@ public class TestServer {
             ConnectionFactory cf = new ConnectionFactory(Constants.DEFAULT_URL);
             try {
                 Connection conn = cf.createConnection();
-                FScopeTransportFactory factory = new FNatsScopeTransport.Factory(conn);
-                FScopeProvider provider = new FScopeProvider(factory, protocolFactory);
+                FPublisherTransportFactory publisherFactory = new FNatsPublisherTransport.Factory(conn);
+                FSubscriberTransportFactory subscriberFactory = new FNatsSubscriberTransport.Factory(conn);
+                FScopeProvider provider = new FScopeProvider(publisherFactory, subscriberFactory, protocolFactory);
                 EventsSubscriber.Iface subscriber = new EventsSubscriber.Client(provider);
                 try {
                     subscriber.subscribeEventCreated(Integer.toString(port)+"-call", (context, event) -> {
