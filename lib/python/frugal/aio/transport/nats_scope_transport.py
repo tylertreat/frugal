@@ -1,146 +1,90 @@
-from asyncio.locks import Lock
 import inspect
-from io import BytesIO
-import struct
 
 from nats.aio.client import Client
 from thrift.transport.TTransport import TTransportException
 from thrift.transport.TTransport import TMemoryBuffer
-from thrift.transport.TTransport import TTransportBase
 
 from frugal import _NATS_MAX_MESSAGE_SIZE
-from frugal.exceptions import FException, FMessageSizeException
-from frugal.transport import FScopeTransport
-from frugal.transport import FScopeTransportFactory
+from frugal.exceptions import FMessageSizeException
+from frugal.transport import FPublisherTransport
+from frugal.transport import FSubscriberTransport
+from frugal.transport import FPublisherTransportFactory
+from frugal.transport import FSubscriberTransportFactory
 
 
-class FNatsScopeTransportFactory(FScopeTransportFactory):
-    """FNatsScopeTransportFactory produces FScopeTransports."""
-    def __init__(
-            self,
-            nats_client: Client,
-            queue=''
-    ):
-        """
-        Creates a new instance of FNatsScopeTransportFactory for producing new
-        pub/sub transports.
-
-        Args:
-            nats_client: A connected nats client.
-            queue: The queue group to subscribe to. If multiple transport
-                   are part of the same queue group, only one transport will
-                   receive a message sent to that queue group. The empty string
-                   indicates NOT to join a queue group.
-        """
+class FNatsPublisherTransportFactory(FPublisherTransportFactory):
+    def __init__(self, nats_client: Client):
         self._nats_client = nats_client
-        self._queue = queue
 
-    def get_transport(self):
-        return FNatsScopeTransport(
-                self._nats_client,
-                queue=self._queue
-        )
+    def get_transport(self) -> FPublisherTransport:
+        return FNatsPublisherTransport(self._nats_client)
 
 
-class FNatsScopeTransport(FScopeTransport, TTransportBase):
+class FNatsPublisherTransport(FPublisherTransport):
     """
-    FNatsScopeTransport implements FScopeTransport using nats as the underlying
-    message broker. Messages are limited to 1MB in size.
+    FPublisherTransport is used exclusively for pub/sub scopes. Publishers use
+    it to publish to a topic. Nats is used as the underlying bus.
     """
-    def __init__(
-            self,
-            nats_client: Client,
-            queue=''
-    ):
-        """
-        Creates a new instance of FNatsScopeTransport for pub/sub.
-
-        Args:
-            nats_client: A connected nats client.
-            queue: The queue group to subscribe to. If multiple transports
-                   are part of the same queue group, only one transport will
-                   receive a message sent to that queue group. The empty string
-                   indicates NOT to join a queue group.
-        """
-        TTransportBase.__init__(self)
-        self._max_message_size = _NATS_MAX_MESSAGE_SIZE
+    def __init__(self, nats_client: Client):
+        super().__init__(_NATS_MAX_MESSAGE_SIZE)
         self._nats_client = nats_client
-        self._queue = queue
-        self._subject = ''
-        self._topic_lock = Lock()
-        self._pull = False
         self._is_open = False
-        self._sub_id = None
-        self._callback = None
-        self._wbuf = BytesIO()
 
-    async def lock_topic(self, topic: str):
-        """
-        Sets the publish topic and locks the transport for exclusive access.
-        This should not be used if the transport instance is a subscriber.
-
-        Args:
-            topic: The topic name to subscribe to.
-        """
-        if self._pull:
-            raise FException('Subscribers cannot lock topics')
-
-        await self._topic_lock.acquire()
-        self._subject = topic
-
-    def unlock_topic(self):
-        """
-        Unsets the publish topic and unlocks the transport.
-        This should not be used if the transport instance is a subscriber.
-        """
-        if self._pull:
-            raise FException('Subscribers cannot lock topics')
-
-        self._subject = ''
-        self._topic_lock.release()
-
-    async def subscribe(self, topic: str, callback):
-        """
-        Opens the transport to receive messages on the subscription.
-
-        Args:
-             topic: The topic to subscribe to.
-             callback: The function to call when a message is received.
-        """
-        self._pull = True
-        self._subject = topic
-        await self.open(callback=callback)
-
-    def isOpen(self):
-        """True if the transport is open, False otherwise"""
-        return self._nats_client.is_connected and self._is_open
-
-    async def open(self, callback=None):
-        """
-        Opens the transport. An exception will be thrown if the nats client
-        is not connected or the transport is already open.
-
-        Args:
-            callback: The function to call when a message is received, this
-                      should only be provided if the transport instance
-                      is a subscriber.
-        """
+    async def open(self):
         if not self._nats_client.is_connected:
             raise TTransportException(TTransportException.NOT_OPEN,
                                       'Nats is not connected')
-
         if self._is_open:
             raise TTransportException(TTransportException.ALREADY_OPEN,
                                       'Nats is already open')
+        self._is_open = True
 
-        if not self._pull:
-            self.reset_write_buffer()
-            self._is_open = True
+    async def close(self):
+        if not self.is_open():
             return
 
-        if not self._subject:
-            raise TTransportException(TTransportException.UNKNOWN,
-                                      'Subscriber cannot have an empty subject')
+        await self._nats_client.flush()
+        self._is_open = False
+
+    def is_open(self) -> bool:
+        return self._is_open and self._nats_client.is_connected
+
+    async def publish(self, topic: str, data):
+        if not self.is_open():
+            raise TTransportException(TTransportException.NOT_OPEN,
+                                      'Transport is not connected')
+        if self._check_publish_size(data):
+            raise FMessageSizeException('Message exceeds max message size')
+        await self._nats_client.publish('frugal.{0}'.format(topic), data)
+
+
+class FNatsSubscriberTransportFactory(FSubscriberTransportFactory):
+    def __init__(self, nats_client: Client, queue=''):
+        self._nats_client = nats_client
+        self._queue = queue
+
+    def get_transport(self) -> FSubscriberTransport:
+        return FNatsSubscriberTransport(self._nats_client, self._queue)
+
+
+class FNatsSubscriberTransport(FSubscriberTransport):
+    """
+    FSubscriberTransport is used exclusively for pub/sub scopes. Subscribers use
+    it to subscribe to a pub/sub topic. Nats is used as the underlying bus.
+    """
+    def __init__(self, nats_client: Client, queue=''):
+        self._nats_client = nats_client
+        self._queue = queue
+        self._is_subscribed = False
+        self._sub_id = None
+
+    async def subscribe(self, topic: str, callback):
+        if not self._nats_client.is_connected:
+            raise TTransportException(TTransportException.NOT_OPEN,
+                                      'Nats is not connected')
+        if self.is_subscribed():
+            raise TTransportException(TTransportException.ALREADY_OPEN,
+                                      'Already subscribed to nats topic')
 
         async def nats_callback(message):
             ret = callback(TMemoryBuffer(message.data[4:]))
@@ -149,66 +93,16 @@ class FNatsScopeTransport(FScopeTransport, TTransportBase):
             return ret
 
         self._sub_id = await self._nats_client.subscribe(
-            'frugal.{0}'.format(self._subject),
+            'frugal.{0}'.format(topic),
             queue=self._queue,
-            cb=nats_callback
+            cb=nats_callback,
         )
-        self._is_open = True
+        self._is_subscribed = True
 
-    async def close(self):
-        """Close the transport."""
-        if not self.isOpen():
-            return
-
-        if not self._pull:
-            await self._nats_client.flush()
-            self._is_open = False
-            return
-
+    async def unsubscribe(self):
         await self._nats_client.unsubscribe(self._sub_id)
         self._sub_id = None
-        self._is_open = False
+        self._is_subscribed = False
 
-    def write(self, buf):
-        """
-        Writes the given data to a buffer. Throws FMessageSizeException if
-        this will cause the buffer to exceed the message size limit.
-
-        Args:
-            buf: The data to write.
-        """
-        size = len(buf) + len(self._wbuf.getvalue())
-
-        if size > self._max_message_size > 0:
-            self._wbuf = BytesIO()
-            raise FMessageSizeException('Message exceeds max message size')
-        self._wbuf.write(buf)
-
-    async def flush(self):
-        """Flushes buffered write data over the network."""
-        if not self.isOpen():
-            raise TTransportException(TTransportException.NOT_OPEN,
-                                      'Transport is not connected')
-
-        frame = self.get_write_bytes()
-        self.reset_write_buffer()
-        if len(frame) == 4:
-            return
-
-        await self._nats_client.publish(
-            'frugal.{0}'.format(self._subject),
-            frame
-        )
-
-    def get_write_bytes(self):
-        """Get the framed bytes from the write buffer."""
-        data = self._wbuf.getvalue()
-        if len(data) == 0:
-            return None
-
-        data_length = struct.pack('!I', len(data))
-        return data_length + data
-
-    def reset_write_buffer(self):
-        """Reset the write buffer."""
-        self._wbuf = BytesIO()
+    def is_subscribed(self) -> bool:
+        return self._is_subscribed

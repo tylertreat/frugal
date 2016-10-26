@@ -8,6 +8,7 @@
 
 from thrift.Thrift import TMessageType
 from frugal.middleware import Method
+from frugal.transport import TMemoryOutputBuffer
 
 
 

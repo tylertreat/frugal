@@ -1,185 +1,108 @@
-from io import BytesIO
 import logging
-import struct
-from threading import Lock
 
 from thrift.transport.TTransport import TTransportException, TMemoryBuffer
-from tornado import gen, locks
+from tornado import gen
 
-from frugal.transport import FScopeTransport, FScopeTransportFactory
-from frugal.exceptions import FException, FMessageSizeException
+from frugal import _NATS_MAX_MESSAGE_SIZE
+from frugal.transport import FPublisherTransportFactory
+from frugal.transport import FPublisherTransport
+from frugal.transport import FSubscriberTransportFactory
+from frugal.transport import FSubscriberTransport
+from frugal.exceptions import FMessageSizeException
 
 _FRAME_BUFFER_SIZE = 5
 _FRUGAL_PREFIX = "frugal."
-MAX_MESSAGE_SIZE = 1024 * 1024
 
 logger = logging.getLogger(__name__)
 
 
-class FNatsScopeTransport(FScopeTransport):
-
-    def __init__(self, nats_client=None, queue=""):
-        """Create a new instance of an FNatsScopeTransport for pub/sub.
-
-            Args:
-                nats_client: A connected instance of the Python NATS client.
-        """
+class FNatsPublisherTransportFactory(FPublisherTransportFactory):
+    def __init__(self, nats_client):
         self._nats_client = nats_client
-        self._queue = queue
-        self._subject = ""
-        self._topic_lock = Lock()
-        self._open_lock = locks.Lock()
-        self._pull = False
+
+    def get_transport(self):
+        return FNatsPublisherTranpsort(self._nats_client)
+
+
+class FNatsPublisherTranpsort(FPublisherTransport):
+    def __init__(self, nats_client):
+        super(FNatsPublisherTranpsort, self).__init__(_NATS_MAX_MESSAGE_SIZE)
+        self._nats_client = nats_client
         self._is_open = False
-        self._write_buffer = None
-        self._sub_id = None
-
-    def lock_topic(self, topic):
-        """Sets the publish topic and locks the transport for exclusive access.
-
-        Args:
-            topic: string topic name to subscribe to
-        Throws:
-            FException: if the instance is a subscriber
-        """
-        if self._pull:
-            raise FException("Subscriber cannot lock topic.")
-
-        self._topic_lock.acquire()
-        self._subject = topic
-
-    def unlock_topic(self):
-        """Unsets the publish topic and unlocks the transport.
-
-        Throws:
-            FException: if the instance is a subscriber
-        """
-        if self._pull:
-            raise FException("Subscriber cannot unlock topic.")
-
-        self._subject = ""
-        self._topic_lock.release()
 
     @gen.coroutine
-    def subscribe(self, topic, callback=None):
-        """Opens the Transport to receive messages on the subscription.
-
-        Args:
-            topic: string topic to subscribe to
-        """
-        self._pull = True
-        self._subject = topic
-        yield self.open(callback)
-
-    def isOpen(self):
-        return self._nats_client.is_connected and self._is_open
-
-    @gen.coroutine
-    def open(self, callback=None):
-        """Asynchronously opens the transport. Throws exception if the provided
-        NATS client is not connected or if the transport is already open.
-
-        Args:
-            callback: function to call when Subscriber receives a message
-        Throws:
-            TTransportException: if NOT_OPEN or ALREADY_OPEN
-        """
+    def open(self):
         if not self._nats_client.is_connected:
             msg = "Nats not connected!"
             raise TTransportException(TTransportException.NOT_OPEN, msg)
-
-        if self.isOpen():
+        if self.is_open():
             msg = "Nats is already open!"
             raise TTransportException(TTransportException.ALREADY_OPEN, msg)
-
-        # If _pull is False the transport belongs to a publisher.  Allocate a
-        # write buffer, mark open and short circuit
-        if not self._pull:
-            self._write_buffer = BytesIO()
-            self._is_open = True
-            return
-
-        if not self._subject:
-            raise TTransportException(message="Subject cannot be empty.")
-
-        def _cb(msg):
-            callback(TMemoryBuffer(msg.data[4:]))
-
-        self._sub_id = yield self._nats_client.subscribe_async(
-            self._get_formatted_subject(),
-            queue=self._queue,
-            cb=_cb
-        )
-
         self._is_open = True
-        logger.debug("FNatsScopeTransport open.")
 
     @gen.coroutine
     def close(self):
-        """Close the transport and unsubscribe from NATS."""
-        logger.debug("Closing FNatsScopeTransport.")
-
-        if not self.isOpen():
-            # No harm in trying to close if already closed.
+        if not self.is_open():
             return
 
-        if not self._pull:
-            yield self._nats_client.flush()
-            self._is_open = False
-            return
-
-        # Unsubscribe
-        yield self._nats_client.unsubscribe(self._sub_id)
-        self._sub_id = None
+        yield self._nats_client.flush()
         self._is_open = False
 
-    def read(self):
-        raise NotImplementedError("Don't call this.")
-
-    def write(self, buff):
-        """Write takes a bytearray and attempts to write it to an underlying
-        BytesIO instance.  It will raise an exception if NATS is not connected
-        or if writing causes the buffer to exceed 1 MB message size.
-
-        Args:
-            buff: bytearray buffer of bytes to write
-        Throws:
-            TTransportException: if NATS not connected
-            FMessageSizeException: if writing to the buffer exceeds 1MB length
-        """
-
-        size = len(buff) + len(self._write_buffer.getvalue())
-
-        if size > MAX_MESSAGE_SIZE:
-            msg = "Message exceeds NATS max message size"
-            raise FMessageSizeException(msg)
-
-        self._write_buffer.write(buff)
+    def is_open(self):
+        return self._nats_client.is_connected and self._is_open
 
     @gen.coroutine
-    def flush(self):
-        if not self.isOpen():
-            msg = "Nats not connected!"
+    def publish(self, topic, data):
+        if not self.is_open():
+            msg = 'Nats not connected!'
             raise TTransportException(TTransportException.NOT_OPEN, msg)
-
-        frame = self._write_buffer.getvalue()
-        frame_length = struct.pack('!I', len(frame))
-        self._write_buffer = BytesIO()
-
-        formatted_subject = self._get_formatted_subject()
-        formatted_message = "{}{}".format(frame_length, frame)
-
-        yield self._nats_client.publish(formatted_subject, formatted_message)
-
-    def _get_formatted_subject(self):
-        return "{}{}".format(_FRUGAL_PREFIX, self._subject)
+        if self._check_publish_size(data):
+            msg = 'Message exceeds NATS max message size'
+            raise FMessageSizeException(msg)
+        yield self._nats_client.publish('frugal.{0}'.format(topic), data)
 
 
-class FNatsScopeTransportFactory(FScopeTransportFactory):
-
-    def __init__(self, nats_client, queue=""):
+class FNatsSubscriberTransportFactory(FSubscriberTransportFactory):
+    def __init__(self, nats_client, queue=''):
         self._nats_client = nats_client
         self._queue = queue
 
     def get_transport(self):
-        return FNatsScopeTransport(self._nats_client, self._queue)
+        return FNatsSubscriberTransport(self._nats_client, self._queue)
+
+
+class FNatsSubscriberTransport(FSubscriberTransport):
+    def __init__(self, nats_client, queue):
+        self._nats_client = nats_client
+        self._queue = queue
+        self._is_subscribed = False
+        self._sub_id = None
+
+    @gen.coroutine
+    def subscribe(self, topic, callback):
+        if not self._nats_client.is_connected:
+            msg = "Nats not connected!"
+            raise TTransportException(TTransportException.NOT_OPEN, msg)
+
+        if self.is_subscribed():
+            msg = "Already subscribed to nats topic!"
+            raise TTransportException(TTransportException.ALREADY_OPEN, msg)
+
+        self._sub_id = yield self._nats_client.subscribe_async(
+            'frugal.{0}'.format(topic),
+            queue=self._queue,
+            cb=lambda message: callback(TMemoryBuffer(message.data[4:]))
+        )
+        self._is_subscribed = True
+
+    @gen.coroutine
+    def unsubscribe(self):
+        if not self.is_subscribed():
+            return
+
+        yield self._nats_client.unsubscribe(self._sub_id)
+        self._sub_id = None
+        self._is_subscribed = False
+
+    def is_subscribed(self):
+        return self._is_subscribed and self._nats_client.is_connected

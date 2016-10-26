@@ -60,7 +60,6 @@ class Client(Iface):
             middleware = [middleware]
         self._transport = transport
         self._protocol_factory = protocol_factory
-        self._write_lock = asyncio.Lock()
         self._methods = {
             'buyAlbum': Method(self._buyAlbum, middleware),
             'enterAlbumGiveaway': Method(self._enterAlbumGiveaway, middleware),
@@ -90,16 +89,14 @@ class Client(Iface):
     async def _send_buyAlbum(self, ctx, ASIN, acct):
         buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
         oprot = self._protocol_factory.get_protocol(buffer)
-        async with self._write_lock:
-            oprot.write_request_headers(ctx)
-            oprot.writeMessageBegin('buyAlbum', TMessageType.CALL, 0)
-            args = buyAlbum_args()
-            args.ASIN = ASIN
-            args.acct = acct
-            args.write(oprot)
-            oprot.writeMessageEnd()
-            data = buffer.getvalue()
-        await self._transport.send(data)
+        oprot.write_request_headers(ctx)
+        oprot.writeMessageBegin('buyAlbum', TMessageType.CALL, 0)
+        args = buyAlbum_args()
+        args.ASIN = ASIN
+        args.acct = acct
+        args.write(oprot)
+        oprot.writeMessageEnd()
+        await self._transport.send(buffer.getvalue())
 
     def _recv_buyAlbum(self, ctx, future):
         def buyAlbum_callback(transport):
@@ -150,16 +147,14 @@ class Client(Iface):
     async def _send_enterAlbumGiveaway(self, ctx, email, name):
         buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
         oprot = self._protocol_factory.get_protocol(buffer)
-        async with self._write_lock:
-            oprot.write_request_headers(ctx)
-            oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.CALL, 0)
-            args = enterAlbumGiveaway_args()
-            args.email = email
-            args.name = name
-            args.write(oprot)
-            oprot.writeMessageEnd()
-            data = buffer.getvalue()
-        await self._transport.send(data)
+        oprot.write_request_headers(ctx)
+        oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.CALL, 0)
+        args = enterAlbumGiveaway_args()
+        args.email = email
+        args.name = name
+        args.write(oprot)
+        oprot.writeMessageEnd()
+        await self._transport.send(buffer.getvalue())
 
     def _recv_enterAlbumGiveaway(self, ctx, future):
         def enterAlbumGiveaway_callback(transport):

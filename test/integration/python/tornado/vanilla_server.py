@@ -10,7 +10,8 @@ sys.path.append('gen-py')
 from frugal.context import FContext
 from frugal.provider import FScopeProvider
 from frugal.server.http_server import FHttpServer
-from frugal.tornado.transport import FNatsScopeTransportFactory
+from frugal.tornado.transport import FNatsPublisherTransportFactory
+from frugal.tornado.transport import FNatsSubscriberTransportFactory
 from nats.io.client import Client as NATS
 from tornado import gen, ioloop
 
@@ -59,16 +60,19 @@ def pub_sub(subject, protocol_factory):
     yield nats_client.connect(**get_nats_options())
 
     # Setup subscriber, send response upon receipt
-    scope_transport_factory = FNatsScopeTransportFactory(nats_client)
-    provider = FScopeProvider(scope_transport_factory, protocol_factory)
+    pub_transport_factory = FNatsPublisherTransportFactory(nats_client)
+    sub_transport_factory = FNatsSubscriberTransportFactory(nats_client)
+    provider = FScopeProvider(
+        pub_transport_factory, sub_transport_factory, protocol_factory)
     publisher = EventsPublisher(provider)
     yield publisher.open()
 
+    @gen.coroutine
     def response_handler(context, event):
         print("received {} : {}".format(context, event))
         response_event = Event(Message="Sending Response")
         response_context = FContext("Call")
-        publisher.publish_EventCreated(response_context, "{}-response".format(subject), response_event)
+        yield publisher.publish_EventCreated(response_context, "{}-response".format(subject), response_event)
         print("Published event={}".format(response_event))
         publisher.close()
 

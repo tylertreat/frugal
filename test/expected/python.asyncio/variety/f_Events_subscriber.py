@@ -15,6 +15,7 @@ from thrift.Thrift import TMessageType
 from thrift.Thrift import TType
 from frugal.middleware import Method
 from frugal.subscription import FSubscription
+from frugal.transport import TMemoryOutputBuffer
 
 from variety.python.ttypes import *
 
@@ -42,7 +43,7 @@ class EventsSubscriber(object):
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
         self._middleware = middleware
-        self._transport, self._protocol_factory = provider.new()
+        self._provider = provider
 
     async def subscribe_EventCreated(self, user, EventCreated_handler):
         """
@@ -57,7 +58,8 @@ class EventsSubscriber(object):
         prefix = 'foo.{}.'.format(user)
         topic = '{}Events{}{}'.format(prefix, self._DELIMITER, op)
 
-        await self._transport.subscribe(topic, self._recv_EventCreated(self._protocol_factory, op, EventCreated_handler))
+        transport, protocol_factory = self._provider.new_subscriber()
+        await transport.subscribe(topic, self._recv_EventCreated(protocol_factory, op, EventCreated_handler))
 
     def _recv_EventCreated(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)

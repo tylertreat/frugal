@@ -10,7 +10,8 @@ from frugal.context import FContext
 from frugal.provider import FScopeProvider
 
 from frugal.tornado.transport import (
-    FNatsScopeTransportFactory,
+    FNatsPublisherTransportFactory,
+    FNatsSubscriberTransportFactory,
     FNatsTransport,
     FHttpTransport
 )
@@ -85,8 +86,10 @@ def main():
 @gen.coroutine
 def test_pub_sub(nats_client, protocol_factory, port):
     global response_received
-    scope_transport_factory = FNatsScopeTransportFactory(nats_client)
-    provider = FScopeProvider(scope_transport_factory, protocol_factory)
+    pub_transport_factory = FNatsPublisherTransportFactory(nats_client)
+    sub_transport_factory = FNatsSubscriberTransportFactory(nats_client)
+    provider = FScopeProvider(
+        pub_transport_factory, sub_transport_factory, protocol_factory)
     publisher = EventsPublisher(provider)
     yield publisher.open()
 

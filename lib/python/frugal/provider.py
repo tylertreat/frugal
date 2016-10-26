@@ -5,22 +5,28 @@ class FScopeProvider(object):
     with Frugal Publishers and Subscribers.
     """
 
-    def __init__(self, transport_factory, protocol_factory):
+    def __init__(self, pub_transport_factory, sub_transport_factory,
+                 protocol_factory):
         """Initialize FScopeProvider.
 
         Args:
             transport_factory: FScopeTransportFactory.
             protocol_factory: FProtocolFactory.
         """
-        self._transport_factory = transport_factory
+        self._pub_transport_factory = pub_transport_factory
+        self._sub_transport_factory = sub_transport_factory
         self._protocol_factory = protocol_factory
 
-    def new(self):
+    def new_publisher(self):
         """Return a tupled FScopeTransport and FProtocol.
         Returns:
             (FScopeTransport, FProtocolFactory)
         """
-        transport = self._transport_factory.get_transport()
+        transport = self._pub_transport_factory.get_transport()
+        return transport, self._protocol_factory
+
+    def new_subscriber(self):
+        transport = self._sub_transport_factory.get_transport()
         return transport, self._protocol_factory
 
 

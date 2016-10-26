@@ -8,6 +8,7 @@
 
 from thrift.Thrift import TMessageType
 from frugal.middleware import Method
+from frugal.transport import TMemoryOutputBuffer
 
 
 
@@ -32,8 +33,7 @@ class AlbumWinnersPublisher(object):
 
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
-        self._transport, protocol_factory = provider.new()
-        self._protocol = protocol_factory.get_protocol(self._transport)
+        self._transport, self._protocol_factory = provider.new_publisher()
         self._methods = {
             'publish_Winner': Method(self._publish_Winner, middleware),
         }
@@ -56,14 +56,11 @@ class AlbumWinnersPublisher(object):
         op = 'Winner'
         prefix = 'v1.music.'
         topic = '{}AlbumWinners{}{}'.format(prefix, self._DELIMITER, op)
-        oprot = self._protocol
-        self._transport.lock_topic(topic)
-        try:
-            oprot.write_request_headers(ctx)
-            oprot.writeMessageBegin(op, TMessageType.CALL, 0)
-            req.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
-        finally:
-            self._transport.unlock_topic()
+        buffer = TMemoryOutputBuffer(self._transport.get_publish_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
+        oprot.write_request_headers(ctx)
+        oprot.writeMessageBegin(op, TMessageType.CALL, 0)
+        req.write(oprot)
+        oprot.writeMessageEnd()
+        self._transport.publish(topic, buffer.getvalue())
 

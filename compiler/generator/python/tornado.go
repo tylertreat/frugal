@@ -47,7 +47,8 @@ func (t *TornadoGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from thrift.Thrift import TType\n"
 	imports += "from tornado import gen\n"
 	imports += "from frugal.middleware import Method\n"
-	imports += "from frugal.subscription import FSubscription\n\n"
+	imports += "from frugal.subscription import FSubscription\n"
+	imports += "from frugal.transport import TMemoryOutputBuffer\n\n"
 
 	namespace, ok := t.Frugal.Thrift.Namespace(lang)
 	if !ok {
@@ -245,7 +246,7 @@ func (t *TornadoGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope
 	subscriber += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	subscriber += tabtabtab + "middleware = [middleware]\n"
 	subscriber += tabtab + "self._middleware = middleware\n"
-	subscriber += tabtab + "self._transport, self._protocol_factory = provider.new()\n\n"
+	subscriber += tabtab + "self._provider = provider\n\n"
 
 	for _, op := range scope.Operations {
 		subscriber += t.generateSubscribeMethod(scope, op)
@@ -283,8 +284,9 @@ func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	method += tabtab + fmt.Sprintf("prefix = %s\n", generatePrefixStringTemplate(scope))
 	method += tabtab + fmt.Sprintf("topic = '{}%s{}{}'.format(prefix, self._DELIMITER, op)\n\n", scope.Name)
 
+	method += tabtab + "transport, protocol_factory = self._provider.new_subscriber()\n"
 	method += tabtab + fmt.Sprintf(
-		"yield self._transport.subscribe(topic, self._recv_%s(self._protocol_factory, op, %s_handler))\n\n",
+		"yield transport.subscribe(topic, self._recv_%s(protocol_factory, op, %s_handler))\n\n",
 		op.Name, op.Name)
 
 	method += tab + fmt.Sprintf("def _recv_%s(self, protocol_factory, op, handler):\n", op.Name)
