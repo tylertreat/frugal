@@ -1,9 +1,5 @@
 from io import BytesIO
-import struct
 
-from thrift.transport.TTransport import TTransportException
-
-from frugal.exceptions import FMessageSizeException
 from frugal.transport import FTransport
 
 

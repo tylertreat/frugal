@@ -8,7 +8,7 @@ from frugal.exceptions import FProtocolException
 from frugal.tests.aio import utils
 
 
-class TestClientRegistry(utils.AsyncIOTestCase):
+class TestRegistry(utils.AsyncIOTestCase):
 
     @utils.async_runner
     async def test_register(self):
@@ -101,6 +101,5 @@ class TestClientRegistry(utils.AsyncIOTestCase):
         )
 
         await registry.execute(frame)
-        callback.assert_called_once_with()
 
         self.assertEqual(frame, callback.call_args_list[0][0][0].getvalue())

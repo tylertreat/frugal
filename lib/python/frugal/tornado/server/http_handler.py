@@ -1,10 +1,14 @@
 import base64
+import logging
 
+from thrift.Thrift import TException
 from thrift.transport.TTransport import TMemoryBuffer
 from tornado import gen
 from tornado.web import RequestHandler
 
 from frugal.transport import TMemoryOutputBuffer
+
+logger = logging.getLogger(__name__)
 
 
 class FTornadoHttpHandler(RequestHandler):
@@ -40,9 +44,11 @@ class FTornadoHttpHandler(RequestHandler):
         # TODO could be better with this limit
         otrans = TMemoryOutputBuffer(0)
         oprot = self._protocol_factory.get_protocol(otrans)
-        # TODO 2.0 this should probably be in a try/catch but we need to decide
-        # what to do here
-        yield self._processor.process(iprot, oprot)
+
+        try:
+            yield self._processor.process(iprot, oprot)
+        except TException as e:
+            logger.exception(e)
 
         # write back response
         output_data = otrans.getvalue()

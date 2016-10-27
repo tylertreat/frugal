@@ -1,18 +1,23 @@
 import logging
+from asyncio import Lock
 
 from thrift.Thrift import TApplicationException, TMessageType, TType
-from tornado import gen
-from tornado.locks import Lock
 
 logger = logging.getLogger(__name__)
+
+
+class FProcessorFunction(object):
+
+    async def process(self, ctx, iprot, oprot):
+        pass
 
 
 class FProcessor(object):
     """FProcessor is a generic object which operates upon an input stream and
     writes to some output stream.
     """
-    @gen.coroutine
-    def process(self, iprot, oprot):
+
+    async def process(self, iprot, oprot):
         pass
 
 
@@ -23,7 +28,7 @@ class FBaseProcessor(FProcessor):
         self._processor_function_map = {}
         self._write_lock = Lock()
 
-    def add_to_processor_map(self, key, proc):
+    def add_to_processor_map(self, key: str, proc: FProcessorFunction):
         """Register the given FProcessorFunction.
 
         Args:
@@ -36,8 +41,7 @@ class FBaseProcessor(FProcessor):
         """Return the write lock."""
         return self._write_lock
 
-    @gen.coroutine
-    def process(self, iprot, oprot):
+    async def process(self, iprot, oprot):
         """Process an input protocol and output protocol
 
         Args:
@@ -56,13 +60,12 @@ class FBaseProcessor(FProcessor):
         # If the function was in our dict, call process on it.
         if processor_function:
             try:
-                ret = yield processor_function.process(context, iprot, oprot)
+                return await processor_function.process(context, iprot, oprot)
             except Exception as e:
                 logging.warn('frugal: error processing request with ' +
                              'correlation id %s: %s' %
                              (context.get_correlation_id(), e))
                 raise
-            raise gen.Return(ret)
 
         iprot.skip(TType.STRUCT)
         iprot.readMessageEnd()
@@ -70,7 +73,7 @@ class FBaseProcessor(FProcessor):
         ex = TApplicationException(TApplicationException.UNKNOWN_METHOD,
                                    "Unknown function: {0}".format(name))
 
-        with (yield self._write_lock.acquire()):
+        async with self._write_lock:
             oprot.write_response_headers(context)
             oprot.writeMessageBegin(name, TMessageType.EXCEPTION, 0)
             ex.write(oprot)

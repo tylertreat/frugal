@@ -1,5 +1,8 @@
+from thrift.Thrift import TException
+from thrift.protocol.TProtocol import TProtocolException
 
-class FException(Exception):
+
+class FException(TException):
     """Basic Frugal exception."""
     def __init__(self, message=None):
         super(FException, self).__init__(message)
@@ -11,15 +14,10 @@ class FContextHeaderException(FException):
         super(FContextHeaderException, self).__init__(message)
 
 
-class FProtocolException(FException):
+class FProtocolException(TProtocolException):
     """Indicates a problem with a protocol."""
-    UNKNOWN = 0
-    INVALID_DATA = 1
-    BAD_VERSION = 2
-
-    def __init__(self, type=UNKNOWN, message=None):
-        super(FProtocolException, self).__init__(message)
-        self.type = type
+    def __init__(self, kind=TProtocolException.UNKNOWN, message=None):
+        super(FProtocolException, self).__init__(type=kind, message=message)
 
 
 class FMessageSizeException(FException):

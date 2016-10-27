@@ -47,7 +47,7 @@ class FRegistry(object):
 
 class FRegistryImpl(FRegistry):
     """
-    FClientRegistry is intended for use only by Frugal clients.
+    FRegistryImpl is intended for use only by Frugal clients.
     This is only to be used by generated code.
     """
 

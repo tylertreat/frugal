@@ -1,6 +1,4 @@
 import base64
-# from io import BytesIO
-# import struct
 
 from aiohttp.client import ClientSession
 from thrift.transport.TTransport import TTransportException

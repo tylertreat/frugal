@@ -1,5 +1,4 @@
 import base64
-import struct
 
 from aiohttp import web
 from thrift.transport.TTransport import TMemoryBuffer

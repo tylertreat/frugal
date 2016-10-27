@@ -1,3 +1,5 @@
+from threading import Lock
+
 from thrift.transport.TTransport import TTransportException
 from thrift.transport.TTransport import TFramedTransport
 
@@ -9,10 +11,16 @@ class FSimpleServer(FServer):
         self._processor_factory = processor_factory
         self._server_transport = server_transport
         self._protocol_factory = protocol_factory
+        self._stopped = False
+        self._stopped_mu = Lock()
 
     def serve(self):
         self._server_transport.listen()
         while True:
+            with self._stopped_mu:
+                if self._stopped:
+                    return
+
             client = self._server_transport.accept()
             framed = TFramedTransport(client)
             iprot = self._protocol_factory.get_protocol(framed)
@@ -21,6 +29,10 @@ class FSimpleServer(FServer):
 
             try:
                 while True:
+                    with self._stopped_mu:
+                        if self._stopped:
+                            break
+
                     processor.process(iprot, oprot)
             except TTransportException:
                 continue
@@ -28,3 +40,6 @@ class FSimpleServer(FServer):
                 print(e)
 
             framed.close()
+
+    def stop(self):
+        self._stopped = True
