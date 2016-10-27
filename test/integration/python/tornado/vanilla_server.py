@@ -68,12 +68,12 @@ def pub_sub(subject, protocol_factory):
         print("received {} : {}".format(context, event))
         response_event = Event(Message="Sending Response")
         response_context = FContext("Call")
-        publisher.publish_EventCreated(response_context, "{}-response".format(subject), response_event)
+        publisher.publish_EventCreated(response_context, "foo", "Client", "response", "{}".format(subject), response_event)
         print("Published event={}".format(response_event))
         publisher.close()
 
     subscriber = EventsSubscriber(provider)
-    yield subscriber.subscribe_EventCreated("{}-call".format(subject), response_handler)
+    yield subscriber.subscribe_EventCreated("foo", "Client", "call", "{}".format(subject), response_handler)
 
 
 def tornado_thread(subject, protocol_factory):

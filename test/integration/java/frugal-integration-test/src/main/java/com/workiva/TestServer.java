@@ -226,13 +226,13 @@ public class TestServer {
                 FScopeProvider provider = new FScopeProvider(factory, protocolFactory);
                 EventsSubscriber subscriber = new EventsSubscriber(provider);
                 try {
-                    subscriber.subscribeEventCreated(Integer.toString(port)+"-call", (context, event) -> {
+                    subscriber.subscribeEventCreated("foo", "Client", "call", Integer.toString(port), (context, event) -> {
                         System.out.format("received " + context + " : " + event);
                         EventsPublisher publisher = new EventsPublisher(provider);
                         try {
                             publisher.open();
                             event = new Event(1, "received call");
-                            publisher.publishEventCreated(new FContext("Call"), Integer.toString(port)+"-response", event);
+                            publisher.publishEventCreated(new FContext("Call"), "foo", "Client", "response", Integer.toString(port), event);
 
                         } catch (TException e) {
                             System.out.println("Error opening publisher to respond" + e.getMessage());

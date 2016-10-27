@@ -48,7 +48,7 @@ func (f *FBaseProcessor) Process(iprot, oprot *FProtocol) error {
 	if ok {
 		err := processor.Process(ctx, iprot, oprot)
 		if err != nil {
-			logger().Warnf(
+			logger().Errorf(
 				"frugal: user handler code returned unhandled error on request with correlation id %s: %s",
 				ctx.CorrelationID(), err.Error())
 		}
