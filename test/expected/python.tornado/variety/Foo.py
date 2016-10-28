@@ -12,7 +12,7 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol, TProtocol
 
 
-class ping_args:
+class ping_args(object):
     def read(self, iprot):
         iprot.readStructBegin()
         while True:
@@ -47,7 +47,7 @@ class ping_args:
     def __ne__(self, other):
         return not (self == other)
 
-class ping_result:
+class ping_result(object):
     def read(self, iprot):
         iprot.readStructBegin()
         while True:
@@ -82,7 +82,7 @@ class ping_result:
     def __ne__(self, other):
         return not (self == other)
 
-class blah_args:
+class blah_args(object):
     """
     Attributes:
      - num
@@ -159,7 +159,7 @@ class blah_args:
     def __ne__(self, other):
         return not (self == other)
 
-class blah_result:
+class blah_result(object):
     """
     Attributes:
      - success
@@ -237,7 +237,7 @@ class blah_result:
     def __ne__(self, other):
         return not (self == other)
 
-class oneWay_args:
+class oneWay_args(object):
     """
     Attributes:
      - id
@@ -311,7 +311,7 @@ class oneWay_args:
     def __ne__(self, other):
         return not (self == other)
 
-class bin_method_args:
+class bin_method_args(object):
     """
     Attributes:
      - bin
@@ -375,7 +375,7 @@ class bin_method_args:
     def __ne__(self, other):
         return not (self == other)
 
-class bin_method_result:
+class bin_method_result(object):
     """
     Attributes:
      - success
@@ -440,7 +440,7 @@ class bin_method_result:
     def __ne__(self, other):
         return not (self == other)
 
-class param_modifiers_args:
+class param_modifiers_args(object):
     """
     Attributes:
      - opt_num
@@ -518,7 +518,7 @@ class param_modifiers_args:
     def __ne__(self, other):
         return not (self == other)
 
-class param_modifiers_result:
+class param_modifiers_result(object):
     """
     Attributes:
      - success
@@ -570,7 +570,7 @@ class param_modifiers_result:
     def __ne__(self, other):
         return not (self == other)
 
-class underlying_types_test_args:
+class underlying_types_test_args(object):
     """
     Attributes:
      - list_type
@@ -650,7 +650,7 @@ class underlying_types_test_args:
     def __ne__(self, other):
         return not (self == other)
 
-class underlying_types_test_result:
+class underlying_types_test_result(object):
     """
     Attributes:
      - success
