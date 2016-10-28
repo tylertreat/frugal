@@ -339,7 +339,7 @@ func (g *Generator) GenerateServiceArgsResults(serviceName string, outputDir str
 func (g *Generator) generateStruct(s *parser.Struct) string {
 	contents := ""
 
-	extends := ""
+	extends := "(object)"
 	if s.Type == parser.StructTypeException {
 		extends = "(TException)"
 	}

@@ -11,7 +11,7 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol, TProtocol
 
 
-class HealthCondition:
+class HealthCondition(object):
     PASS = 1
     WARN = 2
     FAIL = 3
@@ -31,7 +31,7 @@ class HealthCondition:
         "UNKNOWN": 4,
     }
 
-class ItsAnEnum:
+class ItsAnEnum(object):
     FIRST = 2
     SECOND = 3
     THIRD = 4
@@ -48,7 +48,7 @@ class ItsAnEnum:
         "THIRD": 4,
     }
 
-class TestBase:
+class TestBase(object):
     """
     Attributes:
      - base_struct
@@ -101,7 +101,7 @@ class TestBase:
     def __ne__(self, other):
         return not (self == other)
 
-class Event:
+class Event(object):
     """
     This docstring gets added to the generated code because it has
     the @ sign.
@@ -169,7 +169,7 @@ class Event:
     def __ne__(self, other):
         return not (self == other)
 
-class TestingDefaults:
+class TestingDefaults(object):
     """
     Attributes:
      - ID2
@@ -525,7 +525,7 @@ class TestingDefaults:
     def __ne__(self, other):
         return not (self == other)
 
-class EventWrapper:
+class EventWrapper(object):
     """
     Attributes:
      - ID
@@ -717,7 +717,7 @@ class EventWrapper:
     def __ne__(self, other):
         return not (self == other)
 
-class TestingUnions:
+class TestingUnions(object):
     """
     Attributes:
      - AnID

@@ -30,7 +30,7 @@ class base_health_condition:
         "UNKNOWN": 4,
     }
 
-class thing:
+class thing(object):
     """
     Attributes:
      - an_id
@@ -94,7 +94,7 @@ class thing:
     def __ne__(self, other):
         return not (self == other)
 
-class nested_thing:
+class nested_thing(object):
     """
     Attributes:
      - things
