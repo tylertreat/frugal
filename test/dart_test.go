@@ -65,7 +65,7 @@ func TestValidDartFrugalCompiler(t *testing.T) {
 func TestValidDartEnums(t *testing.T) {
 	options := compiler.Options{
 		File:    "idl/enum.frugal",
-		Gen:     "dart",
+		Gen:     "dart:use_enums",
 		Out:     outputDir,
 		Delim:   delim,
 		Recurse: true,

@@ -3,5 +3,5 @@
 
 library enum_dart;
 
-export 'src/f_testing_enums.dart' show testing_enums;
+export 'src/f_testing_enums.dart' show testing_enums, serializetesting_enums, deserializetesting_enums;
 
