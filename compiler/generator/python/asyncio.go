@@ -236,6 +236,7 @@ func (a *AsyncIOGenerator) generateServer(service *parser.Service) string {
 	for _, method := range service.Methods {
 		contents += a.generateProcessorFunction(method)
 	}
+	contents += a.generateWriteApplicationException()
 
 	return contents
 }
@@ -285,22 +286,24 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	if !method.Oneway {
 		contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	}
-	indent := tabtab
-	if len(method.Exceptions) > 0 {
-		indent += tab
-		contents += tabtab + "try:\n"
-	}
-	contents += indent + fmt.Sprintf("ret = self._handler([ctx%s])\n",
+	contents += tabtab + "try:\n"
+	contents += tabtabtab + fmt.Sprintf("ret = self._handler([ctx%s])\n",
 		a.generateServerArgs(method.Arguments))
-	contents += indent + "if inspect.iscoroutine(ret):\n"
-	contents += indent + tab + "ret = await ret\n"
+	contents += tabtabtab + "if inspect.iscoroutine(ret):\n"
+	contents += tabtabtab + tab + "ret = await ret\n"
 	if method.ReturnType != nil {
-		contents += indent + "result.success = ret\n"
+		contents += tabtabtab + "result.success = ret\n"
 	}
 	for _, err := range method.Exceptions {
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", a.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
+	contents += tabtab + "except Exception as e:\n"
+	if !method.Oneway {
+		contents += tabtabtab + "async with self._write_lock:\n"
+		contents += tabtabtabtab + fmt.Sprintf("_write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.args[0] if e.args else 'unknown exception')\n", method.Name)
+	}
+	contents += tabtabtab + "raise\n"
 	if !method.Oneway {
 		contents += tabtab + "async with self._write_lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"

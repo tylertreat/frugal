@@ -217,6 +217,10 @@ class _buyAlbum(FProcessorFunction):
             result.success = ret
         except PurchasingError as error:
             result.error = error
+        except Exception as e:
+            async with self._write_lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "buyAlbum", e.args[0] if e.args else 'unknown exception')
+            raise
         async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('buyAlbum', TMessageType.REPLY, 0)
@@ -236,10 +240,15 @@ class _enterAlbumGiveaway(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = enterAlbumGiveaway_result()
-        ret = self._handler([ctx, args.email, args.name])
-        if inspect.iscoroutine(ret):
-            ret = await ret
-        result.success = ret
+        try:
+            ret = self._handler([ctx, args.email, args.name])
+            if inspect.iscoroutine(ret):
+                ret = await ret
+            result.success = ret
+        except Exception as e:
+            async with self._write_lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "enterAlbumGiveaway", e.args[0] if e.args else 'unknown exception')
+            raise
         async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.REPLY, 0)
@@ -248,3 +257,10 @@ class _enterAlbumGiveaway(FProcessorFunction):
             oprot.get_transport().flush()
 
 
+def _write_application_exception(ctx, oprot, typ, method, message):
+    x = TApplicationException(type=typ, message=message)
+    oprot.write_response_headers(ctx)
+    oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
+    x.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.get_transport().flush()
