@@ -221,6 +221,10 @@ class _buyAlbum(FProcessorFunction):
             result.success = yield gen.maybe_future(self._handler([ctx, args.ASIN, args.acct]))
         except PurchasingError as error:
             result.error = error
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "buyAlbum", e.message)
+            raise
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('buyAlbum', TMessageType.REPLY, 0)
@@ -241,7 +245,12 @@ class _enterAlbumGiveaway(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = enterAlbumGiveaway_result()
-        result.success = yield gen.maybe_future(self._handler([ctx, args.email, args.name]))
+        try:
+            result.success = yield gen.maybe_future(self._handler([ctx, args.email, args.name]))
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "enterAlbumGiveaway", e.message)
+            raise
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.REPLY, 0)
@@ -250,3 +259,10 @@ class _enterAlbumGiveaway(FProcessorFunction):
             oprot.get_transport().flush()
 
 
+def _write_application_exception(ctx, oprot, typ, method, message):
+    x = TApplicationException(type=typ, message=message)
+    oprot.write_response_headers(ctx)
+    oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
+    x.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.get_transport().flush()

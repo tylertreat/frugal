@@ -173,6 +173,7 @@ func (t *TornadoGenerator) generateServer(service *parser.Service) string {
 	for _, method := range service.Methods {
 		contents += t.generateProcessorFunction(method)
 	}
+	contents += t.generateWriteApplicationException()
 
 	return contents
 }
@@ -192,22 +193,24 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 	if !method.Oneway {
 		contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	}
-	indent := tabtab
-	if len(method.Exceptions) > 0 {
-		indent += tab
-		contents += tabtab + "try:\n"
-	}
+	contents += tabtab + "try:\n"
 	if method.ReturnType == nil {
-		contents += indent + fmt.Sprintf("yield gen.maybe_future(self._handler([ctx%s]))\n",
+		contents += tabtabtab + fmt.Sprintf("yield gen.maybe_future(self._handler([ctx%s]))\n",
 			t.generateServerArgs(method.Arguments))
 	} else {
-		contents += indent + fmt.Sprintf("result.success = yield gen.maybe_future(self._handler([ctx%s]))\n",
+		contents += tabtabtab + fmt.Sprintf("result.success = yield gen.maybe_future(self._handler([ctx%s]))\n",
 			t.generateServerArgs(method.Arguments))
 	}
 	for _, err := range method.Exceptions {
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", t.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
+	contents += tabtab + "except Exception as e:\n"
+	if !method.Oneway {
+		contents += tabtabtab + "with self._lock:\n"
+		contents += tabtabtabtab + fmt.Sprintf("_write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", method.Name)
+	}
+	contents += tabtabtab + "raise\n"
 	if !method.Oneway {
 		contents += tabtab + "with self._lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
