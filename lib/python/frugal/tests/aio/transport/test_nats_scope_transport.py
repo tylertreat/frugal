@@ -26,18 +26,10 @@ class TestFNatsScopeTransport(utils.AsyncIOTestCase):
         self.assertEqual(TTransportException.NOT_OPEN, cm.exception.type)
 
     @utils.async_runner
-    async def test_publisher_open_already_open(self):
-        self.mock_nats_client.is_connected = True
-        self.pub_trans._is_open = True
-        with self.assertRaises(TTransportException) as cm:
-            await self.pub_trans.open()
-        self.assertEqual(TTransportException.ALREADY_OPEN, cm.exception.type)
-
-    @utils.async_runner
     async def test_publisher_close_not_open(self):
-        self.pub_trans._is_open = False
+        self.mock_nats_client.is_connected = False
         await self.pub_trans.close()
-        self.assertFalse(self.mock_nats_client.unsubscribe.called)
+        self.assertFalse(self.mock_nats_client.flush.called)
 
     @utils.async_runner
     async def test_close_publisher(self):
@@ -49,16 +41,7 @@ class TestFNatsScopeTransport(utils.AsyncIOTestCase):
         self.mock_nats_client.flush = flush_mock
 
         await self.pub_trans.close()
-        self.assertFalse(self.pub_trans._is_open)
-        self.assertFalse(self.mock_nats_client.unsubscribe.called)
         self.assertTrue(flush_mock.called)
-
-    @utils.async_runner
-    async def test_publish_not_open(self):
-        self.pub_trans._is_open = False
-        with self.assertRaises(TTransportException) as cm:
-            await self.pub_trans.publish('foo', [])
-        self.assertEqual(TTransportException.NOT_OPEN, cm.exception.type)
 
     @utils.async_runner
     async def test_publish(self):

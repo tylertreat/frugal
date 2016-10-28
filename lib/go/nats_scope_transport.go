@@ -31,13 +31,6 @@ func (n *FNatsPublisherTransportFactory) GetTransport() FPublisherTransport {
 // fNatsPublisherTransport implements FPublisherTransport.
 type fNatsPublisherTransport struct {
 	conn         *nats.Conn
-	queue        string
-	closeChan    chan struct{}
-	writeBuffer  *bytes.Buffer
-	topicMu      sync.Mutex
-	openMu       sync.RWMutex
-	isOpen       bool
-	sizeBuffer   []byte
 }
 
 // NewNatsFPublisherTransport creates a new FPublisherTransport which is used for
@@ -48,28 +41,17 @@ func NewNatsFPublisherTransport(conn *nats.Conn) FPublisherTransport {
 
 // Open initializes the transport.
 func (n *fNatsPublisherTransport) Open() error {
-	n.openMu.Lock()
-	defer n.openMu.Unlock()
 	if n.conn.Status() != nats.CONNECTED {
 		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
 			fmt.Sprintf("frugal: NATS not connected, has status %d", n.conn.Status()))
 	}
 
-	if n.isOpen {
-		return thrift.NewTTransportException(thrift.ALREADY_OPEN, "frugal: NATS transport already open")
-	}
-
-	n.writeBuffer = bytes.NewBuffer([]byte{})
-	n.sizeBuffer = make([]byte, 4)
-	n.isOpen = true
 	return nil
 }
 
 // IsOpen returns true if the transport is open, false otherwise.
 func (n *fNatsPublisherTransport) IsOpen() bool {
-	n.openMu.RLock()
-	defer n.openMu.RUnlock()
-	return n.conn.Status() == nats.CONNECTED && n.isOpen
+	return n.conn.Status() == nats.CONNECTED
 }
 
 func (n *fNatsPublisherTransport) getClosedConditionError(prefix string) error {
@@ -83,13 +65,6 @@ func (n *fNatsPublisherTransport) getClosedConditionError(prefix string) error {
 
 // Close closes the transport.
 func (n *fNatsPublisherTransport) Close() error {
-	n.openMu.Lock()
-	defer n.openMu.Unlock()
-	if !n.isOpen {
-		return nil
-	}
-
-	n.isOpen = false
 	return nil
 }
 
@@ -148,13 +123,10 @@ func (n *FNatsSubscriberTransportFactory) GetTransport() FSubscriberTransport {
 // fNatsSubscriberTransport implements FSubscriberTransport.
 type fNatsSubscriberTransport struct {
 	conn         *nats.Conn
-	subject      string
 	queue        string
-	callback     FAsyncCallback
 	sub          *nats.Subscription
 	openMu       sync.RWMutex
-	isOpen       bool
-	sizeBuffer   []byte
+	isSubscribed bool
 }
 
 // NewNatsFSubscriberTransport creates a new FSubscriberTransport which is used for
@@ -173,15 +145,6 @@ func NewNatsFSubscriberTransportWithQueue(conn *nats.Conn, queue string) FSubscr
 
 // Subscribe sets the subscribe topic and opens the transport.
 func (n *fNatsSubscriberTransport) Subscribe(topic string, callback FAsyncCallback) error {
-	n.subject = topic
-	n.callback = callback
-	return n.open()
-}
-
-// open initializes the transport based on whether it's a publisher or
-// subscriber. If Open is called before Subscribe, the transport is assumed to
-// be a publisher.
-func (n *fNatsSubscriberTransport) open() error {
 	n.openMu.Lock()
 	defer n.openMu.Unlock()
 	if n.conn.Status() != nats.CONNECTED {
@@ -189,32 +152,34 @@ func (n *fNatsSubscriberTransport) open() error {
 			fmt.Sprintf("frugal: NATS not connected, has status %d", n.conn.Status()))
 	}
 
-	if n.isOpen {
+	if n.isSubscribed {
 		return thrift.NewTTransportException(thrift.ALREADY_OPEN, "frugal: NATS transport already open")
 	}
 
-	if n.subject == "" {
+	if topic == "" {
 		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
 			"cannot subscribe to empty subject")
 	}
 
-	sub, err := n.conn.QueueSubscribe(n.formattedSubject(), n.queue, n.handleMessage)
+	sub, err := n.conn.QueueSubscribe(n.formattedSubject(topic), n.queue, handleMessage(callback))
 	if err != nil {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	n.sub = sub
-	n.isOpen = true
+	n.isSubscribed = true
 	return nil
 }
 
-func (n *fNatsSubscriberTransport) handleMessage(msg *nats.Msg) {
-	if len(msg.Data) < 4 {
-		logger().Warn("frugal: Discarding invalid scope message frame")
-		return
-	}
-	transport := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(msg.Data[4:])}
-	if err := n.callback(transport); err != nil {
-		logger().Warn("frugal: error executing callback: ", err)
+func handleMessage(callback FAsyncCallback) func(*nats.Msg) {
+	return func(msg *nats.Msg) {
+		if len(msg.Data) < 4 {
+			logger().Warn("frugal: Discarding invalid scope message frame")
+			return
+		}
+		transport := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(msg.Data[4:])}
+		if err := callback(transport); err != nil {
+			logger().Warn("frugal: error executing callback: ", err)
+		}
 	}
 }
 
@@ -223,7 +188,7 @@ func (n *fNatsSubscriberTransport) handleMessage(msg *nats.Msg) {
 func (n *fNatsSubscriberTransport) IsSubscribed() bool {
 	n.openMu.RLock()
 	defer n.openMu.RUnlock()
-	return n.conn.Status() == nats.CONNECTED && n.isOpen
+	return n.conn.Status() == nats.CONNECTED && n.isSubscribed
 }
 
 func (n *fNatsSubscriberTransport) getClosedConditionError(prefix string) error {
@@ -240,7 +205,7 @@ func (n *fNatsSubscriberTransport) getClosedConditionError(prefix string) error 
 func (n *fNatsSubscriberTransport) Unsubscribe() error {
 	n.openMu.Lock()
 	defer n.openMu.Unlock()
-	if !n.isOpen {
+	if !n.isSubscribed {
 		return nil
 	}
 
@@ -248,10 +213,10 @@ func (n *fNatsSubscriberTransport) Unsubscribe() error {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	n.sub = nil
-	n.isOpen = false
+	n.isSubscribed = false
 	return nil
 }
 
-func (n *fNatsSubscriberTransport) formattedSubject() string {
-	return fmt.Sprintf("%s%s", frugalPrefix, n.subject)
+func (n *fNatsSubscriberTransport) formattedSubject(subject string) string {
+	return fmt.Sprintf("%s%s", frugalPrefix, subject)
 }

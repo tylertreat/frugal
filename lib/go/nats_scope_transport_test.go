@@ -183,26 +183,6 @@ func TestNatsPublisherOpenPublish(t *testing.T) {
 	}
 }
 
-// Ensures Open returns an ALREADY_OPEN TTransportException if the transport is
-// already open.
-func TestNatsPublisherOpenAlreadyOpen(t *testing.T) {
-	s := runServer(nil)
-	defer s.Shutdown()
-	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer conn.Close()
-	tr := NewNatsFPublisherTransport(conn)
-
-	assert.Nil(t, tr.Open())
-
-	err = tr.Open()
-
-	trErr := err.(thrift.TTransportException)
-	assert.Equal(t, thrift.ALREADY_OPEN, trErr.TypeId())
-}
-
 // Ensures subscribers discard invalid frames (size < 4).
 func TestNatsSubscriberDiscardInvalidFrame(t *testing.T) {
 	s := runServer(nil)
@@ -239,7 +219,6 @@ func TestNatsPublisherCloseNotOpen(t *testing.T) {
 	defer conn.Close()
 	tr := NewNatsFPublisherTransport(conn)
 	assert.Nil(t, tr.Close())
-	assert.False(t, tr.IsOpen())
 }
 
 // Ensures Close closes the publisher transport and returns nil.
@@ -255,7 +234,6 @@ func TestNatsPublisherClosePublisher(t *testing.T) {
 	assert.Nil(t, tr.Open())
 	assert.True(t, tr.IsOpen())
 	assert.Nil(t, tr.Close())
-	assert.False(t, tr.IsOpen())
 }
 
 // Ensures Close returns an error if the unsubscribe fails.
@@ -288,21 +266,4 @@ func TestNatsPublisherWriteTooLarge(t *testing.T) {
 
 	err = tr.Publish("foo", make([]byte, 1024*1024+1))
 	assert.Equal(t, ErrTooLarge, err)
-	assert.Equal(t, 0, tr.(*fNatsPublisherTransport).writeBuffer.Len())
-}
-
-// Ensures Flush returns an error if the transport is not open.
-func TestNatsPublishNotOpen(t *testing.T) {
-	s := runServer(nil)
-	defer s.Shutdown()
-	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer conn.Close()
-	tr := NewNatsFPublisherTransport(conn)
-
-	err = tr.Publish("foo", []byte{})
-	trErr := err.(thrift.TTransportException)
-	assert.Equal(t, thrift.NOT_OPEN, trErr.TypeId())
 }

@@ -28,17 +28,12 @@ class FNatsPublisherTranpsort(FPublisherTransport):
     def __init__(self, nats_client):
         super(FNatsPublisherTranpsort, self).__init__(_NATS_MAX_MESSAGE_SIZE)
         self._nats_client = nats_client
-        self._is_open = False
 
     @gen.coroutine
     def open(self):
         if not self._nats_client.is_connected:
             msg = "Nats not connected!"
             raise TTransportException(TTransportException.NOT_OPEN, msg)
-        if self.is_open():
-            msg = "Nats is already open!"
-            raise TTransportException(TTransportException.ALREADY_OPEN, msg)
-        self._is_open = True
 
     @gen.coroutine
     def close(self):
@@ -46,10 +41,9 @@ class FNatsPublisherTranpsort(FPublisherTransport):
             return
 
         yield self._nats_client.flush()
-        self._is_open = False
 
     def is_open(self):
-        return self._nats_client.is_connected and self._is_open
+        return self._nats_client.is_connected
 
     @gen.coroutine
     def publish(self, topic, data):
