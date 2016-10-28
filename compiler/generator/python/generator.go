@@ -259,7 +259,7 @@ func (g *Generator) GenerateTypeDef(*parser.TypeDef) error {
 // GenerateEnum generates the given enum.
 func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents := ""
-	contents += fmt.Sprintf("class %s:\n", enum.Name)
+	contents += fmt.Sprintf("class %s(object):\n", enum.Name)
 	if enum.Comment != nil {
 		contents += g.generateDocString(enum.Comment, tab)
 	}
