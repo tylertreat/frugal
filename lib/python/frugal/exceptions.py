@@ -43,10 +43,11 @@ class FMessageSizeException(FException):
 
 class FRateLimitException(TApplicationException):
     """
-    FRateLimitException indicates that an application has exceeded a rate limit threshold.
+    FRateLimitException indicates that an application has exceeded a rate
+    limit threshold.
     """
 
-    RATE_LIMIT_EXCEEDED = 102;
+    RATE_LIMIT_EXCEEDED = 102
 
     def __init__(self, message="rate limit exceeded"):
         """
@@ -54,7 +55,8 @@ class FRateLimitException(TApplicationException):
             message: exception message to provide with the rate limit error.
             Defaults to "rate limit exceeded".
         """
-        super(FRateLimitException, self).__init__(type=FRateLimitException.RATE_LIMIT_EXCEEDED, message=message)
+        super(FRateLimitException, self).__init__(
+            type=FRateLimitException.RATE_LIMIT_EXCEEDED, message=message)
 
 
 class FOperationIdNotFoundException(FException):

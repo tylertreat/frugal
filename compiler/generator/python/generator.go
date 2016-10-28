@@ -1137,7 +1137,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	for _, method := range service.Methods {
 		contents += g.generateProcessorFunction(method)
 	}
-	contents += g.generateServiceHelpers()
+	contents += g.generateWriteApplicationException()
 
 	return contents
 }
@@ -1265,7 +1265,7 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	return contents
 }
 
-func (g *Generator) generateServiceHelpers() string {
+func (g *Generator) generateWriteApplicationException() string {
 	contents := "def _write_application_exception(ctx, oprot, type, method, message):\n"
 	contents += tab + "x = TApplicationException(type=type, message=message)\n"
 	contents += tab + "oprot.write_response_headers(ctx)\n"

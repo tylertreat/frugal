@@ -240,7 +240,7 @@ func (a *AsyncIOGenerator) generateServer(service *parser.Service) string {
 	for _, method := range service.Methods {
 		contents += a.generateProcessorFunction(method)
 	}
-	contents += a.generateServiceHelpers()
+	contents += a.generateWriteApplicationException()
 
 	return contents
 }
