@@ -267,3 +267,19 @@ func TestNatsPublisherWriteTooLarge(t *testing.T) {
 	err = tr.Publish("foo", make([]byte, 1024*1024+1))
 	assert.Equal(t, ErrTooLarge, err)
 }
+
+// Ensures Flush returns an error if the transport is not open.
+func TestNatsPublishNotOpen(t *testing.T) {
+	s := runServer(nil)
+	defer s.Shutdown()
+	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
+	if err != nil {
+		t.Fatal(err)
+	}
+	conn.Close()
+	tr := NewNatsFPublisherTransport(conn)
+
+	err = tr.Publish("foo", []byte{})
+	trErr := err.(thrift.TTransportException)
+	assert.Equal(t, thrift.NOT_OPEN, trErr.TypeId())
+}
