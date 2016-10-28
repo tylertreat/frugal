@@ -1,9 +1,11 @@
-from frugal.aio.transport.base_asyncio_transport import FTransportBase
-from frugal.aio.transport.registry_transport import FRegistryTransport
-from frugal.aio.transport.nats_scope_transport import FNatsScopeTransportFactory
-from frugal.aio.transport.nats_scope_transport import FNatsScopeTransport
-from frugal.aio.transport.nats_transport import FNatsTransport
-from frugal.aio.transport.http_transport import FHttpTransport
+from .base_asyncio_transport import FTransportBase
+from .registry_transport import FRegistryTransport
+from .nats_scope_transport import FNatsPublisherTransportFactory
+from .nats_scope_transport import FNatsPublisherTransport
+from .nats_scope_transport import FNatsSubscriberTransportFactory
+from .nats_scope_transport import FNatsSubscriberTransport
+from .nats_transport import FNatsTransport
+from .http_transport import FHttpTransport
 
 
 __all__ = [
@@ -13,4 +15,8 @@ __all__ = [
     'FNatsScopeTransportFactory',
     'FNatsScopeTransport',
     'FHttpTransport',
+    'FNatsPublisherTransportFactory',
+    'FNatsPublisherTransport',
+    'FNatsSubscriberTransportFactory',
+    'FNatsSubscriberTransport',
 ]

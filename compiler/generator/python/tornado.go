@@ -24,6 +24,7 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from frugal.processor import FBaseProcessor\n"
 	imports += "from frugal.processor import FProcessorFunction\n"
 	imports += "from frugal.registry import FClientRegistry\n"
+	imports += "from frugal.transport import TMemoryOutputBuffer\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "from tornado import gen\n"
@@ -46,7 +47,8 @@ func (t *TornadoGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from thrift.Thrift import TType\n"
 	imports += "from tornado import gen\n"
 	imports += "from frugal.middleware import Method\n"
-	imports += "from frugal.subscription import FSubscription\n\n"
+	imports += "from frugal.subscription import FSubscription\n"
+	imports += "from frugal.transport import TMemoryOutputBuffer\n\n"
 
 	namespace, ok := t.Frugal.Thrift.Namespace(lang)
 	if !ok {
@@ -117,17 +119,17 @@ func (t *TornadoGenerator) generateClientSendMethod(method *parser.Method) strin
 	contents := ""
 	contents += tab + "@gen.coroutine\n"
 	contents += tab + fmt.Sprintf("def _send_%s(self, ctx%s):\n", method.Name, t.generateClientArgs(method.Arguments))
-	contents += tabtab + "oprot = self._oprot\n"
-	contents += tabtab + "with self._write_lock:\n"
-	contents += tabtabtab + "oprot.write_request_headers(ctx)\n"
-	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
-	contents += tabtabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
+	contents += tabtab + "buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())\n"
+	contents += tabtab + "oprot = self._protocol_factory.get_protocol(buffer)\n"
+	contents += tabtab + "oprot.write_request_headers(ctx)\n"
+	contents += tabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
+	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
 	for _, arg := range method.Arguments {
-		contents += tabtabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
+		contents += tabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
 	}
-	contents += tabtabtab + "args.write(oprot)\n"
-	contents += tabtabtab + "oprot.writeMessageEnd()\n"
-	contents += tabtabtab + "yield oprot.get_transport().flush()\n\n"
+	contents += tabtab + "args.write(oprot)\n"
+	contents += tabtab + "oprot.writeMessageEnd()\n"
+	contents += tabtab+"yield self._transport.send(buffer.getvalue())\n\n"
 
 	return contents
 }
@@ -244,7 +246,7 @@ func (t *TornadoGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope
 	subscriber += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	subscriber += tabtabtab + "middleware = [middleware]\n"
 	subscriber += tabtab + "self._middleware = middleware\n"
-	subscriber += tabtab + "self._transport, self._protocol_factory = provider.new()\n\n"
+	subscriber += tabtab + "self._provider = provider\n\n"
 
 	for _, op := range scope.Operations {
 		subscriber += t.generateSubscribeMethod(scope, op)
@@ -282,8 +284,9 @@ func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	method += tabtab + fmt.Sprintf("prefix = %s\n", generatePrefixStringTemplate(scope))
 	method += tabtab + fmt.Sprintf("topic = '{}%s{}{}'.format(prefix, self._DELIMITER, op)\n\n", scope.Name)
 
+	method += tabtab + "transport, protocol_factory = self._provider.new_subscriber()\n"
 	method += tabtab + fmt.Sprintf(
-		"yield self._transport.subscribe(topic, self._recv_%s(self._protocol_factory, op, %s_handler))\n\n",
+		"yield transport.subscribe(topic, self._recv_%s(protocol_factory, op, %s_handler))\n\n",
 		op.Name, op.Name)
 
 	method += tab + fmt.Sprintf("def _recv_%s(self, protocol_factory, op, handler):\n", op.Name)

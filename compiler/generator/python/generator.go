@@ -765,6 +765,7 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
 func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "from thrift.Thrift import TMessageType\n"
 	imports += "from frugal.middleware import Method\n"
+	imports += "from frugal.transport import TMemoryOutputBuffer\n"
 	_, err := file.WriteString(imports)
 	return err
 }
@@ -796,8 +797,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 	publisher += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	publisher += tabtabtab + "middleware = [middleware]\n"
-	publisher += tabtab + "self._transport, protocol_factory = provider.new()\n"
-	publisher += tabtab + "self._protocol = protocol_factory.get_protocol(self._transport)\n"
+	publisher += tabtab + "self._transport, self._protocol_factory = provider.new_publisher()\n"
 	publisher += tabtab + "self._methods = {\n"
 	for _, op := range scope.Operations {
 		publisher += tabtabtab + fmt.Sprintf("'publish_%s': Method(self._publish_%s, middleware),\n", op.Name, op.Name)
@@ -853,6 +853,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operation) string {
 	args := ""
+	asyncOpt := getAsyncOpt(g.Options)
 	docstr := []string{"Args:", tab + "ctx: FContext"}
 	if len(scope.Prefix.Variables) > 0 {
 		prefix := ""
@@ -870,43 +871,49 @@ func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operat
 	}
 
 	method := tab
-	if getAsyncOpt(g.Options) == asyncio {
+	switch asyncOpt {
+	case tornado:
+		method += "@gen.coroutine\n" + tab
+	case asyncio:
 		method += "async "
 	}
 	method += fmt.Sprintf("def publish_%s(self, ctx, %sreq):\n", op.Name, args)
 	method += g.generateDocString(docstr, tabtab)
 	method += tabtab
-	if getAsyncOpt(g.Options) == asyncio {
+	switch asyncOpt {
+	case tornado:
+		method += "yield "
+	case asyncio:
 		method += "await "
 	}
 	method += fmt.Sprintf("self._methods['publish_%s']([ctx, %sreq])\n\n", op.Name, args)
 
 	method += tab
-	if getAsyncOpt(g.Options) == asyncio {
+	switch asyncOpt {
+	case tornado:
+		method += "@gen.coroutine\n" + tab
+	case asyncio:
 		method += "async "
 	}
 	method += fmt.Sprintf("def _publish_%s(self, ctx, %sreq):\n", op.Name, args)
 	method += tabtab + fmt.Sprintf("op = '%s'\n", op.Name)
 	method += tabtab + fmt.Sprintf("prefix = %s\n", generatePrefixStringTemplate(scope))
 	method += tabtab + fmt.Sprintf("topic = '{}%s{}{}'.format(prefix, self._DELIMITER, op)\n", scope.Name)
-	method += tabtab + "oprot = self._protocol\n"
+	method += tabtab + "buffer = TMemoryOutputBuffer(self._transport.get_publish_size_limit())\n"
+	method += tabtab + "oprot = self._protocol_factory.get_protocol(buffer)\n"
+	method += tabtab + "oprot.write_request_headers(ctx)\n"
+	method += tabtab + "oprot.writeMessageBegin(op, TMessageType.CALL, 0)\n"
+	method += tabtab + "req.write(oprot)\n"
+	method += tabtab + "oprot.writeMessageEnd()\n"
+
 	method += tabtab
-	if getAsyncOpt(g.Options) == asyncio {
+	switch asyncOpt {
+	case tornado:
+		method += "yield "
+	case asyncio:
 		method += "await "
 	}
-	method += "self._transport.lock_topic(topic)\n"
-	method += tabtab + "try:\n"
-	method += tabtabtab + "oprot.write_request_headers(ctx)\n"
-	method += tabtabtab + "oprot.writeMessageBegin(op, TMessageType.CALL, 0)\n"
-	method += tabtabtab + "req.write(oprot)\n"
-	method += tabtabtab + "oprot.writeMessageEnd()\n"
-	method += tabtabtab
-	if getAsyncOpt(g.Options) == asyncio {
-		method += "await "
-	}
-	method += "oprot.get_transport().flush()\n"
-	method += tabtab + "finally:\n"
-	method += tabtabtab + "self._transport.unlock_topic()\n"
+	method += "self._transport.publish(topic, buffer.getvalue())\n"
 	return method
 }
 
@@ -1061,9 +1068,6 @@ func (g *Generator) generateClientConstructor(service *parser.Service, async boo
 		contents += tabtab + "                             middleware=middleware)\n"
 		contents += tabtab + "self._methods.update("
 	} else {
-		if async {
-			contents += tabtab + "transport.set_registry(FClientRegistry())\n"
-		}
 		contents += tabtab + "self._transport = transport\n"
 		contents += tabtab + "self._protocol_factory = protocol_factory\n"
 		contents += tabtab + "self._oprot = protocol_factory.get_protocol(transport)\n"

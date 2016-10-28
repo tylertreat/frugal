@@ -17,25 +17,22 @@ const String delimiter = '.';
 /// the @ sign. Prefix specifies topic prefix tokens, which can be static or
 /// variable.
 class EventsPublisher {
-  frugal.FScopeTransport fTransport;
-  frugal.FProtocol fProtocol;
+  frugal.FPublisherTransport transport;
+  frugal.FProtocolFactory protocolFactory;
   Map<String, frugal.FMethod> _methods;
-  frugal.Lock _writeLock;
-
   EventsPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
-    fTransport = provider.fTransportFactory.getTransport();
-    fProtocol = provider.fProtocolFactory.getProtocol(fTransport);
-    _writeLock = new frugal.Lock();
+    transport = provider.publisherTransportFactory.getTransport();
+    protocolFactory = provider.protocolFactory;
     this._methods = {};
     this._methods['EventCreated'] = new frugal.FMethod(this._publishEventCreated, 'Events', 'publishEventCreated', middleware);
   }
 
   Future open() {
-    return fTransport.open();
+    return transport.open();
   }
 
   Future close() {
-    return fTransport.close();
+    return transport.close();
   }
 
   /// This is a docstring.
@@ -44,22 +41,17 @@ class EventsPublisher {
   }
 
   Future _publishEventCreated(frugal.FContext ctx, String user, t_variety.Event req) async {
-    await _writeLock.lock();
-    try {
-      var op = "EventCreated";
-      var prefix = "foo.${user}.";
-      var topic = "${prefix}Events${delimiter}${op}";
-      fTransport.setTopic(topic);
-      var oprot = fProtocol;
-      var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(msg);
-      req.write(oprot);
-      oprot.writeMessageEnd();
-      await oprot.transport.flush();
-    } finally {
-      _writeLock.unlock();
-    }
+    var op = "EventCreated";
+    var prefix = "foo.${user}.";
+    var topic = "${prefix}Events${delimiter}${op}";
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(transport.publishSizeLimit);
+    var oprot = protocolFactory.getProtocol(memoryBuffer);
+    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(msg);
+    req.write(oprot);
+    oprot.writeMessageEnd();
+    await transport.publish(topic, memoryBuffer.writeBytes);
   }
 }
 
@@ -78,8 +70,8 @@ class EventsSubscriber {
     var op = "EventCreated";
     var prefix = "foo.${user}.";
     var topic = "${prefix}Events${delimiter}${op}";
-    var transport = provider.fTransportFactory.getTransport();
-    await transport.subscribe(topic, _recvEventCreated(op, provider.fProtocolFactory, onEvent));
+    var transport = provider.subscriberTransportFactory.getTransport();
+    await transport.subscribe(topic, _recvEventCreated(op, provider.protocolFactory, onEvent));
     return new frugal.FSubscription(topic, transport);
   }
 

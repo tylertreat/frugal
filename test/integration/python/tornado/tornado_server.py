@@ -21,7 +21,8 @@ from frugal_test.f_FrugalTest import Processor
 from frugal_test.ttypes import Event
 
 from frugal.tornado.server import FNatsTornadoServer, FTornadoHttpHandler
-from frugal.tornado.transport import FNatsScopeTransportFactory
+from frugal.tornado.transport import FNatsPublisherTransportFactory
+from frugal.tornado.transport import FNatsSubscriberTransportFactory
 
 from common.FrugalTestHandler import FrugalTestHandler
 
@@ -95,8 +96,10 @@ def main():
         sys.exit(1)
 
     # Setup subscriber, send response upon receipt
-    scope_transport_factory = FNatsScopeTransportFactory(nats_client)
-    provider = FScopeProvider(scope_transport_factory, protocol_factory)
+    pub_transport_factory = FNatsPublisherTransportFactory(nats_client)
+    sub_transport_factory = FNatsSubscriberTransportFactory(nats_client)
+    provider = FScopeProvider(
+        pub_transport_factory, sub_transport_factory, protocol_factory)
     global publisher
     publisher = EventsPublisher(provider)
     yield publisher.open()

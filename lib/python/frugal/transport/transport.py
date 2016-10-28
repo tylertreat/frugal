@@ -1,36 +1,69 @@
 from thrift.transport.TTransport import TTransportBase
 
 
-class FTransport(TTransportBase, object):
-    """FTransport is a Thrift TTransport for services."""
+class FTransport(object):
+    """
+    FTransport is comparable to Thrift's TTransport in that it represents the
+    transport layer for frugal clients. However, frugal is callback based and
+    sends only framed data. Due to this, instead of read, write, and flush
+    methods, FTransport has a send method that sends framed frugal messages.
+    To handle callback data, an FTransport also has an FRegistry, so it provides
+    methods for registering and unregistering an FAsyncCallback to an FContext.
+    """
+    def open(self):
+        """Open the transport."""
+        raise NotImplementedError('You must override this')
 
-    DEFAULT_HIGH_WATERMARK = 5 * 1000
+    def close(self):
+        """Close the transport."""
+        raise NotImplementedError('You must override this')
 
-    def __init__(self):
-        self._registry = None
-
-    def set_registry(self, registry):
-        """Set the FRegistry for the transport
-
-        Args:
-            registry: FRegistry
-        """
-        pass
+    def is_open(self):
+        """Return True if the transport is open, False otherwise."""
+        raise NotImplementedError('You must override this')
 
     def register(self, context, callback):
-        pass
+        """
+        Register a callback with a context.
+
+        Args:
+            context: The context to register.
+            callback: The function associated with the given context.
+        """
+        raise NotImplementedError('You must override this')
 
     def unregister(self, context):
-        pass
+        """
+        Unregister the given context.
+
+        Args:
+            context: The context to unregister.
+        """
+        raise NotImplementedError('You must override this')
 
     def set_monitor(self, monitor):
-        pass
+        """
+        Set the transport monitor for the transport. This should only be used
+        for "stateful" transports.
 
-    def closed(self):
-        pass
+        Args:
+            monitor: A transport monitor
+        """
+        raise NotImplementedError('You must override this')
+
+    def send(self, data):
+        """Transmits the given data."""
+        raise NotImplementedError('You must override this')
+
+    def get_request_size_limit(self):
+        """
+        Returns the maximum number of bytes that can be sent. A non-positive
+        number is returned to indicate an unbounded allowable size.
+        """
+        raise NotImplementedError('You must override this')
 
 
-class FSynchronousTransport(TTransportBase, object):
+class TSynchronousTransport(TTransportBase, object):
     """FSynchronousTransport is a Thrift TTransport for services which makes
     synchronous requests.
     """

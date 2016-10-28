@@ -96,25 +96,25 @@ class TestFNatsTransport(utils.AsyncIOTestCase):
         self.mock_nats_client.unsubscribe.assert_called_once_with(235)
 
     @utils.async_runner
-    async def test_flush_not_open(self):
+    async def test_send_not_open(self):
         self.transport._is_open = False
         with self.assertRaises(TTransportException) as cm:
-            await self.transport.flush()
+            await self.transport.send([])
         self.assertEqual(TTransportException.NOT_OPEN, cm.exception.type)
 
     @utils.async_runner
-    async def test_flush(self):
+    async def test_send(self):
         self.transport._is_open = True
         data = bytearray([2, 3, 4, 5, 6, 7])
-        self.transport._wbuf.write(data)
+        data_len = bytearray([0, 0, 0, 6])
+        frame = data_len + data
         future = asyncio.Future()
         future.set_result(None)
         self.mock_nats_client.publish_request.return_value = future
-        await self.transport.flush()
+        await self.transport.send(frame)
 
-        self.assertEqual(0, len(self.transport._wbuf.getvalue()))
         self.mock_nats_client.publish_request.assert_called_once_with(
             self.subject,
             self.inbox,
-            bytearray([0, 0, 0, 6]) + data
+            frame
         )

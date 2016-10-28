@@ -21,7 +21,8 @@ from frugal_test.ttypes import Event
 
 from frugal.aio.server import FNatsServer
 from frugal.aio.server.http_handler import new_http_handler
-from frugal.aio.transport.nats_scope_transport import FNatsScopeTransportFactory
+from frugal.aio.transport import FNatsPublisherTransportFactory
+from frugal.aio.transport import FNatsSubscriberTransportFactory
 
 from common.FrugalTestHandler import FrugalTestHandler
 from common.utils import *
@@ -53,8 +54,10 @@ async def main():
     processor = Processor(handler)
 
     # Setup subscriber, send response upon receipt
-    scope_transport_factory = FNatsScopeTransportFactory(nats_client)
-    provider = FScopeProvider(scope_transport_factory, protocol_factory)
+    pub_transport_factory = FNatsPublisherTransportFactory(nats_client)
+    sub_transport_factory = FNatsSubscriberTransportFactory(nats_client)
+    provider = FScopeProvider(
+        pub_transport_factory, sub_transport_factory, protocol_factory)
     publisher = EventsPublisher(provider)
     await publisher.open()
 

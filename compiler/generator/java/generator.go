@@ -2295,6 +2295,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import com.workiva.frugal.processor.FProcessorFunction;\n"
 	imports += "import com.workiva.frugal.protocol.*;\n"
 	imports += "import com.workiva.frugal.transport.FTransport;\n"
+	imports += "import com.workiva.frugal.transport.TMemoryOutputBuffer;\n"
 	imports += "import org.apache.thrift.TApplicationException;\n"
 	imports += "import org.apache.thrift.TException;\n"
 	imports += "import org.apache.thrift.protocol.TMessage;\n"
@@ -2313,10 +2314,13 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports += "import com.workiva.frugal.middleware.ServiceMiddleware;\n"
 	imports += "import com.workiva.frugal.protocol.*;\n"
 	imports += "import com.workiva.frugal.provider.FScopeProvider;\n"
-	imports += "import com.workiva.frugal.transport.FScopeTransport;\n"
+	imports += "import com.workiva.frugal.transport.FPublisherTransport;\n"
+	imports += "import com.workiva.frugal.transport.FSubscriberTransport;\n"
 	imports += "import com.workiva.frugal.transport.FSubscription;\n"
+	imports += "import com.workiva.frugal.transport.TMemoryOutputBuffer;\n"
 	imports += "import org.apache.thrift.TException;\n"
 	imports += "import org.apache.thrift.TApplicationException;\n"
+	imports += "import org.apache.thrift.transport.TTransport;\n"
 	imports += "import org.apache.thrift.transport.TTransportException;\n"
 	imports += "import org.apache.thrift.protocol.*;\n\n"
 
@@ -2413,8 +2417,8 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 	publisher += fmt.Sprintf(tabtab+"protected static class Internal%sPublisher implements Iface {\n\n", scopeTitle)
 
 	publisher += tabtabtab + "private FScopeProvider provider;\n"
-	publisher += tabtabtab + "private FScopeTransport transport;\n"
-	publisher += tabtabtab + "private FProtocol protocol;\n\n"
+	publisher += tabtabtab + "private FPublisherTransport transport;\n"
+	publisher += tabtabtab + "private FProtocolFactory protocolFactory;\n\n"
 
 	publisher += fmt.Sprintf(tabtabtab+"protected Internal%sPublisher() {\n", scopeTitle)
 	publisher += tabtabtab + "}\n\n"
@@ -2424,9 +2428,9 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 	publisher += tabtabtab + "}\n\n"
 
 	publisher += tabtabtab + "public void open() throws TException {\n"
-	publisher += tabtabtabtab + "FScopeProvider.Client client = provider.build();\n"
-	publisher += tabtabtabtab + "transport = client.getTransport();\n"
-	publisher += tabtabtabtab + "protocol = client.getProtocol();\n"
+	publisher += tabtabtabtab + "FScopeProvider.Publisher publisher = provider.buildPublisher();\n"
+	publisher += tabtabtabtab + "transport = publisher.getTransport();\n"
+	publisher += tabtabtabtab + "protocolFactory = publisher.getProtocolFactory();\n"
 	publisher += tabtabtabtab + "transport.open();\n"
 	publisher += tabtabtab + "}\n\n"
 
@@ -2442,19 +2446,16 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 			publisher += g.GenerateBlockComment(op.Comment, tabtabtab)
 		}
 		publisher += fmt.Sprintf(tabtabtab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.qualifiedTypeName(op.Type))
-		publisher += fmt.Sprintf(tabtabtabtab+"String op = \"%s\";\n", op.Name)
-		publisher += fmt.Sprintf(tabtabtabtab+"String prefix = %s;\n", generatePrefixStringTemplate(scope))
+		publisher += tabtabtabtab + fmt.Sprintf("String op = \"%s\";\n", op.Name)
+		publisher += tabtabtabtab + fmt.Sprintf("String prefix = %s;\n", generatePrefixStringTemplate(scope))
 		publisher += tabtabtabtab + "String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, DELIMITER, op);\n"
-		publisher += tabtabtabtab + "transport.lockTopic(topic);\n"
-		publisher += tabtabtabtab + "try {\n"
-		publisher += tabtabtabtabtab + "protocol.writeRequestHeader(ctx);\n"
-		publisher += tabtabtabtabtab + "protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));\n"
-		publisher += tabtabtabtabtab + "req.write(protocol);\n"
-		publisher += tabtabtabtabtab + "protocol.writeMessageEnd();\n"
-		publisher += tabtabtabtabtab + "transport.flush();\n"
-		publisher += tabtabtabtab + "} finally {\n"
-		publisher += tabtabtabtabtab + "transport.unlockTopic();\n"
-		publisher += tabtabtabtab + "}\n"
+		publisher += tabtabtabtab + "TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getPublishSizeLimit());\n"
+		publisher += tabtabtabtab + "FProtocol protocol = protocolFactory.getProtocol(memoryBuffer);\n"
+		publisher += tabtabtabtab + "protocol.writeRequestHeader(ctx);\n"
+		publisher += tabtabtabtab + "protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));\n"
+		publisher += tabtabtabtab + "req.write(protocol);\n"
+		publisher += tabtabtabtab + "protocol.writeMessageEnd();\n"
+		publisher += tabtabtabtab + "transport.publish(topic, memoryBuffer.getWriteBytes());\n"
 		publisher += tabtabtab + "}\n"
 	}
 
@@ -2563,55 +2564,37 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 		if op.Comment != nil {
 			subscriber += g.GenerateBlockComment(op.Comment, tabtab)
 		}
-		subscriber += fmt.Sprintf(tabtab+"public FSubscription subscribe%s(%sfinal %sHandler handler) throws TException {\n",
-			op.Name, args, op.Name)
-		subscriber += fmt.Sprintf(tabtabtab+"final String op = \"%s\";\n", op.Name)
-		subscriber += fmt.Sprintf(tabtabtab+"String prefix = %s;\n", generatePrefixStringTemplate(scope))
+		subscriber += tabtab + fmt.Sprintf("public FSubscription subscribe%s(%sfinal %sHandler handler) throws TException {\n", op.Name, args, op.Name)
+		subscriber += tabtabtab + fmt.Sprintf("final String op = \"%s\";\n", op.Name)
+		subscriber += tabtabtab + fmt.Sprintf("String prefix = %s;\n", generatePrefixStringTemplate(scope))
 		subscriber += tabtabtab + "final String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, DELIMITER, op);\n"
-		subscriber += tabtabtab + "final FScopeProvider.Client client = provider.build();\n"
-		subscriber += tabtabtab + "final FScopeTransport transport = client.getTransport();\n"
-		subscriber += tabtabtab + "transport.subscribe(topic);\n\n"
-
+		subscriber += tabtabtab + "final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();\n"
+		subscriber += tabtabtab + "final FSubscriberTransport transport = subscriber.getTransport();\n"
 		subscriber += tabtabtab + fmt.Sprintf(
 			"final %sHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, %sHandler.class, middleware);\n",
 			op.Name, op.Name)
-		subscriber += tabtabtab + "final FSubscription sub = FSubscription.of(topic, transport);\n"
-		subscriber += tabtabtab + "new Thread(new Runnable() {\n"
-		subscriber += tabtabtabtab + "public void run() {\n"
-		subscriber += tabtabtabtabtab + "while (true) {\n"
-		subscriber += tabtabtabtabtabtab + "try {\n"
-		subscriber += tabtabtabtabtabtabtab + "FContext ctx = client.getProtocol().readRequestHeader();\n"
-		subscriber += tabtabtabtabtabtabtab + fmt.Sprintf("%s received = recv%s(op, client.getProtocol());\n",
-			g.qualifiedTypeName(op.Type), op.Name)
-		subscriber += tabtabtabtabtabtabtab + fmt.Sprintf("proxiedHandler.on%s(ctx, received);\n", op.Name)
-		subscriber += tabtabtabtabtabtab + "} catch (TException e) {\n"
-		subscriber += tabtabtabtabtabtabtab + "if (e instanceof TTransportException) {\n"
-		subscriber += tabtabtabtabtabtabtabtab + "TTransportException transportException = (TTransportException) e;\n"
-		subscriber += tabtabtabtabtabtabtabtab + "if (transportException.getType() == TTransportException.END_OF_FILE) {\n"
-		subscriber += tabtabtabtabtabtabtabtabtab + "return;\n"
-		subscriber += tabtabtabtabtabtabtabtab + "}\n"
-		subscriber += tabtabtabtabtabtabtab + "}\n"
-		subscriber += tabtabtabtabtabtabtab + "LOGGER.warning(String.format(\"Subscriber error receiving %s, discarding frame: %s\", topic, e.getMessage()));\n"
-		subscriber += tabtabtabtabtabtabtab + "transport.discardFrame();\n"
-		subscriber += tabtabtabtabtabtab + "}\n"
-		subscriber += tabtabtabtabtab + "}\n"
-		subscriber += tabtabtabtab + "}\n"
-		subscriber += tabtabtab + "}, \"subscription\").start();\n\n"
 
-		subscriber += tabtabtab + "return sub;\n"
+		subscriber += tabtabtab + fmt.Sprintf("transport.subscribe(topic, recv%s(op, subscriber.getProtocolFactory(), proxiedHandler));\n", op.Name)
+		subscriber += tabtabtab + "return FSubscription.of(topic, transport);\n"
 		subscriber += tabtab + "}\n\n"
 
-		subscriber += tabtab + fmt.Sprintf("private %s recv%s(String op, FProtocol iprot) throws TException {\n", g.qualifiedTypeName(op.Type), op.Name)
-		subscriber += tabtabtab + "TMessage msg = iprot.readMessageBegin();\n"
-		subscriber += tabtabtab + "if (!msg.name.equals(op)) {\n"
-		subscriber += tabtabtabtab + "TProtocolUtil.skip(iprot, TType.STRUCT);\n"
-		subscriber += tabtabtabtab + "iprot.readMessageEnd();\n"
-		subscriber += tabtabtabtab + "throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);\n"
-		subscriber += tabtabtab + "}\n"
-		subscriber += tabtabtab + fmt.Sprintf("%s req = new %s();\n", g.qualifiedTypeName(op.Type), g.qualifiedTypeName(op.Type))
-		subscriber += tabtabtab + "req.read(iprot);\n"
-		subscriber += tabtabtab + "iprot.readMessageEnd();\n"
-		subscriber += tabtabtab + "return req;\n"
+		subscriber += tabtab + fmt.Sprintf("private FAsyncCallback recv%s(String op, FProtocolFactory pf, %sHandler handler) {\n", op.Name, op.Name)
+		subscriber += tabtabtab + "return new FAsyncCallback() {\n"
+		subscriber += tabtabtabtab + "public void onMessage(TTransport tr) throws TException {\n"
+		subscriber += tabtabtabtabtab + "FProtocol iprot = pf.getProtocol(tr);\n"
+		subscriber += tabtabtabtabtab + "FContext ctx = iprot.readRequestHeader();\n"
+		subscriber += tabtabtabtabtab + "TMessage msg = iprot.readMessageBegin();\n"
+		subscriber += tabtabtabtabtab + "if (!msg.name.equals(op)) {\n"
+		subscriber += tabtabtabtabtabtab + "TProtocolUtil.skip(iprot, TType.STRUCT);\n"
+		subscriber += tabtabtabtabtabtab + "iprot.readMessageEnd();\n"
+		subscriber += tabtabtabtabtabtab + "throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);\n"
+		subscriber += tabtabtabtabtab + "}\n"
+		subscriber += tabtabtabtabtab + fmt.Sprintf("%s received = new %s();\n", g.qualifiedTypeName(op.Type), g.qualifiedTypeName(op.Type))
+		subscriber += tabtabtabtabtab + "received.read(iprot);\n"
+		subscriber += tabtabtabtabtab + "iprot.readMessageEnd();\n"
+		subscriber += tabtabtabtabtab + fmt.Sprintf("handler.on%s(ctx, received);\n", op.Name)
+		subscriber += tabtabtabtab + "}\n"
+		subscriber += tabtabtab + "};\n"
 		subscriber += tabtab + "}\n\n"
 	}
 
@@ -2721,7 +2704,6 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += tab + "public static class Client implements Iface {\n\n"
 	}
 	if service.Extends == "" {
-		contents += tabtab + "protected final Object writeLock = new Object();\n"
 		if g.generateAsync() {
 			contents += tabtab + "protected ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);\n"
 		}
@@ -2732,7 +2714,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	if service.Extends != "" {
 		contents += tabtabtab + "super(transport, protocolFactory, middleware);\n"
 	}
-	contents += tabtabtab + "Iface client = new InternalClient(transport, protocolFactory, writeLock);\n"
+	contents += tabtabtab + "Iface client = new InternalClient(transport, protocolFactory);\n"
 	contents += tabtabtab + "proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);\n"
 	contents += tabtab + "}\n\n"
 
@@ -2790,20 +2772,13 @@ func (g *Generator) generateInternalClient(service *parser.Service) string {
 
 	contents += tabtab + "private FTransport transport;\n"
 	contents += tabtab + "private FProtocolFactory protocolFactory;\n"
-	contents += tabtab + "private FProtocol inputProtocol;\n"
-	contents += tabtab + "private FProtocol outputProtocol;\n"
-	contents += tabtab + "private final Object writeLock;\n\n"
 
-	contents += tabtab + "public InternalClient(FTransport transport, FProtocolFactory protocolFactory, Object writeLock) {\n"
+	contents += tabtab + "public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {\n"
 	if service.Extends != "" {
 		contents += tabtabtab + "super(transport, protocolFactory);\n"
 	}
 	contents += tabtabtab + "this.transport = transport;\n"
-	contents += tabtabtab + "this.transport.setRegistry(new FClientRegistry());\n"
 	contents += tabtabtab + "this.protocolFactory = protocolFactory;\n"
-	contents += tabtabtab + "this.inputProtocol = this.protocolFactory.getProtocol(this.transport);\n"
-	contents += tabtabtab + "this.outputProtocol = this.protocolFactory.getProtocol(this.transport);\n"
-	contents += tabtabtab + "this.writeLock = writeLock;\n"
 	contents += tabtab + "}\n\n"
 
 	for _, method := range service.Methods {
@@ -2821,29 +2796,28 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 	contents += tabtab + fmt.Sprintf("public %s %s(FContext ctx%s) %s {\n",
 		g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments, false), g.generateExceptions(method.Exceptions))
-	contents += tabtabtab + "FProtocol oprot = this.outputProtocol;\n"
+	contents += tabtabtab + "TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());\n"
+	contents += tabtabtab + "FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);\n"
 	indent := tabtabtab
 	if !method.Oneway {
 		contents += tabtabtab + "BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);\n"
-		contents += tabtabtab + fmt.Sprintf("this.transport.register(ctx, recv%sHandler(ctx, result));\n", strings.Title(method.Name))
+		contents += tabtabtab + fmt.Sprintf("transport.register(ctx, recv%sHandler(ctx, result));\n", strings.Title(method.Name))
 		contents += tabtabtab + "try {\n"
 		indent += tab
 	}
-	contents += indent + "synchronized (writeLock) {\n"
-	contents += indent + tab + "oprot.writeRequestHeader(ctx);\n"
+	contents += indent + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
 		msgType = "ONEWAY"
 	}
-	contents += indent + tab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", method.Name, msgType)
-	contents += indent + tab + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
+	contents += indent + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", method.Name, msgType)
+	contents += indent + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
 	for _, arg := range method.Arguments {
-		contents += indent + tab + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
+		contents += indent + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
 	}
-	contents += indent + tab + "args.write(oprot);\n"
-	contents += indent + tab + "oprot.writeMessageEnd();\n"
-	contents += indent + tab + "oprot.getTransport().flush();\n"
-	contents += indent + "}\n"
+	contents += indent + "args.write(oprot);\n"
+	contents += indent + "oprot.writeMessageEnd();\n"
+	contents += indent + "transport.send(memoryBuffer.getWriteBytes());\n"
 
 	if method.Oneway {
 		contents += tabtab + "}\n"
@@ -2882,7 +2856,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 			method.Name)
 	}
 	contents += tabtabtab + "} finally {\n"
-	contents += tabtabtabtab + "this.transport.unregister(ctx);\n"
+	contents += tabtabtabtab + "transport.unregister(ctx);\n"
 	contents += tabtabtab + "}\n"
 	contents += tabtab + "}\n\n"
 

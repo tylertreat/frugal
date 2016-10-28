@@ -60,7 +60,7 @@ class TestFNatsTornadoServer(AsyncTestCase):
         assert not self.server._oprot_factory.get_protocol.called
         assert not self.server._processor.process.called
 
-    @mock.patch('frugal.tornado.server.nats_server.MAX_MESSAGE_SIZE', 6)
+    @mock.patch('frugal.tornado.server.nats_server._NATS_MAX_MESSAGE_SIZE', 6)
     @gen_test
     def test_on_message_callback_bad_framesize_returns_early(self):
         data = b'asdf'
@@ -84,6 +84,9 @@ class TestFNatsTornadoServer(AsyncTestCase):
         frame_size = struct.pack('!I', len(data))
 
         msg = TestMsg(subject="foo", reply="inbox", data=frame_size + data)
+        publish_future = concurrent.Future()
+        publish_future.set_result(None)
+        self.mock_nats_client.publish.return_value = publish_future
 
         yield self.server._on_message_callback(msg)
 

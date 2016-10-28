@@ -22,7 +22,7 @@ class FTransportBase(FTransport):
         self._max_message_size = max_message_size
         self._wbuf = BytesIO()
 
-    def isOpen(self):
+    def is_open(self) -> bool:
         raise NotImplementedError('You must override this')
 
     async def open(self):
@@ -31,36 +31,9 @@ class FTransportBase(FTransport):
     async def close(self):
         raise NotImplementedError('You must override this')
 
-    def read(self, size):
-        raise Exception('Do not call this')
-
-    def write(self, buf):
-        """
-        Writes the given data to a buffer. Throws FMessageSizeException if
-        this will cause the buffer to exceed the message size limit.
-
-        Args:
-            buf: The data to write.
-        """
-        size = len(buf) + len(self._wbuf.getvalue())
-
-        if size > self._max_message_size > 0:
-            self._wbuf = BytesIO()
-            raise FMessageSizeException('Message exceeds max message size')
-        self._wbuf.write(buf)
-
-    async def flush(self):
+    async def send(self, data):
         raise NotImplementedError('You must override this')
 
-    def get_write_bytes(self):
-        """Get the framed bytes from the write buffer."""
-        data = self._wbuf.getvalue()
-        if len(data) == 0:
-            return None
+    def get_request_size_limit(self) -> int:
+        return self._max_message_size
 
-        data_length = struct.pack('!I', len(data))
-        return data_length + data
-
-    def reset_write_buffer(self):
-        """Reset the write buffer."""
-        self._wbuf = BytesIO()

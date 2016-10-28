@@ -5,9 +5,9 @@ from thrift.Thrift import TException
 from thrift.transport.TTransport import TMemoryBuffer
 from tornado import gen
 
+from frugal import _NATS_MAX_MESSAGE_SIZE
 from frugal.server import FServer
-from frugal.transport import FBoundedMemoryBuffer
-from frugal.tornado.transport.nats_scope_transport import MAX_MESSAGE_SIZE
+from frugal.transport import TMemoryOutputBuffer
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class FNatsTornadoServer(FServer):
             return
 
         frame_size = struct.unpack('!I', msg.data[:4])[0]
-        if frame_size > MAX_MESSAGE_SIZE - 4:
+        if frame_size > _NATS_MAX_MESSAGE_SIZE - 4:
             logger.warning("Invalid frame size, dropping message.")
             return
 
@@ -77,8 +77,8 @@ class FNatsTornadoServer(FServer):
         iprot = self._iprot_factory.get_protocol(
             TMemoryBuffer(msg.data[4:])
         )
-        out_transport = FBoundedMemoryBuffer(MAX_MESSAGE_SIZE - 4)
-        oprot = self._oprot_factory.get_protocol(out_transport)
+        otrans = TMemoryOutputBuffer(_NATS_MAX_MESSAGE_SIZE)
+        oprot = self._oprot_factory.get_protocol(otrans)
 
         try:
             self._processor.process(iprot, oprot)
@@ -86,10 +86,7 @@ class FNatsTornadoServer(FServer):
             logger.exception(ex)
             return
 
-        if len(out_transport) == 0:
+        if len(otrans) == 4:
             return
 
-        data = out_transport.getvalue()
-        buff = struct.pack('!I', len(data))
-
-        yield self._nats_client.publish(reply_to, "{}{}".format(buff, data))
+        yield self._nats_client.publish(reply_to, otrans.getvalue())

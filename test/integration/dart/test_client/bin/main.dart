@@ -166,17 +166,16 @@ Future _initTestClient(
     {String host, int port, String transportType, String protocolType}) async {
 
   FProtocolFactory fProtocolFactory = null;
-  FTransport fTransport = null;
+  FTransport transport = null;
   ctx = new FContext();
 
 //  Nats is not available without the SDK in dart, so HTTP is the only transport we can test
   var uri = Uri.parse('http://$host:$port');
-  var config = new FHttpConfig(uri, {});
-  fTransport = new FHttpClientTransport(new wt.Client(), config);
-  await fTransport.open();
+  transport = new FHttpTransport(new wt.Client(), uri);
+  await transport.open();
 
   fProtocolFactory = new FProtocolFactory(getProtocolFactory(protocolType));
-  client = new FFrugalTestClient(fTransport, fProtocolFactory, [clientMiddleware()]);
+  client = new FFrugalTestClient(transport, fProtocolFactory, [clientMiddleware()]);
 }
 
 List<FTest> _createTests() {

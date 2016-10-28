@@ -26,6 +26,7 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from frugal.aio.processor import FProcessorFunction\n"
 	imports += "from frugal.aio.registry import FClientRegistry\n"
 	imports += "from frugal.middleware import Method\n"
+	imports += "from frugal.transport import TMemoryOutputBuffer\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 
@@ -56,7 +57,8 @@ func (a *AsyncIOGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "from thrift.Thrift import TType\n"
 	imports += "from frugal.middleware import Method\n"
-	imports += "from frugal.subscription import FSubscription\n\n"
+	imports += "from frugal.subscription import FSubscription\n"
+	imports += "from frugal.transport import TMemoryOutputBuffer\n\n"
 
 	namespace, ok := a.Frugal.Thrift.Namespace(lang)
 	if !ok {
@@ -118,11 +120,8 @@ func (a *AsyncIOGenerator) generateClient(service *parser.Service) string {
 		contents += tabtab + "                             middleware=middleware)\n"
 		contents += tabtab + "self._methods.update("
 	} else {
-		contents += tabtab + "transport.set_registry(FClientRegistry())\n"
 		contents += tabtab + "self._transport = transport\n"
 		contents += tabtab + "self._protocol_factory = protocol_factory\n"
-		contents += tabtab + "self._oprot = protocol_factory.get_protocol(transport)\n"
-		contents += tabtab + "self._write_lock = asyncio.Lock()\n"
 		contents += tabtab + "self._methods = "
 	}
 	contents += "{\n"
@@ -176,17 +175,17 @@ func (a *AsyncIOGenerator) generateClientMethod(method *parser.Method) string {
 func (a *AsyncIOGenerator) generateClientSendMethod(method *parser.Method) string {
 	contents := ""
 	contents += tab + fmt.Sprintf("async def _send_%s(self, ctx%s):\n", method.Name, a.generateClientArgs(method.Arguments))
-	contents += tabtab + "oprot = self._oprot\n"
-	contents += tabtab + "async with self._write_lock:\n"
-	contents += tabtabtab + "oprot.write_request_headers(ctx)\n"
-	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
-	contents += tabtabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
+	contents += tabtab + "buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())\n"
+	contents += tabtab + "oprot = self._protocol_factory.get_protocol(buffer)\n"
+	contents += tabtab + "oprot.write_request_headers(ctx)\n"
+	contents += tabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
+	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
 	for _, arg := range method.Arguments {
-		contents += tabtabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
+		contents += tabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
 	}
-	contents += tabtabtab + "args.write(oprot)\n"
-	contents += tabtabtab + "oprot.writeMessageEnd()\n"
-	contents += tabtabtab + "await oprot.get_transport().flush()\n\n"
+	contents += tabtab + "args.write(oprot)\n"
+	contents += tabtab + "oprot.writeMessageEnd()\n"
+	contents += tabtab + "await self._transport.send(buffer.getvalue())\n\n"
 
 	return contents
 }
@@ -333,7 +332,7 @@ func (a *AsyncIOGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope
 	subscriber += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	subscriber += tabtabtab + "middleware = [middleware]\n"
 	subscriber += tabtab + "self._middleware = middleware\n"
-	subscriber += tabtab + "self._transport, self._protocol_factory = provider.new()\n\n"
+	subscriber += tabtab + "self._provider = provider\n\n"
 
 	for _, op := range scope.Operations {
 		subscriber += a.generateSubscribeMethod(scope, op)
@@ -371,8 +370,9 @@ func (a *AsyncIOGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	method += tabtab + fmt.Sprintf("prefix = %s\n", generatePrefixStringTemplate(scope))
 	method += tabtab + fmt.Sprintf("topic = '{}%s{}{}'.format(prefix, self._DELIMITER, op)\n\n", scope.Name)
 
+	method += tabtab + "transport, protocol_factory = self._provider.new_subscriber()\n"
 	method += tabtab + fmt.Sprintf(
-		"await self._transport.subscribe(topic, self._recv_%s(self._protocol_factory, op, %s_handler))\n\n",
+		"await transport.subscribe(topic, self._recv_%s(protocol_factory, op, %s_handler))\n\n",
 		op.Name, op.Name)
 
 	method += tab + fmt.Sprintf("def _recv_%s(self, protocol_factory, op, handler):\n", op.Name)

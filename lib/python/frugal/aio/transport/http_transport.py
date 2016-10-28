@@ -1,6 +1,6 @@
 import base64
-from io import BytesIO
-import struct
+# from io import BytesIO
+# import struct
 
 from aiohttp.client import ClientSession
 from thrift.transport.TTransport import TTransportException
@@ -36,7 +36,7 @@ class FHttpTransport(FRegistryTransport):
         if response_capacity > 0:
             self._headers['x-frugal-payload-limit'] = str(response_capacity)
 
-    def isOpen(self):
+    def is_open(self):
         """Always returns True"""
         return True
 
@@ -48,18 +48,15 @@ class FHttpTransport(FRegistryTransport):
         """No-op"""
         pass
 
-    async def flush(self):
+    async def send(self, data):
         """
         Write the current buffer over the network and execute the callback set
         in the registry with the response.
         """
-        frame = self._wbuf.getvalue()
-        if len(frame) == 0:
-            return
+        if len(data) > self._max_message_size > 0:
+            raise FMessageSizeException()
 
-        self._wbuf = BytesIO()
-        frame_length = struct.pack('!I', len(frame))
-        encoded = base64.b64encode(frame_length + frame)
+        encoded = base64.b64encode(data)
         status, text = await self._make_request(encoded)
         if status == 413:
             raise FMessageSizeException(

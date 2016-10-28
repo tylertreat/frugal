@@ -73,7 +73,7 @@ public class FAdapterTransportTest {
         FAdapterTransport.ExecutorFactory mockExecutorFactory = mock(FAdapterTransport.ExecutorFactory.class);
         tr.setExecutorFactory(mockExecutorFactory);
         FRegistry mockRegistry = mock(FRegistry.class);
-        tr.setRegistry(mockRegistry);
+        tr.registry = mockRegistry;
         ExecutorService mockExecutor = mock(ExecutorService.class);
         when(mockExecutorFactory.newExecutor()).thenReturn(mockExecutor);
         when(mockTr.isOpen()).thenReturn(true);
@@ -101,7 +101,7 @@ public class FAdapterTransportTest {
     @Test
     public void testTransportReader() throws TException {
         FRegistry mockRegistry = mock(FRegistry.class);
-        tr.setRegistry(mockRegistry);
+        tr.registry = mockRegistry;
         FAdapterTransport.ExecutorFactory mockExecutorFactory = mock(FAdapterTransport.ExecutorFactory.class);
         ExecutorService mockExecutor = mock(ExecutorService.class);
         when(mockExecutorFactory.newExecutor()).thenReturn(mockExecutor);
@@ -150,7 +150,7 @@ public class FAdapterTransportTest {
     @Test
     public void testTransportReader_error() throws TException {
         FRegistry mockRegistry = mock(FRegistry.class);
-        tr.setRegistry(mockRegistry);
+        tr.registry = mockRegistry;
         FAdapterTransport.ExecutorFactory mockExecutorFactory = mock(FAdapterTransport.ExecutorFactory.class);
         ExecutorService mockExecutor = mock(ExecutorService.class);
         when(mockExecutorFactory.newExecutor()).thenReturn(mockExecutor);
@@ -167,36 +167,27 @@ public class FAdapterTransportTest {
     }
 
     /**
-     * Ensures write buffers up write and flush calls through to the underlying transport.
+     * Ensures send calls through to write and flush the underlying transport.
      */
     @Test
-    public void testWriteFlush() throws TTransportException {
+    public void testSend() throws TTransportException {
         byte[] buff = new byte[]{1, 2, 3, 4};
-        int off = 0;
-        int len = 4;
 
         when(mockTr.isOpen()).thenReturn(true);
         tr.open();
 
-        tr.write(buff, off, len);
-        tr.flush();
+        tr.send(buff);
 
-        verify(mockTr).write(new byte[]{0, 0, 0, 4}, 0, 4);
-        byte[] expected = new byte[1024];
-        expected[0] = 1;
-        expected[1] = 2;
-        expected[2] = 3;
-        expected[3] = 4;
-        verify(mockTr).write(expected, 0, 4);
+        verify(mockTr).write(buff);
         verify(mockTr).flush();
     }
 
     /**
-     * Ensures flush throws TTransportException if the transport is not open.
+     * Ensures send throws TTransportException if the transport is not open.
      */
     @Test(expected = TTransportException.class)
-    public void testFlush_notOpen() throws TTransportException {
-        tr.flush();
+    public void test_notOpen() throws TTransportException {
+        tr.send(null);
     }
 
 }

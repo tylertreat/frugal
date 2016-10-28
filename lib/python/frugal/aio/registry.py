@@ -122,6 +122,8 @@ class FClientRegistry(FRegistry):
         Args:
             frame: an entire Frugal message frame.
         """
+        if not frame:
+            return
         headers = _Headers.decode_from_frame(frame)
         op_id = headers.get(_OP_ID, None)
 

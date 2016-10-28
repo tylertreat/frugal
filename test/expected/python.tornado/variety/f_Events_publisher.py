@@ -15,6 +15,7 @@ from thrift.Thrift import TType
 from tornado import gen
 from frugal.middleware import Method
 from frugal.subscription import FSubscription
+from frugal.transport import TMemoryOutputBuffer
 
 from variety.python.ttypes import *
 
@@ -41,8 +42,7 @@ class EventsPublisher(object):
 
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
-        self._transport, protocol_factory = provider.new()
-        self._protocol = protocol_factory.get_protocol(self._transport)
+        self._transport, self._protocol_factory = provider.new_publisher()
         self._methods = {
             'publish_EventCreated': Method(self._publish_EventCreated, middleware),
         }
@@ -55,6 +55,7 @@ class EventsPublisher(object):
     def close(self):
         yield self._transport.close()
 
+    @gen.coroutine
     def publish_EventCreated(self, ctx, user, req):
         """
         This is a docstring.
@@ -64,20 +65,18 @@ class EventsPublisher(object):
             user: string
             req: Event
         """
-        self._methods['publish_EventCreated']([ctx, user, req])
+        yield self._methods['publish_EventCreated']([ctx, user, req])
 
+    @gen.coroutine
     def _publish_EventCreated(self, ctx, user, req):
         op = 'EventCreated'
         prefix = 'foo.{}.'.format(user)
         topic = '{}Events{}{}'.format(prefix, self._DELIMITER, op)
-        oprot = self._protocol
-        self._transport.lock_topic(topic)
-        try:
-            oprot.write_request_headers(ctx)
-            oprot.writeMessageBegin(op, TMessageType.CALL, 0)
-            req.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
-        finally:
-            self._transport.unlock_topic()
+        buffer = TMemoryOutputBuffer(self._transport.get_publish_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
+        oprot.write_request_headers(ctx)
+        oprot.writeMessageBegin(op, TMessageType.CALL, 0)
+        req.write(oprot)
+        oprot.writeMessageEnd()
+        yield self._transport.publish(topic, buffer.getvalue())
 

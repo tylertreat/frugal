@@ -4,6 +4,8 @@ import struct
 from thrift.transport.TTransport import TMemoryBuffer
 from tornado.web import RequestHandler
 
+from frugal.transport import TMemoryOutputBuffer
+
 
 class FTornadoHttpHandler(RequestHandler):
     """
@@ -34,18 +36,20 @@ class FTornadoHttpHandler(RequestHandler):
         iprot = self._protocol_factory.get_protocol(
             TMemoryBuffer(payload[4:])
         )
-        out_transport = TMemoryBuffer()
-        oprot = self._protocol_factory.get_protocol(out_transport)
+        # TODO could be better with this limit
+        otrans = TMemoryOutputBuffer(0)
+        oprot = self._protocol_factory.get_protocol(otrans)
+        # TODO 2.0 this should probably be in a try/catch but we need to decide
+        # what to do here
         self._processor.process(iprot, oprot)
 
         # write back response
-        output_data = out_transport.getvalue()
+        output_data = otrans.getvalue()
         if len(output_data) > response_limit > 0:
             self.send_error(status_code=413)
             return
 
-        output_data_len = struct.pack('!I', len(output_data))
-        output_payload = base64.b64encode(output_data_len + output_data)
+        output_payload = base64.b64encode(output_data)
 
         self.set_header('content-transfer-encoding', 'base64')
         self.write(output_payload)

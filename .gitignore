@@ -20,7 +20,13 @@ packages
 *.js.deps
 *.js.map
 
+# Or the lock
 pubspec.lock
+
+# Or dart coverage, docs, and test runner files, for that matter
+lib/dart/coverage
+lib/dart/doc
+lib/dart/test/generated_runner_test.dart
 
 # Ignore generated code and cross results
 skynet.Dockerfile

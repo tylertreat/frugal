@@ -17,12 +17,12 @@ public class FSubscriptionTest {
 
     private final String topic = "topic";
 
-    private FScopeTransport mockTransport;
+    private FSubscriberTransport mockTransport;
     private FSubscription subscription;
 
     @Before
     public void setUp() throws Exception {
-        mockTransport = mock(FScopeTransport.class);
+        mockTransport = mock(FSubscriberTransport.class);
         subscription = FSubscription.of(topic, mockTransport);
     }
 
@@ -34,6 +34,6 @@ public class FSubscriptionTest {
     @Test
     public void testUnsubscribeCallsCloseOnTransport() throws Exception {
         subscription.unsubscribe();
-        verify(mockTransport).close();
+        verify(mockTransport).unsubscribe();
     }
 }

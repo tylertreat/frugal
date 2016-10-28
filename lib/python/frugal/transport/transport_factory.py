@@ -1,4 +1,3 @@
-
 class FTransportFactory(object):
     """FTransportFactory is responsible for creating new FTransports."""
 
@@ -13,13 +12,21 @@ class FTransportFactory(object):
         pass
 
 
-class FScopeTransportFactory(FTransportFactory):
-    """Factory Interface for creating FScopeTransports"""
-
+class FPublisherTransportFactory:
+    """
+    FPublisherTransportFactory is responsible for creating new
+    FPublisherTransports.
+    """
     def get_transport(self):
-        """ Get a new FScopeTransport instance.
+        """Returns a new FPublisherTransport."""
+        pass
 
-        Returns:
-            FScopeTransport
-        """
+
+class FSubscriberTransportFactory:
+    """
+    FSubscriberTransportFactory is responsible for creating new
+    FSubscriberTransports.
+    """
+    def get_transport(self):
+        """Returns a new FSubscriberTransport."""
         pass

@@ -38,10 +38,9 @@ func TestSimpleServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := NewFSimpleServerFactory4(
+	server := NewFSimpleServer(
 		mockFProcessorFactory,
 		serverTr,
-		NewAdapterTransportFactory(),
 		NewFProtocolFactory(protoFactory),
 	)
 
@@ -52,7 +51,7 @@ func TestSimpleServer(t *testing.T) {
 
 	mockFProcessor := new(mockFProcessor)
 	mockFProcessorFactory.Lock() // IDK why this is needed to prevent races...
-	mockFProcessorFactory.On("GetProcessor", mock.AnythingOfType("*thrift.TSocket")).Return(mockFProcessor)
+	mockFProcessorFactory.On("GetProcessor", mock.AnythingOfType("*frugal.TFramedTransport")).Return(mockFProcessor)
 	mockFProcessorFactory.Unlock()
 	mockFProcessor.On("Process", mock.AnythingOfType("*frugal.FProtocol"),
 		mock.AnythingOfType("*frugal.FProtocol")).Return(nil)
@@ -67,9 +66,7 @@ func TestSimpleServer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = fTransport.Write(make([]byte, 10))
-	assert.Nil(t, err)
-	assert.Nil(t, fTransport.Flush())
+	assert.Nil(t, fTransport.Send(make([]byte, 10)))
 	time.Sleep(5 * time.Millisecond)
 
 	assert.Nil(t, server.Stop())

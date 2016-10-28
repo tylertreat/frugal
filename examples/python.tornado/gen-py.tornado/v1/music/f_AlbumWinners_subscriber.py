@@ -15,6 +15,7 @@ from thrift.Thrift import TType
 from tornado import gen
 from frugal.middleware import Method
 from frugal.subscription import FSubscription
+from frugal.transport import TMemoryOutputBuffer
 
 from v1.music.ttypes import *
 
@@ -42,7 +43,7 @@ class AlbumWinnersSubscriber(object):
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
         self._middleware = middleware
-        self._transport, self._protocol_factory = provider.new()
+        self._transport, self._protocol_factory = provider.new_subscriber()
 
     @gen.coroutine
     def subscribe_Winner(self, Winner_handler):
@@ -77,3 +78,7 @@ class AlbumWinnersSubscriber(object):
                 sys.exit(1)
 
         return callback
+
+
+
+
