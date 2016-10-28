@@ -280,7 +280,12 @@ class _ping(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = ping_result()
-        self._handler([ctx])
+        try:
+            self._handler([ctx])
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "ping", e.message)
+            raise
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
@@ -306,6 +311,10 @@ class _bleh(FProcessorFunction):
             result.oops = oops
         except excepts.ttypes.InvalidData as err2:
             result.err2 = err2
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "bleh", e.message)
+            raise
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('bleh', TMessageType.REPLY, 0)
@@ -325,7 +334,12 @@ class _getThing(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = getThing_result()
-        result.success = self._handler([ctx])
+        try:
+            result.success = self._handler([ctx])
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getThing", e.message)
+            raise
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.REPLY, 0)
@@ -345,7 +359,12 @@ class _getMyInt(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = getMyInt_result()
-        result.success = self._handler([ctx])
+        try:
+            result.success = self._handler([ctx])
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getMyInt", e.message)
+            raise
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.REPLY, 0)
@@ -354,3 +373,10 @@ class _getMyInt(FProcessorFunction):
             oprot.get_transport().flush()
 
 
+def _write_application_exception(ctx, oprot, typ, method, message):
+    x = TApplicationException(type=typ, message=message)
+    oprot.write_response_headers(ctx)
+    oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
+    x.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.get_transport().flush()
