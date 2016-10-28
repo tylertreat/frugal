@@ -1134,6 +1134,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	for _, method := range service.Methods {
 		contents += g.generateProcessorFunction(method)
 	}
+	contents += g.generateWriteApplicationException()
 
 	return contents
 }
@@ -1230,11 +1231,8 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	if !method.Oneway {
 		contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	}
-	indent := tabtab
-	if len(method.Exceptions) > 0 {
-		indent += tab
-		contents += tabtab + "try:\n"
-	}
+	indent := tabtabtab
+	contents += tabtab + "try:\n"
 	if method.ReturnType == nil {
 		contents += indent + fmt.Sprintf("self._handler([ctx%s])\n",
 			g.generateServerArgs(method.Arguments))
@@ -1246,6 +1244,12 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", g.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
+	contents += tabtab + "except Exception as e:\n"
+	if !method.Oneway {
+		contents += tabtabtab + "with self._lock:\n"
+		contents += tabtabtabtab + fmt.Sprintf("_write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", method.Name)
+	}
+	contents += tabtabtab + "raise\n"
 	if !method.Oneway {
 		contents += tabtab + "with self._lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
@@ -1275,6 +1279,17 @@ func (g *Generator) generateMethodSignature(method *parser.Method) string {
 	}
 	contents += fmt.Sprintf("def %s(self, ctx%s):\n", method.Name, g.generateClientArgs(method.Arguments))
 	contents += g.generateDocString(docstr, tabtab)
+	return contents
+}
+
+func (g *Generator) generateWriteApplicationException() string {
+	contents := "def _write_application_exception(ctx, oprot, typ, method, message):\n"
+	contents += tab + "x = TApplicationException(type=typ, message=message)\n"
+	contents += tab + "oprot.write_response_headers(ctx)\n"
+	contents += tab + "oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)\n"
+	contents += tab + "x.write(oprot)\n"
+	contents += tab + "oprot.writeMessageEnd()\n"
+	contents += tab + "oprot.get_transport().flush()\n"
 	return contents
 }
 
