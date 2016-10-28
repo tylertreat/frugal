@@ -733,14 +733,16 @@ class TestingDefaults implements thrift.TBase {
           break;
         case STATUS:
           if(field.type == thrift.TType.I32) {
-            status = t_variety.deserializeHealthCondition(iprot.readI32());
+            status = iprot.readI32();
+            this.__isset_status = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case BASE_STATUS:
           if(field.type == thrift.TType.I32) {
-            base_status = t_actual_base_dart.deserializebase.base_health_condition(iprot.readI32());
+            base_status = iprot.readI32();
+            this.__isset_base_status = true;
           } else {
             TProtocolUtil.skip(iprot, field.type);
           }
@@ -865,10 +867,10 @@ class TestingDefaults implements thrift.TBase {
       oprot.writeFieldEnd();
     }
     oprot.writeFieldBegin(_STATUS_FIELD_DESC);
-    oprot.writeI32(t_variety.serializeHealthCondition(status));
+    oprot.writeI32(status);
     oprot.writeFieldEnd();
     oprot.writeFieldBegin(_BASE_STATUS_FIELD_DESC);
-    oprot.writeI32(t_actual_base_dart.serializebase.base_health_condition(base_status));
+    oprot.writeI32(base_status);
     oprot.writeFieldEnd();
     oprot.writeFieldStop();
     oprot.writeStructEnd();
@@ -1037,5 +1039,12 @@ class TestingDefaults implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
+    if(isSetStatus() && !t_variety.HealthCondition.VALID_VALUES.contains(status)) {
+      throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "The field 'status' has been assigned the invalid value $status");
+    }
+    if(isSetBase_status() && !t_actual_base_dart.base_health_condition.VALID_VALUES.contains(base_status)) {
+      throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "The field 'base_status' has been assigned the invalid value $base_status");
+    }
   }
 }

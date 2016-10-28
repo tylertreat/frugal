@@ -630,6 +630,7 @@ class ping_args implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class ping_result implements thrift.TBase {
@@ -701,6 +702,7 @@ class ping_result implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class blah_args implements thrift.TBase {
@@ -910,6 +912,7 @@ class blah_args implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class blah_result implements thrift.TBase {
@@ -1128,6 +1131,7 @@ class blah_result implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class oneWay_args implements thrift.TBase {
@@ -1301,6 +1305,7 @@ class oneWay_args implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class bin_method_args implements thrift.TBase {
@@ -1465,6 +1470,7 @@ class bin_method_args implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class bin_method_result implements thrift.TBase {
@@ -1634,6 +1640,7 @@ class bin_method_result implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class param_modifiers_args implements thrift.TBase {
@@ -1839,6 +1846,7 @@ class param_modifiers_args implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class param_modifiers_result implements thrift.TBase {
@@ -1957,6 +1965,7 @@ class param_modifiers_result implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class underlying_types_test_args implements thrift.TBase {
@@ -2141,6 +2150,7 @@ class underlying_types_test_args implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class underlying_types_test_result implements thrift.TBase {
@@ -2270,6 +2280,7 @@ class underlying_types_test_result implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class getThing_args implements thrift.TBase {
@@ -2341,6 +2352,7 @@ class getThing_args implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class getThing_result implements thrift.TBase {
@@ -2461,6 +2473,7 @@ class getThing_result implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class getMyInt_args implements thrift.TBase {
@@ -2532,6 +2545,7 @@ class getMyInt_args implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
 class getMyInt_result implements thrift.TBase {
@@ -2650,5 +2664,6 @@ class getMyInt_result implements thrift.TBase {
 
   validate() {
     // check for required fields
+    // check that fields of type enum have valid values
   }
 }
