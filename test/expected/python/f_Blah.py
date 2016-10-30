@@ -9,6 +9,7 @@
 from threading import Lock
 
 from frugal.middleware import Method
+from frugal.exceptions import FRateLimitException
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
 from thrift.Thrift import TApplicationException
@@ -118,6 +119,8 @@ class Client(Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
+            if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                raise FRateLimitException(x.message)
             raise x
         result = ping_result()
         result.read(self._iprot)
@@ -161,6 +164,8 @@ class Client(Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
+            if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                raise FRateLimitException(x.message)
             raise x
         result = bleh_result()
         result.read(self._iprot)
@@ -203,6 +208,8 @@ class Client(Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
+            if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                raise FRateLimitException(x.message)
             raise x
         result = getThing_result()
         result.read(self._iprot)
@@ -241,6 +248,8 @@ class Client(Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
+            if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                raise FRateLimitException(x.message)
             raise x
         result = getMyInt_result()
         result.read(self._iprot)
@@ -280,7 +289,12 @@ class _ping(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = ping_result()
-        self._handler([ctx])
+        try:
+            self._handler([ctx])
+        except FRateLimitException as ex:
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "ping", ex.message)
+                return
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
@@ -306,6 +320,10 @@ class _bleh(FProcessorFunction):
             result.oops = oops
         except excepts.ttypes.InvalidData as err2:
             result.err2 = err2
+        except FRateLimitException as ex:
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "bleh", ex.message)
+                return
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('bleh', TMessageType.REPLY, 0)
@@ -325,7 +343,12 @@ class _getThing(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = getThing_result()
-        result.success = self._handler([ctx])
+        try:
+            result.success = self._handler([ctx])
+        except FRateLimitException as ex:
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getThing", ex.message)
+                return
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.REPLY, 0)
@@ -345,12 +368,26 @@ class _getMyInt(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = getMyInt_result()
-        result.success = self._handler([ctx])
+        try:
+            result.success = self._handler([ctx])
+        except FRateLimitException as ex:
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getMyInt", ex.message)
+                return
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.REPLY, 0)
             result.write(oprot)
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
+
+
+def _write_application_exception(ctx, oprot, type, method, message):
+    x = TApplicationException(type=type, message=message)
+    oprot.write_response_headers(ctx)
+    oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
+    x.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.get_transport().flush()
 
 

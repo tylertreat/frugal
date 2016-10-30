@@ -13,6 +13,7 @@ import inspect
 from frugal.aio.processor import FBaseProcessor
 from frugal.aio.processor import FProcessorFunction
 from frugal.aio.registry import FClientRegistry
+from frugal.exceptions import FRateLimitException
 from frugal.middleware import Method
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
@@ -110,6 +111,9 @@ class Client(Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
+                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                    future.set_exception(FRateLimitException(x.message))
+                    return
                 future.set_exception(x)
                 raise x
             result = buyAlbum_result()
@@ -168,6 +172,9 @@ class Client(Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
+                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                    future.set_exception(FRateLimitException(x.message))
+                    return
                 future.set_exception(x)
                 raise x
             result = enterAlbumGiveaway_result()
@@ -215,6 +222,10 @@ class _buyAlbum(FProcessorFunction):
             if inspect.iscoroutine(ret):
                 ret = await ret
             result.success = ret
+        except FRateLimitException as ex:
+            async with self._write_lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "buyAlbum", ex.message)
+                return
         except PurchasingError as error:
             result.error = error
         async with self._write_lock:
@@ -236,15 +247,29 @@ class _enterAlbumGiveaway(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = enterAlbumGiveaway_result()
-        ret = self._handler([ctx, args.email, args.name])
-        if inspect.iscoroutine(ret):
-            ret = await ret
-        result.success = ret
+        try:
+            ret = self._handler([ctx, args.email, args.name])
+            if inspect.iscoroutine(ret):
+                ret = await ret
+            result.success = ret
+        except FRateLimitException as ex:
+            async with self._write_lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", ex.message)
+                return
         async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.REPLY, 0)
             result.write(oprot)
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
+
+
+def _write_application_exception(ctx, oprot, type, method, message):
+    x = TApplicationException(type=type, message=message)
+    oprot.write_response_headers(ctx)
+    oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
+    x.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.get_transport().flush()
 
 

@@ -9,6 +9,7 @@
 from datetime import timedelta
 from threading import Lock
 
+from frugal.exceptions import FRateLimitException
 from frugal.middleware import Method
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
@@ -114,6 +115,9 @@ class Client(Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
+                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                    future.set_exception(FRateLimitException(x.message))
+                    return
                 future.set_exception(x)
                 raise x
             result = buyAlbum_result()
@@ -174,6 +178,9 @@ class Client(Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
+                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                    future.set_exception(FRateLimitException(x.message))
+                    return
                 future.set_exception(x)
                 raise x
             result = enterAlbumGiveaway_result()
@@ -221,6 +228,10 @@ class _buyAlbum(FProcessorFunction):
             result.success = yield gen.maybe_future(self._handler([ctx, args.ASIN, args.acct]))
         except PurchasingError as error:
             result.error = error
+        except FRateLimitException as ex:
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "buyAlbum", ex.message)
+                return
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('buyAlbum', TMessageType.REPLY, 0)
@@ -241,12 +252,26 @@ class _enterAlbumGiveaway(FProcessorFunction):
         args.read(iprot)
         iprot.readMessageEnd()
         result = enterAlbumGiveaway_result()
-        result.success = yield gen.maybe_future(self._handler([ctx, args.email, args.name]))
+        try:
+            result.success = yield gen.maybe_future(self._handler([ctx, args.email, args.name]))
+        except FRateLimitException as ex:
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", ex.message)
+                return
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.REPLY, 0)
             result.write(oprot)
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
+
+
+def _write_application_exception(ctx, oprot, type, method, message):
+    x = TApplicationException(type=type, message=message)
+    oprot.write_response_headers(ctx)
+    oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
+    x.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.get_transport().flush()
 
 
