@@ -1,6 +1,5 @@
 import mock
 from io import BytesIO
-import struct
 
 from tornado import concurrent
 from tornado.testing import gen_test, AsyncTestCase
@@ -48,17 +47,6 @@ class TestFNatsScopeTransport(AsyncTestCase):
         self.assertEquals("Nats not connected!", cm.exception.message)
 
     @gen_test
-    def test_open_throws_exception_if_nats_already_open(self):
-        self.nats_client.is_connected = True
-        self.publisher_transport._is_open = True
-
-        with self.assertRaises(TTransportException) as cm:
-            yield self.publisher_transport.open()
-
-        self.assertEquals(TTransportException.ALREADY_OPEN, cm.exception.type)
-        self.assertEquals("Nats is already open!", cm.exception.message)
-
-    @gen_test
     def test_open_when_subscriber_calls_subscribe(self):
         self.nats_client.is_connected = True
 
@@ -85,6 +73,8 @@ class TestFNatsScopeTransport(AsyncTestCase):
 
     @gen_test
     def test_publish_throws_if_transport_not_open(self):
+        self.nats_client.is_connected = False
+
         with self.assertRaises(TTransportException) as cm:
             yield self.publisher_transport.publish('foo', [])
 

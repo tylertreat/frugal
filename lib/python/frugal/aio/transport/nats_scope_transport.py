@@ -28,26 +28,20 @@ class FNatsPublisherTransport(FPublisherTransport):
     def __init__(self, nats_client: Client):
         super().__init__(_NATS_MAX_MESSAGE_SIZE)
         self._nats_client = nats_client
-        self._is_open = False
 
     async def open(self):
         if not self._nats_client.is_connected:
             raise TTransportException(TTransportException.NOT_OPEN,
                                       'Nats is not connected')
-        if self._is_open:
-            raise TTransportException(TTransportException.ALREADY_OPEN,
-                                      'Nats is already open')
-        self._is_open = True
 
     async def close(self):
         if not self.is_open():
             return
 
         await self._nats_client.flush()
-        self._is_open = False
 
     def is_open(self) -> bool:
-        return self._is_open and self._nats_client.is_connected
+        return self._nats_client.is_connected
 
     async def publish(self, topic: str, data):
         if not self.is_open():
