@@ -2939,38 +2939,37 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	}
 	contents += tab + fmt.Sprintf("public static class Processor extends %s implements FProcessor {\n\n", extends)
 
+	contents += tabtab + "private Iface handler;\n\n"
+
 	contents += tabtab + "public Processor(Iface iface, ServiceMiddleware... middleware) {\n"
 	if service.Extends != "" {
-		contents += tabtabtab + "super(iface, getProcessMap(iface, new java.util.HashMap<String, FProcessorFunction>(), middleware), middleware);\n"
-	} else {
-		contents += tabtabtab + "super(getProcessMap(iface, new java.util.HashMap<String, FProcessorFunction>(), middleware));\n"
+		contents += tabtabtab + "super(iface, middleware);\n"
 	}
+	contents += tabtabtab + "handler = InvocationHandler.composeMiddleware(iface, Iface.class, middleware);\n"
 	contents += tabtab + "}\n\n"
 
-	contents += tabtab + "protected Processor(Iface iface, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {\n"
+	contents += tabtab + "protected java.util.Map<String, FProcessorFunction> getProcessMap() {\n"
 	if service.Extends != "" {
-		contents += tabtabtab + "super(iface, getProcessMap(iface, processMap, middleware), middleware);\n"
+		contents += tabtabtab + "java.util.Map<String, FProcessorFunction> processMap = super.getProcessMap();\n"
 	} else {
-		contents += tabtabtab + "super(getProcessMap(iface, processMap, middleware));\n"
+		contents += tabtabtab + "java.util.Map<String, FProcessorFunction> processMap = new java.util.HashMap<>();\n"
 	}
-	contents += tabtab + "}\n\n"
-
-	contents += tabtab + "private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {\n"
-	contents += tabtabtab + "handler = InvocationHandler.composeMiddleware(handler, Iface.class, middleware);\n"
 	for _, method := range service.Methods {
-		contents += tabtabtab + fmt.Sprintf("processMap.put(\"%s\", new %s(handler));\n", method.Name, strings.Title(method.Name))
+		contents += tabtabtab + fmt.Sprintf("processMap.put(\"%s\", new %s());\n", method.Name, strings.Title(method.Name))
 	}
 	contents += tabtabtab + "return processMap;\n"
 	contents += tabtab + "}\n\n"
 
+	contents += tabtab + "@Override\n"
+	contents += tabtab + "public void addMiddleware(ServiceMiddleware middleware) {\n"
+	if service.Extends != "" {
+		contents += tabtabtab + "super.addMiddleware(middleware);\n"
+	}
+	contents += tabtabtab + "handler = InvocationHandler.composeMiddleware(handler, Iface.class, new ServiceMiddleware[]{middleware});\n"
+	contents += tabtab + "}\n\n"
+
 	for _, method := range service.Methods {
-		contents += tabtab + fmt.Sprintf("private static class %s implements FProcessorFunction {\n\n", strings.Title(method.Name))
-
-		contents += tabtabtab + "private Iface handler;\n\n"
-
-		contents += tabtabtab + fmt.Sprintf("public %s(Iface handler) {\n", strings.Title(method.Name))
-		contents += tabtabtabtab + "this.handler = handler;\n"
-		contents += tabtabtab + "}\n\n"
+		contents += tabtab + fmt.Sprintf("private class %s implements FProcessorFunction {\n\n", strings.Title(method.Name))
 
 		contents += tabtabtab + "public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {\n"
 		contents += tabtabtabtab + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
@@ -2989,7 +2988,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtab + "iprot.readMessageEnd();\n"
 
 		if method.Oneway {
-			contents += tabtabtabtab + fmt.Sprintf("this.handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
+			contents += tabtabtabtab + fmt.Sprintf("handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
 			contents += tabtabtab + "}\n"
 			contents += tabtab + "}\n\n"
 			continue
@@ -2998,9 +2997,9 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtab + fmt.Sprintf("%s_result result = new %s_result();\n", method.Name, method.Name)
 		contents += tabtabtabtab + "try {\n"
 		if method.ReturnType == nil {
-			contents += tabtabtabtabtab + fmt.Sprintf("this.handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
+			contents += tabtabtabtabtab + fmt.Sprintf("handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
 		} else {
-			contents += tabtabtabtabtab + fmt.Sprintf("result.success = this.handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
+			contents += tabtabtabtabtab + fmt.Sprintf("result.success = handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
 			contents += tabtabtabtabtab + "result.setSuccessIsSet(true);\n"
 		}
 		for _, exception := range method.Exceptions {
@@ -3230,4 +3229,13 @@ func (g *Generator) generatedAnnotation() string {
 func (g *Generator) generateAsync() bool {
 	_, ok := g.Options["async"]
 	return ok
+}
+
+var elemNum int
+
+// getElem returns a unique identifier name
+func getElem() string {
+	s := fmt.Sprintf("elem%d", elemNum)
+	elemNum++
+	return s
 }

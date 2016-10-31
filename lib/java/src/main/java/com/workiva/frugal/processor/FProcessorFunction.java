@@ -12,6 +12,14 @@ import org.apache.thrift.TException;
  */
 public interface FProcessorFunction {
 
+    /**
+     * Processes the request from the input protocol and write the response to the output protocol.
+     *
+     * @param ctx FContext
+     * @param in  input FProtocol
+     * @param out output FProtocol
+     * @throws TException
+     */
     void process(FContext ctx, FProtocol in, FProtocol out) throws TException;
 
 }
