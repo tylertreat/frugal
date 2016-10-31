@@ -40,12 +40,11 @@ class FClientRegistry implements FRegistry {
     try {
       opId = int.parse(headers[_opid]);
     } catch (e) {
-      log.warning("Frame headers does not have an opId");
+      log.warning("frugal: invalid protocol frame: op id not a uint64", e);
       return;
     }
 
     if (!_handlers.containsKey(opId)) {
-      log.info("No handler for op $opId}. Dropping frame.");
       return;
     }
     _handlers[opId](new TMemoryTransport.fromUint8List(frame));
