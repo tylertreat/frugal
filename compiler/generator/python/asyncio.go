@@ -24,6 +24,7 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 
 	imports += "from frugal.aio.processor import FBaseProcessor\n"
 	imports += "from frugal.aio.processor import FProcessorFunction\n"
+	imports += "from frugal.exceptions import FTimeoutException\n"
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.transport import TMemoryOutputBuffer\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
@@ -162,6 +163,8 @@ func (a *AsyncIOGenerator) generateClientMethod(method *parser.Method) string {
 	contents += tabtab + "try:\n"
 	contents += tabtabtab + fmt.Sprintf("await self._send_%s(ctx%s)\n", method.Name, a.generateClientArgs(method.Arguments))
 	contents += tabtabtab + "result = await timed_future\n"
+	contents += tabtab + "except asyncio.TimeoutError:\n"
+	contents += fmt.Sprintf(tabtabtab+"raise FTimeoutException('%s timed out after {} milliseconds'.format(ctx.get_timeout()))\n", method.Name)
 	contents += tabtab + "finally:\n"
 	contents += tabtabtab + "await self._transport.unregister(ctx)\n"
 	contents += tabtab + "return result\n\n"

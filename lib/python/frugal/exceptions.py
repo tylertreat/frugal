@@ -30,3 +30,9 @@ class FMessageSizeException(FException):
     """Indicates a message was too large for a transport to handle."""
     def __init__(self, message=None):
         super(FMessageSizeException, self).__init__(message)
+
+
+class FTimeoutException(FException):
+    """Indicates a request took too long."""
+    def __init__(self, message=None):
+        super(FTimeoutException, self).__init__(message=message)

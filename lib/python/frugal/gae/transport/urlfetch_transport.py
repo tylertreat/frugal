@@ -4,6 +4,7 @@ from struct import unpack
 
 from thrift.transport.TTransport import TTransportException
 
+from frugal.exceptions import FTimeoutException
 from frugal.transport.http_transport import TBaseHttpTransport
 
 
@@ -68,9 +69,13 @@ class TUrlfetchTransport(TBaseHttpTransport):
 
 def _urlfetch(url, body, validate_certificate, timeout, headers):
     from google.appengine.api import urlfetch
-    return urlfetch.fetch(
-        url, method=urlfetch.POST, payload=body, headers=headers,
-        validate_certificate=url.startswith('https://'),
-        deadline=timeout
-    )
+    from google.appengine.api.urlfetch_errors import DeadlineExceededError
+    try:
+        return urlfetch.fetch(
+            url, method=urlfetch.POST, payload=body, headers=headers,
+            validate_certificate=url.startswith('https://'),
+            deadline=timeout
+        )
+    except DeadlineExceededError:
+        raise FTimeoutException()
 

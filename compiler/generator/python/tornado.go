@@ -20,6 +20,7 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports := "from datetime import timedelta\n"
 	imports += "from threading import Lock\n\n"
 
+	imports += "from frugal.exceptions import FTimeoutException\n"
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.tornado.processor import FBaseProcessor\n"
 	imports += "from frugal.tornado.processor import FProcessorFunction\n"
@@ -105,6 +106,8 @@ func (t *TornadoGenerator) generateClientMethod(method *parser.Method) string {
 	contents += tabtab + "try:\n"
 	contents += tabtabtab + fmt.Sprintf("yield self._send_%s(ctx%s)\n", method.Name, t.generateClientArgs(method.Arguments))
 	contents += tabtabtab + "result = yield timeout_future\n"
+	contents += tabtab + "except gen.TimeoutError:\n"
+	contents += fmt.Sprintf(tabtabtab+"raise FTimeoutException('%s timed out after {} milliseconds'.format(ctx.get_timeout()))\n", method.Name)
 	contents += tabtab + "finally:\n"
 	contents += tabtabtab + "self._transport.unregister(ctx)\n"
 	contents += tabtab + "raise gen.Return(result)\n\n"
