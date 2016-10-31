@@ -25,6 +25,7 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from frugal.aio.processor import FBaseProcessor\n"
 	imports += "from frugal.aio.processor import FProcessorFunction\n"
 	imports += "from frugal.aio.registry import FClientRegistry\n"
+	imports += "from frugal.exceptions import FRateLimitException\n"
 	imports += "from frugal.middleware import Method\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
@@ -204,6 +205,9 @@ func (a *AsyncIOGenerator) generateClientRecvMethod(method *parser.Method) strin
 	contents += tabtabtabtab + "x = TApplicationException()\n"
 	contents += tabtabtabtab + "x.read(iprot)\n"
 	contents += tabtabtabtab + "iprot.readMessageEnd()\n"
+	contents += tabtabtabtab + "if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:\n"
+	contents += tabtabtabtabtab + "future.set_exception(FRateLimitException(x.message))\n"
+	contents += tabtabtabtabtab + "return\n"
 	contents += tabtabtabtab + "future.set_exception(x)\n"
 	contents += tabtabtabtab + "raise x\n"
 	contents += tabtabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
@@ -290,10 +294,16 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += tabtabtab + fmt.Sprintf("ret = self._handler([ctx%s])\n",
 		a.generateServerArgs(method.Arguments))
 	contents += tabtabtab + "if inspect.iscoroutine(ret):\n"
-	contents += tabtabtab + tab + "ret = await ret\n"
+	contents += tabtabtabtab + "ret = await ret\n"
 	if method.ReturnType != nil {
 		contents += tabtabtab + "result.success = ret\n"
 	}
+	contents += tabtab + "except FRateLimitException as ex:\n"
+	contents += tabtabtab + "async with self._write_lock:\n"
+	contents += tabtabtabtab + fmt.Sprintf(
+		"_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
+		method.Name)
+	contents += tabtabtabtab + "return\n"
 	for _, err := range method.Exceptions {
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", a.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)

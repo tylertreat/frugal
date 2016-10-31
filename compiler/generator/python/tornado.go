@@ -20,6 +20,7 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports := "from datetime import timedelta\n"
 	imports += "from threading import Lock\n\n"
 
+	imports += "from frugal.exceptions import FRateLimitException\n"
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.processor import FBaseProcessor\n"
 	imports += "from frugal.processor import FProcessorFunction\n"
@@ -141,6 +142,9 @@ func (t *TornadoGenerator) generateClientRecvMethod(method *parser.Method) strin
 	contents += tabtabtabtab + "x = TApplicationException()\n"
 	contents += tabtabtabtab + "x.read(iprot)\n"
 	contents += tabtabtabtab + "iprot.readMessageEnd()\n"
+	contents += tabtabtabtab + "if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:\n"
+	contents += tabtabtabtabtab + "future.set_exception(FRateLimitException(x.message))\n"
+	contents += tabtabtabtabtab + "return\n"
 	contents += tabtabtabtab + "future.set_exception(x)\n"
 	contents += tabtabtabtab + "raise x\n"
 	contents += tabtabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
@@ -205,6 +209,12 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", t.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
+	contents += tabtab + "except FRateLimitException as ex:\n"
+	contents += tabtabtab + "with self._lock:\n"
+	contents += tabtabtabtab +
+		fmt.Sprintf("_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
+			method.Name)
+	contents += tabtabtabtab + "return\n"
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with self._lock:\n"

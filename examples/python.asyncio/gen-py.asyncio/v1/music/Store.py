@@ -11,7 +11,7 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol, TProtocol
 
 
-class buyAlbum_args:
+class buyAlbum_args(object):
     """
     Attributes:
      - ASIN
@@ -75,7 +75,7 @@ class buyAlbum_args:
     def __ne__(self, other):
         return not (self == other)
 
-class buyAlbum_result:
+class buyAlbum_result(object):
     """
     Attributes:
      - success
@@ -141,7 +141,7 @@ class buyAlbum_result:
     def __ne__(self, other):
         return not (self == other)
 
-class enterAlbumGiveaway_args:
+class enterAlbumGiveaway_args(object):
     """
     Attributes:
      - email
@@ -205,7 +205,7 @@ class enterAlbumGiveaway_args:
     def __ne__(self, other):
         return not (self == other)
 
-class enterAlbumGiveaway_result:
+class enterAlbumGiveaway_result(object):
     """
     Attributes:
      - success

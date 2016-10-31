@@ -9,6 +9,7 @@
 from threading import Lock
 
 from frugal.middleware import Method
+from frugal.exceptions import FRateLimitException
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
 from thrift.Thrift import TApplicationException
@@ -99,6 +100,8 @@ class Client(Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
+            if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                raise FRateLimitException(x.message)
             raise x
         result = buyAlbum_result()
         result.read(self._iprot)
@@ -143,6 +146,8 @@ class Client(Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
+            if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                raise FRateLimitException(x.message)
             raise x
         result = enterAlbumGiveaway_result()
         result.read(self._iprot)
@@ -184,6 +189,10 @@ class _buyAlbum(FProcessorFunction):
             result.success = self._handler([ctx, args.ASIN, args.acct])
         except PurchasingError as error:
             result.error = error
+        except FRateLimitException as ex:
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "buyAlbum", ex.message)
+                return
         except Exception as e:
             with self._lock:
                 _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "buyAlbum", e.message)
@@ -209,6 +218,10 @@ class _enterAlbumGiveaway(FProcessorFunction):
         result = enterAlbumGiveaway_result()
         try:
             result.success = self._handler([ctx, args.email, args.name])
+        except FRateLimitException as ex:
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", ex.message)
+                return
         except Exception as e:
             with self._lock:
                 _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "enterAlbumGiveaway", e.message)
@@ -228,3 +241,5 @@ def _write_application_exception(ctx, oprot, typ, method, message):
     x.write(oprot)
     oprot.writeMessageEnd()
     oprot.get_transport().flush()
+
+

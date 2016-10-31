@@ -259,7 +259,7 @@ func (g *Generator) GenerateTypeDef(*parser.TypeDef) error {
 // GenerateEnum generates the given enum.
 func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents := ""
-	contents += fmt.Sprintf("class %s:\n", enum.Name)
+	contents += fmt.Sprintf("class %s(object):\n", enum.Name)
 	if enum.Comment != nil {
 		contents += g.generateDocString(enum.Comment, tab)
 	}
@@ -339,7 +339,7 @@ func (g *Generator) GenerateServiceArgsResults(serviceName string, outputDir str
 func (g *Generator) generateStruct(s *parser.Struct) string {
 	contents := ""
 
-	extends := ""
+	extends := "(object)"
 	if s.Type == parser.StructTypeException {
 		extends = "(TException)"
 	}
@@ -771,6 +771,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports := "from threading import Lock\n\n"
 
 	imports += "from frugal.middleware import Method\n"
+	imports += "from frugal.exceptions import FRateLimitException\n"
 	imports += "from frugal.processor import FBaseProcessor\n"
 	imports += "from frugal.processor import FProcessorFunction\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
@@ -1052,6 +1053,8 @@ func (g *Generator) generateClientRecvMethod(method *parser.Method) string {
 	contents += tabtabtab + "x = TApplicationException()\n"
 	contents += tabtabtab + "x.read(self._iprot)\n"
 	contents += tabtabtab + "self._iprot.readMessageEnd()\n"
+	contents += tabtabtab + "if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:\n"
+	contents += tabtabtabtab + "raise FRateLimitException(x.message)\n"
 	contents += tabtabtab + "raise x\n"
 	contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	contents += tabtab + "result.read(self._iprot)\n"
@@ -1243,6 +1246,12 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", g.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
+	contents += tabtab + "except FRateLimitException as ex:\n"
+	contents += tabtabtab + "with self._lock:\n"
+	contents += tabtabtabtab +
+		fmt.Sprintf("_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
+			method.Name)
+	contents += tabtabtabtab + "return\n"
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with self._lock:\n"
@@ -1257,6 +1266,19 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 		contents += tabtabtab + "oprot.writeMessageEnd()\n"
 		contents += tabtabtab + "oprot.get_transport().flush()\n"
 	}
+	contents += "\n\n"
+
+	return contents
+}
+
+func (g *Generator) generateWriteApplicationException() string {
+	contents := "def _write_application_exception(ctx, oprot, typ, method, message):\n"
+	contents += tab + "x = TApplicationException(type=typ, message=message)\n"
+	contents += tab + "oprot.write_response_headers(ctx)\n"
+	contents += tab + "oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)\n"
+	contents += tab + "x.write(oprot)\n"
+	contents += tab + "oprot.writeMessageEnd()\n"
+	contents += tab + "oprot.get_transport().flush()\n"
 	contents += "\n\n"
 
 	return contents
@@ -1278,17 +1300,6 @@ func (g *Generator) generateMethodSignature(method *parser.Method) string {
 	}
 	contents += fmt.Sprintf("def %s(self, ctx%s):\n", method.Name, g.generateClientArgs(method.Arguments))
 	contents += g.generateDocString(docstr, tabtab)
-	return contents
-}
-
-func (g *Generator) generateWriteApplicationException() string {
-	contents := "def _write_application_exception(ctx, oprot, typ, method, message):\n"
-	contents += tab + "x = TApplicationException(type=typ, message=message)\n"
-	contents += tab + "oprot.write_response_headers(ctx)\n"
-	contents += tab + "oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)\n"
-	contents += tab + "x.write(oprot)\n"
-	contents += tab + "oprot.writeMessageEnd()\n"
-	contents += tab + "oprot.get_transport().flush()\n"
 	return contents
 }
 

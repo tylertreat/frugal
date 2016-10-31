@@ -9,6 +9,7 @@
 from datetime import timedelta
 from threading import Lock
 
+from frugal.exceptions import FRateLimitException
 from frugal.middleware import Method
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
@@ -133,6 +134,9 @@ class Client(Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
+                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                    future.set_exception(FRateLimitException(x.message))
+                    return
                 future.set_exception(x)
                 raise x
             result = ping_result()
@@ -189,6 +193,9 @@ class Client(Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
+                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                    future.set_exception(FRateLimitException(x.message))
+                    return
                 future.set_exception(x)
                 raise x
             result = bleh_result()
@@ -248,6 +255,9 @@ class Client(Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
+                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                    future.set_exception(FRateLimitException(x.message))
+                    return
                 future.set_exception(x)
                 raise x
             result = getThing_result()
@@ -301,6 +311,9 @@ class Client(Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
+                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                    future.set_exception(FRateLimitException(x.message))
+                    return
                 future.set_exception(x)
                 raise x
             result = getMyInt_result()
@@ -348,6 +361,10 @@ class _ping(FProcessorFunction):
         result = ping_result()
         try:
             yield gen.maybe_future(self._handler([ctx]))
+        except FRateLimitException as ex:
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "ping", ex.message)
+                return
         except Exception as e:
             with self._lock:
                 _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "ping", e.message)
@@ -378,6 +395,10 @@ class _bleh(FProcessorFunction):
             result.oops = oops
         except excepts.ttypes.InvalidData as err2:
             result.err2 = err2
+        except FRateLimitException as ex:
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "bleh", ex.message)
+                return
         except Exception as e:
             with self._lock:
                 _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "bleh", e.message)
@@ -404,6 +425,10 @@ class _getThing(FProcessorFunction):
         result = getThing_result()
         try:
             result.success = yield gen.maybe_future(self._handler([ctx]))
+        except FRateLimitException as ex:
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getThing", ex.message)
+                return
         except Exception as e:
             with self._lock:
                 _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getThing", e.message)
@@ -430,6 +455,10 @@ class _getMyInt(FProcessorFunction):
         result = getMyInt_result()
         try:
             result.success = yield gen.maybe_future(self._handler([ctx]))
+        except FRateLimitException as ex:
+            with self._lock:
+                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getMyInt", ex.message)
+                return
         except Exception as e:
             with self._lock:
                 _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getMyInt", e.message)
@@ -449,3 +478,5 @@ def _write_application_exception(ctx, oprot, typ, method, message):
     x.write(oprot)
     oprot.writeMessageEnd()
     oprot.get_transport().flush()
+
+
