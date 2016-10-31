@@ -8,6 +8,12 @@ class FException(TException):
         super(FException, self).__init__(message)
 
 
+class FContextException(FException):
+    """Indicates a problem with an FContext"""
+    def __init__(self, message=None):
+        super(FException, self).__init__(message=message)
+
+
 class FContextHeaderException(FException):
     """Indicates an invalid header key on an FContext"""
     def __init__(self, message=None):

@@ -64,11 +64,11 @@ class FBaseProcessor(FProcessor):
         if processor_function:
             try:
                 ret = yield processor_function.process(context, iprot, oprot)
-            except Exception as e:
-                logging.warn('frugal: error processing request with ' +
-                             'correlation id %s: %s' %
-                             (context.get_correlation_id(), e))
-                raise
+            except Exception:
+                logging.exception('frugal: user handler code raised unhandled '
+                                  'exception on request with correlation id {}'
+                                  .format(context.get_correlation_id()))
+                raise gen.Return(None)
             raise gen.Return(ret)
 
         iprot.skip(TType.STRUCT)

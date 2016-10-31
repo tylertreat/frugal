@@ -38,6 +38,7 @@ class FSimpleServer(FServer):
                 continue
             except Exception as e:
                 print(e)
+                break
 
             framed.close()
 

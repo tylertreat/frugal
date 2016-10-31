@@ -6,6 +6,7 @@ from tornado.locks import Lock
 
 from frugal.context import _OP_ID
 from frugal.exceptions import FException
+from frugal.exceptions import FContextException
 from frugal.util.headers import _Headers
 
 logger = logging.getLogger(__name__)
@@ -73,7 +74,7 @@ class FRegistryImpl(FRegistry):
         # map to ensure that request is not still in-flight.
         with (yield self._handlers_lock.acquire()):
             if str(context._get_op_id()) in self._handlers:
-                raise FException("context already registered")
+                raise FContextException("context already registered")
 
         op_id = yield self._increment_and_get_next_op_id()
         context._set_op_id(op_id)
@@ -109,8 +110,6 @@ class FRegistryImpl(FRegistry):
         with (yield self._handlers_lock.acquire()):
             handler = self._handlers.get(op_id, None)
             if not handler:
-                logger.warning("Got a message for unregistered context."
-                               "Dropping")
                 return
 
             handler(TMemoryBuffer(frame))
