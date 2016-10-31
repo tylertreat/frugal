@@ -9,6 +9,7 @@
 from datetime import timedelta
 from threading import Lock
 
+from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.tornado.processor import FBaseProcessor
 from frugal.tornado.processor import FProcessorFunction
@@ -68,6 +69,8 @@ class Client(Iface):
         try:
             yield self._send_basePing(ctx)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('basePing timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)

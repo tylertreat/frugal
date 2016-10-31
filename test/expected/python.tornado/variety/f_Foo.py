@@ -9,6 +9,7 @@
 from datetime import timedelta
 from threading import Lock
 
+from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.tornado.processor import FBaseProcessor
 from frugal.tornado.processor import FProcessorFunction
@@ -149,6 +150,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_ping(ctx)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('ping timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -202,6 +205,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_blah(ctx, num, Str, event)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('blah timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -294,6 +299,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_bin_method(ctx, bin, Str)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('bin_method timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -355,6 +362,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_param_modifiers(ctx, opt_num, default_num, req_num)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('param_modifiers timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -413,6 +422,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_underlying_types_test(ctx, list_type, set_type)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('underlying_types_test timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -468,6 +479,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_getThing(ctx)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('getThing timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -521,6 +534,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_getMyInt(ctx)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('getMyInt timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
