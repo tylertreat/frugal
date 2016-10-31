@@ -177,8 +177,8 @@ func (t *TornadoGenerator) generateServer(service *parser.Service) string {
 	for _, method := range service.Methods {
 		contents += t.generateProcessorFunction(method)
 	}
-	contents += t.generateWriteApplicationException()
 
+	contents += t.generateWriteApplicationException()
 	return contents
 }
 
