@@ -788,34 +788,33 @@ public class FFoo {
 
 	public static class Processor extends actual_base.java.FBaseFoo.Processor implements FProcessor {
 
+		private Iface handler;
+
 		public Processor(Iface iface, ServiceMiddleware... middleware) {
-			super(iface, getProcessMap(iface, new java.util.HashMap<String, FProcessorFunction>(), middleware), middleware);
+			super(iface, middleware);
+			handler = InvocationHandler.composeMiddleware(iface, Iface.class, middleware);
 		}
 
-		protected Processor(Iface iface, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {
-			super(iface, getProcessMap(iface, processMap, middleware), middleware);
-		}
-
-		private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {
-			handler = InvocationHandler.composeMiddleware(handler, Iface.class, middleware);
-			processMap.put("ping", new Ping(handler));
-			processMap.put("blah", new Blah(handler));
-			processMap.put("oneWay", new OneWay(handler));
-			processMap.put("bin_method", new Bin_method(handler));
-			processMap.put("param_modifiers", new Param_modifiers(handler));
-			processMap.put("underlying_types_test", new Underlying_types_test(handler));
-			processMap.put("getThing", new GetThing(handler));
-			processMap.put("getMyInt", new GetMyInt(handler));
+		protected java.util.Map<String, FProcessorFunction> getProcessMap() {
+			java.util.Map<String, FProcessorFunction> processMap = super.getProcessMap();
+			processMap.put("ping", new Ping());
+			processMap.put("blah", new Blah());
+			processMap.put("oneWay", new OneWay());
+			processMap.put("bin_method", new Bin_method());
+			processMap.put("param_modifiers", new Param_modifiers());
+			processMap.put("underlying_types_test", new Underlying_types_test());
+			processMap.put("getThing", new GetThing());
+			processMap.put("getMyInt", new GetMyInt());
 			return processMap;
 		}
 
-		private static class Ping implements FProcessorFunction {
+		@Override
+		public void addMiddleware(ServiceMiddleware middleware) {
+			super.addMiddleware(middleware);
+			handler = InvocationHandler.composeMiddleware(handler, Iface.class, new ServiceMiddleware[]{middleware});
+		}
 
-			private Iface handler;
-
-			public Ping(Iface handler) {
-				this.handler = handler;
-			}
+		private class Ping implements FProcessorFunction {
 
 			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
 				ping_args args = new ping_args();
@@ -832,7 +831,7 @@ public class FFoo {
 				iprot.readMessageEnd();
 				ping_result result = new ping_result();
 				try {
-					this.handler.ping(ctx);
+					handler.ping(ctx);
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
 						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "ping", "Internal error processing ping: " + e.getMessage());
@@ -857,13 +856,7 @@ public class FFoo {
 			}
 		}
 
-		private static class Blah implements FProcessorFunction {
-
-			private Iface handler;
-
-			public Blah(Iface handler) {
-				this.handler = handler;
-			}
+		private class Blah implements FProcessorFunction {
 
 			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
 				blah_args args = new blah_args();
@@ -880,7 +873,7 @@ public class FFoo {
 				iprot.readMessageEnd();
 				blah_result result = new blah_result();
 				try {
-					result.success = this.handler.blah(ctx, args.num, args.Str, args.event);
+					result.success = handler.blah(ctx, args.num, args.Str, args.event);
 					result.setSuccessIsSet(true);
 				} catch (AwesomeException awe) {
 					result.awe = awe;
@@ -910,13 +903,7 @@ public class FFoo {
 			}
 		}
 
-		private static class OneWay implements FProcessorFunction {
-
-			private Iface handler;
-
-			public OneWay(Iface handler) {
-				this.handler = handler;
-			}
+		private class OneWay implements FProcessorFunction {
 
 			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
 				oneWay_args args = new oneWay_args();
@@ -928,17 +915,11 @@ public class FFoo {
 				}
 
 				iprot.readMessageEnd();
-				this.handler.oneWay(ctx, args.id, args.req);
+				handler.oneWay(ctx, args.id, args.req);
 			}
 		}
 
-		private static class Bin_method implements FProcessorFunction {
-
-			private Iface handler;
-
-			public Bin_method(Iface handler) {
-				this.handler = handler;
-			}
+		private class Bin_method implements FProcessorFunction {
 
 			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
 				bin_method_args args = new bin_method_args();
@@ -955,7 +936,7 @@ public class FFoo {
 				iprot.readMessageEnd();
 				bin_method_result result = new bin_method_result();
 				try {
-					result.success = this.handler.bin_method(ctx, args.bin, args.Str);
+					result.success = handler.bin_method(ctx, args.bin, args.Str);
 					result.setSuccessIsSet(true);
 				} catch (actual_base.java.api_exception api) {
 					result.api = api;
@@ -983,13 +964,7 @@ public class FFoo {
 			}
 		}
 
-		private static class Param_modifiers implements FProcessorFunction {
-
-			private Iface handler;
-
-			public Param_modifiers(Iface handler) {
-				this.handler = handler;
-			}
+		private class Param_modifiers implements FProcessorFunction {
 
 			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
 				param_modifiers_args args = new param_modifiers_args();
@@ -1006,7 +981,7 @@ public class FFoo {
 				iprot.readMessageEnd();
 				param_modifiers_result result = new param_modifiers_result();
 				try {
-					result.success = this.handler.param_modifiers(ctx, args.opt_num, args.default_num, args.req_num);
+					result.success = handler.param_modifiers(ctx, args.opt_num, args.default_num, args.req_num);
 					result.setSuccessIsSet(true);
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1032,13 +1007,7 @@ public class FFoo {
 			}
 		}
 
-		private static class Underlying_types_test implements FProcessorFunction {
-
-			private Iface handler;
-
-			public Underlying_types_test(Iface handler) {
-				this.handler = handler;
-			}
+		private class Underlying_types_test implements FProcessorFunction {
 
 			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
 				underlying_types_test_args args = new underlying_types_test_args();
@@ -1055,7 +1024,7 @@ public class FFoo {
 				iprot.readMessageEnd();
 				underlying_types_test_result result = new underlying_types_test_result();
 				try {
-					result.success = this.handler.underlying_types_test(ctx, args.list_type, args.set_type);
+					result.success = handler.underlying_types_test(ctx, args.list_type, args.set_type);
 					result.setSuccessIsSet(true);
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1081,13 +1050,7 @@ public class FFoo {
 			}
 		}
 
-		private static class GetThing implements FProcessorFunction {
-
-			private Iface handler;
-
-			public GetThing(Iface handler) {
-				this.handler = handler;
-			}
+		private class GetThing implements FProcessorFunction {
 
 			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
 				getThing_args args = new getThing_args();
@@ -1104,7 +1067,7 @@ public class FFoo {
 				iprot.readMessageEnd();
 				getThing_result result = new getThing_result();
 				try {
-					result.success = this.handler.getThing(ctx);
+					result.success = handler.getThing(ctx);
 					result.setSuccessIsSet(true);
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1130,13 +1093,7 @@ public class FFoo {
 			}
 		}
 
-		private static class GetMyInt implements FProcessorFunction {
-
-			private Iface handler;
-
-			public GetMyInt(Iface handler) {
-				this.handler = handler;
-			}
+		private class GetMyInt implements FProcessorFunction {
 
 			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
 				getMyInt_args args = new getMyInt_args();
@@ -1153,7 +1110,7 @@ public class FFoo {
 				iprot.readMessageEnd();
 				getMyInt_result result = new getMyInt_result();
 				try {
-					result.success = this.handler.getMyInt(ctx);
+					result.success = handler.getMyInt(ctx);
 					result.setSuccessIsSet(true);
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {

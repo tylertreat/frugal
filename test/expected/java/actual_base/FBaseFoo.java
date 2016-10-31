@@ -172,27 +172,24 @@ public class FBaseFoo {
 
 	public static class Processor extends FBaseProcessor implements FProcessor {
 
+		private Iface handler;
+
 		public Processor(Iface iface, ServiceMiddleware... middleware) {
-			super(getProcessMap(iface, new java.util.HashMap<String, FProcessorFunction>(), middleware));
+			handler = InvocationHandler.composeMiddleware(iface, Iface.class, middleware);
 		}
 
-		protected Processor(Iface iface, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {
-			super(getProcessMap(iface, processMap, middleware));
-		}
-
-		private static java.util.Map<String, FProcessorFunction> getProcessMap(Iface handler, java.util.Map<String, FProcessorFunction> processMap, ServiceMiddleware[] middleware) {
-			handler = InvocationHandler.composeMiddleware(handler, Iface.class, middleware);
-			processMap.put("basePing", new BasePing(handler));
+		protected java.util.Map<String, FProcessorFunction> getProcessMap() {
+			java.util.Map<String, FProcessorFunction> processMap = new java.util.HashMap<>();
+			processMap.put("basePing", new BasePing());
 			return processMap;
 		}
 
-		private static class BasePing implements FProcessorFunction {
+		@Override
+		public void addMiddleware(ServiceMiddleware middleware) {
+			handler = InvocationHandler.composeMiddleware(handler, Iface.class, new ServiceMiddleware[]{middleware});
+		}
 
-			private Iface handler;
-
-			public BasePing(Iface handler) {
-				this.handler = handler;
-			}
+		private class BasePing implements FProcessorFunction {
 
 			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
 				basePing_args args = new basePing_args();
@@ -209,7 +206,7 @@ public class FBaseFoo {
 				iprot.readMessageEnd();
 				basePing_result result = new basePing_result();
 				try {
-					this.handler.basePing(ctx);
+					handler.basePing(ctx);
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
 						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "basePing", "Internal error processing basePing: " + e.getMessage());
