@@ -61,3 +61,21 @@ func TestValidDartFrugalCompiler(t *testing.T) {
 	actualBaseExportPath := filepath.Join(outputDir, "actual_base_dart", "lib", "actual_base_dart.dart")
 	compareFiles(t, "expected/dart/actual_base/actual_base_dart.dart", actualBaseExportPath)
 }
+
+func TestValidDartEnums(t *testing.T) {
+	options := compiler.Options{
+		File:    "idl/enum.frugal",
+		Gen:     "dart:use_enums",
+		Out:     outputDir,
+		Delim:   delim,
+		Recurse: true,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("unexpected error", err)
+	}
+
+	enumsPath := filepath.Join(outputDir, "enum_dart", "lib", "src", "f_testing_enums.dart")
+	compareFiles(t, "expected/dart/enum/f_testing_enums.dart", enumsPath)
+	enumsExportPath := filepath.Join(outputDir, "enum_dart", "lib", "enum_dart.dart")
+	compareFiles(t, "expected/dart/enum/enum_dart.dart", enumsExportPath)
+}

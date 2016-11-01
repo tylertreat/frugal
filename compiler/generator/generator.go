@@ -50,6 +50,7 @@ var Languages = LanguageOptions{
 	"dart": Options{
 		"library_prefix": "Generate code that can be used within an existing library. " +
 			"Use a dot-separated string, e.g. \"my_parent_lib.src.gen\"",
+		"use_enums": "Generate enums as enums rather than a class with numerical constants",
 	},
 	"py": Options{
 		"tornado": "Generate code for use with Tornado (compatible with Python 2.7)",

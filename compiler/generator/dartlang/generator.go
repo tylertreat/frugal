@@ -80,32 +80,36 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 
 	if len(g.Frugal.Thrift.Constants) > 0 {
 		constantsName := fmt.Sprintf("%sConstants", snakeToCamel(libraryName))
-		contents += g.createExport(constantsName)
+		contents += g.createExport(constantsName, false)
 	}
 	for _, s := range g.Frugal.Thrift.Structs {
-		contents += g.createExport(s.Name)
+		contents += g.createExport(s.Name, false)
 	}
 	for _, union := range g.Frugal.Thrift.Unions {
-		contents += g.createExport(union.Name)
+		contents += g.createExport(union.Name, false)
 	}
 	for _, exception := range g.Frugal.Thrift.Exceptions {
-		contents += g.createExport(exception.Name)
+		contents += g.createExport(exception.Name, false)
 	}
 	for _, enum := range g.Frugal.Thrift.Enums {
-		contents += g.createExport(enum.Name)
+		contents += g.createExport(enum.Name, true)
 	}
 
 	_, err = file.WriteString(contents)
 	return err
 }
 
-func (g *Generator) createExport(structName string) string {
+func (g *Generator) createExport(structName string, isEnum bool) string {
 	srcDir := "src"
 	if _, ok := g.Options["library_prefix"]; ok {
 		srcDir = g.getLibraryName()
 	}
-	return fmt.Sprintf("export '%s/f_%s.dart' show %s;\n",
-		srcDir, toFileName(structName), structName)
+	if !isEnum || !g.useEnums() {
+		return fmt.Sprintf("export '%s/f_%s.dart' show %s;\n",
+			srcDir, toFileName(structName), structName)
+	}
+	return fmt.Sprintf("export '%s/f_%s.dart' show %s, serialize%s, deserialize%s;\n",
+		srcDir, toFileName(structName), structName, structName, structName)
 }
 
 // TeardownGenerator is run after generation.
@@ -475,6 +479,19 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 		return err
 	}
 
+	if g.useEnums() {
+		contents += g.generateEnumUsingEnums(enum)
+	} else {
+		contents += g.generateEnumUsingClasses(enum)
+	}
+
+	file.WriteString(contents)
+
+	return nil
+}
+
+func (g *Generator) generateEnumUsingClasses(enum *parser.Enum) string {
+	contents := ""
 	contents += fmt.Sprintf("class %s {\n", enum.Name)
 	for _, field := range enum.Values {
 		contents += fmt.Sprintf(tab+"static const int %s = %d;\n", field.Name, field.Value)
@@ -493,9 +510,38 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	}
 	contents += tab + "};\n"
 	contents += "}\n"
-	file.WriteString(contents)
+	return contents
+}
 
-	return nil
+func (g *Generator) generateEnumUsingEnums(enum *parser.Enum) string {
+	contents := ""
+	contents += fmt.Sprintf("enum %s {\n", enum.Name)
+	for _, field := range enum.Values {
+		contents += fmt.Sprintf(tab+"%s,\n", field.Name)
+	}
+	contents += "}\n\n"
+
+	contents += fmt.Sprintf("int serialize%s(%s variant) {\n", enum.Name, enum.Name)
+	contents += tab+"switch (variant) {\n"
+	for _, field := range enum.Values {
+		contents += fmt.Sprintf(tabtab+"case %s.%s:\n", enum.Name, field.Name)
+		contents += fmt.Sprintf(tabtabtab+"return %d;\n", field.Value)
+	}
+	contents += tab+"}\n"
+	contents += "}\n\n"
+
+	contents += fmt.Sprintf("%s deserialize%s(int value) {\n", enum.Name, enum.Name)
+	contents += tab+"switch (value) {\n"
+	for _, field := range enum.Values {
+		contents += fmt.Sprintf(tabtab+"case %d:\n", field.Value)
+		contents += fmt.Sprintf(tabtabtab+"return %s.%s;\n", enum.Name, field.Name)
+	}
+	contents += tabtab+"default:\n"
+	contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, \"Invalid value '$value' for enum '%s'\");", enum.Name)
+
+	contents += tab+"}\n"
+	contents += "}\n"
+	return contents
 }
 
 // GenerateStruct generates the given struct.
@@ -764,8 +810,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 	fName := toFieldName(field.Name)
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	primitive := g.isDartPrimitive(underlyingType)
-	isEnum := g.Frugal.IsEnum(underlyingType)
-	if underlyingType.IsPrimitive() || isEnum {
+	if underlyingType.IsPrimitive() {
 		thriftType := ""
 		switch underlyingType.Name {
 		case "bool":
@@ -785,15 +830,22 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 		case "binary":
 			thriftType = "Binary"
 		default:
-			if isEnum {
-				thriftType = "I32"
-			} else {
-				panic("unkown thrift type: " + underlyingType.Name)
-			}
+			panic("unknown thrift type: " + underlyingType.Name)
 		}
 
-		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = iprot.read%s();\n", prefix, fName, thriftType)
+		contents += fmt.Sprintf(tabtabtabtabtabtab + ind + "%s%s = iprot.read%s();\n", prefix, fName, thriftType)
 		if primitive && first {
+			contents += fmt.Sprintf(tabtabtabtabtabtab + ind + "this.__isset_%s = true;\n", fName)
+		}
+	} else if g.Frugal.IsEnum(underlyingType) {
+		if g.useEnums() {
+			contents += fmt.Sprintf(tabtabtabtabtabtab + ind + "%s%s = %s.deserialize%s(iprot.readI32());\n",
+				prefix, fName, g.includeQualifier(underlyingType), underlyingType.Name)
+		} else {
+			contents += fmt.Sprintf(tabtabtabtabtabtab + ind + "%s%s = iprot.readI32();\n", prefix, fName)
+		}
+
+		if first {
 			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"this.__isset_%s = true;\n", fName)
 		}
 	} else if g.Frugal.IsStruct(underlyingType) {
@@ -888,8 +940,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 
 	fName := toFieldName(field.Name)
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
-	isEnum := g.Frugal.IsEnum(underlyingType)
-	if underlyingType.IsPrimitive() || isEnum {
+	if underlyingType.IsPrimitive() {
 		write := tabtab + ind + "oprot.write"
 		switch underlyingType.Name {
 		case "bool":
@@ -909,14 +960,17 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 		case "binary":
 			write += "Binary(%s);\n"
 		default:
-			if isEnum {
-				write += "I32(%s);\n"
-			} else {
-				panic("unknown thrift type: " + underlyingType.Name)
-			}
+			panic("unknown thrift type: " + underlyingType.Name)
 		}
 
 		contents += fmt.Sprintf(write, fName)
+	} else if g.Frugal.IsEnum(underlyingType) {
+		if g.useEnums() {
+			contents += fmt.Sprintf(tabtab + "oprot.writeI32(%s.serialize%s(%s));\n",
+				g.includeQualifier(underlyingType), underlyingType.Name, fName)
+		} else {
+			contents += fmt.Sprintf(tabtab+ind+"oprot.writeI32(%s);\n", fName)
+		}
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(tabtab+ind+"%s.write(oprot);\n", fName)
 	} else if underlyingType.IsContainer() {
@@ -1034,15 +1088,17 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 		}
 	}
 
-	contents += tabtab + "// check that fields of type enum have valid values\n"
-	for _, field := range s.Fields {
-		if g.Frugal.IsEnum(field.Type) {
-			fName := toFieldName(field.Name)
-			isSetCheck := fmt.Sprintf("isSet%s()", strings.Title(field.Name))
-			contents += fmt.Sprintf(tabtab+"if(%s && !%s.VALID_VALUES.contains(%s)) {\n",
-				isSetCheck, g.qualifiedTypeName(field.Type), fName)
-			contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, \"The field '%s' has been assigned the invalid value $%s\");\n", fName, fName)
-			contents += tabtab + "}\n"
+	if !g.useEnums() {
+		contents += tabtab + "// check that fields of type enum have valid values\n"
+		for _, field := range s.Fields {
+			if g.Frugal.IsEnum(field.Type) {
+				fName := toFieldName(field.Name)
+				isSetCheck := fmt.Sprintf("isSet%s()", strings.Title(field.Name))
+				contents += fmt.Sprintf(tabtab+"if(%s && !%s.VALID_VALUES.contains(%s)) {\n",
+					isSetCheck, g.qualifiedTypeName(field.Type), fName)
+				contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, \"The field '%s' has been assigned the invalid value $%s\");\n", fName, fName)
+				contents += tabtab + "}\n"
+			}
 		}
 	}
 
@@ -1634,6 +1690,14 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 	return param
 }
 
+func (g *Generator) includeQualifier(t *parser.Type) string {
+	include := t.IncludeName()
+	if include != "" {
+		return fmt.Sprintf("t_%s", toLibraryName(g.Frugal.NamespaceForInclude(include, lang)))
+	}
+	return fmt.Sprintf("t_%s", toLibraryName(g.getNamespaceOrName()))
+}
+
 func (g *Generator) getLibraryPrefix() string {
 	prefix := ""
 	if _, ok := g.Options["library_prefix"]; ok {
@@ -1668,6 +1732,11 @@ func (g *Generator) getNamespaceOrName() string {
 		name = g.Frugal.Name
 	}
 	return name
+}
+
+func (g *Generator) useEnums() bool {
+	_, useEnums := g.Options["use_enums"]
+	return useEnums
 }
 
 func toLibraryName(name string) string {
