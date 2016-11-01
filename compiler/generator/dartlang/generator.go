@@ -99,12 +99,12 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 	return err
 }
 
-func (g *Generator) createExport(structName string, enum bool) string {
+func (g *Generator) createExport(structName string, isEnum bool) string {
 	srcDir := "src"
 	if _, ok := g.Options["library_prefix"]; ok {
 		srcDir = g.getLibraryName()
 	}
-	if !enum || !g.useEnums() {
+	if !isEnum || !g.useEnums() {
 		return fmt.Sprintf("export '%s/f_%s.dart' show %s;\n",
 			srcDir, toFileName(structName), structName)
 	}
@@ -830,7 +830,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 		case "binary":
 			thriftType = "Binary"
 		default:
-			panic("unkown thrift type: " + underlyingType.Name)
+			panic("unknown thrift type: " + underlyingType.Name)
 		}
 
 		contents += fmt.Sprintf(tabtabtabtabtabtab + ind + "%s%s = iprot.read%s();\n", prefix, fName, thriftType)
