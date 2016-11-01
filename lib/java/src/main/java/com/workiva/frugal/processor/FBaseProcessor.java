@@ -14,24 +14,23 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 /**
- * Base message processor.
+ * Abstract base FProcessor implementation. This should only be used by generated code.
  */
-public class FBaseProcessor implements FProcessor {
+public abstract class FBaseProcessor implements FProcessor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FBaseProcessor.class);
     protected static final Object WRITE_LOCK = new Object();
 
-    private final Map<String, FProcessorFunction> processMap;
-
-    protected FBaseProcessor(Map<String, FProcessorFunction> processorFunctionMap) {
-        this.processMap = processorFunctionMap;
-    }
+    private Map<String, FProcessorFunction> processMap;
 
     @Override
     public void process(FProtocol iprot, FProtocol oprot) throws TException {
+        if (processMap == null) {
+            processMap = getProcessMap();
+        }
         FContext ctx = iprot.readRequestHeader();
         TMessage message = iprot.readMessageBegin();
-        FProcessorFunction processor = this.processMap.get(message.name);
+        FProcessorFunction processor = processMap.get(message.name);
         if (processor != null) {
             try {
                 processor.process(ctx, iprot, oprot);
@@ -55,4 +54,11 @@ public class FBaseProcessor implements FProcessor {
         }
         throw e;
     }
+
+    /**
+     * Returns the map of method names to FProcessorFunctions.
+     *
+     * @return FProcessorFunction map
+     */
+    protected abstract Map<String, FProcessorFunction> getProcessMap();
 }

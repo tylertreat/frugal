@@ -1,5 +1,6 @@
 package com.workiva.frugal.processor;
 
+import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocol;
 import org.apache.thrift.TApplicationException;
@@ -12,6 +13,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.any;
@@ -37,7 +39,7 @@ public class FBaseProcessorTest {
         map = new HashMap<>();
         oneWayFunction = mock(FProcessorFunction.class);
 
-        processor = new FBaseProcessor(map);
+        processor = new TestFProcessor(map);
 
         iprot = mock(FProtocol.class);
         oprot = mock(FProtocol.class);
@@ -81,6 +83,24 @@ public class FBaseProcessorTest {
             verify(oprot).writeMessageBegin(any(TMessage.class));
             verify(oprot).writeMessageEnd();
             verify(tTransport).flush();
+        }
+    }
+
+    private class TestFProcessor extends FBaseProcessor {
+
+        private Map<String, FProcessorFunction> procMap;
+
+        public TestFProcessor(Map<String, FProcessorFunction> procMap) {
+            this.procMap = procMap;
+        }
+
+        @Override
+        public Map<String, FProcessorFunction> getProcessMap() {
+            return procMap;
+        }
+
+        @Override
+        public void addMiddleware(ServiceMiddleware middleware) {
         }
     }
 }

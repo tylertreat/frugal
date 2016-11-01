@@ -1,5 +1,6 @@
 package com.workiva.frugal.server;
 
+import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.protocol.FProtocol;
 import com.workiva.frugal.protocol.FProtocolFactory;
@@ -200,6 +201,10 @@ public class FNatsServerTest {
             if (expectedOut != null) {
                 out.writeString(new String(expectedOut));
             }
+        }
+
+        @Override
+        public void addMiddleware(ServiceMiddleware middleware) {
         }
 
     }

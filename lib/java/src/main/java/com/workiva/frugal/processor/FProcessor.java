@@ -1,5 +1,6 @@
 package com.workiva.frugal.processor;
 
+import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.FProtocol;
 import org.apache.thrift.TException;
 
@@ -11,6 +12,19 @@ import org.apache.thrift.TException;
  */
 public interface FProcessor {
 
+    /**
+     * Processes the request from the input protocol and write the response to the output protocol.
+     *
+     * @param in  input FProtocol
+     * @param out output FProtocol
+     * @throws TException
+     */
     void process(FProtocol in, FProtocol out) throws TException;
 
+    /**
+     * Adds the given ServiceMiddleware to the FProcessor. This should only be called before the server is started.
+     *
+     * @param middleware the ServiceMiddleware to add
+     */
+    void addMiddleware(ServiceMiddleware middleware);
 }
