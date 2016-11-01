@@ -2026,11 +2026,12 @@ func (p *EventWrapper) String() string {
 }
 
 type TestingUnions struct {
-	AnID           *ID     `thrift:"AnID,1" db:"AnID" json:"AnID,omitempty"`
-	AString        *string `thrift:"aString,2" db:"aString" json:"aString,omitempty"`
-	Someotherthing *Int    `thrift:"someotherthing,3" db:"someotherthing" json:"someotherthing,omitempty"`
-	AnInt16        *int16  `thrift:"AnInt16,4" db:"AnInt16" json:"AnInt16,omitempty"`
-	Requests       Request `thrift:"Requests,5" db:"Requests" json:"Requests,omitempty"`
+	AnID            *ID     `thrift:"AnID,1" db:"AnID" json:"AnID,omitempty"`
+	AString         *string `thrift:"aString,2" db:"aString" json:"aString,omitempty"`
+	Someotherthing  *Int    `thrift:"someotherthing,3" db:"someotherthing" json:"someotherthing,omitempty"`
+	AnInt16         *int16  `thrift:"AnInt16,4" db:"AnInt16" json:"AnInt16,omitempty"`
+	Requests        Request `thrift:"Requests,5" db:"Requests" json:"Requests,omitempty"`
+	BinFieldInUnion []byte  `thrift:"bin_field_in_union,6" db:"bin_field_in_union" json:"bin_field_in_union,omitempty"`
 }
 
 func NewTestingUnions() *TestingUnions {
@@ -2099,6 +2100,16 @@ func (p *TestingUnions) GetRequests() Request {
 	return p.Requests
 }
 
+var TestingUnions_BinFieldInUnion_DEFAULT []byte
+
+func (p *TestingUnions) IsSetBinFieldInUnion() bool {
+	return p.BinFieldInUnion != nil
+}
+
+func (p *TestingUnions) GetBinFieldInUnion() []byte {
+	return p.BinFieldInUnion
+}
+
 func (p *TestingUnions) CountSetFieldsTestingUnions() int {
 	count := 0
 	if p.IsSetAnID() {
@@ -2111,6 +2122,12 @@ func (p *TestingUnions) CountSetFieldsTestingUnions() int {
 		count++
 	}
 	if p.IsSetAnInt16() {
+		count++
+	}
+	if p.IsSetRequests() {
+		count++
+	}
+	if p.IsSetBinFieldInUnion() {
 		count++
 	}
 	return count
@@ -2148,6 +2165,10 @@ func (p *TestingUnions) Read(iprot thrift.TProtocol) error {
 			}
 		case 5:
 			if err := p.ReadField5(iprot); err != nil {
+				return err
+			}
+		case 6:
+			if err := p.ReadField6(iprot); err != nil {
 				return err
 			}
 		default:
@@ -2231,6 +2252,15 @@ func (p *TestingUnions) ReadField5(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *TestingUnions) ReadField6(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadBinary(); err != nil {
+		return thrift.PrependError("error reading field 6: ", err)
+	} else {
+		p.BinFieldInUnion = v
+	}
+	return nil
+}
+
 func (p *TestingUnions) Write(oprot thrift.TProtocol) error {
 	if c := p.CountSetFieldsTestingUnions(); c != 1 {
 		return fmt.Errorf("%T write union: exactly one field must be set (%d set).", p, c)
@@ -2251,6 +2281,9 @@ func (p *TestingUnions) Write(oprot thrift.TProtocol) error {
 		return err
 	}
 	if err := p.writeField5(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField6(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -2343,6 +2376,21 @@ func (p *TestingUnions) writeField5(oprot thrift.TProtocol) error {
 		}
 		if err := oprot.WriteFieldEnd(); err != nil {
 			return thrift.PrependError(fmt.Sprintf("%T write field end error 5:Requests: ", p), err)
+		}
+	}
+	return nil
+}
+
+func (p *TestingUnions) writeField6(oprot thrift.TProtocol) error {
+	if p.IsSetBinFieldInUnion() {
+		if err := oprot.WriteFieldBegin("bin_field_in_union", thrift.STRING, 6); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 6:bin_field_in_union: ", p), err)
+		}
+		if err := oprot.WriteBinary([]byte(p.BinFieldInUnion)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T.bin_field_in_union (6) field write error: ", p), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 6:bin_field_in_union: ", p), err)
 		}
 	}
 	return nil

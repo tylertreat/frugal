@@ -571,11 +571,9 @@ func (g *Generator) generateStruct(s *parser.Struct, serviceName string) string 
 		contents += fmt.Sprintf("func (p *%s) CountSetFields%s() int {\n", sName, sName)
 		contents += "\tcount := 0\n"
 		for _, field := range s.Fields {
-			if g.isPointerField(field) {
-				contents += fmt.Sprintf("\tif p.IsSet%s() {\n", title(field.Name))
-				contents += "\t\tcount++\n"
-				contents += "\t}\n"
-			}
+			contents += fmt.Sprintf("\tif p.IsSet%s() {\n", title(field.Name))
+			contents += "\t\tcount++\n"
+			contents += "\t}\n"
 		}
 		contents += "\treturn count\n"
 		contents += "}\n\n"
@@ -2130,21 +2128,7 @@ func (g *Generator) getEnumFromThriftType(t *parser.Type) string {
 func (g *Generator) isPrimitive(t *parser.Type) bool {
 	underlyingType := g.Frugal.UnderlyingType(t)
 	switch underlyingType.Name {
-	case "bool":
-		fallthrough
-	case "byte":
-		fallthrough
-	case "i8":
-		fallthrough
-	case "i16":
-		fallthrough
-	case "i32":
-		fallthrough
-	case "i64":
-		fallthrough
-	case "double":
-		fallthrough
-	case "string":
+	case "bool", "byte", "i8", "i16", "i32", "i64", "double", "string":
 		return true
 	default:
 		return false
