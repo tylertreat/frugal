@@ -20,10 +20,10 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports := "from datetime import timedelta\n"
 	imports += "from threading import Lock\n\n"
 
+	imports += "from frugal.exceptions import FTimeoutException\n"
 	imports += "from frugal.middleware import Method\n"
-	imports += "from frugal.processor import FBaseProcessor\n"
-	imports += "from frugal.processor import FProcessorFunction\n"
-	imports += "from frugal.registry import FClientRegistry\n"
+	imports += "from frugal.tornado.processor import FBaseProcessor\n"
+	imports += "from frugal.tornado.processor import FProcessorFunction\n"
 	imports += "from frugal.transport import TMemoryOutputBuffer\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
@@ -106,6 +106,8 @@ func (t *TornadoGenerator) generateClientMethod(method *parser.Method) string {
 	contents += tabtab + "try:\n"
 	contents += tabtabtab + fmt.Sprintf("yield self._send_%s(ctx%s)\n", method.Name, t.generateClientArgs(method.Arguments))
 	contents += tabtabtab + "result = yield timeout_future\n"
+	contents += tabtab + "except gen.TimeoutError:\n"
+	contents += fmt.Sprintf(tabtabtab+"raise FTimeoutException('%s timed out after {} milliseconds'.format(ctx.get_timeout()))\n", method.Name)
 	contents += tabtab + "finally:\n"
 	contents += tabtabtab + "self._transport.unregister(ctx)\n"
 	contents += tabtab + "raise gen.Return(result)\n\n"
@@ -212,7 +214,7 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
 	if !method.Oneway {
-		contents += tabtab + "with self._lock:\n"
+		contents += tabtab + "with (yield self._lock.acquire()):\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
 		contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", method.Name)
 		contents += tabtabtab + "result.write(oprot)\n"

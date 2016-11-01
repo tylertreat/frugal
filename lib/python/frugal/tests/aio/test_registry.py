@@ -1,46 +1,18 @@
 from asyncio import Future
 from mock import Mock
 
-from frugal.aio.registry import FClientRegistry
-from frugal.aio.registry import FServerRegistry
+from frugal.aio.registry import FRegistryImpl
 from frugal.context import FContext
 from frugal.exceptions import FException
 from frugal.exceptions import FProtocolException
 from frugal.tests.aio import utils
 
 
-class TestServerRegistry(utils.AsyncIOTestCase):
-
-    @utils.async_runner
-    async def test_execute(self):
-        processor = Mock()
-        future = Future()
-        future.set_result(None)
-        processor.process.return_value = future
-        iprot_factory = Mock()
-        oprot = Mock()
-
-        registry = FServerRegistry(processor, iprot_factory, oprot)
-
-        frame = bytearray(
-            b'\x00\x00\x00\x00\x0e\x00\x00\x00\x05_opid\x00\x00\x00\x011'
-            b'\x80\x01\x00\x02\x00\x00\x00\x08basePing\x00\x00\x00\x00\x00'
-        )
-
-        await registry.execute(frame)
-        self.assertEqual(
-            frame,
-            iprot_factory.get_protocol.call_args_list[0][0][0].getvalue()
-        )
-        processor.process.assert_called_once_with(
-            iprot_factory.get_protocol.return_value, oprot)
-
-
-class TestClientRegistry(utils.AsyncIOTestCase):
+class TestRegistry(utils.AsyncIOTestCase):
 
     @utils.async_runner
     async def test_register(self):
-        registry = FClientRegistry()
+        registry = FRegistryImpl()
         context = FContext("fooid")
         context._set_op_id(123)
         callback = Mock()
@@ -49,7 +21,7 @@ class TestClientRegistry(utils.AsyncIOTestCase):
 
     @utils.async_runner
     async def test_register_with_existing_op_id(self):
-        registry = FClientRegistry()
+        registry = FRegistryImpl()
         context = FContext("fooid")
         context._set_op_id(0)
         callback = Mock()
@@ -62,7 +34,7 @@ class TestClientRegistry(utils.AsyncIOTestCase):
 
     @utils.async_runner
     async def test_unregister(self):
-        registry = FClientRegistry()
+        registry = FRegistryImpl()
         context = FContext("fooid")
         context._set_op_id(1)
         callback = Mock()
@@ -73,7 +45,7 @@ class TestClientRegistry(utils.AsyncIOTestCase):
 
     @utils.async_runner
     async def test_execute_bad_frame(self):
-        registry = FClientRegistry()
+        registry = FRegistryImpl()
         context = FContext("fooid")
         callback = Mock()
         await registry.register(context, callback)
@@ -85,7 +57,7 @@ class TestClientRegistry(utils.AsyncIOTestCase):
 
     @utils.async_runner
     async def test_execute_frame_missing_op_id(self):
-        registry = FClientRegistry()
+        registry = FRegistryImpl()
         registry._next_opid = 10
         context = FContext("fooid")
         callback = Mock()
@@ -101,7 +73,7 @@ class TestClientRegistry(utils.AsyncIOTestCase):
 
     @utils.async_runner
     async def test_execute_unregistered_op_id(self):
-        registry = FClientRegistry()
+        registry = FRegistryImpl()
         registry._next_opid = 10
         context = FContext("fooid")
         callback = Mock()
@@ -117,7 +89,7 @@ class TestClientRegistry(utils.AsyncIOTestCase):
 
     @utils.async_runner
     async def test_execute(self):
-        registry = FClientRegistry()
+        registry = FRegistryImpl()
         registry._next_opid = 0
         context = FContext("fooid")
         callback = Mock()
@@ -129,6 +101,5 @@ class TestClientRegistry(utils.AsyncIOTestCase):
         )
 
         await registry.execute(frame)
-        callback.assert_called_once
 
         self.assertEqual(frame, callback.call_args_list[0][0][0].getvalue())

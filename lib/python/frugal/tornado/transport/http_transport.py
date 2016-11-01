@@ -93,4 +93,4 @@ class FHttpTransport(FTornadoTransport):
             # One-way method, drop response
             return
 
-        self.execute_frame(decoded)
+        yield self.execute_frame(decoded)

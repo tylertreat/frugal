@@ -12,7 +12,7 @@ import inspect
 
 from frugal.aio.processor import FBaseProcessor
 from frugal.aio.processor import FProcessorFunction
-from frugal.aio.registry import FClientRegistry
+from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
@@ -64,6 +64,8 @@ class Client(Iface):
         try:
             await self._send_basePing(ctx)
             result = await timed_future
+        except asyncio.TimeoutError:
+            raise FTimeoutException('basePing timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             await self._transport.unregister(ctx)
         return result

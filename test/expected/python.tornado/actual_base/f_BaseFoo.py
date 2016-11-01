@@ -9,10 +9,10 @@
 from datetime import timedelta
 from threading import Lock
 
+from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
-from frugal.processor import FBaseProcessor
-from frugal.processor import FProcessorFunction
-from frugal.registry import FClientRegistry
+from frugal.tornado.processor import FBaseProcessor
+from frugal.tornado.processor import FProcessorFunction
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
@@ -69,6 +69,8 @@ class Client(Iface):
         try:
             yield self._send_basePing(ctx)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('basePing timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -131,7 +133,7 @@ class _basePing(FProcessorFunction):
         iprot.readMessageEnd()
         result = basePing_result()
         yield gen.maybe_future(self._handler([ctx]))
-        with self._lock:
+        with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('basePing', TMessageType.REPLY, 0)
             result.write(oprot)

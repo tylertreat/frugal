@@ -3,9 +3,13 @@ from asyncio import Lock
 
 from thrift.Thrift import TApplicationException, TMessageType, TType
 
-from frugal.aio.processor import FProcessorFunction
-
 logger = logging.getLogger(__name__)
+
+
+class FProcessorFunction(object):
+
+    async def process(self, ctx, iprot, oprot):
+        pass
 
 
 class FProcessor(object):

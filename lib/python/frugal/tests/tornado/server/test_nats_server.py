@@ -88,6 +88,10 @@ class TestFNatsTornadoServer(AsyncTestCase):
         publish_future.set_result(None)
         self.mock_nats_client.publish.return_value = publish_future
 
+        process_future = concurrent.Future()
+        process_future.set_result(None)
+        self.mock_processor.process.return_value = process_future
+
         yield self.server._on_message_callback(msg)
 
         self.server._processor.process.assert_called_with(iprot, oprot)

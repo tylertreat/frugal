@@ -12,7 +12,7 @@ import inspect
 
 from frugal.aio.processor import FBaseProcessor
 from frugal.aio.processor import FProcessorFunction
-from frugal.aio.registry import FClientRegistry
+from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
@@ -147,6 +147,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             await self._send_ping(ctx)
             result = await timed_future
+        except asyncio.TimeoutError:
+            raise FTimeoutException('ping timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             await self._transport.unregister(ctx)
         return result
@@ -198,6 +200,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             await self._send_blah(ctx, num, Str, event)
             result = await timed_future
+        except asyncio.TimeoutError:
+            raise FTimeoutException('blah timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             await self._transport.unregister(ctx)
         return result
@@ -286,6 +290,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             await self._send_bin_method(ctx, bin, Str)
             result = await timed_future
+        except asyncio.TimeoutError:
+            raise FTimeoutException('bin_method timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             await self._transport.unregister(ctx)
         return result
@@ -345,6 +351,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             await self._send_param_modifiers(ctx, opt_num, default_num, req_num)
             result = await timed_future
+        except asyncio.TimeoutError:
+            raise FTimeoutException('param_modifiers timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             await self._transport.unregister(ctx)
         return result
@@ -401,6 +409,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             await self._send_underlying_types_test(ctx, list_type, set_type)
             result = await timed_future
+        except asyncio.TimeoutError:
+            raise FTimeoutException('underlying_types_test timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             await self._transport.unregister(ctx)
         return result
@@ -454,6 +464,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             await self._send_getThing(ctx)
             result = await timed_future
+        except asyncio.TimeoutError:
+            raise FTimeoutException('getThing timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             await self._transport.unregister(ctx)
         return result
@@ -505,6 +517,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             await self._send_getMyInt(ctx)
             result = await timed_future
+        except asyncio.TimeoutError:
+            raise FTimeoutException('getMyInt timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             await self._transport.unregister(ctx)
         return result

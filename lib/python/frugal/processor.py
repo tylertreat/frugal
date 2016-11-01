@@ -6,6 +6,12 @@ from thrift.Thrift import TApplicationException, TMessageType, TType
 logger = logging.getLogger(__name__)
 
 
+class FProcessorFunction(object):
+
+    def process(self, ctx, iprot, oprot):
+        pass
+
+
 class FProcessor(object):
     """FProcessor is a generic object which operates upon an input stream and
     writes to some output stream.

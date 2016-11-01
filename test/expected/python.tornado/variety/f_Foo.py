@@ -9,10 +9,10 @@
 from datetime import timedelta
 from threading import Lock
 
+from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
-from frugal.processor import FBaseProcessor
-from frugal.processor import FProcessorFunction
-from frugal.registry import FClientRegistry
+from frugal.tornado.processor import FBaseProcessor
+from frugal.tornado.processor import FProcessorFunction
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
@@ -150,6 +150,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_ping(ctx)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('ping timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -203,6 +205,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_blah(ctx, num, Str, event)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('blah timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -295,6 +299,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_bin_method(ctx, bin, Str)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('bin_method timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -356,6 +362,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_param_modifiers(ctx, opt_num, default_num, req_num)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('param_modifiers timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -414,6 +422,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_underlying_types_test(ctx, list_type, set_type)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('underlying_types_test timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -469,6 +479,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_getThing(ctx)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('getThing timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -522,6 +534,8 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         try:
             yield self._send_getMyInt(ctx)
             result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('getMyInt timed out after {} milliseconds'.format(ctx.get_timeout()))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -596,7 +610,7 @@ class _ping(FProcessorFunction):
         iprot.readMessageEnd()
         result = ping_result()
         yield gen.maybe_future(self._handler([ctx]))
-        with self._lock:
+        with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
             result.write(oprot)
@@ -622,7 +636,7 @@ class _blah(FProcessorFunction):
             result.awe = awe
         except actual_base.python.ttypes.api_exception as api:
             result.api = api
-        with self._lock:
+        with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('blah', TMessageType.REPLY, 0)
             result.write(oprot)
@@ -660,7 +674,7 @@ class _bin_method(FProcessorFunction):
             result.success = yield gen.maybe_future(self._handler([ctx, args.bin, args.Str]))
         except actual_base.python.ttypes.api_exception as api:
             result.api = api
-        with self._lock:
+        with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('bin_method', TMessageType.REPLY, 0)
             result.write(oprot)
@@ -681,7 +695,7 @@ class _param_modifiers(FProcessorFunction):
         iprot.readMessageEnd()
         result = param_modifiers_result()
         result.success = yield gen.maybe_future(self._handler([ctx, args.opt_num, args.default_num, args.req_num]))
-        with self._lock:
+        with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('param_modifiers', TMessageType.REPLY, 0)
             result.write(oprot)
@@ -702,7 +716,7 @@ class _underlying_types_test(FProcessorFunction):
         iprot.readMessageEnd()
         result = underlying_types_test_result()
         result.success = yield gen.maybe_future(self._handler([ctx, args.list_type, args.set_type]))
-        with self._lock:
+        with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('underlying_types_test', TMessageType.REPLY, 0)
             result.write(oprot)
@@ -723,7 +737,7 @@ class _getThing(FProcessorFunction):
         iprot.readMessageEnd()
         result = getThing_result()
         result.success = yield gen.maybe_future(self._handler([ctx]))
-        with self._lock:
+        with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.REPLY, 0)
             result.write(oprot)
@@ -744,7 +758,7 @@ class _getMyInt(FProcessorFunction):
         iprot.readMessageEnd()
         result = getMyInt_result()
         result.success = yield gen.maybe_future(self._handler([ctx]))
-        with self._lock:
+        with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.REPLY, 0)
             result.write(oprot)

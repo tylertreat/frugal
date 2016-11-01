@@ -1,10 +1,6 @@
-from io import BytesIO
-from struct import pack
-
 from tornado import gen, locks
 
-from frugal.exceptions import FException, FMessageSizeException
-from frugal.registry import FClientRegistry
+from frugal.tornado.registry import FRegistryImpl
 from frugal.transport import FTransport
 
 
@@ -17,8 +13,7 @@ class FTornadoTransport(FTransport):
         super(FTornadoTransport, self).__init__()
         self._max_message_size = max_message_size
 
-        self._registry_lock = locks.Lock()
-        self._registry = FClientRegistry()
+        self._registry = FRegistryImpl()
 
     @gen.coroutine
     def register(self, context, callback):
@@ -32,11 +27,7 @@ class FTornadoTransport(FTransport):
         Raises:
             StandardError: if registry has not been set.
         """
-        with (yield self._registry_lock.acquire()):
-            if not self._registry:
-                raise FException("registry cannot be null.")
-
-            self._registry.register(context, callback)
+        yield self._registry.register(context, callback)
 
     @gen.coroutine
     def unregister(self, context):
@@ -48,11 +39,7 @@ class FTornadoTransport(FTransport):
         Raises:
             StandardError: if registry has not been set.
         """
-        with (yield self._registry_lock.acquire()):
-            if not self._registry:
-                raise FException("registry cannot be null.")
-
-            self._registry.unregister(context)
+        yield self._registry.unregister(context)
 
     def is_open(self):
         raise NotImplementedError("You must override this.")
@@ -72,9 +59,10 @@ class FTornadoTransport(FTransport):
     def send(self, data):
         raise NotImplementedError('You must override this.')
 
+    @gen.coroutine
     def execute_frame(self, frame):
         """Execute a frugal frame.
         NOTE: this frame must include the frame size.
         """
-        self._registry.execute(frame[4:])
+        yield self._registry.execute(frame[4:])
 

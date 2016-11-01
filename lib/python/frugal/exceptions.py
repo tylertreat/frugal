@@ -1,46 +1,38 @@
+from thrift.Thrift import TException
+from thrift.protocol.TProtocol import TProtocolException
 
-class FException(Exception):
 
+class FException(TException):
+    """Basic Frugal exception."""
     def __init__(self, message=None):
         super(FException, self).__init__(message)
 
 
-class FrugalVersionException(FException):
-
+class FContextException(FException):
+    """Indicates a problem with an FContext"""
     def __init__(self, message=None):
-        super(FrugalVersionException, self).__init__(message)
+        super(FException, self).__init__(message=message)
 
 
 class FContextHeaderException(FException):
-
+    """Indicates an invalid header key on an FContext"""
     def __init__(self, message=None):
         super(FContextHeaderException, self).__init__(message)
 
 
-class FProtocolException(FException):
-
-    UNKNOWN = 0
-    INVALID_DATA = 1
-    BAD_VERSION = 2
-
-    def __init__(self, type=UNKNOWN, message=None):
-        super(FProtocolException, self).__init__(message)
-        self.type = type
-
-
-class FExecuteCallbackNotSet(FException):
-
-    def __init__(self, message=None):
-        super(FExecuteCallbackNotSet, self).__init__(message)
+class FProtocolException(TProtocolException):
+    """Indicates a problem with a protocol."""
+    def __init__(self, kind=TProtocolException.UNKNOWN, message=None):
+        super(FProtocolException, self).__init__(type=kind, message=message)
 
 
 class FMessageSizeException(FException):
-
+    """Indicates a message was too large for a transport to handle."""
     def __init__(self, message=None):
         super(FMessageSizeException, self).__init__(message)
 
 
-class FOperationIdNotFoundException(FException):
-
+class FTimeoutException(FException):
+    """Indicates a request took too long."""
     def __init__(self, message=None):
-        super(FOperationIdNotFoundException, self).__init__(message)
+        super(FTimeoutException, self).__init__(message=message)

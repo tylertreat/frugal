@@ -42,47 +42,9 @@ class FRegistry(object):
         pass
 
 
-class FServerRegistry(FRegistry):
+class FRegistryImpl(FRegistry):
     """
-    FServerRegistry is intended for use only by Frugal servers.
-    This is only to be used by generated code.
-    """
-
-    def __init__(self, processor, iprot_factory, oprot):
-        """Initialize FServerRegistry.
-
-        Args:
-            processor: FProcessor is the server request processor.
-            iprot_factory: FProtocolFactory used for creating input
-                                    protocols.
-            oprot: output FProtocol.
-        """
-        self._processor = processor
-        self._iprot_factory = iprot_factory
-        self._oprot = oprot
-
-    def register(self, context, callback):
-        # No-op in server.
-        pass
-
-    def unregister(self, context):
-        # No-op in server.
-        pass
-
-    def execute(self, frame):
-        """Dispatch a single Frugal message frame.
-
-        Args:
-            frame: an entire Frugal message frame.
-        """
-        wrapped_transport = TMemoryBuffer(frame)
-        iprot = self._iprot_factory.get_protocol(wrapped_transport)
-        self._processor.process(iprot, self._oprot)
-
-
-class FClientRegistry(FRegistry):
-    """
-    FClientRegistry is intended for use only by Frugal clients.
+    FRegistryImpl is intended for use only by Frugal clients.
     This is only to be used by generated code.
     """
 

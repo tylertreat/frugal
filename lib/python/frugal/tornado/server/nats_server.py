@@ -81,7 +81,7 @@ class FNatsTornadoServer(FServer):
         oprot = self._oprot_factory.get_protocol(otrans)
 
         try:
-            self._processor.process(iprot, oprot)
+            yield self._processor.process(iprot, oprot)
         except TException as ex:
             logger.exception(ex)
             return
