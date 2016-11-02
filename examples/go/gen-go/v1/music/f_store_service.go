@@ -305,7 +305,7 @@ func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FPro
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
 		p.GetWriteMutex().Lock()
-		storeWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "buyAlbum", err.Error())
+		err = storeWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "buyAlbum", err.Error())
 		p.GetWriteMutex().Unlock()
 		return err
 	}
@@ -332,9 +332,9 @@ func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FPro
 			result.Error = v
 		default:
 			p.GetWriteMutex().Lock()
-			storeWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "buyAlbum", "Internal error processing buyAlbum: "+err2.Error())
+			applicationError := storeWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "buyAlbum", "Internal error processing buyAlbum: "+err2.Error())
 			p.GetWriteMutex().Unlock()
-			return err2
+			return applicationError
 		}
 	} else {
 		var retval *Album = ret[0].(*Album)
@@ -390,7 +390,7 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
 		p.GetWriteMutex().Lock()
-		storeWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "enterAlbumGiveaway", err.Error())
+		err = storeWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "enterAlbumGiveaway", err.Error())
 		p.GetWriteMutex().Unlock()
 		return err
 	}
@@ -413,9 +413,9 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 			return nil
 		}
 		p.GetWriteMutex().Lock()
-		storeWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "enterAlbumGiveaway", "Internal error processing enterAlbumGiveaway: "+err2.Error())
+		applicationError := storeWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "enterAlbumGiveaway", "Internal error processing enterAlbumGiveaway: "+err2.Error())
 		p.GetWriteMutex().Unlock()
-		return err2
+		return applicationError
 	} else {
 		var retval bool = ret[0].(bool)
 		result.Success = &retval
@@ -460,13 +460,14 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 	return err
 }
 
-func storeWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) {
+func storeWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) error {
 	x := thrift.NewTApplicationException(type_, message)
 	oprot.WriteResponseHeader(ctx)
 	oprot.WriteMessageBegin(method, thrift.EXCEPTION, 0)
 	x.Write(oprot)
 	oprot.WriteMessageEnd()
 	oprot.Flush()
+	return x
 }
 
 type StoreBuyAlbumArgs struct {

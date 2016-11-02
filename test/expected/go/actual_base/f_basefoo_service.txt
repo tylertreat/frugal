@@ -172,7 +172,7 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
 		p.GetWriteMutex().Lock()
-		basefooWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "basePing", err.Error())
+		err = basefooWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "basePing", err.Error())
 		p.GetWriteMutex().Unlock()
 		return err
 	}
@@ -195,9 +195,9 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 			return nil
 		}
 		p.GetWriteMutex().Lock()
-		basefooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "basePing", "Internal error processing basePing: "+err2.Error())
+		applicationError := basefooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "basePing", "Internal error processing basePing: "+err2.Error())
 		p.GetWriteMutex().Unlock()
-		return err2
+		return applicationError
 	}
 	p.GetWriteMutex().Lock()
 	defer p.GetWriteMutex().Unlock()
@@ -239,13 +239,14 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 	return err
 }
 
-func basefooWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) {
+func basefooWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) error {
 	x := thrift.NewTApplicationException(type_, message)
 	oprot.WriteResponseHeader(ctx)
 	oprot.WriteMessageBegin(method, thrift.EXCEPTION, 0)
 	x.Write(oprot)
 	oprot.WriteMessageEnd()
 	oprot.Flush()
+	return x
 }
 
 type BaseFooBasePingArgs struct {
