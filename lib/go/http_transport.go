@@ -77,6 +77,9 @@ func NewFrugalHandlerFunc(processor FProcessor, protocolFactory *FProtocolFactor
 				)
 				return
 			}
+
+			// reassign so later code doesn't get this error
+			err = nil
 		}
 
 		// If client requested a limit, check the buffer size
@@ -91,7 +94,6 @@ func NewFrugalHandlerFunc(processor FProcessor, protocolFactory *FProtocolFactor
 		// Encode response
 		encoded := new(bytes.Buffer)
 		encoder := newEncoder(encoded)
-		var err error
 		binary.BigEndian.PutUint32(frameSize, uint32(outBuf.Len()))
 		if _, e := encoder.Write(frameSize); e != nil {
 			err = e
