@@ -30,7 +30,7 @@ public class NatsClient {
 
         // Create and open a new transport that uses NATS for sending data.
         // The NATS transport will communicate using the music-service topic.
-        FTransport transport = new FNatsTransport(conn, NatsServer.SERVICE_SUBJECT);
+        FTransport transport = FNatsTransport.of(conn, NatsServer.SERVICE_SUBJECT);
         transport.open();
 
         // Create a new client for the music store

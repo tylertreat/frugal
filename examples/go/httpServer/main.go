@@ -23,10 +23,10 @@ func main() {
 	processor := music.NewFStoreProcessor(handler)
 
 	// Start the server using the configured processor, and protocol
-	http.HandleFunc("/frugal", frugal.NewFrugalHandlerFunc(processor, fProtocolFactory, fProtocolFactory))
+	http.HandleFunc("/frugal", frugal.NewFrugalHandlerFunc(processor, fProtocolFactory))
 	func() {
 		fmt.Println("Starting the http server...")
-		http.ListenAndServe(":8080", http.DefaultServeMux)
+		http.ListenAndServe(":9090", http.DefaultServeMux)
 	}()
 }
 

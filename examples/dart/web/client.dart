@@ -2,13 +2,16 @@ import 'dart:async';
 import 'dart:html';
 
 import 'package:logging/logging.dart';
-import 'package:thrift/thrift.dart';
 import 'package:v1_music/v1_music.dart' as music;
+import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
+import 'package:w_transport/w_transport.dart' as wt;
+import 'package:w_transport/w_transport_browser.dart' show configureWTransportForBrowser;
 
 frugal.FSubscription sub;
 
 void main() {
+  configureWTransportForBrowser();
   Logger.root.level = Level.FINEST;
   Logger.root.onRecord.listen((LogRecord r) {
     window.console.log('${r.loggerName}(${r.level}): ${r.message}');
@@ -42,7 +45,12 @@ class EventUI {
     _initConnection();
   }
 
-  void _initConnection() { }
+  _initConnection() async {
+    var transport = new frugal.FHttpTransport(new wt.Client(), Uri.parse("http://localhost:8080/frugal"));
+    await transport.open();
+    var protocolFactory = new frugal.FProtocolFactory(new thrift.TBinaryProtocolFactory());
+    _fStoreClient = new music.FStoreClient(transport, protocolFactory);
+  }
 
   void _buildInterface() {
     output.children.forEach((e) {
@@ -77,7 +85,7 @@ class EventUI {
     var album = new music.Album();
     album.aSIN = asin.value;
     album.duration = int.parse(duration.value);
-    frugal.FContext ctx = new frugal.FContext(correlationId: 'an-id');
+    frugal.FContext ctx = new frugal.FContext(correlationID: 'an-id');
     _albumWinnersPublisher.publishWinner(ctx, album);
   }
 
@@ -121,14 +129,14 @@ class EventUI {
     if (_fStoreClient == null) {
       window.alert("Not connected to server");
     }
-    var ctx = new frugal.FContext(correlationId:"corr-12345");
+    var ctx = new frugal.FContext(correlationID:"corr-12345");
     _fStoreClient.buyAlbum(ctx, "My-ASIN", "Account-12345").catchError( (e) {
       window.alert("Ping errored! ${e.toString()}");
     });
   }
 
   void onEvent(frugal.FContext ctx, music.Album m) {
-    window.alert(ctx.correlationId().toString() + ' : ' + m.toString());
+    window.alert(ctx.correlationID.toString() + ' : ' + m.toString());
   }
 }
 

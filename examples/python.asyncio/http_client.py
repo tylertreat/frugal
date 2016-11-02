@@ -33,7 +33,7 @@ async def main():
     prot_factory = FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
 
     # Create an HTTP to query the configured server URL
-    transport = FHttpTransport("http://localhost:8080/frugal")
+    transport = FHttpTransport("http://localhost:9090/frugal")
 
     # Using the configured transport and protocol, create a client
     # to talk to the music store service.
@@ -44,7 +44,7 @@ async def main():
                                         str(uuid.uuid4()),
                                         "ACT-12345")
 
-    root.info("Bought an album %s\n", album)
+    root.info("Bought an album %s\n", album.ASIN)
 
     await store_client.enterAlbumGiveaway(FContext(),
                                           "kevin@workiva.com",

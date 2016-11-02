@@ -1,8 +1,8 @@
 package examples;
 
 import com.workiva.frugal.protocol.FProtocolFactory;
+import com.workiva.frugal.server.FNatsServer;
 import com.workiva.frugal.server.FServer;
-import com.workiva.frugal.server.FStatelessNatsServer;
 import com.workiva.frugal.transport.FNatsTransport;
 import com.workiva.frugal.transport.FTransport;
 import io.nats.client.Connection;
@@ -31,7 +31,7 @@ public class NatsServer {
 
         // Create and open a new transport that uses NATS for sending data.
         // The NATS transport will communicate using the music-service topic.
-        FTransport transport = new FNatsTransport(conn, "music-service");
+        FTransport transport = FNatsTransport.of(conn, "music-service");
         transport.open();
 
         // Create a new server processor.
@@ -42,7 +42,7 @@ public class NatsServer {
         // Create a new music store server using the processor
         // The server can be configured using the Builder interface.
         FServer server =
-                new FStatelessNatsServer.Builder(conn, processor, protocolFactory, SERVICE_SUBJECT)
+                new FNatsServer.Builder(conn, processor, protocolFactory, SERVICE_SUBJECT)
                         .withQueueGroup(SERVICE_SUBJECT) // if set, all servers listen to the same queue group
                         .build();
 

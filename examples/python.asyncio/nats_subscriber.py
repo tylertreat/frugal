@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import asyncio
 
@@ -8,7 +9,7 @@ from nats.aio.client import Client as NatsClient
 
 from frugal.protocol.protocol_factory import FProtocolFactory
 from frugal.provider import FScopeProvider
-from frugal.aio.transport import FNatsScopeTransportFactory
+from frugal.aio.transport import FNatsSubscriberTransportFactory
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py.asyncio"))
 from v1.music.f_AlbumWinners_subscriber import AlbumWinnersSubscriber  # noqa
@@ -40,13 +41,13 @@ async def main():
     await nats_client.connect(**options)
 
     # Create a pub sub scope using the configured transport and protocol
-    scope_transport_factory = FNatsScopeTransportFactory(nats_client)
-    provider = FScopeProvider(scope_transport_factory, prot_factory)
+    transport_factory = FNatsSubscriberTransportFactory(nats_client)
+    provider = FScopeProvider(None, transport_factory, prot_factory)
 
     subscriber = AlbumWinnersSubscriber(provider)
 
     def event_handler(ctx, req):
-        root.info("You won! {}".format(req))
+        root.info("You won! {}".format(req.ASIN))
 
     await subscriber.subscribe_Winner(event_handler)
 
