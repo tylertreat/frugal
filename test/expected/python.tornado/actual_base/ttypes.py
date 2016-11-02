@@ -94,7 +94,7 @@ class thing(object):
     def __ne__(self, other):
         return not (self == other)
 
-class nested_thing:
+class nested_thing(object):
     """
     Attributes:
      - things

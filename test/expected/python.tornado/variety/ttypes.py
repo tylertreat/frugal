@@ -115,7 +115,7 @@ class TestBase(object):
     def __ne__(self, other):
         return not (self == other)
 
-class TestLowercase:
+class TestLowercase(object):
     """
     Attributes:
      - lowercaseInt
