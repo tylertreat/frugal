@@ -3,6 +3,7 @@ package frugal
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -22,6 +23,8 @@ func TestServiceMiddleware(t *testing.T) {
 	middleware2 := newTestMiddleware(&calledArg2, &serviceName2, &methodName2)
 	handler := &testHandler{}
 	method := NewMethod(handler, handler.handlerMethod, "handlerMethod", []ServiceMiddleware{middleware1, middleware2})
+	called := make(chan bool, 1)
+	method.AddMiddleware(newTestSimpleMiddleware(called))
 	arg := 42
 
 	ret := method.Invoke([]interface{}{arg})
@@ -34,6 +37,12 @@ func TestServiceMiddleware(t *testing.T) {
 	assert.Equal(arg+1, calledArg1)
 	assert.Equal("testHandler", serviceName1)
 	assert.Equal("handlerMethod", methodName1)
+
+	select {
+	case <-called:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Expected middleware to be called")
+	}
 }
 
 // Ensure the proxied method is properly invoked if no middleware is provided.
@@ -65,6 +74,18 @@ func newTestMiddleware(calledArg *int, serviceName, methodName *string) ServiceM
 			*serviceName = service.Type().Elem().Name()
 			*methodName = method.Name
 			args[0] = args[0].(int) + 1
+			return next(service, method, args)
+		}
+	}
+}
+
+func newTestSimpleMiddleware(called chan<- bool) ServiceMiddleware {
+	return func(next InvocationHandler) InvocationHandler {
+		return func(service reflect.Value, method reflect.Method, args Arguments) Results {
+			select {
+			case called <- true:
+			default:
+			}
 			return next(service, method, args)
 		}
 	}

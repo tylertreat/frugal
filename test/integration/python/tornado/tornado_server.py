@@ -104,19 +104,18 @@ def main():
     publisher = EventsPublisher(provider)
     yield publisher.open()
 
+    @gen.coroutine
     def response_handler(context, event):
         print("received {} : {}".format(context, event))
         response_event = Event(Message="Sending Response")
         response_context = FContext("Call")
         global publisher
         global port
-        resp = "{}-response".format(port)
-        publisher.publish_EventCreated(response_context, resp, response_event)
+        yield publisher.publish_EventCreated(response_context, "foo", "Client", "response", "{}".format(port), response_event)
         print("Published event={}".format(response_event))
 
     subscriber = EventsSubscriber(provider)
-    call = "{}-call".format(args.port)
-    yield subscriber.subscribe_EventCreated(call, response_handler)
+    yield subscriber.subscribe_EventCreated("foo", "Client", "call", "{}".format(args.port), response_handler)
 
 
 def healthcheck(port):

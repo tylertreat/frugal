@@ -67,6 +67,12 @@ func (m *Method) Invoke(args Arguments) Results {
 	return m.handler(m.proxiedStruct, m.proxiedMethod, args)
 }
 
+// AddMiddleware wraps the Method with the given ServiceMiddleware. This should
+// only be called by generated code.
+func (m *Method) AddMiddleware(middleware ServiceMiddleware) {
+	m.handler = middleware(m.handler)
+}
+
 // NewMethod creates a new Method which proxies the given handler.
 // ProxiedHandler must be a struct and method must be a function. This should
 // only be called by generated code.

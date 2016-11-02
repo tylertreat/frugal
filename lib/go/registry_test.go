@@ -76,3 +76,5 @@ func (p *mockProcessor) Process(in, out *FProtocol) error {
 	p.oprot = out
 	return nil
 }
+
+func (p *mockProcessor) AddMiddleware(middleware ServiceMiddleware) {}
