@@ -1875,10 +1875,10 @@ func (g *Generator) generateMethodException(prefix string, service *parser.Servi
 		contents += prefix + "p.GetWriteMutex().Lock()\n"
 		msg := fmt.Sprintf("\"Internal error processing %s: \"+err2.Error()", nameLower)
 		contents += fmt.Sprintf(
-			prefix+"applicationError := %sWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, \"%s\", %s)\n", servLower, nameLower, msg)
+			prefix+"err2 := %sWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, \"%s\", %s)\n", servLower, nameLower, msg)
 		contents += prefix + "p.GetWriteMutex().Unlock()\n"
 	}
-	contents += prefix + "return applicationError\n"
+	contents += prefix + "return err2\n"
 	return contents
 }
 

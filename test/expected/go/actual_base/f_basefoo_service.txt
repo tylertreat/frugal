@@ -195,9 +195,9 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 			return nil
 		}
 		p.GetWriteMutex().Lock()
-		applicationError := basefooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "basePing", "Internal error processing basePing: "+err2.Error())
+		err2 := basefooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "basePing", "Internal error processing basePing: "+err2.Error())
 		p.GetWriteMutex().Unlock()
-		return applicationError
+		return err2
 	}
 	p.GetWriteMutex().Lock()
 	defer p.GetWriteMutex().Unlock()

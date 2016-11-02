@@ -1093,9 +1093,9 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 			return nil
 		}
 		p.GetWriteMutex().Lock()
-		applicationError := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "ping", "Internal error processing ping: "+err2.Error())
+		err2 := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "ping", "Internal error processing ping: "+err2.Error())
 		p.GetWriteMutex().Unlock()
-		return applicationError
+		return err2
 	}
 	p.GetWriteMutex().Lock()
 	defer p.GetWriteMutex().Unlock()
@@ -1176,9 +1176,9 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 			result.API = v
 		default:
 			p.GetWriteMutex().Lock()
-			applicationError := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "blah", "Internal error processing blah: "+err2.Error())
+			err2 := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "blah", "Internal error processing blah: "+err2.Error())
 			p.GetWriteMutex().Unlock()
-			return applicationError
+			return err2
 		}
 	} else {
 		var retval int64 = ret[0].(int64)
@@ -1252,7 +1252,7 @@ func (p *fooFOneWay) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtoco
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
-		return applicationError
+		return err2
 	}
 	return err
 }
@@ -1294,9 +1294,9 @@ func (p *fooFBinMethod) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProt
 			result.API = v
 		default:
 			p.GetWriteMutex().Lock()
-			applicationError := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "bin_method", "Internal error processing bin_method: "+err2.Error())
+			err2 := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "bin_method", "Internal error processing bin_method: "+err2.Error())
 			p.GetWriteMutex().Unlock()
-			return applicationError
+			return err2
 		}
 	} else {
 		var retval []byte = ret[0].([]byte)
@@ -1375,9 +1375,9 @@ func (p *fooFParamModifiers) Process(ctx *frugal.FContext, iprot, oprot *frugal.
 			return nil
 		}
 		p.GetWriteMutex().Lock()
-		applicationError := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "param_modifiers", "Internal error processing param_modifiers: "+err2.Error())
+		err2 := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "param_modifiers", "Internal error processing param_modifiers: "+err2.Error())
 		p.GetWriteMutex().Unlock()
-		return applicationError
+		return err2
 	} else {
 		var retval int64 = ret[0].(int64)
 		result.Success = &retval
@@ -1455,9 +1455,9 @@ func (p *fooFUnderlyingTypesTest) Process(ctx *frugal.FContext, iprot, oprot *fr
 			return nil
 		}
 		p.GetWriteMutex().Lock()
-		applicationError := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "underlying_types_test", "Internal error processing underlying_types_test: "+err2.Error())
+		err2 := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "underlying_types_test", "Internal error processing underlying_types_test: "+err2.Error())
 		p.GetWriteMutex().Unlock()
-		return applicationError
+		return err2
 	} else {
 		var retval []ID = ret[0].([]ID)
 		result.Success = retval
@@ -1535,9 +1535,9 @@ func (p *fooFGetThing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 			return nil
 		}
 		p.GetWriteMutex().Lock()
-		applicationError := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "getThing", "Internal error processing getThing: "+err2.Error())
+		err2 := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "getThing", "Internal error processing getThing: "+err2.Error())
 		p.GetWriteMutex().Unlock()
-		return applicationError
+		return err2
 	} else {
 		var retval *validStructs.Thing = ret[0].(*validStructs.Thing)
 		result.Success = retval
@@ -1615,9 +1615,9 @@ func (p *fooFGetMyInt) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 			return nil
 		}
 		p.GetWriteMutex().Lock()
-		applicationError := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "getMyInt", "Internal error processing getMyInt: "+err2.Error())
+		err2 := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "getMyInt", "Internal error processing getMyInt: "+err2.Error())
 		p.GetWriteMutex().Unlock()
-		return applicationError
+		return err2
 	} else {
 		var retval ValidTypes.MyInt = ret[0].(ValidTypes.MyInt)
 		result.Success = &retval
