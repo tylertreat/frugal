@@ -35,7 +35,7 @@ public abstract class FBaseProcessor implements FProcessor {
             try {
                 processor.process(ctx, iprot, oprot);
             } catch (Exception e) {
-                LOGGER.warn("User handler code threw unhandled exception on request with correlation id "
+                LOGGER.error("User handler code threw unhandled exception on request with correlation id "
                         + ctx.getCorrelationId(), e);
                 throw e;
             }

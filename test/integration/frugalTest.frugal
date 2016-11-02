@@ -39,7 +39,11 @@ enum Numberz
 typedef i64 id
 const id DEFAULT_ID = -1
 
-scope Events prefix foo.{user} {
+// acct = "foo"
+// mem = "Client"
+// role = "call" or "response"
+// RID = port - random ID to differentiate each client/server pair
+scope Events prefix {acct}.{mem}.{role}.{RID} {
     EventCreated: Event
 }
 

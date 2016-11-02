@@ -1,5 +1,6 @@
 from thrift.Thrift import TException
 from thrift.protocol.TProtocol import TProtocolException
+from thrift.Thrift import TApplicationException
 
 
 class FException(TException):
@@ -36,3 +37,21 @@ class FTimeoutException(FException):
     """Indicates a request took too long."""
     def __init__(self, message=None):
         super(FTimeoutException, self).__init__(message=message)
+
+
+class FRateLimitException(TApplicationException):
+    """
+    FRateLimitException indicates that an application has exceeded a rate
+    limit threshold.
+    """
+
+    RATE_LIMIT_EXCEEDED = 102
+
+    def __init__(self, message="rate limit exceeded"):
+        """
+        Args:
+            message: exception message to provide with the rate limit error.
+            Defaults to "rate limit exceeded".
+        """
+        super(FRateLimitException, self).__init__(
+            type=FRateLimitException.RATE_LIMIT_EXCEEDED, message=message)

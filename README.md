@@ -8,7 +8,7 @@ implements the same functionality as Thrift with some additional
 features. For a more detailed explanation, see the
 [documentation](documentation).
 
-Currently supported languages are Go, Java, and Dart.
+Currently supported languages are Go, Java, Dart, and Python (2.7 and 3.5).
 
 ## Installation
 
@@ -42,6 +42,9 @@ added.
     $ cd $GOPATH/src/github.com/Workiva/frugal
     $ godep go install
     ```
+
+When generating go, be aware the frugal go library and the frugal compiler
+have separate dependencies.
 
 ## Using the Thrift compiler (DEPRECATED)
 You may use the thrift compiler to generate parts of the internal code used by frugal using the --gen_with_frugal=false flag.
@@ -105,7 +108,7 @@ scope Events {
 }
 ```
 
-Generate the code with `frugal`. Currently, only Go, Java, and Dart are
+Generate the code with `frugal`. Currently, only Go, Java, Dart, and Python are
 supported.
 
 ```

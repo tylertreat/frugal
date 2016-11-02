@@ -51,3 +51,5 @@ func (p *processor) Process(in, out *FProtocol) error {
 	out.WriteString("foo")
 	return nil
 }
+
+func (p *processor) AddMiddleware(middleware ServiceMiddleware) {}
