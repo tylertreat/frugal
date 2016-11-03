@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import asyncio
 import sys
 import argparse
@@ -137,6 +135,8 @@ async def test_pub_sub(nats_client, protocol_factory, port):
     exit(0)
 
 
+# Use middleware to log the name of each test and args passed
+# Also checks that clients accept middleware
 def client_middleware(next):
     def handler(method, args):
         global middleware_called
@@ -144,7 +144,7 @@ def client_middleware(next):
         print("{}({}) = ".format(method.__name__, args[1:]), end="")
         # ret is a <class 'coroutine'>
         ret = next(method, args)
-        # Use asyncIO.ensure_future to convert to a task
+        # Use asyncIO.ensure_future to convert the coroutine to a task
         task = asyncio.ensure_future(ret)
         # Register a callback on the future
         task.add_done_callback(log_future)
@@ -152,6 +152,7 @@ def client_middleware(next):
     return handler
 
 
+# After completion of future, log the response of each test
 def log_future(future):
     try:
         print("value of future is: {}".format(future.result()))
