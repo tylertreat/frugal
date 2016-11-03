@@ -32,10 +32,7 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 
 	// Import include modules.
 	for _, include := range s.ReferencedIncludes() {
-		namespace, ok := a.Frugal.NamespaceForInclude(include, lang)
-		if !ok {
-			namespace = include
-		}
+		namespace := a.getPackageNamespace(include)
 		imports += fmt.Sprintf("import %s\n", namespace)
 	}
 
