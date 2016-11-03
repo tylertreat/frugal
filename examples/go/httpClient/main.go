@@ -18,7 +18,7 @@ func main() {
 	fProtocolFactory := frugal.NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
 
 	// Create an HTTP transport listening
-	httpTransport := frugal.NewHttpFTransportBuilder(&http.Client{}, "http://localhost:8080/frugal").Build()
+	httpTransport := frugal.NewFHTTPTransportBuilder(&http.Client{}, "http://localhost:9090/frugal").Build()
 	defer httpTransport.Close()
 	if err := httpTransport.Open(); err != nil {
 		panic(err)

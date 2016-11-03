@@ -9,11 +9,7 @@ from thrift.transport.TTransport import TTransportException
 import uuid
 from frugal.context import FContext
 from frugal.protocol import FProtocolFactory
-from frugal.provider import FScopeProvider
-from frugal.aio.transport import (
-    FNatsTransport,
-    FNatsScopeTransportFactory,
-)
+from frugal.aio.transport import FNatsTransport
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py.asyncio"))
 from v1.music.f_Store import Client as FStoreClient  # noqa
@@ -68,6 +64,7 @@ async def main():
                                           "kevin@workiva.com",
                                           "Kevin")
 
+    # Close transport and nats client
     await nats_transport.close()
     await nats_client.close()
 
