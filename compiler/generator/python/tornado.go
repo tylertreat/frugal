@@ -49,13 +49,7 @@ func (t *TornadoGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.subscription import FSubscription\n\n"
 
-	//namespace, ok := t.Frugal.Thrift.Namespace(lang)
-	//if !ok {
-	//	namespace = t.Frugal.Name
-	//}
-	//namespace = t.Options["package_prefix"] + namespace
-	//// TODO
-	imports += fmt.Sprintf("from .ttypes import *\n")
+	imports += "from .ttypes import *\n"
 	_, err := file.WriteString(imports)
 	return err
 }

@@ -749,11 +749,6 @@ func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) err
 	contents := ""
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
 	for _, include := range g.Frugal.Thrift.Includes {
-		//includeName, ok := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
-		//if !ok {
-		//	includeName = include.Name
-		//}
-
 		includeName := g.getPackageNamespace(filepath.Base(include.Name))
 		contents += fmt.Sprintf("import %s.ttypes\n", includeName)
 	}
@@ -794,15 +789,9 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
 		imports += fmt.Sprintf("import %s\n", namespace)
 	}
 
-	//// Import this service's modules.
-	//namespace, ok := g.Frugal.Thrift.Namespace(lang)
-	//if !ok {
-	//	namespace = g.Frugal.Name
-	//}
-	//// TODO
-	//namespace = g.Options["package_prefix"] + namespace
+	// Import this service's modules.
 	imports += fmt.Sprintf("from .%s import *\n", s.Name)
-	imports += fmt.Sprintf("from .ttypes import *\n")
+	imports += "from .ttypes import *\n"
 
 	return imports
 }
