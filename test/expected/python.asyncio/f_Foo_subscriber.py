@@ -16,7 +16,7 @@ from thrift.Thrift import TType
 from frugal.middleware import Method
 from frugal.subscription import FSubscription
 
-from valid.ttypes import *
+from .ttypes import *
 
 
 

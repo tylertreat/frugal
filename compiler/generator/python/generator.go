@@ -749,10 +749,12 @@ func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) err
 	contents := ""
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
 	for _, include := range g.Frugal.Thrift.Includes {
-		includeName, ok := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
-		if !ok {
-			includeName = include.Name
-		}
+		//includeName, ok := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
+		//if !ok {
+		//	includeName = include.Name
+		//}
+
+		includeName := g.getPackageNamespace(filepath.Base(include.Name))
 		contents += fmt.Sprintf("import %s.ttypes\n", includeName)
 	}
 	contents += "\n"
@@ -788,20 +790,19 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
 
 	// Import include modules.
 	for _, include := range s.ReferencedIncludes() {
-		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-		if !ok {
-			namespace = include
-		}
+		namespace := g.getPackageNamespace(include)
 		imports += fmt.Sprintf("import %s\n", namespace)
 	}
 
-	// Import this service's modules.
-	namespace, ok := g.Frugal.Thrift.Namespace(lang)
-	if !ok {
-		namespace = g.Frugal.Name
-	}
-	imports += fmt.Sprintf("from %s.%s import *\n", namespace, s.Name)
-	imports += fmt.Sprintf("from %s.ttypes import *\n", namespace)
+	//// Import this service's modules.
+	//namespace, ok := g.Frugal.Thrift.Namespace(lang)
+	//if !ok {
+	//	namespace = g.Frugal.Name
+	//}
+	//// TODO
+	//namespace = g.Options["package_prefix"] + namespace
+	imports += fmt.Sprintf("from .%s import *\n", s.Name)
+	imports += fmt.Sprintf("from .ttypes import *\n")
 
 	return imports
 }
@@ -1364,10 +1365,7 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 		return param
 	}
 
-	namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-	if !ok {
-		namespace = include
-	}
+	namespace := g.getPackageNamespace(include)
 	return fmt.Sprintf("%s.ttypes.%s", namespace, param)
 }
 
@@ -1390,6 +1388,14 @@ func (g *Generator) getTType(t *parser.Type) string {
 		}
 	}
 	return "TType." + ttype
+}
+
+func (g *Generator) getPackageNamespace(include string) string {
+	namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+	if !ok {
+		namespace = include
+	}
+	return g.Options["package_prefix"] + namespace
 }
 
 var elemNum int
