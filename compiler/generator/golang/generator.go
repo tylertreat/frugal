@@ -1726,7 +1726,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\t\tiprot.ReadMessageEnd()\n"
 	if !method.Oneway {
 		contents += "\t\tp.GetWriteMutex().Lock()\n"
-		contents += fmt.Sprintf("\t\t%sWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, \"%s\", err.Error())\n", servLower, nameLower)
+		contents += fmt.Sprintf("\t\terr = %sWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, \"%s\", err.Error())\n", servLower, nameLower)
 		contents += "\t\tp.GetWriteMutex().Unlock()\n"
 	}
 	contents += "\t\treturn err\n"
@@ -1875,7 +1875,7 @@ func (g *Generator) generateMethodException(prefix string, service *parser.Servi
 		contents += prefix + "p.GetWriteMutex().Lock()\n"
 		msg := fmt.Sprintf("\"Internal error processing %s: \"+err2.Error()", nameLower)
 		contents += fmt.Sprintf(
-			prefix+"%sWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, \"%s\", %s)\n", servLower, nameLower, msg)
+			prefix+"err2 := %sWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, \"%s\", %s)\n", servLower, nameLower, msg)
 		contents += prefix + "p.GetWriteMutex().Unlock()\n"
 	}
 	contents += prefix + "return err2\n"
@@ -1885,13 +1885,14 @@ func (g *Generator) generateMethodException(prefix string, service *parser.Servi
 func (g *Generator) generateWriteApplicationError(service *parser.Service) string {
 	servLower := strings.ToLower(service.Name)
 	contents := fmt.Sprintf("func %sWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, "+
-		"type_ int32, method, message string) {\n", servLower)
+		"type_ int32, method, message string) error {\n", servLower)
 	contents += "\tx := thrift.NewTApplicationException(type_, message)\n"
 	contents += "\toprot.WriteResponseHeader(ctx)\n"
 	contents += "\toprot.WriteMessageBegin(method, thrift.EXCEPTION, 0)\n"
 	contents += "\tx.Write(oprot)\n"
 	contents += "\toprot.WriteMessageEnd()\n"
 	contents += "\toprot.Flush()\n"
+	contents += "\treturn x\n"
 	contents += "}\n\n"
 	return contents
 }

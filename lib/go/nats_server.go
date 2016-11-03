@@ -23,8 +23,7 @@ type frameWrapper struct {
 type FNatsServerBuilder struct {
 	conn               *nats.Conn
 	processor          FProcessor
-	inputProtoFactory  *FProtocolFactory
-	outputProtoFactory *FProtocolFactory
+	protoFactory  *FProtocolFactory
 	subject            string
 	queue              string
 	workerCount        uint
@@ -39,8 +38,7 @@ func NewFNatsServerBuilder(conn *nats.Conn, processor FProcessor,
 	return &FNatsServerBuilder{
 		conn:               conn,
 		processor:          processor,
-		inputProtoFactory:  protoFactory,
-		outputProtoFactory: protoFactory,
+		protoFactory:       protoFactory,
 		subject:            subject,
 		workerCount:        1,
 		queueLen:           defaultWorkQueueLen,
@@ -79,8 +77,7 @@ func (f *FNatsServerBuilder) Build() FServer {
 	return &fNatsServer{
 		conn:               f.conn,
 		processor:          f.processor,
-		inputProtoFactory:  f.inputProtoFactory,
-		outputProtoFactory: f.outputProtoFactory,
+		protoFactory:  f.protoFactory,
 		subject:            f.subject,
 		queue:              f.queue,
 		workerCount:        f.workerCount,
@@ -95,8 +92,7 @@ func (f *FNatsServerBuilder) Build() FServer {
 type fNatsServer struct {
 	conn               *nats.Conn
 	processor          FProcessor
-	inputProtoFactory  *FProtocolFactory
-	outputProtoFactory *FProtocolFactory
+	protoFactory  *FProtocolFactory
 	subject            string
 	queue              string
 	workerCount        uint
@@ -171,10 +167,13 @@ func (f *fNatsServer) processFrame(frame []byte, reply string) error {
 	input := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(frame[4:])} // Discard frame size
 	// Only allow 1MB to be buffered.
 	output := NewTMemoryOutputBuffer(natsMaxMessageSize)
-	if err := f.processor.Process(
-		f.inputProtoFactory.GetProtocol(input),
-		f.outputProtoFactory.GetProtocol(output)); err != nil {
-		return err
+	iprot := f.protoFactory.GetProtocol(input)
+	oprot := f.protoFactory.GetProtocol(output)
+	err := f.processor.Process(iprot, oprot)
+	if err != nil {
+		if _, ok := err.(thrift.TApplicationException); !ok {
+			return err
+		}
 	}
 
 	if !output.HasWriteData() {
