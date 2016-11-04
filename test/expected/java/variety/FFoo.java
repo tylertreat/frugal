@@ -866,7 +866,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "ping", e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "ping", e.getMessage());
 					}
 					throw e;
 				}
@@ -880,7 +880,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "ping", "Internal error processing ping: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "ping", "Internal error processing ping: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -911,7 +911,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "blah", e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "blah", e.getMessage());
 					}
 					throw e;
 				}
@@ -930,7 +930,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "blah", "Internal error processing blah: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "blah", "Internal error processing blah: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -977,7 +977,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "bin_method", e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "bin_method", e.getMessage());
 					}
 					throw e;
 				}
@@ -994,7 +994,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "bin_method", "Internal error processing bin_method: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "bin_method", "Internal error processing bin_method: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -1025,7 +1025,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "param_modifiers", e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "param_modifiers", e.getMessage());
 					}
 					throw e;
 				}
@@ -1040,7 +1040,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "param_modifiers", "Internal error processing param_modifiers: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "param_modifiers", "Internal error processing param_modifiers: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -1071,7 +1071,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "underlying_types_test", e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "underlying_types_test", e.getMessage());
 					}
 					throw e;
 				}
@@ -1086,7 +1086,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "underlying_types_test", "Internal error processing underlying_types_test: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "underlying_types_test", "Internal error processing underlying_types_test: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -1117,7 +1117,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "getThing", e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "getThing", e.getMessage());
 					}
 					throw e;
 				}
@@ -1132,7 +1132,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "getThing", "Internal error processing getThing: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "getThing", "Internal error processing getThing: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -1163,7 +1163,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "getMyInt", e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "getMyInt", e.getMessage());
 					}
 					throw e;
 				}
@@ -1178,7 +1178,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "getMyInt", "Internal error processing getMyInt: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "getMyInt", "Internal error processing getMyInt: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -1200,13 +1200,14 @@ public class FFoo {
 			}
 		}
 
-		private static void writeApplicationException(FContext ctx, FProtocol oprot, int type, String method, String message) throws TException {
+		private static TApplicationException writeApplicationException(FContext ctx, FProtocol oprot, int type, String method, String message) throws TException {
 			TApplicationException x = new TApplicationException(type, message);
 			oprot.writeResponseHeader(ctx);
 			oprot.writeMessageBegin(new TMessage(method, TMessageType.EXCEPTION, 0));
 			x.write(oprot);
 			oprot.writeMessageEnd();
 			oprot.getTransport().flush();
+			return x;
 		}
 
 	}

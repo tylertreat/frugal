@@ -205,7 +205,7 @@ public class FBaseFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "basePing", e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "basePing", e.getMessage());
 					}
 					throw e;
 				}
@@ -219,7 +219,7 @@ public class FBaseFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "basePing", "Internal error processing basePing: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "basePing", "Internal error processing basePing: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -241,13 +241,14 @@ public class FBaseFoo {
 			}
 		}
 
-		private static void writeApplicationException(FContext ctx, FProtocol oprot, int type, String method, String message) throws TException {
+		private static TApplicationException writeApplicationException(FContext ctx, FProtocol oprot, int type, String method, String message) throws TException {
 			TApplicationException x = new TApplicationException(type, message);
 			oprot.writeResponseHeader(ctx);
 			oprot.writeMessageBegin(new TMessage(method, TMessageType.EXCEPTION, 0));
 			x.write(oprot);
 			oprot.writeMessageEnd();
 			oprot.getTransport().flush();
+			return x;
 		}
 
 	}
