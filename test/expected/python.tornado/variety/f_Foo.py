@@ -637,6 +637,10 @@ class _ping(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "ping", ex.message)
                 return
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "ping", e.message)
+            raise
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
@@ -667,6 +671,10 @@ class _blah(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "blah", ex.message)
                 return
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "blah", e.message)
+            raise
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('blah', TMessageType.REPLY, 0)
@@ -692,6 +700,8 @@ class _oneWay(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "oneWay", ex.message)
                 return
+        except Exception as e:
+            raise
 
 
 class _bin_method(FProcessorFunction):
@@ -714,6 +724,10 @@ class _bin_method(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "bin_method", ex.message)
                 return
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "bin_method", e.message)
+            raise
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('bin_method', TMessageType.REPLY, 0)
@@ -740,6 +754,10 @@ class _param_modifiers(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "param_modifiers", ex.message)
                 return
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "param_modifiers", e.message)
+            raise
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('param_modifiers', TMessageType.REPLY, 0)
@@ -766,6 +784,10 @@ class _underlying_types_test(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "underlying_types_test", ex.message)
                 return
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "underlying_types_test", e.message)
+            raise
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('underlying_types_test', TMessageType.REPLY, 0)
@@ -792,6 +814,10 @@ class _getThing(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getThing", ex.message)
                 return
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getThing", e.message)
+            raise
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.REPLY, 0)
@@ -818,6 +844,10 @@ class _getMyInt(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getMyInt", ex.message)
                 return
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getMyInt", e.message)
+            raise
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.REPLY, 0)
@@ -826,8 +856,8 @@ class _getMyInt(FProcessorFunction):
             oprot.get_transport().flush()
 
 
-def _write_application_exception(ctx, oprot, type, method, message):
-    x = TApplicationException(type=type, message=message)
+def _write_application_exception(ctx, oprot, typ, method, message):
+    x = TApplicationException(type=typ, message=message)
     oprot.write_response_headers(ctx)
     oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
     x.write(oprot)
