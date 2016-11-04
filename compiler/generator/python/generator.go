@@ -786,16 +786,16 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 
 func (g *Generator) generateServiceExtendsImport(s *parser.Service) string {
 	if s.Extends == "" || strings.Contains(s.Extends, ".") {
-		// It's already imported in an include
+		// Either no super service or it's already imported in an include
 		return ""
 	}
 
+	// Extending a service defined in the same IDL, need to import
 	namespace, ok := g.Frugal.Thrift.Namespace(lang)
 	if !ok {
 		namespace = g.Frugal.Name
 	}
 	return fmt.Sprintf("from %s import f_%s\n", namespace, s.Extends)
-	//return ""
 }
 
 func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
