@@ -1,4 +1,3 @@
-#this yaml inherits bot from team, do not add bot
 # codecov inherits bot from team, do not add bot to this yml
 codecov:
   url: "https://codecov.workiva.net"
