@@ -24,15 +24,17 @@ from frugal_test.f_FrugalTest import Client as FrugalTestClient
 from common.utils import *
 from common.test_definitions import rpc_test_definitions
 
-
 response_received = False
+middleware_called = False
+
 
 async def main():
 
     parser = argparse.ArgumentParser(description="Run a python asyncio client")
-    parser.add_argument('--port', dest='port', default=9090)
+    parser.add_argument('--port', dest='port', default='9090')
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
-    parser.add_argument('--transport', dest='transport_type', default="stateless", choices="stateless, stateless-stateful, http")
+    parser.add_argument('--transport', dest='transport_type', default="stateless",
+                        choices="stateless, stateless-stateful, http")
     args = parser.parse_args()
 
     protocol_factory = get_protocol_factory(args.protocol_type)
@@ -51,7 +53,7 @@ async def main():
         print("Unknown transport type: {type}".format(type=args.transport_type))
         sys.exit(1)
 
-    client = FrugalTestClient(transport, protocol_factory)
+    client = FrugalTestClient(transport, protocol_factory, client_middleware)
     ctx = FContext("test")
 
     await test_rpc(client, ctx)
@@ -79,7 +81,6 @@ async def test_rpc(client, ctx):
             result = e
 
         test_failed = check_for_failure(result, expected_result) or test_failed
-
 
     # oneWay RPC call (no response)
     seconds = 1
@@ -135,6 +136,31 @@ async def test_pub_sub(nats_client, protocol_factory, port):
 
     await publisher.close()
     exit(0)
+
+
+# Use middleware to log the name of each test and args passed
+# Also checks that clients accept middleware
+def client_middleware(next):
+    def handler(method, args):
+        global middleware_called
+        middleware_called = True
+        print("{}({}) = ".format(method.__name__, args[1:]), end="")
+        # ret is a <class 'coroutine'>
+        ret = next(method, args)
+        # Use asyncIO.ensure_future to convert the coroutine to a task
+        task = asyncio.ensure_future(ret)
+        # Register a callback on the future
+        task.add_done_callback(log_future)
+        return task
+    return handler
+
+
+# After completion of future, log the response of each test
+def log_future(future):
+    try:
+        print("value of future is: {}".format(future.result()))
+    except Exception as ex:
+        print("{}".format(ex))
 
 
 if __name__ == '__main__':

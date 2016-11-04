@@ -36,7 +36,7 @@ middleware_called = False
 @gen.coroutine
 def main():
     parser = argparse.ArgumentParser(description="Run a python tornado client")
-    parser.add_argument('--port', dest='port', default=9090)
+    parser.add_argument('--port', dest='port', default= '9090')
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
     parser.add_argument('--transport', dest='transport_type', default="stateless",
                         choices="stateless, http")

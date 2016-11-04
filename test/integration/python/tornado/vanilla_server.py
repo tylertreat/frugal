@@ -27,7 +27,7 @@ from gen_py_tornado.frugal_test.ttypes import Event
 @gen.coroutine
 def main():
     parser = argparse.ArgumentParser(description="Run a python server")
-    parser.add_argument('--port', dest='port', type=int, default=9090)
+    parser.add_argument('--port', dest='port', type=int, default='9090')
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
     parser.add_argument('--transport', dest="transport_type", default="http", choices="http")
 

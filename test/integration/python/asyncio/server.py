@@ -36,7 +36,7 @@ port = 0
 
 async def main():
     parser = argparse.ArgumentParser(description="Run an asyncio python server")
-    parser.add_argument('--port', dest='port', default=9090)
+    parser.add_argument('--port', dest='port', default='9090')
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
     parser.add_argument('--transport', dest="transport_type", default="stateless", choices="stateless, stateless-stateful, http")
 
