@@ -38,6 +38,7 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 		}
 		imports += fmt.Sprintf("import %s\n", namespace)
 	}
+	imports += a.generateServiceExtendsImport(s)
 
 	// Import this service's modules.
 	namespace, ok := a.Frugal.Thrift.Namespace(lang)

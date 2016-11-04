@@ -777,10 +777,25 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n\n"
 
+	imports += g.generateServiceExtendsImport(s)
 	imports += g.generateServiceIncludeImports(s)
 
 	_, err := file.WriteString(imports)
 	return err
+}
+
+func (g *Generator) generateServiceExtendsImport(s *parser.Service) string {
+	if s.Extends == "" || strings.Contains(s.Extends, ".") {
+		// It's already imported in an include
+		return ""
+	}
+
+	namespace, ok := g.Frugal.Thrift.Namespace(lang)
+	if !ok {
+		namespace = g.Frugal.Name
+	}
+	return fmt.Sprintf("from %s import f_%s\n", namespace, s.Extends)
+	//return ""
 }
 
 func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
