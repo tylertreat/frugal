@@ -215,6 +215,12 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 		fmt.Sprintf("_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
 			method.Name)
 	contents += tabtabtabtab + "return\n"
+	contents += tabtab + "except Exception as e:\n"
+	if !method.Oneway {
+		contents += tabtabtab + "with self._lock:\n"
+		contents += tabtabtabtab + fmt.Sprintf("_write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", method.Name)
+	}
+	contents += tabtabtab + "raise\n"
 	if !method.Oneway {
 		contents += tabtab + "with self._lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
