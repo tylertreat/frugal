@@ -1151,8 +1151,8 @@ func (g *Generator) exposeServiceModule(path string, service *parser.Service) er
 		return err
 	}
 	initStr := string(init)
-	initStr += fmt.Sprintf("\nimport f_%s\n", service.Name)
-	initStr += fmt.Sprintf("from f_%s import *\n", service.Name)
+	initStr += fmt.Sprintf("\nfrom . import f_%s\n", service.Name)
+	initStr += fmt.Sprintf("from .f_%s import *\n", service.Name)
 	init = []byte(initStr)
 	return ioutil.WriteFile(initFile, init, os.ModePerm)
 }
