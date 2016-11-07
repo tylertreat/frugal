@@ -30,6 +30,7 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from tornado import gen\n"
 	imports += "from tornado.concurrent import Future\n\n"
 
+	imports += t.generateServiceExtendsImport(s)
 	imports += t.generateServiceIncludeImports(s)
 
 	_, err := file.WriteString(imports)

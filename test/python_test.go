@@ -110,3 +110,20 @@ func TestValidPythonFrugalCompiler(t *testing.T) {
 	varietyFooPath := filepath.Join(outputDir, "variety", "python", "Foo.py")
 	compareFiles(t, "expected/python/variety/Foo.py", varietyFooPath)
 }
+
+func TestPythonExtendServiceSameFile(t *testing.T) {
+	options := compiler.Options{
+		File: "idl/service_extension_same_file.frugal",
+		Gen: "py:asyncio",
+		Out: outputDir,
+		Delim: delim,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("unexpected error", err)
+	}
+
+	basePingerPath := filepath.Join(outputDir, "service_extension_same_file", "python", "f_BasePinger.py")
+	compareFiles(t, "expected/python.asyncio/service_extension_same_file/f_BasePinger.py", basePingerPath)
+	pingerPath := filepath.Join(outputDir, "service_extension_same_file", "python", "f_Pinger.py")
+	compareFiles(t, "expected/python.asyncio/service_extension_same_file/f_Pinger.py", pingerPath)
+}
