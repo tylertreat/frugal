@@ -787,12 +787,7 @@ func (g *Generator) generateServiceExtendsImport(s *parser.Service) string {
 		return ""
 	}
 
-	// Extending a service defined in the same IDL, need to import
-	namespace, ok := g.Frugal.Thrift.Namespace(lang)
-	if !ok {
-		namespace = g.Frugal.Name
-	}
-	return fmt.Sprintf("from %s import f_%s\n", namespace, s.Extends)
+	return fmt.Sprintf("from . import f_%s\n", s.Extends)
 }
 
 func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
