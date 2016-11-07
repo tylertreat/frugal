@@ -295,6 +295,10 @@ class _ping(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "ping", ex.message)
                 return
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "ping", e.message)
+            raise
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
@@ -324,6 +328,10 @@ class _bleh(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "bleh", ex.message)
                 return
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "bleh", e.message)
+            raise
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('bleh', TMessageType.REPLY, 0)
@@ -349,6 +357,10 @@ class _getThing(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getThing", ex.message)
                 return
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getThing", e.message)
+            raise
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.REPLY, 0)
@@ -374,6 +386,10 @@ class _getMyInt(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getMyInt", ex.message)
                 return
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getMyInt", e.message)
+            raise
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.REPLY, 0)
@@ -382,8 +398,8 @@ class _getMyInt(FProcessorFunction):
             oprot.get_transport().flush()
 
 
-def _write_application_exception(ctx, oprot, type, method, message):
-    x = TApplicationException(type=type, message=message)
+def _write_application_exception(ctx, oprot, typ, method, message):
+    x = TApplicationException(type=typ, message=message)
     oprot.write_response_headers(ctx)
     oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
     x.write(oprot)

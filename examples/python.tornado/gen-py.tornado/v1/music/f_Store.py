@@ -232,6 +232,10 @@ class _buyAlbum(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "buyAlbum", ex.message)
                 return
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "buyAlbum", e.message)
+            raise
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('buyAlbum', TMessageType.REPLY, 0)
@@ -258,6 +262,10 @@ class _enterAlbumGiveaway(FProcessorFunction):
             with self._lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", ex.message)
                 return
+        except Exception as e:
+            with self._lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "enterAlbumGiveaway", e.message)
+            raise
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.REPLY, 0)
@@ -266,8 +274,8 @@ class _enterAlbumGiveaway(FProcessorFunction):
             oprot.get_transport().flush()
 
 
-def _write_application_exception(ctx, oprot, type, method, message):
-    x = TApplicationException(type=type, message=message)
+def _write_application_exception(ctx, oprot, typ, method, message):
+    x = TApplicationException(type=typ, message=message)
     oprot.write_response_headers(ctx)
     oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
     x.write(oprot)

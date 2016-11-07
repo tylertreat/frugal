@@ -811,13 +811,15 @@ class TestingUnions(object):
      - someotherthing
      - AnInt16
      - Requests
+     - bin_field_in_union
     """
-    def __init__(self, AnID=None, aString=None, someotherthing=None, AnInt16=None, Requests=None):
+    def __init__(self, AnID=None, aString=None, someotherthing=None, AnInt16=None, Requests=None, bin_field_in_union=None):
         self.AnID = AnID
         self.aString = aString
         self.someotherthing = someotherthing
         self.AnInt16 = AnInt16
         self.Requests = Requests
+        self.bin_field_in_union = bin_field_in_union
 
     def read(self, iprot):
         iprot.readStructBegin()
@@ -856,6 +858,11 @@ class TestingUnions(object):
                     iprot.readMapEnd()
                 else:
                     iprot.skip(ftype)
+            elif fid == 6:
+                if ftype == TType.STRING:
+                    self.bin_field_in_union = iprot.readBinary()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -887,6 +894,10 @@ class TestingUnions(object):
                 oprot.writeString(_elem46)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
+        if self.bin_field_in_union is not None:
+            oprot.writeFieldBegin('bin_field_in_union', TType.STRING, 6)
+            oprot.writeBinary(self.bin_field_in_union)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -900,6 +911,7 @@ class TestingUnions(object):
         value = (value * 31) ^ hash(self.someotherthing)
         value = (value * 31) ^ hash(self.AnInt16)
         value = (value * 31) ^ hash(self.Requests)
+        value = (value * 31) ^ hash(self.bin_field_in_union)
         return value
 
     def __repr__(self):

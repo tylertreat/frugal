@@ -774,10 +774,25 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n\n"
 
+	imports += g.generateServiceExtendsImport(s)
 	imports += g.generateServiceIncludeImports(s)
 
 	_, err := file.WriteString(imports)
 	return err
+}
+
+func (g *Generator) generateServiceExtendsImport(s *parser.Service) string {
+	if s.Extends == "" || strings.Contains(s.Extends, ".") {
+		// Either no super service or it's already imported in an include
+		return ""
+	}
+
+	// Extending a service defined in the same IDL, need to import
+	namespace, ok := g.Frugal.Thrift.Namespace(lang)
+	if !ok {
+		namespace = g.Frugal.Name
+	}
+	return fmt.Sprintf("from %s import f_%s\n", namespace, s.Extends)
 }
 
 func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
@@ -1240,6 +1255,12 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 		fmt.Sprintf("_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
 			method.Name)
 	contents += tabtabtabtab + "return\n"
+	contents += tabtab + "except Exception as e:\n"
+	if !method.Oneway {
+		contents += tabtabtab + "with self._lock:\n"
+		contents += tabtabtabtab + fmt.Sprintf("_write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", method.Name)
+	}
+	contents += tabtabtab + "raise\n"
 	if !method.Oneway {
 		contents += tabtab + "with self._lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
@@ -1254,8 +1275,8 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 }
 
 func (g *Generator) generateWriteApplicationException() string {
-	contents := "def _write_application_exception(ctx, oprot, type, method, message):\n"
-	contents += tab + "x = TApplicationException(type=type, message=message)\n"
+	contents := "def _write_application_exception(ctx, oprot, typ, method, message):\n"
+	contents += tab + "x = TApplicationException(type=typ, message=message)\n"
 	contents += tab + "oprot.write_response_headers(ctx)\n"
 	contents += tab + "oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)\n"
 	contents += tab + "x.write(oprot)\n"

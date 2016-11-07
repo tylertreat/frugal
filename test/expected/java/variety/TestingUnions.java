@@ -42,6 +42,7 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 	private static final org.apache.thrift.protocol.TField SOMEOTHERTHING_FIELD_DESC = new org.apache.thrift.protocol.TField("someotherthing", org.apache.thrift.protocol.TType.I32, (short)3);
 	private static final org.apache.thrift.protocol.TField AN_INT16_FIELD_DESC = new org.apache.thrift.protocol.TField("AnInt16", org.apache.thrift.protocol.TType.I16, (short)4);
 	private static final org.apache.thrift.protocol.TField REQUESTS_FIELD_DESC = new org.apache.thrift.protocol.TField("Requests", org.apache.thrift.protocol.TType.MAP, (short)5);
+	private static final org.apache.thrift.protocol.TField BIN_FIELD_IN_UNION_FIELD_DESC = new org.apache.thrift.protocol.TField("bin_field_in_union", org.apache.thrift.protocol.TType.STRING, (short)6);
 
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -49,7 +50,8 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 		A_STRING((short)2, "aString"),
 		SOMEOTHERTHING((short)3, "someotherthing"),
 		AN_INT16((short)4, "AnInt16"),
-		REQUESTS((short)5, "Requests")
+		REQUESTS((short)5, "Requests"),
+		BIN_FIELD_IN_UNION((short)6, "bin_field_in_union")
 ;
 
 		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
@@ -75,6 +77,8 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 					return AN_INT16;
 				case 5: // REQUESTS
 					return REQUESTS;
+				case 6: // BIN_FIELD_IN_UNION
+					return BIN_FIELD_IN_UNION;
 				default:
 					return null;
 			}
@@ -127,6 +131,8 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I16)));
 		tmpMap.put(_Fields.REQUESTS, new org.apache.thrift.meta_data.FieldMetaData("Requests", org.apache.thrift.TFieldRequirementType.DEFAULT,
 				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.MAP, "request")));
+		tmpMap.put(_Fields.BIN_FIELD_IN_UNION, new org.apache.thrift.meta_data.FieldMetaData("bin_field_in_union", org.apache.thrift.TFieldRequirementType.DEFAULT,
+				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING, true)));
 		metaDataMap = Collections.unmodifiableMap(tmpMap);
 		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(TestingUnions.class, metaDataMap);
 	}
@@ -176,6 +182,12 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 		return x;
 	}
 
+	public static TestingUnions bin_field_in_union(java.nio.ByteBuffer value) {
+		TestingUnions x = new TestingUnions();
+		x.setBin_field_in_union(value);
+		return x;
+	}
+
 	@Override
 	protected void checkType(_Fields setField, Object value) throws ClassCastException {
 		switch (setField) {
@@ -204,6 +216,11 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 					break;
 				}
 				throw new ClassCastException("Was expecting value of type java.util.Map<Integer, String> for field 'Requests', but got " + value.getClass().getSimpleName());
+			case BIN_FIELD_IN_UNION:
+				if (value instanceof java.nio.ByteBuffer) {
+					break;
+				}
+				throw new ClassCastException("Was expecting value of type java.nio.ByteBuffer for field 'bin_field_in_union', but got " + value.getClass().getSimpleName());
 			default:
 				throw new IllegalArgumentException("Unknown field id " + setField);
 		}
@@ -261,6 +278,14 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 						org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
 						return null;
 					}
+				case BIN_FIELD_IN_UNION:
+					if (field.type == BIN_FIELD_IN_UNION_FIELD_DESC.type) {
+						java.nio.ByteBuffer bin_field_in_union = iprot.readBinary();
+						return bin_field_in_union;
+					} else {
+						org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+						return null;
+					}
 				default:
 					throw new IllegalStateException("setField wasn't null, but didn't match any of the case statements!");
 			}
@@ -298,6 +323,10 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 				}
 				oprot.writeMapEnd();
 				return;
+			case BIN_FIELD_IN_UNION:
+				java.nio.ByteBuffer bin_field_in_union = (java.nio.ByteBuffer)value_;
+				oprot.writeBinary(bin_field_in_union);
+				return;
 			default:
 				throw new IllegalStateException("Cannot write union with unknown field " + setField_);
 		}
@@ -330,6 +359,9 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 					}
 					iprot.readMapEnd();
 					return Requests;
+				case BIN_FIELD_IN_UNION:
+					java.nio.ByteBuffer bin_field_in_union = iprot.readBinary();
+					return bin_field_in_union;
 				default:
 					throw new IllegalStateException("setField wasn't null, but didn't match any of the case statements!");
 			}
@@ -366,6 +398,10 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 				}
 				oprot.writeMapEnd();
 				return;
+			case BIN_FIELD_IN_UNION:
+				java.nio.ByteBuffer bin_field_in_union = (java.nio.ByteBuffer)value_;
+				oprot.writeBinary(bin_field_in_union);
+				return;
 			default:
 				throw new IllegalStateException("Cannot write union with unknown field " + setField_);
 		}
@@ -384,6 +420,8 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 				return AN_INT16_FIELD_DESC;
 			case REQUESTS:
 				return REQUESTS_FIELD_DESC;
+			case BIN_FIELD_IN_UNION:
+				return BIN_FIELD_IN_UNION_FIELD_DESC;
 			default:
 				throw new IllegalArgumentException("Unknown field id " + setField);
 		}
@@ -471,6 +509,20 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 		value_ = value;
 	}
 
+	public java.nio.ByteBuffer getBin_field_in_union() {
+		if (getSetField() == _Fields.BIN_FIELD_IN_UNION) {
+			return (java.nio.ByteBuffer)getFieldValue();
+		} else {
+			throw new RuntimeException("Cannot get field 'bin_field_in_union' because union is currently set to " + getFieldDesc(getSetField()).name);
+		}
+	}
+
+	public void setBin_field_in_union(java.nio.ByteBuffer value) {
+		if (value == null) throw new NullPointerException();
+		setField_ = _Fields.BIN_FIELD_IN_UNION;
+		value_ = value;
+	}
+
 	public boolean isSetAnID() {
 		return setField_ == _Fields.AN_ID;
 	}
@@ -489,6 +541,10 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 
 	public boolean isSetRequests() {
 		return setField_ == _Fields.REQUESTS;
+	}
+
+	public boolean isSetBin_field_in_union() {
+		return setField_ == _Fields.BIN_FIELD_IN_UNION;
 	}
 
 

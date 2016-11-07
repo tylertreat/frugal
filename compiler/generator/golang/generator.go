@@ -465,12 +465,26 @@ func (g *Generator) GenerateServiceArgsResults(serviceName string, outputDir str
 func (g *Generator) generateStruct(s *parser.Struct, serviceName string) string {
 	contents := ""
 
-	// Struct declaration
+	sName := titleServiceName(s.Name, serviceName)
+	contents += g.generateStructDeclaration(s, sName)
+	contents += g.generateConstructor(s, sName)
+
+	contents += g.generateGetters(s, sName)
+	contents += g.generateCountSetFields(s, sName)
+
+	contents += g.generateRead(s, sName)
+	contents += g.generateWrite(s, sName)
+	contents += g.generateToString(s, sName)
+
+	return contents
+}
+
+func (g *Generator) generateStructDeclaration(s *parser.Struct, sName string) string {
+	contents := ""
 	if s.Comment != nil {
 		contents += g.GenerateInlineComment(s.Comment, "")
 	}
 
-	sName := titleServiceName(s.Name, serviceName)
 	contents += fmt.Sprintf("type %s struct {\n", sName)
 
 	// Declare fields
@@ -499,8 +513,12 @@ func (g *Generator) generateStruct(s *parser.Struct, serviceName string) string 
 	}
 
 	contents += "}\n\n"
+	return contents
+}
 
-	// Creator function
+func (g *Generator) generateConstructor(s *parser.Struct, sName string) string {
+	contents := ""
+
 	contents += fmt.Sprintf("func New%s() *%s {\n", sName, sName)
 	contents += fmt.Sprintf("\treturn &%s{\n", sName)
 
@@ -514,8 +532,12 @@ func (g *Generator) generateStruct(s *parser.Struct, serviceName string) string 
 
 	contents += "\t}\n"
 	contents += "}\n\n"
+	return contents
+}
 
-	// Getters
+func (g *Generator) generateGetters(s *parser.Struct, sName string) string {
+	contents := ""
+
 	for _, field := range s.Fields {
 		fName := title(field.Name)
 		isPointer := g.isPointerField(field)
@@ -565,23 +587,31 @@ func (g *Generator) generateStruct(s *parser.Struct, serviceName string) string 
 			contents += "}\n\n"
 		}
 	}
+	return contents
+}
 
-	// Helper function to determine how many optional fields are set in a union
+// generateCountSetFields generates a helper function to determine how many
+// optional fields are set in a union.
+func (g *Generator) generateCountSetFields(s *parser.Struct, sName string) string {
+	contents := ""
+
 	if s.Type == parser.StructTypeUnion {
 		contents += fmt.Sprintf("func (p *%s) CountSetFields%s() int {\n", sName, sName)
 		contents += "\tcount := 0\n"
 		for _, field := range s.Fields {
-			if g.isPointerField(field) {
-				contents += fmt.Sprintf("\tif p.IsSet%s() {\n", title(field.Name))
-				contents += "\t\tcount++\n"
-				contents += "\t}\n"
-			}
+			contents += fmt.Sprintf("\tif p.IsSet%s() {\n", title(field.Name))
+			contents += "\t\tcount++\n"
+			contents += "\t}\n"
 		}
 		contents += "\treturn count\n"
 		contents += "}\n\n"
 	}
+	return contents
+}
 
-	// Read methods
+func (g *Generator) generateRead(s *parser.Struct, sName string) string {
+	contents := ""
+
 	contents += fmt.Sprintf("func (p *%s) Read(iprot thrift.TProtocol) error {\n", sName)
 	contents += "\tif _, err := iprot.ReadStructBegin(); err != nil {\n"
 	contents += "\t\treturn thrift.PrependError(fmt.Sprintf(\"%T read error: \", p), err)\n"
@@ -642,8 +672,12 @@ func (g *Generator) generateStruct(s *parser.Struct, serviceName string) string 
 	for _, field := range s.Fields {
 		contents += g.generateReadField(sName, field)
 	}
+	return contents
+}
 
-	// Write methods
+func (g *Generator) generateWrite(s *parser.Struct, sName string) string {
+	contents := ""
+
 	contents += fmt.Sprintf("func (p *%s) Write(oprot thrift.TProtocol) error {\n", sName)
 
 	// Only one field can be set for a union, make sure that's the case
@@ -677,14 +711,18 @@ func (g *Generator) generateStruct(s *parser.Struct, serviceName string) string 
 		contents += g.generateWriteField(sName, field)
 	}
 
-	// String
+	return contents
+}
+
+func(g *Generator) generateToString(s *parser.Struct, sName string) string {
+	contents := ""
+
 	contents += fmt.Sprintf("func (p *%s) String() string {\n", sName)
 	contents += "\tif p == nil {\n"
 	contents += "\t\treturn \"<nil>\"\n"
 	contents += "\t}\n"
 	contents += fmt.Sprintf("\treturn fmt.Sprintf(\"%s(%%+v)\", *p)\n", sName)
 	contents += "}\n\n"
-
 	return contents
 }
 
@@ -2130,21 +2168,7 @@ func (g *Generator) getEnumFromThriftType(t *parser.Type) string {
 func (g *Generator) isPrimitive(t *parser.Type) bool {
 	underlyingType := g.Frugal.UnderlyingType(t)
 	switch underlyingType.Name {
-	case "bool":
-		fallthrough
-	case "byte":
-		fallthrough
-	case "i8":
-		fallthrough
-	case "i16":
-		fallthrough
-	case "i32":
-		fallthrough
-	case "i64":
-		fallthrough
-	case "double":
-		fallthrough
-	case "string":
+	case "bool", "byte", "i8", "i16", "i32", "i64", "double", "string":
 		return true
 	default:
 		return false

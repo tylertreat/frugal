@@ -3,9 +3,10 @@ import os
 import logging
 import sys
 import asyncio
+import uuid
 
 from aiohttp import web
-from nats.aio.client import Client as NatsClient
+from nats.aio.client import Client as NATS
 
 from thrift.protocol import TBinaryProtocol
 from frugal.protocol import FProtocolFactory
@@ -40,7 +41,7 @@ class StoreHandler(Iface):
         Return an album; always buy the same one.
         """
         album = Album()
-        album.ASIN = uuid.uuid4()
+        album.ASIN = str(uuid.uuid4())
         album.duration = 12000
         return album
 
