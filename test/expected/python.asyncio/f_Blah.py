@@ -356,6 +356,10 @@ class _ping(FProcessorFunction):
             async with self._write_lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "ping", ex.message)
                 return
+        except Exception as e:
+            async with self._write_lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "ping", e.args[0] if e.args else 'unknown exception')
+            raise
         async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
@@ -388,6 +392,10 @@ class _bleh(FProcessorFunction):
             result.oops = oops
         except excepts.ttypes.InvalidData as err2:
             result.err2 = err2
+        except Exception as e:
+            async with self._write_lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "bleh", e.args[0] if e.args else 'unknown exception')
+            raise
         async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('bleh', TMessageType.REPLY, 0)
@@ -416,6 +424,10 @@ class _getThing(FProcessorFunction):
             async with self._write_lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getThing", ex.message)
                 return
+        except Exception as e:
+            async with self._write_lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getThing", e.args[0] if e.args else 'unknown exception')
+            raise
         async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.REPLY, 0)
@@ -444,6 +456,10 @@ class _getMyInt(FProcessorFunction):
             async with self._write_lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getMyInt", ex.message)
                 return
+        except Exception as e:
+            async with self._write_lock:
+                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getMyInt", e.args[0] if e.args else 'unknown exception')
+            raise
         async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.REPLY, 0)
@@ -452,8 +468,8 @@ class _getMyInt(FProcessorFunction):
             oprot.get_transport().flush()
 
 
-def _write_application_exception(ctx, oprot, type, method, message):
-    x = TApplicationException(type=type, message=message)
+def _write_application_exception(ctx, oprot, typ, method, message):
+    x = TApplicationException(type=typ, message=message)
     oprot.write_response_headers(ctx)
     oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
     x.write(oprot)

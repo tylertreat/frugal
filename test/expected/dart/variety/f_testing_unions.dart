@@ -15,6 +15,7 @@ class TestingUnions implements TBase {
   static final TField _SOMEOTHERTHING_FIELD_DESC = new TField("someotherthing", TType.I32, 3);
   static final TField _AN_INT16_FIELD_DESC = new TField("AnInt16", TType.I16, 4);
   static final TField _REQUESTS_FIELD_DESC = new TField("Requests", TType.MAP, 5);
+  static final TField _BIN_FIELD_IN_UNION_FIELD_DESC = new TField("bin_field_in_union", TType.STRING, 6);
 
   int _anID;
   static const int ANID = 1;
@@ -26,6 +27,8 @@ class TestingUnions implements TBase {
   static const int ANINT16 = 4;
   Map<int, String> _requests;
   static const int REQUESTS = 5;
+  Uint8List _bin_field_in_union;
+  static const int BIN_FIELD_IN_UNION = 6;
 
   bool __isset_anID = false;
   bool __isset_someotherthing = false;
@@ -97,6 +100,18 @@ class TestingUnions implements TBase {
     this.requests = null;
   }
 
+  Uint8List get bin_field_in_union => this._bin_field_in_union;
+
+  set bin_field_in_union(Uint8List bin_field_in_union) {
+    this._bin_field_in_union = bin_field_in_union;
+  }
+
+  bool isSetBin_field_in_union() => this.bin_field_in_union != null;
+
+  unsetBin_field_in_union() {
+    this.bin_field_in_union = null;
+  }
+
   getFieldValue(int fieldID) {
     switch (fieldID) {
       case ANID:
@@ -109,6 +124,8 @@ class TestingUnions implements TBase {
         return this.anInt16;
       case REQUESTS:
         return this.requests;
+      case BIN_FIELD_IN_UNION:
+        return this.bin_field_in_union;
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -156,6 +173,14 @@ class TestingUnions implements TBase {
         }
         break;
 
+      case BIN_FIELD_IN_UNION:
+        if(value == null) {
+          unsetBin_field_in_union();
+        } else {
+          this.bin_field_in_union = value;
+        }
+        break;
+
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -174,6 +199,8 @@ class TestingUnions implements TBase {
         return isSetAnInt16();
       case REQUESTS:
         return isSetRequests();
+      case BIN_FIELD_IN_UNION:
+        return isSetBin_field_in_union();
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -233,6 +260,13 @@ class TestingUnions implements TBase {
             TProtocolUtil.skip(iprot, field.type);
           }
           break;
+        case BIN_FIELD_IN_UNION:
+          if(field.type == TType.STRING) {
+            bin_field_in_union = iprot.readBinary();
+          } else {
+            TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
         default:
           TProtocolUtil.skip(iprot, field.type);
           break;
@@ -279,6 +313,11 @@ class TestingUnions implements TBase {
       oprot.writeMapEnd();
       oprot.writeFieldEnd();
     }
+    if(isSetBin_field_in_union() && this.bin_field_in_union != null) {
+      oprot.writeFieldBegin(_BIN_FIELD_IN_UNION_FIELD_DESC);
+      oprot.writeBinary(bin_field_in_union);
+      oprot.writeFieldEnd();
+    }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
   }
@@ -320,6 +359,16 @@ class TestingUnions implements TBase {
         ret.write("null");
       } else {
         ret.write(this.requests);
+      }
+    }
+
+    if(isSetBin_field_in_union()) {
+      ret.write(", ");
+      ret.write("bin_field_in_union:");
+      if(this.bin_field_in_union == null) {
+        ret.write("null");
+      } else {
+        ret.write("BINARY");
       }
     }
 

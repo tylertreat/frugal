@@ -2,6 +2,7 @@ import os
 import logging
 import sys
 import asyncio
+import uuid
 
 from nats.aio.client import Client as NatsClient
 from thrift.protocol import TBinaryProtocol
@@ -63,7 +64,7 @@ async def main():
 
     root.info("Bought an album %s\n", album)
 
-    await store_client.EnterAlbumGiveaway(FContext(),
+    await store_client.enterAlbumGiveaway(FContext(),
                                           "kevin@workiva.com",
                                           "Kevin")
 
