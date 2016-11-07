@@ -25,8 +25,7 @@ class TestFBaseProcessor(unittest.TestCase):
         itrans = TMemoryBuffer(value=frame)
         iprot = FProtocolFactory(TBinaryProtocolFactory()).get_protocol(itrans)
         oprot = Mock()
-        with self.assertRaises(FException):
-            processor.process(iprot, oprot)
+        processor.process(iprot, oprot)
 
     def test_process_missing_function(self):
         processor = FBaseProcessor()

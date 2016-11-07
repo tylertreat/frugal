@@ -13,8 +13,6 @@ distclean: clean
 	rm -rf $(BUILD_DIR)
 	rm -rf $(LIBS_DIR)
 
-test: clean unit
-
 deps-tornado:
 	$(PIP) install -Ur requirements_dev_tornado.txt
 

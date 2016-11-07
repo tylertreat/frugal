@@ -27,8 +27,7 @@ class TestFBaseProcessor(utils.AsyncIOTestCase):
         itrans = TMemoryBuffer(value=frame)
         iprot = FProtocolFactory(TBinaryProtocolFactory()).get_protocol(itrans)
         oprot = Mock()
-        with self.assertRaises(FException):
-            await processor.process(iprot, oprot)
+        await processor.process(iprot, oprot)
 
     @utils.async_runner
     async def test_process_missing_function(self):

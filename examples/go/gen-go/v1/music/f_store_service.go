@@ -332,9 +332,9 @@ func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FPro
 			result.Error = v
 		default:
 			p.GetWriteMutex().Lock()
-			applicationError := storeWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "buyAlbum", "Internal error processing buyAlbum: "+err2.Error())
+			err2 := storeWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "buyAlbum", "Internal error processing buyAlbum: "+err2.Error())
 			p.GetWriteMutex().Unlock()
-			return applicationError
+			return err2
 		}
 	} else {
 		var retval *Album = ret[0].(*Album)
@@ -413,9 +413,9 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 			return nil
 		}
 		p.GetWriteMutex().Lock()
-		applicationError := storeWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "enterAlbumGiveaway", "Internal error processing enterAlbumGiveaway: "+err2.Error())
+		err2 := storeWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "enterAlbumGiveaway", "Internal error processing enterAlbumGiveaway: "+err2.Error())
 		p.GetWriteMutex().Unlock()
-		return applicationError
+		return err2
 	} else {
 		var retval bool = ret[0].(bool)
 		result.Success = &retval

@@ -6,7 +6,7 @@ import asyncio
 import uuid
 
 from aiohttp import web
-from nats.aio.client import Client as NatsClient
+from nats.aio.client import Client as NATS
 
 from thrift.protocol import TBinaryProtocol
 from frugal.protocol import FProtocolFactory

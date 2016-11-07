@@ -1,8 +1,8 @@
 project: frugal
 language: golang
 
-# https://dev.webfilings.org/zuul/release/293382
-runner_image: drydock-prod.workiva.org/workiva/messaging-docker-images:81307
+# https://dev.webfilings.org/zuul/release/311561
+runner_image: drydock-prod.workiva.org/workiva/messaging-docker-images:91007
 
 script:
     - ./scripts/smithy.sh
@@ -30,3 +30,13 @@ artifacts:
         - frugal-*.tar.gz
     test_results:
         - test_results/*
+
+    # RM needs to track our dependencies in python for compliance reasons
+    # This uploads our pip dependencies for both python2/python3 so that they
+    # can be audited.
+    
+    # These names are hard coded into RM console - do not change them without
+    # verifying they are changed in Rosie as well
+    build:
+        - python2_pip_deps.txt
+        - python3_pip_deps.txt
