@@ -19,6 +19,7 @@ from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from v1.music.Store import *
 from v1.music.ttypes import *
+from . import Store
 
 
 class Iface(object):

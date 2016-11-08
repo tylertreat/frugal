@@ -749,10 +749,7 @@ func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) err
 	contents := ""
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
 	for _, include := range g.Frugal.Thrift.Includes {
-		includeName, ok := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
-		if !ok {
-			includeName = include.Name
-		}
+		includeName := g.getPackageNamespace(filepath.Base(include.Name))
 		contents += fmt.Sprintf("import %s.ttypes\n", includeName)
 	}
 	contents += "\n"
@@ -790,12 +787,7 @@ func (g *Generator) generateServiceExtendsImport(s *parser.Service) string {
 		return ""
 	}
 
-	// Extending a service defined in the same IDL, need to import
-	namespace, ok := g.Frugal.Thrift.Namespace(lang)
-	if !ok {
-		namespace = g.Frugal.Name
-	}
-	return fmt.Sprintf("from %s import f_%s\n", namespace, s.Extends)
+	return fmt.Sprintf("from . import f_%s\n", s.Extends)
 }
 
 func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
@@ -803,20 +795,13 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
 
 	// Import include modules.
 	for _, include := range s.ReferencedIncludes() {
-		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-		if !ok {
-			namespace = include
-		}
+		namespace := g.getPackageNamespace(include)
 		imports += fmt.Sprintf("import %s\n", namespace)
 	}
 
 	// Import this service's modules.
-	namespace, ok := g.Frugal.Thrift.Namespace(lang)
-	if !ok {
-		namespace = g.Frugal.Name
-	}
-	imports += fmt.Sprintf("from %s.%s import *\n", namespace, s.Name)
-	imports += fmt.Sprintf("from %s.ttypes import *\n", namespace)
+	imports += fmt.Sprintf("from .%s import *\n", s.Name)
+	imports += "from .ttypes import *\n"
 
 	return imports
 }
@@ -1166,8 +1151,8 @@ func (g *Generator) exposeServiceModule(path string, service *parser.Service) er
 		return err
 	}
 	initStr := string(init)
-	initStr += fmt.Sprintf("\nimport f_%s\n", service.Name)
-	initStr += fmt.Sprintf("from f_%s import *\n", service.Name)
+	initStr += fmt.Sprintf("\nfrom . import f_%s\n", service.Name)
+	initStr += fmt.Sprintf("from .f_%s import *\n", service.Name)
 	init = []byte(initStr)
 	return ioutil.WriteFile(initFile, init, os.ModePerm)
 }
@@ -1196,9 +1181,7 @@ func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 	serviceName := "f_" + service.ExtendsService()
 	include := service.ExtendsInclude()
 	if include != "" {
-		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
-			include = inc
-		}
+		include := g.getPackageNamespace(include)
 		serviceName = include + "." + serviceName
 	}
 	return serviceName
@@ -1385,10 +1368,7 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 		return param
 	}
 
-	namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-	if !ok {
-		namespace = include
-	}
+	namespace := g.getPackageNamespace(include)
 	return fmt.Sprintf("%s.ttypes.%s", namespace, param)
 }
 
@@ -1411,6 +1391,14 @@ func (g *Generator) getTType(t *parser.Type) string {
 		}
 	}
 	return "TType." + ttype
+}
+
+func (g *Generator) getPackageNamespace(include string) string {
+	namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+	if !ok {
+		namespace = include
+	}
+	return g.Options["package_prefix"] + namespace
 }
 
 var elemNum int

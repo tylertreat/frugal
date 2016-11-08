@@ -17,9 +17,9 @@ from frugal.exceptions import FRateLimitException
 from frugal.middleware import Method
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
-from service_extension_same_file.python import f_BasePinger
-from service_extension_same_file.python.Pinger import *
-from service_extension_same_file.python.ttypes import *
+from . import f_BasePinger
+from .Pinger import *
+from .ttypes import *
 
 
 class Iface(f_BasePinger.Iface):

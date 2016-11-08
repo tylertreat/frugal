@@ -18,8 +18,8 @@ from thrift.Thrift import TMessageType
 import excepts
 import validStructs
 import ValidTypes
-from valid.Blah import *
-from valid.ttypes import *
+from .Blah import *
+from .ttypes import *
 
 
 class Iface(object):

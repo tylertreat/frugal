@@ -111,6 +111,24 @@ func TestValidPythonFrugalCompiler(t *testing.T) {
 	compareFiles(t, "expected/python/variety/Foo.py", varietyFooPath)
 }
 
+func TestPythonPackagePrefix(t *testing.T) {
+	options := compiler.Options{
+		File:    "idl/service_inheritance.frugal",
+		Gen:     "py:package_prefix=generic_package_prefix.",
+		Out:     outputDir,
+		Delim:   delim,
+		Recurse: false,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("unexpected error", err)
+	}
+
+	fFooPath := filepath.Join(outputDir, "service_inheritance", "f_Foo.py")
+	compareFiles(t, "expected/python/package_prefix/f_Foo.py", fFooPath)
+	ttypesPath := filepath.Join(outputDir, "service_inheritance", "ttypes.py")
+	compareFiles(t, "expected/python/package_prefix/ttypes.py", ttypesPath)
+}
+
 func TestPythonExtendServiceSameFile(t *testing.T) {
 	options := compiler.Options{
 		File: "idl/service_extension_same_file.frugal",
