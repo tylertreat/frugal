@@ -1,3 +1,3 @@
 
-import f_Store
-from f_Store import *
+from . import f_Store
+from .f_Store import *

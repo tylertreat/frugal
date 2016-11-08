@@ -259,7 +259,7 @@ func (g *Generator) GenerateTypeDef(*parser.TypeDef) error {
 // GenerateEnum generates the given enum.
 func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents := ""
-	contents += fmt.Sprintf("class %s:\n", enum.Name)
+	contents += fmt.Sprintf("class %s(object):\n", enum.Name)
 	if enum.Comment != nil {
 		contents += g.generateDocString(enum.Comment, tab)
 	}
@@ -339,7 +339,7 @@ func (g *Generator) GenerateServiceArgsResults(serviceName string, outputDir str
 func (g *Generator) generateStruct(s *parser.Struct) string {
 	contents := ""
 
-	extends := ""
+	extends := "(object)"
 	if s.Type == parser.StructTypeException {
 		extends = "(TException)"
 	}
@@ -749,10 +749,7 @@ func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) err
 	contents := ""
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
 	for _, include := range g.Frugal.Thrift.Includes {
-		includeName, ok := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
-		if !ok {
-			includeName = include.Name
-		}
+		includeName := g.getPackageNamespace(filepath.Base(include.Name))
 		contents += fmt.Sprintf("import %s.ttypes\n", includeName)
 	}
 	contents += "\n"
@@ -771,15 +768,26 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports := "from threading import Lock\n\n"
 
 	imports += "from frugal.middleware import Method\n"
+	imports += "from frugal.exceptions import FRateLimitException\n"
 	imports += "from frugal.processor import FBaseProcessor\n"
 	imports += "from frugal.processor import FProcessorFunction\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n\n"
 
+	imports += g.generateServiceExtendsImport(s)
 	imports += g.generateServiceIncludeImports(s)
 
 	_, err := file.WriteString(imports)
 	return err
+}
+
+func (g *Generator) generateServiceExtendsImport(s *parser.Service) string {
+	if s.Extends == "" || strings.Contains(s.Extends, ".") {
+		// Either no super service or it's already imported in an include
+		return ""
+	}
+
+	return fmt.Sprintf("from . import f_%s\n", s.Extends)
 }
 
 func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
@@ -787,20 +795,13 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
 
 	// Import include modules.
 	for _, include := range s.ReferencedIncludes() {
-		namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-		if !ok {
-			namespace = include
-		}
+		namespace := g.getPackageNamespace(include)
 		imports += fmt.Sprintf("import %s\n", namespace)
 	}
 
 	// Import this service's modules.
-	namespace, ok := g.Frugal.Thrift.Namespace(lang)
-	if !ok {
-		namespace = g.Frugal.Name
-	}
-	imports += fmt.Sprintf("from %s.%s import *\n", namespace, s.Name)
-	imports += fmt.Sprintf("from %s.ttypes import *\n", namespace)
+	imports += fmt.Sprintf("from .%s import *\n", s.Name)
+	imports += "from .ttypes import *\n"
 
 	return imports
 }
@@ -1052,6 +1053,8 @@ func (g *Generator) generateClientRecvMethod(method *parser.Method) string {
 	contents += tabtabtab + "x = TApplicationException()\n"
 	contents += tabtabtab + "x.read(self._iprot)\n"
 	contents += tabtabtab + "self._iprot.readMessageEnd()\n"
+	contents += tabtabtab + "if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:\n"
+	contents += tabtabtabtab + "raise FRateLimitException(x.message)\n"
 	contents += tabtabtab + "raise x\n"
 	contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	contents += tabtab + "result.read(self._iprot)\n"
@@ -1134,6 +1137,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	for _, method := range service.Methods {
 		contents += g.generateProcessorFunction(method)
 	}
+	contents += g.generateWriteApplicationException()
 
 	return contents
 }
@@ -1147,8 +1151,8 @@ func (g *Generator) exposeServiceModule(path string, service *parser.Service) er
 		return err
 	}
 	initStr := string(init)
-	initStr += fmt.Sprintf("\nimport f_%s\n", service.Name)
-	initStr += fmt.Sprintf("from f_%s import *\n", service.Name)
+	initStr += fmt.Sprintf("\nfrom . import f_%s\n", service.Name)
+	initStr += fmt.Sprintf("from .f_%s import *\n", service.Name)
 	init = []byte(initStr)
 	return ioutil.WriteFile(initFile, init, os.ModePerm)
 }
@@ -1177,9 +1181,7 @@ func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 	serviceName := "f_" + service.ExtendsService()
 	include := service.ExtendsInclude()
 	if include != "" {
-		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
-			include = inc
-		}
+		include := g.getPackageNamespace(include)
 		serviceName = include + "." + serviceName
 	}
 	return serviceName
@@ -1230,22 +1232,30 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	if !method.Oneway {
 		contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	}
-	indent := tabtab
-	if len(method.Exceptions) > 0 {
-		indent += tab
-		contents += tabtab + "try:\n"
-	}
+	contents += tabtab + "try:\n"
 	if method.ReturnType == nil {
-		contents += indent + fmt.Sprintf("self._handler([ctx%s])\n",
+		contents += tabtabtab + fmt.Sprintf("self._handler([ctx%s])\n",
 			g.generateServerArgs(method.Arguments))
 	} else {
-		contents += indent + fmt.Sprintf("result.success = self._handler([ctx%s])\n",
+		contents += tabtabtab + fmt.Sprintf("result.success = self._handler([ctx%s])\n",
 			g.generateServerArgs(method.Arguments))
 	}
 	for _, err := range method.Exceptions {
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", g.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
+	contents += tabtab + "except FRateLimitException as ex:\n"
+	contents += tabtabtab + "with self._lock:\n"
+	contents += tabtabtabtab +
+		fmt.Sprintf("_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
+			method.Name)
+	contents += tabtabtabtab + "return\n"
+	contents += tabtab + "except Exception as e:\n"
+	if !method.Oneway {
+		contents += tabtabtab + "with self._lock:\n"
+		contents += tabtabtabtab + fmt.Sprintf("_write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", method.Name)
+	}
+	contents += tabtabtab + "raise\n"
 	if !method.Oneway {
 		contents += tabtab + "with self._lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
@@ -1254,6 +1264,19 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 		contents += tabtabtab + "oprot.writeMessageEnd()\n"
 		contents += tabtabtab + "oprot.get_transport().flush()\n"
 	}
+	contents += "\n\n"
+
+	return contents
+}
+
+func (g *Generator) generateWriteApplicationException() string {
+	contents := "def _write_application_exception(ctx, oprot, typ, method, message):\n"
+	contents += tab + "x = TApplicationException(type=typ, message=message)\n"
+	contents += tab + "oprot.write_response_headers(ctx)\n"
+	contents += tab + "oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)\n"
+	contents += tab + "x.write(oprot)\n"
+	contents += tab + "oprot.writeMessageEnd()\n"
+	contents += tab + "oprot.get_transport().flush()\n"
 	contents += "\n\n"
 
 	return contents
@@ -1345,10 +1368,7 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 		return param
 	}
 
-	namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-	if !ok {
-		namespace = include
-	}
+	namespace := g.getPackageNamespace(include)
 	return fmt.Sprintf("%s.ttypes.%s", namespace, param)
 }
 
@@ -1371,6 +1391,14 @@ func (g *Generator) getTType(t *parser.Type) string {
 		}
 	}
 	return "TType." + ttype
+}
+
+func (g *Generator) getPackageNamespace(include string) string {
+	namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
+	if !ok {
+		namespace = include
+	}
+	return g.Options["package_prefix"] + namespace
 }
 
 var elemNum int

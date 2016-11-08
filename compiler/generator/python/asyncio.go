@@ -25,26 +25,20 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from frugal.aio.processor import FBaseProcessor\n"
 	imports += "from frugal.aio.processor import FProcessorFunction\n"
 	imports += "from frugal.aio.registry import FClientRegistry\n"
+	imports += "from frugal.exceptions import FRateLimitException\n"
 	imports += "from frugal.middleware import Method\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 
 	// Import include modules.
 	for _, include := range s.ReferencedIncludes() {
-		namespace, ok := a.Frugal.NamespaceForInclude(include, lang)
-		if !ok {
-			namespace = include
-		}
+		namespace := a.getPackageNamespace(include)
 		imports += fmt.Sprintf("import %s\n", namespace)
 	}
+	imports += a.generateServiceExtendsImport(s)
 
-	// Import this service's modules.
-	namespace, ok := a.Frugal.Thrift.Namespace(lang)
-	if !ok {
-		namespace = a.Frugal.Name
-	}
-	imports += fmt.Sprintf("from %s.%s import *\n", namespace, s.Name)
-	imports += fmt.Sprintf("from %s.ttypes import *\n", namespace)
+	imports += fmt.Sprintf("from .%s import *\n", s.Name)
+	imports += "from .ttypes import *\n"
 
 	_, err := file.WriteString(imports)
 	return err
@@ -62,11 +56,7 @@ func (a *AsyncIOGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.subscription import FSubscription\n\n"
 
-	namespace, ok := a.Frugal.Thrift.Namespace(lang)
-	if !ok {
-		namespace = a.Frugal.Name
-	}
-	imports += fmt.Sprintf("from %s.ttypes import *\n", namespace)
+	imports += "from .ttypes import *\n"
 	_, err := file.WriteString(imports)
 	return err
 }
@@ -204,6 +194,9 @@ func (a *AsyncIOGenerator) generateClientRecvMethod(method *parser.Method) strin
 	contents += tabtabtabtab + "x = TApplicationException()\n"
 	contents += tabtabtabtab + "x.read(iprot)\n"
 	contents += tabtabtabtab + "iprot.readMessageEnd()\n"
+	contents += tabtabtabtab + "if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:\n"
+	contents += tabtabtabtabtab + "future.set_exception(FRateLimitException(x.message))\n"
+	contents += tabtabtabtabtab + "return\n"
 	contents += tabtabtabtab + "future.set_exception(x)\n"
 	contents += tabtabtabtab + "raise x\n"
 	contents += tabtabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
@@ -236,6 +229,7 @@ func (a *AsyncIOGenerator) generateServer(service *parser.Service) string {
 	for _, method := range service.Methods {
 		contents += a.generateProcessorFunction(method)
 	}
+	contents += a.generateWriteApplicationException()
 
 	return contents
 }
@@ -285,22 +279,30 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	if !method.Oneway {
 		contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	}
-	indent := tabtab
-	if len(method.Exceptions) > 0 {
-		indent += tab
-		contents += tabtab + "try:\n"
-	}
-	contents += indent + fmt.Sprintf("ret = self._handler([ctx%s])\n",
+	contents += tabtab + "try:\n"
+	contents += tabtabtab + fmt.Sprintf("ret = self._handler([ctx%s])\n",
 		a.generateServerArgs(method.Arguments))
-	contents += indent + "if inspect.iscoroutine(ret):\n"
-	contents += indent + tab + "ret = await ret\n"
+	contents += tabtabtab + "if inspect.iscoroutine(ret):\n"
+	contents += tabtabtabtab + "ret = await ret\n"
 	if method.ReturnType != nil {
-		contents += indent + "result.success = ret\n"
+		contents += tabtabtab + "result.success = ret\n"
 	}
+	contents += tabtab + "except FRateLimitException as ex:\n"
+	contents += tabtabtab + "async with self._write_lock:\n"
+	contents += tabtabtabtab + fmt.Sprintf(
+		"_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
+		method.Name)
+	contents += tabtabtabtab + "return\n"
 	for _, err := range method.Exceptions {
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", a.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
+	contents += tabtab + "except Exception as e:\n"
+	if !method.Oneway {
+		contents += tabtabtab + "async with self._write_lock:\n"
+		contents += tabtabtabtab + fmt.Sprintf("_write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.args[0] if e.args else 'unknown exception')\n", method.Name)
+	}
+	contents += tabtabtab + "raise\n"
 	if !method.Oneway {
 		contents += tabtab + "async with self._write_lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"

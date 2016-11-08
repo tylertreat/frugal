@@ -58,10 +58,11 @@ class FBaseProcessor(FProcessor):
             try:
                 return await processor_function.process(context, iprot, oprot)
             except Exception as e:
-                logging.warn('frugal: error processing request with ' +
-                             'correlation id %s: %s' %
-                             (context.get_correlation_id(), e))
-                raise
+                logger.exception(
+                    'frugal: user handler code raised unhandled ' +
+                    'exception on request with correlation id {}'.format(
+                        context.get_correlation_id()))
+                return
 
         iprot.skip(TType.STRUCT)
         iprot.readMessageEnd()

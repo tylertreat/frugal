@@ -131,8 +131,6 @@ class FClientRegistry(FRegistry):
         async with self._handlers_lock:
             handler = self._handlers.get(op_id, None)
             if not handler:
-                logger.warning("Got a message for unregistered context."
-                               "Dropping")
                 return
 
             handler(TMemoryBuffer(frame))
