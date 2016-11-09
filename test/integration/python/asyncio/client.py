@@ -17,7 +17,7 @@ from frugal.aio.transport import (
 from nats.aio.client import Client as NatsClient
 
 from frugal_test.f_Events_publisher import EventsPublisher
-from frugal_test import ttypes, Xception, Insanity, Xception2, Event
+from frugal_test.ttypes import Xception, Insanity, Xception2, Event
 from frugal_test.f_Events_subscriber import EventsSubscriber
 from frugal_test.f_FrugalTest import Client as FrugalTestClient
 

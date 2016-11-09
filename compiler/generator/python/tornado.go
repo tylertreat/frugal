@@ -3,7 +3,6 @@ package python
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
@@ -62,9 +61,6 @@ func (t *TornadoGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 
 // GenerateService generates the given service.
 func (t *TornadoGenerator) GenerateService(file *os.File, s *parser.Service) error {
-	if err := t.exposeServiceModule(filepath.Dir(file.Name()), s); err != nil {
-		return err
-	}
 	contents := ""
 	contents += t.generateServiceInterface(s)
 	contents += t.generateClient(s)
