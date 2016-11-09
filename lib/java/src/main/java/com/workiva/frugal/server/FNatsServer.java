@@ -298,9 +298,9 @@ public class FNatsServer implements FServer {
             try {
                 processor.process(inputProtoFactory.getProtocol(input), outputProtoFactory.getProtocol(output));
             } catch (TApplicationException e) {
-                LOGGER.warn("error processing frame: " + e.getMessage());
+                LOGGER.error("user handler code returned unhandled error on request:" + e.getMessage());
             } catch (TException e) {
-                LOGGER.warn("error processing frame: " + e.getMessage());
+                LOGGER.error("user handler code returned unhandled error on request:" + e.getMessage());
                 return;
             }
 
