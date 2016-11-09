@@ -1,7 +1,7 @@
 import base64
 import logging
 
-from thrift.Thrift import TException
+from thrift.Thrift import TApplicationException
 from thrift.transport.TTransport import TMemoryBuffer
 from tornado import gen
 from tornado.web import RequestHandler
@@ -47,8 +47,12 @@ class FTornadoHttpHandler(RequestHandler):
 
         try:
             yield self._processor.process(iprot, oprot)
-        except TException as e:
-            logger.exception(e)
+        except TApplicationException:
+            # Continue so the exception is sent to the client
+            pass
+        except Exception as e:
+            self.send_error(status_code=400)
+            return
 
         # write back response
         output_data = otrans.getvalue()

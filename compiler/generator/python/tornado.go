@@ -151,7 +151,7 @@ func (t *TornadoGenerator) generateClientRecvMethod(method *parser.Method) strin
 	contents += tabtabtabtabtab + "future.set_exception(FRateLimitException(x.message))\n"
 	contents += tabtabtabtabtab + "return\n"
 	contents += tabtabtabtab + "future.set_exception(x)\n"
-	contents += tabtabtabtab + "raise x\n"
+	contents += tabtabtabtab + "return\n"
 	contents += tabtabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	contents += tabtabtab + "result.read(iprot)\n"
 	contents += tabtabtab + "iprot.readMessageEnd()\n"
@@ -215,17 +215,17 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
 	contents += tabtab + "except FRateLimitException as ex:\n"
-	contents += tabtabtab + "with self._lock:\n"
+	contents += tabtabtab + "with (yield self._lock.acquire()):\n"
 	contents += tabtabtabtab +
 		fmt.Sprintf("_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
 			method.Name)
 	contents += tabtabtabtab + "return\n"
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
-		contents += tabtabtab + "with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("_write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", method.Name)
+		contents += tabtabtab + "with (yield self._lock.acquire()):\n"
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", method.Name)
 	}
-	contents += tabtabtab + "raise\n"
+	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {
 		contents += tabtab + "with (yield self._lock.acquire()):\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"

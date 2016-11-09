@@ -2,6 +2,7 @@ import base64
 import logging
 import struct
 
+from thrift.Thrift import TApplicationException
 from thrift.transport.TTransport import TMemoryBuffer
 
 logger = logging.getLogger(__name__)
@@ -131,7 +132,6 @@ class _FHttpRequestHandler:
         Returns:
             A _FHttpResponse.
         """
-        logger.exception(e)
         return _FHttpResponse(status_code=400)
 
     def handle_http_request(self, request):
@@ -162,6 +162,9 @@ class _FSynchronousHttpRequestHandler(_FHttpRequestHandler):
 
         try:
             self._processor.process(iprot, oprot)
+        except TApplicationException:
+            # Continue so the exception is sent to the client
+            pass
         except Exception as e:
             return self._handle_processor_exception(e)
 

@@ -1211,9 +1211,9 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("_write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", method.Name)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", method.Name)
 	}
-	contents += tabtabtab + "raise\n"
+	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {
 		contents += tabtab + "with self._lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
@@ -1235,6 +1235,7 @@ func (g *Generator) generateWriteApplicationException() string {
 	contents += tab + "x.write(oprot)\n"
 	contents += tab + "oprot.writeMessageEnd()\n"
 	contents += tab + "oprot.get_transport().flush()\n"
+	contents += tab + "return x"
 	contents += "\n\n"
 
 	return contents

@@ -68,7 +68,7 @@ class FBaseProcessor(FProcessor):
                 logging.exception('frugal: user handler code raised unhandled '
                                   'exception on request with correlation id {}'
                                   .format(context.get_correlation_id()))
-                raise gen.Return(None)
+                raise
             raise gen.Return(ret)
 
         iprot.skip(TType.STRUCT)
