@@ -35,11 +35,11 @@ class TestFNatsTornadoServer(AsyncTestCase):
 
         yield self.server.serve()
 
-        self.assertEquals([123], self.server._sids)
+        self.assertEquals(123, self.server._sub_id)
 
     @gen_test
     def test_stop(self):
-        self.server._sids = [123]
+        self.server._sub_id = 123
         f = concurrent.Future()
         f.set_result(None)
         self.mock_nats_client.unsubscribe.return_value = f

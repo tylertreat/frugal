@@ -20,33 +20,30 @@ class FNatsServer(FServer):
     def __init__(
             self,
             nats_client: Client,
-            subject: List[str],
+            subject: str,
             processor: FProcessor,
             protocol_factory: FProtocolFactory,
             queue=''
     ):
         self._nats_client = nats_client
-        self._subjects = [subject] if isinstance(subject, str) else subject
+        self._subject = subject
         self._processor = processor
         self._protocol_factory = protocol_factory
         self._queue = queue
-        self._sub_ids = []
+        self._sub_id = None
 
     async def serve(self):
         """Subscribe to the server subject and queue."""
-        self._sub_ids = []
-        for subject in self._subjects:
-            self._sub_ids.append(await self._nats_client.subscribe(
-                subject,
-                queue=self._queue,
-                cb=self._on_message_callback,
-            ))
+        self._sub_id = await self._nats_client.subscribe(
+            self._subject,
+            queue=self._queue,
+            cb=self._on_message_callback,
+        )
         logger.info('Frugal server running...')
 
     async def stop(self):
         """Unsubscribe from the server subject."""
-        for sid in self._sub_ids:
-            await self._nats_client.unsubscribe(sid)
+        await self._nats_client.unsubscribe(self._sub_id)
 
     async def _on_message_callback(self, message):
         """The function to be executed when a message is received."""

@@ -16,7 +16,7 @@ class FNatsTornadoServer(FServer):
     """An implementation of FServer which uses NATS as the underlying transport.
     Clients must connect with the FNatsTransport"""
 
-    def __init__(self, nats_client, subjects, processor,
+    def __init__(self, nats_client, subject, processor,
                  protocol_factory, queue=""):
         """Create a new instance of FStatelessNatsTornadoServer
 
@@ -27,13 +27,12 @@ class FNatsTornadoServer(FServer):
             protocol_factory: FProtocolFactory
         """
         self._nats_client = nats_client
-        subjects = [subjects] if isinstance(subjects, basestring) else subjects
-        self._subjects = subjects
+        self._subject = subject
         self._processor = processor
         self._iprot_factory = protocol_factory
         self._oprot_factory = protocol_factory
         self._queue = queue
-        self._sids = []
+        self._sub_id = None
 
     @gen.coroutine
     def serve(self):
@@ -41,10 +40,11 @@ class FNatsTornadoServer(FServer):
         queue = self._queue
         cb = self._on_message_callback
 
-        self._sids = [(yield self._nats_client.subscribe_async(
-            subject,
+        self._sub_id = yield self._nats_client.subscribe_async(
+            self._subject,
             queue=queue,
-            cb=cb)) for subject in self._subjects]
+            cb=cb
+        )
 
         logger.info("Frugal server running...")
 
@@ -52,8 +52,7 @@ class FNatsTornadoServer(FServer):
     def stop(self):
         """Unsubscribe from server subject"""
         logger.debug("Frugal server stopping...")
-        for sid in self._sids:
-            yield self._nats_client.unsubscribe(sid)
+        yield self._nats_client.unsubscribe(self._sub_id)
 
     @gen.coroutine
     def _on_message_callback(self, msg):
