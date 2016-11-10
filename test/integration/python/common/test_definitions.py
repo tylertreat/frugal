@@ -1,4 +1,4 @@
-from frugal_test import ttypes, Xception, Insanity, Xception2, Event
+from frugal_test.ttypes import Xception, Insanity, Xception2, Event
 from frugal_test.f_FrugalTest import Xtruct, Xtruct2, Numberz
 
 

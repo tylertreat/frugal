@@ -2,7 +2,6 @@ package python
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -944,9 +943,6 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 // GenerateService generates the given service.
 func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
-	if err := g.exposeServiceModule(filepath.Dir(file.Name()), s); err != nil {
-		return err
-	}
 	contents := ""
 	contents += g.generateServiceInterface(s)
 	contents += g.generateClient(s)
@@ -1101,19 +1097,6 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	contents += g.generateWriteApplicationException()
 
 	return contents
-}
-
-func (g *Generator) exposeServiceModule(path string, service *parser.Service) error {
-	initFile := fmt.Sprintf("%s%s__init__.py", path, string(os.PathSeparator))
-	init, err := ioutil.ReadFile(initFile)
-	if err != nil {
-		return err
-	}
-	initStr := string(init)
-	initStr += fmt.Sprintf("\nimport f_%s\n", service.Name)
-	initStr += fmt.Sprintf("from f_%s import *\n", service.Name)
-	init = []byte(initStr)
-	return ioutil.WriteFile(initFile, init, os.ModePerm)
 }
 
 func (g *Generator) generateServiceInterface(service *parser.Service) string {

@@ -2,9 +2,7 @@ package python
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
@@ -72,9 +70,6 @@ func (a *AsyncIOGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 
 // GenerateService generates the given service.
 func (a *AsyncIOGenerator) GenerateService(file *os.File, s *parser.Service) error {
-	if err := a.exposeServiceModule(filepath.Dir(file.Name()), s); err != nil {
-		return err
-	}
 	contents := ""
 	contents += a.generateServiceInterface(s)
 	contents += a.generateClient(s)
@@ -83,19 +78,6 @@ func (a *AsyncIOGenerator) GenerateService(file *os.File, s *parser.Service) err
 
 	_, err := file.WriteString(contents)
 	return err
-}
-
-func (a *AsyncIOGenerator) exposeServiceModule(path string, service *parser.Service) error {
-	initFile := fmt.Sprintf("%s%s__init__.py", path, string(os.PathSeparator))
-	init, err := ioutil.ReadFile(initFile)
-	if err != nil {
-		return err
-	}
-	initStr := string(init)
-	initStr += fmt.Sprintf("\nfrom . import f_%s\n", service.Name)
-	initStr += fmt.Sprintf("from .f_%s import *\n", service.Name)
-	init = []byte(initStr)
-	return ioutil.WriteFile(initFile, init, os.ModePerm)
 }
 
 func (a *AsyncIOGenerator) generateClient(service *parser.Service) string {
