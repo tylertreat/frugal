@@ -15,8 +15,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class FRegistryImpl implements FRegistry {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FRegistryImpl.class);
-
     private static final AtomicLong NEXT_OP_ID = new AtomicLong(0);
 
     protected Map<Long, Pair<FAsyncCallback, Thread>> handlers;

@@ -18,7 +18,6 @@ from thrift.Thrift import TMessageType
 import actual_base.python
 import validStructs
 import ValidTypes
-from .Foo import *
 from .ttypes import *
 
 

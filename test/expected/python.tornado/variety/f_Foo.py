@@ -23,7 +23,6 @@ from tornado.concurrent import Future
 import actual_base.python
 import validStructs
 import ValidTypes
-from .Foo import *
 from .ttypes import *
 
 

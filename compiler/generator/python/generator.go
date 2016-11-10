@@ -763,7 +763,6 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
 	}
 
 	// Import this service's modules.
-	imports += fmt.Sprintf("from .%s import *\n", s.Name)
 	imports += "from .ttypes import *\n"
 
 	return imports

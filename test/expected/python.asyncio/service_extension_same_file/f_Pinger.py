@@ -19,7 +19,6 @@ from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from . import f_BasePinger
-from .Pinger import *
 from .ttypes import *
 
 

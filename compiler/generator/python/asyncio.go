@@ -37,7 +37,6 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += a.generateServiceExtendsImport(s)
 
 	// Import this service's modules.
-	imports += fmt.Sprintf("from .%s import *\n", s.Name)
 	imports += "from .ttypes import *\n"
 
 	_, err := file.WriteString(imports)

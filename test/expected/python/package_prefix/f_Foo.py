@@ -16,7 +16,6 @@ from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 
 import generic_package_prefix.actual_base.python
-from .Foo import *
 from .ttypes import *
 
 

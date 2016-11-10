@@ -20,7 +20,6 @@ from thrift.Thrift import TMessageType
 from tornado import gen
 from tornado.concurrent import Future
 
-from .BaseFoo import *
 from .ttypes import *
 
 
