@@ -114,7 +114,7 @@ class Client(Iface):
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
-                raise x
+                return
             result = buyAlbum_result()
             result.read(iprot)
             iprot.readMessageEnd()
@@ -177,7 +177,7 @@ class Client(Iface):
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
-                raise x
+                return
             result = enterAlbumGiveaway_result()
             result.read(iprot)
             iprot.readMessageEnd()
@@ -229,6 +229,10 @@ class _buyAlbum(FProcessorFunction):
                 return
         except PurchasingError as error:
             result.error = error
+        except Exception as e:
+            async with self._write_lock:
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "buyAlbum", e.args[0] if e.args else 'unknown exception')
+            raise e from None
         async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('buyAlbum', TMessageType.REPLY, 0)
@@ -257,6 +261,10 @@ class _enterAlbumGiveaway(FProcessorFunction):
             async with self._write_lock:
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", ex.message)
                 return
+        except Exception as e:
+            async with self._write_lock:
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "enterAlbumGiveaway", e.args[0] if e.args else 'unknown exception')
+            raise e from None
         async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.REPLY, 0)
@@ -265,14 +273,14 @@ class _enterAlbumGiveaway(FProcessorFunction):
             oprot.get_transport().flush()
 
 
-def _write_application_exception(ctx, oprot, type, method, message):
-    x = TApplicationException(type=type, message=message)
+def _write_application_exception(ctx, oprot, typ, method, message):
+    x = TApplicationException(type=typ, message=message)
     oprot.write_response_headers(ctx)
     oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
     x.write(oprot)
     oprot.writeMessageEnd()
     oprot.get_transport().flush()
-
+    return x
 
 class buyAlbum_args(object):
     """

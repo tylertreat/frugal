@@ -189,7 +189,7 @@ func (a *AsyncIOGenerator) generateClientRecvMethod(method *parser.Method) strin
 	contents += tabtabtabtabtab + "future.set_exception(FRateLimitException(x.message))\n"
 	contents += tabtabtabtabtab + "return\n"
 	contents += tabtabtabtab + "future.set_exception(x)\n"
-	contents += tabtabtabtab + "raise x\n"
+	contents += tabtabtabtab + "return\n"
 	contents += tabtabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	contents += tabtabtab + "result.read(iprot)\n"
 	contents += tabtabtab + "iprot.readMessageEnd()\n"
@@ -291,9 +291,9 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "async with self._write_lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("_write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.args[0] if e.args else 'unknown exception')\n", method.Name)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.args[0] if e.args else 'unknown exception')\n", method.Name)
 	}
-	contents += tabtabtab + "raise\n"
+	contents += tabtabtab + "raise e from None\n"
 	if !method.Oneway {
 		contents += tabtab + "async with self._write_lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"

@@ -94,7 +94,7 @@ class Client(Iface):
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
-                raise x
+                return
             result = basePing_result()
             result.read(iprot)
             iprot.readMessageEnd()
@@ -139,8 +139,8 @@ class _basePing(FProcessorFunction):
                 return
         except Exception as e:
             async with self._write_lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "basePing", e.args[0] if e.args else 'unknown exception')
-            raise
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "basePing", e.args[0] if e.args else 'unknown exception')
+            raise e from None
         async with self._write_lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('basePing', TMessageType.REPLY, 0)
@@ -156,7 +156,7 @@ def _write_application_exception(ctx, oprot, typ, method, message):
     x.write(oprot)
     oprot.writeMessageEnd()
     oprot.get_transport().flush()
-
+    return x
 
 class basePing_args(object):
     def read(self, iprot):

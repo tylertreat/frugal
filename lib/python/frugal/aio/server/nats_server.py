@@ -3,7 +3,7 @@ import struct
 from typing import List
 
 from nats.aio.client import Client
-from thrift.Thrift import TException
+from thrift.Thrift import TApplicationException
 from thrift.transport.TTransport import TMemoryBuffer
 
 from frugal import _NATS_MAX_MESSAGE_SIZE
@@ -65,8 +65,10 @@ class FNatsServer(FServer):
 
         try:
             await self._processor.process(iprot, oprot)
-        except TException as e:
-            logger.exception(e)
+        except TApplicationException:
+            # Continue so the exception is sent to the client
+            pass
+        except Exception:
             return
 
         if len(otrans) == 4:

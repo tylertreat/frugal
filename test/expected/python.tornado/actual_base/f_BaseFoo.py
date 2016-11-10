@@ -100,7 +100,7 @@ class Client(Iface):
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
-                raise x
+                return
             result = basePing_result()
             result.read(iprot)
             iprot.readMessageEnd()
@@ -139,13 +139,13 @@ class _basePing(FProcessorFunction):
         try:
             yield gen.maybe_future(self._handler([ctx]))
         except FRateLimitException as ex:
-            with self._lock:
+            with (yield self._lock.acquire()):
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "basePing", ex.message)
                 return
         except Exception as e:
-            with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "basePing", e.message)
-            raise
+            with (yield self._lock.acquire()):
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "basePing", e.message)
+            raise e
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('basePing', TMessageType.REPLY, 0)
@@ -161,7 +161,7 @@ def _write_application_exception(ctx, oprot, typ, method, message):
     x.write(oprot)
     oprot.writeMessageEnd()
     oprot.get_transport().flush()
-
+    return x
 
 class basePing_args(object):
     def read(self, iprot):

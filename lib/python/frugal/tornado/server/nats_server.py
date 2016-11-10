@@ -2,6 +2,7 @@ import logging
 import struct
 
 from thrift.Thrift import TException
+from thrift.Thrift import TApplicationException
 from thrift.transport.TTransport import TMemoryBuffer
 from tornado import gen
 
@@ -81,8 +82,10 @@ class FNatsTornadoServer(FServer):
 
         try:
             yield self._processor.process(iprot, oprot)
-        except TException as ex:
-            logger.exception(ex)
+        except TApplicationException:
+            # Continue so the exception is sent to the client
+            pass
+        except Exception:
             return
 
         if len(otrans) == 4:

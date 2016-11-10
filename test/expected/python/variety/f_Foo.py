@@ -519,8 +519,8 @@ class _ping(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "ping", e.message)
-            raise
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "ping", e.message)
+            raise e
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
@@ -552,8 +552,8 @@ class _blah(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "blah", e.message)
-            raise
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "blah", e.message)
+            raise e
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('blah', TMessageType.REPLY, 0)
@@ -579,7 +579,7 @@ class _oneWay(FProcessorFunction):
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "oneWay", ex.message)
                 return
         except Exception as e:
-            raise
+            raise e
 
 
 class _bin_method(FProcessorFunction):
@@ -603,8 +603,8 @@ class _bin_method(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "bin_method", e.message)
-            raise
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "bin_method", e.message)
+            raise e
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('bin_method', TMessageType.REPLY, 0)
@@ -632,8 +632,8 @@ class _param_modifiers(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "param_modifiers", e.message)
-            raise
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "param_modifiers", e.message)
+            raise e
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('param_modifiers', TMessageType.REPLY, 0)
@@ -661,8 +661,8 @@ class _underlying_types_test(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "underlying_types_test", e.message)
-            raise
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "underlying_types_test", e.message)
+            raise e
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('underlying_types_test', TMessageType.REPLY, 0)
@@ -690,8 +690,8 @@ class _getThing(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getThing", e.message)
-            raise
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getThing", e.message)
+            raise e
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.REPLY, 0)
@@ -719,8 +719,8 @@ class _getMyInt(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getMyInt", e.message)
-            raise
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getMyInt", e.message)
+            raise e
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.REPLY, 0)
@@ -736,7 +736,7 @@ def _write_application_exception(ctx, oprot, typ, method, message):
     x.write(oprot)
     oprot.writeMessageEnd()
     oprot.get_transport().flush()
-
+    return x
 
 class ping_args(object):
     def read(self, iprot):

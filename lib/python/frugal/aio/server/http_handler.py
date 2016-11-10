@@ -1,6 +1,7 @@
 import base64
 
 from aiohttp import web
+from thrift.Thrift import TApplicationException
 from thrift.transport.TTransport import TMemoryBuffer
 
 from frugal.aio.processor import FProcessor
@@ -37,8 +38,10 @@ def new_http_handler(processor: FProcessor, protocol_factory: FProtocolFactory):
         oprot = protocol_factory.get_protocol(otrans)
         try:
             await processor.process(iprot, oprot)
-        except:
-            # TODO make this less broad in the future
+        except TApplicationException:
+            # Continue so the exception is sent to the client
+            pass
+        except Exception:
             return web.Response(status=400)
 
         # write back response

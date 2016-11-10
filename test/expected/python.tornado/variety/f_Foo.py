@@ -181,7 +181,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
-                raise x
+                return
             result = ping_result()
             result.read(iprot)
             iprot.readMessageEnd()
@@ -242,7 +242,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
-                raise x
+                return
             result = blah_result()
             result.read(iprot)
             iprot.readMessageEnd()
@@ -338,7 +338,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
-                raise x
+                return
             result = bin_method_result()
             result.read(iprot)
             iprot.readMessageEnd()
@@ -405,7 +405,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
-                raise x
+                return
             result = param_modifiers_result()
             result.read(iprot)
             iprot.readMessageEnd()
@@ -467,7 +467,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
-                raise x
+                return
             result = underlying_types_test_result()
             result.read(iprot)
             iprot.readMessageEnd()
@@ -525,7 +525,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
-                raise x
+                return
             result = getThing_result()
             result.read(iprot)
             iprot.readMessageEnd()
@@ -583,7 +583,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
-                raise x
+                return
             result = getMyInt_result()
             result.read(iprot)
             iprot.readMessageEnd()
@@ -634,13 +634,13 @@ class _ping(FProcessorFunction):
         try:
             yield gen.maybe_future(self._handler([ctx]))
         except FRateLimitException as ex:
-            with self._lock:
+            with (yield self._lock.acquire()):
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "ping", ex.message)
                 return
         except Exception as e:
-            with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "ping", e.message)
-            raise
+            with (yield self._lock.acquire()):
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "ping", e.message)
+            raise e
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
@@ -668,13 +668,13 @@ class _blah(FProcessorFunction):
         except actual_base.python.ttypes.api_exception as api:
             result.api = api
         except FRateLimitException as ex:
-            with self._lock:
+            with (yield self._lock.acquire()):
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "blah", ex.message)
                 return
         except Exception as e:
-            with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "blah", e.message)
-            raise
+            with (yield self._lock.acquire()):
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "blah", e.message)
+            raise e
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('blah', TMessageType.REPLY, 0)
@@ -697,11 +697,11 @@ class _oneWay(FProcessorFunction):
         try:
             yield gen.maybe_future(self._handler([ctx, args.id, args.req]))
         except FRateLimitException as ex:
-            with self._lock:
+            with (yield self._lock.acquire()):
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "oneWay", ex.message)
                 return
         except Exception as e:
-            raise
+            raise e
 
 
 class _bin_method(FProcessorFunction):
@@ -721,13 +721,13 @@ class _bin_method(FProcessorFunction):
         except actual_base.python.ttypes.api_exception as api:
             result.api = api
         except FRateLimitException as ex:
-            with self._lock:
+            with (yield self._lock.acquire()):
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "bin_method", ex.message)
                 return
         except Exception as e:
-            with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "bin_method", e.message)
-            raise
+            with (yield self._lock.acquire()):
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "bin_method", e.message)
+            raise e
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('bin_method', TMessageType.REPLY, 0)
@@ -751,13 +751,13 @@ class _param_modifiers(FProcessorFunction):
         try:
             result.success = yield gen.maybe_future(self._handler([ctx, args.opt_num, args.default_num, args.req_num]))
         except FRateLimitException as ex:
-            with self._lock:
+            with (yield self._lock.acquire()):
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "param_modifiers", ex.message)
                 return
         except Exception as e:
-            with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "param_modifiers", e.message)
-            raise
+            with (yield self._lock.acquire()):
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "param_modifiers", e.message)
+            raise e
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('param_modifiers', TMessageType.REPLY, 0)
@@ -781,13 +781,13 @@ class _underlying_types_test(FProcessorFunction):
         try:
             result.success = yield gen.maybe_future(self._handler([ctx, args.list_type, args.set_type]))
         except FRateLimitException as ex:
-            with self._lock:
+            with (yield self._lock.acquire()):
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "underlying_types_test", ex.message)
                 return
         except Exception as e:
-            with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "underlying_types_test", e.message)
-            raise
+            with (yield self._lock.acquire()):
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "underlying_types_test", e.message)
+            raise e
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('underlying_types_test', TMessageType.REPLY, 0)
@@ -811,13 +811,13 @@ class _getThing(FProcessorFunction):
         try:
             result.success = yield gen.maybe_future(self._handler([ctx]))
         except FRateLimitException as ex:
-            with self._lock:
+            with (yield self._lock.acquire()):
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getThing", ex.message)
                 return
         except Exception as e:
-            with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getThing", e.message)
-            raise
+            with (yield self._lock.acquire()):
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getThing", e.message)
+            raise e
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.REPLY, 0)
@@ -841,13 +841,13 @@ class _getMyInt(FProcessorFunction):
         try:
             result.success = yield gen.maybe_future(self._handler([ctx]))
         except FRateLimitException as ex:
-            with self._lock:
+            with (yield self._lock.acquire()):
                 _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getMyInt", ex.message)
                 return
         except Exception as e:
-            with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getMyInt", e.message)
-            raise
+            with (yield self._lock.acquire()):
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getMyInt", e.message)
+            raise e
         with (yield self._lock.acquire()):
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.REPLY, 0)
@@ -863,7 +863,7 @@ def _write_application_exception(ctx, oprot, typ, method, message):
     x.write(oprot)
     oprot.writeMessageEnd()
     oprot.get_transport().flush()
-
+    return x
 
 class ping_args(object):
     def read(self, iprot):

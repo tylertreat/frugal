@@ -122,8 +122,8 @@ class _basePing(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "basePing", e.message)
-            raise
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "basePing", e.message)
+            raise e
         with self._lock:
             oprot.write_response_headers(ctx)
             oprot.writeMessageBegin('basePing', TMessageType.REPLY, 0)
@@ -139,7 +139,7 @@ def _write_application_exception(ctx, oprot, typ, method, message):
     x.write(oprot)
     oprot.writeMessageEnd()
     oprot.get_transport().flush()
-
+    return x
 
 class basePing_args(object):
     def read(self, iprot):
