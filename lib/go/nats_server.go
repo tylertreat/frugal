@@ -21,14 +21,14 @@ type frameWrapper struct {
 
 // FNatsServerBuilder configures and builds NATS server instances.
 type FNatsServerBuilder struct {
-	conn               *nats.Conn
-	processor          FProcessor
+	conn          *nats.Conn
+	processor     FProcessor
 	protoFactory  *FProtocolFactory
-	subject            string
-	queue              string
-	workerCount        uint
-	queueLen           uint
-	highWatermark      time.Duration
+	subject       string
+	queue         string
+	workerCount   uint
+	queueLen      uint
+	highWatermark time.Duration
 }
 
 // NewFNatsServerBuilder creates a builder which configures and builds NATS
@@ -36,13 +36,13 @@ type FNatsServerBuilder struct {
 func NewFNatsServerBuilder(conn *nats.Conn, processor FProcessor,
 	protoFactory *FProtocolFactory, subject string) *FNatsServerBuilder {
 	return &FNatsServerBuilder{
-		conn:               conn,
-		processor:          processor,
-		protoFactory:       protoFactory,
-		subject:            subject,
-		workerCount:        1,
-		queueLen:           defaultWorkQueueLen,
-		highWatermark:      defaultWatermark,
+		conn:          conn,
+		processor:     processor,
+		protoFactory:  protoFactory,
+		subject:       subject,
+		workerCount:   1,
+		queueLen:      defaultWorkQueueLen,
+		highWatermark: defaultWatermark,
 	}
 }
 
@@ -75,30 +75,30 @@ func (f *FNatsServerBuilder) WithHighWatermark(highWatermark time.Duration) *FNa
 // Build a new configured NATS FServer.
 func (f *FNatsServerBuilder) Build() FServer {
 	return &fNatsServer{
-		conn:               f.conn,
-		processor:          f.processor,
+		conn:          f.conn,
+		processor:     f.processor,
 		protoFactory:  f.protoFactory,
-		subject:            f.subject,
-		queue:              f.queue,
-		workerCount:        f.workerCount,
-		workC:              make(chan *frameWrapper, f.queueLen),
-		quit:               make(chan struct{}),
-		highWatermark:      f.highWatermark,
+		subject:       f.subject,
+		queue:         f.queue,
+		workerCount:   f.workerCount,
+		workC:         make(chan *frameWrapper, f.queueLen),
+		quit:          make(chan struct{}),
+		highWatermark: f.highWatermark,
 	}
 }
 
 // fNatsServer implements FServer by using NATS as the underlying transport.
 // Clients must connect with the transport created by NewNatsFTransport.
 type fNatsServer struct {
-	conn               *nats.Conn
-	processor          FProcessor
+	conn          *nats.Conn
+	processor     FProcessor
 	protoFactory  *FProtocolFactory
-	subject            string
-	queue              string
-	workerCount        uint
-	workC              chan *frameWrapper
-	quit               chan struct{}
-	highWatermark      time.Duration
+	subject       string
+	queue         string
+	workerCount   uint
+	workC         chan *frameWrapper
+	quit          chan struct{}
+	highWatermark time.Duration
 }
 
 // Serve starts the server.

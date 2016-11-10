@@ -30,6 +30,7 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from tornado import gen\n"
 	imports += "from tornado.concurrent import Future\n\n"
 
+	imports += t.generateServiceExtendsImport(s)
 	imports += t.generateServiceIncludeImports(s)
 
 	_, err := file.WriteString(imports)
@@ -50,11 +51,7 @@ func (t *TornadoGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from frugal.subscription import FSubscription\n"
 	imports += "from frugal.transport import TMemoryOutputBuffer\n\n"
 
-	namespace, ok := t.Frugal.Thrift.Namespace(lang)
-	if !ok {
-		namespace = t.Frugal.Name
-	}
-	imports += fmt.Sprintf("from %s.ttypes import *\n", namespace)
+	imports += "from .ttypes import *\n"
 	_, err := file.WriteString(imports)
 	return err
 }

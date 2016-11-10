@@ -41,12 +41,11 @@ class FRegistryImpl implements FRegistry {
     try {
       opID = int.parse(headers[_opid]);
     } catch (e) {
-      _log.warning("Frame headers does not have an opId");
+      log.warning("frugal: invalid protocol frame: op id not a uint64", e);
       return;
     }
 
-    if (!_handlers.containsKey(opID)) {
-      _log.info("No handler for op $opID}. Dropping frame.");
+    if (!_handlers.containsKey(opId)) {
       return;
     }
     _handlers[opID](new TMemoryTransport.fromUint8List(frame));

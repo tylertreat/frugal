@@ -4,8 +4,6 @@ import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.util.Pair;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,6 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class FRegistryImpl implements FRegistry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FRegistryImpl.class);
+
     private static final AtomicLong NEXT_OP_ID = new AtomicLong(0);
 
     protected Map<Long, Pair<FAsyncCallback, Thread>> handlers;
@@ -72,12 +71,11 @@ public class FRegistryImpl implements FRegistry {
         try {
             opId = Long.parseLong(headers.get(FContext.OP_ID));
         } catch (NumberFormatException e) {
-            throw new FException("frame missing opId");
+            throw new FException("invalid protocol frame: op id not a uint64", e);
         }
 
         Pair<FAsyncCallback, Thread> callbackThreadPair = handlers.get(opId);
         if (callbackThreadPair == null) {
-            LOGGER.info("Got a message for an unregistered context. Dropping.");
             return;
         }
         callbackThreadPair.getLeft().onMessage(new TMemoryInputTransport(frame));

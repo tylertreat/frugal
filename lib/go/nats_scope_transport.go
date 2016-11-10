@@ -14,7 +14,7 @@ const frameBufferSize = 5
 
 // FNatsPublisherTransportFactory creates FNatsPublisherTransports.
 type FNatsPublisherTransportFactory struct {
-	conn  *nats.Conn
+	conn *nats.Conn
 }
 
 // NewFNatsPublisherTransportFactory creates an FNatsPublisherTransportFactory using
@@ -30,7 +30,7 @@ func (n *FNatsPublisherTransportFactory) GetTransport() FPublisherTransport {
 
 // fNatsPublisherTransport implements FPublisherTransport.
 type fNatsPublisherTransport struct {
-	conn         *nats.Conn
+	conn *nats.Conn
 }
 
 // NewNatsFPublisherTransport creates a new FPublisherTransport which is used for
@@ -92,7 +92,6 @@ func (n *fNatsPublisherTransport) Publish(topic string, data []byte) error {
 func (n *fNatsPublisherTransport) formattedSubject(subject string) string {
 	return fmt.Sprintf("%s%s", frugalPrefix, subject)
 }
-
 
 // FNatsSubscriberTransportFactory creates FNatsSubscriberTransports.
 type FNatsSubscriberTransportFactory struct {

@@ -99,3 +99,38 @@ func TestValidPythonAsyncIO(t *testing.T) {
 	baseFooPath := filepath.Join(outputDir, "asyncio", "actual_base", "python", "f_BaseFoo.py")
 	compareFiles(t, "expected/python.asyncio/actual_base/f_BaseFoo.py", baseFooPath)
 }
+
+func TestPythonPackagePrefix(t *testing.T) {
+	options := compiler.Options{
+		File:    "idl/service_inheritance.frugal",
+		Gen:     "py:package_prefix=generic_package_prefix.",
+		Out:     outputDir,
+		Delim:   delim,
+		Recurse: false,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("unexpected error", err)
+	}
+
+	fFooPath := filepath.Join(outputDir, "service_inheritance", "f_Foo.py")
+	compareFiles(t, "expected/python/package_prefix/f_Foo.py", fFooPath)
+	ttypesPath := filepath.Join(outputDir, "service_inheritance", "ttypes.py")
+	compareFiles(t, "expected/python/package_prefix/ttypes.py", ttypesPath)
+}
+
+func TestPythonExtendServiceSameFile(t *testing.T) {
+	options := compiler.Options{
+		File: "idl/service_extension_same_file.frugal",
+		Gen: "py:asyncio",
+		Out: outputDir,
+		Delim: delim,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("unexpected error", err)
+	}
+
+	basePingerPath := filepath.Join(outputDir, "service_extension_same_file", "python", "f_BasePinger.py")
+	compareFiles(t, "expected/python.asyncio/service_extension_same_file/f_BasePinger.py", basePingerPath)
+	pingerPath := filepath.Join(outputDir, "service_extension_same_file", "python", "f_Pinger.py")
+	compareFiles(t, "expected/python.asyncio/service_extension_same_file/f_Pinger.py", pingerPath)
+}

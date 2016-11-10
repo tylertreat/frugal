@@ -711,9 +711,9 @@ func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) err
 	contents := ""
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
 	for _, include := range g.Frugal.Thrift.Includes {
-		namespace := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
-		contents += fmt.Sprintf("import %s.ttypes\n", namespace)
-		contents += fmt.Sprintf("import %s.constants\n", namespace)
+		includeName := g.getPackageNamespace(filepath.Base(include.Name))
+		contents += fmt.Sprintf("import %s.ttypes\n", includeName)
+		contents += fmt.Sprintf("import %s.constants\n", includeName)
 	}
 	contents += "\n"
 	if isArgsOrResult {
@@ -737,10 +737,20 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n\n"
 
+	imports += g.generateServiceExtendsImport(s)
 	imports += g.generateServiceIncludeImports(s)
 
 	_, err := file.WriteString(imports)
 	return err
+}
+
+func (g *Generator) generateServiceExtendsImport(s *parser.Service) string {
+	if s.Extends == "" || strings.Contains(s.Extends, ".") {
+		// Either no super service or it's already imported in an include
+		return ""
+	}
+
+	return fmt.Sprintf("from . import f_%s\n", s.Extends)
 }
 
 func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
@@ -748,15 +758,13 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
 
 	// Import include modules.
 	for _, include := range s.ReferencedIncludes() {
-		imports += fmt.Sprintf("import %s\n", g.Frugal.NamespaceForInclude(include, lang))
+		namespace := g.getPackageNamespace(include)
+		imports += fmt.Sprintf("import %s\n", namespace)
 	}
 
 	// Import this service's modules.
-	namespace, ok := g.Frugal.Thrift.Namespace(lang)
-	if !ok {
-		namespace = g.Frugal.Name
-	}
-	imports += fmt.Sprintf("from %s.ttypes import *\n", namespace)
+	imports += fmt.Sprintf("from .%s import *\n", s.Name)
+	imports += "from .ttypes import *\n"
 
 	return imports
 }
@@ -1099,6 +1107,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	return contents
 }
 
+
 func (g *Generator) generateServiceInterface(service *parser.Service) string {
 	contents := ""
 	if service.Extends != "" {
@@ -1123,7 +1132,8 @@ func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 	serviceName := "f_" + service.ExtendsService()
 	include := service.ExtendsInclude()
 	if include != "" {
-		serviceName = g.Frugal.NamespaceForInclude(include, lang) + "." + serviceName
+		include := g.getPackageNamespace(include)
+		serviceName = include + "." + serviceName
 	}
 	return serviceName
 }
@@ -1310,7 +1320,8 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 		return param
 	}
 
-	return fmt.Sprintf("%s.ttypes.%s", g.Frugal.NamespaceForInclude(include, lang), param)
+	namespace := g.getPackageNamespace(include)
+	return fmt.Sprintf("%s.ttypes.%s", namespace, param)
 }
 
 func (g *Generator) getTType(t *parser.Type) string {
@@ -1332,6 +1343,11 @@ func (g *Generator) getTType(t *parser.Type) string {
 		}
 	}
 	return "TType." + ttype
+}
+
+func (g *Generator) getPackageNamespace(include string) string {
+	namespace := g.Frugal.NamespaceForInclude(include, lang)
+	return g.Options["package_prefix"] + namespace
 }
 
 func getAsyncOpt(options map[string]string) concurrencyModel {
