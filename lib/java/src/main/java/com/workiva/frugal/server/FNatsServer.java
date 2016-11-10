@@ -7,6 +7,7 @@ import com.workiva.frugal.util.BlockingRejectedExecutionHandler;
 import io.nats.client.Connection;
 import io.nats.client.MessageHandler;
 import io.nats.client.Subscription;
+import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.apache.thrift.transport.TTransport;
@@ -296,8 +297,10 @@ public class FNatsServer implements FServer {
             TMemoryOutputBuffer output = new TMemoryOutputBuffer(NATS_MAX_MESSAGE_SIZE);
             try {
                 processor.process(inputProtoFactory.getProtocol(input), outputProtoFactory.getProtocol(output));
+            } catch (TApplicationException e) {
+                LOGGER.error("user handler code returned unhandled error on request:" + e.getMessage());
             } catch (TException e) {
-                LOGGER.warn("error processing frame: " + e.getMessage());
+                LOGGER.error("user handler code returned unhandled error on request:" + e.getMessage());
                 return;
             }
 

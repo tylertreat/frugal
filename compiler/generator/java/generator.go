@@ -2986,7 +2986,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtabtab + "iprot.readMessageEnd();\n"
 		if !method.Oneway {
 			contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"
-			contents += tabtabtabtabtabtab + fmt.Sprintf("writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, \"%s\", e.getMessage());\n", method.Name)
+			contents += tabtabtabtabtabtab + fmt.Sprintf("e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, \"%s\", e.getMessage());\n", method.Name)
 			contents += tabtabtabtabtab + "}\n"
 		}
 		contents += tabtabtabtabtab + "throw e;\n"
@@ -3020,7 +3020,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtab + "} catch (TException e) {\n"
 		contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"
 		contents += tabtabtabtabtabtab + fmt.Sprintf(
-			"writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, \"%s\", \"Internal error processing %s: \" + e.getMessage());\n",
+			"e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, \"%s\", \"Internal error processing %s: \" + e.getMessage());\n",
 			method.Name, method.Name)
 		contents += tabtabtabtabtab + "}\n"
 		contents += tabtabtabtabtab + "throw e;\n"
@@ -3046,13 +3046,14 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtab + "}\n\n"
 	}
 
-	contents += tabtab + "private static void writeApplicationException(FContext ctx, FProtocol oprot, int type, String method, String message) throws TException {\n"
+	contents += tabtab + "private static TApplicationException writeApplicationException(FContext ctx, FProtocol oprot, int type, String method, String message) throws TException {\n"
 	contents += tabtabtab + "TApplicationException x = new TApplicationException(type, message);\n"
 	contents += tabtabtab + "oprot.writeResponseHeader(ctx);\n"
 	contents += tabtabtab + "oprot.writeMessageBegin(new TMessage(method, TMessageType.EXCEPTION, 0));\n"
 	contents += tabtabtab + "x.write(oprot);\n"
 	contents += tabtabtab + "oprot.writeMessageEnd();\n"
 	contents += tabtabtab + "oprot.getTransport().flush();\n"
+	contents += tabtabtab + "return x;\n"
 	contents += tabtab + "}\n\n"
 
 	contents += tab + "}\n\n"
