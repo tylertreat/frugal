@@ -18,17 +18,4 @@ class Python(LanguageBase):
             f.write("__version__ = '{0}'".format(version))
 
     def update_expected_tests(self, root):
-        files_to_update = ['f_Blah.py',
-                           'f_blah_publisher.py',
-                           'f_blah_subscriber.py',
-                           'f_Foo_publisher.py',
-                           'f_Foo_subscriber.py']
-
-        valid = os.path.join(root, "test/out/valid")
-        expected = os.path.join(root, "test/expected/python")
-
-        for f in files_to_update:
-            src = os.path.join(expected, f)
-            dest = os.path.join(valid, f)
-            print "copying {} to {}".format(src, dest)
-            copyfile(src, dest)
+        pass
