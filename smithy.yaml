@@ -1,8 +1,8 @@
 project: frugal
 language: golang
 
-# https://dev.webfilings.org/zuul/release/311561
-runner_image: drydock-prod.workiva.org/workiva/messaging-docker-images:91007
+# https://dev.webfilings.org/zuul/release/313076
+runner_image: drydock-prod.workiva.org/workiva/messaging-docker-images:91836
 
 script:
     - ./scripts/smithy.sh
@@ -16,6 +16,7 @@ script:
 env:
     - FRUGAL_HOME=/smithy-builder/builds/Workiva/frugal/cache/GO/src/github.com/Workiva/frugal # $GOPATH/src/github.com/Workiva/frugal
     - SMITHY_ROOT=/smithy-builder/builds/Workiva/frugal/workspace
+    - CODECOV_TOKEN='d88d0bbe-b5f0-4dce-92ae-a110aa028ddb'
 
 artifacts:
     artifactory:

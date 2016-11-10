@@ -5,17 +5,17 @@ package frugal
 // FProtocolFactory.
 type FScopeProvider struct {
 	//scopeTransportFactory FScopeTransportFactory
-	publisherTransportFactory FPublisherTransportFactory
+	publisherTransportFactory  FPublisherTransportFactory
 	subscriberTransportFactory FSubscriberTransportFactory
-	protocolFactory       *FProtocolFactory
+	protocolFactory            *FProtocolFactory
 }
 
 // NewFScopeProvider creates a new FScopeProvider using the given factories.
 func NewFScopeProvider(pub FPublisherTransportFactory, sub FSubscriberTransportFactory, prot *FProtocolFactory) *FScopeProvider {
 	return &FScopeProvider{
-		publisherTransportFactory: pub,
+		publisherTransportFactory:  pub,
 		subscriberTransportFactory: sub,
-		protocolFactory: prot,
+		protocolFactory:            prot,
 	}
 }
 

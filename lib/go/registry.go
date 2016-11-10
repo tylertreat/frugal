@@ -93,7 +93,7 @@ func (c *fRegistry) Execute(frame []byte) error {
 
 	opid, err := strconv.ParseUint(headers[opID], 10, 64)
 	if err != nil {
-		logger().Warn("frugal: invalid protocol frame:", err)
+		logger().Warn("frugal: invalid protocol frame, op id not a uint64:", err)
 		return err
 	}
 

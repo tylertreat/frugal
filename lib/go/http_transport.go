@@ -68,7 +68,7 @@ func NewFrugalHandlerFunc(processor FProcessor, protocolFactory *FProtocolFactor
 		output := &thrift.TMemoryBuffer{Buffer: outBuf}
 		iprot := protocolFactory.GetProtocol(input)
 		oprot := protocolFactory.GetProtocol(output)
-		err := processor.Process(iprot, oprot);
+		err := processor.Process(iprot, oprot)
 		if err != nil {
 			if _, ok := err.(thrift.TApplicationException); !ok {
 				http.Error(w,

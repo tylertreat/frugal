@@ -31,16 +31,13 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 
 	// Import include modules.
 	for _, include := range s.ReferencedIncludes() {
-		namespace := a.Frugal.NamespaceForInclude(include, lang)
+		namespace := a.getPackageNamespace(include)
 		imports += fmt.Sprintf("import %s\n", namespace)
 	}
+	imports += a.generateServiceExtendsImport(s)
 
 	// Import this service's modules.
-	namespace, ok := a.Frugal.Thrift.Namespace(lang)
-	if !ok {
-		namespace = a.Frugal.Name
-	}
-	imports += fmt.Sprintf("from %s.ttypes import *\n", namespace)
+	imports += "from .ttypes import *\n"
 
 	_, err := file.WriteString(imports)
 	return err
@@ -59,11 +56,7 @@ func (a *AsyncIOGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from frugal.subscription import FSubscription\n"
 	imports += "from frugal.transport import TMemoryOutputBuffer\n\n"
 
-	namespace, ok := a.Frugal.Thrift.Namespace(lang)
-	if !ok {
-		namespace = a.Frugal.Name
-	}
-	imports += fmt.Sprintf("from %s.ttypes import *\n", namespace)
+	imports += "from .ttypes import *\n"
 	_, err := file.WriteString(imports)
 	return err
 }
