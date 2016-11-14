@@ -3,5 +3,6 @@ nose-exclude==0.4.1
 rednose
 mock==1.0.1
 coverage
+setuptools==7.0
 
 -r requirements.txt
