@@ -133,7 +133,7 @@ public class FHttpTransport extends FTransport {
     public void send(byte[] payload) throws TTransportException {
         int requestSizeLimit = getRequestSizeLimit();
         if (requestSizeLimit > 0 && payload.length > requestSizeLimit) {
-            throw new FMessageSizeException(
+            throw FMessageSizeException.forRequest(
                     String.format("Message exceeds %d bytes, was %d bytes",
                             requestSizeLimit, payload.length));
         }
@@ -188,8 +188,7 @@ public class FHttpTransport extends FTransport {
             // Response too large
             int status = response.getStatusLine().getStatusCode();
             if (status == HttpStatus.SC_REQUEST_TOO_LONG) {
-                throw new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE,
-                        "response was too large for the transport");
+                throw FMessageSizeException.forResponse("response was too large for the transport");
             }
 
             // Decode body

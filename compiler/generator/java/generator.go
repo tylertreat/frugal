@@ -2286,6 +2286,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 
 	imports += g.generateStructImports()
 
+	imports += "import com.workiva.frugal.exception.FException;\n"
 	imports += "import com.workiva.frugal.exception.FMessageSizeException;\n"
 	imports += "import com.workiva.frugal.exception.FRateLimitException;\n"
 	imports += "import com.workiva.frugal.exception.FTimeoutException;\n"
@@ -2878,10 +2879,10 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtabtab + "if (message.type == TMessageType.EXCEPTION) {\n"
 	contents += tabtabtabtabtabtabtab + "TApplicationException e = TApplicationException.read(iprot);\n"
 	contents += tabtabtabtabtabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtabtabtabtabtab + "if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {\n"
+	contents += tabtabtabtabtabtabtab + "if (e.getType() == FException.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {\n"
 	contents += tabtabtabtabtabtabtabtab + "TException ex;\n"
-	contents += tabtabtabtabtabtabtabtab + "if (e.getType() == FTransport.RESPONSE_TOO_LARGE){\n"
-	contents += tabtabtabtabtabtabtabtabtab + "ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, \"response too large for transport\");\n"
+	contents += tabtabtabtabtabtabtabtab + "if (e.getType() == FException.RESPONSE_TOO_LARGE) {\n"
+	contents += tabtabtabtabtabtabtabtabtab + "ex = FMessageSizeException.forResponse(e.getMessage());\n"
 	contents += tabtabtabtabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtabtabtabtab + "else {\n"
 	contents += tabtabtabtabtabtabtabtabtab + "ex = new FRateLimitException(\"rate limit exceeded\");\n"
@@ -3035,7 +3036,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtabtab + "} catch (TException e) {\n"
 		contents += tabtabtabtabtabtab + "if (e instanceof FMessageSizeException) {\n"
 		contents += tabtabtabtabtabtabtab + fmt.Sprintf(
-			"writeApplicationException(ctx, oprot, FTransport.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \" + e.getMessage());\n",
+			"writeApplicationException(ctx, oprot, FException.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \" + e.getMessage());\n",
 			method.Name)
 		contents += tabtabtabtabtabtab + "} else {\n"
 		contents += tabtabtabtabtabtabtab + "throw e;\n"

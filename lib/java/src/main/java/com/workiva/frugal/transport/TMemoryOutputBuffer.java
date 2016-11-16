@@ -68,8 +68,8 @@ public class TMemoryOutputBuffer extends TTransport {
     @Override
     public void write(byte[] buf, int off, int len) throws TTransportException {
         if (limit > 0 && buffer.size() + len > limit) {
-            buffer.reset();
-            throw new FMessageSizeException(String.format("Buffer size reached (%d)", limit));
+            reset();
+            throw FMessageSizeException.forRequest(String.format("Buffer size reached (%d)", limit));
         }
         buffer.write(buf, off, len);
     }

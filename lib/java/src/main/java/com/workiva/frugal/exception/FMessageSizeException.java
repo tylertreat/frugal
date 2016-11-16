@@ -1,34 +1,43 @@
 package com.workiva.frugal.exception;
 
-import com.workiva.frugal.transport.FTransport;
 import org.apache.thrift.transport.TTransportException;
 
-// TODO: FMessageSizeException should be used to indicate
-// a TApplicationException instead of a TTransport exception in SDK 2.0.
-
 /**
- * This exception indicates a message was too large for a transport to handle.
+ * TTransportException which indicates a message was too large for a transport to handle.
  */
 public class FMessageSizeException extends TTransportException {
 
-    public FMessageSizeException() {
-        super(FTransport.REQUEST_TOO_LARGE);
-    }
+    /**
+     * TTransportException code which indicates the request was too large for the transport.
+     */
+    public static final int REQUEST_TOO_LARGE = 100;
 
-    public FMessageSizeException(String message) {
-        super(FTransport.REQUEST_TOO_LARGE, message);
-    }
+    /**
+     * TTransportException code which indicates the response was too large for the transport.
+     */
+    public static final int RESPONSE_TOO_LARGE = 101;
 
-    public FMessageSizeException(int type, String message) {
+    private FMessageSizeException(int type, String message) {
         super(type, message);
     }
 
-    public FMessageSizeException(Throwable cause) {
-        super(FTransport.REQUEST_TOO_LARGE, cause);
+    /**
+     * Creates a new FMessageSizeException for an oversized request.
+     *
+     * @param message exception message
+     * @return FMessageSizeException
+     */
+    public static FMessageSizeException forRequest(String message) {
+        return new FMessageSizeException(REQUEST_TOO_LARGE, message);
     }
 
-    public FMessageSizeException(String message, Throwable cause) {
-        super(FTransport.REQUEST_TOO_LARGE, message, cause);
+    /**
+     * Creates a new FMessageSizeException for an oversized response.
+     *
+     * @param message exception message
+     * @return FMessageSizeException
+     */
+    public static FMessageSizeException forResponse(String message) {
+        return new FMessageSizeException(RESPONSE_TOO_LARGE, message);
     }
-
 }

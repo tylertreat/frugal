@@ -44,7 +44,7 @@ public class FNatsTransport extends FTransport {
      * Creates a new FTransport which uses the NATS messaging system as the underlying transport.
      * A request is simply published to a subject and responses are received on a randomly generated
      * subject. This requires requests to fit within a single NATS message.
-     * <p>
+     * <p/>
      * This transport uses a randomly generated inbox for receiving NATS replies.
      *
      * @param conn    NATS connection
@@ -117,7 +117,7 @@ public class FNatsTransport extends FTransport {
         }
 
         if (payload.length > NATS_MAX_MESSAGE_SIZE) {
-            throw new FMessageSizeException(
+            throw FMessageSizeException.forRequest(
                     String.format("Message exceeds %d bytes, was %d bytes",
                             NATS_MAX_MESSAGE_SIZE, payload.length));
         }
@@ -145,9 +145,9 @@ public class FNatsTransport extends FTransport {
 
     /**
      * Convert NATS connection state to a suitable exception type.
-     * @param connState nats connection state
-     * @param prefix prefix to add to exception message
      *
+     * @param connState nats connection state
+     * @param prefix    prefix to add to exception message
      * @return a TTransportException type
      */
     protected static TTransportException getClosedConditionException(Constants.ConnState connState, String prefix) {
