@@ -202,7 +202,9 @@ func (h *fHTTPTransport) Send(data []byte) error {
 	}
 
 	if h.requestSizeLimit > 0 && len(data) > int(h.requestSizeLimit) {
-		return thrift.NewTTransportExceptionFromError(ErrTooLarge)
+		return thrift.NewTTransportException(
+			TTRANSPORT_REQUEST_TOO_LARGE,
+			fmt.Sprintf("Message exceeds %d bytes, was %d bytes", h.requestSizeLimit, len(data)))
 	}
 
 	// Make the HTTP request
@@ -275,7 +277,7 @@ func (h *fHTTPTransport) makeRequest(requestPayload []byte) ([]byte, error) {
 
 	// Response too large
 	if response.StatusCode == http.StatusRequestEntityTooLarge {
-		return nil, thrift.NewTTransportException(RESPONSE_TOO_LARGE,
+		return nil, thrift.NewTTransportException(TTRANSPORT_RESPONSE_TOO_LARGE,
 			"response was too large for the transport")
 	}
 
