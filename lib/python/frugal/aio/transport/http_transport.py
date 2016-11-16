@@ -52,12 +52,14 @@ class FHttpTransport(FRegistryTransport):
         in the registry with the response.
         """
         if len(data) > self._max_message_size > 0:
-            raise FMessageSizeException()
+            raise FMessageSizeException.for_request(
+                'Message exceeds {0} bytes, was {1} bytes'.format(
+                    self._max_message_size, len(data)))
 
         encoded = base64.b64encode(data)
         status, text = await self._make_request(encoded)
         if status == 413:
-            raise FMessageSizeException(
+            raise FMessageSizeException.for_response(
                 'response was too large for the transport')
 
         if status >= 300:

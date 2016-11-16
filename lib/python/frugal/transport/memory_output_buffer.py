@@ -27,7 +27,7 @@ class TMemoryOutputBuffer(TMemoryBuffer, object):
         if len(self) + len(buf) > self._limit > 0:
             self._buffer = TMemoryBuffer()
             raise FMessageSizeException(
-                "Buffer size reached {}".format(self._limit))
+                message="Buffer size reached {}".format(self._limit))
         self._buffer.write(buf)
 
     def getvalue(self):

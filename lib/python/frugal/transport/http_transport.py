@@ -52,7 +52,9 @@ class TBaseHttpTransport(TSynchronousTransport):
         size = len(buf) + len(self._wbuff.getvalue())
         if size + 4 > self._request_capacity > 0:
             self._wbuff = BytesIO()
-            raise FMessageSizeException('Message exceeds max message size')
+            raise FMessageSizeException.for_request(
+                'Message exceeds {0} bytes, was {1} bytes'.format(
+                    self._request_capacity, size + 4))
 
         self._wbuff.write(buf)
 
