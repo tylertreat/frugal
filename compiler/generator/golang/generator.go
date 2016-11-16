@@ -644,7 +644,7 @@ func (g *Generator) generateWrite(s *parser.Struct, sName string) string {
 	return contents
 }
 
-func(g *Generator) generateToString(s *parser.Struct, sName string) string {
+func (g *Generator) generateToString(s *parser.Struct, sName string) string {
 	contents := ""
 
 	contents += fmt.Sprintf("func (p *%s) String() string {\n", sName)
@@ -1130,7 +1130,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += "\tOpen() error\n"
 	publisher += "\tClose() error\n"
 	for _, op := range scope.Operations {
-		publisher += fmt.Sprintf("\tPublish%s(ctx *frugal.FContext, %sreq *%s) error\n", op.Name, args, g.qualifiedTypeName(op.Type))
+		publisher += fmt.Sprintf("\tPublish%s(ctx frugal.FContext, %sreq *%s) error\n", op.Name, args, g.qualifiedTypeName(op.Type))
 	}
 	publisher += "}\n\n"
 
@@ -1184,7 +1184,7 @@ func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operat
 	if op.Comment != nil {
 		publisher += g.GenerateInlineComment(op.Comment, "")
 	}
-	publisher += fmt.Sprintf("func (l *%sPublisher) Publish%s(ctx *frugal.FContext, %sreq *%s) error {\n",
+	publisher += fmt.Sprintf("func (l *%sPublisher) Publish%s(ctx frugal.FContext, %sreq *%s) error {\n",
 		scopeLower, op.Name, args, g.qualifiedTypeName(op.Type))
 	publisher += fmt.Sprintf("\tret := l.methods[\"publish%s\"].Invoke(%s)\n", op.Name, g.generateScopeArgs(scope))
 	publisher += "\tif ret[0] != nil {\n"
@@ -1205,7 +1205,7 @@ func (g *Generator) generateInternalPublishMethod(scope *parser.Scope, op *parse
 		publisher  = ""
 	)
 
-	publisher += fmt.Sprintf("func (l *%sPublisher) publish%s(ctx *frugal.FContext, %sreq *%s) error {\n",
+	publisher += fmt.Sprintf("func (l *%sPublisher) publish%s(ctx frugal.FContext, %sreq *%s) error {\n",
 		scopeLower, op.Name, args, g.qualifiedTypeName(op.Type))
 	publisher += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 	publisher += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
@@ -1275,7 +1275,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 	subscriber += fmt.Sprintf("type %sSubscriber interface {\n", scopeCamel)
 	for _, op := range scope.Operations {
-		subscriber += fmt.Sprintf("\tSubscribe%s(%shandler func(*frugal.FContext, *%s)) (*frugal.FSubscription, error)\n",
+		subscriber += fmt.Sprintf("\tSubscribe%s(%shandler func(frugal.FContext, *%s)) (*frugal.FSubscription, error)\n",
 			op.Name, args, g.qualifiedTypeName(op.Type))
 	}
 	subscriber += "}\n\n"
@@ -1310,7 +1310,7 @@ func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Oper
 	if op.Comment != nil {
 		subscriber += g.GenerateInlineComment(op.Comment, "")
 	}
-	subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*frugal.FContext, *%s)) (*frugal.FSubscription, error) {\n",
+	subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(frugal.FContext, *%s)) (*frugal.FSubscription, error) {\n",
 		scopeLower, op.Name, args, g.qualifiedTypeName(op.Type))
 	subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 	subscriber += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
@@ -1325,7 +1325,7 @@ func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Oper
 	subscriber += "\treturn sub, nil\n"
 	subscriber += "}\n\n"
 
-	subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, pf *frugal.FProtocolFactory, handler func(*frugal.FContext, *%s)) frugal.FAsyncCallback {\n",
+	subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *%s)) frugal.FAsyncCallback {\n",
 		scopeLower, op.Name, g.qualifiedTypeName(op.Type))
 	subscriber += fmt.Sprintf("\tmethod := frugal.NewMethod(l, handler, \"Subscribe%s\", l.middleware)\n", op.Name)
 	subscriber += "\treturn func(transport thrift.TTransport) error {\n"
@@ -1382,7 +1382,7 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, "\t")
 		}
-		contents += fmt.Sprintf("\t%s(ctx *frugal.FContext%s) %s\n",
+		contents += fmt.Sprintf("\t%s(ctx frugal.FContext%s) %s\n",
 			snakeToCamel(method.Name), g.generateInterfaceArgs(method.Arguments),
 			g.generateReturnArgs(method))
 	}
@@ -1477,7 +1477,7 @@ func (g *Generator) generateAsyncClientMethod(service *parser.Service, method *p
 	if method.Comment != nil {
 		contents += g.GenerateInlineComment(method.Comment, "")
 	}
-	contents += fmt.Sprintf("func (f *F%sClient) %sAsync(ctx *frugal.FContext%s) %s {\n",
+	contents += fmt.Sprintf("func (f *F%sClient) %sAsync(ctx frugal.FContext%s) %s {\n",
 		servTitle, nameTitle, g.generateInputArgs(method.Arguments), g.generateAsyncReturnArgs(method))
 	contents += "\terrC := make(chan error, 1)\n"
 	if method.ReturnType != nil {
@@ -1515,7 +1515,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	if method.Comment != nil {
 		contents += g.GenerateInlineComment(method.Comment, "")
 	}
-	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx *frugal.FContext%s) %s {\n",
+	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx frugal.FContext%s) %s {\n",
 		servTitle, nameTitle, g.generateInputArgs(method.Arguments), g.generateReturnArgs(method))
 	contents += fmt.Sprintf("\tret := f.methods[\"%s\"].Invoke(%s)\n", nameLower, g.generateClientArgs(method))
 	numReturn := "2"
@@ -1550,7 +1550,7 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	)
 
 	contents := ""
-	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx *frugal.FContext%s) %s {\n",
+	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx frugal.FContext%s) %s {\n",
 		servTitle, nameLower, g.generateInputArgs(method.Arguments), g.generateReturnArgs(method))
 	var returnType string
 	if !method.Oneway {
@@ -1620,7 +1620,7 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf(
-		"func (f *F%sClient) recv%sHandler(ctx *frugal.FContext, resultC chan<- %s, errorC chan<- error) frugal.FAsyncCallback {\n",
+		"func (f *F%sClient) recv%sHandler(ctx frugal.FContext, resultC chan<- %s, errorC chan<- error) frugal.FAsyncCallback {\n",
 		servTitle, nameTitle, returnType)
 	contents += "\treturn func(tr thrift.TTransport) error {\n"
 	contents += "\t\tiprot := f.protocolFactory.GetProtocol(tr)\n"
@@ -1757,7 +1757,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\t*frugal.FBaseProcessorFunction\n"
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func (p *%sF%s) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {\n", servLower, nameTitle)
+	contents += fmt.Sprintf("func (p *%sF%s) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {\n", servLower, nameTitle)
 	contents += fmt.Sprintf("\targs := %s%sArgs{}\n", servTitle, nameTitle)
 	contents += "\tvar err error\n"
 	contents += "\tif err = args.Read(iprot); err != nil {\n"
@@ -1922,7 +1922,7 @@ func (g *Generator) generateMethodException(prefix string, service *parser.Servi
 
 func (g *Generator) generateWriteApplicationError(service *parser.Service) string {
 	servLower := strings.ToLower(service.Name)
-	contents := fmt.Sprintf("func %sWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, "+
+	contents := fmt.Sprintf("func %sWriteApplicationError(ctx frugal.FContext, oprot *frugal.FProtocol, "+
 		"type_ int32, method, message string) error {\n", servLower)
 	contents += "\tx := thrift.NewTApplicationException(type_, message)\n"
 	contents += "\toprot.WriteResponseHeader(ctx)\n"

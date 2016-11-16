@@ -65,10 +65,10 @@ type FSubscriberTransport interface {
 // and unregistering an FAsyncCallback to an FContext.
 type FTransport interface {
 	// Register a callback for the given Context.
-	Register(*FContext, FAsyncCallback) error
+	Register(FContext, FAsyncCallback) error
 
 	// Unregister a callback for the given Context.
-	Unregister(*FContext)
+	Unregister(FContext)
 
 	// SetMonitor starts a monitor that can watch the health of, and reopen,
 	// the transport.
@@ -138,12 +138,12 @@ func (f *fBaseTransport) ExecuteFrame(frame []byte) error {
 }
 
 // Register a callback for the given Context. Only called by generated code.
-func (f *fBaseTransport) Register(ctx *FContext, callback FAsyncCallback) error {
+func (f *fBaseTransport) Register(ctx FContext, callback FAsyncCallback) error {
 	return f.registry.Register(ctx, callback)
 }
 
 // Unregister a callback for the given Context. Only called by generated code.
-func (f *fBaseTransport) Unregister(ctx *FContext) {
+func (f *fBaseTransport) Unregister(ctx FContext) {
 	f.registry.Unregister(ctx)
 }
 

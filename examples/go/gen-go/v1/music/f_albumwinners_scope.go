@@ -18,7 +18,7 @@ const delimiter = "."
 type AlbumWinnersPublisher interface {
 	Open() error
 	Close() error
-	PublishWinner(ctx *frugal.FContext, req *Album) error
+	PublishWinner(ctx frugal.FContext, req *Album) error
 }
 
 type albumWinnersPublisher struct {
@@ -47,7 +47,7 @@ func (l *albumWinnersPublisher) Close() error {
 	return l.transport.Close()
 }
 
-func (l *albumWinnersPublisher) PublishWinner(ctx *frugal.FContext, req *Album) error {
+func (l *albumWinnersPublisher) PublishWinner(ctx frugal.FContext, req *Album) error {
 	ret := l.methods["publishWinner"].Invoke([]interface{}{ctx, req})
 	if ret[0] != nil {
 		return ret[0].(error)
@@ -55,7 +55,7 @@ func (l *albumWinnersPublisher) PublishWinner(ctx *frugal.FContext, req *Album) 
 	return nil
 }
 
-func (l *albumWinnersPublisher) publishWinner(ctx *frugal.FContext, req *Album) error {
+func (l *albumWinnersPublisher) publishWinner(ctx frugal.FContext, req *Album) error {
 	op := "Winner"
 	prefix := "v1.music."
 	topic := fmt.Sprintf("%sAlbumWinners%s%s", prefix, delimiter, op)
@@ -83,7 +83,7 @@ func (l *albumWinnersPublisher) publishWinner(ctx *frugal.FContext, req *Album) 
 // semantics. Subscribers to this scope will be notified if they win a contest.
 // Scopes must have a prefix.
 type AlbumWinnersSubscriber interface {
-	SubscribeWinner(handler func(*frugal.FContext, *Album)) (*frugal.FSubscription, error)
+	SubscribeWinner(handler func(frugal.FContext, *Album)) (*frugal.FSubscription, error)
 }
 
 type albumWinnersSubscriber struct {
@@ -95,7 +95,7 @@ func NewAlbumWinnersSubscriber(provider *frugal.FScopeProvider, middleware ...fr
 	return &albumWinnersSubscriber{provider: provider, middleware: middleware}
 }
 
-func (l *albumWinnersSubscriber) SubscribeWinner(handler func(*frugal.FContext, *Album)) (*frugal.FSubscription, error) {
+func (l *albumWinnersSubscriber) SubscribeWinner(handler func(frugal.FContext, *Album)) (*frugal.FSubscription, error) {
 	op := "Winner"
 	prefix := "v1.music."
 	topic := fmt.Sprintf("%sAlbumWinners%s%s", prefix, delimiter, op)
@@ -109,7 +109,7 @@ func (l *albumWinnersSubscriber) SubscribeWinner(handler func(*frugal.FContext, 
 	return sub, nil
 }
 
-func (l *albumWinnersSubscriber) recvWinner(op string, pf *frugal.FProtocolFactory, handler func(*frugal.FContext, *Album)) frugal.FAsyncCallback {
+func (l *albumWinnersSubscriber) recvWinner(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *Album)) frugal.FAsyncCallback {
 	method := frugal.NewMethod(l, handler, "SubscribeWinner", l.middleware)
 	return func(transport thrift.TTransport) error {
 		iprot := pf.GetProtocol(transport)

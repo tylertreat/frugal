@@ -51,7 +51,7 @@ func TestReadRequestHeader(t *testing.T) {
 	ctx, err := proto.ReadRequestHeader()
 	assert.Nil(err)
 	assert.Equal(frugalHeaders[cid], ctx.CorrelationID())
-	assert.Equal(uint64(0), ctx.opID())
+	assert.Equal(uint64(0), getOpID(ctx))
 	val, ok := ctx.RequestHeader("hello")
 	assert.True(ok)
 	assert.Equal(frugalHeaders["hello"], val)
@@ -124,7 +124,7 @@ func TestWriteReadRequestHeader(t *testing.T) {
 	assert.True(ok)
 	assert.Equal("bar", header)
 	assert.Equal("123", ctx.CorrelationID())
-	assert.Equal(uint64(0), ctx.opID())
+	assert.Equal(uint64(0), getOpID(ctx))
 }
 
 // Ensures WriteResponseHeader properly encodes header bytes and
@@ -147,7 +147,7 @@ func TestWriteReadResponseHeader(t *testing.T) {
 	assert.True(ok)
 	assert.Equal("bar", header)
 	assert.Equal("123", ctx.CorrelationID())
-	assert.Equal(uint64(0), ctx.opID())
+	assert.Equal(uint64(0), getOpID(ctx))
 }
 
 // Ensures readHeader returns an error if there are not enough frame bytes to

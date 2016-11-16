@@ -34,7 +34,7 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	subscriber.SubscribeWinner(func(ctx *frugal.FContext, m *music.Album) {
+	subscriber.SubscribeWinner(func(ctx frugal.FContext, m *music.Album) {
 		fmt.Printf("received %+v : %+v\n", ctx, m)
 		defer wg.Done()
 	})

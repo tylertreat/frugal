@@ -37,7 +37,7 @@ func TestClientRegistry(t *testing.T) {
 
 	// Register the context for the first time
 	assert.Nil(registry.Register(ctx, cb))
-	opID := ctx.opID()
+	opID := getOpID(ctx)
 	assert.True(opID > 0)
 	// Encode a frame with this context
 	transport := &thrift.TMemoryBuffer{Buffer: new(bytes.Buffer)}
@@ -54,7 +54,7 @@ func TestClientRegistry(t *testing.T) {
 
 	// Unregister the context
 	registry.Unregister(ctx)
-	_, ok := registry.(*fRegistry).handlers[ctx.opID()]
+	_, ok := registry.(*fRegistry).handlers[getOpID(ctx)]
 	assert.False(ok)
 	// But make sure execute sill returns nil when executing a frame with the
 	// same opID (it will just drop the frame)
@@ -63,7 +63,7 @@ func TestClientRegistry(t *testing.T) {
 
 	// Now, register the same context again and ensure the opID is increased.
 	assert.Nil(registry.Register(ctx, cb))
-	assert.True(ctx.opID() > opID)
+	assert.True(getOpID(ctx) > opID)
 }
 
 type mockProcessor struct {

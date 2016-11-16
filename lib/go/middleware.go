@@ -42,8 +42,13 @@ type (
 )
 
 // Context returns the first argument value as an FContext.
-func (a Arguments) Context() *FContext {
-	return a[0].(*FContext)
+func (a Arguments) Context() FContext {
+	return a[0].(FContext)
+}
+
+// Context sets the given FContext as the first argument.
+func (a Arguments) SetContext(ctx FContext) {
+	a[0] = ctx
 }
 
 // Error returns the last return value as an error.

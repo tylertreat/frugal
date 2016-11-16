@@ -71,7 +71,7 @@ func StartClient(
 		resp := make(chan bool)
 		subscriber := frugaltest.NewEventsSubscriber(provider)
 		// TODO: Document SubscribeEventCreated "user" cannot contain spaces
-		_, err = subscriber.SubscribeEventCreated("foo", "Client", "response", fmt.Sprintf("%d", port), func(ctx *frugal.FContext, e *frugaltest.Event) {
+		_, err = subscriber.SubscribeEventCreated("foo", "Client", "response", fmt.Sprintf("%d", port), func(ctx frugal.FContext, e *frugaltest.Event) {
 			fmt.Printf(" Response received %v\n", e)
 			close(resp)
 		})

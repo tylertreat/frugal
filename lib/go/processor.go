@@ -93,7 +93,7 @@ func (f *FBaseProcessor) GetWriteMutex() *sync.Mutex {
 type FProcessorFunction interface {
 	// Process the request from the input protocol and write the response to
 	// the output protocol.
-	Process(ctx *FContext, in, out *FProtocol) error
+	Process(ctx FContext, in, out *FProtocol) error
 
 	// AddMiddleware adds the given ServiceMiddleware to the
 	// FProcessorFunction. This should only be called before the server is

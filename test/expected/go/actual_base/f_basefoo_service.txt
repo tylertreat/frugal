@@ -18,7 +18,7 @@ var _ = fmt.Printf
 var _ = bytes.Equal
 
 type FBaseFoo interface {
-	BasePing(ctx *frugal.FContext) (err error)
+	BasePing(ctx frugal.FContext) (err error)
 }
 
 type FBaseFooClient struct {
@@ -38,7 +38,7 @@ func NewFBaseFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middlewa
 	return client
 }
 
-func (f *FBaseFooClient) BasePing(ctx *frugal.FContext) (err error) {
+func (f *FBaseFooClient) BasePing(ctx frugal.FContext) (err error) {
 	ret := f.methods["basePing"].Invoke([]interface{}{ctx})
 	if len(ret) != 1 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
@@ -49,7 +49,7 @@ func (f *FBaseFooClient) BasePing(ctx *frugal.FContext) (err error) {
 	return err
 }
 
-func (f *FBaseFooClient) basePing(ctx *frugal.FContext) (err error) {
+func (f *FBaseFooClient) basePing(ctx frugal.FContext) (err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan struct{}, 1)
 	if err = f.transport.Register(ctx, f.recvBasePingHandler(ctx, resultC, errorC)); err != nil {
@@ -90,7 +90,7 @@ func (f *FBaseFooClient) basePing(ctx *frugal.FContext) (err error) {
 	return
 }
 
-func (f *FBaseFooClient) recvBasePingHandler(ctx *frugal.FContext, resultC chan<- struct{}, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FBaseFooClient) recvBasePingHandler(ctx frugal.FContext, resultC chan<- struct{}, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -166,7 +166,7 @@ type basefooFBasePing struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *basefooFBasePing) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := BaseFooBasePingArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -239,7 +239,7 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 	return err
 }
 
-func basefooWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) error {
+func basefooWriteApplicationError(ctx frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) error {
 	x := thrift.NewTApplicationException(type_, message)
 	oprot.WriteResponseHeader(ctx)
 	oprot.WriteMessageBegin(method, thrift.EXCEPTION, 0)

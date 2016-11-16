@@ -15,11 +15,11 @@ type mockFRegistry struct {
 	executeCalled chan struct{}
 }
 
-func (m *mockFRegistry) Register(ctx *FContext, cb FAsyncCallback) error {
+func (m *mockFRegistry) Register(ctx FContext, cb FAsyncCallback) error {
 	return m.Called(ctx, cb).Error(0)
 }
 
-func (m *mockFRegistry) Unregister(ctx *FContext) {
+func (m *mockFRegistry) Unregister(ctx FContext) {
 	m.Called(ctx)
 }
 

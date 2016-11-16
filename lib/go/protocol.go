@@ -87,25 +87,25 @@ type FProtocol struct {
 
 // WriteRequestHeader writes the request headers set on the given Context
 // into the protocol
-func (f *FProtocol) WriteRequestHeader(ctx *FContext) error {
+func (f *FProtocol) WriteRequestHeader(ctx FContext) error {
 	return f.writeHeader(ctx.RequestHeaders())
 }
 
 // ReadRequestHeader reads the request headers on the protocol into a
 // returned Context
-func (f *FProtocol) ReadRequestHeader() (*FContext, error) {
+func (f *FProtocol) ReadRequestHeader() (FContext, error) {
 	headers, err := readHeader(f.Transport())
 	if err != nil {
 		return nil, err
 	}
 
-	ctx := &FContext{
+	ctx := &FContextImpl{
 		requestHeaders:  make(map[string]string),
 		responseHeaders: make(map[string]string),
 	}
 
 	for name, value := range headers {
-		ctx.addRequestHeader(name, value)
+		ctx.AddRequestHeader(name, value)
 	}
 
 	// Put op id in response headers
@@ -113,27 +113,27 @@ func (f *FProtocol) ReadRequestHeader() (*FContext, error) {
 	if !ok {
 		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: request missing op id")
 	}
-	ctx.setResponseOpID(opid)
+	setResponseOpID(ctx, opid)
 
 	return ctx, nil
 }
 
 // WriteResponseHeader writes the response headers set on the given Context
 // into the protocol
-func (f *FProtocol) WriteResponseHeader(ctx *FContext) error {
+func (f *FProtocol) WriteResponseHeader(ctx FContext) error {
 	return f.writeHeader(ctx.ResponseHeaders())
 }
 
 // ReadResponseHeader reads the response headers on the protocol into a
 // provided Context
-func (f *FProtocol) ReadResponseHeader(ctx *FContext) error {
+func (f *FProtocol) ReadResponseHeader(ctx FContext) error {
 	headers, err := readHeader(f.Transport())
 	if err != nil {
 		return err
 	}
 
 	for name, value := range headers {
-		ctx.addResponseHeader(name, value)
+		ctx.AddResponseHeader(name, value)
 	}
 
 	return nil
