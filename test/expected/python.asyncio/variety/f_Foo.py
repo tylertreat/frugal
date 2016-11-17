@@ -12,8 +12,10 @@ import inspect
 
 from frugal.aio.processor import FBaseProcessor
 from frugal.aio.processor import FProcessorFunction
-from frugal.exceptions import FTimeoutException
+from frugal.exceptions import FApplicationException
+from frugal.exceptions import FMessageSizeException
 from frugal.exceptions import FRateLimitException
+from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
@@ -173,7 +175,10 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
-                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    return
+                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
@@ -232,7 +237,10 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
-                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    return
+                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
@@ -324,7 +332,10 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
-                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    return
+                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
@@ -389,7 +400,10 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
-                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    return
+                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
@@ -449,7 +463,10 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
-                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    return
+                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
@@ -505,7 +522,10 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
-                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    return
+                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
@@ -561,7 +581,10 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
-                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    return
+                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
@@ -618,18 +641,21 @@ class _ping(FProcessorFunction):
                 ret = await ret
         except FRateLimitException as ex:
             async with self._write_lock:
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "ping", ex.message)
+                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "ping", ex.message)
                 return
         except Exception as e:
             async with self._write_lock:
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "ping", e.args[0] if e.args else 'unknown exception')
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "ping", e.args[0])
             raise e from None
         async with self._write_lock:
-            oprot.write_response_headers(ctx)
-            oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
-            result.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "ping", e.args[0])
 
 
 class _blah(FProcessorFunction):
@@ -650,7 +676,7 @@ class _blah(FProcessorFunction):
             result.success = ret
         except FRateLimitException as ex:
             async with self._write_lock:
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "blah", ex.message)
+                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "blah", ex.message)
                 return
         except AwesomeException as awe:
             result.awe = awe
@@ -658,14 +684,17 @@ class _blah(FProcessorFunction):
             result.api = api
         except Exception as e:
             async with self._write_lock:
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "blah", e.args[0] if e.args else 'unknown exception')
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "blah", e.args[0])
             raise e from None
         async with self._write_lock:
-            oprot.write_response_headers(ctx)
-            oprot.writeMessageBegin('blah', TMessageType.REPLY, 0)
-            result.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('blah', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "blah", e.args[0])
 
 
 class _oneWay(FProcessorFunction):
@@ -684,7 +713,7 @@ class _oneWay(FProcessorFunction):
                 ret = await ret
         except FRateLimitException as ex:
             async with self._write_lock:
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "oneWay", ex.message)
+                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "oneWay", ex.message)
                 return
         except Exception as e:
             raise e from None
@@ -708,20 +737,23 @@ class _bin_method(FProcessorFunction):
             result.success = ret
         except FRateLimitException as ex:
             async with self._write_lock:
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "bin_method", ex.message)
+                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "bin_method", ex.message)
                 return
         except actual_base.python.ttypes.api_exception as api:
             result.api = api
         except Exception as e:
             async with self._write_lock:
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "bin_method", e.args[0] if e.args else 'unknown exception')
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "bin_method", e.args[0])
             raise e from None
         async with self._write_lock:
-            oprot.write_response_headers(ctx)
-            oprot.writeMessageBegin('bin_method', TMessageType.REPLY, 0)
-            result.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('bin_method', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "bin_method", e.args[0])
 
 
 class _param_modifiers(FProcessorFunction):
@@ -742,18 +774,21 @@ class _param_modifiers(FProcessorFunction):
             result.success = ret
         except FRateLimitException as ex:
             async with self._write_lock:
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "param_modifiers", ex.message)
+                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "param_modifiers", ex.message)
                 return
         except Exception as e:
             async with self._write_lock:
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "param_modifiers", e.args[0] if e.args else 'unknown exception')
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "param_modifiers", e.args[0])
             raise e from None
         async with self._write_lock:
-            oprot.write_response_headers(ctx)
-            oprot.writeMessageBegin('param_modifiers', TMessageType.REPLY, 0)
-            result.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('param_modifiers', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "param_modifiers", e.args[0])
 
 
 class _underlying_types_test(FProcessorFunction):
@@ -774,18 +809,21 @@ class _underlying_types_test(FProcessorFunction):
             result.success = ret
         except FRateLimitException as ex:
             async with self._write_lock:
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "underlying_types_test", ex.message)
+                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "underlying_types_test", ex.message)
                 return
         except Exception as e:
             async with self._write_lock:
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "underlying_types_test", e.args[0] if e.args else 'unknown exception')
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "underlying_types_test", e.args[0])
             raise e from None
         async with self._write_lock:
-            oprot.write_response_headers(ctx)
-            oprot.writeMessageBegin('underlying_types_test', TMessageType.REPLY, 0)
-            result.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('underlying_types_test', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "underlying_types_test", e.args[0])
 
 
 class _getThing(FProcessorFunction):
@@ -806,18 +844,21 @@ class _getThing(FProcessorFunction):
             result.success = ret
         except FRateLimitException as ex:
             async with self._write_lock:
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getThing", ex.message)
+                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getThing", ex.message)
                 return
         except Exception as e:
             async with self._write_lock:
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getThing", e.args[0] if e.args else 'unknown exception')
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getThing", e.args[0])
             raise e from None
         async with self._write_lock:
-            oprot.write_response_headers(ctx)
-            oprot.writeMessageBegin('getThing', TMessageType.REPLY, 0)
-            result.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('getThing', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "getThing", e.args[0])
 
 
 class _getMyInt(FProcessorFunction):
@@ -838,18 +879,21 @@ class _getMyInt(FProcessorFunction):
             result.success = ret
         except FRateLimitException as ex:
             async with self._write_lock:
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getMyInt", ex.message)
+                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getMyInt", ex.message)
                 return
         except Exception as e:
             async with self._write_lock:
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getMyInt", e.args[0] if e.args else 'unknown exception')
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "getMyInt", e.args[0])
             raise e from None
         async with self._write_lock:
-            oprot.write_response_headers(ctx)
-            oprot.writeMessageBegin('getMyInt', TMessageType.REPLY, 0)
-            result.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('getMyInt', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "getMyInt", e.args[0])
 
 
 def _write_application_exception(ctx, oprot, typ, method, message):

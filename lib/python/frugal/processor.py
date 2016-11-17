@@ -1,7 +1,10 @@
 import logging
 from threading import Lock
 
-from thrift.Thrift import TApplicationException, TMessageType, TType
+from thrift.Thrift import TApplicationException
+from thrift.Thrift import TException
+from thrift.Thrift import TMessageType
+from thrift.Thrift import TType
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +67,11 @@ class FBaseProcessor(FProcessor):
         if processor_function:
             try:
                 return processor_function.process(context, iprot, oprot)
+            except TException:
+                logging.exception(
+                    'frugal: exception occurred while processing request with '
+                    'correlation id {}'.format(context.get_correlation_id()))
+                raise
             except Exception:
                 logger.exception(
                     'frugal: user handler code raised unhandled ' +
