@@ -34,10 +34,12 @@ import javax.annotation.Generated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.workiva.frugal.exception.FApplicationException;
 import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.exception.FRateLimitException;
 import com.workiva.frugal.exception.FTimeoutException;
+import com.workiva.frugal.exception.FTransportException;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.processor.FBaseProcessor;
@@ -152,13 +154,12 @@ public class FStore {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FException.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
-								TException ex;
-								if (e.getType() == FException.RESPONSE_TOO_LARGE) {
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
 									ex = FMessageSizeException.forResponse(e.getMessage());
-								}
-								else {
-									ex = new FRateLimitException("rate limit exceeded");
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
 								}
 								try {
 									result.put(ex);
@@ -245,13 +246,12 @@ public class FStore {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FException.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
-								TException ex;
-								if (e.getType() == FException.RESPONSE_TOO_LARGE) {
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
 									ex = FMessageSizeException.forResponse(e.getMessage());
-								}
-								else {
-									ex = new FRateLimitException("rate limit exceeded");
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
 								}
 								try {
 									result.put(ex);
@@ -332,7 +332,7 @@ public class FStore {
 				} catch (PurchasingError error) {
 					result.error = error;
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "buyAlbum", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "buyAlbum", "rate limit exceeded");
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -349,7 +349,7 @@ public class FStore {
 						oprot.getTransport().flush();
 					} catch (TException e) {
 						if (e instanceof FMessageSizeException) {
-							writeApplicationException(ctx, oprot, FException.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: " + e.getMessage());
+							writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -378,7 +378,7 @@ public class FStore {
 					result.success = handler.enterAlbumGiveaway(ctx, args.email, args.name);
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", "rate limit exceeded");
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -395,7 +395,7 @@ public class FStore {
 						oprot.getTransport().flush();
 					} catch (TException e) {
 						if (e instanceof FMessageSizeException) {
-							writeApplicationException(ctx, oprot, FException.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: " + e.getMessage());
+							writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}

@@ -7,16 +7,6 @@ import org.apache.thrift.transport.TTransportException;
  */
 public class FMessageSizeException extends TTransportException {
 
-    /**
-     * TTransportException code which indicates the request was too large for the transport.
-     */
-    public static final int REQUEST_TOO_LARGE = 100;
-
-    /**
-     * TTransportException code which indicates the response was too large for the transport.
-     */
-    public static final int RESPONSE_TOO_LARGE = 101;
-
     private FMessageSizeException(int type, String message) {
         super(type, message);
     }
@@ -28,7 +18,7 @@ public class FMessageSizeException extends TTransportException {
      * @return FMessageSizeException
      */
     public static FMessageSizeException forRequest(String message) {
-        return new FMessageSizeException(REQUEST_TOO_LARGE, message);
+        return new FMessageSizeException(FTransportException.REQUEST_TOO_LARGE, message);
     }
 
     /**
@@ -38,6 +28,6 @@ public class FMessageSizeException extends TTransportException {
      * @return FMessageSizeException
      */
     public static FMessageSizeException forResponse(String message) {
-        return new FMessageSizeException(RESPONSE_TOO_LARGE, message);
+        return new FMessageSizeException(FTransportException.RESPONSE_TOO_LARGE, message);
     }
 }

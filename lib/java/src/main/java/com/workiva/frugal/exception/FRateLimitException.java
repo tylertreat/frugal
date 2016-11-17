@@ -7,14 +7,12 @@ import org.apache.thrift.TApplicationException;
  */
 public class FRateLimitException extends TApplicationException {
 
-    public static final int RATE_LIMIT_EXCEEDED = 102;
-
     public FRateLimitException() {
-        super(RATE_LIMIT_EXCEEDED);
+        super(FApplicationException.RATE_LIMIT_EXCEEDED);
     }
 
     public FRateLimitException(String message) {
-        super(RATE_LIMIT_EXCEEDED, message);
+        super(FApplicationException.RATE_LIMIT_EXCEEDED, message);
     }
 
     public FRateLimitException(int type, String message) {
