@@ -2,6 +2,7 @@ package python
 
 import (
 	"fmt"
+	"strings"
 	"os"
 
 	"github.com/Workiva/frugal/compiler/globals"
@@ -32,7 +33,13 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	// Import include modules.
 	for _, include := range s.ReferencedIncludes() {
 		namespace := a.getPackageNamespace(include)
-		imports += fmt.Sprintf("import %s\n", namespace)
+		imports += fmt.Sprintf("import %s.ttypes\n", namespace)
+		imports += fmt.Sprintf("import %s.constants\n", namespace)
+		if s.Extends != "" {
+			extendsSlice := strings.Split(s.Extends, ".")
+			extendsService := extendsSlice[len(extendsSlice) - 1]
+			imports += fmt.Sprintf("import %s.f_%s\n", namespace, extendsService)
+		}
 	}
 	imports += a.generateServiceExtendsImport(s)
 

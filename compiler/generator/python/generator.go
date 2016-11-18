@@ -93,10 +93,6 @@ func (g *Generator) TeardownGenerator() error {
 
 // GenerateConstantsContents generates constants.
 func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) error {
-	if len(constants) == 0 {
-		return nil
-	}
-
 	file, err := g.GenerateFile("constants", g.outputDir, generator.ObjectFile)
 	defer file.Close()
 	if err != nil {
@@ -759,7 +755,13 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
 	// Import include modules.
 	for _, include := range s.ReferencedIncludes() {
 		namespace := g.getPackageNamespace(include)
-		imports += fmt.Sprintf("import %s\n", namespace)
+		imports += fmt.Sprintf("import %s.ttypes\n", namespace)
+		imports += fmt.Sprintf("import %s.constants\n", namespace)
+		if s.Extends != "" {
+			extendsSlice := strings.Split(s.Extends, ".")
+			extendsService := extendsSlice[len(extendsSlice) - 1]
+			imports += fmt.Sprintf("import %s.f_%s\n", namespace, extendsService)
+		}
 	}
 
 	// Import this service's modules.
