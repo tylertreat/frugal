@@ -15,8 +15,4 @@ public class FRateLimitException extends TApplicationException {
         super(FApplicationException.RATE_LIMIT_EXCEEDED, message);
     }
 
-    public FRateLimitException(int type, String message) {
-        super(type, message);
-    }
-
 }
