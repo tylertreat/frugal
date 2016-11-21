@@ -18,9 +18,15 @@ from frugal.middleware import Method
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
-import actual_base.python
-import validStructs
-import ValidTypes
+import actual_base.python.ttypes
+import actual_base.python.constants
+import actual_base.python.f_BaseFoo
+import validStructs.ttypes
+import validStructs.constants
+import validStructs.f_BaseFoo
+import ValidTypes.ttypes
+import ValidTypes.constants
+import ValidTypes.f_BaseFoo
 from .ttypes import *
 
 
