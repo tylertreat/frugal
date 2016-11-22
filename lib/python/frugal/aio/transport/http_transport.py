@@ -59,7 +59,7 @@ class FHttpTransport(FRegistryTransport):
         encoded = base64.b64encode(data)
         status, text = await self._make_request(encoded)
         if status == 413:
-            raise FMessageSizeException.reesponse(
+            raise FMessageSizeException.response(
                 'response was too large for the transport')
 
         if status >= 300:
