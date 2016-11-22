@@ -36,11 +36,13 @@ class FMessageSizeError extends TTransportError {
   FMessageSizeError(int type, String message) : super(type, message);
 
   /// Create an [FMessageSizeError] indicating the request is too large.
-  FMessageSizeError.request({String message: "request was too large for the transport"})
+  FMessageSizeError.request(
+      {String message: "request was too large for the transport"})
       : super(FTransportError.REQUEST_TOO_LARGE, message);
 
   /// Create an [FMessageSizeError] indicating the response is too large.
-  FMessageSizeError.response({String message: "response was too large for the transport"})
+  FMessageSizeError.response(
+      {String message: "response was too large for the transport"})
       : super(FTransportError.RESPONSE_TOO_LARGE, message);
 }
 

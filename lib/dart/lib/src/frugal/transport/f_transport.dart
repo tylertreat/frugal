@@ -7,7 +7,6 @@ part of frugal.src.frugal;
 /// handle callback data, also has an [FRegistry], so it provides methods for
 /// registering and unregistering an [FAsyncCallback] to an [FContext].
 abstract class FTransport {
-
   MonitorRunner _monitor;
   StreamController _closeController = new StreamController.broadcast();
   FRegistry _registry;
