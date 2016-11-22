@@ -14,8 +14,9 @@ import (
 var ErrTimeout = errors.New("frugal: request timed out")
 
 const (
-	cid            = "_cid"
-	opID           = "_opid"
+	cidHeader      = "_cid"     // Header containing correlation id
+	opIDHeader     = "_opid"    // Header containing op id (uint64 as string)
+	timeoutHeader  = "_timeout" // Header containing request timeout (milliseconds as string)
 	defaultTimeout = 5 * time.Second
 )
 
@@ -41,7 +42,6 @@ type FContext struct {
 	requestHeaders  map[string]string
 	responseHeaders map[string]string
 	mu              sync.RWMutex
-	timeout         time.Duration
 }
 
 // NewFContext returns a Context for the given correlation id. If an empty
@@ -54,11 +54,11 @@ func NewFContext(correlationID string) *FContext {
 	}
 	ctx := &FContext{
 		requestHeaders: map[string]string{
-			cid:  correlationID,
-			opID: "0",
+			cidHeader:     correlationID,
+			opIDHeader:    "0",
+			timeoutHeader: strconv.FormatInt(int64(defaultTimeout/time.Millisecond), 10),
 		},
 		responseHeaders: make(map[string]string),
-		timeout:         defaultTimeout,
 	}
 	return ctx
 }
@@ -67,7 +67,7 @@ func NewFContext(correlationID string) *FContext {
 func (c *FContext) CorrelationID() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.requestHeaders[cid]
+	return c.requestHeaders[cidHeader]
 }
 
 // setOpID returns the operation id for the context
@@ -75,14 +75,14 @@ func (c *FContext) setOpID(id uint64) {
 	opIDStr := strconv.FormatUint(id, 10)
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.requestHeaders[opID] = opIDStr
+	c.requestHeaders[opIDHeader] = opIDStr
 }
 
 // opID returns the operation id for the context
 func (c *FContext) opID() uint64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	opIDStr := c.requestHeaders[opID]
+	opIDStr := c.requestHeaders[opIDHeader]
 	id, err := strconv.ParseUint(opIDStr, 10, 64)
 	if err != nil {
 		// Should not happen.
@@ -95,7 +95,7 @@ func (c *FContext) opID() uint64 {
 // The headers _cid and _opid are reserved. Returns the same FContext to allow
 // for chaining calls.
 func (c *FContext) AddRequestHeader(name, value string) *FContext {
-	if name == cid || name == opID {
+	if name == cidHeader || name == opIDHeader {
 		return c
 	}
 	c.mu.Lock()
@@ -127,7 +127,7 @@ func (c *FContext) RequestHeaders() map[string]string {
 // The _opid header is reserved. Returns the same FContext to allow for
 // chaining calls.
 func (c *FContext) AddResponseHeader(name, value string) *FContext {
-	if name == opID {
+	if name == opIDHeader {
 		return c
 	}
 	c.addResponseHeader(name, value)
@@ -157,7 +157,7 @@ func (c *FContext) ResponseHeaders() map[string]string {
 // FContext to allow for chaining calls.
 func (c *FContext) SetTimeout(timeout time.Duration) *FContext {
 	c.mu.Lock()
-	c.timeout = timeout
+	c.requestHeaders[timeoutHeader] = strconv.FormatInt(int64(timeout/time.Millisecond), 10)
 	c.mu.Unlock()
 	return c
 }
@@ -165,13 +165,18 @@ func (c *FContext) SetTimeout(timeout time.Duration) *FContext {
 // Timeout returns the request timeout.
 func (c *FContext) Timeout() time.Duration {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.timeout
+	timeoutMillisStr := c.requestHeaders[timeoutHeader]
+	c.mu.RUnlock()
+	timeoutMillis, err := strconv.ParseInt(timeoutMillisStr, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return time.Millisecond * time.Duration(timeoutMillis)
 }
 
 func (c *FContext) setResponseOpID(id string) {
 	c.mu.Lock()
-	c.responseHeaders[opID] = id
+	c.responseHeaders[opIDHeader] = id
 	c.mu.Unlock()
 }
 

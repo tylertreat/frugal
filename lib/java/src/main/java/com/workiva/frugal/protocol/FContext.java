@@ -25,14 +25,14 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FContext {
 
-    protected static final String CID = "_cid";
-    protected static final String OP_ID = "_opid";
+    protected static final String CID_HEADER = "_cid";         // Header containing correlation id
+    protected static final String OPID_HEADER = "_opid";       // Header containing op id (uint64 as string)
+    protected static final String TIMEOUT_HEADER = "_timeout"; // Header containing request timeout (milliseconds as string)
+
     protected static final long DEFAULT_TIMEOUT = 5 * 1000;
 
     private Map<String, String> requestHeaders = new ConcurrentHashMap<>();
     private Map<String, String> responseHeaders = new ConcurrentHashMap<>();
-
-    private volatile long timeout = DEFAULT_TIMEOUT;
 
     private FContext(Map<String, String> requestHeaders, Map<String, String> responseHeaders) {
         this.requestHeaders = requestHeaders;
@@ -52,8 +52,9 @@ public class FContext {
      * @param correlationId unique tracing identifier
      */
     public FContext(String correlationId) {
-        requestHeaders.put(CID, correlationId);
-        requestHeaders.put(OP_ID, "0");
+        requestHeaders.put(CID_HEADER, correlationId);
+        requestHeaders.put(OPID_HEADER, "0");
+        requestHeaders.put(TIMEOUT_HEADER, Long.toString(DEFAULT_TIMEOUT));
 
     }
 
@@ -64,10 +65,9 @@ public class FContext {
      * @return FContext
      */
     protected static FContext withRequestHeaders(Map<String, String> headers) {
-        if (headers.get(CID) == null) {
-            headers.put(CID, generateCorrelationId());
-        }
-        return new FContext(headers, new HashMap<String, String>());
+        headers.computeIfAbsent(CID_HEADER, k -> generateCorrelationId());
+        headers.computeIfAbsent(TIMEOUT_HEADER, k -> Long.toString(DEFAULT_TIMEOUT));
+        return new FContext(headers, new HashMap<>());
     }
 
     private static String generateCorrelationId() {
@@ -80,7 +80,7 @@ public class FContext {
      * @return correlation id
      */
     public String getCorrelationId() {
-        return requestHeaders.get(CID);
+        return requestHeaders.get(CID_HEADER);
     }
 
     /**
@@ -90,7 +90,7 @@ public class FContext {
      * @return operation id
      */
     protected long getOpId() {
-        String opIdStr = requestHeaders.get(OP_ID);
+        String opIdStr = requestHeaders.get(OPID_HEADER);
         if (opIdStr == null) {
             return 0;
         }
@@ -104,7 +104,7 @@ public class FContext {
      * @param opId the operation id to set
      */
     protected void setOpId(long opId) {
-        requestHeaders.put(OP_ID, Long.toString(opId));
+        requestHeaders.put(OPID_HEADER, Long.toString(opId));
     }
 
     /**
@@ -117,7 +117,7 @@ public class FContext {
      * @return FContext
      */
     public FContext addRequestHeader(String name, String value) {
-        if (OP_ID.equals(name) || CID.equals(name)) {
+        if (OPID_HEADER.equals(name) || CID_HEADER.equals(name)) {
             return this;
         }
         requestHeaders.put(name, value);
@@ -149,7 +149,7 @@ public class FContext {
      * @return FContext
      */
     public FContext addResponseHeader(String name, String value) {
-        if (OP_ID.equals(name)) {
+        if (OPID_HEADER.equals(name)) {
             return this;
         }
         responseHeaders.put(name, value);
@@ -225,7 +225,7 @@ public class FContext {
      * @return the request timeout in milliseconds.
      */
     public long getTimeout() {
-        return this.timeout;
+        return Long.parseLong(requestHeaders.getOrDefault(TIMEOUT_HEADER, "0"));
     }
 
     /**
@@ -234,10 +234,10 @@ public class FContext {
      * @param timeout timeout for the request in milliseconds.
      */
     public void setTimeout(long timeout) {
-        this.timeout = timeout;
+        requestHeaders.put(TIMEOUT_HEADER, Long.toString(timeout));
     }
 
     protected void setResponseOpId(String opId) {
-        responseHeaders.put(OP_ID, opId);
+        responseHeaders.put(OPID_HEADER, opId);
     }
 }

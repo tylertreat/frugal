@@ -38,7 +38,7 @@ class FClientRegistry implements FRegistry {
     var headers = Headers.decodeFromFrame(frame);
     var opId;
     try {
-      opId = int.parse(headers[_opid]);
+      opId = int.parse(headers[_opidHeader]);
     } catch (e) {
       log.warning("frugal: invalid protocol frame: op id not a uint64", e);
       return;

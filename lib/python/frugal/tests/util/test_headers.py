@@ -18,7 +18,8 @@ class TestHeaders(unittest.TestCase):
         ctx = FContext("corrId")
         expected = bytearray(b'\x00\x00\x00\x00 \x00\x00\x00\x05_opid\x00\x00'
                              b'\x00\x010\x00\x00\x00\x04_cid\x00\x00\x00\x06'
-                             b'corrId')
+                             b'corrId\x00\x00\x00\x08_timeout\x00\x00\x00'
+                             b'\x044000')
         buff = self.headers._write_to_bytearray(ctx.get_request_headers())
 
         self.assertEqual(len(expected), len(buff))
