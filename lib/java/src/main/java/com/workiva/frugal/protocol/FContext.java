@@ -25,9 +25,14 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FContext {
 
-    protected static final String CID_HEADER = "_cid";         // Header containing correlation id
-    protected static final String OPID_HEADER = "_opid";       // Header containing op id (uint64 as string)
-    protected static final String TIMEOUT_HEADER = "_timeout"; // Header containing request timeout (milliseconds as string)
+    // Header containing correlation id
+    protected static final String CID_HEADER = "_cid";
+
+    // Header containing op id (uint64 as string)
+    protected static final String OPID_HEADER = "_opid";
+
+    // Header containing request timeout (milliseconds as string)
+    protected static final String TIMEOUT_HEADER = "_timeout";
 
     protected static final long DEFAULT_TIMEOUT = 5 * 1000;
 

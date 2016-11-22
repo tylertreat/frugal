@@ -1,8 +1,14 @@
 part of frugal;
 
-const String _cidHeader = "_cid";         // Header containing correlation id
-const String _opidHeader = "_opid";       // Header containing op id (uint64 as string)
-const String _timeoutHeader = "_timeout"; // Header containing request timeout (milliseconds as string)
+// Header containing correlation id
+const String _cidHeader = "_cid";
+
+// Header containing op id (uint64 as string)
+const String _opidHeader = "_opid";
+
+// Header containing request timeout (milliseconds as string)
+const String _timeoutHeader = "_timeout";
+
 final Duration _defaultTimeout = new Duration(seconds: 5);
 
 /// FContext is the context for a Frugal message. Every RPC has an FContext,
@@ -28,7 +34,8 @@ class FContext {
   Map<String, String> _responseHeaders;
 
   Duration get timeout {
-    return new Duration(milliseconds: int.parse(_requestHeaders[_timeoutHeader]));
+    return new Duration(
+        milliseconds: int.parse(_requestHeaders[_timeoutHeader]));
   }
 
   void set timeout(Duration timeout) {

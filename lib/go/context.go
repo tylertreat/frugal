@@ -14,9 +14,15 @@ import (
 var ErrTimeout = errors.New("frugal: request timed out")
 
 const (
-	cidHeader      = "_cid"     // Header containing correlation id
-	opIDHeader     = "_opid"    // Header containing op id (uint64 as string)
-	timeoutHeader  = "_timeout" // Header containing request timeout (milliseconds as string)
+	// Header containing correlation id
+	cidHeader = "_cid"
+
+	// Header containing op id (uint64 as string)
+	opIDHeader = "_opid"
+
+	// Header containing request timeout (milliseconds as string)
+	timeoutHeader = "_timeout"
+
 	defaultTimeout = 5 * time.Second
 )
 
