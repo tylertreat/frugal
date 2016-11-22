@@ -52,7 +52,7 @@ class FNatsPublisherTranpsort(FPublisherTransport):
             raise TTransportException(TTransportException.NOT_OPEN, msg)
         if self._check_publish_size(data):
             msg = 'Message exceeds NATS max message size'
-            raise FMessageSizeException.for_request(msg)
+            raise FMessageSizeException.request(msg)
         yield self._nats_client.publish('frugal.{0}'.format(topic), data)
 
 

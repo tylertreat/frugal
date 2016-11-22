@@ -143,7 +143,7 @@ func (t *TornadoGenerator) generateClientRecvMethod(method *parser.Method) strin
 	contents += tabtabtabtab + "x.read(iprot)\n"
 	contents += tabtabtabtab + "iprot.readMessageEnd()\n"
 	contents += tabtabtabtab + "if x.type == FApplicationException.RESPONSE_TOO_LARGE:\n"
-	contents += tabtabtabtabtab + "future.set_exception(FMessageSizeException.for_response(x.message))\n"
+	contents += tabtabtabtabtab + "future.set_exception(FMessageSizeException.response(x.message))\n"
 	contents += tabtabtabtabtab + "return\n"
 	contents += tabtabtabtab + "if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:\n"
 	contents += tabtabtabtabtab + "future.set_exception(FRateLimitException(x.message))\n"

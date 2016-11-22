@@ -64,7 +64,7 @@ class FHttpTransport(FTornadoTransport):
         response.
         """
         if len(data) > self._max_message_size > 0:
-            raise FMessageSizeException.for_request(
+            raise FMessageSizeException.request(
                 'Message exceeds {0} bytes, was {1} bytes'.format(
                     self._max_message_size, len(data)))
 

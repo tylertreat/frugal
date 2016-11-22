@@ -176,7 +176,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x.read(iprot)
                 iprot.readMessageEnd()
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    future.set_exception(FMessageSizeException.response(x.message))
                     return
                 if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
@@ -238,7 +238,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x.read(iprot)
                 iprot.readMessageEnd()
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    future.set_exception(FMessageSizeException.response(x.message))
                     return
                 if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
@@ -333,7 +333,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x.read(iprot)
                 iprot.readMessageEnd()
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    future.set_exception(FMessageSizeException.response(x.message))
                     return
                 if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
@@ -401,7 +401,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x.read(iprot)
                 iprot.readMessageEnd()
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    future.set_exception(FMessageSizeException.response(x.message))
                     return
                 if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
@@ -464,7 +464,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x.read(iprot)
                 iprot.readMessageEnd()
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    future.set_exception(FMessageSizeException.response(x.message))
                     return
                 if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
@@ -523,7 +523,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x.read(iprot)
                 iprot.readMessageEnd()
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    future.set_exception(FMessageSizeException.response(x.message))
                     return
                 if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
@@ -582,7 +582,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 x.read(iprot)
                 iprot.readMessageEnd()
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                    future.set_exception(FMessageSizeException.for_response(x.message))
+                    future.set_exception(FMessageSizeException.response(x.message))
                     return
                 if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))

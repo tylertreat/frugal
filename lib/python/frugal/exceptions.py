@@ -49,11 +49,11 @@ class FMessageSizeException(TTransportException):
         super(FMessageSizeException, self).__init__(type=type, message=message)
 
     @classmethod
-    def for_request(cls, message=None):
+    def request(cls, message=None):
         return cls(type=FTransportException.REQUEST_TOO_LARGE, message=message)
 
     @classmethod
-    def for_response(cls, message=None):
+    def response(cls, message=None):
         return cls(type=FTransportException.RESPONSE_TOO_LARGE,
                    message=message)
 
