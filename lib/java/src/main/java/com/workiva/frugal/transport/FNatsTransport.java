@@ -117,7 +117,7 @@ public class FNatsTransport extends FTransport {
         }
 
         if (payload.length > NATS_MAX_MESSAGE_SIZE) {
-            throw FMessageSizeException.forRequest(
+            throw FMessageSizeException.request(
                     String.format("Message exceeds %d bytes, was %d bytes",
                             NATS_MAX_MESSAGE_SIZE, payload.length));
         }

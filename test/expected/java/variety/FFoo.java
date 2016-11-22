@@ -207,7 +207,7 @@ public class FFoo {
 							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 								TException ex = e;
 								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.forResponse(e.getMessage());
+									ex = FMessageSizeException.response(e.getMessage());
 								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 									ex = new FRateLimitException(e.getMessage());
 								}
@@ -309,7 +309,7 @@ public class FFoo {
 							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 								TException ex = e;
 								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.forResponse(e.getMessage());
+									ex = FMessageSizeException.response(e.getMessage());
 								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 									ex = new FRateLimitException(e.getMessage());
 								}
@@ -419,7 +419,7 @@ public class FFoo {
 							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 								TException ex = e;
 								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.forResponse(e.getMessage());
+									ex = FMessageSizeException.response(e.getMessage());
 								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 									ex = new FRateLimitException(e.getMessage());
 								}
@@ -512,7 +512,7 @@ public class FFoo {
 							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 								TException ex = e;
 								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.forResponse(e.getMessage());
+									ex = FMessageSizeException.response(e.getMessage());
 								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 									ex = new FRateLimitException(e.getMessage());
 								}
@@ -604,7 +604,7 @@ public class FFoo {
 							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 								TException ex = e;
 								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.forResponse(e.getMessage());
+									ex = FMessageSizeException.response(e.getMessage());
 								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 									ex = new FRateLimitException(e.getMessage());
 								}
@@ -694,7 +694,7 @@ public class FFoo {
 							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 								TException ex = e;
 								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.forResponse(e.getMessage());
+									ex = FMessageSizeException.response(e.getMessage());
 								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 									ex = new FRateLimitException(e.getMessage());
 								}
@@ -784,7 +784,7 @@ public class FFoo {
 							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 								TException ex = e;
 								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.forResponse(e.getMessage());
+									ex = FMessageSizeException.response(e.getMessage());
 								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
 									ex = new FRateLimitException(e.getMessage());
 								}

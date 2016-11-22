@@ -2884,7 +2884,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtabtabtab + "if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {\n"
 	contents += tabtabtabtabtabtabtabtab + "TException ex = e;\n"
 	contents += tabtabtabtabtabtabtabtab + "if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {\n"
-	contents += tabtabtabtabtabtabtabtabtab + "ex = FMessageSizeException.forResponse(e.getMessage());\n"
+	contents += tabtabtabtabtabtabtabtabtab + "ex = FMessageSizeException.response(e.getMessage());\n"
 	contents += tabtabtabtabtabtabtabtab + "} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {\n"
 	contents += tabtabtabtabtabtabtabtabtab + "ex = new FRateLimitException(e.getMessage());\n"
 	contents += tabtabtabtabtabtabtabtab + "}\n"

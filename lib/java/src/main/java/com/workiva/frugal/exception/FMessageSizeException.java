@@ -17,7 +17,7 @@ public class FMessageSizeException extends TTransportException {
      * @param message exception message
      * @return FMessageSizeException
      */
-    public static FMessageSizeException forRequest(String message) {
+    public static FMessageSizeException request(String message) {
         return new FMessageSizeException(FTransportException.REQUEST_TOO_LARGE, message);
     }
 
@@ -27,7 +27,7 @@ public class FMessageSizeException extends TTransportException {
      * @param message exception message
      * @return FMessageSizeException
      */
-    public static FMessageSizeException forResponse(String message) {
+    public static FMessageSizeException response(String message) {
         return new FMessageSizeException(FTransportException.RESPONSE_TOO_LARGE, message);
     }
 }
