@@ -12,20 +12,42 @@ class FError extends TError {
   FError.withType(int type, String message) : super(type, message);
 }
 
+/// Contains [TApplicationError] constants.
+class FApplicationError extends TApplicationError {
+  /// Indicates the response was too large for the transport.
+  static const int RESPONSE_TOO_LARGE = 100;
+
+  /// Indicates a rate limit was exceeded.
+  static const int RATE_LIMIT_EXCEEDED = 102;
+}
+
+/// Contains [TTransportError] constants.
+class FTransportError extends TTransportError {
+  /// Indicates the request was too large for the transport.
+  static const int REQUEST_TOO_LARGE = 100;
+
+  /// Indicates the response was too large for the transport.
+  static const int RESPONSE_TOO_LARGE = 101;
+}
+
 /// Indicates a message was too large for a transport to handle.
 class FMessageSizeError extends TTransportError {
   /// Create an [FMessageSizeError] with the given type and message.
   FMessageSizeError(int type, String message) : super(type, message);
 
   /// Create an [FMessageSizeError] indicating the request is too large.
-  FMessageSizeError.request()
-      : super(FTransport.REQUEST_TOO_LARGE,
-            "request was too large for the transport");
+  FMessageSizeError.request({String message: "request was too large for the transport"})
+      : super(FTransportError.REQUEST_TOO_LARGE, message);
 
   /// Create an [FMessageSizeError] indicating the response is too large.
-  FMessageSizeError.response()
-      : super(FTransport.RESPONSE_TOO_LARGE,
-            "response was too large for the transport");
+  FMessageSizeError.response({String message: "response was too large for the transport"})
+      : super(FTransportError.RESPONSE_TOO_LARGE, message);
+}
+
+/// FRateLimitError indicates that an application has breached a rate threshold.
+class FRateLimitError extends TApplicationError {
+  FRateLimitError({String message: "rate limit exceeded"})
+      : super(FApplicationError.RATE_LIMIT_EXCEEDED, message);
 }
 
 /// Indicates a frugal request timed out.
