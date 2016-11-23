@@ -1,6 +1,7 @@
 package frugal
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,13 +28,25 @@ func TestNewCorrelationID(t *testing.T) {
 }
 
 // Ensures the "_opid" request header for an FContext is returned for calls to
-// getRequestOpID.
+// getOpID.
 func TestOpID(t *testing.T) {
+	assert := assert.New(t)
 	corid := "fooid"
 	opid := "12345"
 	ctx := NewFContext(corid)
 	ctx.AddRequestHeader(opID, opid)
-	assert.Equal(t, uint64(12345), getOpID(ctx))
+	actOpID, err := getOpID(ctx)
+	assert.Nil(err)
+	assert.Equal(uint64(12345), actOpID)
+
+	delete(ctx.(*FContextImpl).requestHeaders, opID)
+	_, err = getOpID(ctx)
+	assert.Equal(fmt.Errorf("FContext does not have the required %s request header", opID), err)
+
+	opIDStr := "-123"
+	ctx.(*FContextImpl).requestHeaders[opID] = opIDStr
+	_, err = getOpID(ctx)
+	assert.Equal(fmt.Errorf("FContext has an opid that is not a non-negative integer: %s", opIDStr), err)
 }
 
 // Ensures AddRequestHeader properly adds the key-value pair to the context
@@ -53,7 +66,9 @@ func TestRequestHeader(t *testing.T) {
 	assert.Equal(t, ctx, ctx.AddRequestHeader(opID, "123"))
 
 	assert.Equal(t, "baz", ctx.CorrelationID())
-	assert.Equal(t, uint64(123), getOpID(ctx))
+	actOpID, err := getOpID(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, uint64(123), actOpID)
 }
 
 // Ensures AddResponseHeader properly adds the key-value pair to the context

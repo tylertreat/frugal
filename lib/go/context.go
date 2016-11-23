@@ -185,28 +185,29 @@ func (c *FContextImpl) Timeout() time.Duration {
 	return c.timeout
 }
 
-// setRequestOpID sets the request operation id for context
+// setRequestOpID sets the request operation id for context.
 func setRequestOpID(ctx FContext, id uint64) {
 	opIDStr := strconv.FormatUint(id, 10)
 	ctx.AddRequestHeader(opID, opIDStr)
 }
 
-// opID returns the request operation id for the given context
-func getOpID(ctx FContext) uint64 {
+// opID returns the request operation id for the given context.
+func getOpID(ctx FContext) (uint64, error) {
 	opIDStr, ok := ctx.RequestHeader(opID)
-	// Should not happen unless this is a malformed implemtation of FContext.
 	if !ok {
-		panic(fmt.Errorf("The FContext should always contain the %s request header", opID))
+		// Should not happen unless a client/server sent a bogus context.
+		return 0, fmt.Errorf("FContext does not have the required %s request header", opID)
 	}
 	id, err := strconv.ParseUint(opIDStr, 10, 64)
-	// Should not happen unless this is a malformed implemtation of FContext.
 	if err != nil {
-		panic(err)
+		// Should not happen unless a client/server sent a bogus context.
+		return 0, fmt.Errorf("FContext has an opid that is not a non-negative integer: %s", opIDStr)
+
 	}
-	return id
+	return id, nil
 }
 
-// setResponseOpID sets the response operation id for context
+// setResponseOpID sets the response operation id for context.
 func setResponseOpID(ctx FContext, id string) {
 	ctx.AddResponseHeader(opID, id)
 }

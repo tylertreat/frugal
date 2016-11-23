@@ -62,12 +62,15 @@ func (c *fRegistry) Register(ctx FContext, callback FAsyncCallback) error {
 	// increasing atomic uint64 for this purpose. If the FContext already has
 	// an op id, it has been used for a request. We check the handlers map to
 	// ensure that request is not still in-flight.
-	opID := getOpID(ctx)
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	_, ok := c.handlers[opID]
-	if ok {
-		return errors.New("frugal: context already registered")
+	opID, err := getOpID(ctx)
+	// Context already has an opID
+	if err == nil {
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		_, ok := c.handlers[opID]
+		if ok {
+			return errors.New("frugal: context already registered")
+		}
 	}
 	opID = atomic.AddUint64(&nextOpID, 1)
 	setRequestOpID(ctx, opID)
@@ -77,7 +80,11 @@ func (c *fRegistry) Register(ctx FContext, callback FAsyncCallback) error {
 
 // Unregister a callback for the given Context.
 func (c *fRegistry) Unregister(ctx FContext) {
-	opID := getOpID(ctx)
+	opID, err := getOpID(ctx)
+	if err != nil {
+		logger().Warnf("Attempted to unregister an FContext with a malformed opid: %s", err)
+		return
+	}
 	c.mu.Lock()
 	delete(c.handlers, opID)
 	c.mu.Unlock()
