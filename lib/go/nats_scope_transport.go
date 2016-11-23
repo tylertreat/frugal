@@ -135,6 +135,9 @@ func (n *fNatsScopeTransport) Open() error {
 	if err != nil {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
+	if err = n.conn.FlushTimeout(defaultTimeout); err != nil {
+		return thrift.NewTTransportExceptionFromError(err)
+	}
 	n.sub = sub
 	n.isOpen = true
 	return nil
