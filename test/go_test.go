@@ -53,9 +53,9 @@ func TestValidGoFrugalCompiler(t *testing.T) {
 		t.Fatal("unexpected error", err)
 	}
 
-	baseFtypesPath := filepath.Join(outputDir, "actual_base", "f_types.go")
+	baseFtypesPath := filepath.Join(outputDir, "actual_base", "golang", "f_types.go")
 	compareFiles(t, "expected/go/actual_base/f_types.txt", baseFtypesPath)
-	baseFbasefooPath := filepath.Join(outputDir, "actual_base", "f_basefoo.go")
+	baseFbasefooPath := filepath.Join(outputDir, "actual_base", "golang", "f_basefoo.go")
 	compareFiles(t, "expected/go/actual_base/f_basefoo.txt", baseFbasefooPath)
 
 	varietyFtypesPath := filepath.Join(outputDir, "variety", "f_types.go")

@@ -8,7 +8,8 @@ import (
 	"fmt"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/Workiva/frugal/test/out/actual_base"
+	"github.com/Workiva/frugal/test/out/actual_base/golang"
+	"github.com/Workiva/frugal/test/out/subdir_include"
 )
 
 // (needed to ensure safety because of naive import list construction.)
@@ -16,7 +17,8 @@ var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
 
-var _ = actual_base.GoUnusedProtection__
+var _ = golang.GoUnusedProtection__
+var _ = subdir_include.GoUnusedProtection__
 
 type FooPingArgs struct {
 }
@@ -291,9 +293,9 @@ func (p *FooBlahArgs) String() string {
 }
 
 type FooBlahResult struct {
-	Success *int64                    `thrift:"success,0" db:"success" json:"success,omitempty"`
-	Awe     *AwesomeException         `thrift:"awe,1" db:"awe" json:"awe,omitempty"`
-	API     *actual_base.APIException `thrift:"api,2" db:"api" json:"api,omitempty"`
+	Success *int64               `thrift:"success,0" db:"success" json:"success,omitempty"`
+	Awe     *AwesomeException    `thrift:"awe,1" db:"awe" json:"awe,omitempty"`
+	API     *golang.APIException `thrift:"api,2" db:"api" json:"api,omitempty"`
 }
 
 func NewFooBlahResult() *FooBlahResult {
@@ -326,13 +328,13 @@ func (p *FooBlahResult) GetAwe() *AwesomeException {
 	return p.Awe
 }
 
-var FooBlahResult_API_DEFAULT *actual_base.APIException
+var FooBlahResult_API_DEFAULT *golang.APIException
 
 func (p *FooBlahResult) IsSetAPI() bool {
 	return p.API != nil
 }
 
-func (p *FooBlahResult) GetAPI() *actual_base.APIException {
+func (p *FooBlahResult) GetAPI() *golang.APIException {
 	if !p.IsSetAPI() {
 		return FooBlahResult_API_DEFAULT
 	}
@@ -398,7 +400,7 @@ func (p *FooBlahResult) ReadField1(iprot thrift.TProtocol) error {
 }
 
 func (p *FooBlahResult) ReadField2(iprot thrift.TProtocol) error {
-	p.API = actual_base.NewAPIException()
+	p.API = golang.NewAPIException()
 	if err := p.API.Read(iprot); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.API), err)
 	}
@@ -759,8 +761,8 @@ func (p *FooBinMethodArgs) String() string {
 }
 
 type FooBinMethodResult struct {
-	Success []byte                    `thrift:"success,0" db:"success" json:"success,omitempty"`
-	API     *actual_base.APIException `thrift:"api,1" db:"api" json:"api,omitempty"`
+	Success []byte               `thrift:"success,0" db:"success" json:"success,omitempty"`
+	API     *golang.APIException `thrift:"api,1" db:"api" json:"api,omitempty"`
 }
 
 func NewFooBinMethodResult() *FooBinMethodResult {
@@ -777,13 +779,13 @@ func (p *FooBinMethodResult) GetSuccess() []byte {
 	return p.Success
 }
 
-var FooBinMethodResult_API_DEFAULT *actual_base.APIException
+var FooBinMethodResult_API_DEFAULT *golang.APIException
 
 func (p *FooBinMethodResult) IsSetAPI() bool {
 	return p.API != nil
 }
 
-func (p *FooBinMethodResult) GetAPI() *actual_base.APIException {
+func (p *FooBinMethodResult) GetAPI() *golang.APIException {
 	if !p.IsSetAPI() {
 		return FooBinMethodResult_API_DEFAULT
 	}
@@ -837,7 +839,7 @@ func (p *FooBinMethodResult) ReadField0(iprot thrift.TProtocol) error {
 }
 
 func (p *FooBinMethodResult) ReadField1(iprot thrift.TProtocol) error {
-	p.API = actual_base.NewAPIException()
+	p.API = golang.NewAPIException()
 	if err := p.API.Read(iprot); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.API), err)
 	}
@@ -1445,4 +1447,202 @@ func (p *FooUnderlyingTypesTestResult) String() string {
 		return "<nil>"
 	}
 	return fmt.Sprintf("FooUnderlyingTypesTestResult(%+v)", *p)
+}
+
+type FooUseSubdirStructArgs struct {
+	A *subdir_include.A `thrift:"a,1" db:"a" json:"a"`
+}
+
+func NewFooUseSubdirStructArgs() *FooUseSubdirStructArgs {
+	return &FooUseSubdirStructArgs{}
+}
+
+var FooUseSubdirStructArgs_A_DEFAULT *subdir_include.A
+
+func (p *FooUseSubdirStructArgs) IsSetA() bool {
+	return p.A != nil
+}
+
+func (p *FooUseSubdirStructArgs) GetA() *subdir_include.A {
+	if !p.IsSetA() {
+		return FooUseSubdirStructArgs_A_DEFAULT
+	}
+	return p.A
+}
+
+func (p *FooUseSubdirStructArgs) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 1:
+			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructArgs) ReadField1(iprot thrift.TProtocol) error {
+	p.A = subdir_include.NewA()
+	if err := p.A.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.A), err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructArgs) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("use_subdir_struct_args"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructArgs) writeField1(oprot thrift.TProtocol) error {
+	if err := oprot.WriteFieldBegin("a", thrift.STRUCT, 1); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:a: ", p), err)
+	}
+	if err := p.A.Write(oprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.A), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:a: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("FooUseSubdirStructArgs(%+v)", *p)
+}
+
+type FooUseSubdirStructResult struct {
+	Success *subdir_include.A `thrift:"success,0" db:"success" json:"success,omitempty"`
+}
+
+func NewFooUseSubdirStructResult() *FooUseSubdirStructResult {
+	return &FooUseSubdirStructResult{}
+}
+
+var FooUseSubdirStructResult_Success_DEFAULT *subdir_include.A
+
+func (p *FooUseSubdirStructResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *FooUseSubdirStructResult) GetSuccess() *subdir_include.A {
+	if !p.IsSetSuccess() {
+		return FooUseSubdirStructResult_Success_DEFAULT
+	}
+	return p.Success
+}
+
+func (p *FooUseSubdirStructResult) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 0:
+			if err := p.ReadField0(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructResult) ReadField0(iprot thrift.TProtocol) error {
+	p.Success = subdir_include.NewA()
+	if err := p.Success.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Success), err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructResult) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("use_subdir_struct_result"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField0(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructResult) writeField0(oprot thrift.TProtocol) error {
+	if p.IsSetSuccess() {
+		if err := oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err)
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Success), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err)
+		}
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("FooUseSubdirStructResult(%+v)", *p)
 }
