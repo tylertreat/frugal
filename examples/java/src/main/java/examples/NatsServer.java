@@ -42,7 +42,7 @@ public class NatsServer {
         // Create a new music store server using the processor
         // The server can be configured using the Builder interface.
         FServer server =
-                new FNatsServer.Builder(conn, processor, protocolFactory, SERVICE_SUBJECT)
+                new FNatsServer.Builder(conn, processor, protocolFactory, new String[]{SERVICE_SUBJECT})
                         .withQueueGroup(SERVICE_SUBJECT) // if set, all servers listen to the same queue group
                         .build();
 

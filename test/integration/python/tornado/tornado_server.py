@@ -74,7 +74,7 @@ def main():
     processor = Processor(handler)
 
     if args.transport_type == "stateless":
-        server = FNatsTornadoServer(nats_client, subject,
+        server = FNatsTornadoServer(nats_client, [subject],
                                     processor, protocol_factory)
 
         # start healthcheck so the test runner knows the server is running

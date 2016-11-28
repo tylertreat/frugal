@@ -71,7 +71,7 @@ async def main():
 
     if args.transport_type in ["stateless", "stateless-stateful"]:
         server = FNatsServer(nats_client,
-                             subject,
+                             [subject],
                              processor,
                              protocol_factory)
         # start healthcheck so the test runner knows the server is running

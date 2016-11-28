@@ -52,14 +52,14 @@ public class FNatsServerTest {
         mockConn = mock(Connection.class);
         mockProcessor = mock(FProcessor.class);
         mockProtocolFactory = mock(FProtocolFactory.class);
-        server = new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+        server = new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, new String[]{subject})
                 .withQueueGroup(queue).build();
     }
 
     @Test
     public void testBuilderConfiguresServer() {
         FNatsServer server =
-                new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+                new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, new String[]{subject})
                         .withHighWatermark(7)
                         .withQueueGroup("myQueue")
                         .withQueueLength(7)
@@ -73,7 +73,7 @@ public class FNatsServerTest {
 
     @Test
     public void testServe() throws TException, IOException, InterruptedException {
-        server = new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+        server = new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, new String[]{subject})
                 .withQueueGroup(queue).build();
         ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> queueCaptor = ArgumentCaptor.forClass(String.class);
@@ -109,7 +109,7 @@ public class FNatsServerTest {
         ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
         when(executor.submit(captor.capture())).thenReturn(null);
         FNatsServer server =
-                new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+                new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, new String[]{subject})
                         .withExecutorService(executor).build();
         MessageHandler handler = server.newRequestHandler();
         String reply = "reply";
@@ -135,7 +135,7 @@ public class FNatsServerTest {
         ExecutorService executor = mock(ExecutorService.class);
         when(executor.submit(any(Runnable.class))).thenReturn(null);
         FNatsServer server =
-                new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, subject)
+                new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, new String[]{subject})
                 .withExecutorService(executor).build();
         MessageHandler handler = server.newRequestHandler();
         byte[] data = "this is a request".getBytes();

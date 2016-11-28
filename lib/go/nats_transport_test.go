@@ -196,7 +196,7 @@ func newClientAndServer(t *testing.T, isTTransport bool) (*fNatsTransport, *fNat
 	mockProcessor := new(mockFProcessor)
 	mockTProtocolFactory := new(mockTProtocolFactory)
 	protocolFactory := NewFProtocolFactory(mockTProtocolFactory)
-	server := NewFNatsServerBuilder(conn, mockProcessor, protocolFactory, "foo").
+	server := NewFNatsServerBuilder(conn, mockProcessor, protocolFactory, []string{"foo"}).
 		WithQueueGroup("queue").
 		WithWorkerCount(1).
 		Build()

@@ -29,13 +29,13 @@ class TestFNatsServer(utils.AsyncIOTestCase):
         future.set_result(235)
         self.mock_nats_client.subscribe.return_value = future
         await self.server.serve()
-        self.assertEqual(235, self.server._sub_id)
+        self.assertEqual([235], self.server._sub_ids)
         self.mock_nats_client.subscribe.assert_called_once_with(
             self.subject, queue='', cb=self.server._on_message_callback)
 
     @utils.async_runner
     async def test_stop(self):
-        self.server._sub_id = 235
+        self.server._sub_ids = [235]
         future = asyncio.Future()
         future.set_result(None)
         self.mock_nats_client.unsubscribe.return_value = future
