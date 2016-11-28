@@ -424,7 +424,7 @@ TypeAnnotation <- name:Identifier _ value:('=' __ value:Literal { return value, 
         optValue = value.(string)
     }
     return &Annotation{
-      Name: string(name.(Identifier)),
+        Name:  string(name.(Identifier)),
         Value: optValue,
     }, nil
 }
@@ -472,12 +472,13 @@ ConstMap <- '{' __ values:(ConstValue __ ':' __ ConstValue __ (',' / &'}') __)* 
 
 FrugalStatement <- Scope
 
-Scope <- docstr:(DocString __)? "scope" __ name:Identifier __ prefix:Prefix? __ '{' __ operations:(Operation __)* ('}' / EndOfScopeError) EOS {
+Scope <- docstr:(DocString __)? "scope" __ name:Identifier __ prefix:Prefix? __ '{' __ operations:(Operation __)* ('}' / EndOfScopeError) _ annotations:TypeAnnotations? EOS {
     ops := operations.([]interface{})
     scope := &Scope{
-        Name:       string(name.(Identifier)),
-        Operations: make([]*Operation, len(ops)),
-        Prefix:     defaultPrefix,
+        Name:        string(name.(Identifier)),
+        Operations:  make([]*Operation, len(ops)),
+        Prefix:      defaultPrefix,
+        Annotations: toAnnotations(annotations),
     }
     if docstr != nil {
         raw := docstr.([]interface{})[0].(string)
@@ -506,10 +507,11 @@ PrefixToken <- ('{' PrefixWord '}') / PrefixWord
 
 PrefixWord <- [^\r\n\t\f .{}]+
 
-Operation <- docstr:(DocString __)? name:Identifier _ ':' __ typ:Identifier __ {
+Operation <- docstr:(DocString __)? name:Identifier _ ':' __ typ:Identifier _ annotations:TypeAnnotations? ListSeparator? {
     o := &Operation{
-        Name: string(name.(Identifier)),
-        Type: &Type{Name: string(typ.(Identifier))},
+        Name:        string(name.(Identifier)),
+        Type:        &Type{Name: string(typ.(Identifier))},
+        Annotations: toAnnotations(annotations),
     }
     if docstr != nil {
         raw := docstr.([]interface{})[0].(string)
