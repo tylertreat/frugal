@@ -6,6 +6,7 @@
 
 from thrift.Thrift import TType, TMessageType, TException, TApplicationException
 import actual_base.python.ttypes
+import subdir_include.ttypes
 
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol, TProtocol

@@ -6,6 +6,7 @@
 
 from thrift.Thrift import TType, TMessageType, TException, TApplicationException
 import actual_base.python.ttypes
+import subdir_include.ttypes
 
 from .ttypes import *
 from thrift.transport import TTransport
@@ -687,6 +688,112 @@ class underlying_types_test_result(object):
             for _elem61 in self.success:
                 oprot.writeI64(_elem61)
             oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __hash__(self):
+        value = 17
+        value = (value * 31) ^ hash(self.success)
+        return value
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+            for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+class use_subdir_struct_args(object):
+    """
+    Attributes:
+     - a
+    """
+    def __init__(self, a=None):
+        self.a = a
+
+    def read(self, iprot):
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.a = subdir_include.ttypes.A()
+                    self.a.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        oprot.writeStructBegin('use_subdir_struct_args')
+        if self.a is not None:
+            oprot.writeFieldBegin('a', TType.STRUCT, 1)
+            self.a.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __hash__(self):
+        value = 17
+        value = (value * 31) ^ hash(self.a)
+        return value
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+            for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+class use_subdir_struct_result(object):
+    """
+    Attributes:
+     - success
+    """
+    def __init__(self, success=None):
+        self.success = success
+
+    def read(self, iprot):
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 0:
+                if ftype == TType.STRUCT:
+                    self.success = subdir_include.ttypes.A()
+                    self.success.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        oprot.writeStructBegin('use_subdir_struct_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.STRUCT, 0)
+            self.success.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
