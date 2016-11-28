@@ -2,6 +2,7 @@ package frugal
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -37,7 +38,47 @@ const (
 // An FContext should belong to a single request for the lifetime of that
 // request. It can be reused once the request has completed, though they should
 // generally not be reused.
-type FContext struct {
+//
+// Implementations of FContext must adhere to the following:
+//		1)	The CorrelationID should be stored as a request header with the
+//			header name "_cid"
+//		2)	Threadsafe
+type FContext interface {
+	// CorrelationID returns the correlation id for the context.
+	CorrelationID() string
+
+	// AddRequestHeader adds a request header to the context for the given
+	// name. The headers _cid and _opid are reserved. Returns the same FContext
+	// to allow for chaining calls.
+	AddRequestHeader(name, value string) FContext
+
+	// RequestHeader gets the named request header.
+	RequestHeader(name string) (string, bool)
+
+	// RequestHeaders returns the request headers map.
+	RequestHeaders() map[string]string
+
+	// AddResponseHeader adds a response header to the context for the given
+	// name. The _opid header is reserved. Returns the same FContext to allow
+	// for chaining calls.
+	AddResponseHeader(name, value string) FContext
+
+	// ResponseHeader gets the named response header.
+	ResponseHeader(name string) (string, bool)
+
+	// ResponseHeaders returns the response headers map.
+	ResponseHeaders() map[string]string
+
+	// SetTimeout sets the request timeout. Default is 5 seconds. Returns the
+	// same FContext to allow for chaining calls.
+	SetTimeout(timeout time.Duration) FContext
+
+	// Timeout returns the request timeout.
+	Timeout() time.Duration
+}
+
+// FContextImpl is an implementation of FContext.
+type FContextImpl struct {
 	requestHeaders  map[string]string
 	responseHeaders map[string]string
 	mu              sync.RWMutex
@@ -48,11 +89,11 @@ type FContext struct {
 // correlation id is given, one will be generated. A Context should belong to a
 // single request for the lifetime of the request. It can be reused once its
 // request has completed, though they should generally not be reused.
-func NewFContext(correlationID string) *FContext {
+func NewFContext(correlationID string) FContext {
 	if correlationID == "" {
 		correlationID = generateCorrelationID()
 	}
-	ctx := &FContext{
+	ctx := &FContextImpl{
 		requestHeaders: map[string]string{
 			cid:  correlationID,
 			opID: "0",
@@ -63,57 +104,33 @@ func NewFContext(correlationID string) *FContext {
 	return ctx
 }
 
-// CorrelationID returns the correlation id for the context
-func (c *FContext) CorrelationID() string {
+// CorrelationID returns the correlation id for the context.
+func (c *FContextImpl) CorrelationID() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.requestHeaders[cid]
 }
 
-// setOpID returns the operation id for the context
-func (c *FContext) setOpID(id uint64) {
-	opIDStr := strconv.FormatUint(id, 10)
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.requestHeaders[opID] = opIDStr
-}
-
-// opID returns the operation id for the context
-func (c *FContext) opID() uint64 {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	opIDStr := c.requestHeaders[opID]
-	id, err := strconv.ParseUint(opIDStr, 10, 64)
-	if err != nil {
-		// Should not happen.
-		panic(err)
-	}
-	return id
-}
-
 // AddRequestHeader adds a request header to the context for the given name.
 // The headers _cid and _opid are reserved. Returns the same FContext to allow
 // for chaining calls.
-func (c *FContext) AddRequestHeader(name, value string) *FContext {
-	if name == cid || name == opID {
-		return c
-	}
+func (c *FContextImpl) AddRequestHeader(name, value string) FContext {
 	c.mu.Lock()
 	c.requestHeaders[name] = value
 	c.mu.Unlock()
 	return c
 }
 
-// RequestHeader gets the named request header
-func (c *FContext) RequestHeader(name string) (string, bool) {
+// RequestHeader gets the named request header.
+func (c *FContextImpl) RequestHeader(name string) (string, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	val, ok := c.requestHeaders[name]
 	return val, ok
 }
 
-// RequestHeaders returns the request headers map
-func (c *FContext) RequestHeaders() map[string]string {
+// RequestHeaders returns the request headers map.
+func (c *FContextImpl) RequestHeaders() map[string]string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	headers := make(map[string]string, len(c.requestHeaders))
@@ -126,24 +143,23 @@ func (c *FContext) RequestHeaders() map[string]string {
 // AddResponseHeader adds a response header to the context for the given name.
 // The _opid header is reserved. Returns the same FContext to allow for
 // chaining calls.
-func (c *FContext) AddResponseHeader(name, value string) *FContext {
-	if name == opID {
-		return c
-	}
-	c.addResponseHeader(name, value)
+func (c *FContextImpl) AddResponseHeader(name, value string) FContext {
+	c.mu.Lock()
+	c.responseHeaders[name] = value
+	c.mu.Unlock()
 	return c
 }
 
-// ResponseHeader gets the named response header
-func (c *FContext) ResponseHeader(name string) (string, bool) {
+// ResponseHeader gets the named response header.
+func (c *FContextImpl) ResponseHeader(name string) (string, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	val, ok := c.responseHeaders[name]
 	return val, ok
 }
 
-// ResponseHeaders returns the response headers map
-func (c *FContext) ResponseHeaders() map[string]string {
+// ResponseHeaders returns the response headers map.
+func (c *FContextImpl) ResponseHeaders() map[string]string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	headers := make(map[string]string, len(c.responseHeaders))
@@ -155,7 +171,7 @@ func (c *FContext) ResponseHeaders() map[string]string {
 
 // SetTimeout sets the request timeout. Default is 5 seconds. Returns the same
 // FContext to allow for chaining calls.
-func (c *FContext) SetTimeout(timeout time.Duration) *FContext {
+func (c *FContextImpl) SetTimeout(timeout time.Duration) FContext {
 	c.mu.Lock()
 	c.timeout = timeout
 	c.mu.Unlock()
@@ -163,30 +179,37 @@ func (c *FContext) SetTimeout(timeout time.Duration) *FContext {
 }
 
 // Timeout returns the request timeout.
-func (c *FContext) Timeout() time.Duration {
+func (c *FContextImpl) Timeout() time.Duration {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.timeout
 }
 
-func (c *FContext) setResponseOpID(id string) {
-	c.mu.Lock()
-	c.responseHeaders[opID] = id
-	c.mu.Unlock()
+// setRequestOpID sets the request operation id for context.
+func setRequestOpID(ctx FContext, id uint64) {
+	opIDStr := strconv.FormatUint(id, 10)
+	ctx.AddRequestHeader(opID, opIDStr)
 }
 
-// addRequestHeader bypasses the check for reserved headers.
-func (c *FContext) addRequestHeader(name, value string) {
-	c.mu.Lock()
-	c.requestHeaders[name] = value
-	c.mu.Unlock()
+// opID returns the request operation id for the given context.
+func getOpID(ctx FContext) (uint64, error) {
+	opIDStr, ok := ctx.RequestHeader(opID)
+	if !ok {
+		// Should not happen unless a client/server sent a bogus context.
+		return 0, fmt.Errorf("FContext does not have the required %s request header", opID)
+	}
+	id, err := strconv.ParseUint(opIDStr, 10, 64)
+	if err != nil {
+		// Should not happen unless a client/server sent a bogus context.
+		return 0, fmt.Errorf("FContext has an opid that is not a non-negative integer: %s", opIDStr)
+
+	}
+	return id, nil
 }
 
-// addResponseHeader bypasses the check for reserved headers.
-func (c *FContext) addResponseHeader(name, value string) {
-	c.mu.Lock()
-	c.responseHeaders[name] = value
-	c.mu.Unlock()
+// setResponseOpID sets the response operation id for context.
+func setResponseOpID(ctx FContext, id string) {
+	ctx.AddResponseHeader(opID, id)
 }
 
 // generateCorrelationID returns a random string id. It's assigned to a var for

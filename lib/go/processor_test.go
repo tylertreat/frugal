@@ -22,7 +22,7 @@ type pingProcessor struct {
 	err           error
 }
 
-func (p *pingProcessor) Process(ctx *FContext, iprot, oprot *FProtocol) error {
+func (p *pingProcessor) Process(ctx FContext, iprot, oprot *FProtocol) error {
 	p.called = true
 	assert.Equal(p.t, p.expectedProto, iprot)
 	assert.Equal(p.t, p.expectedProto, oprot)

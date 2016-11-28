@@ -50,5 +50,5 @@ func main() {
 }
 
 func blockForever() {
-	select{ }
+	select {}
 }

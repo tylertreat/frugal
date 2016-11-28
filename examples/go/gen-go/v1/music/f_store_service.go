@@ -20,8 +20,8 @@ var _ = bytes.Equal
 // Services are the API for client and server interaction.
 // Users can buy an album or enter a giveaway for a free album.
 type FStore interface {
-	BuyAlbum(ctx *frugal.FContext, ASIN string, acct string) (r *Album, err error)
-	EnterAlbumGiveaway(ctx *frugal.FContext, email string, name string) (r bool, err error)
+	BuyAlbum(ctx frugal.FContext, ASIN string, acct string) (r *Album, err error)
+	EnterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error)
 }
 
 // Services are the API for client and server interaction.
@@ -44,7 +44,7 @@ func NewFStoreClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware
 	return client
 }
 
-func (f *FStoreClient) BuyAlbum(ctx *frugal.FContext, asin string, acct string) (r *Album, err error) {
+func (f *FStoreClient) BuyAlbum(ctx frugal.FContext, asin string, acct string) (r *Album, err error) {
 	ret := f.methods["buyAlbum"].Invoke([]interface{}{ctx, asin, acct})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
@@ -56,7 +56,7 @@ func (f *FStoreClient) BuyAlbum(ctx *frugal.FContext, asin string, acct string) 
 	return r, err
 }
 
-func (f *FStoreClient) buyAlbum(ctx *frugal.FContext, asin string, acct string) (r *Album, err error) {
+func (f *FStoreClient) buyAlbum(ctx frugal.FContext, asin string, acct string) (r *Album, err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan *Album, 1)
 	if err = f.transport.Register(ctx, f.recvBuyAlbumHandler(ctx, resultC, errorC)); err != nil {
@@ -100,7 +100,7 @@ func (f *FStoreClient) buyAlbum(ctx *frugal.FContext, asin string, acct string) 
 	return
 }
 
-func (f *FStoreClient) recvBuyAlbumHandler(ctx *frugal.FContext, resultC chan<- *Album, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FStoreClient) recvBuyAlbumHandler(ctx frugal.FContext, resultC chan<- *Album, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -166,7 +166,7 @@ func (f *FStoreClient) recvBuyAlbumHandler(ctx *frugal.FContext, resultC chan<- 
 	}
 }
 
-func (f *FStoreClient) EnterAlbumGiveaway(ctx *frugal.FContext, email string, name string) (r bool, err error) {
+func (f *FStoreClient) EnterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error) {
 	ret := f.methods["enterAlbumGiveaway"].Invoke([]interface{}{ctx, email, name})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
@@ -178,7 +178,7 @@ func (f *FStoreClient) EnterAlbumGiveaway(ctx *frugal.FContext, email string, na
 	return r, err
 }
 
-func (f *FStoreClient) enterAlbumGiveaway(ctx *frugal.FContext, email string, name string) (r bool, err error) {
+func (f *FStoreClient) enterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan bool, 1)
 	if err = f.transport.Register(ctx, f.recvEnterAlbumGiveawayHandler(ctx, resultC, errorC)); err != nil {
@@ -222,7 +222,7 @@ func (f *FStoreClient) enterAlbumGiveaway(ctx *frugal.FContext, email string, na
 	return
 }
 
-func (f *FStoreClient) recvEnterAlbumGiveawayHandler(ctx *frugal.FContext, resultC chan<- bool, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FStoreClient) recvEnterAlbumGiveawayHandler(ctx frugal.FContext, resultC chan<- bool, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -299,7 +299,7 @@ type storeFBuyAlbum struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *storeFBuyAlbum) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := StoreBuyAlbumArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -384,7 +384,7 @@ type storeFEnterAlbumGiveaway struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *storeFEnterAlbumGiveaway) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := StoreEnterAlbumGiveawayArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -460,7 +460,7 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 	return err
 }
 
-func storeWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) error {
+func storeWriteApplicationError(ctx frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) error {
 	x := thrift.NewTApplicationException(type_, message)
 	oprot.WriteResponseHeader(ctx)
 	oprot.WriteMessageBegin(method, thrift.EXCEPTION, 0)

@@ -363,14 +363,14 @@ func (m *mockFTransport) SetRegistry(fr FRegistry) {
 	m.Called(fr)
 }
 
-func (m *mockFTransport) Register(fc *FContext, fac FAsyncCallback) error {
+func (m *mockFTransport) Register(fc FContext, fac FAsyncCallback) error {
 	m.Lock()
 	defer m.Unlock()
 	args := m.Called(fc, fac)
 	return args.Error(0)
 }
 
-func (m *mockFTransport) Unregister(fc *FContext) {
+func (m *mockFTransport) Unregister(fc FContext) {
 	m.Lock()
 	defer m.Unlock()
 	m.Called(fc)

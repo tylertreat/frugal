@@ -37,13 +37,13 @@ func TestClientRegistry(t *testing.T) {
 
 	// Register the context for the first time
 	assert.Nil(registry.Register(ctx, cb))
-	opID := ctx.opID()
-	assert.True(opID > 0)
+	opid, err := getOpID(ctx)
+	assert.Nil(err)
+	assert.True(opid > 0)
 	// Encode a frame with this context
 	transport := &thrift.TMemoryBuffer{Buffer: new(bytes.Buffer)}
 	proto := &FProtocol{tProtocolFactory.GetProtocol(transport)}
-	err := proto.writeHeader(ctx.RequestHeaders())
-	assert.Nil(err)
+	assert.Nil(proto.writeHeader(ctx.RequestHeaders()))
 	// Pass the frame to execute
 	frame := transport.Bytes()
 	assert.Nil(registry.Execute(frame))
@@ -54,7 +54,9 @@ func TestClientRegistry(t *testing.T) {
 
 	// Unregister the context
 	registry.Unregister(ctx)
-	_, ok := registry.(*fRegistry).handlers[ctx.opID()]
+	opid, err = getOpID(ctx)
+	assert.Nil(err)
+	_, ok := registry.(*fRegistry).handlers[opid]
 	assert.False(ok)
 	// But make sure execute sill returns nil when executing a frame with the
 	// same opID (it will just drop the frame)
@@ -63,7 +65,9 @@ func TestClientRegistry(t *testing.T) {
 
 	// Now, register the same context again and ensure the opID is increased.
 	assert.Nil(registry.Register(ctx, cb))
-	assert.True(ctx.opID() > opID)
+	newOpID, err := getOpID(ctx)
+	assert.Nil(err)
+	assert.True(newOpID > opid)
 }
 
 type mockProcessor struct {

@@ -16,11 +16,11 @@ type mockRegistry struct {
 	err    error
 }
 
-func (m *mockRegistry) Register(ctx *FContext, callback FAsyncCallback) error {
+func (m *mockRegistry) Register(ctx FContext, callback FAsyncCallback) error {
 	return nil
 }
 
-func (m *mockRegistry) Unregister(ctx *FContext) {
+func (m *mockRegistry) Unregister(ctx FContext) {
 }
 
 func (m *mockRegistry) Execute(frame []byte) error {
