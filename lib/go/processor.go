@@ -48,9 +48,15 @@ func (f *FBaseProcessor) Process(iprot, oprot *FProtocol) error {
 	if ok {
 		err := processor.Process(ctx, iprot, oprot)
 		if err != nil {
-			logger().Errorf(
-				"frugal: user handler code returned unhandled error on request with correlation id %s: %s",
-				ctx.CorrelationID(), err.Error())
+			if _, ok := err.(thrift.TException); ok {
+				logger().Errorf(
+					"frugal: error occurred while processing request with correlation id %s: %s",
+					ctx.CorrelationID(), err.Error())
+			} else {
+				logger().Errorf(
+					"frugal: user handler code returned unhandled error on request with correlation id %s: %s",
+					ctx.CorrelationID(), err.Error())
+			}
 		}
 		return err
 	}

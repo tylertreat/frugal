@@ -9,8 +9,10 @@
 from datetime import timedelta
 from threading import Lock
 
-from frugal.exceptions import FTimeoutException
+from frugal.exceptions import FApplicationException
+from frugal.exceptions import FMessageSizeException
 from frugal.exceptions import FRateLimitException
+from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.tornado.processor import FBaseProcessor
 from frugal.tornado.processor import FProcessorFunction
@@ -96,7 +98,10 @@ class Client(Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
-                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                    future.set_exception(FMessageSizeException.response(x.message))
+                    return
+                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
@@ -140,18 +145,21 @@ class _basePing(FProcessorFunction):
             yield gen.maybe_future(self._handler([ctx]))
         except FRateLimitException as ex:
             with (yield self._lock.acquire()):
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "basePing", ex.message)
+                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "basePing", ex.message)
                 return
         except Exception as e:
             with (yield self._lock.acquire()):
                 e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "basePing", e.message)
             raise e
         with (yield self._lock.acquire()):
-            oprot.write_response_headers(ctx)
-            oprot.writeMessageBegin('basePing', TMessageType.REPLY, 0)
-            result.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('basePing', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "basePing", e.message)
 
 
 def _write_application_exception(ctx, oprot, typ, method, message):

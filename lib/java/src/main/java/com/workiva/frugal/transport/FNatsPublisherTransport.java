@@ -25,7 +25,7 @@ public class FNatsPublisherTransport implements FPublisherTransport {
     /**
      * Creates a new FNatsPublisherTransport which is used for publishing.
      *
-     * @param conn  NATS connection
+     * @param conn NATS connection
      */
     protected FNatsPublisherTransport(Connection conn) {
         this.conn = conn;
@@ -92,7 +92,7 @@ public class FNatsPublisherTransport implements FPublisherTransport {
         }
 
         if (payload.length > NATS_MAX_MESSAGE_SIZE) {
-            throw new FMessageSizeException(
+            throw FMessageSizeException.request(
                     String.format("Message exceeds %d bytes, was %d bytes",
                             NATS_MAX_MESSAGE_SIZE, payload.length));
         }

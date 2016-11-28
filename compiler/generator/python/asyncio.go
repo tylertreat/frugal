@@ -23,8 +23,10 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 
 	imports += "from frugal.aio.processor import FBaseProcessor\n"
 	imports += "from frugal.aio.processor import FProcessorFunction\n"
-	imports += "from frugal.exceptions import FTimeoutException\n"
+	imports += "from frugal.exceptions import FApplicationException\n"
+	imports += "from frugal.exceptions import FMessageSizeException\n"
 	imports += "from frugal.exceptions import FRateLimitException\n"
+	imports += "from frugal.exceptions import FTimeoutException\n"
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.transport import TMemoryOutputBuffer\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
@@ -185,7 +187,10 @@ func (a *AsyncIOGenerator) generateClientRecvMethod(method *parser.Method) strin
 	contents += tabtabtabtab + "x = TApplicationException()\n"
 	contents += tabtabtabtab + "x.read(iprot)\n"
 	contents += tabtabtabtab + "iprot.readMessageEnd()\n"
-	contents += tabtabtabtab + "if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:\n"
+	contents += tabtabtabtab + "if x.type == FApplicationException.RESPONSE_TOO_LARGE:\n"
+	contents += tabtabtabtabtab + "future.set_exception(FMessageSizeException.response(x.message))\n"
+	contents += tabtabtabtabtab + "return\n"
+	contents += tabtabtabtab + "if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:\n"
 	contents += tabtabtabtabtab + "future.set_exception(FRateLimitException(x.message))\n"
 	contents += tabtabtabtabtab + "return\n"
 	contents += tabtabtabtab + "future.set_exception(x)\n"
@@ -281,7 +286,7 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += tabtab + "except FRateLimitException as ex:\n"
 	contents += tabtabtab + "async with self._write_lock:\n"
 	contents += tabtabtabtab + fmt.Sprintf(
-		"_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
+		"_write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
 		method.Name)
 	contents += tabtabtabtab + "return\n"
 	for _, err := range method.Exceptions {
@@ -291,16 +296,20 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "async with self._write_lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.args[0] if e.args else 'unknown exception')\n", method.Name)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.args[0])\n", method.Name)
 	}
 	contents += tabtabtab + "raise e from None\n"
 	if !method.Oneway {
 		contents += tabtab + "async with self._write_lock:\n"
-		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
-		contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", method.Name)
-		contents += tabtabtab + "result.write(oprot)\n"
-		contents += tabtabtab + "oprot.writeMessageEnd()\n"
-		contents += tabtabtab + "oprot.get_transport().flush()\n"
+		contents += tabtabtab + "try:\n"
+		contents += tabtabtabtab + "oprot.write_response_headers(ctx)\n"
+		contents += tabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", method.Name)
+		contents += tabtabtabtab + "result.write(oprot)\n"
+		contents += tabtabtabtab + "oprot.writeMessageEnd()\n"
+		contents += tabtabtabtab + "oprot.get_transport().flush()\n"
+		contents += tabtabtab + "except FMessageSizeException as e:\n"
+		contents += tabtabtabtab + fmt.Sprintf(
+			"raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, \"%s\", e.args[0])\n", method.Name)
 	}
 	contents += "\n\n"
 

@@ -18,7 +18,7 @@ clean:
 generate: clean
 	find $(IDL_DIR) -type f -name '*.frugal' \
 		-exec frugal -out $(GO) --gen go:package_prefix=$(THIS_REPO)/$(GO)/ {} \; \
-		-exec frugal -out $(JAVA) --gen java {} \; \
+		-exec frugal -out $(JAVA) --gen java:generated_annotations=undated {} \; \
 		-exec frugal -out $(PYTHON) --gen py {} \; \
 		-exec frugal -out $(PYTHON_TORNADO) --gen py:tornado {} \; \
 		-exec frugal -out $(PYTHON_ASYNCIO) --gen py:asyncio {} \; \

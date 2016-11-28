@@ -58,7 +58,7 @@ async def main():
     prot_factory = FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
 
     # Open a NATS connection to receive requests
-    nats_client = NatsClient()
+    nats_client = NATS()
     options = {
         "verbose": True,
         "servers": ["nats://127.0.0.1:4222"]

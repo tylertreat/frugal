@@ -105,7 +105,8 @@ func TestNatsTransportWrite(t *testing.T) {
 	buff := make([]byte, 5)
 	buff = make([]byte, 1024*1024+1)
 	err := tr.Send(buff)
-	assert.Equal(t, ErrTooLarge, err)
+	assert.True(t, IsErrTooLarge(err))
+	assert.Equal(t, TTRANSPORT_REQUEST_TOO_LARGE, err.(thrift.TTransportException).TypeId())
 	assert.Equal(t, 0, tr.writeBuffer.Len())
 }
 

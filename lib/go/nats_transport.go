@@ -103,7 +103,9 @@ func (f *fNatsTransport) Send(data []byte) error {
 	}
 
 	if len(data) > natsMaxMessageSize {
-		return thrift.NewTTransportExceptionFromError(ErrTooLarge)
+		return thrift.NewTTransportException(
+			TTRANSPORT_REQUEST_TOO_LARGE,
+			fmt.Sprintf("Message exceeds %d bytes, was %d bytes", natsMaxMessageSize, len(data)))
 	}
 
 	err := f.conn.PublishRequest(f.subject, f.inbox, data)

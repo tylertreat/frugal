@@ -148,12 +148,12 @@ func (f *FFooClient) recvPingHandler(ctx *frugal.FContext, resultC chan<- struct
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -277,12 +277,12 @@ func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- int64,
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -469,12 +469,12 @@ func (f *FFooClient) recvBinMethodHandler(ctx *frugal.FContext, resultC chan<- [
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -606,12 +606,12 @@ func (f *FFooClient) recvParamModifiersHandler(ctx *frugal.FContext, resultC cha
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -738,12 +738,12 @@ func (f *FFooClient) recvUnderlyingTypesTestHandler(ctx *frugal.FContext, result
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -867,12 +867,12 @@ func (f *FFooClient) recvGetThingHandler(ctx *frugal.FContext, resultC chan<- *v
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -996,12 +996,12 @@ func (f *FFooClient) recvGetMyIntHandler(ctx *frugal.FContext, resultC chan<- Va
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -1088,7 +1088,7 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "ping", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "ping", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1101,35 +1101,35 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "ping", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("ping", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "ping", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "ping", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "ping", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "ping", err2.Error())
 			return nil
 		}
 		err = err2
@@ -1165,7 +1165,7 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "blah", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "blah", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1188,35 +1188,35 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "blah", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("blah", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "blah", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "blah", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "blah", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "blah", err2.Error())
 			return nil
 		}
 		err = err2
@@ -1248,7 +1248,7 @@ func (p *fooFOneWay) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtoco
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "oneWay", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "oneWay", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1285,7 +1285,7 @@ func (p *fooFBinMethod) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProt
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "bin_method", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "bin_method", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1306,35 +1306,35 @@ func (p *fooFBinMethod) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProt
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "bin_method", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "bin_method", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("bin_method", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "bin_method", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "bin_method", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "bin_method", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "bin_method", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "bin_method", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "bin_method", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "bin_method", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "bin_method", err2.Error())
 			return nil
 		}
 		err = err2
@@ -1370,7 +1370,7 @@ func (p *fooFParamModifiers) Process(ctx *frugal.FContext, iprot, oprot *frugal.
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "param_modifiers", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "param_modifiers", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1386,35 +1386,35 @@ func (p *fooFParamModifiers) Process(ctx *frugal.FContext, iprot, oprot *frugal.
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "param_modifiers", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("param_modifiers", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "param_modifiers", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "param_modifiers", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "param_modifiers", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "param_modifiers", err2.Error())
 			return nil
 		}
 		err = err2
@@ -1450,7 +1450,7 @@ func (p *fooFUnderlyingTypesTest) Process(ctx *frugal.FContext, iprot, oprot *fr
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "underlying_types_test", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "underlying_types_test", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1466,35 +1466,35 @@ func (p *fooFUnderlyingTypesTest) Process(ctx *frugal.FContext, iprot, oprot *fr
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "underlying_types_test", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("underlying_types_test", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "underlying_types_test", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "underlying_types_test", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "underlying_types_test", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "underlying_types_test", err2.Error())
 			return nil
 		}
 		err = err2
@@ -1530,7 +1530,7 @@ func (p *fooFGetThing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "getThing", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "getThing", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1546,35 +1546,35 @@ func (p *fooFGetThing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getThing", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getThing", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("getThing", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getThing", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getThing", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getThing", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getThing", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getThing", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getThing", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getThing", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getThing", err2.Error())
 			return nil
 		}
 		err = err2
@@ -1610,7 +1610,7 @@ func (p *fooFGetMyInt) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "getMyInt", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "getMyInt", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1626,35 +1626,35 @@ func (p *fooFGetMyInt) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getMyInt", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getMyInt", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("getMyInt", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getMyInt", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getMyInt", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getMyInt", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getMyInt", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getMyInt", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getMyInt", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getMyInt", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getMyInt", err2.Error())
 			return nil
 		}
 		err = err2

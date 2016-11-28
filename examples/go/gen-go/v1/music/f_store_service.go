@@ -129,12 +129,12 @@ func (f *FStoreClient) recvBuyAlbumHandler(ctx *frugal.FContext, resultC chan<- 
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -251,12 +251,12 @@ func (f *FStoreClient) recvEnterAlbumGiveawayHandler(ctx *frugal.FContext, resul
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -323,7 +323,7 @@ func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FPro
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			storeWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "buyAlbum", "Rate limit exceeded")
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "buyAlbum", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -344,35 +344,35 @@ func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FPro
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "buyAlbum", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("buyAlbum", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "buyAlbum", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "buyAlbum", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "buyAlbum", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "buyAlbum", err2.Error())
 			return nil
 		}
 		err = err2
@@ -408,7 +408,7 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			storeWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", "Rate limit exceeded")
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -424,35 +424,35 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "enterAlbumGiveaway", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("enterAlbumGiveaway", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "enterAlbumGiveaway", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "enterAlbumGiveaway", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "enterAlbumGiveaway", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "enterAlbumGiveaway", err2.Error())
 			return nil
 		}
 		err = err2

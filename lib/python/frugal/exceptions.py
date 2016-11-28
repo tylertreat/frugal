@@ -1,12 +1,26 @@
-from thrift.Thrift import TException
 from thrift.protocol.TProtocol import TProtocolException
+from thrift.transport.TTransport import TTransportException
 from thrift.Thrift import TApplicationException
+from thrift.Thrift import TException
 
 
 class FException(TException):
     """Basic Frugal exception."""
+
     def __init__(self, message=None):
         super(FException, self).__init__(message)
+
+
+class FApplicationException(TApplicationException):
+
+    RESPONSE_TOO_LARGE = 100
+    RATE_LIMIT_EXCEEDED = 102
+
+
+class FTransportException(TTransportException):
+
+    REQUEST_TOO_LARGE = 100
+    RESPONSE_TOO_LARGE = 101
 
 
 class FContextException(FException):
@@ -27,10 +41,21 @@ class FProtocolException(TProtocolException):
         super(FProtocolException, self).__init__(type=kind, message=message)
 
 
-class FMessageSizeException(FException):
+class FMessageSizeException(TTransportException):
     """Indicates a message was too large for a transport to handle."""
-    def __init__(self, message=None):
-        super(FMessageSizeException, self).__init__(message)
+
+    def __init__(self, type=FTransportException.REQUEST_TOO_LARGE,
+                 message=None):
+        super(FMessageSizeException, self).__init__(type=type, message=message)
+
+    @classmethod
+    def request(cls, message=None):
+        return cls(type=FTransportException.REQUEST_TOO_LARGE, message=message)
+
+    @classmethod
+    def response(cls, message=None):
+        return cls(type=FTransportException.RESPONSE_TOO_LARGE,
+                   message=message)
 
 
 class FTimeoutException(FException):
@@ -45,8 +70,6 @@ class FRateLimitException(TApplicationException):
     limit threshold.
     """
 
-    RATE_LIMIT_EXCEEDED = 102
-
     def __init__(self, message="rate limit exceeded"):
         """
         Args:
@@ -54,4 +77,4 @@ class FRateLimitException(TApplicationException):
             Defaults to "rate limit exceeded".
         """
         super(FRateLimitException, self).__init__(
-            type=FRateLimitException.RATE_LIMIT_EXCEEDED, message=message)
+            type=FApplicationException.RATE_LIMIT_EXCEEDED, message=message)

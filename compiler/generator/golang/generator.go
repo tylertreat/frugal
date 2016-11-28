@@ -644,7 +644,7 @@ func (g *Generator) generateWrite(s *parser.Struct, sName string) string {
 	return contents
 }
 
-func(g *Generator) generateToString(s *parser.Struct, sName string) string {
+func (g *Generator) generateToString(s *parser.Struct, sName string) string {
 	contents := ""
 
 	contents += fmt.Sprintf("func (p *%s) String() string {\n", sName)
@@ -1651,12 +1651,12 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	contents += "\t\t\t\terrorC <- err\n"
 	contents += "\t\t\t\treturn err\n"
 	contents += "\t\t\t}\n"
-	contents += "\t\t\tif error1.TypeId() == frugal.RESPONSE_TOO_LARGE {\n"
-	contents += "\t\t\t\terr = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, \"response too large for transport\")\n"
+	contents += "\t\t\tif error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {\n"
+	contents += "\t\t\t\terr = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())\n"
 	contents += "\t\t\t\terrorC <- err\n"
 	contents += "\t\t\t\treturn nil\n"
 	contents += "\t\t\t}\n"
-	contents += "\t\t\tif error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {\n"
+	contents += "\t\t\tif error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {\n"
 	contents += "\t\t\t\terr = frugal.ErrRateLimitExceeded\n"
 	contents += "\t\t\t\terrorC <- err\n"
 	contents += "\t\t\t\treturn nil\n"
@@ -1798,7 +1798,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\t\tif err2 == frugal.ErrRateLimitExceeded {\n"
 	contents += "\t\t\tp.GetWriteMutex().Lock()\n"
 	contents += fmt.Sprintf(
-		"\t\t\t%sWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, \"%s\", \"Rate limit exceeded\")\n",
+		"\t\t\t%sWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, \"%s\", \"Rate limit exceeded\")\n",
 		servLower, nameLower)
 	contents += "\t\t\tp.GetWriteMutex().Unlock()\n"
 	contents += "\t\t\treturn nil\n"
@@ -1897,7 +1897,7 @@ func (g *Generator) generateErrTooLarge(service *parser.Service, method *parser.
 	nameLower := generator.LowercaseFirstLetter(method.Name)
 	contents := "\t\tif frugal.IsErrTooLarge(err2) {\n"
 	contents += fmt.Sprintf(
-		"\t\t\t%sWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \"+err2.Error())\n",
+		"\t\t\t%sWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, \"%s\", err2.Error())\n",
 		servLower, nameLower)
 	contents += "\t\t\treturn nil\n"
 	contents += "\t\t}\n"

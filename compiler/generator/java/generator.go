@@ -2286,9 +2286,12 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 
 	imports += g.generateStructImports()
 
+	imports += "import com.workiva.frugal.exception.FApplicationException;\n"
+	imports += "import com.workiva.frugal.exception.FException;\n"
 	imports += "import com.workiva.frugal.exception.FMessageSizeException;\n"
 	imports += "import com.workiva.frugal.exception.FRateLimitException;\n"
 	imports += "import com.workiva.frugal.exception.FTimeoutException;\n"
+	imports += "import com.workiva.frugal.exception.FTransportException;\n"
 	imports += "import com.workiva.frugal.middleware.InvocationHandler;\n"
 	imports += "import com.workiva.frugal.middleware.ServiceMiddleware;\n"
 	imports += "import com.workiva.frugal.processor.FBaseProcessor;\n"
@@ -2878,13 +2881,12 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtabtab + "if (message.type == TMessageType.EXCEPTION) {\n"
 	contents += tabtabtabtabtabtabtab + "TApplicationException e = TApplicationException.read(iprot);\n"
 	contents += tabtabtabtabtabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtabtabtabtabtab + "if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {\n"
-	contents += tabtabtabtabtabtabtabtab + "TException ex;\n"
-	contents += tabtabtabtabtabtabtabtab + "if (e.getType() == FTransport.RESPONSE_TOO_LARGE){\n"
-	contents += tabtabtabtabtabtabtabtabtab + "ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, \"response too large for transport\");\n"
-	contents += tabtabtabtabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtabtabtabtab + "else {\n"
-	contents += tabtabtabtabtabtabtabtabtab + "ex = new FRateLimitException(\"rate limit exceeded\");\n"
+	contents += tabtabtabtabtabtabtab + "if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {\n"
+	contents += tabtabtabtabtabtabtabtab + "TException ex = e;\n"
+	contents += tabtabtabtabtabtabtabtab + "if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {\n"
+	contents += tabtabtabtabtabtabtabtabtab + "ex = FMessageSizeException.response(e.getMessage());\n"
+	contents += tabtabtabtabtabtabtabtab + "} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {\n"
+	contents += tabtabtabtabtabtabtabtabtab + "ex = new FRateLimitException(e.getMessage());\n"
 	contents += tabtabtabtabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtabtabtabtab + "try {\n"
 	contents += tabtabtabtabtabtabtabtabtab + "result.put(ex);\n"
@@ -3014,7 +3016,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 			contents += tabtabtabtabtab + fmt.Sprintf("result.%s = %s;\n", exception.Name, exception.Name)
 		}
 		contents += tabtabtabtab + "} catch (FRateLimitException e) {\n"
-		contents += tabtabtabtabtab + fmt.Sprintf("writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", \"rate limit exceeded\");\n",
+		contents += tabtabtabtabtab + fmt.Sprintf("writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, \"%s\", \"rate limit exceeded\");\n",
 			method.Name)
 		contents += tabtabtabtabtab + "return;\n"
 		contents += tabtabtabtab + "} catch (TException e) {\n"
@@ -3035,7 +3037,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtabtab + "} catch (TException e) {\n"
 		contents += tabtabtabtabtabtab + "if (e instanceof FMessageSizeException) {\n"
 		contents += tabtabtabtabtabtabtab + fmt.Sprintf(
-			"writeApplicationException(ctx, oprot, FTransport.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \" + e.getMessage());\n",
+			"writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \" + e.getMessage());\n",
 			method.Name)
 		contents += tabtabtabtabtabtab + "} else {\n"
 		contents += tabtabtabtabtabtabtab + "throw e;\n"
