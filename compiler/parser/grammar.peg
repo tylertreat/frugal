@@ -68,6 +68,14 @@
         }
         return st
     }
+
+    // toAnnotations converts an interface{} to an Annotation slice.
+    func toAnnotations(v interface{}) []*Annotation {
+        if v == nil {
+            return nil
+        }
+        return v.([]*Annotation)
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -187,11 +195,12 @@ Const <- "const" _ typ:FieldType _ name:Identifier _ "=" _ value:ConstValue EOS 
     }, nil
 }
 
-Enum <- "enum" _ name:Identifier __ '{' __ values:(EnumValue __)* '}' EOS {
+Enum <- "enum" _ name:Identifier __ '{' __ values:(EnumValue __)* '}' _ annotations:TypeAnnotations? EOS {
     vs := toIfaceSlice(values)
     en := &Enum{
-        Name: string(name.(Identifier)),
-        Values: make([]*EnumValue, len(vs)),
+        Name:        string(name.(Identifier)),
+        Values:      make([]*EnumValue, len(vs)),
+        Annotations: toAnnotations(annotations),
     }
     // Assigns numbers in order. This will behave badly if some values are
     // defined and other are not, but I think that's ok since that's a silly
@@ -210,10 +219,11 @@ Enum <- "enum" _ name:Identifier __ '{' __ values:(EnumValue __)* '}' EOS {
     return en, nil
 }
 
-EnumValue <- docstr:(DocString __)? name:Identifier _ value:('=' _ IntConstant)? ListSeparator? {
+EnumValue <- docstr:(DocString __)? name:Identifier _ value:('=' _ IntConstant)? _ annotations:TypeAnnotations? ListSeparator? {
     ev := &EnumValue{
-        Name: string(name.(Identifier)),
-        Value: -1,
+        Name:        string(name.(Identifier)),
+        Value:       -1,
+        Annotations: toAnnotations(annotations),
     }
     if docstr != nil {
         raw := docstr.([]interface{})[0].(string)
@@ -225,19 +235,21 @@ EnumValue <- docstr:(DocString __)? name:Identifier _ value:('=' _ IntConstant)?
     return ev, nil
 }
 
-TypeDef <- "typedef" _ typ:FieldType _ name:Identifier EOS {
+TypeDef <- "typedef" _ typ:FieldType _ name:Identifier _ annotations:TypeAnnotations? EOS {
     return &TypeDef{
-        Name: string(name.(Identifier)),
-        Type: typ.(*Type),
+        Name:        string(name.(Identifier)),
+        Type:        typ.(*Type),
+        Annotations: toAnnotations(annotations),
     }, nil
 }
 
 Struct <- "struct" _ st:StructLike { return st.(*Struct), nil }
 Exception <- "exception" _ st:StructLike { return exception(st.(*Struct)), nil }
 Union <- "union" _ st:StructLike { return union(st.(*Struct)), nil }
-StructLike <- name:Identifier __ '{' __ fields:FieldList '}' EOS {
+StructLike <- name:Identifier __ '{' __ fields:FieldList '}' _ annotations:TypeAnnotations? EOS {
     st := &Struct{
-        Name: string(name.(Identifier)),
+        Name:        string(name.(Identifier)),
+        Annotations: toAnnotations(annotations),
     }
     if fields != nil {
         st.Fields = fields.([]*Field)
@@ -254,11 +266,12 @@ FieldList <- fields:(Field __)* {
     return flds, nil
 }
 
-Field <- docstr:(DocString __)? id:IntConstant _ ':' _ mod:FieldModifier? _ typ:FieldType _ name:Identifier __ def:('=' _ ConstValue)? ListSeparator? {
+Field <- docstr:(DocString __)? id:IntConstant _ ':' _ mod:FieldModifier? _ typ:FieldType _ name:Identifier __ def:('=' _ ConstValue)? _ annotations:TypeAnnotations? ListSeparator? {
     f := &Field{
-        ID:   int(id.(int64)),
-        Name: string(name.(Identifier)),
-        Type: typ.(*Type),
+        ID:          int(id.(int64)),
+        Name:        string(name.(Identifier)),
+        Type:        typ.(*Type),
+        Annotations: toAnnotations(annotations),
     }
     if docstr != nil {
         raw := docstr.([]interface{})[0].(string)
@@ -284,11 +297,12 @@ FieldModifier <- ("required" / "optional") {
     }
 }
 
-Service <- "service" _ name:Identifier _ extends:("extends" __ Identifier __)? __ '{' __ methods:(Function __)* ('}' / EndOfServiceError) EOS {
+Service <- "service" _ name:Identifier _ extends:("extends" __ Identifier __)? __ '{' __ methods:(Function __)* ('}' / EndOfServiceError) _ annotations:TypeAnnotations? EOS {
     ms := methods.([]interface{})
     svc := &Service{
-        Name:    string(name.(Identifier)),
-        Methods: make([]*Method, len(ms)),
+        Name:        string(name.(Identifier)),
+        Methods:     make([]*Method, len(ms)),
+        Annotations: toAnnotations(annotations),
     }
     if extends != nil {
         svc.Extends = string(extends.([]interface{})[2].(Identifier))
@@ -304,9 +318,10 @@ EndOfServiceError <- . {
     return nil, errors.New("parser: expected end of service")
 }
 
-Function <- docstr:(DocString __)? oneway:("oneway" __)? typ:FunctionType __ name:Identifier _ '(' __ arguments:FieldList ')' __ exceptions:Throws? ListSeparator? {
+Function <- docstr:(DocString __)? oneway:("oneway" __)? typ:FunctionType __ name:Identifier _ '(' __ arguments:FieldList ')' __ exceptions:Throws? _ annotations:TypeAnnotations? ListSeparator? {
     m := &Method{
-        Name: string(name.(Identifier)),
+        Name:        string(name.(Identifier)),
+        Annotations: toAnnotations(annotations),
     }
     if docstr != nil {
         raw := docstr.([]interface{})[0].(string)
@@ -349,33 +364,43 @@ FieldType <- typ:(BaseType / ContainerType / Identifier) {
     return typ, nil
 }
 
-BaseType <- ("bool" / "byte" / "i16" / "i32" / "i64" / "double" / "string" / "binary" ) {
-    return &Type{Name: string(c.text)}, nil
+BaseType <- name:BaseTypeName _ annotations:TypeAnnotations? {
+    return &Type{
+        Name:        name.(string),
+        Annotations: toAnnotations(annotations),
+    }, nil
+}
+
+BaseTypeName <- ("bool" / "byte" / "i16" / "i32" / "i64" / "double" / "string" / "binary" ) {
+    return string(c.text), nil
 }
 
 ContainerType <- typ:(MapType / SetType / ListType) {
     return typ, nil
 }
 
-MapType <- CppType? "map<" WS key:FieldType WS "," WS value:FieldType WS ">" {
+MapType <- CppType? "map<" WS key:FieldType WS "," WS value:FieldType WS ">" _ annotations:TypeAnnotations? {
     return &Type{
-        Name: "map",
-        KeyType: key.(*Type),
-        ValueType: value.(*Type),
+        Name:        "map",
+        KeyType:     key.(*Type),
+        ValueType:   value.(*Type),
+        Annotations: toAnnotations(annotations),
     }, nil
 }
 
-SetType <- CppType? "set<" WS typ:FieldType WS ">" {
+SetType <- CppType? "set<" WS typ:FieldType WS ">" _ annotations:TypeAnnotations? {
     return &Type{
-        Name: "set",
-        ValueType: typ.(*Type),
+        Name:        "set",
+        ValueType:   typ.(*Type),
+        Annotations: toAnnotations(annotations),
     }, nil
 }
 
-ListType <- "list<" WS typ:FieldType WS ">" {
+ListType <- "list<" WS typ:FieldType WS ">" _ annotations:TypeAnnotations? {
     return &Type{
-        Name: "list",
-        ValueType: typ.(*Type),
+        Name:        "list",
+        ValueType:   typ.(*Type),
+        Annotations: toAnnotations(annotations),
     }, nil
 }
 
@@ -384,6 +409,25 @@ CppType <- "cpp_type" cppType:Literal {
 }
 
 ConstValue <- Literal / BoolConstant / DoubleConstant / IntConstant / ConstMap / ConstList / Identifier
+
+TypeAnnotations <- '(' __ annotations:TypeAnnotation* ')' {
+    var anns []*Annotation
+    for _, ann := range annotations.([]interface{}) {
+        anns = append(anns, ann.(*Annotation))
+    }
+    return anns, nil
+}
+
+TypeAnnotation <- name:Identifier _ value:('=' __ value:Literal { return value, nil })? ListSeparator? __ {
+    var optValue string
+    if value != nil {
+        optValue = value.(string)
+    }
+    return &Annotation{
+      Name: string(name.(Identifier)),
+        Value: optValue,
+    }, nil
+}
 
 BoolConstant <- ("true" / "false") {
     return string(c.text) == "true", nil
