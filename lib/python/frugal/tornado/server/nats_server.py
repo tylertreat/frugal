@@ -1,7 +1,6 @@
 import logging
 import struct
 
-from thrift.Thrift import TException
 from thrift.Thrift import TApplicationException
 from thrift.transport.TTransport import TMemoryBuffer
 from tornado import gen
@@ -17,7 +16,7 @@ class FNatsTornadoServer(FServer):
     """An implementation of FServer which uses NATS as the underlying transport.
     Clients must connect with the FNatsTransport"""
 
-    def __init__(self, nats_client, subject, processor,
+    def __init__(self, nats_client, subjects, processor,
                  protocol_factory, queue=""):
         """Create a new instance of FStatelessNatsTornadoServer
 
@@ -28,12 +27,13 @@ class FNatsTornadoServer(FServer):
             protocol_factory: FProtocolFactory
         """
         self._nats_client = nats_client
-        self._subject = subject
+        self._subjects = [subjects] if isinstance(subjects, basestring) \
+            else subjects
         self._processor = processor
         self._iprot_factory = protocol_factory
         self._oprot_factory = protocol_factory
         self._queue = queue
-        self._sub_id = None
+        self._sub_ids = []
 
     @gen.coroutine
     def serve(self):
@@ -41,11 +41,13 @@ class FNatsTornadoServer(FServer):
         queue = self._queue
         cb = self._on_message_callback
 
-        self._sub_id = yield self._nats_client.subscribe_async(
-            self._subject,
-            queue=queue,
-            cb=cb
-        )
+        self._sub_ids = [
+            (yield self._nats_client.subscribe_async(
+                subject,
+                queue=queue,
+                cb=cb
+            )) for subject in self._subjects
+        ]
 
         logger.info("Frugal server running...")
 
@@ -53,7 +55,8 @@ class FNatsTornadoServer(FServer):
     def stop(self):
         """Unsubscribe from server subject"""
         logger.debug("Frugal server stopping...")
-        yield self._nats_client.unsubscribe(self._sub_id)
+        for sid in self._sub_ids:
+            yield self._nats_client.unsubscribe(sid)
 
     @gen.coroutine
     def _on_message_callback(self, msg):

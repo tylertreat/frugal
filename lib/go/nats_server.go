@@ -24,7 +24,7 @@ type FNatsServerBuilder struct {
 	conn          *nats.Conn
 	processor     FProcessor
 	protoFactory  *FProtocolFactory
-	subject       string
+	subjects      []string
 	queue         string
 	workerCount   uint
 	queueLen      uint
@@ -34,12 +34,12 @@ type FNatsServerBuilder struct {
 // NewFNatsServerBuilder creates a builder which configures and builds NATS
 // server instances.
 func NewFNatsServerBuilder(conn *nats.Conn, processor FProcessor,
-	protoFactory *FProtocolFactory, subject string) *FNatsServerBuilder {
+	protoFactory *FProtocolFactory, subjects []string) *FNatsServerBuilder {
 	return &FNatsServerBuilder{
 		conn:          conn,
 		processor:     processor,
 		protoFactory:  protoFactory,
-		subject:       subject,
+		subjects:      subjects,
 		workerCount:   1,
 		queueLen:      defaultWorkQueueLen,
 		highWatermark: defaultWatermark,
@@ -78,7 +78,7 @@ func (f *FNatsServerBuilder) Build() FServer {
 		conn:          f.conn,
 		processor:     f.processor,
 		protoFactory:  f.protoFactory,
-		subject:       f.subject,
+		subjects:      f.subjects,
 		queue:         f.queue,
 		workerCount:   f.workerCount,
 		workC:         make(chan *frameWrapper, f.queueLen),
@@ -93,7 +93,7 @@ type fNatsServer struct {
 	conn          *nats.Conn
 	processor     FProcessor
 	protoFactory  *FProtocolFactory
-	subject       string
+	subjects      []string
 	queue         string
 	workerCount   uint
 	workC         chan *frameWrapper
@@ -103,9 +103,13 @@ type fNatsServer struct {
 
 // Serve starts the server.
 func (f *fNatsServer) Serve() error {
-	sub, err := f.conn.QueueSubscribe(f.subject, f.queue, f.handler)
-	if err != nil {
-		return err
+	subscriptions := []*nats.Subscription{}
+	for _, subject := range f.subjects {
+		sub, err := f.conn.QueueSubscribe(subject, f.queue, f.handler)
+		if err != nil {
+			return err
+		}
+		subscriptions = append(subscriptions, sub)
 	}
 
 	for i := uint(0); i < f.workerCount; i++ {
@@ -116,7 +120,9 @@ func (f *fNatsServer) Serve() error {
 	<-f.quit
 	logger().Info("frugal: server stopping...")
 
-	sub.Unsubscribe()
+	for _, sub := range subscriptions {
+		sub.Unsubscribe()
+	}
 
 	return nil
 }

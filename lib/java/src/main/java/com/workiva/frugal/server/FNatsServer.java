@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -38,7 +39,7 @@ public class FNatsServer implements FServer {
     private final FProcessor processor;
     private final FProtocolFactory inputProtoFactory;
     private final FProtocolFactory outputProtoFactory;
-    private final String subject;
+    private final String[] subjects;
     private final String queue;
     private final long highWatermark;
 
@@ -46,7 +47,7 @@ public class FNatsServer implements FServer {
     private final ExecutorService executorService;
 
     /**
-     * Creates a new FNatsServer which receives requests on the given subject and queue.
+     * Creates a new FNatsServer which receives requests on the given subjects and queue.
      * <p>
      * The worker count controls the size of the thread pool used to process requests. This uses a provided queue
      * length. If the queue fills up, newly received requests will block to be placed on the queue. If requests wait for
@@ -56,18 +57,18 @@ public class FNatsServer implements FServer {
      * @param conn            NATS connection
      * @param processor       FProcessor used to process requests
      * @param protoFactory    FProtocolFactory used for input and output protocols
-     * @param subject         NATS subject to receive requests on
+     * @param subjects        NATS subjects to receive requests on
      * @param queue           NATS queue group to receive requests on
      * @param highWatermark   Milliseconds when high watermark logic is triggered
      * @param executorService Custom executor service for processing messages
      */
     private FNatsServer(Connection conn, FProcessor processor, FProtocolFactory protoFactory,
-                        String subject, String queue, long highWatermark, ExecutorService executorService) {
+                        String[] subjects, String queue, long highWatermark, ExecutorService executorService) {
         this.conn = conn;
         this.processor = processor;
         this.inputProtoFactory = protoFactory;
         this.outputProtoFactory = protoFactory;
-        this.subject = subject;
+        this.subjects = subjects;
         this.queue = queue;
         this.highWatermark = highWatermark;
         this.executorService = executorService;
@@ -81,7 +82,7 @@ public class FNatsServer implements FServer {
         private final Connection conn;
         private final FProcessor processor;
         private final FProtocolFactory protoFactory;
-        private final String subject;
+        private final String[] subjects;
 
         private String queue = "";
         private int workerCount = 1;
@@ -90,18 +91,18 @@ public class FNatsServer implements FServer {
         private ExecutorService executorService;
 
         /**
-         * Creates a new Builder which creates FStatelessNatsServers that subscribe to the given NATS subject.
+         * Creates a new Builder which creates FStatelessNatsServers that subscribe to the given NATS subjects.
          *
          * @param conn         NATS connection
          * @param processor    FProcessor used to process requests
          * @param protoFactory FProtocolFactory used for input and output protocols
-         * @param subject      NATS subject to receive requests on
+         * @param subjects     NATS subjects to receive requests on
          */
-        public Builder(Connection conn, FProcessor processor, FProtocolFactory protoFactory, String subject) {
+        public Builder(Connection conn, FProcessor processor, FProtocolFactory protoFactory, String[] subjects) {
             this.conn = conn;
             this.processor = processor;
             this.protoFactory = protoFactory;
-            this.subject = subject;
+            this.subjects = subjects;
         }
 
         /**
@@ -185,9 +186,7 @@ public class FNatsServer implements FServer {
                         new ArrayBlockingQueue<>(queueLength),
                         new BlockingRejectedExecutionHandler());
             }
-            FNatsServer server =
-                    new FNatsServer(conn, processor, protoFactory, subject, queue, highWatermark, executorService);
-            return server;
+            return new FNatsServer(conn, processor, protoFactory, subjects, queue, highWatermark, executorService);
         }
 
     }
@@ -199,7 +198,11 @@ public class FNatsServer implements FServer {
      */
     @Override
     public void serve() throws TException {
-        Subscription sub = conn.subscribe(subject, queue, newRequestHandler());
+        ArrayList<Subscription> subscriptionArrayList = new ArrayList<>();
+        for (String subject : subjects) {
+            subscriptionArrayList.add(conn.subscribe(subject, queue, newRequestHandler()));
+        }
+
         LOGGER.info("Frugal server running...");
         try {
             shutdownSignal.await();
@@ -207,10 +210,13 @@ public class FNatsServer implements FServer {
         }
         LOGGER.info("Frugal server stopping...");
 
-        try {
-            sub.unsubscribe();
-        } catch (IOException e) {
-            LOGGER.warn("Frugal server failed to unsubscribe: " + e.getMessage());
+        for (Subscription subscription : subscriptionArrayList) {
+            try {
+                subscription.unsubscribe();
+            } catch (IOException e) {
+                LOGGER.warn("Frugal server failed to unsubscribe from " + subscription.getSubject() + ": " +
+                        e.getMessage());
+            }
         }
     }
 
@@ -323,8 +329,8 @@ public class FNatsServer implements FServer {
      *
      * @return the subject
      */
-    public String getSubject() {
-        return subject;
+    public String[] getSubjects() {
+        return subjects;
     }
 
     /**

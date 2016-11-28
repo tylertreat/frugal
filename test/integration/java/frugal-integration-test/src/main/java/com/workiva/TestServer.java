@@ -111,7 +111,7 @@ public class TestServer {
                             conn,
                             processor,
                             fProtocolFactory,
-                            Integer.toString(port)).build();
+                            new String[]{Integer.toString(port)}).build();
                     break;
             }
 
