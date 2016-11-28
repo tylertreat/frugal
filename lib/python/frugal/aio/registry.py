@@ -3,7 +3,7 @@ import logging
 
 from thrift.transport.TTransport import TMemoryBuffer
 
-from frugal.context import _OP_ID
+from frugal.context import _OPID_HEADER
 from frugal.exceptions import FException
 from frugal.util.headers import _Headers
 
@@ -123,7 +123,7 @@ class FClientRegistry(FRegistry):
             frame: an entire Frugal message frame.
         """
         headers = _Headers.decode_from_frame(frame)
-        op_id = headers.get(_OP_ID, None)
+        op_id = headers.get(_OPID_HEADER, None)
 
         if not op_id:
             raise FException("Frame missing op_id")

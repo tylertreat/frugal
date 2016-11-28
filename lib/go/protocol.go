@@ -106,7 +106,7 @@ func (f *FProtocol) ReadRequestHeader() (*FContext, error) {
 	}
 
 	// Put op id in response headers
-	opid, ok := headers[opID]
+	opid, ok := headers[opIDHeader]
 	if !ok {
 		return nil, NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: request missing op id")
 	}

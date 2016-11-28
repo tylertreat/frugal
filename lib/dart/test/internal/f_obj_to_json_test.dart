@@ -11,7 +11,7 @@ void main() {
 
     test('Serializes an FContext', () {
       String json = fObjToJson(new FContext(correlationId: "cid"));
-      expect(json, '{"_cid":"cid","_opid":"0"}');
+      expect(json, '{"_cid":"cid","_opid":"0","_timeout":"5000"}');
     });
 
     test('Serializes a normal object', () {

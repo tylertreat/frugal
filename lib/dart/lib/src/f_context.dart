@@ -1,7 +1,15 @@
 part of frugal;
 
-String _cid = "_cid";
-String _opid = "_opid";
+// Header containing correlation id
+const String _cidHeader = "_cid";
+
+// Header containing op id (uint64 as string)
+const String _opidHeader = "_opid";
+
+// Header containing request timeout (milliseconds as string)
+const String _timeoutHeader = "_timeout";
+
+final Duration _defaultTimeout = new Duration(seconds: 5);
 
 /// FContext is the context for a Frugal message. Every RPC has an FContext,
 /// which can be used to set request headers, response headers, and the request
@@ -25,12 +33,13 @@ class FContext {
   Map<String, String> _requestHeaders;
   Map<String, String> _responseHeaders;
 
-  // Default timeout to 5 seconds
-  Duration _timeout = new Duration(seconds: 5);
+  Duration get timeout {
+    return new Duration(
+        milliseconds: int.parse(_requestHeaders[_timeoutHeader]));
+  }
 
-  Duration get timeout => _timeout;
-  void set timeout(timeout) {
-    _timeout = timeout;
+  void set timeout(Duration timeout) {
+    _requestHeaders[_timeoutHeader] = timeout.inMilliseconds.toString();
   }
 
   FContext({String correlationId: ""}) {
@@ -38,35 +47,39 @@ class FContext {
       correlationId = _generateCorrelationId();
     }
     _requestHeaders = {
-      _cid: correlationId,
-      _opid: "0",
+      _cidHeader: correlationId,
+      _opidHeader: "0",
+      _timeoutHeader: _defaultTimeout.inMilliseconds.toString(),
     };
     _responseHeaders = {};
   }
 
   FContext.withRequestHeaders(Map<String, String> headers) {
-    if (!headers.containsKey(_cid) || headers[_cid] == "") {
-      headers[_cid] = _generateCorrelationId();
+    if (!headers.containsKey(_cidHeader) || headers[_cidHeader] == "") {
+      headers[_cidHeader] = _generateCorrelationId();
     }
-    if (!headers.containsKey(_opid) || headers[_opid] == "") {
-      headers[_opid] = "0";
+    if (!headers.containsKey(_opidHeader) || headers[_opidHeader] == "") {
+      headers[_opidHeader] = "0";
+    }
+    if (!headers.containsKey(_timeoutHeader) || headers[_timeoutHeader] == "") {
+      headers[_timeoutHeader] = _defaultTimeout.inMilliseconds.toString();
     }
     _requestHeaders = headers;
     _responseHeaders = {};
   }
 
   /// Correlation Id for the context
-  String correlationId() => _requestHeaders[_cid];
+  String correlationId() => _requestHeaders[_cidHeader];
 
   /// Get the operation id for the context
   int _opId() {
-    var opIdStr = _requestHeaders[_opid];
+    var opIdStr = _requestHeaders[_opidHeader];
     return int.parse(opIdStr);
   }
 
   /// Set the operation id for the context
   void _setOpId(int id) {
-    _requestHeaders[_opid] = "$id";
+    _requestHeaders[_opidHeader] = "$id";
   }
 
   /// Add a request header to the context for the given name.

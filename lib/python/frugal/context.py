@@ -3,8 +3,15 @@ from copy import copy
 from frugal import _IS_PY2
 from frugal.exceptions import FContextHeaderException
 
-_C_ID = "_cid"
-_OP_ID = "_opid"
+# Header containing correlation id.
+_CID_HEADER = "_cid"
+
+# Header containing op id (uint64 as string).
+_OPID_HEADER = "_opid"
+
+# Header containing request timeout (milliseconds as string).
+_TIMEOUT_HEADER = "_timeout"
+
 _DEFAULT_TIMEOUT = 5 * 1000
 _DEFAULT_OP_ID = 0
 
@@ -40,20 +47,19 @@ class FContext(object):
         self._request_headers = {}
         self._response_headers = {}
 
-        self._timeout = timeout
-
         if not correlation_id:
             correlation_id = self._generate_cid()
 
-        self._request_headers[_C_ID] = correlation_id
-        self._request_headers[_OP_ID] = str(_DEFAULT_OP_ID)
+        self._request_headers[_CID_HEADER] = correlation_id
+        self._request_headers[_OPID_HEADER] = str(_DEFAULT_OP_ID)
+        self._request_headers[_TIMEOUT_HEADER] = str(timeout)
 
     def get_correlation_id(self):
         """Return the correlation id for the FContext.
            This is used for distributed tracing purposes.
         """
 
-        return self._request_headers.get(_C_ID)
+        return self._request_headers.get(_CID_HEADER)
 
     def _get_op_id(self):
         """Return an int operation id for the FContext.  This is a unique long
@@ -61,13 +67,13 @@ class FContext(object):
         implementation detail.
         """
 
-        return int(self._request_headers.get(_OP_ID))
+        return int(self._request_headers.get(_OPID_HEADER))
 
     def _set_op_id(self, op_id):
-        self._request_headers[_OP_ID] = str(op_id)
+        self._request_headers[_OPID_HEADER] = str(op_id)
 
     def _set_response_op_id(self, op_id):
-        self._response_headers[_OP_ID] = op_id
+        self._response_headers[_OPID_HEADER] = op_id
 
     def get_request_headers(self):
         """Returns request headers for this FConext."""
@@ -95,7 +101,7 @@ class FContext(object):
             FContextHeaderException: if user tries to set _cid or _opid.
             TypeError: if user passes non-string for key or value.
         """
-        if key in (_OP_ID, _C_ID):
+        if key in (_OPID_HEADER, _CID_HEADER):
             raise FContextHeaderException(
                 "Not allowed to overwrite internal _cid or _opid.")
 
@@ -129,7 +135,7 @@ class FContext(object):
             FContextHeaderException: if user tries to set _cid or _opid.
             TypeError: if user passes non-string for key or value.
         """
-        if key in (_OP_ID, _C_ID):
+        if key in (_OPID_HEADER, _CID_HEADER):
             raise FContextHeaderException(
                 "Not allowed to overwrite internal _cid or _opid")
 
@@ -143,11 +149,10 @@ class FContext(object):
         self._response_headers[key] = value
 
     def get_timeout(self):
-        return self._timeout
+        return int(self._request_headers.get(_TIMEOUT_HEADER))
 
     def set_timeout(self, timeout):
-        # TODO: check the type of timeout
-        self._timeout = timeout
+        self._request_headers[_TIMEOUT_HEADER] = str(timeout)
         return self
 
     def _check_string(self, string):

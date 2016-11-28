@@ -92,5 +92,5 @@ func TestServerRegistry(t *testing.T) {
 
 	ctx, err := processor.iprot.ReadRequestHeader()
 	assert.Nil(err)
-	assert.Equal(ctx.CorrelationID(), frugalHeaders[cid])
+	assert.Equal(ctx.CorrelationID(), frugalHeaders[cidHeader])
 }
