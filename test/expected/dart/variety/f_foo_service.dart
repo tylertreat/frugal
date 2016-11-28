@@ -103,12 +103,12 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
         if (msg.type == thrift.TMessageType.EXCEPTION) {
           thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
           iprot.readMessageEnd();
-          if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response());
+          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError());
+          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError(message: error.message));
             return;
           }
           throw error;
@@ -170,12 +170,12 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
         if (msg.type == thrift.TMessageType.EXCEPTION) {
           thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
           iprot.readMessageEnd();
-          if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response());
+          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError());
+          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError(message: error.message));
             return;
           }
           throw error;
@@ -268,12 +268,12 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
         if (msg.type == thrift.TMessageType.EXCEPTION) {
           thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
           iprot.readMessageEnd();
-          if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response());
+          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError());
+          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError(message: error.message));
             return;
           }
           throw error;
@@ -345,12 +345,12 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
         if (msg.type == thrift.TMessageType.EXCEPTION) {
           thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
           iprot.readMessageEnd();
-          if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response());
+          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError());
+          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError(message: error.message));
             return;
           }
           throw error;
@@ -417,12 +417,12 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
         if (msg.type == thrift.TMessageType.EXCEPTION) {
           thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
           iprot.readMessageEnd();
-          if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response());
+          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError());
+          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError(message: error.message));
             return;
           }
           throw error;
@@ -487,12 +487,12 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
         if (msg.type == thrift.TMessageType.EXCEPTION) {
           thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
           iprot.readMessageEnd();
-          if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response());
+          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError());
+          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError(message: error.message));
             return;
           }
           throw error;
@@ -557,12 +557,12 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
         if (msg.type == thrift.TMessageType.EXCEPTION) {
           thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
           iprot.readMessageEnd();
-          if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response());
+          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError());
+          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError(message: error.message));
             return;
           }
           throw error;

@@ -18,7 +18,7 @@ const delimiter = "."
 type EventsPublisher interface {
 	Open() error
 	Close() error
-	PublishEventCreated(ctx *frugal.FContext, user string, req *Event) error
+	PublishEventCreated(ctx frugal.FContext, user string, req *Event) error
 }
 
 type eventsPublisher struct {
@@ -48,7 +48,7 @@ func (l *eventsPublisher) Close() error {
 }
 
 // This is a docstring.
-func (l *eventsPublisher) PublishEventCreated(ctx *frugal.FContext, user string, req *Event) error {
+func (l *eventsPublisher) PublishEventCreated(ctx frugal.FContext, user string, req *Event) error {
 	ret := l.methods["publishEventCreated"].Invoke([]interface{}{ctx, user, req})
 	if ret[0] != nil {
 		return ret[0].(error)
@@ -56,7 +56,7 @@ func (l *eventsPublisher) PublishEventCreated(ctx *frugal.FContext, user string,
 	return nil
 }
 
-func (l *eventsPublisher) publishEventCreated(ctx *frugal.FContext, user string, req *Event) error {
+func (l *eventsPublisher) publishEventCreated(ctx frugal.FContext, user string, req *Event) error {
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
@@ -84,7 +84,7 @@ func (l *eventsPublisher) publishEventCreated(ctx *frugal.FContext, user string,
 // the @ sign. Prefix specifies topic prefix tokens, which can be static or
 // variable.
 type EventsSubscriber interface {
-	SubscribeEventCreated(user string, handler func(*frugal.FContext, *Event)) (*frugal.FSubscription, error)
+	SubscribeEventCreated(user string, handler func(frugal.FContext, *Event)) (*frugal.FSubscription, error)
 }
 
 type eventsSubscriber struct {
@@ -97,7 +97,7 @@ func NewEventsSubscriber(provider *frugal.FScopeProvider, middleware ...frugal.S
 }
 
 // This is a docstring.
-func (l *eventsSubscriber) SubscribeEventCreated(user string, handler func(*frugal.FContext, *Event)) (*frugal.FSubscription, error) {
+func (l *eventsSubscriber) SubscribeEventCreated(user string, handler func(frugal.FContext, *Event)) (*frugal.FSubscription, error) {
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
@@ -111,7 +111,7 @@ func (l *eventsSubscriber) SubscribeEventCreated(user string, handler func(*frug
 	return sub, nil
 }
 
-func (l *eventsSubscriber) recvEventCreated(op string, pf *frugal.FProtocolFactory, handler func(*frugal.FContext, *Event)) frugal.FAsyncCallback {
+func (l *eventsSubscriber) recvEventCreated(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *Event)) frugal.FAsyncCallback {
 	method := frugal.NewMethod(l, handler, "SubscribeEventCreated", l.middleware)
 	return func(transport thrift.TTransport) error {
 		iprot := pf.GetProtocol(transport)

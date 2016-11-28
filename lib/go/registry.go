@@ -36,9 +36,9 @@ type FAsyncCallback func(thrift.TTransport) error
 // passed to the FProcessor to be handled.
 type FRegistry interface {
 	// Register a callback for the given Context.
-	Register(ctx *FContext, callback FAsyncCallback) error
+	Register(ctx FContext, callback FAsyncCallback) error
 	// Unregister a callback for the given Context.
-	Unregister(*FContext)
+	Unregister(FContext)
 	// Execute dispatches a single Thrift message frame.
 	Execute([]byte) error
 }
@@ -55,29 +55,36 @@ func NewFRegistry() FRegistry {
 }
 
 // Register a callback for the given Context.
-func (c *fRegistry) Register(ctx *FContext, callback FAsyncCallback) error {
+func (c *fRegistry) Register(ctx FContext, callback FAsyncCallback) error {
 	// An FContext can be reused for multiple requests. Because of this, every
 	// time an FContext is registered, it must be assigned a new op id to
 	// ensure we can properly correlate responses. We use a monotonically
 	// increasing atomic uint64 for this purpose. If the FContext already has
 	// an op id, it has been used for a request. We check the handlers map to
 	// ensure that request is not still in-flight.
-	opID := ctx.opID()
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	_, ok := c.handlers[opID]
-	if ok {
-		return errors.New("frugal: context already registered")
+	opID, err := getOpID(ctx)
+	// Context already has an opID
+	if err == nil {
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		_, ok := c.handlers[opID]
+		if ok {
+			return errors.New("frugal: context already registered")
+		}
 	}
 	opID = atomic.AddUint64(&nextOpID, 1)
-	ctx.setOpID(opID)
+	setRequestOpID(ctx, opID)
 	c.handlers[opID] = callback
 	return nil
 }
 
 // Unregister a callback for the given Context.
-func (c *fRegistry) Unregister(ctx *FContext) {
-	opID := ctx.opID()
+func (c *fRegistry) Unregister(ctx FContext) {
+	opID, err := getOpID(ctx)
+	if err != nil {
+		logger().Warnf("Attempted to unregister an FContext with a malformed opid: %s", err)
+		return
+	}
 	c.mu.Lock()
 	delete(c.handlers, opID)
 	c.mu.Unlock()

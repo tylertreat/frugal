@@ -1,4 +1,4 @@
-from .t_memory_output_buffer import TMemoryOutputBuffer
+from .memory_output_buffer import TMemoryOutputBuffer
 from .scope_transport import FPublisherTransport
 from .scope_transport import FSubscriberTransport
 from .transport import TSynchronousTransport, FTransport

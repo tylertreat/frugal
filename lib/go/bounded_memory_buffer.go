@@ -2,6 +2,7 @@ package frugal
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
@@ -30,7 +31,9 @@ func NewTMemoryOutputBuffer(size uint) *TMemoryOutputBuffer {
 func (f *TMemoryOutputBuffer) Write(buf []byte) (int, error) {
 	if f.limit > 0 && uint(len(buf)+f.Len()) > f.limit {
 		f.Reset()
-		return 0, ErrTooLarge
+		return 0, thrift.NewTTransportException(
+			TTRANSPORT_REQUEST_TOO_LARGE,
+			fmt.Sprintf("Buffer size reached (%d)", f.limit))
 	}
 	return f.TMemoryBuffer.Write(buf)
 }

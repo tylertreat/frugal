@@ -26,16 +26,16 @@ type FFoo interface {
 	actual_base.FBaseFoo
 
 	// Ping the server.
-	Ping(ctx *frugal.FContext) (err error)
+	Ping(ctx frugal.FContext) (err error)
 	// Blah the server.
-	Blah(ctx *frugal.FContext, num int32, Str string, event *Event) (r int64, err error)
+	Blah(ctx frugal.FContext, num int32, Str string, event *Event) (r int64, err error)
 	// oneway methods don't receive a response from the server.
-	OneWay(ctx *frugal.FContext, id ID, req Request) (err error)
-	BinMethod(ctx *frugal.FContext, bin []byte, Str string) (r []byte, err error)
-	ParamModifiers(ctx *frugal.FContext, opt_num int32, default_num int32, req_num int32) (r int64, err error)
-	UnderlyingTypesTest(ctx *frugal.FContext, list_type []ID, set_type map[ID]bool) (r []ID, err error)
-	GetThing(ctx *frugal.FContext) (r *validStructs.Thing, err error)
-	GetMyInt(ctx *frugal.FContext) (r ValidTypes.MyInt, err error)
+	OneWay(ctx frugal.FContext, id ID, req Request) (err error)
+	BinMethod(ctx frugal.FContext, bin []byte, Str string) (r []byte, err error)
+	ParamModifiers(ctx frugal.FContext, opt_num int32, default_num int32, req_num int32) (r int64, err error)
+	UnderlyingTypesTest(ctx frugal.FContext, list_type []ID, set_type map[ID]bool) (r []ID, err error)
+	GetThing(ctx frugal.FContext) (r *validStructs.Thing, err error)
+	GetMyInt(ctx frugal.FContext) (r ValidTypes.MyInt, err error)
 }
 
 // This is a thrift service. Frugal will generate bindings that include
@@ -67,7 +67,7 @@ func NewFFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware .
 }
 
 // Ping the server.
-func (f *FFooClient) Ping(ctx *frugal.FContext) (err error) {
+func (f *FFooClient) Ping(ctx frugal.FContext) (err error) {
 	ret := f.methods["ping"].Invoke([]interface{}{ctx})
 	if len(ret) != 1 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
@@ -78,7 +78,7 @@ func (f *FFooClient) Ping(ctx *frugal.FContext) (err error) {
 	return err
 }
 
-func (f *FFooClient) ping(ctx *frugal.FContext) (err error) {
+func (f *FFooClient) ping(ctx frugal.FContext) (err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan struct{}, 1)
 	if err = f.transport.Register(ctx, f.recvPingHandler(ctx, resultC, errorC)); err != nil {
@@ -119,7 +119,7 @@ func (f *FFooClient) ping(ctx *frugal.FContext) (err error) {
 	return
 }
 
-func (f *FFooClient) recvPingHandler(ctx *frugal.FContext, resultC chan<- struct{}, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FFooClient) recvPingHandler(ctx frugal.FContext, resultC chan<- struct{}, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -148,12 +148,12 @@ func (f *FFooClient) recvPingHandler(ctx *frugal.FContext, resultC chan<- struct
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -182,7 +182,7 @@ func (f *FFooClient) recvPingHandler(ctx *frugal.FContext, resultC chan<- struct
 }
 
 // Blah the server.
-func (f *FFooClient) Blah(ctx *frugal.FContext, num int32, str string, event *Event) (r int64, err error) {
+func (f *FFooClient) Blah(ctx frugal.FContext, num int32, str string, event *Event) (r int64, err error) {
 	ret := f.methods["blah"].Invoke([]interface{}{ctx, num, str, event})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
@@ -194,7 +194,7 @@ func (f *FFooClient) Blah(ctx *frugal.FContext, num int32, str string, event *Ev
 	return r, err
 }
 
-func (f *FFooClient) blah(ctx *frugal.FContext, num int32, str string, event *Event) (r int64, err error) {
+func (f *FFooClient) blah(ctx frugal.FContext, num int32, str string, event *Event) (r int64, err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan int64, 1)
 	if err = f.transport.Register(ctx, f.recvBlahHandler(ctx, resultC, errorC)); err != nil {
@@ -239,7 +239,7 @@ func (f *FFooClient) blah(ctx *frugal.FContext, num int32, str string, event *Ev
 	return
 }
 
-func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- int64, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FFooClient) recvBlahHandler(ctx frugal.FContext, resultC chan<- int64, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -268,12 +268,12 @@ func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- int64,
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -310,7 +310,7 @@ func (f *FFooClient) recvBlahHandler(ctx *frugal.FContext, resultC chan<- int64,
 }
 
 // oneway methods don't receive a response from the server.
-func (f *FFooClient) OneWay(ctx *frugal.FContext, id ID, req Request) (err error) {
+func (f *FFooClient) OneWay(ctx frugal.FContext, id ID, req Request) (err error) {
 	ret := f.methods["oneWay"].Invoke([]interface{}{ctx, id, req})
 	if len(ret) != 1 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
@@ -321,7 +321,7 @@ func (f *FFooClient) OneWay(ctx *frugal.FContext, id ID, req Request) (err error
 	return err
 }
 
-func (f *FFooClient) oneWay(ctx *frugal.FContext, id ID, req Request) (err error) {
+func (f *FFooClient) oneWay(ctx frugal.FContext, id ID, req Request) (err error) {
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -351,7 +351,7 @@ func (f *FFooClient) oneWay(ctx *frugal.FContext, id ID, req Request) (err error
 	return
 }
 
-func (f *FFooClient) BinMethod(ctx *frugal.FContext, bin []byte, str string) (r []byte, err error) {
+func (f *FFooClient) BinMethod(ctx frugal.FContext, bin []byte, str string) (r []byte, err error) {
 	ret := f.methods["bin_method"].Invoke([]interface{}{ctx, bin, str})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
@@ -363,7 +363,7 @@ func (f *FFooClient) BinMethod(ctx *frugal.FContext, bin []byte, str string) (r 
 	return r, err
 }
 
-func (f *FFooClient) bin_method(ctx *frugal.FContext, bin []byte, str string) (r []byte, err error) {
+func (f *FFooClient) bin_method(ctx frugal.FContext, bin []byte, str string) (r []byte, err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan []byte, 1)
 	if err = f.transport.Register(ctx, f.recvBinMethodHandler(ctx, resultC, errorC)); err != nil {
@@ -407,7 +407,7 @@ func (f *FFooClient) bin_method(ctx *frugal.FContext, bin []byte, str string) (r
 	return
 }
 
-func (f *FFooClient) recvBinMethodHandler(ctx *frugal.FContext, resultC chan<- []byte, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FFooClient) recvBinMethodHandler(ctx frugal.FContext, resultC chan<- []byte, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -436,12 +436,12 @@ func (f *FFooClient) recvBinMethodHandler(ctx *frugal.FContext, resultC chan<- [
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -473,7 +473,7 @@ func (f *FFooClient) recvBinMethodHandler(ctx *frugal.FContext, resultC chan<- [
 	}
 }
 
-func (f *FFooClient) ParamModifiers(ctx *frugal.FContext, opt_num int32, default_num int32, req_num int32) (r int64, err error) {
+func (f *FFooClient) ParamModifiers(ctx frugal.FContext, opt_num int32, default_num int32, req_num int32) (r int64, err error) {
 	ret := f.methods["param_modifiers"].Invoke([]interface{}{ctx, opt_num, default_num, req_num})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
@@ -485,7 +485,7 @@ func (f *FFooClient) ParamModifiers(ctx *frugal.FContext, opt_num int32, default
 	return r, err
 }
 
-func (f *FFooClient) param_modifiers(ctx *frugal.FContext, opt_num int32, default_num int32, req_num int32) (r int64, err error) {
+func (f *FFooClient) param_modifiers(ctx frugal.FContext, opt_num int32, default_num int32, req_num int32) (r int64, err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan int64, 1)
 	if err = f.transport.Register(ctx, f.recvParamModifiersHandler(ctx, resultC, errorC)); err != nil {
@@ -530,7 +530,7 @@ func (f *FFooClient) param_modifiers(ctx *frugal.FContext, opt_num int32, defaul
 	return
 }
 
-func (f *FFooClient) recvParamModifiersHandler(ctx *frugal.FContext, resultC chan<- int64, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FFooClient) recvParamModifiersHandler(ctx frugal.FContext, resultC chan<- int64, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -559,12 +559,12 @@ func (f *FFooClient) recvParamModifiersHandler(ctx *frugal.FContext, resultC cha
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -592,7 +592,7 @@ func (f *FFooClient) recvParamModifiersHandler(ctx *frugal.FContext, resultC cha
 	}
 }
 
-func (f *FFooClient) UnderlyingTypesTest(ctx *frugal.FContext, list_type []ID, set_type map[ID]bool) (r []ID, err error) {
+func (f *FFooClient) UnderlyingTypesTest(ctx frugal.FContext, list_type []ID, set_type map[ID]bool) (r []ID, err error) {
 	ret := f.methods["underlying_types_test"].Invoke([]interface{}{ctx, list_type, set_type})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
@@ -604,7 +604,7 @@ func (f *FFooClient) UnderlyingTypesTest(ctx *frugal.FContext, list_type []ID, s
 	return r, err
 }
 
-func (f *FFooClient) underlying_types_test(ctx *frugal.FContext, list_type []ID, set_type map[ID]bool) (r []ID, err error) {
+func (f *FFooClient) underlying_types_test(ctx frugal.FContext, list_type []ID, set_type map[ID]bool) (r []ID, err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan []ID, 1)
 	if err = f.transport.Register(ctx, f.recvUnderlyingTypesTestHandler(ctx, resultC, errorC)); err != nil {
@@ -648,7 +648,7 @@ func (f *FFooClient) underlying_types_test(ctx *frugal.FContext, list_type []ID,
 	return
 }
 
-func (f *FFooClient) recvUnderlyingTypesTestHandler(ctx *frugal.FContext, resultC chan<- []ID, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FFooClient) recvUnderlyingTypesTestHandler(ctx frugal.FContext, resultC chan<- []ID, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -677,12 +677,12 @@ func (f *FFooClient) recvUnderlyingTypesTestHandler(ctx *frugal.FContext, result
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -710,7 +710,7 @@ func (f *FFooClient) recvUnderlyingTypesTestHandler(ctx *frugal.FContext, result
 	}
 }
 
-func (f *FFooClient) GetThing(ctx *frugal.FContext) (r *validStructs.Thing, err error) {
+func (f *FFooClient) GetThing(ctx frugal.FContext) (r *validStructs.Thing, err error) {
 	ret := f.methods["getThing"].Invoke([]interface{}{ctx})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
@@ -722,7 +722,7 @@ func (f *FFooClient) GetThing(ctx *frugal.FContext) (r *validStructs.Thing, err 
 	return r, err
 }
 
-func (f *FFooClient) getThing(ctx *frugal.FContext) (r *validStructs.Thing, err error) {
+func (f *FFooClient) getThing(ctx frugal.FContext) (r *validStructs.Thing, err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan *validStructs.Thing, 1)
 	if err = f.transport.Register(ctx, f.recvGetThingHandler(ctx, resultC, errorC)); err != nil {
@@ -763,7 +763,7 @@ func (f *FFooClient) getThing(ctx *frugal.FContext) (r *validStructs.Thing, err 
 	return
 }
 
-func (f *FFooClient) recvGetThingHandler(ctx *frugal.FContext, resultC chan<- *validStructs.Thing, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FFooClient) recvGetThingHandler(ctx frugal.FContext, resultC chan<- *validStructs.Thing, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -792,12 +792,12 @@ func (f *FFooClient) recvGetThingHandler(ctx *frugal.FContext, resultC chan<- *v
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -825,7 +825,7 @@ func (f *FFooClient) recvGetThingHandler(ctx *frugal.FContext, resultC chan<- *v
 	}
 }
 
-func (f *FFooClient) GetMyInt(ctx *frugal.FContext) (r ValidTypes.MyInt, err error) {
+func (f *FFooClient) GetMyInt(ctx frugal.FContext) (r ValidTypes.MyInt, err error) {
 	ret := f.methods["getMyInt"].Invoke([]interface{}{ctx})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
@@ -837,7 +837,7 @@ func (f *FFooClient) GetMyInt(ctx *frugal.FContext) (r ValidTypes.MyInt, err err
 	return r, err
 }
 
-func (f *FFooClient) getMyInt(ctx *frugal.FContext) (r ValidTypes.MyInt, err error) {
+func (f *FFooClient) getMyInt(ctx frugal.FContext) (r ValidTypes.MyInt, err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan ValidTypes.MyInt, 1)
 	if err = f.transport.Register(ctx, f.recvGetMyIntHandler(ctx, resultC, errorC)); err != nil {
@@ -878,7 +878,7 @@ func (f *FFooClient) getMyInt(ctx *frugal.FContext) (r ValidTypes.MyInt, err err
 	return
 }
 
-func (f *FFooClient) recvGetMyIntHandler(ctx *frugal.FContext, resultC chan<- ValidTypes.MyInt, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FFooClient) recvGetMyIntHandler(ctx frugal.FContext, resultC chan<- ValidTypes.MyInt, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -907,12 +907,12 @@ func (f *FFooClient) recvGetMyIntHandler(ctx *frugal.FContext, resultC chan<- Va
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -961,7 +961,7 @@ type fooFPing struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *fooFPing) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := FooPingArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -985,7 +985,7 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "ping", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "ping", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -998,35 +998,35 @@ func (p *fooFPing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "ping", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("ping", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "ping", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "ping", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "ping", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "ping", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "ping", err2.Error())
 			return nil
 		}
 		err = err2
@@ -1038,7 +1038,7 @@ type fooFBlah struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *fooFBlah) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := FooBlahArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -1062,7 +1062,7 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "blah", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "blah", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1085,35 +1085,35 @@ func (p *fooFBlah) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol)
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "blah", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("blah", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "blah", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "blah", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "blah", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "blah", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "blah", err2.Error())
 			return nil
 		}
 		err = err2
@@ -1125,7 +1125,7 @@ type fooFOneWay struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *fooFOneWay) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *fooFOneWay) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := FooOneWayArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -1145,7 +1145,7 @@ func (p *fooFOneWay) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtoco
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "oneWay", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "oneWay", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1158,7 +1158,7 @@ type fooFBinMethod struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *fooFBinMethod) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *fooFBinMethod) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := FooBinMethodArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -1182,7 +1182,7 @@ func (p *fooFBinMethod) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProt
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "bin_method", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "bin_method", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1203,35 +1203,35 @@ func (p *fooFBinMethod) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProt
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "bin_method", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "bin_method", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("bin_method", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "bin_method", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "bin_method", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "bin_method", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "bin_method", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "bin_method", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "bin_method", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "bin_method", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "bin_method", err2.Error())
 			return nil
 		}
 		err = err2
@@ -1243,7 +1243,7 @@ type fooFParamModifiers struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *fooFParamModifiers) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *fooFParamModifiers) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := FooParamModifiersArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -1267,7 +1267,7 @@ func (p *fooFParamModifiers) Process(ctx *frugal.FContext, iprot, oprot *frugal.
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "param_modifiers", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "param_modifiers", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1283,35 +1283,35 @@ func (p *fooFParamModifiers) Process(ctx *frugal.FContext, iprot, oprot *frugal.
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "param_modifiers", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("param_modifiers", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "param_modifiers", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "param_modifiers", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "param_modifiers", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "param_modifiers", err2.Error())
 			return nil
 		}
 		err = err2
@@ -1323,7 +1323,7 @@ type fooFUnderlyingTypesTest struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *fooFUnderlyingTypesTest) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *fooFUnderlyingTypesTest) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := FooUnderlyingTypesTestArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -1347,7 +1347,7 @@ func (p *fooFUnderlyingTypesTest) Process(ctx *frugal.FContext, iprot, oprot *fr
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "underlying_types_test", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "underlying_types_test", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1363,35 +1363,35 @@ func (p *fooFUnderlyingTypesTest) Process(ctx *frugal.FContext, iprot, oprot *fr
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "underlying_types_test", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("underlying_types_test", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "underlying_types_test", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "underlying_types_test", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "underlying_types_test", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "underlying_types_test", err2.Error())
 			return nil
 		}
 		err = err2
@@ -1403,7 +1403,7 @@ type fooFGetThing struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *fooFGetThing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *fooFGetThing) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := FooGetThingArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -1427,7 +1427,7 @@ func (p *fooFGetThing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "getThing", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "getThing", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1443,35 +1443,35 @@ func (p *fooFGetThing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getThing", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getThing", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("getThing", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getThing", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getThing", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getThing", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getThing", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getThing", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getThing", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getThing", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getThing", err2.Error())
 			return nil
 		}
 		err = err2
@@ -1483,7 +1483,7 @@ type fooFGetMyInt struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *fooFGetMyInt) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *fooFGetMyInt) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := FooGetMyIntArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -1507,7 +1507,7 @@ func (p *fooFGetMyInt) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "getMyInt", "Rate limit exceeded")
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "getMyInt", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1523,35 +1523,35 @@ func (p *fooFGetMyInt) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getMyInt", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getMyInt", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("getMyInt", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getMyInt", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getMyInt", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getMyInt", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getMyInt", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getMyInt", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getMyInt", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			fooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "getMyInt", "response too large: "+err2.Error())
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "getMyInt", err2.Error())
 			return nil
 		}
 		err = err2
@@ -1559,7 +1559,7 @@ func (p *fooFGetMyInt) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProto
 	return err
 }
 
-func fooWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) error {
+func fooWriteApplicationError(ctx frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) error {
 	x := thrift.NewTApplicationException(type_, message)
 	oprot.WriteResponseHeader(ctx)
 	oprot.WriteMessageBegin(method, thrift.EXCEPTION, 0)

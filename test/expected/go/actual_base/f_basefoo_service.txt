@@ -18,7 +18,7 @@ var _ = fmt.Printf
 var _ = bytes.Equal
 
 type FBaseFoo interface {
-	BasePing(ctx *frugal.FContext) (err error)
+	BasePing(ctx frugal.FContext) (err error)
 }
 
 type FBaseFooClient struct {
@@ -38,7 +38,7 @@ func NewFBaseFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middlewa
 	return client
 }
 
-func (f *FBaseFooClient) BasePing(ctx *frugal.FContext) (err error) {
+func (f *FBaseFooClient) BasePing(ctx frugal.FContext) (err error) {
 	ret := f.methods["basePing"].Invoke([]interface{}{ctx})
 	if len(ret) != 1 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 1", len(ret)))
@@ -49,7 +49,7 @@ func (f *FBaseFooClient) BasePing(ctx *frugal.FContext) (err error) {
 	return err
 }
 
-func (f *FBaseFooClient) basePing(ctx *frugal.FContext) (err error) {
+func (f *FBaseFooClient) basePing(ctx frugal.FContext) (err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan struct{}, 1)
 	if err = f.transport.Register(ctx, f.recvBasePingHandler(ctx, resultC, errorC)); err != nil {
@@ -90,7 +90,7 @@ func (f *FBaseFooClient) basePing(ctx *frugal.FContext) (err error) {
 	return
 }
 
-func (f *FBaseFooClient) recvBasePingHandler(ctx *frugal.FContext, resultC chan<- struct{}, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FBaseFooClient) recvBasePingHandler(ctx frugal.FContext, resultC chan<- struct{}, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -119,12 +119,12 @@ func (f *FBaseFooClient) recvBasePingHandler(ctx *frugal.FContext, resultC chan<
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -166,7 +166,7 @@ type basefooFBasePing struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *basefooFBasePing) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := BaseFooBasePingArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -190,7 +190,7 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			basefooWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "basePing", "Rate limit exceeded")
+			basefooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "basePing", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -203,35 +203,35 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			basefooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "basePing", "response too large: "+err2.Error())
+			basefooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "basePing", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("basePing", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			basefooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "basePing", "response too large: "+err2.Error())
+			basefooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "basePing", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			basefooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "basePing", "response too large: "+err2.Error())
+			basefooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "basePing", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			basefooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "basePing", "response too large: "+err2.Error())
+			basefooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "basePing", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			basefooWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "basePing", "response too large: "+err2.Error())
+			basefooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "basePing", err2.Error())
 			return nil
 		}
 		err = err2
@@ -239,7 +239,7 @@ func (p *basefooFBasePing) Process(ctx *frugal.FContext, iprot, oprot *frugal.FP
 	return err
 }
 
-func basefooWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) error {
+func basefooWriteApplicationError(ctx frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) error {
 	x := thrift.NewTApplicationException(type_, message)
 	oprot.WriteResponseHeader(ctx)
 	oprot.WriteMessageBegin(method, thrift.EXCEPTION, 0)

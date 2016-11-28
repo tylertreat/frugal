@@ -122,7 +122,7 @@ func (p *TFramedTransport) Flush() error {
 	}
 	if size > 0 {
 		if _, err := p.buf.WriteTo(p.transport); err != nil {
-			if err == ErrTooLarge {
+			if IsErrTooLarge(err) {
 				p.buf.Reset()
 			}
 			return thrift.NewTTransportExceptionFromError(err)

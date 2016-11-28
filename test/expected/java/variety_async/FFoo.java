@@ -34,9 +34,12 @@ import javax.annotation.Generated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.workiva.frugal.exception.FApplicationException;
+import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.exception.FRateLimitException;
 import com.workiva.frugal.exception.FTimeoutException;
+import com.workiva.frugal.exception.FTransportException;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.processor.FBaseProcessor;
@@ -276,13 +279,12 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
-								TException ex;
-								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
-									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
-								}
-								else {
-									ex = new FRateLimitException("rate limit exceeded");
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
 								}
 								try {
 									result.put(ex);
@@ -379,13 +381,12 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
-								TException ex;
-								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
-									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
-								}
-								else {
-									ex = new FRateLimitException("rate limit exceeded");
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
 								}
 								try {
 									result.put(ex);
@@ -490,13 +491,12 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
-								TException ex;
-								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
-									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
-								}
-								else {
-									ex = new FRateLimitException("rate limit exceeded");
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
 								}
 								try {
 									result.put(ex);
@@ -584,13 +584,12 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
-								TException ex;
-								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
-									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
-								}
-								else {
-									ex = new FRateLimitException("rate limit exceeded");
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
 								}
 								try {
 									result.put(ex);
@@ -677,13 +676,12 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
-								TException ex;
-								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
-									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
-								}
-								else {
-									ex = new FRateLimitException("rate limit exceeded");
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
 								}
 								try {
 									result.put(ex);
@@ -768,13 +766,12 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
-								TException ex;
-								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
-									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
-								}
-								else {
-									ex = new FRateLimitException("rate limit exceeded");
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
 								}
 								try {
 									result.put(ex);
@@ -859,13 +856,12 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
-								TException ex;
-								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
-									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
-								}
-								else {
-									ex = new FRateLimitException("rate limit exceeded");
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
 								}
 								try {
 									result.put(ex);
@@ -951,7 +947,7 @@ public class FFoo {
 				try {
 					handler.ping(ctx);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "ping", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "ping", "rate limit exceeded");
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -968,7 +964,7 @@ public class FFoo {
 						oprot.getTransport().flush();
 					} catch (TException e) {
 						if (e instanceof FMessageSizeException) {
-							writeApplicationException(ctx, oprot, FTransport.RESPONSE_TOO_LARGE, "ping", "response too large: " + e.getMessage());
+							writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "ping", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -1001,7 +997,7 @@ public class FFoo {
 				} catch (actual_base.java.api_exception api) {
 					result.api = api;
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "blah", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "blah", "rate limit exceeded");
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1018,7 +1014,7 @@ public class FFoo {
 						oprot.getTransport().flush();
 					} catch (TException e) {
 						if (e instanceof FMessageSizeException) {
-							writeApplicationException(ctx, oprot, FTransport.RESPONSE_TOO_LARGE, "blah", "response too large: " + e.getMessage());
+							writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "blah", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -1065,7 +1061,7 @@ public class FFoo {
 				} catch (actual_base.java.api_exception api) {
 					result.api = api;
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "bin_method", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "bin_method", "rate limit exceeded");
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1082,7 +1078,7 @@ public class FFoo {
 						oprot.getTransport().flush();
 					} catch (TException e) {
 						if (e instanceof FMessageSizeException) {
-							writeApplicationException(ctx, oprot, FTransport.RESPONSE_TOO_LARGE, "bin_method", "response too large: " + e.getMessage());
+							writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "bin_method", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -1111,7 +1107,7 @@ public class FFoo {
 					result.success = handler.param_modifiers(ctx, args.opt_num, args.default_num, args.req_num);
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "param_modifiers", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "param_modifiers", "rate limit exceeded");
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1128,7 +1124,7 @@ public class FFoo {
 						oprot.getTransport().flush();
 					} catch (TException e) {
 						if (e instanceof FMessageSizeException) {
-							writeApplicationException(ctx, oprot, FTransport.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: " + e.getMessage());
+							writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -1157,7 +1153,7 @@ public class FFoo {
 					result.success = handler.underlying_types_test(ctx, args.list_type, args.set_type);
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "underlying_types_test", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "underlying_types_test", "rate limit exceeded");
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1174,7 +1170,7 @@ public class FFoo {
 						oprot.getTransport().flush();
 					} catch (TException e) {
 						if (e instanceof FMessageSizeException) {
-							writeApplicationException(ctx, oprot, FTransport.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: " + e.getMessage());
+							writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -1203,7 +1199,7 @@ public class FFoo {
 					result.success = handler.getThing(ctx);
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getThing", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getThing", "rate limit exceeded");
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1220,7 +1216,7 @@ public class FFoo {
 						oprot.getTransport().flush();
 					} catch (TException e) {
 						if (e instanceof FMessageSizeException) {
-							writeApplicationException(ctx, oprot, FTransport.RESPONSE_TOO_LARGE, "getThing", "response too large: " + e.getMessage());
+							writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "getThing", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -1249,7 +1245,7 @@ public class FFoo {
 					result.success = handler.getMyInt(ctx);
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "getMyInt", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getMyInt", "rate limit exceeded");
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1266,7 +1262,7 @@ public class FFoo {
 						oprot.getTransport().flush();
 					} catch (TException e) {
 						if (e instanceof FMessageSizeException) {
-							writeApplicationException(ctx, oprot, FTransport.RESPONSE_TOO_LARGE, "getMyInt", "response too large: " + e.getMessage());
+							writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "getMyInt", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}

@@ -181,14 +181,14 @@ func (f *fAdapterTransport) GetRequestSizeLimit() uint {
 }
 
 // Register a callback for the given Context.
-func (f *fAdapterTransport) Register(ctx *FContext, cb FAsyncCallback) error {
+func (f *fAdapterTransport) Register(ctx FContext, cb FAsyncCallback) error {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	return f.registry.Register(ctx, cb)
 }
 
 // Unregister a callback for the given Context.
-func (f *fAdapterTransport) Unregister(ctx *FContext) {
+func (f *fAdapterTransport) Unregister(ctx FContext) {
 	f.mu.RLock()
 	f.registry.Unregister(ctx)
 	f.mu.RUnlock()

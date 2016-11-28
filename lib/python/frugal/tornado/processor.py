@@ -1,6 +1,9 @@
 import logging
 
-from thrift.Thrift import TApplicationException, TMessageType, TType
+from thrift.Thrift import TApplicationException
+from thrift.Thrift import TException
+from thrift.Thrift import TMessageType
+from thrift.Thrift import TType
 from tornado import gen
 from tornado.locks import Lock
 
@@ -64,6 +67,11 @@ class FBaseProcessor(FProcessor):
         if processor_function:
             try:
                 ret = yield processor_function.process(context, iprot, oprot)
+            except TException:
+                logging.exception('frugal: exception occurred while '
+                                  'processing request with correlation id {}'
+                                  .format(context.get_correlation_id()))
+                raise
             except Exception:
                 logging.exception('frugal: user handler code raised unhandled '
                                   'exception on request with correlation id {}'

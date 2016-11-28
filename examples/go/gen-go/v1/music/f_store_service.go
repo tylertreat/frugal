@@ -20,8 +20,8 @@ var _ = bytes.Equal
 // Services are the API for client and server interaction.
 // Users can buy an album or enter a giveaway for a free album.
 type FStore interface {
-	BuyAlbum(ctx *frugal.FContext, ASIN string, acct string) (r *Album, err error)
-	EnterAlbumGiveaway(ctx *frugal.FContext, email string, name string) (r bool, err error)
+	BuyAlbum(ctx frugal.FContext, ASIN string, acct string) (r *Album, err error)
+	EnterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error)
 }
 
 // Services are the API for client and server interaction.
@@ -44,7 +44,7 @@ func NewFStoreClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware
 	return client
 }
 
-func (f *FStoreClient) BuyAlbum(ctx *frugal.FContext, asin string, acct string) (r *Album, err error) {
+func (f *FStoreClient) BuyAlbum(ctx frugal.FContext, asin string, acct string) (r *Album, err error) {
 	ret := f.methods["buyAlbum"].Invoke([]interface{}{ctx, asin, acct})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
@@ -56,7 +56,7 @@ func (f *FStoreClient) BuyAlbum(ctx *frugal.FContext, asin string, acct string) 
 	return r, err
 }
 
-func (f *FStoreClient) buyAlbum(ctx *frugal.FContext, asin string, acct string) (r *Album, err error) {
+func (f *FStoreClient) buyAlbum(ctx frugal.FContext, asin string, acct string) (r *Album, err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan *Album, 1)
 	if err = f.transport.Register(ctx, f.recvBuyAlbumHandler(ctx, resultC, errorC)); err != nil {
@@ -100,7 +100,7 @@ func (f *FStoreClient) buyAlbum(ctx *frugal.FContext, asin string, acct string) 
 	return
 }
 
-func (f *FStoreClient) recvBuyAlbumHandler(ctx *frugal.FContext, resultC chan<- *Album, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FStoreClient) recvBuyAlbumHandler(ctx frugal.FContext, resultC chan<- *Album, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -129,12 +129,12 @@ func (f *FStoreClient) recvBuyAlbumHandler(ctx *frugal.FContext, resultC chan<- 
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -166,7 +166,7 @@ func (f *FStoreClient) recvBuyAlbumHandler(ctx *frugal.FContext, resultC chan<- 
 	}
 }
 
-func (f *FStoreClient) EnterAlbumGiveaway(ctx *frugal.FContext, email string, name string) (r bool, err error) {
+func (f *FStoreClient) EnterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error) {
 	ret := f.methods["enterAlbumGiveaway"].Invoke([]interface{}{ctx, email, name})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
@@ -178,7 +178,7 @@ func (f *FStoreClient) EnterAlbumGiveaway(ctx *frugal.FContext, email string, na
 	return r, err
 }
 
-func (f *FStoreClient) enterAlbumGiveaway(ctx *frugal.FContext, email string, name string) (r bool, err error) {
+func (f *FStoreClient) enterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error) {
 	errorC := make(chan error, 1)
 	resultC := make(chan bool, 1)
 	if err = f.transport.Register(ctx, f.recvEnterAlbumGiveawayHandler(ctx, resultC, errorC)); err != nil {
@@ -222,7 +222,7 @@ func (f *FStoreClient) enterAlbumGiveaway(ctx *frugal.FContext, email string, na
 	return
 }
 
-func (f *FStoreClient) recvEnterAlbumGiveawayHandler(ctx *frugal.FContext, resultC chan<- bool, errorC chan<- error) frugal.FAsyncCallback {
+func (f *FStoreClient) recvEnterAlbumGiveawayHandler(ctx frugal.FContext, resultC chan<- bool, errorC chan<- error) frugal.FAsyncCallback {
 	return func(tr thrift.TTransport) error {
 		iprot := f.protocolFactory.GetProtocol(tr)
 		if err := iprot.ReadResponseHeader(ctx); err != nil {
@@ -251,12 +251,12 @@ func (f *FStoreClient) recvEnterAlbumGiveawayHandler(ctx *frugal.FContext, resul
 				errorC <- err
 				return err
 			}
-			if error1.TypeId() == frugal.RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, "response too large for transport")
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
 				err = frugal.ErrRateLimitExceeded
 				errorC <- err
 				return nil
@@ -299,7 +299,7 @@ type storeFBuyAlbum struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *storeFBuyAlbum) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := StoreBuyAlbumArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -323,7 +323,7 @@ func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FPro
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			storeWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "buyAlbum", "Rate limit exceeded")
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "buyAlbum", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -344,35 +344,35 @@ func (p *storeFBuyAlbum) Process(ctx *frugal.FContext, iprot, oprot *frugal.FPro
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "buyAlbum", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("buyAlbum", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "buyAlbum", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "buyAlbum", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "buyAlbum", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "buyAlbum", err2.Error())
 			return nil
 		}
 		err = err2
@@ -384,7 +384,7 @@ type storeFEnterAlbumGiveaway struct {
 	*frugal.FBaseProcessorFunction
 }
 
-func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+func (p *storeFEnterAlbumGiveaway) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
 	args := StoreEnterAlbumGiveawayArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {
@@ -408,7 +408,7 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 	if err2 != nil {
 		if err2 == frugal.ErrRateLimitExceeded {
 			p.GetWriteMutex().Lock()
-			storeWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", "Rate limit exceeded")
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", "Rate limit exceeded")
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -424,35 +424,35 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 	defer p.GetWriteMutex().Unlock()
 	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "enterAlbumGiveaway", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageBegin("enterAlbumGiveaway", thrift.REPLY, 0); err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "enterAlbumGiveaway", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "enterAlbumGiveaway", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "enterAlbumGiveaway", err2.Error())
 			return nil
 		}
 		err = err2
 	}
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
-			storeWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: "+err2.Error())
+			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "enterAlbumGiveaway", err2.Error())
 			return nil
 		}
 		err = err2
@@ -460,7 +460,7 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx *frugal.FContext, iprot, oprot *f
 	return err
 }
 
-func storeWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) error {
+func storeWriteApplicationError(ctx frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) error {
 	x := thrift.NewTApplicationException(type_, message)
 	oprot.WriteResponseHeader(ctx)
 	oprot.WriteMessageBegin(method, thrift.EXCEPTION, 0)

@@ -422,11 +422,9 @@ func TestHTTPTransportRequestTooLarge(t *testing.T) {
 	assert.Nil(transport.Open())
 
 	// Write request
-	expectedErr := ErrTooLarge
 	err := transport.Send(requestBytes)
 
-	assert.Equal(err.(thrift.TTransportException).TypeId(), expectedErr.TypeId())
-	assert.Equal(err.(thrift.TTransportException).Error(), expectedErr.Error())
+	assert.Equal(err.(thrift.TTransportException).TypeId(), TTRANSPORT_REQUEST_TOO_LARGE)
 
 	// Close
 	assert.Nil(transport.Close())
@@ -451,10 +449,8 @@ func TestHTTPTransportResponseTooLarge(t *testing.T) {
 	assert.Nil(transport.Open())
 
 	// Flush
-	expectedErr := thrift.NewTTransportException(RESPONSE_TOO_LARGE, "response was too large for the transport")
 	actuaErr := transport.Send(requestBytes)
-	assert.Equal(actuaErr.(thrift.TTransportException).TypeId(), expectedErr.TypeId())
-	assert.Equal(actuaErr.(thrift.TTransportException).Error(), expectedErr.Error())
+	assert.Equal(actuaErr.(thrift.TTransportException).TypeId(), TTRANSPORT_RESPONSE_TOO_LARGE)
 
 	// Close
 	assert.Nil(transport.Close())

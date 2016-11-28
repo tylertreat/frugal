@@ -7,12 +7,6 @@ part of frugal.src.frugal;
 /// handle callback data, also has an [FRegistry], so it provides methods for
 /// registering and unregistering an [FAsyncCallback] to an [FContext].
 abstract class FTransport {
-  /// Indicates the request was too large for the transport.
-  static const int REQUEST_TOO_LARGE = 100;
-
-  /// Indicates the response was too large for the transport.
-  static const int RESPONSE_TOO_LARGE = 101;
-
   MonitorRunner _monitor;
   StreamController _closeController = new StreamController.broadcast();
   FRegistry _registry;

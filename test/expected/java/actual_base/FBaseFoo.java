@@ -34,9 +34,12 @@ import javax.annotation.Generated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.workiva.frugal.exception.FApplicationException;
+import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.exception.FRateLimitException;
 import com.workiva.frugal.exception.FTimeoutException;
+import com.workiva.frugal.exception.FTransportException;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.processor.FBaseProcessor;
@@ -132,13 +135,12 @@ public class FBaseFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
-								TException ex;
-								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
-									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
-								}
-								else {
-									ex = new FRateLimitException("rate limit exceeded");
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
 								}
 								try {
 									result.put(ex);
@@ -215,7 +217,7 @@ public class FBaseFoo {
 				try {
 					handler.basePing(ctx);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "basePing", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "basePing", "rate limit exceeded");
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -232,7 +234,7 @@ public class FBaseFoo {
 						oprot.getTransport().flush();
 					} catch (TException e) {
 						if (e instanceof FMessageSizeException) {
-							writeApplicationException(ctx, oprot, FTransport.RESPONSE_TOO_LARGE, "basePing", "response too large: " + e.getMessage());
+							writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "basePing", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}

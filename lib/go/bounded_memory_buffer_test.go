@@ -3,6 +3,7 @@ package frugal
 import (
 	"testing"
 
+	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,6 +20,7 @@ func TestTFramedMemoryBufferWrite(t *testing.T) {
 	assert.Equal(t, 40, n)
 	assert.Equal(t, 94, buff.Len())
 	_, err = buff.Write(make([]byte, 20))
-	assert.Equal(t, ErrTooLarge, err)
+	assert.True(t, IsErrTooLarge(err))
+	assert.Equal(t, TTRANSPORT_REQUEST_TOO_LARGE, err.(thrift.TTransportException).TypeId())
 	assert.Equal(t, 4, buff.Len())
 }

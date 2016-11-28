@@ -12,8 +12,10 @@ import inspect
 
 from frugal.aio.processor import FBaseProcessor
 from frugal.aio.processor import FProcessorFunction
-from frugal.exceptions import FTimeoutException
+from frugal.exceptions import FApplicationException
+from frugal.exceptions import FMessageSizeException
 from frugal.exceptions import FRateLimitException
+from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
@@ -110,7 +112,10 @@ class Client(Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
-                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                    future.set_exception(FMessageSizeException.response(x.message))
+                    return
+                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
@@ -173,7 +178,10 @@ class Client(Iface):
                 x = TApplicationException()
                 x.read(iprot)
                 iprot.readMessageEnd()
-                if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
+                if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                    future.set_exception(FMessageSizeException.response(x.message))
+                    return
+                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
                     future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
@@ -225,20 +233,23 @@ class _buyAlbum(FProcessorFunction):
             result.success = ret
         except FRateLimitException as ex:
             async with self._write_lock:
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "buyAlbum", ex.message)
+                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "buyAlbum", ex.message)
                 return
         except PurchasingError as error:
             result.error = error
         except Exception as e:
             async with self._write_lock:
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "buyAlbum", e.args[0] if e.args else 'unknown exception')
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "buyAlbum", e.args[0])
             raise e from None
         async with self._write_lock:
-            oprot.write_response_headers(ctx)
-            oprot.writeMessageBegin('buyAlbum', TMessageType.REPLY, 0)
-            result.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('buyAlbum', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "buyAlbum", e.args[0])
 
 
 class _enterAlbumGiveaway(FProcessorFunction):
@@ -259,18 +270,21 @@ class _enterAlbumGiveaway(FProcessorFunction):
             result.success = ret
         except FRateLimitException as ex:
             async with self._write_lock:
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", ex.message)
+                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", ex.message)
                 return
         except Exception as e:
             async with self._write_lock:
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "enterAlbumGiveaway", e.args[0] if e.args else 'unknown exception')
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "enterAlbumGiveaway", e.args[0])
             raise e from None
         async with self._write_lock:
-            oprot.write_response_headers(ctx)
-            oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.REPLY, 0)
-            result.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", e.args[0])
 
 
 def _write_application_exception(ctx, oprot, typ, method, message):

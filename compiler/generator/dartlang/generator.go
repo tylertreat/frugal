@@ -522,24 +522,24 @@ func (g *Generator) generateEnumUsingEnums(enum *parser.Enum) string {
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf("int serialize%s(%s variant) {\n", enum.Name, enum.Name)
-	contents += tab+"switch (variant) {\n"
+	contents += tab + "switch (variant) {\n"
 	for _, field := range enum.Values {
 		contents += fmt.Sprintf(tabtab+"case %s.%s:\n", enum.Name, field.Name)
 		contents += fmt.Sprintf(tabtabtab+"return %d;\n", field.Value)
 	}
-	contents += tab+"}\n"
+	contents += tab + "}\n"
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf("%s deserialize%s(int value) {\n", enum.Name, enum.Name)
-	contents += tab+"switch (value) {\n"
+	contents += tab + "switch (value) {\n"
 	for _, field := range enum.Values {
 		contents += fmt.Sprintf(tabtab+"case %d:\n", field.Value)
 		contents += fmt.Sprintf(tabtabtab+"return %s.%s;\n", enum.Name, field.Name)
 	}
-	contents += tabtab+"default:\n"
+	contents += tabtab + "default:\n"
 	contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, \"Invalid value '$value' for enum '%s'\");", enum.Name)
 
-	contents += tab+"}\n"
+	contents += tab + "}\n"
 	contents += "}\n"
 	return contents
 }
@@ -833,16 +833,16 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 			panic("unknown thrift type: " + underlyingType.Name)
 		}
 
-		contents += fmt.Sprintf(tabtabtabtabtabtab + ind + "%s%s = iprot.read%s();\n", prefix, fName, thriftType)
+		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = iprot.read%s();\n", prefix, fName, thriftType)
 		if primitive && first {
-			contents += fmt.Sprintf(tabtabtabtabtabtab + ind + "this.__isset_%s = true;\n", fName)
+			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"this.__isset_%s = true;\n", fName)
 		}
 	} else if g.Frugal.IsEnum(underlyingType) {
 		if g.useEnums() {
-			contents += fmt.Sprintf(tabtabtabtabtabtab + ind + "%s%s = %s.deserialize%s(iprot.readI32());\n",
+			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = %s.deserialize%s(iprot.readI32());\n",
 				prefix, fName, g.includeQualifier(underlyingType), underlyingType.Name)
 		} else {
-			contents += fmt.Sprintf(tabtabtabtabtabtab + ind + "%s%s = iprot.readI32();\n", prefix, fName)
+			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = iprot.readI32();\n", prefix, fName)
 		}
 
 		if first {
@@ -966,7 +966,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 		contents += fmt.Sprintf(write, fName)
 	} else if g.Frugal.IsEnum(underlyingType) {
 		if g.useEnums() {
-			contents += fmt.Sprintf(tabtab + "oprot.writeI32(%s.serialize%s(%s));\n",
+			contents += fmt.Sprintf(tabtab+"oprot.writeI32(%s.serialize%s(%s));\n",
 				g.includeQualifier(underlyingType), underlyingType.Name, fName)
 		} else {
 			contents += fmt.Sprintf(tabtab+ind+"oprot.writeI32(%s);\n", fName)
@@ -1518,12 +1518,12 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtab + "if (msg.type == thrift.TMessageType.EXCEPTION) {\n"
 	contents += tabtabtabtabtab + "thrift.TApplicationError error = thrift.TApplicationError.read(iprot);\n"
 	contents += tabtabtabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtabtabtab + "if (error.type == frugal.FTransport.RESPONSE_TOO_LARGE) {\n"
-	contents += tabtabtabtabtabtab + "controller.addError(new frugal.FMessageSizeError.response());\n"
+	contents += tabtabtabtabtab + "if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {\n"
+	contents += tabtabtabtabtabtab + "controller.addError(new frugal.FMessageSizeError.response(message: error.message));\n"
 	contents += tabtabtabtabtabtab + "return;\n"
 	contents += tabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtab + "if (error.type == frugal.FRateLimitError.RATE_LIMIT_EXCEEDED) {\n"
-	contents += tabtabtabtabtabtab + "controller.addError(new frugal.FRateLimitError());\n"
+	contents += tabtabtabtabtab + "if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {\n"
+	contents += tabtabtabtabtabtab + "controller.addError(new frugal.FRateLimitError(message: error.message));\n"
 	contents += tabtabtabtabtabtab + "return;\n"
 	contents += tabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtab + "throw error;\n"

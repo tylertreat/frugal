@@ -82,7 +82,9 @@ func (n *fNatsPublisherTransport) Publish(topic string, data []byte) error {
 	}
 
 	if len(data) > natsMaxMessageSize {
-		return ErrTooLarge
+		return thrift.NewTTransportException(
+			TTRANSPORT_REQUEST_TOO_LARGE,
+			fmt.Sprintf("Message exceeds %d bytes, was %d bytes", natsMaxMessageSize, len(data)))
 	}
 
 	err := n.conn.Publish(n.formattedSubject(topic), data)
