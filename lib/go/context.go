@@ -175,7 +175,7 @@ func (c *FContext) Timeout() time.Duration {
 	c.mu.RUnlock()
 	timeoutMillis, err := strconv.ParseInt(timeoutMillisStr, 10, 64)
 	if err != nil {
-		return 0
+		return defaultTimeout
 	}
 	return time.Millisecond * time.Duration(timeoutMillis)
 }

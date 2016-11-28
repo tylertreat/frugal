@@ -230,7 +230,7 @@ public class FContext {
      * @return the request timeout in milliseconds.
      */
     public long getTimeout() {
-        return Long.parseLong(requestHeaders.getOrDefault(TIMEOUT_HEADER, "0"));
+        return Long.parseLong(requestHeaders.getOrDefault(TIMEOUT_HEADER, Long.toString(DEFAULT_TIMEOUT)));
     }
 
     /**
