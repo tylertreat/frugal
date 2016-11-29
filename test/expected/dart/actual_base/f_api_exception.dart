@@ -37,7 +37,7 @@ class api_exception extends Error implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {

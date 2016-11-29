@@ -75,7 +75,7 @@ class EventsSubscriber {
     return new frugal.FSubscription(topic, transport);
   }
 
-  _recvEventCreated(String op, frugal.FProtocolFactory protocolFactory, dynamic onEvent(frugal.FContext ctx, t_variety.Event req)) {
+  frugal.FAsyncCallback _recvEventCreated(String op, frugal.FProtocolFactory protocolFactory, dynamic onEvent(frugal.FContext ctx, t_variety.Event req)) {
     frugal.FMethod method = new frugal.FMethod(onEvent, 'Events', 'subscribeEvent', this._middleware);
     callbackEventCreated(thrift.TTransport transport) {
       var iprot = protocolFactory.getProtocol(transport);

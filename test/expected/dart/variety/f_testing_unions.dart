@@ -139,7 +139,7 @@ class TestingUnions implements thrift.TBase {
         if(value == null) {
           unsetAnID();
         } else {
-          this.anID = value;
+          this.anID = value as int;
         }
         break;
 
@@ -147,7 +147,7 @@ class TestingUnions implements thrift.TBase {
         if(value == null) {
           unsetAString();
         } else {
-          this.aString = value;
+          this.aString = value as String;
         }
         break;
 
@@ -155,7 +155,7 @@ class TestingUnions implements thrift.TBase {
         if(value == null) {
           unsetSomeotherthing();
         } else {
-          this.someotherthing = value;
+          this.someotherthing = value as int;
         }
         break;
 
@@ -163,7 +163,7 @@ class TestingUnions implements thrift.TBase {
         if(value == null) {
           unsetAnInt16();
         } else {
-          this.anInt16 = value;
+          this.anInt16 = value as int;
         }
         break;
 
@@ -171,7 +171,7 @@ class TestingUnions implements thrift.TBase {
         if(value == null) {
           unsetRequests();
         } else {
-          this.requests = value;
+          this.requests = value as Map<int, String>;
         }
         break;
 
@@ -179,7 +179,7 @@ class TestingUnions implements thrift.TBase {
         if(value == null) {
           unsetBin_field_in_union();
         } else {
-          this.bin_field_in_union = value;
+          this.bin_field_in_union = value as Uint8List;
         }
         break;
 
@@ -208,7 +208,7 @@ class TestingUnions implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -222,14 +222,14 @@ class TestingUnions implements thrift.TBase {
             anID = iprot.readI64();
             this.__isset_anID = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case ASTRING:
           if(field.type == thrift.TType.STRING) {
             aString = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case SOMEOTHERTHING:
@@ -237,7 +237,7 @@ class TestingUnions implements thrift.TBase {
             someotherthing = iprot.readI32();
             this.__isset_someotherthing = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case ANINT16:
@@ -245,7 +245,7 @@ class TestingUnions implements thrift.TBase {
             anInt16 = iprot.readI16();
             this.__isset_anInt16 = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case REQUESTS:
@@ -259,14 +259,14 @@ class TestingUnions implements thrift.TBase {
             }
             iprot.readMapEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case BIN_FIELD_IN_UNION:
           if(field.type == thrift.TType.STRING) {
             bin_field_in_union = iprot.readBinary();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
