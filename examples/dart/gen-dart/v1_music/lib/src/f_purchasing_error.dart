@@ -95,7 +95,7 @@ class PurchasingError extends Error implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -108,7 +108,7 @@ class PurchasingError extends Error implements thrift.TBase {
           if(field.type == thrift.TType.STRING) {
             message = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case ERROR_CODE:
@@ -116,7 +116,7 @@ class PurchasingError extends Error implements thrift.TBase {
             error_code = iprot.readI16();
             this.__isset_error_code = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:

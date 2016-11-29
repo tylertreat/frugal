@@ -271,7 +271,7 @@ class buyAlbum_args implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -284,14 +284,14 @@ class buyAlbum_args implements thrift.TBase {
           if(field.type == thrift.TType.STRING) {
             aSIN = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case ACCT:
           if(field.type == thrift.TType.STRING) {
             acct = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -436,7 +436,7 @@ class buyAlbum_result implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -450,7 +450,7 @@ class buyAlbum_result implements thrift.TBase {
             success = new t_v1_music.Album();
             success.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case ERROR:
@@ -458,7 +458,7 @@ class buyAlbum_result implements thrift.TBase {
             error = new t_v1_music.PurchasingError();
             error.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -607,7 +607,7 @@ class enterAlbumGiveaway_args implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -620,14 +620,14 @@ class enterAlbumGiveaway_args implements thrift.TBase {
           if(field.type == thrift.TType.STRING) {
             email = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case NAME:
           if(field.type == thrift.TType.STRING) {
             name = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -747,7 +747,7 @@ class enterAlbumGiveaway_result implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -761,7 +761,7 @@ class enterAlbumGiveaway_result implements thrift.TBase {
             success = iprot.readBool();
             this.__isset_success = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
