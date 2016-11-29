@@ -7,6 +7,7 @@ import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart';
 import 'package:variety/variety.dart' as t_variety;
 import 'package:actual_base_dart/actual_base_dart.dart' as t_actual_base_dart;
+import 'package:subdir_include/subdir_include.dart' as t_subdir_include;
 
 class TestingUnions implements TBase {
   static final TStruct _STRUCT_DESC = new TStruct("TestingUnions");

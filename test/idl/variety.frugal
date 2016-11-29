@@ -4,6 +4,7 @@ namespace java variety.java
 namespace py variety.python
 
 include "base.frugal"
+include "subdir_includes/subdir_include.frugal"
 
 typedef i64 id
 typedef i32 int
@@ -152,6 +153,8 @@ service Foo extends base.BaseFoo {
     i64 param_modifiers(1:i32 opt_num, 2: optional i32 default_num, 3: required i32 req_num),
 
     list<id> underlying_types_test(1:list<id> list_type, 2: set<id> set_type),
+
+    subdir_include.A use_subdir_struct(1:subdir_include.A a),
 }
 
 /**@
