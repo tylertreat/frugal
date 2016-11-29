@@ -1,9 +1,6 @@
-import struct
-
 from thrift.protocol.TProtocol import TProtocolBase
 
-from frugal.context import FContext, _OP_ID
-from frugal.exceptions import FrugalVersionException
+from frugal.context import FContext, _OPID_HEADER
 from frugal.util.headers import _Headers
 
 _V0 = 0
@@ -58,7 +55,7 @@ class FProtocol(TProtocolBase, object):
         for key, value in headers.items():
             context._set_request_header(key, value)
 
-        op_id = headers[_OP_ID]
+        op_id = headers[_OPID_HEADER]
         context._set_response_op_id(op_id)
         return context
 

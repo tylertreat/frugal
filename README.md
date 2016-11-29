@@ -238,9 +238,8 @@ service FooService {
 ## Thrift Parity
 
 Frugal is intended to be a superset of Thrift, meaning valid Thrift should be
-valid Frugal. However, there are known Thrift features which are not currently
-supported in Frugal, namely annotations. File an issue if you discover an
-inconsistency with the IDL.
+valid Frugal. File an issue if you discover an inconsistency in compatibility
+with the IDL.
 
 ## Docker
 

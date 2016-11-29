@@ -69,7 +69,7 @@ public class FClientRegistry implements FRegistry {
 
         long opId;
         try {
-            opId = Long.parseLong(headers.get(FContext.OP_ID));
+            opId = Long.parseLong(headers.get(FContext.OPID_HEADER));
         } catch (NumberFormatException e) {
             throw new FException("invalid protocol frame: op id not a uint64", e);
         }

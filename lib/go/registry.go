@@ -91,7 +91,7 @@ func (c *clientRegistry) Execute(frame []byte) error {
 		return err
 	}
 
-	opid, err := strconv.ParseUint(headers[opID], 10, 64)
+	opid, err := strconv.ParseUint(headers[opIDHeader], 10, 64)
 	if err != nil {
 		logger().Warn("frugal: invalid protocol frame, op id not a uint64:", err)
 		return err

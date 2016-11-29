@@ -1055,10 +1055,10 @@ func (g *Generator) GenerateTypesImports(file *os.File) error {
 	for _, include := range g.Frugal.Thrift.Includes {
 		includeName, ok := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
 		if !ok {
-			includeName = include.Name
+			includeName = filepath.Base(include.Name)
 		}
-		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeName)
-		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", includeName)
+		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeNameToImport(includeName))
+		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", includeNameToReference(includeName))
 	}
 
 	contents += ")\n\n"
@@ -1090,10 +1090,10 @@ func (g *Generator) GenerateServiceResultArgsImports(file *os.File) error {
 	for _, include := range g.Frugal.Thrift.Includes {
 		includeName, ok := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
 		if !ok {
-			includeName = include.Name
+			includeName = filepath.Base(include.Name)
 		}
-		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeName)
-		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", includeName)
+		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeNameToImport(includeName))
+		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", includeNameToReference(includeName))
 	}
 
 	contents += ")\n\n"
@@ -1134,7 +1134,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 		if !ok {
 			namespace = include
 		}
-		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, namespace)
+		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeNameToImport(namespace))
 	}
 
 	imports += ")\n\n"
@@ -1170,7 +1170,7 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 		if !ok {
 			namespace = include
 		}
-		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, namespace)
+		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeNameToImport(namespace))
 	}
 
 	imports += ")"
@@ -1493,6 +1493,7 @@ func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 		if inc, ok := g.Frugal.NamespaceForInclude(include, lang); ok {
 			include = inc
 		}
+		include = includeNameToReference(include)
 		serviceName = include + "." + serviceName
 	}
 	return serviceName
@@ -1506,6 +1507,7 @@ func (g *Generator) getServiceExtendsNamespace(service *parser.Service) string {
 		} else {
 			namespace = service.ExtendsInclude()
 		}
+		namespace = includeNameToReference(namespace)
 		namespace += "."
 	}
 	return namespace
@@ -2217,6 +2219,7 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 		if !ok {
 			namespace = include
 		}
+		namespace = includeNameToReference(namespace)
 		param = fmt.Sprintf("%s.%s", namespace, param)
 	}
 
@@ -2232,6 +2235,17 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 func (g *Generator) generateAsync() bool {
 	_, ok := g.Options["async"]
 	return ok
+}
+
+func includeNameToImport(includeName string) string {
+	return strings.Replace(includeName, ".", "/", -1)
+}
+
+func includeNameToReference(includeName string) string {
+	split := strings.FieldsFunc(includeName, func(r rune) bool {
+		return r == '.' || r == '/'
+	})
+	return split[len(split) - 1]
 }
 
 // snakeToCamel returns a string converted from snake case to uppercase.

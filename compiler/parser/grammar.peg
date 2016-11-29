@@ -68,13 +68,21 @@
         }
         return st
     }
+
+    // toAnnotations converts an interface{} to an Annotation slice.
+    func toAnnotations(v interface{}) []*Annotation {
+        if v == nil {
+            return nil
+        }
+        return v.([]*Annotation)
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                   TOP-LEVEL                               //
 ///////////////////////////////////////////////////////////////////////////////
 
-Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
+Grammar <- __ statements:( Statement __ )* (EOF / SyntaxError) {
     thrift := &Thrift{
         Includes:       []*Include{},
         Namespaces:     []*Namespace{},
@@ -145,11 +153,11 @@ Grammar ← __ statements:( Statement __ )* (EOF / SyntaxError) {
     return frugal, nil
 }
 
-SyntaxError ← . {
+SyntaxError <- . {
     return nil, errors.New("parser: syntax error")
 }
 
-Statement ← docstr:(DocString __)? statement:(ThriftStatement / FrugalStatement) {
+Statement <- docstr:(DocString __)? statement:(ThriftStatement / FrugalStatement) {
     wrapper := &statementWrapper{statement: statement}
     if docstr != nil {
         raw := docstr.([]interface{})[0].(string)
@@ -162,9 +170,9 @@ Statement ← docstr:(DocString __)? statement:(ThriftStatement / FrugalStatemen
 //                                   THRIFT                                  //
 ///////////////////////////////////////////////////////////////////////////////
 
-ThriftStatement ← Include / Namespace / Const / Enum / TypeDef / Struct / Exception / Union / Service
+ThriftStatement <- Include / Namespace / Const / Enum / TypeDef / Struct / Exception / Union / Service
 
-Include ← "include" _ file:Literal EOS {
+Include <- "include" _ file:Literal EOS {
     name := file.(string)
     if ix := strings.LastIndex(name, "."); ix > 0 {
         name = name[:ix]
@@ -172,14 +180,14 @@ Include ← "include" _ file:Literal EOS {
     return &Include{Name: name, Value: file.(string)}, nil
 }
 
-Namespace ← "namespace" _ scope:[*a-z.-]+ _ ns:Identifier EOS {
+Namespace <- "namespace" _ scope:[*a-z.-]+ _ ns:Identifier EOS {
     return &Namespace{
         Scope: ifaceSliceToString(scope),
         Value: string(ns.(Identifier)),
     }, nil
 }
 
-Const ← "const" _ typ:FieldType _ name:Identifier _ "=" _ value:ConstValue EOS {
+Const <- "const" _ typ:FieldType _ name:Identifier _ "=" _ value:ConstValue EOS {
     return &Constant{
         Name: string(name.(Identifier)),
         Type: typ.(*Type),
@@ -187,11 +195,12 @@ Const ← "const" _ typ:FieldType _ name:Identifier _ "=" _ value:ConstValue EOS
     }, nil
 }
 
-Enum ← "enum" _ name:Identifier __ '{' __ values:(EnumValue __)* '}' EOS {
+Enum <- "enum" _ name:Identifier __ '{' __ values:(EnumValue __)* '}' _ annotations:TypeAnnotations? EOS {
     vs := toIfaceSlice(values)
     en := &Enum{
-        Name: string(name.(Identifier)),
-        Values: make([]*EnumValue, len(vs)),
+        Name:        string(name.(Identifier)),
+        Values:      make([]*EnumValue, len(vs)),
+        Annotations: toAnnotations(annotations),
     }
     // Assigns numbers in order. This will behave badly if some values are
     // defined and other are not, but I think that's ok since that's a silly
@@ -210,10 +219,11 @@ Enum ← "enum" _ name:Identifier __ '{' __ values:(EnumValue __)* '}' EOS {
     return en, nil
 }
 
-EnumValue ← docstr:(DocString __)? name:Identifier _ value:('=' _ IntConstant)? ListSeparator? {
+EnumValue <- docstr:(DocString __)? name:Identifier _ value:('=' _ IntConstant)? _ annotations:TypeAnnotations? ListSeparator? {
     ev := &EnumValue{
-        Name: string(name.(Identifier)),
-        Value: -1,
+        Name:        string(name.(Identifier)),
+        Value:       -1,
+        Annotations: toAnnotations(annotations),
     }
     if docstr != nil {
         raw := docstr.([]interface{})[0].(string)
@@ -225,19 +235,21 @@ EnumValue ← docstr:(DocString __)? name:Identifier _ value:('=' _ IntConstant)
     return ev, nil
 }
 
-TypeDef ← "typedef" _ typ:FieldType _ name:Identifier EOS {
+TypeDef <- "typedef" _ typ:FieldType _ name:Identifier _ annotations:TypeAnnotations? EOS {
     return &TypeDef{
-        Name: string(name.(Identifier)),
-        Type: typ.(*Type),
+        Name:        string(name.(Identifier)),
+        Type:        typ.(*Type),
+        Annotations: toAnnotations(annotations),
     }, nil
 }
 
-Struct ← "struct" _ st:StructLike { return st.(*Struct), nil }
-Exception ← "exception" _ st:StructLike { return exception(st.(*Struct)), nil }
-Union ← "union" _ st:StructLike { return union(st.(*Struct)), nil }
-StructLike ← name:Identifier __ '{' __ fields:FieldList '}' EOS {
+Struct <- "struct" _ st:StructLike { return st.(*Struct), nil }
+Exception <- "exception" _ st:StructLike { return exception(st.(*Struct)), nil }
+Union <- "union" _ st:StructLike { return union(st.(*Struct)), nil }
+StructLike <- name:Identifier __ '{' __ fields:FieldList '}' _ annotations:TypeAnnotations? EOS {
     st := &Struct{
-        Name: string(name.(Identifier)),
+        Name:        string(name.(Identifier)),
+        Annotations: toAnnotations(annotations),
     }
     if fields != nil {
         st.Fields = fields.([]*Field)
@@ -245,7 +257,7 @@ StructLike ← name:Identifier __ '{' __ fields:FieldList '}' EOS {
     return st, nil
 }
 
-FieldList ← fields:(Field __)* {
+FieldList <- fields:(Field __)* {
     fs := fields.([]interface{})
     flds := make([]*Field, len(fs))
     for i, f := range fs {
@@ -254,11 +266,12 @@ FieldList ← fields:(Field __)* {
     return flds, nil
 }
 
-Field ← docstr:(DocString __)? id:IntConstant _ ':' _ mod:FieldModifier? _ typ:FieldType _ name:Identifier __ def:('=' _ ConstValue)? ListSeparator? {
+Field <- docstr:(DocString __)? id:IntConstant _ ':' _ mod:FieldModifier? _ typ:FieldType _ name:Identifier __ def:('=' _ ConstValue)? _ annotations:TypeAnnotations? ListSeparator? {
     f := &Field{
-        ID:   int(id.(int64)),
-        Name: string(name.(Identifier)),
-        Type: typ.(*Type),
+        ID:          int(id.(int64)),
+        Name:        string(name.(Identifier)),
+        Type:        typ.(*Type),
+        Annotations: toAnnotations(annotations),
     }
     if docstr != nil {
         raw := docstr.([]interface{})[0].(string)
@@ -276,7 +289,7 @@ Field ← docstr:(DocString __)? id:IntConstant _ ':' _ mod:FieldModifier? _ typ
     return f, nil
 }
 
-FieldModifier ← ("required" / "optional") {
+FieldModifier <- ("required" / "optional") {
     if bytes.Equal(c.text, []byte("required")) {
         return Required, nil
     } else {
@@ -284,11 +297,12 @@ FieldModifier ← ("required" / "optional") {
     }
 }
 
-Service ← "service" _ name:Identifier _ extends:("extends" __ Identifier __)? __ '{' __ methods:(Function __)* ('}' / EndOfServiceError) EOS {
+Service <- "service" _ name:Identifier _ extends:("extends" __ Identifier __)? __ '{' __ methods:(Function __)* ('}' / EndOfServiceError) _ annotations:TypeAnnotations? EOS {
     ms := methods.([]interface{})
     svc := &Service{
-        Name:    string(name.(Identifier)),
-        Methods: make([]*Method, len(ms)),
+        Name:        string(name.(Identifier)),
+        Methods:     make([]*Method, len(ms)),
+        Annotations: toAnnotations(annotations),
     }
     if extends != nil {
         svc.Extends = string(extends.([]interface{})[2].(Identifier))
@@ -300,13 +314,14 @@ Service ← "service" _ name:Identifier _ extends:("extends" __ Identifier __)? 
     return svc, nil
 }
 
-EndOfServiceError ← . {
+EndOfServiceError <- . {
     return nil, errors.New("parser: expected end of service")
 }
 
-Function ← docstr:(DocString __)? oneway:("oneway" __)? typ:FunctionType __ name:Identifier _ '(' __ arguments:FieldList ')' __ exceptions:Throws? ListSeparator? {
+Function <- docstr:(DocString __)? oneway:("oneway" __)? typ:FunctionType __ name:Identifier _ '(' __ arguments:FieldList ')' __ exceptions:Throws? _ annotations:TypeAnnotations? ListSeparator? {
     m := &Method{
-        Name: string(name.(Identifier)),
+        Name:        string(name.(Identifier)),
+        Annotations: toAnnotations(annotations),
     }
     if docstr != nil {
         raw := docstr.([]interface{})[0].(string)
@@ -331,73 +346,102 @@ Function ← docstr:(DocString __)? oneway:("oneway" __)? typ:FunctionType __ na
     return m, nil
 }
 
-FunctionType ← typ:("void" / FieldType) {
+FunctionType <- typ:("void" / FieldType) {
     if t, ok := typ.(*Type); ok {
         return t, nil
     }
     return &Type{Name: string(c.text)}, nil
 }
 
-Throws ← "throws" __ '(' __ exceptions:FieldList ')' {
+Throws <- "throws" __ '(' __ exceptions:FieldList ')' {
     return exceptions, nil
 }
 
-FieldType ← typ:(BaseType / ContainerType / Identifier) {
+FieldType <- typ:(BaseType / ContainerType / Identifier) {
     if t, ok := typ.(Identifier); ok {
         return &Type{Name: string(t)}, nil
     }
     return typ, nil
 }
 
-BaseType ← ("bool" / "byte" / "i16" / "i32" / "i64" / "double" / "string" / "binary" ) {
-    return &Type{Name: string(c.text)}, nil
+BaseType <- name:BaseTypeName _ annotations:TypeAnnotations? {
+    return &Type{
+        Name:        name.(string),
+        Annotations: toAnnotations(annotations),
+    }, nil
 }
 
-ContainerType ← typ:(MapType / SetType / ListType) {
+BaseTypeName <- ("bool" / "byte" / "i16" / "i32" / "i64" / "double" / "string" / "binary" ) {
+    return string(c.text), nil
+}
+
+ContainerType <- typ:(MapType / SetType / ListType) {
     return typ, nil
 }
 
-MapType ← CppType? "map<" WS key:FieldType WS "," WS value:FieldType WS ">" {
+MapType <- CppType? "map<" WS key:FieldType WS "," WS value:FieldType WS ">" _ annotations:TypeAnnotations? {
     return &Type{
-        Name: "map",
-        KeyType: key.(*Type),
-        ValueType: value.(*Type),
+        Name:        "map",
+        KeyType:     key.(*Type),
+        ValueType:   value.(*Type),
+        Annotations: toAnnotations(annotations),
     }, nil
 }
 
-SetType ← CppType? "set<" WS typ:FieldType WS ">" {
+SetType <- CppType? "set<" WS typ:FieldType WS ">" _ annotations:TypeAnnotations? {
     return &Type{
-        Name: "set",
-        ValueType: typ.(*Type),
+        Name:        "set",
+        ValueType:   typ.(*Type),
+        Annotations: toAnnotations(annotations),
     }, nil
 }
 
-ListType ← "list<" WS typ:FieldType WS ">" {
+ListType <- "list<" WS typ:FieldType WS ">" _ annotations:TypeAnnotations? {
     return &Type{
-        Name: "list",
-        ValueType: typ.(*Type),
+        Name:        "list",
+        ValueType:   typ.(*Type),
+        Annotations: toAnnotations(annotations),
     }, nil
 }
 
-CppType ← "cpp_type" cppType:Literal {
+CppType <- "cpp_type" cppType:Literal {
     return cppType, nil
 }
 
-ConstValue ← Literal / BoolConstant / DoubleConstant / IntConstant / ConstMap / ConstList / Identifier
+ConstValue <- Literal / BoolConstant / DoubleConstant / IntConstant / ConstMap / ConstList / Identifier
 
-BoolConstant ← ("true" / "false") {
+TypeAnnotations <- '(' __ annotations:TypeAnnotation* ')' {
+    var anns []*Annotation
+    for _, ann := range annotations.([]interface{}) {
+        anns = append(anns, ann.(*Annotation))
+    }
+    return anns, nil
+}
+
+TypeAnnotation <- name:Identifier _ value:('=' __ value:Literal { return value, nil })? ListSeparator? __ {
+    var optValue string
+    if value != nil {
+        optValue = value.(string)
+    }
+    return &Annotation{
+        Name:  string(name.(Identifier)),
+        Value: optValue,
+    }, nil
+}
+
+BoolConstant <- ("true" / "false") {
     return string(c.text) == "true", nil
 }
 
-IntConstant ← [-+]? Digit+ {
+IntConstant <- [-+]? Digit+ {
     return strconv.ParseInt(string(c.text), 10, 64)
 }
 
-DoubleConstant ← [+-]? Digit* '.' Digit* ( ['Ee'] IntConstant )? {
+DoubleConstant <- [+-]? Digit* '.' Digit* ( ['Ee'] IntConstant )? {
     return strconv.ParseFloat(string(c.text), 64)
 }
 
-ConstList ← '[' __ values:(ConstValue __ ListSeparator? __)* __ ']' {
+ConstList <- '[' __ values:(ConstValue __ ListSeparator? __)* __ ']' {
     valueSlice := values.([]interface{})
     vs := make([]interface{}, len(valueSlice))
     for i, v := range valueSlice {
@@ -406,7 +450,7 @@ ConstList ← '[' __ values:(ConstValue __ ListSeparator? __)* __ ']' {
     return vs, nil
 }
 
-ConstMap ← '{' __ values:(ConstValue __ ':' __ ConstValue __ (',' / &'}') __)* '}' {
+ConstMap <- '{' __ values:(ConstValue __ ':' __ ConstValue __ (',' / &'}') __)* '}' {
     if values == nil {
         return nil, nil
     }
@@ -426,14 +470,15 @@ ConstMap ← '{' __ values:(ConstValue __ ':' __ ConstValue __ (',' / &'}') __)*
 //                                   FRUGAL                                  //
 ///////////////////////////////////////////////////////////////////////////////
 
-FrugalStatement ← Scope
+FrugalStatement <- Scope
 
-Scope ← docstr:(DocString __)? "scope" __ name:Identifier __ prefix:Prefix? __ '{' __ operations:(Operation __)* ('}' / EndOfScopeError) EOS {
+Scope <- docstr:(DocString __)? "scope" __ name:Identifier __ prefix:Prefix? __ '{' __ operations:(Operation __)* ('}' / EndOfScopeError) _ annotations:TypeAnnotations? EOS {
     ops := operations.([]interface{})
     scope := &Scope{
-        Name:       string(name.(Identifier)),
-        Operations: make([]*Operation, len(ops)),
-        Prefix:     defaultPrefix,
+        Name:        string(name.(Identifier)),
+        Operations:  make([]*Operation, len(ops)),
+        Prefix:      defaultPrefix,
+        Annotations: toAnnotations(annotations),
     }
     if docstr != nil {
         raw := docstr.([]interface{})[0].(string)
@@ -449,23 +494,24 @@ Scope ← docstr:(DocString __)? "scope" __ name:Identifier __ prefix:Prefix? __
     return scope, nil
 }
 
-EndOfScopeError ← . {
+EndOfScopeError <- . {
     return nil, errors.New("parser: expected end of scope")
 }
 
-Prefix ← "prefix" __ PrefixToken ('.' PrefixToken)* {
+Prefix <- "prefix" __ PrefixToken ('.' PrefixToken)* {
     prefix := strings.TrimSpace(strings.TrimPrefix(string(c.text), "prefix"))
     return newScopePrefix(prefix)
 }
 
-PrefixToken ← ('{' PrefixWord '}') / PrefixWord
+PrefixToken <- ('{' PrefixWord '}') / PrefixWord
 
-PrefixWord ← [^\r\n\t\f .{}]+
+PrefixWord <- [^\r\n\t\f .{}]+
 
-Operation ← docstr:(DocString __)? name:Identifier _ ':' __ typ:Identifier __ {
+Operation <- docstr:(DocString __)? name:Identifier _ ':' __ typ:Identifier _ annotations:TypeAnnotations? ListSeparator? {
     o := &Operation{
-        Name: string(name.(Identifier)),
-        Type: &Type{Name: string(typ.(Identifier))},
+        Name:        string(name.(Identifier)),
+        Type:        &Type{Name: string(typ.(Identifier))},
+        Annotations: toAnnotations(annotations),
     }
     if docstr != nil {
         raw := docstr.([]interface{})[0].(string)
@@ -478,7 +524,7 @@ Operation ← docstr:(DocString __)? name:Identifier _ ':' __ typ:Identifier __ 
 //                                   GENERAL                                 //
 ///////////////////////////////////////////////////////////////////////////////
 
-Literal ← (('"' (`\"` / [^"])* '"') / ('\'' (`\'` / [^'])* '\'')) {
+Literal <- (('"' (`\"` / [^"])* '"') / ('\'' (`\'` / [^'])* '\'')) {
     if len(c.text) != 0 && c.text[0] == '\'' {
         intermediate := strings.Replace(string(c.text[1:len(c.text)-1]), `\'`, `'`, -1)
         return strconv.Unquote(`"` + strings.Replace(intermediate, `"`, `\"`, -1) + `"`)
@@ -487,32 +533,32 @@ Literal ← (('"' (`\"` / [^"])* '"') / ('\'' (`\'` / [^'])* '\'')) {
     return strconv.Unquote(string(c.text))
 }
 
-Identifier ← (Letter / '_')+ (Letter / Digit / [._])* {
+Identifier <- (Letter / '_')+ (Letter / Digit / [._])* {
     return Identifier(string(c.text)), nil
 }
 
-ListSeparator ← [,;]
-Letter ← [A-Za-z]
-Digit ← [0-9]
+ListSeparator <- [,;]
+Letter <- [A-Za-z]
+Digit <- [0-9]
 
-SourceChar ← .
-DocString ← "/**@" ( !"*/" SourceChar )* "*/" {
+SourceChar <- .
+DocString <- "/**@" ( !"*/" SourceChar )* "*/" {
     comment := string(c.text)
     comment = strings.TrimPrefix(comment, "/**@")
     comment = strings.TrimSuffix(comment, "*/")
     return strings.TrimSpace(comment), nil
 }
-Comment ← MultiLineComment / SingleLineComment
-MultiLineComment ← !DocString "/*" ( !"*/" SourceChar )* "*/"
-MultiLineCommentNoLineTerminator ← !DocString "/*" ( !( "*/" / EOL ) SourceChar )* "*/"
-SingleLineComment ← ("//" ( !EOL SourceChar )*) / ("#" ( !EOL SourceChar )*)
+Comment <- MultiLineComment / SingleLineComment
+MultiLineComment <- !DocString "/*" ( !"*/" SourceChar )* "*/"
+MultiLineCommentNoLineTerminator <- !DocString "/*" ( !( "*/" / EOL ) SourceChar )* "*/"
+SingleLineComment <- ("//" ( !EOL SourceChar )*) / ("#" ( !EOL SourceChar )*)
 
-__ ← ( Whitespace / EOL / Comment )*
-_ ← ( Whitespace / MultiLineCommentNoLineTerminator )*
-WS ← Whitespace*
+__ <- ( Whitespace / EOL / Comment )*
+_ <- ( Whitespace / MultiLineCommentNoLineTerminator )*
+WS <- Whitespace*
 
-Whitespace ← [ \t\r]
-EOL ← '\n'
-EOS ← __ ';' / _ SingleLineComment? EOL / __ EOF
+Whitespace <- [ \t\r]
+EOL <- '\n'
+EOS <- __ ';' / _ SingleLineComment? EOL / __ EOF
 
-EOF ← !.
+EOF <- !.
