@@ -67,13 +67,13 @@ class FBaseProcessor(FProcessor):
             except TException:
                 logging.exception(
                     'frugal: exception occurred while processing request with '
-                    'correlation id {}'.format(context.get_correlation_id()))
+                    'correlation id {}'.format(context.correlation_id))
                 raise
             except Exception as e:
                 logger.exception(
                     'frugal: user handler code raised unhandled ' +
                     'exception on request with correlation id {}'.format(
-                        context.get_correlation_id()))
+                        context.correlation_id))
                 raise
 
         iprot.skip(TType.STRUCT)

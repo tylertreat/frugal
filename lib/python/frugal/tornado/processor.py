@@ -70,12 +70,12 @@ class FBaseProcessor(FProcessor):
             except TException:
                 logging.exception('frugal: exception occurred while '
                                   'processing request with correlation id {}'
-                                  .format(context.get_correlation_id()))
+                                  .format(context.correlation_id))
                 raise
             except Exception:
                 logging.exception('frugal: user handler code raised unhandled '
                                   'exception on request with correlation id {}'
-                                  .format(context.get_correlation_id()))
+                                  .format(context.correlation_id))
                 raise
             raise gen.Return(ret)
 
