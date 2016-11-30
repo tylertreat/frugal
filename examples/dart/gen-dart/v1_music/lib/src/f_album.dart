@@ -122,7 +122,7 @@ class Album implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -142,7 +142,7 @@ class Album implements thrift.TBase {
             }
             iprot.readListEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case DURATION:
@@ -150,14 +150,14 @@ class Album implements thrift.TBase {
             duration = iprot.readDouble();
             this.__isset_duration = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case ASIN:
           if(field.type == thrift.TType.STRING) {
             aSIN = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:

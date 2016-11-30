@@ -730,7 +730,7 @@ func (g *Generator) generateFieldMethods(s *parser.Struct) string {
 		contents += tabtabtabtab + "if(value == null) {\n"
 		contents += fmt.Sprintf(tabtabtabtabtab+"unset%s();\n", strings.Title(field.Name))
 		contents += tabtabtabtab + "} else {\n"
-		contents += fmt.Sprintf(tabtabtabtabtab+"this.%s = value;\n", fName)
+		contents += fmt.Sprintf(tabtabtabtabtab+"this.%s = value as %s;\n", fName, g.getDartTypeFromThriftType(field.Type))
 		contents += tabtabtabtab + "}\n"
 		contents += tabtabtabtab + "break;\n\n"
 	}
@@ -755,7 +755,7 @@ func (g *Generator) generateFieldMethods(s *parser.Struct) string {
 }
 
 func (g *Generator) generateRead(s *parser.Struct) string {
-	contents := tab + "read(TProtocol iprot) {\n"
+	contents := tab + "read(thrift.TProtocol iprot) {\n"
 	contents += tabtab + "thrift.TField field;\n"
 	contents += tabtab + "iprot.readStructBegin();\n"
 	contents += tabtab + "while(true) {\n"
@@ -770,7 +770,7 @@ func (g *Generator) generateRead(s *parser.Struct) string {
 		contents += fmt.Sprintf(tabtabtabtabtab+"if(field.type == %s) {\n", t)
 		contents += g.generateReadFieldRec(field, true, "")
 		contents += tabtabtabtabtab + "} else {\n"
-		contents += tabtabtabtabtabtab + "TProtocolUtil.skip(iprot, field.type);\n"
+		contents += tabtabtabtabtabtab + "thrift.TProtocolUtil.skip(iprot, field.type);\n"
 		contents += tabtabtabtabtab + "}\n"
 		contents += tabtabtabtabtab + "break;\n"
 	}
@@ -788,7 +788,7 @@ func (g *Generator) generateRead(s *parser.Struct) string {
 		if field.Modifier == parser.Required && g.isDartPrimitive(field.Type) {
 			fName := toFieldName(field.Name)
 			contents += fmt.Sprintf(tabtab+"if(!__isset_%s) {\n", fName)
-			contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(TProtocolErrorType.UNKNOWN, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
+			contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
 			contents += tabtab + "}\n"
 		}
 	}
@@ -1318,7 +1318,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += tabtab + "return new frugal.FSubscription(topic, transport);\n"
 		subscribers += tab + "}\n\n"
 
-		subscribers += fmt.Sprintf(tab+"_recv%s(String op, frugal.FProtocolFactory protocolFactory, dynamic on%s(frugal.FContext ctx, %s req)) {\n",
+		subscribers += fmt.Sprintf(tab+"frugal.FAsyncCallback _recv%s(String op, frugal.FProtocolFactory protocolFactory, dynamic on%s(frugal.FContext ctx, %s req)) {\n",
 			op.Name, op.Type.ParamName(), g.qualifiedTypeName(op.Type))
 		subscribers += fmt.Sprintf(tabtab+"frugal.FMethod method = new frugal.FMethod(on%s, '%s', 'subscribe%s', this._middleware);\n",
 			op.Type.ParamName(), strings.Title(scope.Name), op.Type.ParamName())
@@ -1444,7 +1444,8 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	// Generate wrapper method
 	contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s) {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
-	contents += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx%s]);\n", nameLower, g.generateInputArgsWithoutTypes(method.Arguments))
+	contents += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx%s]) as Future%s;\n",
+		nameLower, g.generateInputArgsWithoutTypes(method.Arguments), g.generateReturnArg(method))
 	contents += fmt.Sprintf(tab + "}\n\n")
 
 	// Generate the calling method
@@ -1509,7 +1510,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 
 	// Generate the callback
-	contents += fmt.Sprintf(tab+"_recv%sHandler(frugal.FContext ctx, StreamController controller) {\n", nameTitle)
+	contents += fmt.Sprintf(tab+"frugal.FAsyncCallback _recv%sHandler(frugal.FContext ctx, StreamController controller) {\n", nameTitle)
 	contents += fmt.Sprintf(tabtab+"%sCallback(thrift.TTransport transport) {\n", nameLower)
 	contents += tabtabtab + "try {\n"
 	contents += tabtabtabtab + "var iprot = _protocolFactory.getProtocol(transport);\n"

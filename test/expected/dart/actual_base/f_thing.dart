@@ -64,7 +64,7 @@ class thing implements thrift.TBase {
         if(value == null) {
           unsetAn_id();
         } else {
-          this.an_id = value;
+          this.an_id = value as int;
         }
         break;
 
@@ -72,7 +72,7 @@ class thing implements thrift.TBase {
         if(value == null) {
           unsetA_string();
         } else {
-          this.a_string = value;
+          this.a_string = value as String;
         }
         break;
 
@@ -93,7 +93,7 @@ class thing implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -107,14 +107,14 @@ class thing implements thrift.TBase {
             an_id = iprot.readI32();
             this.__isset_an_id = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case A_STRING:
           if(field.type == thrift.TType.STRING) {
             a_string = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:

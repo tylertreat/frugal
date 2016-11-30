@@ -31,7 +31,7 @@ class FBaseFooClient implements FBaseFoo {
   frugal.FProtocolFactory _protocolFactory;
 
   Future basePing(frugal.FContext ctx) {
-    return this._methods['basePing']([ctx]);
+    return this._methods['basePing']([ctx]) as Future;
   }
 
   Future _basePing(frugal.FContext ctx) async {
@@ -61,7 +61,7 @@ class FBaseFooClient implements FBaseFoo {
     }
   }
 
-  _recvBasePingHandler(frugal.FContext ctx, StreamController controller) {
+  frugal.FAsyncCallback _recvBasePingHandler(frugal.FContext ctx, StreamController controller) {
     basePingCallback(thrift.TTransport transport) {
       try {
         var iprot = _protocolFactory.getProtocol(transport);
@@ -125,7 +125,7 @@ class basePing_args implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -197,7 +197,7 @@ class basePing_result implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
