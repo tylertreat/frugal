@@ -24,7 +24,11 @@ var (
 		52, 53, 0, 0, 0, 3, 102, 111, 111, 0, 0, 0, 3, 98, 97, 114, 0, 0, 0, 3, 98,
 		97, 122, 0, 0, 0, 3, 113, 117, 120, 0, 0, 0, 17, 116, 104, 105, 115, 32,
 		105, 115, 32, 97, 32, 114, 101, 113, 117, 101, 115, 116}
-	frugalHeaders = map[string]string{opID: "0", cid: "iYAGCJHBWCKLJBsjkdohb", "hello": "world"}
+	frugalHeaders = map[string]string{
+		opIDHeader: "0",
+		cidHeader:  "iYAGCJHBWCKLJBsjkdohb",
+		"hello":    "world",
+	}
 
 	tProtocolFactory = thrift.NewTBinaryProtocolFactoryDefault()
 )
@@ -50,7 +54,7 @@ func TestReadRequestHeader(t *testing.T) {
 
 	ctx, err := proto.ReadRequestHeader()
 	assert.Nil(err)
-	assert.Equal(frugalHeaders[cid], ctx.CorrelationID())
+	assert.Equal(frugalHeaders[cidHeader], ctx.CorrelationID())
 	opid, err := getOpID(ctx)
 	assert.Nil(err)
 	assert.Equal(uint64(0), opid)

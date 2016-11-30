@@ -12,15 +12,15 @@ const Version = "2.0.0-RC2"
 
 // Global variables.
 var (
-	TopicDelimiter  = "."
-	Gen             string
-	Out             string
-	FileDir         string
-	DryRun          bool
-	Recurse         bool
-	Verbose         bool
-	Now             = time.Now()
-	CompiledFiles   = make(map[string]*parser.Frugal)
+	TopicDelimiter = "."
+	Gen            string
+	Out            string
+	FileDir        string
+	DryRun         bool
+	Recurse        bool
+	Verbose        bool
+	Now            = time.Now()
+	CompiledFiles  = make(map[string]*parser.Frugal)
 )
 
 // Reset global variables to initial state.

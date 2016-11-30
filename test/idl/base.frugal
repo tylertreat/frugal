@@ -1,5 +1,5 @@
 namespace java actual_base.java
-namespace go actual_base
+namespace go actual_base.golang
 namespace dart actual_base.dart
 namespace py actual_base.python
 

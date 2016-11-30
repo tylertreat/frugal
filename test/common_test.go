@@ -43,6 +43,6 @@ func compareFiles(t *testing.T, expectedPath, generatedPath string) {
 	}
 
 	if generatedScanner.Scan() {
-		t.Fatal("Generated has more lines than expected")
+		t.Fatalf("Generated has more lines than expected: exp %s gen %s", expectedPath, generatedPath)
 	}
 }

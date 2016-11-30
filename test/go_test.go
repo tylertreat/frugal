@@ -9,9 +9,9 @@ import (
 
 func TestValidGoWithAsync(t *testing.T) {
 	options := compiler.Options{
-		File: frugalGenFile,
-		Gen: "go:package_prefix=github.com/Workiva/frugal/test/out/async/,async",
-		Out: outputDir + "/async",
+		File:  frugalGenFile,
+		Gen:   "go:package_prefix=github.com/Workiva/frugal/test/out/async/,async",
+		Out:   outputDir + "/async",
 		Delim: delim,
 	}
 	if err := compiler.Compile(options); err != nil {
@@ -34,9 +34,9 @@ func TestValidGoFrugalCompiler(t *testing.T) {
 		t.Fatal("unexpected error", err)
 	}
 
-	baseFtypesPath := filepath.Join(outputDir, "actual_base", "f_types.go")
+	baseFtypesPath := filepath.Join(outputDir, "actual_base", "golang", "f_types.go")
 	compareFiles(t, "expected/go/actual_base/f_types.txt", baseFtypesPath)
-	baseFbasefooPath := filepath.Join(outputDir, "actual_base", "f_basefoo_service.go")
+	baseFbasefooPath := filepath.Join(outputDir, "actual_base", "golang", "f_basefoo_service.go")
 	compareFiles(t, "expected/go/actual_base/f_basefoo_service.txt", baseFbasefooPath)
 
 	varietyFtypesPath := filepath.Join(outputDir, "variety", "f_types.go")

@@ -31,6 +31,9 @@ import validStructs.f_BaseFoo
 import ValidTypes.ttypes
 import ValidTypes.constants
 import ValidTypes.f_BaseFoo
+import subdir_include.ttypes
+import subdir_include.constants
+import subdir_include.f_BaseFoo
 from .ttypes import *
 
 
@@ -114,6 +117,14 @@ class Iface(actual_base.python.f_BaseFoo.Iface):
         """
         pass
 
+    def use_subdir_struct(self, ctx, a):
+        """
+        Args:
+            ctx: FContext
+            a: subdir_include.A
+        """
+        pass
+
 
 class Client(actual_base.python.f_BaseFoo.Client, Iface):
 
@@ -139,6 +150,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             'underlying_types_test': Method(self._underlying_types_test, middleware),
             'getThing': Method(self._getThing, middleware),
             'getMyInt': Method(self._getMyInt, middleware),
+            'use_subdir_struct': Method(self._use_subdir_struct, middleware),
         })
 
     def ping(self, ctx):
@@ -624,6 +636,69 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             raise x
         return getMyInt_callback
 
+    def use_subdir_struct(self, ctx, a):
+        """
+        Args:
+            ctx: FContext
+            a: subdir_include.A
+        """
+        return self._methods['use_subdir_struct']([ctx, a])
+
+    @gen.coroutine
+    def _use_subdir_struct(self, ctx, a):
+        delta = timedelta(milliseconds=ctx.get_timeout())
+        callback_future = Future()
+        timeout_future = gen.with_timeout(delta, callback_future)
+        self._transport.register(ctx, self._recv_use_subdir_struct(ctx, callback_future))
+        try:
+            yield self._send_use_subdir_struct(ctx, a)
+            result = yield timeout_future
+        except gen.TimeoutError:
+            raise FTimeoutException('use_subdir_struct timed out after {} milliseconds'.format(ctx.get_timeout()))
+        finally:
+            self._transport.unregister(ctx)
+        raise gen.Return(result)
+
+    @gen.coroutine
+    def _send_use_subdir_struct(self, ctx, a):
+        buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
+        oprot.write_request_headers(ctx)
+        oprot.writeMessageBegin('use_subdir_struct', TMessageType.CALL, 0)
+        args = use_subdir_struct_args()
+        args.a = a
+        args.write(oprot)
+        oprot.writeMessageEnd()
+        yield self._transport.send(buffer.getvalue())
+
+    def _recv_use_subdir_struct(self, ctx, future):
+        def use_subdir_struct_callback(transport):
+            iprot = self._protocol_factory.get_protocol(transport)
+            iprot.read_response_headers(ctx)
+            _, mtype, _ = iprot.readMessageBegin()
+            if mtype == TMessageType.EXCEPTION:
+                x = TApplicationException()
+                x.read(iprot)
+                iprot.readMessageEnd()
+                if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                    future.set_exception(FMessageSizeException.response(x.message))
+                    return
+                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
+                    future.set_exception(FRateLimitException(x.message))
+                    return
+                future.set_exception(x)
+                return
+            result = use_subdir_struct_result()
+            result.read(iprot)
+            iprot.readMessageEnd()
+            if result.success is not None:
+                future.set_result(result.success)
+                return
+            x = TApplicationException(TApplicationException.MISSING_RESULT, "use_subdir_struct failed: unknown result")
+            future.set_exception(x)
+            raise x
+        return use_subdir_struct_callback
+
 
 class Processor(actual_base.python.f_BaseFoo.Processor):
 
@@ -646,6 +721,7 @@ class Processor(actual_base.python.f_BaseFoo.Processor):
         self.add_to_processor_map('underlying_types_test', _underlying_types_test(Method(handler.underlying_types_test, middleware), self.get_write_lock()))
         self.add_to_processor_map('getThing', _getThing(Method(handler.getThing, middleware), self.get_write_lock()))
         self.add_to_processor_map('getMyInt', _getMyInt(Method(handler.getMyInt, middleware), self.get_write_lock()))
+        self.add_to_processor_map('use_subdir_struct', _use_subdir_struct(Method(handler.use_subdir_struct, middleware), self.get_write_lock()))
 
 
 class _ping(FProcessorFunction):
@@ -904,6 +980,39 @@ class _getMyInt(FProcessorFunction):
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "getMyInt", e.message)
+
+
+class _use_subdir_struct(FProcessorFunction):
+
+    def __init__(self, handler, lock):
+        self._handler = handler
+        self._lock = lock
+
+    @gen.coroutine
+    def process(self, ctx, iprot, oprot):
+        args = use_subdir_struct_args()
+        args.read(iprot)
+        iprot.readMessageEnd()
+        result = use_subdir_struct_result()
+        try:
+            result.success = yield gen.maybe_future(self._handler([ctx, args.a]))
+        except FRateLimitException as ex:
+            with (yield self._lock.acquire()):
+                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "use_subdir_struct", ex.message)
+                return
+        except Exception as e:
+            with (yield self._lock.acquire()):
+                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "use_subdir_struct", e.message)
+            raise e
+        with (yield self._lock.acquire()):
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('use_subdir_struct', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "use_subdir_struct", e.message)
 
 
 def _write_application_exception(ctx, oprot, typ, method, message):
@@ -1765,6 +1874,112 @@ class getMyInt_result(object):
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.I32, 0)
             oprot.writeI32(self.success)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __hash__(self):
+        value = 17
+        value = (value * 31) ^ hash(self.success)
+        return value
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+            for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+class use_subdir_struct_args(object):
+    """
+    Attributes:
+     - a
+    """
+    def __init__(self, a=None):
+        self.a = a
+
+    def read(self, iprot):
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.a = subdir_include.ttypes.A()
+                    self.a.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        oprot.writeStructBegin('use_subdir_struct_args')
+        if self.a is not None:
+            oprot.writeFieldBegin('a', TType.STRUCT, 1)
+            self.a.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __hash__(self):
+        value = 17
+        value = (value * 31) ^ hash(self.a)
+        return value
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+            for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+class use_subdir_struct_result(object):
+    """
+    Attributes:
+     - success
+    """
+    def __init__(self, success=None):
+        self.success = success
+
+    def read(self, iprot):
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 0:
+                if ftype == TType.STRUCT:
+                    self.success = subdir_include.ttypes.A()
+                    self.success.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        oprot.writeStructBegin('use_subdir_struct_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.STRUCT, 0)
+            self.success.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()

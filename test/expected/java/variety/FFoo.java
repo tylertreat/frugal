@@ -92,6 +92,8 @@ public class FFoo {
 
 		public int getMyInt(FContext ctx) throws TException;
 
+		public A use_subdir_struct(FContext ctx, A a) throws TException;
+
 	}
 
 	public static class Client extends actual_base.java.FBaseFoo.Client implements Iface {
@@ -143,6 +145,10 @@ public class FFoo {
 
 		public int getMyInt(FContext ctx) throws TException {
 			return proxy.getMyInt(ctx);
+		}
+
+		public A use_subdir_struct(FContext ctx, A a) throws TException {
+			return proxy.use_subdir_struct(ctx, a);
 		}
 
 	}
@@ -823,6 +829,97 @@ public class FFoo {
 			};
 		}
 
+		public A use_subdir_struct(FContext ctx, A a) throws TException {
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
+			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
+			transport.register(ctx, recvUse_subdir_structHandler(ctx, result));
+			try {
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage("use_subdir_struct", TMessageType.CALL, 0));
+				use_subdir_struct_args args = new use_subdir_struct_args();
+				args.setA(a);
+				args.write(oprot);
+				oprot.writeMessageEnd();
+				transport.send(memoryBuffer.getWriteBytes());
+
+				Object res = null;
+				try {
+					res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);
+				} catch (InterruptedException e) {
+					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "use_subdir_struct interrupted: " + e.getMessage());
+				}
+				if (res == null) {
+					throw new FTimeoutException("use_subdir_struct timed out");
+				}
+				if (res instanceof TException) {
+					throw (TException) res;
+				}
+				use_subdir_struct_result r = (use_subdir_struct_result) res;
+				if (r.isSetSuccess()) {
+					return r.success;
+				}
+				throw new TApplicationException(TApplicationException.MISSING_RESULT, "use_subdir_struct failed: unknown result");
+			} finally {
+				transport.unregister(ctx);
+			}
+		}
+
+		private FAsyncCallback recvUse_subdir_structHandler(final FContext ctx, final BlockingQueue<Object> result) {
+			return new FAsyncCallback() {
+				public void onMessage(TTransport tr) throws TException {
+					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
+					try {
+						iprot.readResponseHeader(ctx);
+						TMessage message = iprot.readMessageBegin();
+						if (!message.name.equals("use_subdir_struct")) {
+							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "use_subdir_struct failed: wrong method name");
+						}
+						if (message.type == TMessageType.EXCEPTION) {
+							TApplicationException e = TApplicationException.read(iprot);
+							iprot.readMessageEnd();
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
+								}
+								try {
+									result.put(ex);
+									return;
+								} catch (InterruptedException ie) {
+									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "use_subdir_struct interrupted: " + ie.getMessage());
+								}
+							}
+							try {
+								result.put(e);
+							} finally {
+								throw e;
+							}
+						}
+						if (message.type != TMessageType.REPLY) {
+							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "use_subdir_struct failed: invalid message type");
+						}
+						use_subdir_struct_result res = new use_subdir_struct_result();
+						res.read(iprot);
+						iprot.readMessageEnd();
+						try {
+							result.put(res);
+						} catch (InterruptedException e) {
+							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "use_subdir_struct interrupted: " + e.getMessage());
+						}
+					} catch (TException e) {
+						try {
+							result.put(e);
+						} finally {
+							throw e;
+						}
+					}
+				}
+			};
+		}
+
 	}
 
 	public static class Processor extends actual_base.java.FBaseFoo.Processor implements FProcessor {
@@ -844,6 +941,7 @@ public class FFoo {
 			processMap.put("underlying_types_test", new Underlying_types_test());
 			processMap.put("getThing", new GetThing());
 			processMap.put("getMyInt", new GetMyInt());
+			processMap.put("use_subdir_struct", new Use_subdir_struct());
 			return processMap;
 		}
 
@@ -872,7 +970,7 @@ public class FFoo {
 				try {
 					handler.ping(ctx);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "ping", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "ping", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -922,7 +1020,7 @@ public class FFoo {
 				} catch (actual_base.java.api_exception api) {
 					result.api = api;
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "blah", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "blah", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -986,7 +1084,7 @@ public class FFoo {
 				} catch (actual_base.java.api_exception api) {
 					result.api = api;
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "bin_method", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "bin_method", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1032,7 +1130,7 @@ public class FFoo {
 					result.success = handler.param_modifiers(ctx, args.opt_num, args.default_num, args.req_num);
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "param_modifiers", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "param_modifiers", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1078,7 +1176,7 @@ public class FFoo {
 					result.success = handler.underlying_types_test(ctx, args.list_type, args.set_type);
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "underlying_types_test", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "underlying_types_test", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1124,7 +1222,7 @@ public class FFoo {
 					result.success = handler.getThing(ctx);
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getThing", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getThing", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1170,7 +1268,7 @@ public class FFoo {
 					result.success = handler.getMyInt(ctx);
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getMyInt", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getMyInt", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1188,6 +1286,52 @@ public class FFoo {
 					} catch (TException e) {
 						if (e instanceof FMessageSizeException) {
 							writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "getMyInt", "response too large: " + e.getMessage());
+						} else {
+							throw e;
+						}
+					}
+				}
+			}
+		}
+
+		private class Use_subdir_struct implements FProcessorFunction {
+
+			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
+				use_subdir_struct_args args = new use_subdir_struct_args();
+				try {
+					args.read(iprot);
+				} catch (TException e) {
+					iprot.readMessageEnd();
+					synchronized (WRITE_LOCK) {
+						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "use_subdir_struct", e.getMessage());
+					}
+					throw e;
+				}
+
+				iprot.readMessageEnd();
+				use_subdir_struct_result result = new use_subdir_struct_result();
+				try {
+					result.success = handler.use_subdir_struct(ctx, args.a);
+					result.setSuccessIsSet(true);
+				} catch (FRateLimitException e) {
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "use_subdir_struct", e.getMessage());
+					return;
+				} catch (TException e) {
+					synchronized (WRITE_LOCK) {
+						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "use_subdir_struct", "Internal error processing use_subdir_struct: " + e.getMessage());
+					}
+					throw e;
+				}
+				synchronized (WRITE_LOCK) {
+					try {
+						oprot.writeResponseHeader(ctx);
+						oprot.writeMessageBegin(new TMessage("use_subdir_struct", TMessageType.REPLY, 0));
+						result.write(oprot);
+						oprot.writeMessageEnd();
+						oprot.getTransport().flush();
+					} catch (TException e) {
+						if (e instanceof FMessageSizeException) {
+							writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "use_subdir_struct", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -7392,6 +7536,738 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 			BitSet incoming = iprot.readBitSet(1);
 			if (incoming.get(0)) {
 				struct.success = iprot.readI32();
+				struct.setSuccessIsSet(true);
+			}
+		}
+
+	}
+
+}
+public static class use_subdir_struct_args implements org.apache.thrift.TBase<use_subdir_struct_args, use_subdir_struct_args._Fields>, java.io.Serializable, Cloneable, Comparable<use_subdir_struct_args> {
+	private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("use_subdir_struct_args");
+
+	private static final org.apache.thrift.protocol.TField A_FIELD_DESC = new org.apache.thrift.protocol.TField("a", org.apache.thrift.protocol.TType.STRUCT, (short)1);
+
+	private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+	static {
+		schemes.put(StandardScheme.class, new use_subdir_struct_argsStandardSchemeFactory());
+		schemes.put(TupleScheme.class, new use_subdir_struct_argsTupleSchemeFactory());
+	}
+
+	public A a; // required
+	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+		A((short)1, "a")
+;
+
+		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+		static {
+			for (_Fields field : EnumSet.allOf(_Fields.class)) {
+				byName.put(field.getFieldName(), field);
+			}
+		}
+
+		/**
+		 * Find the _Fields constant that matches fieldId, or null if its not found.
+		 */
+		public static _Fields findByThriftId(int fieldId) {
+			switch(fieldId) {
+				case 1: // A
+					return A;
+				default:
+					return null;
+			}
+		}
+
+		/**
+		 * Find the _Fields constant that matches fieldId, throwing an exception
+		 * if it is not found.
+		 */
+		public static _Fields findByThriftIdOrThrow(int fieldId) {
+			_Fields fields = findByThriftId(fieldId);
+			if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+			return fields;
+		}
+
+		/**
+		 * Find the _Fields constant that matches name, or null if its not found.
+		 */
+		public static _Fields findByName(String name) {
+			return byName.get(name);
+		}
+
+		private final short _thriftId;
+		private final String _fieldName;
+
+		_Fields(short thriftId, String fieldName) {
+			_thriftId = thriftId;
+			_fieldName = fieldName;
+		}
+
+		public short getThriftFieldId() {
+			return _thriftId;
+		}
+
+		public String getFieldName() {
+			return _fieldName;
+		}
+	}
+
+	// isset id assignments
+	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+	static {
+		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+		tmpMap.put(_Fields.A, new org.apache.thrift.meta_data.FieldMetaData("a", org.apache.thrift.TFieldRequirementType.DEFAULT,
+				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, A.class)));
+		metaDataMap = Collections.unmodifiableMap(tmpMap);
+		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(use_subdir_struct_args.class, metaDataMap);
+	}
+
+	public use_subdir_struct_args() {
+	}
+
+	public use_subdir_struct_args(
+		A a) {
+		this();
+		this.a = a;
+	}
+
+	/**
+	 * Performs a deep copy on <i>other</i>.
+	 */
+	public use_subdir_struct_args(use_subdir_struct_args other) {
+		if (other.isSetA()) {
+			this.a = new A(other.a);
+		}
+	}
+
+	public use_subdir_struct_args deepCopy() {
+		return new use_subdir_struct_args(this);
+	}
+
+	@Override
+	public void clear() {
+		this.a = null;
+
+	}
+
+	public A getA() {
+		return this.a;
+	}
+
+	public use_subdir_struct_args setA(A a) {
+		this.a = a;
+		return this;
+	}
+
+	public void unsetA() {
+		this.a = null;
+	}
+
+	/** Returns true if field a is set (has been assigned a value) and false otherwise */
+	public boolean isSetA() {
+		return this.a != null;
+	}
+
+	public void setAIsSet(boolean value) {
+		if (!value) {
+			this.a = null;
+		}
+	}
+
+	public void setFieldValue(_Fields field, Object value) {
+		switch (field) {
+		case A:
+			if (value == null) {
+				unsetA();
+			} else {
+				setA((A)value);
+			}
+			break;
+
+		}
+	}
+
+	public Object getFieldValue(_Fields field) {
+		switch (field) {
+		case A:
+			return getA();
+
+		}
+		throw new IllegalStateException();
+	}
+
+	/** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+	public boolean isSet(_Fields field) {
+		if (field == null) {
+			throw new IllegalArgumentException();
+		}
+
+		switch (field) {
+		case A:
+			return isSetA();
+		}
+		throw new IllegalStateException();
+	}
+
+	@Override
+	public boolean equals(Object that) {
+		if (that == null)
+			return false;
+		if (that instanceof use_subdir_struct_args)
+			return this.equals((use_subdir_struct_args)that);
+		return false;
+	}
+
+	public boolean equals(use_subdir_struct_args that) {
+		if (that == null)
+			return false;
+
+		boolean this_present_a = true && this.isSetA();
+		boolean that_present_a = true && that.isSetA();
+		if (this_present_a || that_present_a) {
+			if (!(this_present_a && that_present_a))
+				return false;
+			if (!this.a.equals(that.a))
+				return false;
+		}
+
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		List<Object> list = new ArrayList<Object>();
+
+		boolean present_a = true && (isSetA());
+		list.add(present_a);
+		if (present_a)
+			list.add(a);
+
+		return list.hashCode();
+	}
+
+	@Override
+	public int compareTo(use_subdir_struct_args other) {
+		if (!getClass().equals(other.getClass())) {
+			return getClass().getName().compareTo(other.getClass().getName());
+		}
+
+		int lastComparison = 0;
+
+		lastComparison = Boolean.valueOf(isSetA()).compareTo(other.isSetA());
+		if (lastComparison != 0) {
+			return lastComparison;
+		}
+		if (isSetA()) {
+			lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.a, other.a);
+			if (lastComparison != 0) {
+				return lastComparison;
+			}
+		}
+		return 0;
+	}
+
+	public _Fields fieldForId(int fieldId) {
+		return _Fields.findByThriftId(fieldId);
+	}
+
+	public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+		schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+	}
+
+	public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+		schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder("use_subdir_struct_args(");
+		boolean first = true;
+
+		sb.append("a:");
+		if (this.a == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.a);
+		}
+		first = false;
+		sb.append(")");
+		return sb.toString();
+	}
+
+	public void validate() throws org.apache.thrift.TException {
+		// check for required fields
+		// check for sub-struct validity
+		if (a != null) {
+			a.validate();
+		}
+	}
+
+	private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+		try {
+			write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+		} catch (org.apache.thrift.TException te) {
+			throw new java.io.IOException(te);
+		}
+	}
+
+	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+		try {
+			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
+			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+		} catch (org.apache.thrift.TException te) {
+			throw new java.io.IOException(te);
+		}
+	}
+
+	private static class use_subdir_struct_argsStandardSchemeFactory implements SchemeFactory {
+		public use_subdir_struct_argsStandardScheme getScheme() {
+			return new use_subdir_struct_argsStandardScheme();
+		}
+	}
+
+	private static class use_subdir_struct_argsStandardScheme extends StandardScheme<use_subdir_struct_args> {
+
+		public void read(org.apache.thrift.protocol.TProtocol iprot, use_subdir_struct_args struct) throws org.apache.thrift.TException {
+			org.apache.thrift.protocol.TField schemeField;
+			iprot.readStructBegin();
+			while (true) {
+				schemeField = iprot.readFieldBegin();
+				if (schemeField.type == org.apache.thrift.protocol.TType.STOP) {
+					break;
+				}
+				switch (schemeField.id) {
+					case 1: // A
+						if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+							struct.a = new A();
+							struct.a.read(iprot);
+							struct.setAIsSet(true);
+						} else {
+							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+						}
+						break;
+					default:
+						org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+				}
+				iprot.readFieldEnd();
+			}
+			iprot.readStructEnd();
+
+			// check for required fields of primitive type, which can't be checked in the validate method
+			struct.validate();
+		}
+
+		public void write(org.apache.thrift.protocol.TProtocol oprot, use_subdir_struct_args struct) throws org.apache.thrift.TException {
+			struct.validate();
+
+			oprot.writeStructBegin(STRUCT_DESC);
+			if (struct.a != null) {
+				oprot.writeFieldBegin(A_FIELD_DESC);
+				struct.a.write(oprot);
+				oprot.writeFieldEnd();
+			}
+			oprot.writeFieldStop();
+			oprot.writeStructEnd();
+		}
+
+	}
+
+	private static class use_subdir_struct_argsTupleSchemeFactory implements SchemeFactory {
+		public use_subdir_struct_argsTupleScheme getScheme() {
+			return new use_subdir_struct_argsTupleScheme();
+		}
+	}
+
+	private static class use_subdir_struct_argsTupleScheme extends TupleScheme<use_subdir_struct_args> {
+
+		@Override
+		public void write(org.apache.thrift.protocol.TProtocol prot, use_subdir_struct_args struct) throws org.apache.thrift.TException {
+			TTupleProtocol oprot = (TTupleProtocol) prot;
+			BitSet optionals = new BitSet();
+			if (struct.isSetA()) {
+				optionals.set(0);
+			}
+			oprot.writeBitSet(optionals, 1);
+			if (struct.isSetA()) {
+				struct.a.write(oprot);
+			}
+		}
+
+		@Override
+		public void read(org.apache.thrift.protocol.TProtocol prot, use_subdir_struct_args struct) throws org.apache.thrift.TException {
+			TTupleProtocol iprot = (TTupleProtocol) prot;
+			BitSet incoming = iprot.readBitSet(1);
+			if (incoming.get(0)) {
+				struct.a = new A();
+				struct.a.read(iprot);
+				struct.setAIsSet(true);
+			}
+		}
+
+	}
+
+}
+public static class use_subdir_struct_result implements org.apache.thrift.TBase<use_subdir_struct_result, use_subdir_struct_result._Fields>, java.io.Serializable, Cloneable, Comparable<use_subdir_struct_result> {
+	private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("use_subdir_struct_result");
+
+	private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.STRUCT, (short)0);
+
+	private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+	static {
+		schemes.put(StandardScheme.class, new use_subdir_struct_resultStandardSchemeFactory());
+		schemes.put(TupleScheme.class, new use_subdir_struct_resultTupleSchemeFactory());
+	}
+
+	public A success; // required
+	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+		SUCCESS((short)0, "success")
+;
+
+		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+		static {
+			for (_Fields field : EnumSet.allOf(_Fields.class)) {
+				byName.put(field.getFieldName(), field);
+			}
+		}
+
+		/**
+		 * Find the _Fields constant that matches fieldId, or null if its not found.
+		 */
+		public static _Fields findByThriftId(int fieldId) {
+			switch(fieldId) {
+				case 0: // SUCCESS
+					return SUCCESS;
+				default:
+					return null;
+			}
+		}
+
+		/**
+		 * Find the _Fields constant that matches fieldId, throwing an exception
+		 * if it is not found.
+		 */
+		public static _Fields findByThriftIdOrThrow(int fieldId) {
+			_Fields fields = findByThriftId(fieldId);
+			if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+			return fields;
+		}
+
+		/**
+		 * Find the _Fields constant that matches name, or null if its not found.
+		 */
+		public static _Fields findByName(String name) {
+			return byName.get(name);
+		}
+
+		private final short _thriftId;
+		private final String _fieldName;
+
+		_Fields(short thriftId, String fieldName) {
+			_thriftId = thriftId;
+			_fieldName = fieldName;
+		}
+
+		public short getThriftFieldId() {
+			return _thriftId;
+		}
+
+		public String getFieldName() {
+			return _fieldName;
+		}
+	}
+
+	// isset id assignments
+	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+	static {
+		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
+				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, A.class)));
+		metaDataMap = Collections.unmodifiableMap(tmpMap);
+		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(use_subdir_struct_result.class, metaDataMap);
+	}
+
+	public use_subdir_struct_result() {
+	}
+
+	public use_subdir_struct_result(
+		A success) {
+		this();
+		this.success = success;
+	}
+
+	/**
+	 * Performs a deep copy on <i>other</i>.
+	 */
+	public use_subdir_struct_result(use_subdir_struct_result other) {
+		if (other.isSetSuccess()) {
+			this.success = new A(other.success);
+		}
+	}
+
+	public use_subdir_struct_result deepCopy() {
+		return new use_subdir_struct_result(this);
+	}
+
+	@Override
+	public void clear() {
+		this.success = null;
+
+	}
+
+	public A getSuccess() {
+		return this.success;
+	}
+
+	public use_subdir_struct_result setSuccess(A success) {
+		this.success = success;
+		return this;
+	}
+
+	public void unsetSuccess() {
+		this.success = null;
+	}
+
+	/** Returns true if field success is set (has been assigned a value) and false otherwise */
+	public boolean isSetSuccess() {
+		return this.success != null;
+	}
+
+	public void setSuccessIsSet(boolean value) {
+		if (!value) {
+			this.success = null;
+		}
+	}
+
+	public void setFieldValue(_Fields field, Object value) {
+		switch (field) {
+		case SUCCESS:
+			if (value == null) {
+				unsetSuccess();
+			} else {
+				setSuccess((A)value);
+			}
+			break;
+
+		}
+	}
+
+	public Object getFieldValue(_Fields field) {
+		switch (field) {
+		case SUCCESS:
+			return getSuccess();
+
+		}
+		throw new IllegalStateException();
+	}
+
+	/** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+	public boolean isSet(_Fields field) {
+		if (field == null) {
+			throw new IllegalArgumentException();
+		}
+
+		switch (field) {
+		case SUCCESS:
+			return isSetSuccess();
+		}
+		throw new IllegalStateException();
+	}
+
+	@Override
+	public boolean equals(Object that) {
+		if (that == null)
+			return false;
+		if (that instanceof use_subdir_struct_result)
+			return this.equals((use_subdir_struct_result)that);
+		return false;
+	}
+
+	public boolean equals(use_subdir_struct_result that) {
+		if (that == null)
+			return false;
+
+		boolean this_present_success = true && this.isSetSuccess();
+		boolean that_present_success = true && that.isSetSuccess();
+		if (this_present_success || that_present_success) {
+			if (!(this_present_success && that_present_success))
+				return false;
+			if (!this.success.equals(that.success))
+				return false;
+		}
+
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		List<Object> list = new ArrayList<Object>();
+
+		boolean present_success = true && (isSetSuccess());
+		list.add(present_success);
+		if (present_success)
+			list.add(success);
+
+		return list.hashCode();
+	}
+
+	@Override
+	public int compareTo(use_subdir_struct_result other) {
+		if (!getClass().equals(other.getClass())) {
+			return getClass().getName().compareTo(other.getClass().getName());
+		}
+
+		int lastComparison = 0;
+
+		lastComparison = Boolean.valueOf(isSetSuccess()).compareTo(other.isSetSuccess());
+		if (lastComparison != 0) {
+			return lastComparison;
+		}
+		if (isSetSuccess()) {
+			lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.success, other.success);
+			if (lastComparison != 0) {
+				return lastComparison;
+			}
+		}
+		return 0;
+	}
+
+	public _Fields fieldForId(int fieldId) {
+		return _Fields.findByThriftId(fieldId);
+	}
+
+	public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+		schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+	}
+
+	public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+		schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder("use_subdir_struct_result(");
+		boolean first = true;
+
+		sb.append("success:");
+		if (this.success == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.success);
+		}
+		first = false;
+		sb.append(")");
+		return sb.toString();
+	}
+
+	public void validate() throws org.apache.thrift.TException {
+		// check for required fields
+		// check for sub-struct validity
+		if (success != null) {
+			success.validate();
+		}
+	}
+
+	private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+		try {
+			write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+		} catch (org.apache.thrift.TException te) {
+			throw new java.io.IOException(te);
+		}
+	}
+
+	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+		try {
+			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
+			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+		} catch (org.apache.thrift.TException te) {
+			throw new java.io.IOException(te);
+		}
+	}
+
+	private static class use_subdir_struct_resultStandardSchemeFactory implements SchemeFactory {
+		public use_subdir_struct_resultStandardScheme getScheme() {
+			return new use_subdir_struct_resultStandardScheme();
+		}
+	}
+
+	private static class use_subdir_struct_resultStandardScheme extends StandardScheme<use_subdir_struct_result> {
+
+		public void read(org.apache.thrift.protocol.TProtocol iprot, use_subdir_struct_result struct) throws org.apache.thrift.TException {
+			org.apache.thrift.protocol.TField schemeField;
+			iprot.readStructBegin();
+			while (true) {
+				schemeField = iprot.readFieldBegin();
+				if (schemeField.type == org.apache.thrift.protocol.TType.STOP) {
+					break;
+				}
+				switch (schemeField.id) {
+					case 0: // SUCCESS
+						if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+							struct.success = new A();
+							struct.success.read(iprot);
+							struct.setSuccessIsSet(true);
+						} else {
+							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+						}
+						break;
+					default:
+						org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+				}
+				iprot.readFieldEnd();
+			}
+			iprot.readStructEnd();
+
+			// check for required fields of primitive type, which can't be checked in the validate method
+			struct.validate();
+		}
+
+		public void write(org.apache.thrift.protocol.TProtocol oprot, use_subdir_struct_result struct) throws org.apache.thrift.TException {
+			struct.validate();
+
+			oprot.writeStructBegin(STRUCT_DESC);
+			if (struct.success != null) {
+				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+				struct.success.write(oprot);
+				oprot.writeFieldEnd();
+			}
+			oprot.writeFieldStop();
+			oprot.writeStructEnd();
+		}
+
+	}
+
+	private static class use_subdir_struct_resultTupleSchemeFactory implements SchemeFactory {
+		public use_subdir_struct_resultTupleScheme getScheme() {
+			return new use_subdir_struct_resultTupleScheme();
+		}
+	}
+
+	private static class use_subdir_struct_resultTupleScheme extends TupleScheme<use_subdir_struct_result> {
+
+		@Override
+		public void write(org.apache.thrift.protocol.TProtocol prot, use_subdir_struct_result struct) throws org.apache.thrift.TException {
+			TTupleProtocol oprot = (TTupleProtocol) prot;
+			BitSet optionals = new BitSet();
+			if (struct.isSetSuccess()) {
+				optionals.set(0);
+			}
+			oprot.writeBitSet(optionals, 1);
+			if (struct.isSetSuccess()) {
+				struct.success.write(oprot);
+			}
+		}
+
+		@Override
+		public void read(org.apache.thrift.protocol.TProtocol prot, use_subdir_struct_result struct) throws org.apache.thrift.TException {
+			TTupleProtocol iprot = (TTupleProtocol) prot;
+			BitSet incoming = iprot.readBitSet(1);
+			if (incoming.get(0)) {
+				struct.success = new A();
+				struct.success.read(iprot);
 				struct.setSuccessIsSet(true);
 			}
 		}

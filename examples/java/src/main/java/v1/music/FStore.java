@@ -154,11 +154,12 @@ public class FStore {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
+								TException ex;
+								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
+									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
+								}
+								else {
 									ex = new FRateLimitException(e.getMessage());
 								}
 								try {
@@ -246,11 +247,12 @@ public class FStore {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+							if (e.getType() == FTransport.RESPONSE_TOO_LARGE || e.getType() == FRateLimitException.RATE_LIMIT_EXCEEDED) {
+								TException ex;
+								if (e.getType() == FTransport.RESPONSE_TOO_LARGE){
+									ex = new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE, "response too large for transport");
+								}
+								else {
 									ex = new FRateLimitException(e.getMessage());
 								}
 								try {
@@ -332,7 +334,7 @@ public class FStore {
 				} catch (PurchasingError error) {
 					result.error = error;
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "buyAlbum", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "buyAlbum", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -378,7 +380,7 @@ public class FStore {
 					result.success = handler.enterAlbumGiveaway(ctx, args.email, args.name);
 					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {

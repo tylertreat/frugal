@@ -6,6 +6,7 @@ namespace py variety.python
 include "base.frugal"
 include "validStructs.frugal"
 include "ValidTypes.frugal"
+include "subdir_includes/subdir_include.frugal"
 
 typedef i64 id
 typedef i32 int
@@ -158,6 +159,8 @@ service Foo extends base.BaseFoo {
     validStructs.Thing getThing(),
 
     ValidTypes.MyInt getMyInt(),
+
+    subdir_include.A use_subdir_struct(1:subdir_include.A a),
 }
 
 /**@

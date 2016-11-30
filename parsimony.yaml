@@ -1,6 +1,0 @@
-event.frugal:
-    path: example/event.frugal
-    requires: ['base.frugal']
-
-base.frugal:
-    path: example/base.frugal
