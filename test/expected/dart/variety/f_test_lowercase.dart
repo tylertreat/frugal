@@ -51,7 +51,7 @@ class TestLowercase implements thrift.TBase {
         if(value == null) {
           unsetLowercaseInt();
         } else {
-          this.lowercaseInt = value;
+          this.lowercaseInt = value as int;
         }
         break;
 
@@ -70,7 +70,7 @@ class TestLowercase implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -84,7 +84,7 @@ class TestLowercase implements thrift.TBase {
             lowercaseInt = iprot.readI32();
             this.__isset_lowercaseInt = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:

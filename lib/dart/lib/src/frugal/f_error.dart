@@ -48,6 +48,7 @@ class FMessageSizeError extends TTransportError {
 
 /// FRateLimitError indicates that an application has breached a rate threshold.
 class FRateLimitError extends TApplicationError {
+  /// Create an [FRateLimitError] with the given message.
   FRateLimitError({String message: "rate limit exceeded"})
       : super(FApplicationError.RATE_LIMIT_EXCEEDED, message);
 }

@@ -386,7 +386,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetID2();
         } else {
-          this.iD2 = value;
+          this.iD2 = value as int;
         }
         break;
 
@@ -394,7 +394,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetEv1();
         } else {
-          this.ev1 = value;
+          this.ev1 = value as t_variety.Event;
         }
         break;
 
@@ -402,7 +402,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetEv2();
         } else {
-          this.ev2 = value;
+          this.ev2 = value as t_variety.Event;
         }
         break;
 
@@ -410,7 +410,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetID();
         } else {
-          this.iD = value;
+          this.iD = value as int;
         }
         break;
 
@@ -418,7 +418,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetThing();
         } else {
-          this.thing = value;
+          this.thing = value as String;
         }
         break;
 
@@ -426,7 +426,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetThing2();
         } else {
-          this.thing2 = value;
+          this.thing2 = value as String;
         }
         break;
 
@@ -434,7 +434,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetListfield();
         } else {
-          this.listfield = value;
+          this.listfield = value as List<int>;
         }
         break;
 
@@ -442,7 +442,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetID3();
         } else {
-          this.iD3 = value;
+          this.iD3 = value as int;
         }
         break;
 
@@ -450,7 +450,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetBin_field();
         } else {
-          this.bin_field = value;
+          this.bin_field = value as Uint8List;
         }
         break;
 
@@ -458,7 +458,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetBin_field2();
         } else {
-          this.bin_field2 = value;
+          this.bin_field2 = value as Uint8List;
         }
         break;
 
@@ -466,7 +466,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetBin_field3();
         } else {
-          this.bin_field3 = value;
+          this.bin_field3 = value as Uint8List;
         }
         break;
 
@@ -474,7 +474,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetBin_field4();
         } else {
-          this.bin_field4 = value;
+          this.bin_field4 = value as Uint8List;
         }
         break;
 
@@ -482,7 +482,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetList2();
         } else {
-          this.list2 = value;
+          this.list2 = value as List<int>;
         }
         break;
 
@@ -490,7 +490,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetList3();
         } else {
-          this.list3 = value;
+          this.list3 = value as List<int>;
         }
         break;
 
@@ -498,7 +498,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetList4();
         } else {
-          this.list4 = value;
+          this.list4 = value as List<int>;
         }
         break;
 
@@ -506,7 +506,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetA_map();
         } else {
-          this.a_map = value;
+          this.a_map = value as Map<String, String>;
         }
         break;
 
@@ -514,7 +514,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetStatus();
         } else {
-          this.status = value;
+          this.status = value as int;
         }
         break;
 
@@ -522,7 +522,7 @@ class TestingDefaults implements thrift.TBase {
         if(value == null) {
           unsetBase_status();
         } else {
-          this.base_status = value;
+          this.base_status = value as int;
         }
         break;
 
@@ -575,7 +575,7 @@ class TestingDefaults implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -589,7 +589,7 @@ class TestingDefaults implements thrift.TBase {
             iD2 = iprot.readI64();
             this.__isset_iD2 = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case EV1:
@@ -597,7 +597,7 @@ class TestingDefaults implements thrift.TBase {
             ev1 = new t_variety.Event();
             ev1.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case EV2:
@@ -605,7 +605,7 @@ class TestingDefaults implements thrift.TBase {
             ev2 = new t_variety.Event();
             ev2.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case ID:
@@ -613,21 +613,21 @@ class TestingDefaults implements thrift.TBase {
             iD = iprot.readI64();
             this.__isset_iD = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case THING:
           if(field.type == thrift.TType.STRING) {
             thing = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case THING2:
           if(field.type == thrift.TType.STRING) {
             thing2 = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case LISTFIELD:
@@ -640,7 +640,7 @@ class TestingDefaults implements thrift.TBase {
             }
             iprot.readListEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case ID3:
@@ -648,35 +648,35 @@ class TestingDefaults implements thrift.TBase {
             iD3 = iprot.readI64();
             this.__isset_iD3 = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case BIN_FIELD:
           if(field.type == thrift.TType.STRING) {
             bin_field = iprot.readBinary();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case BIN_FIELD2:
           if(field.type == thrift.TType.STRING) {
             bin_field2 = iprot.readBinary();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case BIN_FIELD3:
           if(field.type == thrift.TType.STRING) {
             bin_field3 = iprot.readBinary();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case BIN_FIELD4:
           if(field.type == thrift.TType.STRING) {
             bin_field4 = iprot.readBinary();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case LIST2:
@@ -689,7 +689,7 @@ class TestingDefaults implements thrift.TBase {
             }
             iprot.readListEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case LIST3:
@@ -702,7 +702,7 @@ class TestingDefaults implements thrift.TBase {
             }
             iprot.readListEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case LIST4:
@@ -715,7 +715,7 @@ class TestingDefaults implements thrift.TBase {
             }
             iprot.readListEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case A_MAP:
@@ -729,7 +729,7 @@ class TestingDefaults implements thrift.TBase {
             }
             iprot.readMapEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case STATUS:
@@ -737,7 +737,7 @@ class TestingDefaults implements thrift.TBase {
             status = iprot.readI32();
             this.__isset_status = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case BASE_STATUS:
@@ -745,7 +745,7 @@ class TestingDefaults implements thrift.TBase {
             base_status = iprot.readI32();
             this.__isset_base_status = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -758,10 +758,10 @@ class TestingDefaults implements thrift.TBase {
 
     // check for required fields of primitive type, which can't be checked in the validate method
     if(!__isset_status) {
-      throw new thrift.TProtocolError(TProtocolErrorType.UNKNOWN, "Required field 'status' was not present in struct TestingDefaults");
+      throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "Required field 'status' was not present in struct TestingDefaults");
     }
     if(!__isset_base_status) {
-      throw new thrift.TProtocolError(TProtocolErrorType.UNKNOWN, "Required field 'base_status' was not present in struct TestingDefaults");
+      throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "Required field 'base_status' was not present in struct TestingDefaults");
     }
     validate();
   }

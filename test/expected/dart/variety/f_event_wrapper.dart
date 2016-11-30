@@ -206,7 +206,7 @@ class EventWrapper implements thrift.TBase {
         if(value == null) {
           unsetID();
         } else {
-          this.iD = value;
+          this.iD = value as int;
         }
         break;
 
@@ -214,7 +214,7 @@ class EventWrapper implements thrift.TBase {
         if(value == null) {
           unsetEv();
         } else {
-          this.ev = value;
+          this.ev = value as t_variety.Event;
         }
         break;
 
@@ -222,7 +222,7 @@ class EventWrapper implements thrift.TBase {
         if(value == null) {
           unsetEvents();
         } else {
-          this.events = value;
+          this.events = value as List<t_variety.Event>;
         }
         break;
 
@@ -230,7 +230,7 @@ class EventWrapper implements thrift.TBase {
         if(value == null) {
           unsetEvents2();
         } else {
-          this.events2 = value;
+          this.events2 = value as Set<t_variety.Event>;
         }
         break;
 
@@ -238,7 +238,7 @@ class EventWrapper implements thrift.TBase {
         if(value == null) {
           unsetEventMap();
         } else {
-          this.eventMap = value;
+          this.eventMap = value as Map<int, t_variety.Event>;
         }
         break;
 
@@ -246,7 +246,7 @@ class EventWrapper implements thrift.TBase {
         if(value == null) {
           unsetNums();
         } else {
-          this.nums = value;
+          this.nums = value as List<List<int>>;
         }
         break;
 
@@ -254,7 +254,7 @@ class EventWrapper implements thrift.TBase {
         if(value == null) {
           unsetEnums();
         } else {
-          this.enums = value;
+          this.enums = value as List<int>;
         }
         break;
 
@@ -262,7 +262,7 @@ class EventWrapper implements thrift.TBase {
         if(value == null) {
           unsetABoolField();
         } else {
-          this.aBoolField = value;
+          this.aBoolField = value as bool;
         }
         break;
 
@@ -270,7 +270,7 @@ class EventWrapper implements thrift.TBase {
         if(value == null) {
           unsetA_union();
         } else {
-          this.a_union = value;
+          this.a_union = value as t_variety.TestingUnions;
         }
         break;
 
@@ -278,7 +278,7 @@ class EventWrapper implements thrift.TBase {
         if(value == null) {
           unsetTypedefOfTypedef();
         } else {
-          this.typedefOfTypedef = value;
+          this.typedefOfTypedef = value as String;
         }
         break;
 
@@ -315,7 +315,7 @@ class EventWrapper implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -329,7 +329,7 @@ class EventWrapper implements thrift.TBase {
             iD = iprot.readI64();
             this.__isset_iD = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case EV:
@@ -337,7 +337,7 @@ class EventWrapper implements thrift.TBase {
             ev = new t_variety.Event();
             ev.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case EVENTS:
@@ -351,7 +351,7 @@ class EventWrapper implements thrift.TBase {
             }
             iprot.readListEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case EVENTS2:
@@ -365,7 +365,7 @@ class EventWrapper implements thrift.TBase {
             }
             iprot.readSetEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case EVENTMAP:
@@ -380,7 +380,7 @@ class EventWrapper implements thrift.TBase {
             }
             iprot.readMapEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case NUMS:
@@ -399,7 +399,7 @@ class EventWrapper implements thrift.TBase {
             }
             iprot.readListEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case ENUMS:
@@ -412,7 +412,7 @@ class EventWrapper implements thrift.TBase {
             }
             iprot.readListEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case ABOOLFIELD:
@@ -420,7 +420,7 @@ class EventWrapper implements thrift.TBase {
             aBoolField = iprot.readBool();
             this.__isset_aBoolField = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case A_UNION:
@@ -428,14 +428,14 @@ class EventWrapper implements thrift.TBase {
             a_union = new t_variety.TestingUnions();
             a_union.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case TYPEDEFOFTYPEDEF:
           if(field.type == thrift.TType.STRING) {
             typedefOfTypedef = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:

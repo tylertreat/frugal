@@ -68,7 +68,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
 
   /// Ping the server.
   Future ping(frugal.FContext ctx) {
-    return this._methods['ping']([ctx]);
+    return this._methods['ping']([ctx]) as Future;
   }
 
   Future _ping(frugal.FContext ctx) async {
@@ -98,7 +98,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     }
   }
 
-  _recvPingHandler(frugal.FContext ctx, StreamController controller) {
+  frugal.FAsyncCallback _recvPingHandler(frugal.FContext ctx, StreamController controller) {
     pingCallback(thrift.TTransport transport) {
       try {
         var iprot = _protocolFactory.getProtocol(transport);
@@ -132,7 +132,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
 
   /// Blah the server.
   Future<int> blah(frugal.FContext ctx, int num, String str, t_variety.Event event) {
-    return this._methods['blah']([ctx, num, str, event]);
+    return this._methods['blah']([ctx, num, str, event]) as Future<int>;
   }
 
   Future<int> _blah(frugal.FContext ctx, int num, String str, t_variety.Event event) async {
@@ -165,7 +165,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     }
   }
 
-  _recvBlahHandler(frugal.FContext ctx, StreamController controller) {
+  frugal.FAsyncCallback _recvBlahHandler(frugal.FContext ctx, StreamController controller) {
     blahCallback(thrift.TTransport transport) {
       try {
         var iprot = _protocolFactory.getProtocol(transport);
@@ -214,7 +214,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
 
   /// oneway methods don't receive a response from the server.
   Future oneWay(frugal.FContext ctx, int id, Map<int, String> req) {
-    return this._methods['oneWay']([ctx, id, req]);
+    return this._methods['oneWay']([ctx, id, req]) as Future;
   }
 
   Future _oneWay(frugal.FContext ctx, int id, Map<int, String> req) async {
@@ -231,7 +231,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   }
 
   Future<Uint8List> bin_method(frugal.FContext ctx, Uint8List bin, String str) {
-    return this._methods['bin_method']([ctx, bin, str]);
+    return this._methods['bin_method']([ctx, bin, str]) as Future<Uint8List>;
   }
 
   Future<Uint8List> _bin_method(frugal.FContext ctx, Uint8List bin, String str) async {
@@ -263,7 +263,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     }
   }
 
-  _recvBin_methodHandler(frugal.FContext ctx, StreamController controller) {
+  frugal.FAsyncCallback _recvBin_methodHandler(frugal.FContext ctx, StreamController controller) {
     bin_methodCallback(thrift.TTransport transport) {
       try {
         var iprot = _protocolFactory.getProtocol(transport);
@@ -307,7 +307,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   }
 
   Future<int> param_modifiers(frugal.FContext ctx, int opt_num, int default_num, int req_num) {
-    return this._methods['param_modifiers']([ctx, opt_num, default_num, req_num]);
+    return this._methods['param_modifiers']([ctx, opt_num, default_num, req_num]) as Future<int>;
   }
 
   Future<int> _param_modifiers(frugal.FContext ctx, int opt_num, int default_num, int req_num) async {
@@ -340,7 +340,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     }
   }
 
-  _recvParam_modifiersHandler(frugal.FContext ctx, StreamController controller) {
+  frugal.FAsyncCallback _recvParam_modifiersHandler(frugal.FContext ctx, StreamController controller) {
     param_modifiersCallback(thrift.TTransport transport) {
       try {
         var iprot = _protocolFactory.getProtocol(transport);
@@ -380,7 +380,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   }
 
   Future<List<int>> underlying_types_test(frugal.FContext ctx, List<int> list_type, Set<int> set_type) {
-    return this._methods['underlying_types_test']([ctx, list_type, set_type]);
+    return this._methods['underlying_types_test']([ctx, list_type, set_type]) as Future<List<int>>;
   }
 
   Future<List<int>> _underlying_types_test(frugal.FContext ctx, List<int> list_type, Set<int> set_type) async {
@@ -412,7 +412,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     }
   }
 
-  _recvUnderlying_types_testHandler(frugal.FContext ctx, StreamController controller) {
+  frugal.FAsyncCallback _recvUnderlying_types_testHandler(frugal.FContext ctx, StreamController controller) {
     underlying_types_testCallback(thrift.TTransport transport) {
       try {
         var iprot = _protocolFactory.getProtocol(transport);
@@ -452,7 +452,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   }
 
   Future<t_validStructs.Thing> getThing(frugal.FContext ctx) {
-    return this._methods['getThing']([ctx]);
+    return this._methods['getThing']([ctx]) as Future<t_validStructs.Thing>;
   }
 
   Future<t_validStructs.Thing> _getThing(frugal.FContext ctx) async {
@@ -482,7 +482,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     }
   }
 
-  _recvGetThingHandler(frugal.FContext ctx, StreamController controller) {
+  frugal.FAsyncCallback _recvGetThingHandler(frugal.FContext ctx, StreamController controller) {
     getThingCallback(thrift.TTransport transport) {
       try {
         var iprot = _protocolFactory.getProtocol(transport);
@@ -522,7 +522,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   }
 
   Future<int> getMyInt(frugal.FContext ctx) {
-    return this._methods['getMyInt']([ctx]);
+    return this._methods['getMyInt']([ctx]) as Future<int>;
   }
 
   Future<int> _getMyInt(frugal.FContext ctx) async {
@@ -552,7 +552,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     }
   }
 
-  _recvGetMyIntHandler(frugal.FContext ctx, StreamController controller) {
+  frugal.FAsyncCallback _recvGetMyIntHandler(frugal.FContext ctx, StreamController controller) {
     getMyIntCallback(thrift.TTransport transport) {
       try {
         var iprot = _protocolFactory.getProtocol(transport);
@@ -592,7 +592,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   }
 
   Future<t_subdir_include.A> use_subdir_struct(frugal.FContext ctx, t_subdir_include.A a) {
-    return this._methods['use_subdir_struct']([ctx, a]);
+    return this._methods['use_subdir_struct']([ctx, a]) as Future<t_subdir_include.A>;
   }
 
   Future<t_subdir_include.A> _use_subdir_struct(frugal.FContext ctx, t_subdir_include.A a) async {
@@ -623,7 +623,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     }
   }
 
-  _recvUse_subdir_structHandler(frugal.FContext ctx, StreamController controller) {
+  frugal.FAsyncCallback _recvUse_subdir_structHandler(frugal.FContext ctx, StreamController controller) {
     use_subdir_structCallback(thrift.TTransport transport) {
       try {
         var iprot = _protocolFactory.getProtocol(transport);
@@ -694,7 +694,7 @@ class ping_args implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -766,7 +766,7 @@ class ping_result implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -882,7 +882,7 @@ class blah_args implements thrift.TBase {
         if(value == null) {
           unsetNum();
         } else {
-          this.num = value;
+          this.num = value as int;
         }
         break;
 
@@ -890,7 +890,7 @@ class blah_args implements thrift.TBase {
         if(value == null) {
           unsetStr();
         } else {
-          this.str = value;
+          this.str = value as String;
         }
         break;
 
@@ -898,7 +898,7 @@ class blah_args implements thrift.TBase {
         if(value == null) {
           unsetEvent();
         } else {
-          this.event = value;
+          this.event = value as t_variety.Event;
         }
         break;
 
@@ -921,7 +921,7 @@ class blah_args implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -935,14 +935,14 @@ class blah_args implements thrift.TBase {
             num = iprot.readI32();
             this.__isset_num = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case STR:
           if(field.type == thrift.TType.STRING) {
             str = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case EVENT:
@@ -950,7 +950,7 @@ class blah_args implements thrift.TBase {
             event = new t_variety.Event();
             event.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -1092,7 +1092,7 @@ class blah_result implements thrift.TBase {
         if(value == null) {
           unsetSuccess();
         } else {
-          this.success = value;
+          this.success = value as int;
         }
         break;
 
@@ -1100,7 +1100,7 @@ class blah_result implements thrift.TBase {
         if(value == null) {
           unsetAwe();
         } else {
-          this.awe = value;
+          this.awe = value as t_variety.AwesomeException;
         }
         break;
 
@@ -1108,7 +1108,7 @@ class blah_result implements thrift.TBase {
         if(value == null) {
           unsetApi();
         } else {
-          this.api = value;
+          this.api = value as t_actual_base_dart.api_exception;
         }
         break;
 
@@ -1131,7 +1131,7 @@ class blah_result implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -1145,7 +1145,7 @@ class blah_result implements thrift.TBase {
             success = iprot.readI64();
             this.__isset_success = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case AWE:
@@ -1153,7 +1153,7 @@ class blah_result implements thrift.TBase {
             awe = new t_variety.AwesomeException();
             awe.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case API:
@@ -1161,7 +1161,7 @@ class blah_result implements thrift.TBase {
             api = new t_actual_base_dart.api_exception();
             api.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -1294,7 +1294,7 @@ class oneWay_args implements thrift.TBase {
         if(value == null) {
           unsetId();
         } else {
-          this.id = value;
+          this.id = value as int;
         }
         break;
 
@@ -1302,7 +1302,7 @@ class oneWay_args implements thrift.TBase {
         if(value == null) {
           unsetReq();
         } else {
-          this.req = value;
+          this.req = value as Map<int, String>;
         }
         break;
 
@@ -1323,7 +1323,7 @@ class oneWay_args implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -1337,7 +1337,7 @@ class oneWay_args implements thrift.TBase {
             id = iprot.readI64();
             this.__isset_id = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case REQ:
@@ -1351,7 +1351,7 @@ class oneWay_args implements thrift.TBase {
             }
             iprot.readMapEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -1466,7 +1466,7 @@ class bin_method_args implements thrift.TBase {
         if(value == null) {
           unsetBin();
         } else {
-          this.bin = value;
+          this.bin = value as Uint8List;
         }
         break;
 
@@ -1474,7 +1474,7 @@ class bin_method_args implements thrift.TBase {
         if(value == null) {
           unsetStr();
         } else {
-          this.str = value;
+          this.str = value as String;
         }
         break;
 
@@ -1495,7 +1495,7 @@ class bin_method_args implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -1508,14 +1508,14 @@ class bin_method_args implements thrift.TBase {
           if(field.type == thrift.TType.STRING) {
             bin = iprot.readBinary();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case STR:
           if(field.type == thrift.TType.STRING) {
             str = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -1631,7 +1631,7 @@ class bin_method_result implements thrift.TBase {
         if(value == null) {
           unsetSuccess();
         } else {
-          this.success = value;
+          this.success = value as Uint8List;
         }
         break;
 
@@ -1639,7 +1639,7 @@ class bin_method_result implements thrift.TBase {
         if(value == null) {
           unsetApi();
         } else {
-          this.api = value;
+          this.api = value as t_actual_base_dart.api_exception;
         }
         break;
 
@@ -1660,7 +1660,7 @@ class bin_method_result implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -1673,7 +1673,7 @@ class bin_method_result implements thrift.TBase {
           if(field.type == thrift.TType.STRING) {
             success = iprot.readBinary();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case API:
@@ -1681,7 +1681,7 @@ class bin_method_result implements thrift.TBase {
             api = new t_actual_base_dart.api_exception();
             api.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -1824,7 +1824,7 @@ class param_modifiers_args implements thrift.TBase {
         if(value == null) {
           unsetOpt_num();
         } else {
-          this.opt_num = value;
+          this.opt_num = value as int;
         }
         break;
 
@@ -1832,7 +1832,7 @@ class param_modifiers_args implements thrift.TBase {
         if(value == null) {
           unsetDefault_num();
         } else {
-          this.default_num = value;
+          this.default_num = value as int;
         }
         break;
 
@@ -1840,7 +1840,7 @@ class param_modifiers_args implements thrift.TBase {
         if(value == null) {
           unsetReq_num();
         } else {
-          this.req_num = value;
+          this.req_num = value as int;
         }
         break;
 
@@ -1863,7 +1863,7 @@ class param_modifiers_args implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -1877,7 +1877,7 @@ class param_modifiers_args implements thrift.TBase {
             opt_num = iprot.readI32();
             this.__isset_opt_num = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case DEFAULT_NUM:
@@ -1885,7 +1885,7 @@ class param_modifiers_args implements thrift.TBase {
             default_num = iprot.readI32();
             this.__isset_default_num = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case REQ_NUM:
@@ -1893,7 +1893,7 @@ class param_modifiers_args implements thrift.TBase {
             req_num = iprot.readI32();
             this.__isset_req_num = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -1906,7 +1906,7 @@ class param_modifiers_args implements thrift.TBase {
 
     // check for required fields of primitive type, which can't be checked in the validate method
     if(!__isset_req_num) {
-      throw new thrift.TProtocolError(TProtocolErrorType.UNKNOWN, "Required field 'req_num' was not present in struct param_modifiers_args");
+      throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "Required field 'req_num' was not present in struct param_modifiers_args");
     }
     validate();
   }
@@ -1992,7 +1992,7 @@ class param_modifiers_result implements thrift.TBase {
         if(value == null) {
           unsetSuccess();
         } else {
-          this.success = value;
+          this.success = value as int;
         }
         break;
 
@@ -2011,7 +2011,7 @@ class param_modifiers_result implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -2025,7 +2025,7 @@ class param_modifiers_result implements thrift.TBase {
             success = iprot.readI64();
             this.__isset_success = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -2126,7 +2126,7 @@ class underlying_types_test_args implements thrift.TBase {
         if(value == null) {
           unsetList_type();
         } else {
-          this.list_type = value;
+          this.list_type = value as List<int>;
         }
         break;
 
@@ -2134,7 +2134,7 @@ class underlying_types_test_args implements thrift.TBase {
         if(value == null) {
           unsetSet_type();
         } else {
-          this.set_type = value;
+          this.set_type = value as Set<int>;
         }
         break;
 
@@ -2155,7 +2155,7 @@ class underlying_types_test_args implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -2174,7 +2174,7 @@ class underlying_types_test_args implements thrift.TBase {
             }
             iprot.readListEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case SET_TYPE:
@@ -2187,7 +2187,7 @@ class underlying_types_test_args implements thrift.TBase {
             }
             iprot.readSetEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -2294,7 +2294,7 @@ class underlying_types_test_result implements thrift.TBase {
         if(value == null) {
           unsetSuccess();
         } else {
-          this.success = value;
+          this.success = value as List<int>;
         }
         break;
 
@@ -2313,7 +2313,7 @@ class underlying_types_test_result implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -2332,7 +2332,7 @@ class underlying_types_test_result implements thrift.TBase {
             }
             iprot.readListEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -2416,7 +2416,7 @@ class getThing_args implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -2496,7 +2496,7 @@ class getThing_result implements thrift.TBase {
         if(value == null) {
           unsetSuccess();
         } else {
-          this.success = value;
+          this.success = value as t_validStructs.Thing;
         }
         break;
 
@@ -2515,7 +2515,7 @@ class getThing_result implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -2529,7 +2529,7 @@ class getThing_result implements thrift.TBase {
             success = new t_validStructs.Thing();
             success.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -2609,7 +2609,7 @@ class getMyInt_args implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -2691,7 +2691,7 @@ class getMyInt_result implements thrift.TBase {
         if(value == null) {
           unsetSuccess();
         } else {
-          this.success = value;
+          this.success = value as int;
         }
         break;
 
@@ -2710,7 +2710,7 @@ class getMyInt_result implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -2724,7 +2724,7 @@ class getMyInt_result implements thrift.TBase {
             success = iprot.readI32();
             this.__isset_success = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -2808,7 +2808,7 @@ class use_subdir_struct_args implements thrift.TBase {
         if(value == null) {
           unsetA();
         } else {
-          this.a = value;
+          this.a = value as t_subdir_include.A;
         }
         break;
 
@@ -2827,7 +2827,7 @@ class use_subdir_struct_args implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -2841,7 +2841,7 @@ class use_subdir_struct_args implements thrift.TBase {
             a = new t_subdir_include.A();
             a.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
@@ -2927,7 +2927,7 @@ class use_subdir_struct_result implements thrift.TBase {
         if(value == null) {
           unsetSuccess();
         } else {
-          this.success = value;
+          this.success = value as t_subdir_include.A;
         }
         break;
 
@@ -2946,7 +2946,7 @@ class use_subdir_struct_result implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -2960,7 +2960,7 @@ class use_subdir_struct_result implements thrift.TBase {
             success = new t_subdir_include.A();
             success.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:

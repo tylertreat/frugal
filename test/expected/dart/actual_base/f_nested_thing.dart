@@ -45,7 +45,7 @@ class nested_thing implements thrift.TBase {
         if(value == null) {
           unsetThings();
         } else {
-          this.things = value;
+          this.things = value as List<t_actual_base_dart.thing>;
         }
         break;
 
@@ -64,7 +64,7 @@ class nested_thing implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -84,7 +84,7 @@ class nested_thing implements thrift.TBase {
             }
             iprot.readListEnd();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:

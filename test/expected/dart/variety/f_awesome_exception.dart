@@ -74,7 +74,7 @@ class AwesomeException extends Error implements thrift.TBase {
         if(value == null) {
           unsetID();
         } else {
-          this.iD = value;
+          this.iD = value as int;
         }
         break;
 
@@ -82,7 +82,7 @@ class AwesomeException extends Error implements thrift.TBase {
         if(value == null) {
           unsetReason();
         } else {
-          this.reason = value;
+          this.reason = value as String;
         }
         break;
 
@@ -103,7 +103,7 @@ class AwesomeException extends Error implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -117,14 +117,14 @@ class AwesomeException extends Error implements thrift.TBase {
             iD = iprot.readI64();
             this.__isset_iD = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case REASON:
           if(field.type == thrift.TType.STRING) {
             reason = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:

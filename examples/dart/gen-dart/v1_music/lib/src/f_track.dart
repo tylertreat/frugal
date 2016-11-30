@@ -204,7 +204,7 @@ class Track implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -217,28 +217,28 @@ class Track implements thrift.TBase {
           if(field.type == thrift.TType.STRING) {
             title = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case ARTIST:
           if(field.type == thrift.TType.STRING) {
             artist = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case PUBLISHER:
           if(field.type == thrift.TType.STRING) {
             publisher = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case COMPOSER:
           if(field.type == thrift.TType.STRING) {
             composer = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case DURATION:
@@ -246,7 +246,7 @@ class Track implements thrift.TBase {
             duration = iprot.readDouble();
             this.__isset_duration = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case PRO:
@@ -254,7 +254,7 @@ class Track implements thrift.TBase {
             pro = iprot.readI32();
             this.__isset_pro = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:

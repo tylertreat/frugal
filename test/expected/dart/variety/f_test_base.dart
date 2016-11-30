@@ -49,7 +49,7 @@ class TestBase implements thrift.TBase {
         if(value == null) {
           unsetBase_struct();
         } else {
-          this.base_struct = value;
+          this.base_struct = value as t_actual_base_dart.thing;
         }
         break;
 
@@ -68,7 +68,7 @@ class TestBase implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -82,7 +82,7 @@ class TestBase implements thrift.TBase {
             base_struct = new t_actual_base_dart.thing();
             base_struct.read(iprot);
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:

@@ -77,7 +77,7 @@ class Event implements thrift.TBase {
         if(value == null) {
           unsetID();
         } else {
-          this.iD = value;
+          this.iD = value as int;
         }
         break;
 
@@ -85,7 +85,7 @@ class Event implements thrift.TBase {
         if(value == null) {
           unsetMessage();
         } else {
-          this.message = value;
+          this.message = value as String;
         }
         break;
 
@@ -106,7 +106,7 @@ class Event implements thrift.TBase {
     }
   }
 
-  read(TProtocol iprot) {
+  read(thrift.TProtocol iprot) {
     thrift.TField field;
     iprot.readStructBegin();
     while(true) {
@@ -120,14 +120,14 @@ class Event implements thrift.TBase {
             iD = iprot.readI64();
             this.__isset_iD = true;
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case MESSAGE:
           if(field.type == thrift.TType.STRING) {
             message = iprot.readString();
           } else {
-            TProtocolUtil.skip(iprot, field.type);
+            thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
