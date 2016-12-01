@@ -27,7 +27,7 @@ var _ = ValidTypes.GoUnusedProtection__
 var _ = subdir_include.GoUnusedProtection__
 var GoUnusedProtection__ int
 
-const RedefConst = actual_base.golang.ConstI32FromBase
+const RedefConst = golang.ConstI32FromBase
 
 var DEFAULT_ID ID
 
@@ -609,7 +609,7 @@ func NewTestingDefaults() *TestingDefaults {
 			6,
 		},
 		Status:     HealthCondition_PASS,
-		BaseStatus: actual_base.golang.BaseHealthCondition_FAIL,
+		BaseStatus: golang.BaseHealthCondition_FAIL,
 	}
 }
 
