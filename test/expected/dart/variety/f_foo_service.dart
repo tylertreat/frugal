@@ -12,6 +12,7 @@ import 'package:frugal/frugal.dart' as frugal;
 import 'package:actual_base_dart/actual_base_dart.dart' as t_actual_base_dart;
 import 'package:validStructs/validStructs.dart' as t_validStructs;
 import 'package:ValidTypes/ValidTypes.dart' as t_ValidTypes;
+import 'package:subdir_include/subdir_include.dart' as t_subdir_include;
 import 'package:variety/variety.dart' as t_variety;
 
 
@@ -37,6 +38,8 @@ abstract class FFoo extends t_actual_base_dart.FBaseFoo {
   Future<t_validStructs.Thing> getThing(frugal.FContext ctx);
 
   Future<int> getMyInt(frugal.FContext ctx);
+
+  Future<t_subdir_include.A> use_subdir_struct(frugal.FContext ctx, t_subdir_include.A a);
 }
 
 /// This is a thrift service. Frugal will generate bindings that include
@@ -57,6 +60,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     this._methods['underlying_types_test'] = new frugal.FMethod(this._underlying_types_test, 'Foo', 'underlying_types_test', middleware);
     this._methods['getThing'] = new frugal.FMethod(this._getThing, 'Foo', 'getThing', middleware);
     this._methods['getMyInt'] = new frugal.FMethod(this._getMyInt, 'Foo', 'getMyInt', middleware);
+    this._methods['use_subdir_struct'] = new frugal.FMethod(this._use_subdir_struct, 'Foo', 'use_subdir_struct', middleware);
   }
 
   frugal.FTransport _transport;
@@ -585,6 +589,77 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       }
     }
     return getMyIntCallback;
+  }
+
+  Future<t_subdir_include.A> use_subdir_struct(frugal.FContext ctx, t_subdir_include.A a) {
+    return this._methods['use_subdir_struct']([ctx, a]) as Future<t_subdir_include.A>;
+  }
+
+  Future<t_subdir_include.A> _use_subdir_struct(frugal.FContext ctx, t_subdir_include.A a) async {
+    var controller = new StreamController();
+    var closeSubscription = _transport.onClose.listen((_) {
+      controller.addError(new thrift.TTransportError(
+        thrift.TTransportErrorType.NOT_OPEN,
+        "Transport closed before request completed."));
+      });
+    _transport.register(ctx, _recvUse_subdir_structHandler(ctx, controller));
+    try {
+      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+      var oprot = _protocolFactory.getProtocol(memoryBuffer);
+      oprot.writeRequestHeader(ctx);
+      oprot.writeMessageBegin(new thrift.TMessage("use_subdir_struct", thrift.TMessageType.CALL, 0));
+      use_subdir_struct_args args = new use_subdir_struct_args();
+      args.a = a;
+      args.write(oprot);
+      oprot.writeMessageEnd();
+      await _transport.send(memoryBuffer.writeBytes);
+
+      return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
+        throw new frugal.FTimeoutError.withMessage("Foo.use_subdir_struct timed out after ${ctx.timeout}");
+      });
+    } finally {
+      closeSubscription.cancel();
+      _transport.unregister(ctx);
+    }
+  }
+
+  frugal.FAsyncCallback _recvUse_subdir_structHandler(frugal.FContext ctx, StreamController controller) {
+    use_subdir_structCallback(thrift.TTransport transport) {
+      try {
+        var iprot = _protocolFactory.getProtocol(transport);
+        iprot.readResponseHeader(ctx);
+        thrift.TMessage msg = iprot.readMessageBegin();
+        if (msg.type == thrift.TMessageType.EXCEPTION) {
+          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+          iprot.readMessageEnd();
+          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
+            return;
+          }
+          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
+            controller.addError(new frugal.FRateLimitError(message: error.message));
+            return;
+          }
+          throw error;
+        }
+
+        use_subdir_struct_result result = new use_subdir_struct_result();
+        result.read(iprot);
+        iprot.readMessageEnd();
+        if (result.isSetSuccess()) {
+          controller.add(result.success);
+          return;
+        }
+
+        throw new thrift.TApplicationError(
+          thrift.TApplicationErrorType.MISSING_RESULT, "use_subdir_struct failed: unknown result"
+        );
+      } catch(e) {
+        controller.addError(e);
+        rethrow;
+      }
+    }
+    return use_subdir_structCallback;
   }
 
 }
@@ -2683,6 +2758,246 @@ class getMyInt_result implements thrift.TBase {
     if(isSetSuccess()) {
       ret.write("success:");
       ret.write(this.success);
+    }
+
+    ret.write(")");
+
+    return ret.toString();
+  }
+
+  validate() {
+    // check for required fields
+    // check that fields of type enum have valid values
+  }
+}
+class use_subdir_struct_args implements thrift.TBase {
+  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("use_subdir_struct_args");
+  static final thrift.TField _A_FIELD_DESC = new thrift.TField("a", thrift.TType.STRUCT, 1);
+
+  t_subdir_include.A _a;
+  static const int A = 1;
+
+
+  use_subdir_struct_args() {
+  }
+
+  t_subdir_include.A get a => this._a;
+
+  set a(t_subdir_include.A a) {
+    this._a = a;
+  }
+
+  bool isSetA() => this.a != null;
+
+  unsetA() {
+    this.a = null;
+  }
+
+  getFieldValue(int fieldID) {
+    switch (fieldID) {
+      case A:
+        return this.a;
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  setFieldValue(int fieldID, Object value) {
+    switch(fieldID) {
+      case A:
+        if(value == null) {
+          unsetA();
+        } else {
+          this.a = value as t_subdir_include.A;
+        }
+        break;
+
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  // Returns true if the field corresponding to fieldID is set (has been assigned a value) and false otherwise
+  bool isSet(int fieldID) {
+    switch(fieldID) {
+      case A:
+        return isSetA();
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  read(thrift.TProtocol iprot) {
+    thrift.TField field;
+    iprot.readStructBegin();
+    while(true) {
+      field = iprot.readFieldBegin();
+      if(field.type == thrift.TType.STOP) {
+        break;
+      }
+      switch(field.id) {
+        case A:
+          if(field.type == thrift.TType.STRUCT) {
+            a = new t_subdir_include.A();
+            a.read(iprot);
+          } else {
+            thrift.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        default:
+          thrift.TProtocolUtil.skip(iprot, field.type);
+          break;
+      }
+      iprot.readFieldEnd();
+    }
+    iprot.readStructEnd();
+
+    // check for required fields of primitive type, which can't be checked in the validate method
+    validate();
+  }
+
+  write(thrift.TProtocol oprot) {
+    validate();
+
+    oprot.writeStructBegin(_STRUCT_DESC);
+    if(this.a != null) {
+      oprot.writeFieldBegin(_A_FIELD_DESC);
+      a.write(oprot);
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldStop();
+    oprot.writeStructEnd();
+  }
+
+  String toString() {
+    StringBuffer ret = new StringBuffer("use_subdir_struct_args(");
+
+    ret.write("a:");
+    if(this.a == null) {
+      ret.write("null");
+    } else {
+      ret.write(this.a);
+    }
+
+    ret.write(")");
+
+    return ret.toString();
+  }
+
+  validate() {
+    // check for required fields
+    // check that fields of type enum have valid values
+  }
+}
+class use_subdir_struct_result implements thrift.TBase {
+  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("use_subdir_struct_result");
+  static final thrift.TField _SUCCESS_FIELD_DESC = new thrift.TField("success", thrift.TType.STRUCT, 0);
+
+  t_subdir_include.A _success;
+  static const int SUCCESS = 0;
+
+
+  use_subdir_struct_result() {
+  }
+
+  t_subdir_include.A get success => this._success;
+
+  set success(t_subdir_include.A success) {
+    this._success = success;
+  }
+
+  bool isSetSuccess() => this.success != null;
+
+  unsetSuccess() {
+    this.success = null;
+  }
+
+  getFieldValue(int fieldID) {
+    switch (fieldID) {
+      case SUCCESS:
+        return this.success;
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  setFieldValue(int fieldID, Object value) {
+    switch(fieldID) {
+      case SUCCESS:
+        if(value == null) {
+          unsetSuccess();
+        } else {
+          this.success = value as t_subdir_include.A;
+        }
+        break;
+
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  // Returns true if the field corresponding to fieldID is set (has been assigned a value) and false otherwise
+  bool isSet(int fieldID) {
+    switch(fieldID) {
+      case SUCCESS:
+        return isSetSuccess();
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  read(thrift.TProtocol iprot) {
+    thrift.TField field;
+    iprot.readStructBegin();
+    while(true) {
+      field = iprot.readFieldBegin();
+      if(field.type == thrift.TType.STOP) {
+        break;
+      }
+      switch(field.id) {
+        case SUCCESS:
+          if(field.type == thrift.TType.STRUCT) {
+            success = new t_subdir_include.A();
+            success.read(iprot);
+          } else {
+            thrift.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        default:
+          thrift.TProtocolUtil.skip(iprot, field.type);
+          break;
+      }
+      iprot.readFieldEnd();
+    }
+    iprot.readStructEnd();
+
+    // check for required fields of primitive type, which can't be checked in the validate method
+    validate();
+  }
+
+  write(thrift.TProtocol oprot) {
+    validate();
+
+    oprot.writeStructBegin(_STRUCT_DESC);
+    if(isSetSuccess() && this.success != null) {
+      oprot.writeFieldBegin(_SUCCESS_FIELD_DESC);
+      success.write(oprot);
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldStop();
+    oprot.writeStructEnd();
+  }
+
+  String toString() {
+    StringBuffer ret = new StringBuffer("use_subdir_struct_result(");
+
+    if(isSetSuccess()) {
+      ret.write("success:");
+      if(this.success == null) {
+        ret.write("null");
+      } else {
+        ret.write(this.success);
+      }
     }
 
     ret.write(")");

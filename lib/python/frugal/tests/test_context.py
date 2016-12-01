@@ -1,5 +1,4 @@
 import unittest
-import mock
 
 from frugal.context import FContext, _DEFAULT_TIMEOUT
 from frugal.exceptions import FContextHeaderException
@@ -15,8 +14,20 @@ class TestContext(unittest.TestCase):
         self.assertEqual(_DEFAULT_TIMEOUT, context.timeout)
 
     def test_timeout(self):
-        context = FContext("fooid", 123)
-        self.assertEqual(123, context.timeout)
+        # Check default timeout (5 seconds).
+        context = FContext()
+        self.assertEqual(5000, context.timeout)
+        self.assertEqual("5000", context.get_request_header("_timeout"))
+
+        # Set timeout and check expected values.
+        context.set_timeout(10000)
+        self.assertEqual(10000, context.timeout)
+        self.assertEqual("10000", context.get_request_header("_timeout"))
+
+        # Check timeout passed to constructor.
+        context = FContext(timeout=1000)
+        self.assertEqual(1000, context.timeout)
+        self.assertEqual("1000", context.get_request_header("_timeout"))
 
     def test_op_id(self):
         context = FContext(self.correlation_id)

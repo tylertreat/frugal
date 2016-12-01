@@ -3,6 +3,7 @@ package frugal
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -34,19 +35,35 @@ func TestOpID(t *testing.T) {
 	corid := "fooid"
 	opid := "12345"
 	ctx := NewFContext(corid)
-	ctx.AddRequestHeader(opID, opid)
+	ctx.AddRequestHeader(opIDHeader, opid)
 	actOpID, err := getOpID(ctx)
 	assert.Nil(err)
 	assert.Equal(uint64(12345), actOpID)
 
-	delete(ctx.(*FContextImpl).requestHeaders, opID)
+	delete(ctx.(*FContextImpl).requestHeaders, opIDHeader)
 	_, err = getOpID(ctx)
-	assert.Equal(fmt.Errorf("FContext does not have the required %s request header", opID), err)
+	assert.Equal(fmt.Errorf("FContext does not have the required %s request header", opIDHeader), err)
 
 	opIDStr := "-123"
-	ctx.(*FContextImpl).requestHeaders[opID] = opIDStr
+	ctx.(*FContextImpl).requestHeaders[opIDHeader] = opIDStr
 	_, err = getOpID(ctx)
 	assert.Equal(fmt.Errorf("FContext has an opid that is not a non-negative integer: %s", opIDStr), err)
+}
+
+// Ensures the "_timeout" request header is correctly set and calls to Timeout
+// return the correct Duration.
+func TestTimeout(t *testing.T) {
+	// Check default timeout (5 seconds).
+	ctx := NewFContext("")
+	timeoutStr, _ := ctx.RequestHeader(timeoutHeader)
+	assert.Equal(t, "5000", timeoutStr)
+	assert.Equal(t, defaultTimeout, ctx.Timeout())
+
+	// Set timeout and check expected values.
+	ctx.SetTimeout(10 * time.Second)
+	timeoutStr, _ = ctx.RequestHeader(timeoutHeader)
+	assert.Equal(t, "10000", timeoutStr)
+	assert.Equal(t, 10*time.Second, ctx.Timeout())
 }
 
 // Ensures AddRequestHeader properly adds the key-value pair to the context
@@ -59,11 +76,11 @@ func TestRequestHeader(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, "bar", val)
 	assert.Equal(t, "bar", ctx.RequestHeaders()["foo"])
-	assert.Equal(t, corid, ctx.RequestHeaders()[cid])
-	assert.NotEqual(t, "", ctx.RequestHeaders()[opID])
+	assert.Equal(t, corid, ctx.RequestHeaders()[cidHeader])
+	assert.NotEqual(t, "", ctx.RequestHeaders()[opIDHeader])
 
-	assert.Equal(t, ctx, ctx.AddRequestHeader(cid, "baz"))
-	assert.Equal(t, ctx, ctx.AddRequestHeader(opID, "123"))
+	assert.Equal(t, ctx, ctx.AddRequestHeader(cidHeader, "baz"))
+	assert.Equal(t, ctx, ctx.AddRequestHeader(opIDHeader, "123"))
 
 	assert.Equal(t, "baz", ctx.CorrelationID())
 	actOpID, err := getOpID(ctx)
@@ -81,9 +98,9 @@ func TestResponseHeader(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, "bar", val)
 	assert.Equal(t, "bar", ctx.ResponseHeaders()["foo"])
-	assert.Equal(t, "", ctx.ResponseHeaders()[cid])
-	assert.Equal(t, "", ctx.ResponseHeaders()[opID])
+	assert.Equal(t, "", ctx.ResponseHeaders()[cidHeader])
+	assert.Equal(t, "", ctx.ResponseHeaders()[opIDHeader])
 
-	assert.Equal(t, ctx, ctx.AddResponseHeader(opID, "1"))
-	assert.Equal(t, "1", ctx.ResponseHeaders()[opID])
+	assert.Equal(t, ctx, ctx.AddResponseHeader(opIDHeader, "1"))
+	assert.Equal(t, "1", ctx.ResponseHeaders()[opIDHeader])
 }

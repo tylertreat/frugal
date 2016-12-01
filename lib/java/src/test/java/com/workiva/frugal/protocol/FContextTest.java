@@ -72,4 +72,17 @@ public class FContextTest {
         assertEquals("qux", ctx.getResponseHeader("baz"));
     }
 
+    @Test
+    public void testTimeout() {
+        // Check default timeout (5 seconds).
+        FContext ctx = new FContext();
+        assertEquals(5000, ctx.getTimeout());
+        assertEquals("5000", ctx.getRequestHeader("_timeout"));
+
+        // Set timeout and check expected values.
+        ctx.setTimeout(10000);
+        assertEquals(10000, ctx.getTimeout());
+        assertEquals("10000", ctx.getRequestHeader("_timeout"));
+    }
+
 }

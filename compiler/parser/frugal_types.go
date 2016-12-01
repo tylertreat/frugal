@@ -13,10 +13,11 @@ import (
 // subscribe methods are generated from this for publishers and subscribers,
 // respectively.
 type Operation struct {
-	Comment []string
-	Name    string
-	Type    *Type
-	Scope   *Scope // Pointer back to containing Scope
+	Comment     []string
+	Name        string
+	Type        *Type
+	Annotations []*Annotation
+	Scope       *Scope // Pointer back to containing Scope
 }
 
 // ScopePrefix is the string prefix prepended to a pub/sub topic. The string
@@ -35,11 +36,12 @@ func (n *ScopePrefix) Template(s string) string {
 
 // Scope is a pub/sub namespace.
 type Scope struct {
-	Comment    []string
-	Name       string
-	Prefix     *ScopePrefix
-	Operations []*Operation
-	Frugal     *Frugal // Pointer back to containing Frugal
+	Comment     []string
+	Name        string
+	Prefix      *ScopePrefix
+	Operations  []*Operation
+	Annotations []*Annotation
+	Frugal      *Frugal // Pointer back to containing Frugal
 }
 
 // ReferencedIncludes returns a slice containing the referenced includes which

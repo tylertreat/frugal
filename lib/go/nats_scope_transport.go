@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"sync"
+	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/nats-io/nats"
@@ -11,6 +12,9 @@ import (
 
 // frameBufferSize is the number of message frames to buffer on the subscriber.
 const frameBufferSize = 5
+
+// flushTimeout is the max duration to flush subscriptions to the NATS server.
+const flushTimeout = 5 * time.Second
 
 // FNatsPublisherTransportFactory creates FNatsPublisherTransports.
 type FNatsPublisherTransportFactory struct {
@@ -164,6 +168,9 @@ func (n *fNatsSubscriberTransport) Subscribe(topic string, callback FAsyncCallba
 
 	sub, err := n.conn.QueueSubscribe(n.formattedSubject(topic), n.queue, handleMessage(callback))
 	if err != nil {
+		return thrift.NewTTransportExceptionFromError(err)
+	}
+	if err = n.conn.FlushTimeout(flushTimeout); err != nil {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
 	n.sub = sub

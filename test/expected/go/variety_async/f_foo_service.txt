@@ -11,7 +11,8 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"
 	"github.com/Workiva/frugal/test/out/async/ValidTypes"
-	"github.com/Workiva/frugal/test/out/async/actual_base"
+	"github.com/Workiva/frugal/test/out/async/actual_base/golang"
+	"github.com/Workiva/frugal/test/out/async/subdir_include"
 	"github.com/Workiva/frugal/test/out/async/validStructs"
 )
 
@@ -23,7 +24,7 @@ var _ = bytes.Equal
 // This is a thrift service. Frugal will generate bindings that include
 // a frugal Context for each service call.
 type FFoo interface {
-	actual_base.FBaseFoo
+	golang.FBaseFoo
 
 	// Ping the server.
 	Ping(ctx frugal.FContext) (err error)
@@ -36,12 +37,13 @@ type FFoo interface {
 	UnderlyingTypesTest(ctx frugal.FContext, list_type []ID, set_type map[ID]bool) (r []ID, err error)
 	GetThing(ctx frugal.FContext) (r *validStructs.Thing, err error)
 	GetMyInt(ctx frugal.FContext) (r ValidTypes.MyInt, err error)
+	UseSubdirStruct(ctx frugal.FContext, a *subdir_include.A) (r *subdir_include.A, err error)
 }
 
 // This is a thrift service. Frugal will generate bindings that include
 // a frugal Context for each service call.
 type FFooClient struct {
-	*actual_base.FBaseFooClient
+	*golang.FBaseFooClient
 	transport       frugal.FTransport
 	protocolFactory *frugal.FProtocolFactory
 	methods         map[string]*frugal.Method
@@ -50,7 +52,7 @@ type FFooClient struct {
 func NewFFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FFooClient {
 	methods := make(map[string]*frugal.Method)
 	client := &FFooClient{
-		FBaseFooClient:  actual_base.NewFBaseFooClient(t, p, middleware...),
+		FBaseFooClient:  golang.NewFBaseFooClient(t, p, middleware...),
 		transport:       t,
 		protocolFactory: p,
 		methods:         methods,
@@ -63,6 +65,7 @@ func NewFFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware .
 	methods["underlying_types_test"] = frugal.NewMethod(client, client.underlying_types_test, "underlying_types_test", middleware)
 	methods["getThing"] = frugal.NewMethod(client, client.getThing, "getThing", middleware)
 	methods["getMyInt"] = frugal.NewMethod(client, client.getMyInt, "getMyInt", middleware)
+	methods["use_subdir_struct"] = frugal.NewMethod(client, client.use_subdir_struct, "use_subdir_struct", middleware)
 	return client
 }
 
@@ -1043,12 +1046,143 @@ func (f *FFooClient) GetMyIntAsync(ctx frugal.FContext) (r <-chan ValidTypes.MyI
 	return resultC, errC
 }
 
+func (f *FFooClient) UseSubdirStruct(ctx frugal.FContext, a *subdir_include.A) (r *subdir_include.A, err error) {
+	ret := f.methods["use_subdir_struct"].Invoke([]interface{}{ctx, a})
+	if len(ret) != 2 {
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
+	}
+	r = ret[0].(*subdir_include.A)
+	if ret[1] != nil {
+		err = ret[1].(error)
+	}
+	return r, err
+}
+
+func (f *FFooClient) use_subdir_struct(ctx frugal.FContext, a *subdir_include.A) (r *subdir_include.A, err error) {
+	errorC := make(chan error, 1)
+	resultC := make(chan *subdir_include.A, 1)
+	if err = f.transport.Register(ctx, f.recvUseSubdirStructHandler(ctx, resultC, errorC)); err != nil {
+		return
+	}
+	defer f.transport.Unregister(ctx)
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageBegin("use_subdir_struct", thrift.CALL, 0); err != nil {
+		return
+	}
+	args := FooUseSubdirStructArgs{
+		A: a,
+	}
+	if err = args.Write(oprot); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	if err = oprot.Flush(); err != nil {
+		return
+	}
+	data := buffer.Bytes()
+	if err = f.transport.Send(data); err != nil {
+		return
+	}
+
+	select {
+	case err = <-errorC:
+	case r = <-resultC:
+	case <-time.After(ctx.Timeout()):
+		err = frugal.ErrTimeout
+	case <-f.transport.Closed():
+		err = frugal.ErrTransportClosed
+	}
+	return
+}
+
+func (f *FFooClient) recvUseSubdirStructHandler(ctx frugal.FContext, resultC chan<- *subdir_include.A, errorC chan<- error) frugal.FAsyncCallback {
+	return func(tr thrift.TTransport) error {
+		iprot := f.protocolFactory.GetProtocol(tr)
+		if err := iprot.ReadResponseHeader(ctx); err != nil {
+			errorC <- err
+			return err
+		}
+		method, mTypeId, _, err := iprot.ReadMessageBegin()
+		if err != nil {
+			errorC <- err
+			return err
+		}
+		if method != "use_subdir_struct" {
+			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "use_subdir_struct failed: wrong method name")
+			errorC <- err
+			return err
+		}
+		if mTypeId == thrift.EXCEPTION {
+			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+			var error1 thrift.TApplicationException
+			error1, err = error0.Read(iprot)
+			if err != nil {
+				errorC <- err
+				return err
+			}
+			if err = iprot.ReadMessageEnd(); err != nil {
+				errorC <- err
+				return err
+			}
+			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
+				errorC <- err
+				return nil
+			}
+			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
+				err = frugal.ErrRateLimitExceeded
+				errorC <- err
+				return nil
+			}
+			err = error1
+			errorC <- err
+			return err
+		}
+		if mTypeId != thrift.REPLY {
+			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "use_subdir_struct failed: invalid message type")
+			errorC <- err
+			return err
+		}
+		result := FooUseSubdirStructResult{}
+		if err = result.Read(iprot); err != nil {
+			errorC <- err
+			return err
+		}
+		if err = iprot.ReadMessageEnd(); err != nil {
+			errorC <- err
+			return err
+		}
+		resultC <- result.GetSuccess()
+		return nil
+	}
+}
+
+func (f *FFooClient) UseSubdirStructAsync(ctx frugal.FContext, a *subdir_include.A) (r <-chan *subdir_include.A, err <-chan error) {
+	errC := make(chan error, 1)
+	resultC := make(chan *subdir_include.A, 1)
+	go func() {
+		result, err := f.UseSubdirStruct(ctx, a)
+		if err != nil {
+			errC <- err
+		} else {
+			resultC <- result
+		}
+	}()
+	return resultC, errC
+}
+
 type FFooProcessor struct {
-	*actual_base.FBaseFooProcessor
+	*golang.FBaseFooProcessor
 }
 
 func NewFFooProcessor(handler FFoo, middleware ...frugal.ServiceMiddleware) *FFooProcessor {
-	p := &FFooProcessor{actual_base.NewFBaseFooProcessor(handler, middleware...)}
+	p := &FFooProcessor{golang.NewFBaseFooProcessor(handler, middleware...)}
 	p.AddToProcessorMap("ping", &fooFPing{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.Ping, "Ping", middleware))})
 	p.AddToProcessorMap("blah", &fooFBlah{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.Blah, "Blah", middleware))})
 	p.AddToProcessorMap("oneWay", &fooFOneWay{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.OneWay, "OneWay", middleware))})
@@ -1057,6 +1191,7 @@ func NewFFooProcessor(handler FFoo, middleware ...frugal.ServiceMiddleware) *FFo
 	p.AddToProcessorMap("underlying_types_test", &fooFUnderlyingTypesTest{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.UnderlyingTypesTest, "UnderlyingTypesTest", middleware))})
 	p.AddToProcessorMap("getThing", &fooFGetThing{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.GetThing, "GetThing", middleware))})
 	p.AddToProcessorMap("getMyInt", &fooFGetMyInt{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.GetMyInt, "GetMyInt", middleware))})
+	p.AddToProcessorMap("use_subdir_struct", &fooFUseSubdirStruct{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.UseSubdirStruct, "UseSubdirStruct", middleware))})
 	return p
 }
 
@@ -1172,7 +1307,7 @@ func (p *fooFBlah) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) 
 		switch v := err2.(type) {
 		case *AwesomeException:
 			result.Awe = v
-		case *actual_base.APIException:
+		case *golang.APIException:
 			result.API = v
 		default:
 			p.GetWriteMutex().Lock()
@@ -1290,7 +1425,7 @@ func (p *fooFBinMethod) Process(ctx frugal.FContext, iprot, oprot *frugal.FProto
 			return nil
 		}
 		switch v := err2.(type) {
-		case *actual_base.APIException:
+		case *golang.APIException:
 			result.API = v
 		default:
 			p.GetWriteMutex().Lock()
@@ -1662,6 +1797,86 @@ func (p *fooFGetMyInt) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtoc
 	return err
 }
 
+type fooFUseSubdirStruct struct {
+	*frugal.FBaseProcessorFunction
+}
+
+func (p *fooFUseSubdirStruct) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+	args := FooUseSubdirStructArgs{}
+	var err error
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		p.GetWriteMutex().Lock()
+		err = fooWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, "use_subdir_struct", err.Error())
+		p.GetWriteMutex().Unlock()
+		return err
+	}
+
+	iprot.ReadMessageEnd()
+	result := FooUseSubdirStructResult{}
+	var err2 error
+	ret := p.InvokeMethod([]interface{}{ctx, args.A})
+	if len(ret) != 2 {
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
+	}
+	if ret[1] != nil {
+		err2 = ret[1].(error)
+	}
+	if err2 != nil {
+		if err2 == frugal.ErrRateLimitExceeded {
+			p.GetWriteMutex().Lock()
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "use_subdir_struct", "Rate limit exceeded")
+			p.GetWriteMutex().Unlock()
+			return nil
+		}
+		p.GetWriteMutex().Lock()
+		err2 := fooWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, "use_subdir_struct", "Internal error processing use_subdir_struct: "+err2.Error())
+		p.GetWriteMutex().Unlock()
+		return err2
+	} else {
+		var retval *subdir_include.A = ret[0].(*subdir_include.A)
+		result.Success = retval
+	}
+	p.GetWriteMutex().Lock()
+	defer p.GetWriteMutex().Unlock()
+	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "use_subdir_struct", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = oprot.WriteMessageBegin("use_subdir_struct", thrift.REPLY, 0); err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "use_subdir_struct", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "use_subdir_struct", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "use_subdir_struct", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = oprot.Flush(); err == nil && err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, "use_subdir_struct", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	return err
+}
+
 func fooWriteApplicationError(ctx frugal.FContext, oprot *frugal.FProtocol, type_ int32, method, message string) error {
 	x := thrift.NewTApplicationException(type_, message)
 	oprot.WriteResponseHeader(ctx)
@@ -1945,9 +2160,9 @@ func (p *FooBlahArgs) String() string {
 }
 
 type FooBlahResult struct {
-	Success *int64                    `thrift:"success,0" db:"success" json:"success,omitempty"`
-	Awe     *AwesomeException         `thrift:"awe,1" db:"awe" json:"awe,omitempty"`
-	API     *actual_base.APIException `thrift:"api,2" db:"api" json:"api,omitempty"`
+	Success *int64               `thrift:"success,0" db:"success" json:"success,omitempty"`
+	Awe     *AwesomeException    `thrift:"awe,1" db:"awe" json:"awe,omitempty"`
+	API     *golang.APIException `thrift:"api,2" db:"api" json:"api,omitempty"`
 }
 
 func NewFooBlahResult() *FooBlahResult {
@@ -1980,13 +2195,13 @@ func (p *FooBlahResult) GetAwe() *AwesomeException {
 	return p.Awe
 }
 
-var FooBlahResult_API_DEFAULT *actual_base.APIException
+var FooBlahResult_API_DEFAULT *golang.APIException
 
 func (p *FooBlahResult) IsSetAPI() bool {
 	return p.API != nil
 }
 
-func (p *FooBlahResult) GetAPI() *actual_base.APIException {
+func (p *FooBlahResult) GetAPI() *golang.APIException {
 	if !p.IsSetAPI() {
 		return FooBlahResult_API_DEFAULT
 	}
@@ -2052,7 +2267,7 @@ func (p *FooBlahResult) ReadField1(iprot thrift.TProtocol) error {
 }
 
 func (p *FooBlahResult) ReadField2(iprot thrift.TProtocol) error {
-	p.API = actual_base.NewAPIException()
+	p.API = golang.NewAPIException()
 	if err := p.API.Read(iprot); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.API), err)
 	}
@@ -2413,8 +2628,8 @@ func (p *FooBinMethodArgs) String() string {
 }
 
 type FooBinMethodResult struct {
-	Success []byte                    `thrift:"success,0" db:"success" json:"success,omitempty"`
-	API     *actual_base.APIException `thrift:"api,1" db:"api" json:"api,omitempty"`
+	Success []byte               `thrift:"success,0" db:"success" json:"success,omitempty"`
+	API     *golang.APIException `thrift:"api,1" db:"api" json:"api,omitempty"`
 }
 
 func NewFooBinMethodResult() *FooBinMethodResult {
@@ -2431,13 +2646,13 @@ func (p *FooBinMethodResult) GetSuccess() []byte {
 	return p.Success
 }
 
-var FooBinMethodResult_API_DEFAULT *actual_base.APIException
+var FooBinMethodResult_API_DEFAULT *golang.APIException
 
 func (p *FooBinMethodResult) IsSetAPI() bool {
 	return p.API != nil
 }
 
-func (p *FooBinMethodResult) GetAPI() *actual_base.APIException {
+func (p *FooBinMethodResult) GetAPI() *golang.APIException {
 	if !p.IsSetAPI() {
 		return FooBinMethodResult_API_DEFAULT
 	}
@@ -2491,7 +2706,7 @@ func (p *FooBinMethodResult) ReadField0(iprot thrift.TProtocol) error {
 }
 
 func (p *FooBinMethodResult) ReadField1(iprot thrift.TProtocol) error {
-	p.API = actual_base.NewAPIException()
+	p.API = golang.NewAPIException()
 	if err := p.API.Read(iprot); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.API), err)
 	}
@@ -3410,4 +3625,202 @@ func (p *FooGetMyIntResult) String() string {
 		return "<nil>"
 	}
 	return fmt.Sprintf("FooGetMyIntResult(%+v)", *p)
+}
+
+type FooUseSubdirStructArgs struct {
+	A *subdir_include.A `thrift:"a,1" db:"a" json:"a"`
+}
+
+func NewFooUseSubdirStructArgs() *FooUseSubdirStructArgs {
+	return &FooUseSubdirStructArgs{}
+}
+
+var FooUseSubdirStructArgs_A_DEFAULT *subdir_include.A
+
+func (p *FooUseSubdirStructArgs) IsSetA() bool {
+	return p.A != nil
+}
+
+func (p *FooUseSubdirStructArgs) GetA() *subdir_include.A {
+	if !p.IsSetA() {
+		return FooUseSubdirStructArgs_A_DEFAULT
+	}
+	return p.A
+}
+
+func (p *FooUseSubdirStructArgs) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 1:
+			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructArgs) ReadField1(iprot thrift.TProtocol) error {
+	p.A = subdir_include.NewA()
+	if err := p.A.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.A), err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructArgs) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("use_subdir_struct_args"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructArgs) writeField1(oprot thrift.TProtocol) error {
+	if err := oprot.WriteFieldBegin("a", thrift.STRUCT, 1); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:a: ", p), err)
+	}
+	if err := p.A.Write(oprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.A), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:a: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("FooUseSubdirStructArgs(%+v)", *p)
+}
+
+type FooUseSubdirStructResult struct {
+	Success *subdir_include.A `thrift:"success,0" db:"success" json:"success,omitempty"`
+}
+
+func NewFooUseSubdirStructResult() *FooUseSubdirStructResult {
+	return &FooUseSubdirStructResult{}
+}
+
+var FooUseSubdirStructResult_Success_DEFAULT *subdir_include.A
+
+func (p *FooUseSubdirStructResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *FooUseSubdirStructResult) GetSuccess() *subdir_include.A {
+	if !p.IsSetSuccess() {
+		return FooUseSubdirStructResult_Success_DEFAULT
+	}
+	return p.Success
+}
+
+func (p *FooUseSubdirStructResult) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 0:
+			if err := p.ReadField0(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructResult) ReadField0(iprot thrift.TProtocol) error {
+	p.Success = subdir_include.NewA()
+	if err := p.Success.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Success), err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructResult) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("use_subdir_struct_result"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField0(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructResult) writeField0(oprot thrift.TProtocol) error {
+	if p.IsSetSuccess() {
+		if err := oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err)
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Success), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err)
+		}
+	}
+	return nil
+}
+
+func (p *FooUseSubdirStructResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("FooUseSubdirStructResult(%+v)", *p)
 }

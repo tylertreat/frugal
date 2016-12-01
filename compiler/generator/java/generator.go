@@ -3016,7 +3016,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 			contents += tabtabtabtabtab + fmt.Sprintf("result.%s = %s;\n", exception.Name, exception.Name)
 		}
 		contents += tabtabtabtab + "} catch (FRateLimitException e) {\n"
-		contents += tabtabtabtabtab + fmt.Sprintf("writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, \"%s\", \"rate limit exceeded\");\n",
+		contents += tabtabtabtabtab + fmt.Sprintf("writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, \"%s\", e.getMessage());\n",
 			method.Name)
 		contents += tabtabtabtabtab + "return;\n"
 		contents += tabtabtabtab + "} catch (TException e) {\n"

@@ -16,6 +16,9 @@ import validStructs.constants
 import ValidTypes.ttypes
 import ValidTypes.constants
 
+import subdir_include.ttypes
+import subdir_include.constants
+
 redef_const = actual_base.python.constants.const_i32_from_base
 DEFAULT_ID = -1
 other_default = DEFAULT_ID

@@ -39,7 +39,7 @@ class FRegistryImpl implements FRegistry {
     var headers = Headers.decodeFromFrame(frame);
     var opID;
     try {
-      opID = int.parse(headers[_opid]);
+      opID = int.parse(headers[_opidHeader]);
     } catch (e) {
       _log.warning("frugal: invalid protocol frame: op id not a uint64", e);
       return;

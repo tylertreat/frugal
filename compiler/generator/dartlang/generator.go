@@ -1723,7 +1723,7 @@ func (g *Generator) getPackagePrefix() string {
 }
 
 func (g *Generator) getImportDeclaration(namespace string) string {
-	namespace = toLibraryName(namespace)
+	namespace = toLibraryName(filepath.Base(namespace))
 	prefix := g.getPackagePrefix()
 	if prefix == "" {
 		prefix += namespace + "/"

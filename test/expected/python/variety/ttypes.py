@@ -11,6 +11,8 @@ import validStructs.ttypes
 import validStructs.constants
 import ValidTypes.ttypes
 import ValidTypes.constants
+import subdir_include.ttypes
+import subdir_include.constants
 
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol, TProtocol

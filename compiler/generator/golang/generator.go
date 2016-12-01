@@ -197,9 +197,9 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 		case parser.LocalEnum:
 			return fmt.Sprintf("%s_%s", title(idCtx.Enum.Name), idCtx.EnumValue.Name)
 		case parser.IncludeConstant:
-			return fmt.Sprintf("%s.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang), title(idCtx.Constant.Name))
+			return fmt.Sprintf("%s.%s", includeNameToReference(g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang)), title(idCtx.Constant.Name))
 		case parser.IncludeEnum:
-			return fmt.Sprintf("%s.%s_%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang),
+			return fmt.Sprintf("%s.%s_%s", includeNameToReference(g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang)),
 				title(idCtx.Enum.Name), idCtx.EnumValue.Name)
 		default:
 			panic(fmt.Sprintf("The Identifier %s has unexpected type %d", identifier, idCtx.Type))
@@ -980,8 +980,8 @@ func (g *Generator) GenerateTypesImports(file *os.File) error {
 	pkgPrefix := g.Options["package_prefix"]
 	for _, include := range g.Frugal.Thrift.Includes {
 		includeName := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
-		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeName)
-		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", includeName)
+		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeNameToImport(includeName))
+		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", includeNameToReference(includeName))
 	}
 
 	contents += ")\n\n"
@@ -1012,8 +1012,8 @@ func (g *Generator) GenerateServiceResultArgsImports(file *os.File) error {
 	pkgPrefix := g.Options["package_prefix"]
 	for _, include := range g.Frugal.Thrift.Includes {
 		includeName := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
-		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeName)
-		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", includeName)
+		contents += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeNameToImport(includeName))
+		protections += fmt.Sprintf("var _ = %s.GoUnusedProtection__\n", includeNameToReference(includeName))
 	}
 
 	contents += ")\n\n"
@@ -1050,7 +1050,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 
 	pkgPrefix := g.Options["package_prefix"]
 	for _, include := range s.ReferencedIncludes() {
-		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, g.Frugal.NamespaceForInclude(include, lang))
+		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeNameToImport(g.Frugal.NamespaceForInclude(include, lang)))
 	}
 
 	imports += ")\n\n"
@@ -1082,7 +1082,7 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 
 	pkgPrefix := g.Options["package_prefix"]
 	for _, include := range g.Frugal.ReferencedScopeIncludes() {
-		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, g.Frugal.NamespaceForInclude(include, lang))
+		imports += fmt.Sprintf("\t\"%s%s\"\n", pkgPrefix, includeNameToImport(g.Frugal.NamespaceForInclude(include, lang)))
 	}
 
 	imports += ")"
@@ -1394,7 +1394,7 @@ func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 	serviceName := "F" + service.ExtendsService()
 	include := service.ExtendsInclude()
 	if include != "" {
-		serviceName = g.Frugal.NamespaceForInclude(include, lang) + "." + serviceName
+		serviceName = includeNameToReference(g.Frugal.NamespaceForInclude(include, lang)) + "." + serviceName
 	}
 	return serviceName
 }
@@ -1402,7 +1402,7 @@ func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 func (g *Generator) getServiceExtendsNamespace(service *parser.Service) string {
 	namespace := ""
 	if service.ExtendsInclude() != "" {
-		namespace = g.Frugal.NamespaceForInclude(service.ExtendsInclude(), lang)
+		namespace = includeNameToReference(g.Frugal.NamespaceForInclude(service.ExtendsInclude(), lang))
 		namespace += "."
 	}
 	return namespace
@@ -2095,7 +2095,7 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 	param := snakeToCamel(t.ParamName())
 	include := t.IncludeName()
 	if include != "" {
-		param = fmt.Sprintf("%s.%s", g.Frugal.NamespaceForInclude(include, lang), param)
+		param = fmt.Sprintf("%s.%s", includeNameToReference(g.Frugal.NamespaceForInclude(include, lang)), param)
 	}
 
 	// The Thrift generator uses a convention of appending a suffix of '_'
@@ -2110,6 +2110,17 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 func (g *Generator) generateAsync() bool {
 	_, ok := g.Options["async"]
 	return ok
+}
+
+func includeNameToImport(includeName string) string {
+	return strings.Replace(includeName, ".", "/", -1)
+}
+
+func includeNameToReference(includeName string) string {
+	split := strings.FieldsFunc(includeName, func(r rune) bool {
+		return r == '.' || r == '/'
+	})
+	return split[len(split)-1]
 }
 
 // snakeToCamel returns a string converted from snake case to uppercase.

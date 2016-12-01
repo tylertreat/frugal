@@ -89,9 +89,10 @@ type Namespace struct {
 
 // Type represents an IDL data type.
 type Type struct {
-	Name      string
-	KeyType   *Type // If map
-	ValueType *Type // If map, list, or set
+	Name        string
+	KeyType     *Type // If map
+	ValueType   *Type // If map, list, or set
+	Annotations []*Annotation
 }
 
 // IsPrimitive indicates if the type is a Thrift primitive type.
@@ -144,23 +145,26 @@ func (t *Type) String() string {
 
 // TypeDef represents an IDL typedef.
 type TypeDef struct {
-	Comment []string
-	Name    string
-	Type    *Type
+	Comment     []string
+	Name        string
+	Type        *Type
+	Annotations []*Annotation
 }
 
 // EnumValue represents an IDL enum value.
 type EnumValue struct {
-	Comment []string
-	Name    string
-	Value   int
+	Comment     []string
+	Name        string
+	Value       int
+	Annotations []*Annotation
 }
 
 // Enum represents an IDL enum.
 type Enum struct {
-	Comment []string
-	Name    string
-	Values  []*EnumValue
+	Comment     []string
+	Name        string
+	Values      []*EnumValue
+	Annotations []*Annotation
 }
 
 // Constant represents an IDL constant.
@@ -173,12 +177,13 @@ type Constant struct {
 
 // Field represents an IDL field on a struct or method.
 type Field struct {
-	Comment  []string
-	ID       int
-	Name     string
-	Modifier FieldModifier
-	Type     *Type
-	Default  interface{}
+	Comment     []string
+	ID          int
+	Name        string
+	Modifier    FieldModifier
+	Type        *Type
+	Default     interface{}
+	Annotations []*Annotation
 }
 
 // StructType represents what "type" a struct is (struct, exception, or union).
@@ -207,28 +212,31 @@ const (
 
 // Struct represents an IDL struct (or exception or union).
 type Struct struct {
-	Comment []string
-	Name    string
-	Fields  []*Field
-	Type    StructType
+	Comment     []string
+	Name        string
+	Fields      []*Field
+	Type        StructType
+	Annotations []*Annotation
 }
 
 // Method represents an IDL service method.
 type Method struct {
-	Comment    []string
-	Name       string
-	Oneway     bool
-	ReturnType *Type
-	Arguments  []*Field
-	Exceptions []*Field
+	Comment     []string
+	Name        string
+	Oneway      bool
+	ReturnType  *Type
+	Arguments   []*Field
+	Exceptions  []*Field
+	Annotations []*Annotation
 }
 
 // Service represents an IDL service.
 type Service struct {
-	Comment []string
-	Name    string
-	Extends string
-	Methods []*Method
+	Comment     []string
+	Name        string
+	Extends     string
+	Methods     []*Method
+	Annotations []*Annotation
 }
 
 // ExtendsInclude returns the name of the include this service extends from, if
@@ -403,6 +411,12 @@ type Identifier string
 // KeyValue is a key-value pair.
 type KeyValue struct {
 	Key, Value interface{}
+}
+
+// Annotation is key-value metadata attached to an IDL definition.
+type Annotation struct {
+	Name  string
+	Value string
 }
 
 // ReferencedIncludes returns a slice containing the referenced includes which

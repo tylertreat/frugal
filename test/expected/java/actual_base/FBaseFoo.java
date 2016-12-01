@@ -217,7 +217,7 @@ public class FBaseFoo {
 				try {
 					handler.basePing(ctx);
 				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "basePing", "rate limit exceeded");
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "basePing", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
