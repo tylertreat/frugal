@@ -152,7 +152,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
 
     @gen.coroutine
     def _ping(self, ctx):
-        delta = timedelta(milliseconds=ctx.get_timeout())
+        delta = timedelta(milliseconds=ctx.timeout)
         callback_future = Future()
         timeout_future = gen.with_timeout(delta, callback_future)
         self._transport.register(ctx, self._recv_ping(ctx, callback_future))
@@ -160,7 +160,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             yield self._send_ping(ctx)
             result = yield timeout_future
         except gen.TimeoutError:
-            raise FTimeoutException('ping timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('ping timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -213,7 +213,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
 
     @gen.coroutine
     def _blah(self, ctx, num, Str, event):
-        delta = timedelta(milliseconds=ctx.get_timeout())
+        delta = timedelta(milliseconds=ctx.timeout)
         callback_future = Future()
         timeout_future = gen.with_timeout(delta, callback_future)
         self._transport.register(ctx, self._recv_blah(ctx, callback_future))
@@ -221,7 +221,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             yield self._send_blah(ctx, num, Str, event)
             result = yield timeout_future
         except gen.TimeoutError:
-            raise FTimeoutException('blah timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('blah timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -313,7 +313,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
 
     @gen.coroutine
     def _bin_method(self, ctx, bin, Str):
-        delta = timedelta(milliseconds=ctx.get_timeout())
+        delta = timedelta(milliseconds=ctx.timeout)
         callback_future = Future()
         timeout_future = gen.with_timeout(delta, callback_future)
         self._transport.register(ctx, self._recv_bin_method(ctx, callback_future))
@@ -321,7 +321,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             yield self._send_bin_method(ctx, bin, Str)
             result = yield timeout_future
         except gen.TimeoutError:
-            raise FTimeoutException('bin_method timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('bin_method timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -382,7 +382,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
 
     @gen.coroutine
     def _param_modifiers(self, ctx, opt_num, default_num, req_num):
-        delta = timedelta(milliseconds=ctx.get_timeout())
+        delta = timedelta(milliseconds=ctx.timeout)
         callback_future = Future()
         timeout_future = gen.with_timeout(delta, callback_future)
         self._transport.register(ctx, self._recv_param_modifiers(ctx, callback_future))
@@ -390,7 +390,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             yield self._send_param_modifiers(ctx, opt_num, default_num, req_num)
             result = yield timeout_future
         except gen.TimeoutError:
-            raise FTimeoutException('param_modifiers timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('param_modifiers timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -448,7 +448,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
 
     @gen.coroutine
     def _underlying_types_test(self, ctx, list_type, set_type):
-        delta = timedelta(milliseconds=ctx.get_timeout())
+        delta = timedelta(milliseconds=ctx.timeout)
         callback_future = Future()
         timeout_future = gen.with_timeout(delta, callback_future)
         self._transport.register(ctx, self._recv_underlying_types_test(ctx, callback_future))
@@ -456,7 +456,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             yield self._send_underlying_types_test(ctx, list_type, set_type)
             result = yield timeout_future
         except gen.TimeoutError:
-            raise FTimeoutException('underlying_types_test timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('underlying_types_test timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -511,7 +511,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
 
     @gen.coroutine
     def _getThing(self, ctx):
-        delta = timedelta(milliseconds=ctx.get_timeout())
+        delta = timedelta(milliseconds=ctx.timeout)
         callback_future = Future()
         timeout_future = gen.with_timeout(delta, callback_future)
         self._transport.register(ctx, self._recv_getThing(ctx, callback_future))
@@ -519,7 +519,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             yield self._send_getThing(ctx)
             result = yield timeout_future
         except gen.TimeoutError:
-            raise FTimeoutException('getThing timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('getThing timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)
@@ -572,7 +572,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
 
     @gen.coroutine
     def _getMyInt(self, ctx):
-        delta = timedelta(milliseconds=ctx.get_timeout())
+        delta = timedelta(milliseconds=ctx.timeout)
         callback_future = Future()
         timeout_future = gen.with_timeout(delta, callback_future)
         self._transport.register(ctx, self._recv_getMyInt(ctx, callback_future))
@@ -580,7 +580,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             yield self._send_getMyInt(ctx)
             result = yield timeout_future
         except gen.TimeoutError:
-            raise FTimeoutException('getMyInt timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('getMyInt timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)

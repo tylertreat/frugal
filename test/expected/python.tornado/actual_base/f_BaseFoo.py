@@ -65,7 +65,7 @@ class Client(Iface):
 
     @gen.coroutine
     def _basePing(self, ctx):
-        delta = timedelta(milliseconds=ctx.get_timeout())
+        delta = timedelta(milliseconds=ctx.timeout)
         callback_future = Future()
         timeout_future = gen.with_timeout(delta, callback_future)
         self._transport.register(ctx, self._recv_basePing(ctx, callback_future))
@@ -73,7 +73,7 @@ class Client(Iface):
             yield self._send_basePing(ctx)
             result = yield timeout_future
         except gen.TimeoutError:
-            raise FTimeoutException('basePing timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('basePing timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)

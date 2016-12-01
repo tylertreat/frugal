@@ -1000,7 +1000,7 @@ func (g *Generator) generateClientSendMethod(method *parser.Method) string {
 	contents += tab + fmt.Sprintf("def _send_%s(self, ctx%s):\n", method.Name, g.generateClientArgs(method.Arguments))
 	contents += tabtab + "oprot = self._oprot\n"
 	contents += tabtab + "with self._write_lock:\n"
-	contents += tabtabtab + "oprot.get_transport().set_timeout(ctx.get_timeout())\n"
+	contents += tabtabtab + "oprot.get_transport().set_timeout(ctx.timeout)\n"
 	contents += tabtabtab + "oprot.write_request_headers(ctx)\n"
 	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
 	contents += tabtabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
