@@ -510,7 +510,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
     def _send_use_subdir_struct(self, ctx, a):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
+            oprot.get_transport().set_timeout(ctx.timeout)
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('use_subdir_struct', TMessageType.CALL, 0)
             args = use_subdir_struct_args()

@@ -646,7 +646,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
 
     @gen.coroutine
     def _use_subdir_struct(self, ctx, a):
-        delta = timedelta(milliseconds=ctx.get_timeout())
+        delta = timedelta(milliseconds=ctx.timeout)
         callback_future = Future()
         timeout_future = gen.with_timeout(delta, callback_future)
         self._transport.register(ctx, self._recv_use_subdir_struct(ctx, callback_future))
@@ -654,7 +654,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             yield self._send_use_subdir_struct(ctx, a)
             result = yield timeout_future
         except gen.TimeoutError:
-            raise FTimeoutException('use_subdir_struct timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('use_subdir_struct timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             self._transport.unregister(ctx)
         raise gen.Return(result)

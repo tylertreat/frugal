@@ -627,7 +627,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return await self._methods['use_subdir_struct']([ctx, a])
 
     async def _use_subdir_struct(self, ctx, a):
-        timeout = ctx.get_timeout() / 1000.0
+        timeout = ctx.timeout / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
         await self._transport.register(ctx, self._recv_use_subdir_struct(ctx, future))
@@ -635,7 +635,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             await self._send_use_subdir_struct(ctx, a)
             result = await timed_future
         except asyncio.TimeoutError:
-            raise FTimeoutException('use_subdir_struct timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('use_subdir_struct timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             await self._transport.unregister(ctx)
         return result
