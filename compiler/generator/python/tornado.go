@@ -95,7 +95,7 @@ func (t *TornadoGenerator) generateClientMethod(method *parser.Method) string {
 		return contents
 	}
 
-	contents += tabtab + "delta = timedelta(milliseconds=ctx.get_timeout())\n"
+	contents += tabtab + "delta = timedelta(milliseconds=ctx.timeout)\n"
 	contents += tabtab + "callback_future = Future()\n"
 	contents += tabtab + "timeout_future = gen.with_timeout(delta, callback_future)\n"
 	contents += tabtab + fmt.Sprintf("self._transport.register(ctx, self._recv_%s(ctx, callback_future))\n", method.Name)
@@ -103,7 +103,7 @@ func (t *TornadoGenerator) generateClientMethod(method *parser.Method) string {
 	contents += tabtabtab + fmt.Sprintf("yield self._send_%s(ctx%s)\n", method.Name, t.generateClientArgs(method.Arguments))
 	contents += tabtabtab + "result = yield timeout_future\n"
 	contents += tabtab + "except gen.TimeoutError:\n"
-	contents += fmt.Sprintf(tabtabtab+"raise FTimeoutException('%s timed out after {} milliseconds'.format(ctx.get_timeout()))\n", method.Name)
+	contents += fmt.Sprintf(tabtabtab+"raise FTimeoutException('%s timed out after {} milliseconds'.format(ctx.timeout))\n", method.Name)
 	contents += tabtab + "finally:\n"
 	contents += tabtabtab + "self._transport.unregister(ctx)\n"
 	contents += tabtab + "raise gen.Return(result)\n\n"
