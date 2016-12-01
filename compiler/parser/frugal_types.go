@@ -16,7 +16,7 @@ type Operation struct {
 	Comment     []string
 	Name        string
 	Type        *Type
-	Annotations []*Annotation
+	Annotations Annotations
 	Scope       *Scope // Pointer back to containing Scope
 }
 
@@ -40,7 +40,7 @@ type Scope struct {
 	Name        string
 	Prefix      *ScopePrefix
 	Operations  []*Operation
-	Annotations []*Annotation
+	Annotations Annotations
 	Frugal      *Frugal // Pointer back to containing Frugal
 }
 

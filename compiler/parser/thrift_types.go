@@ -92,7 +92,7 @@ type Type struct {
 	Name        string
 	KeyType     *Type // If map
 	ValueType   *Type // If map, list, or set
-	Annotations []*Annotation
+	Annotations Annotations
 }
 
 // IsPrimitive indicates if the type is a Thrift primitive type.
@@ -148,7 +148,7 @@ type TypeDef struct {
 	Comment     []string
 	Name        string
 	Type        *Type
-	Annotations []*Annotation
+	Annotations Annotations
 }
 
 // EnumValue represents an IDL enum value.
@@ -156,7 +156,7 @@ type EnumValue struct {
 	Comment     []string
 	Name        string
 	Value       int
-	Annotations []*Annotation
+	Annotations Annotations
 }
 
 // Enum represents an IDL enum.
@@ -164,15 +164,16 @@ type Enum struct {
 	Comment     []string
 	Name        string
 	Values      []*EnumValue
-	Annotations []*Annotation
+	Annotations Annotations
 }
 
 // Constant represents an IDL constant.
 type Constant struct {
-	Comment []string
-	Name    string
-	Type    *Type
-	Value   interface{}
+	Comment     []string
+	Name        string
+	Type        *Type
+	Value       interface{}
+	Annotations Annotations
 }
 
 // Field represents an IDL field on a struct or method.
@@ -183,7 +184,7 @@ type Field struct {
 	Modifier    FieldModifier
 	Type        *Type
 	Default     interface{}
-	Annotations []*Annotation
+	Annotations Annotations
 }
 
 // StructType represents what "type" a struct is (struct, exception, or union).
@@ -216,7 +217,7 @@ type Struct struct {
 	Name        string
 	Fields      []*Field
 	Type        StructType
-	Annotations []*Annotation
+	Annotations Annotations
 }
 
 // Method represents an IDL service method.
@@ -227,7 +228,7 @@ type Method struct {
 	ReturnType  *Type
 	Arguments   []*Field
 	Exceptions  []*Field
-	Annotations []*Annotation
+	Annotations Annotations
 }
 
 // Service represents an IDL service.
@@ -236,7 +237,7 @@ type Service struct {
 	Name        string
 	Extends     string
 	Methods     []*Method
-	Annotations []*Annotation
+	Annotations Annotations
 }
 
 // ExtendsInclude returns the name of the include this service extends from, if
@@ -418,6 +419,9 @@ type Annotation struct {
 	Name  string
 	Value string
 }
+
+// Annotations is the collection of Annotations present on an IDL definition.
+type Annotations []*Annotation
 
 // ReferencedIncludes returns a slice containing the referenced includes which
 // will need to be imported in generated code.
