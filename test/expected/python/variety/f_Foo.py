@@ -162,7 +162,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
     def _send_ping(self, ctx):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
+            oprot.get_transport().set_timeout(ctx.timeout)
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.CALL, 0)
             args = ping_args()
@@ -204,7 +204,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
     def _send_blah(self, ctx, num, Str, event):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
+            oprot.get_transport().set_timeout(ctx.timeout)
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('blah', TMessageType.CALL, 0)
             args = blah_args()
@@ -254,7 +254,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
     def _send_oneWay(self, ctx, id, req):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
+            oprot.get_transport().set_timeout(ctx.timeout)
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('oneWay', TMessageType.CALL, 0)
             args = oneWay_args()
@@ -295,7 +295,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
     def _send_bin_method(self, ctx, bin, Str):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
+            oprot.get_transport().set_timeout(ctx.timeout)
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('bin_method', TMessageType.CALL, 0)
             args = bin_method_args()
@@ -342,7 +342,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
     def _send_param_modifiers(self, ctx, opt_num, default_num, req_num):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
+            oprot.get_transport().set_timeout(ctx.timeout)
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('param_modifiers', TMessageType.CALL, 0)
             args = param_modifiers_args()
@@ -387,7 +387,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
     def _send_underlying_types_test(self, ctx, list_type, set_type):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
+            oprot.get_transport().set_timeout(ctx.timeout)
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('underlying_types_test', TMessageType.CALL, 0)
             args = underlying_types_test_args()
@@ -429,7 +429,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
     def _send_getThing(self, ctx):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
+            oprot.get_transport().set_timeout(ctx.timeout)
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('getThing', TMessageType.CALL, 0)
             args = getThing_args()
@@ -469,7 +469,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
     def _send_getMyInt(self, ctx):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
+            oprot.get_transport().set_timeout(ctx.timeout)
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('getMyInt', TMessageType.CALL, 0)
             args = getMyInt_args()

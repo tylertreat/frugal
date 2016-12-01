@@ -64,7 +64,7 @@ class Client(Iface):
     def _send_basePing(self, ctx):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
+            oprot.get_transport().set_timeout(ctx.timeout)
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('basePing', TMessageType.CALL, 0)
             args = basePing_args()

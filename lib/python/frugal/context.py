@@ -54,7 +54,8 @@ class FContext(object):
         self._request_headers[_OPID_HEADER] = str(_DEFAULT_OP_ID)
         self._request_headers[_TIMEOUT_HEADER] = str(timeout)
 
-    def get_correlation_id(self):
+    @property
+    def correlation_id(self):
         """Return the correlation id for the FContext.
            This is used for distributed tracing purposes.
         """
@@ -152,6 +153,15 @@ class FContext(object):
         return int(self._request_headers.get(_TIMEOUT_HEADER))
 
     def set_timeout(self, timeout):
+        self._request_headers[_TIMEOUT_HEADER] = str(timeout)
+
+    @property
+    def timeout(self):
+        return int(self._request_headers.get(_TIMEOUT_HEADER))
+
+    @timeout.setter
+    def timeout(self, timeout):
+        # TODO: check the type of timeout
         self._request_headers[_TIMEOUT_HEADER] = str(timeout)
         return self
 

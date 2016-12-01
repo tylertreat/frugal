@@ -61,7 +61,7 @@ class Client(f_BasePinger.Client, Iface):
         return await self._methods['ping']([ctx])
 
     async def _ping(self, ctx):
-        timeout = ctx.get_timeout() / 1000.0
+        timeout = ctx.timeout / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
         await self._transport.register(ctx, self._recv_ping(ctx, future))
@@ -69,7 +69,7 @@ class Client(f_BasePinger.Client, Iface):
             await self._send_ping(ctx)
             result = await timed_future
         except asyncio.TimeoutError:
-            raise FTimeoutException('ping timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('ping timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             await self._transport.unregister(ctx)
         return result

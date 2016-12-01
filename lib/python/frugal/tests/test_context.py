@@ -10,29 +10,29 @@ class TestContext(unittest.TestCase):
 
     def test_correlation_id(self):
         context = FContext("fooid")
-        self.assertEqual("fooid", context.get_correlation_id())
-        self.assertEqual(_DEFAULT_TIMEOUT, context.get_timeout())
+        self.assertEqual("fooid", context.correlation_id)
+        self.assertEqual(_DEFAULT_TIMEOUT, context.timeout)
 
     def test_timeout(self):
         # Check default timeout (5 seconds).
         context = FContext()
-        self.assertEqual(5000, context.get_timeout())
+        self.assertEqual(5000, context.timeout)
         self.assertEqual("5000", context.get_request_header("_timeout"))
 
         # Set timeout and check expected values.
         context.set_timeout(10000)
-        self.assertEqual(10000, context.get_timeout())
+        self.assertEqual(10000, context.timeout)
         self.assertEqual("10000", context.get_request_header("_timeout"))
 
         # Check timeout passed to constructor.
         context = FContext(timeout=1000)
-        self.assertEqual(1000, context.get_timeout())
+        self.assertEqual(1000, context.timeout)
         self.assertEqual("1000", context.get_request_header("_timeout"))
 
     def test_op_id(self):
         context = FContext(self.correlation_id)
         context._set_request_header("_opid", "12345")
-        self.assertEqual(self.correlation_id, context.get_correlation_id())
+        self.assertEqual(self.correlation_id, context.correlation_id)
         self.assertEqual("12345", context.get_request_header("_opid"))
 
     def test_request_header(self):

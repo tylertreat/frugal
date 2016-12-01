@@ -141,7 +141,7 @@ func (a *AsyncIOGenerator) generateClientMethod(method *parser.Method) string {
 	}
 
 	contents += tab + fmt.Sprintf("async def _%s(self, ctx%s):\n", method.Name, a.generateClientArgs(method.Arguments))
-	contents += tabtab + "timeout = ctx.get_timeout() / 1000.0\n"
+	contents += tabtab + "timeout = ctx.timeout / 1000.0\n"
 	contents += tabtab + "future = asyncio.Future()\n"
 	contents += tabtab + "timed_future = asyncio.wait_for(future, timeout)\n"
 	contents += tabtab + fmt.Sprintf("await self._transport.register(ctx, self._recv_%s(ctx, future))\n", method.Name)
@@ -149,7 +149,7 @@ func (a *AsyncIOGenerator) generateClientMethod(method *parser.Method) string {
 	contents += tabtabtab + fmt.Sprintf("await self._send_%s(ctx%s)\n", method.Name, a.generateClientArgs(method.Arguments))
 	contents += tabtabtab + "result = await timed_future\n"
 	contents += tabtab + "except asyncio.TimeoutError:\n"
-	contents += fmt.Sprintf(tabtabtab+"raise FTimeoutException('%s timed out after {} milliseconds'.format(ctx.get_timeout()))\n", method.Name)
+	contents += fmt.Sprintf(tabtabtab+"raise FTimeoutException('%s timed out after {} milliseconds'.format(ctx.timeout))\n", method.Name)
 	contents += tabtab + "finally:\n"
 	contents += tabtabtab + "await self._transport.unregister(ctx)\n"
 	contents += tabtab + "return result\n\n"

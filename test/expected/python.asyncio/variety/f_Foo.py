@@ -161,7 +161,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return await self._methods['ping']([ctx])
 
     async def _ping(self, ctx):
-        timeout = ctx.get_timeout() / 1000.0
+        timeout = ctx.timeout / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
         await self._transport.register(ctx, self._recv_ping(ctx, future))
@@ -169,7 +169,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             await self._send_ping(ctx)
             result = await timed_future
         except asyncio.TimeoutError:
-            raise FTimeoutException('ping timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('ping timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             await self._transport.unregister(ctx)
         return result
@@ -220,7 +220,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return await self._methods['blah']([ctx, num, Str, event])
 
     async def _blah(self, ctx, num, Str, event):
-        timeout = ctx.get_timeout() / 1000.0
+        timeout = ctx.timeout / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
         await self._transport.register(ctx, self._recv_blah(ctx, future))
@@ -228,7 +228,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             await self._send_blah(ctx, num, Str, event)
             result = await timed_future
         except asyncio.TimeoutError:
-            raise FTimeoutException('blah timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('blah timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             await self._transport.unregister(ctx)
         return result
@@ -316,7 +316,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return await self._methods['bin_method']([ctx, bin, Str])
 
     async def _bin_method(self, ctx, bin, Str):
-        timeout = ctx.get_timeout() / 1000.0
+        timeout = ctx.timeout / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
         await self._transport.register(ctx, self._recv_bin_method(ctx, future))
@@ -324,7 +324,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             await self._send_bin_method(ctx, bin, Str)
             result = await timed_future
         except asyncio.TimeoutError:
-            raise FTimeoutException('bin_method timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('bin_method timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             await self._transport.unregister(ctx)
         return result
@@ -383,7 +383,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return await self._methods['param_modifiers']([ctx, opt_num, default_num, req_num])
 
     async def _param_modifiers(self, ctx, opt_num, default_num, req_num):
-        timeout = ctx.get_timeout() / 1000.0
+        timeout = ctx.timeout / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
         await self._transport.register(ctx, self._recv_param_modifiers(ctx, future))
@@ -391,7 +391,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             await self._send_param_modifiers(ctx, opt_num, default_num, req_num)
             result = await timed_future
         except asyncio.TimeoutError:
-            raise FTimeoutException('param_modifiers timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('param_modifiers timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             await self._transport.unregister(ctx)
         return result
@@ -447,7 +447,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return await self._methods['underlying_types_test']([ctx, list_type, set_type])
 
     async def _underlying_types_test(self, ctx, list_type, set_type):
-        timeout = ctx.get_timeout() / 1000.0
+        timeout = ctx.timeout / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
         await self._transport.register(ctx, self._recv_underlying_types_test(ctx, future))
@@ -455,7 +455,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             await self._send_underlying_types_test(ctx, list_type, set_type)
             result = await timed_future
         except asyncio.TimeoutError:
-            raise FTimeoutException('underlying_types_test timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('underlying_types_test timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             await self._transport.unregister(ctx)
         return result
@@ -508,7 +508,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return await self._methods['getThing']([ctx])
 
     async def _getThing(self, ctx):
-        timeout = ctx.get_timeout() / 1000.0
+        timeout = ctx.timeout / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
         await self._transport.register(ctx, self._recv_getThing(ctx, future))
@@ -516,7 +516,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             await self._send_getThing(ctx)
             result = await timed_future
         except asyncio.TimeoutError:
-            raise FTimeoutException('getThing timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('getThing timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             await self._transport.unregister(ctx)
         return result
@@ -567,7 +567,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         return await self._methods['getMyInt']([ctx])
 
     async def _getMyInt(self, ctx):
-        timeout = ctx.get_timeout() / 1000.0
+        timeout = ctx.timeout / 1000.0
         future = asyncio.Future()
         timed_future = asyncio.wait_for(future, timeout)
         await self._transport.register(ctx, self._recv_getMyInt(ctx, future))
@@ -575,7 +575,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             await self._send_getMyInt(ctx)
             result = await timed_future
         except asyncio.TimeoutError:
-            raise FTimeoutException('getMyInt timed out after {} milliseconds'.format(ctx.get_timeout()))
+            raise FTimeoutException('getMyInt timed out after {} milliseconds'.format(ctx.timeout))
         finally:
             await self._transport.unregister(ctx)
         return result

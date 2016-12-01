@@ -66,7 +66,7 @@ class Client(generic_package_prefix.actual_base.python.f_BaseFoo.Client, Iface):
     def _send_get_thing(self, ctx, the_thing):
         oprot = self._oprot
         with self._write_lock:
-            oprot.get_transport().set_timeout(ctx.get_timeout())
+            oprot.get_transport().set_timeout(ctx.timeout)
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('get_thing', TMessageType.CALL, 0)
             args = get_thing_args()
