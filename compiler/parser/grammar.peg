@@ -180,10 +180,11 @@ Include <- "include" _ file:Literal EOS {
     return &Include{Name: name, Value: file.(string)}, nil
 }
 
-Namespace <- "namespace" _ scope:[*a-z.-]+ _ ns:Identifier EOS {
+Namespace <- "namespace" _ scope:[*a-z.-]+ _ ns:Identifier _ annotations:TypeAnnotations? EOS {
     return &Namespace{
-        Scope: ifaceSliceToString(scope),
-        Value: string(ns.(Identifier)),
+        Scope:       ifaceSliceToString(scope),
+        Value:       string(ns.(Identifier)),
+        Annotations: toAnnotations(annotations),
     }, nil
 }
 

@@ -676,8 +676,8 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 
 // GetOutputDir returns the output directory for generated files.
 func (g *Generator) GetOutputDir(dir string) string {
-	if pkg, ok := g.Frugal.Thrift.Namespace(lang); ok {
-		path := generator.GetPackageComponents(pkg)
+	if namespace := g.Frugal.Thrift.Namespace(lang); namespace != nil {
+		path := generator.GetPackageComponents(namespace.Value)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
 		dir = filepath.Join(dir, g.Frugal.Name)
@@ -1394,11 +1394,11 @@ func (g *Generator) getTType(t *parser.Type) string {
 }
 
 func (g *Generator) getPackageNamespace(include string) string {
-	namespace, ok := g.Frugal.NamespaceForInclude(include, lang)
-	if !ok {
-		namespace = include
+	name := include
+	if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+		name = namespace.Value
 	}
-	return g.Options["package_prefix"] + namespace
+	return g.Options["package_prefix"] + name
 }
 
 var elemNum int

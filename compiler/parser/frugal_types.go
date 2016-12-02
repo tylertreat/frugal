@@ -81,15 +81,14 @@ type Frugal struct {
 	OrderedDefinitions []interface{}
 }
 
-// NamespaceForInclude returns the namespace value for the given inclue name
-// and language.
-func (f *Frugal) NamespaceForInclude(include, lang string) (string, bool) {
+// NamespaceForInclude returns the Namespace for the given inclue name and
+// language.
+func (f *Frugal) NamespaceForInclude(include, lang string) *Namespace {
 	parsed, ok := f.ParsedIncludes[include]
 	if !ok {
-		return "", ok
+		return nil
 	}
-	namespace, ok := parsed.Thrift.Namespace(lang)
-	return namespace, ok
+	return parsed.Thrift.Namespace(lang)
 }
 
 // ContainsFrugalDefinitions indicates if the parse tree contains any

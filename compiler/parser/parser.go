@@ -7,6 +7,26 @@ import (
 	"strings"
 )
 
+// Supported generator annotations.
+const (
+	// VendorAnnotation is used on namespace definitions to indicate to any
+	// consumers of the IDL where the generated code is vendored so that
+	// consumers can generate code that points to it. This cannot be used with
+	// "*" namespaces since it is language-dependent.
+	//
+	// When a Frugal file has an include whose namespace is vendored, Frugal
+	// will skip generating the include if -use-vendor is set since this flag
+	// indicates intention to use the vendored code as advertised by the
+	// "vendor" annotation.
+	//
+	// If no location is specified by the "vendor" annotation, it defaults to
+	// the namespace value, e.g. "namespace java com.foo.bar (vendor)" defaults
+	// to "import com.foo.bar" in the generated Java code, while
+	// "namespace go foo (github.com/Workiva/my-repo/gen-go/foo)" generates Go
+	// code which uses "import github.com/Workiva/my-repo/gen-go/foo".
+	VendorAnnotation = "vendor"
+)
+
 // ParseFrugal parses the given Frugal file into its semantic representation.
 func ParseFrugal(filePath string) (*Frugal, error) {
 	return parseFrugal(filePath, []string{})

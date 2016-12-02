@@ -83,8 +83,14 @@ type Include struct {
 
 // Namespace represents an IDL namespace.
 type Namespace struct {
-	Scope string
-	Value string
+	Scope       string
+	Value       string
+	Annotations Annotations
+}
+
+// Wildcard indicates if this Namespace is a wildcard (*).
+func (n *Namespace) Wildcard() bool {
+	return n.Scope == "*"
 }
 
 // Type represents an IDL data type.
@@ -392,18 +398,12 @@ type Thrift struct {
 }
 
 // Namespace returns namespace value for the given scope.
-func (t *Thrift) Namespace(scope string) (string, bool) {
-	namespace, ok := t.namespaceIndex[scope]
-	value := ""
-	if ok {
-		value = namespace.Value
-	} else {
-		namespace, ok = t.namespaceIndex["*"]
-		if ok {
-			value = namespace.Value
-		}
+func (t *Thrift) Namespace(scope string) *Namespace {
+	namespace := t.namespaceIndex[scope]
+	if namespace != nil {
+		return namespace
 	}
-	return value, ok
+	return t.namespaceIndex["*"]
 }
 
 // Identifier represents an IDL identifier.
@@ -422,6 +422,17 @@ type Annotation struct {
 
 // Annotations is the collection of Annotations present on an IDL definition.
 type Annotations []*Annotation
+
+// Vendor returns true if the "vendor" annotation is present and its associated
+// value, if any.
+func (a Annotations) Vendor() (string, bool) {
+	for _, annotation := range a {
+		if annotation.Name == VendorAnnotation {
+			return annotation.Value, true
+		}
+	}
+	return "", false
+}
 
 // ReferencedIncludes returns a slice containing the referenced includes which
 // will need to be imported in generated code.
