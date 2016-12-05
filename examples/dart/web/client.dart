@@ -85,7 +85,7 @@ class EventUI {
     var album = new music.Album();
     album.aSIN = asin.value;
     album.duration = int.parse(duration.value);
-    frugal.FContext ctx = new frugal.FContext(correlationID: 'an-id');
+    frugal.FContext ctx = new frugal.FContext(correlationId: 'an-id');
     _albumWinnersPublisher.publishWinner(ctx, album);
   }
 
@@ -129,14 +129,14 @@ class EventUI {
     if (_fStoreClient == null) {
       window.alert("Not connected to server");
     }
-    var ctx = new frugal.FContext(correlationID:"corr-12345");
+    var ctx = new frugal.FContext(correlationId:"corr-12345");
     _fStoreClient.buyAlbum(ctx, "My-ASIN", "Account-12345").catchError( (e) {
       window.alert("Ping errored! ${e.toString()}");
     });
   }
 
   void onEvent(frugal.FContext ctx, music.Album m) {
-    window.alert(ctx.correlationID.toString() + ' : ' + m.toString());
+    window.alert(ctx.correlationId.toString() + ' : ' + m.toString());
   }
 }
 
