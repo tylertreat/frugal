@@ -16,6 +16,7 @@ const (
 	frugalGenFile           = "idl/variety.frugal"
 	badNamespace            = "idl/bad_namespace.frugal"
 	includeVendor           = "idl/include_vendor.frugal"
+	includeDefaultVendor    = "idl/include_default_vendor.frugal"
 )
 
 var (
