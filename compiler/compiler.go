@@ -27,7 +27,7 @@ type Options struct {
 	DryRun             bool   // Do not generate code
 	Recurse            bool   // Generate includes
 	Verbose            bool   // Verbose mode
-	UseVendor          bool
+	UseVendor          bool   // Do not generate code for vendored includes
 }
 
 // Compile parses the Frugal IDL and generates code for it, returning an error
