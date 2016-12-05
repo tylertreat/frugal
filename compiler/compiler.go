@@ -174,13 +174,7 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	// If -use-vendor is set, check if this IDL has the "vendor" annotation on
 	// its namespace. If it does, we shouldn't generate code for it.
 	if namespace := frugal.Thrift.Namespace(lang); useVendor && namespace != nil {
-		_, vendored := namespace.Annotations.Vendor()
-		if vendored {
-			// "vendor" annotation isn't compatible with * namespaces.
-			if namespace.Wildcard() {
-				return nil, fmt.Errorf("\"%s\" annotation not compatible with * namespace",
-					parser.VendorAnnotation)
-			}
+		if _, vendored := namespace.Annotations.Vendor(); vendored {
 			generate = false
 		}
 	}

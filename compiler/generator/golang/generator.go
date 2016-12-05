@@ -17,10 +17,11 @@ import (
 )
 
 const (
-	lang             = "go"
-	defaultOutputDir = "gen-go"
-	serviceSuffix    = "_service"
-	scopeSuffix      = "_scope"
+	lang                = "go"
+	defaultOutputDir    = "gen-go"
+	serviceSuffix       = "_service"
+	scopeSuffix         = "_scope"
+	packagePrefixOption = "package_prefix"
 )
 
 // Generator implements the LanguageGenerator interface for Go.
@@ -1052,7 +1053,7 @@ func (g *Generator) GenerateTypesImports(file *os.File) error {
 	}
 
 	protections := ""
-	pkgPrefix := g.Options["package_prefix"]
+	pkgPrefix := g.Options[packagePrefixOption]
 	for _, include := range g.Frugal.Thrift.Includes {
 		contents += g.generateIncludeImport(include.Name, pkgPrefix)
 		protections += g.generateImportProtection(include)
@@ -1083,7 +1084,7 @@ func (g *Generator) GenerateServiceResultArgsImports(file *os.File) error {
 	}
 
 	protections := ""
-	pkgPrefix := g.Options["package_prefix"]
+	pkgPrefix := g.Options[packagePrefixOption]
 	for _, include := range g.Frugal.Thrift.Includes {
 		contents += g.generateIncludeImport(include.Name, pkgPrefix)
 		protections += g.generateImportProtection(include)
@@ -1121,7 +1122,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 		imports += "\t\"github.com/Workiva/frugal/lib/go\"\n"
 	}
 
-	pkgPrefix := g.Options["package_prefix"]
+	pkgPrefix := g.Options[packagePrefixOption]
 	for _, include := range s.ReferencedIncludes() {
 		imports += g.generateIncludeImport(include, pkgPrefix)
 	}
@@ -1153,7 +1154,7 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 		imports += "\t\"github.com/Workiva/frugal/lib/go\"\n"
 	}
 
-	pkgPrefix := g.Options["package_prefix"]
+	pkgPrefix := g.Options[packagePrefixOption]
 	for _, include := range g.Frugal.ReferencedScopeIncludes() {
 		imports += g.generateIncludeImport(include, pkgPrefix)
 	}

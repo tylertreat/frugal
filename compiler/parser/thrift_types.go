@@ -354,6 +354,8 @@ func (s *Service) ReferencedInternals() []string {
 	return internals
 }
 
+// validate ensures Service oneways don't return anything and field ids aren't
+// duplicated.
 func (s *Service) validate() error {
 	for _, method := range s.Methods {
 		// Ensure oneways don't return anything.
@@ -482,7 +484,12 @@ func (t *Thrift) DataStructures() []*Struct {
 	return structs
 }
 
+// validate parsed Thrift IDL, e.g. no duplicate identifiers, valid types,
+// no wildcard namespace with a "vendor" annotation, etc.
 func (t *Thrift) validate(includes map[string]*Frugal) error {
+	if err := t.validateNamespaces(); err != nil {
+		return err
+	}
 	if err := t.validateIncludes(); err != nil {
 		return err
 	}
@@ -503,6 +510,16 @@ func (t *Thrift) validate(includes map[string]*Frugal) error {
 	}
 	if err := t.validateServices(includes); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (t *Thrift) validateNamespaces() error {
+	for _, namespace := range t.Namespaces {
+		_, vendor := namespace.Annotations.Vendor()
+		if namespace.Wildcard() && vendor {
+			return fmt.Errorf("\"%s\" annotation not compatible with * namespace", VendorAnnotation)
+		}
 	}
 	return nil
 }

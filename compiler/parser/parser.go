@@ -20,10 +20,11 @@ const (
 	// "vendor" annotation.
 	//
 	// If no location is specified by the "vendor" annotation, it defaults to
-	// the namespace value, e.g. "namespace java com.foo.bar (vendor)" defaults
-	// to "import com.foo.bar" in the generated Java code, while
-	// "namespace go foo (github.com/Workiva/my-repo/gen-go/foo)" generates Go
-	// code which uses "import github.com/Workiva/my-repo/gen-go/foo".
+	// the namespace value, e.g. 'namespace java com.foo.bar (vendor)' defaults
+	// to 'import com.foo.bar' in the generated Java code, while
+	// 'namespace go foo (vendor="github.com/Workiva/my-repo/gen-go/foo")'
+	// generates Go code which uses
+	// 'import github.com/Workiva/my-repo/gen-go/foo'.
 	VendorAnnotation = "vendor"
 )
 
@@ -70,7 +71,7 @@ func parseFrugal(filePath string, visitedIncludes []string) (*Frugal, error) {
 
 		parsedIncl, err := parseFrugal(filepath.Join(frugal.Dir, include), visitedIncludes)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Include %s: %s", include, err)
 		}
 
 		// Lop off extension (.frugal or .thrift)

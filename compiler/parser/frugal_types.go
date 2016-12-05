@@ -268,6 +268,8 @@ func (f *Frugal) assignFrugal() {
 	}
 }
 
+// validate parsed Frugal IDL by ensuring there are no duplicate service/scope
+// names and the Thrift is valid.
 func (f *Frugal) validate() error {
 	// Ensure there are no duplicate names between services and scopes.
 	names := make(map[string]struct{})
@@ -283,6 +285,7 @@ func (f *Frugal) validate() error {
 		}
 		names[scope.Name] = struct{}{}
 	}
+
 	return f.Thrift.validate(f.ParsedIncludes)
 }
 
