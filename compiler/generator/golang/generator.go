@@ -1170,10 +1170,10 @@ func (g *Generator) generateIncludeImport(include, pkgPrefix string) string {
 	importPath := fmt.Sprintf("%s%s", pkgPrefix, includeNameToImport(includeName))
 	namespace := g.Frugal.NamespaceForInclude(includeName, lang)
 	if namespace != nil {
-		includeName = namespace.Value
+		importPath = fmt.Sprintf("%s%s", pkgPrefix, includeNameToImport(namespace.Value))
 		// If -use-vendor is set and a vendor annotation is present on the
 		// namespace, honor its import path.
-		if vendorPath, ok := namespace.Annotations.Vendor(); globals.UseVendor && ok {
+		if vendorPath, ok := namespace.Annotations.Vendor(); globals.UseVendor && ok && vendorPath != "" {
 			importPath = vendorPath
 		}
 	}
