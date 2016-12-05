@@ -78,7 +78,7 @@ void main() {
         print('hello world');
       };
       await debugMiddleware(handler)(
-          'Service', 'method', [new FContext(correlationID: 'cid'), 1]);
+          'Service', 'method', [new FContext(correlationId: 'cid'), 1]);
       // It would be nice to expect that print ...hello world... was called, but that does not seem possible
       // Next best thing is to just see that the handler was called without throwing an error
       expect(handlerRan, true);

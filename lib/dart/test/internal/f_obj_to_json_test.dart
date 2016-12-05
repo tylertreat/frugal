@@ -11,7 +11,7 @@ void main() {
     });
 
     test('Serializes an FContext', () {
-      String json = fObjToJson(new FContext(correlationID: "cid"));
+      String json = fObjToJson(new FContext(correlationId: "cid"));
       expect(json, '{"_cid":"cid","_opid":"0","_timeout":"5000"}');
     });
 

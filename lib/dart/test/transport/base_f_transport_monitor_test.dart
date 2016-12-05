@@ -60,7 +60,7 @@ void main() {
   test('close cleanly provides no cause', () async {
     var monitor = new BaseFTransportMonitor();
     // ignore: strong_mode_down_cast_composite
-    monitor.onDisconnect.listen(expectAsync((cause) {
+    monitor.onDisconnect.listen(expectAsync1((cause) {
       expect(cause, isNull);
     }));
     monitor.onClosedCleanly();
@@ -71,7 +71,7 @@ void main() {
         new BaseFTransportMonitor(initialWait: 1, maxReopenAttempts: 0);
     var error = new StateError("fake error");
     // ignore: strong_mode_down_cast_composite
-    monitor.onDisconnect.listen(expectAsync((cause) {
+    monitor.onDisconnect.listen(expectAsync1((cause) {
       expect(cause, error);
     }));
     monitor.onClosedUncleanly(error);

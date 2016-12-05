@@ -5,6 +5,9 @@ analyzer:
   strong-mode: true
 
 linter:
+  exclude:
+    - test/internal/f_obj_to_json_test.dart
+    - tool/dev.dart
   rules:
     # Error Rules
     - avoid_empty_else

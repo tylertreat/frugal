@@ -34,13 +34,13 @@ class FContext {
   Map<String, String> _requestHeaders;
   Map<String, String> _responseHeaders;
 
-  /// Create a new [FContext] with the optionally specified [correlationID].
-  FContext({String correlationID: ""}) {
-    if (correlationID == "") {
-      correlationID = _generateCorrelationID();
+  /// Create a new [FContext] with the optionally specified [correlationId].
+  FContext({String correlationId: ""}) {
+    if (correlationId == "") {
+      correlationId = _generateCorrelationId();
     }
     _requestHeaders = {
-      _cidHeader: correlationID,
+      _cidHeader: correlationId,
       _opidHeader: "0",
       _timeoutHeader: _defaultTimeout.inMilliseconds.toString(),
     };
@@ -50,7 +50,7 @@ class FContext {
   /// Create a new [FContext] with the given request headers.
   FContext.withRequestHeaders(Map<String, String> headers) {
     if (!headers.containsKey(_cidHeader) || headers[_cidHeader] == "") {
-      headers[_cidHeader] = _generateCorrelationID();
+      headers[_cidHeader] = _generateCorrelationId();
     }
     if (!headers.containsKey(_opidHeader) || headers[_opidHeader] == "") {
       headers[_opidHeader] = "0";
@@ -69,21 +69,22 @@ class FContext {
         milliseconds: int.parse(_requestHeaders[_timeoutHeader]));
   }
 
-  void set timeout(Duration timeout) {
+  /// Set the request timeout for any method call using this context.
+  set timeout(Duration timeout) {
     _requestHeaders[_timeoutHeader] = timeout.inMilliseconds.toString();
   }
 
   /// Correlation id for the context.
-  String get correlationID => _requestHeaders[_cidHeader];
+  String get correlationId => _requestHeaders[_cidHeader];
 
   /// The operation id for the context.
-  int get _opID {
+  int get _opId {
     var opIdStr = _requestHeaders[_opidHeader];
     return int.parse(opIdStr);
   }
 
   /// Set the operation id for the context.
-  set _opID(int id) {
+  set _opId(int id) {
     _requestHeaders[_opidHeader] = "$id";
   }
 
@@ -141,6 +142,6 @@ class FContext {
     return new UnmodifiableMapView(_responseHeaders);
   }
 
-  static String _generateCorrelationID() =>
+  static String _generateCorrelationId() =>
       new Uuid().v4().toString().replaceAll('-', '');
 }

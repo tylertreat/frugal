@@ -8,7 +8,7 @@ void main() {
     test(
         'test the registry sucessfully executes an FAsyncCallback registered to an FContext',
         () {
-      var ctx = new FContext(correlationID: 'sweet-corid');
+      var ctx = new FContext(correlationId: 'sweet-corid');
       var mockCallback = new MockCallback();
       FRegistry registry = new FRegistryImpl();
       registry.register(ctx, mockCallback.callback);
@@ -52,7 +52,7 @@ void main() {
     test(
         'test register throws an exception if the contest is already bound to a callback',
         () {
-      var ctx = new FContext(correlationID: 'sweet-corid');
+      var ctx = new FContext(correlationId: 'sweet-corid');
       var mockCallback = new MockCallback();
       FRegistry registry = new FRegistryImpl();
       registry.register(ctx, mockCallback.callback);
