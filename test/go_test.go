@@ -44,13 +44,13 @@ func TestValidGoWithAsync(t *testing.T) {
 func TestValidGoFrugalCompiler(t *testing.T) {
 	options := compiler.Options{
 		File:    frugalGenFile,
-		Gen:     "go:package_prefix=github.com/Workiva/frugal/test/out/,gen_with_frugal=true",
+		Gen:     "go:package_prefix=github.com/Workiva/frugal/test/out/",
 		Out:     outputDir,
 		Delim:   delim,
 		Recurse: true,
 	}
 	if err := compiler.Compile(options); err != nil {
-		t.Fatal("unexpected error", err)
+		t.Fatal("Unexpected error", err)
 	}
 
 	baseFtypesPath := filepath.Join(outputDir, "actual_base", "golang", "f_types.go")
@@ -62,4 +62,26 @@ func TestValidGoFrugalCompiler(t *testing.T) {
 	compareFiles(t, "expected/go/variety/f_types.txt", varietyFtypesPath)
 	varietyFfooPath := filepath.Join(outputDir, "variety", "f_foo.go")
 	compareFiles(t, "expected/go/variety/f_foo.txt", varietyFfooPath)
+}
+
+func TestValidGoVendor(t *testing.T) {
+	options := compiler.Options{
+		File:      includeVendor,
+		Gen:       "go:package_prefix=github.com/Workiva/frugal/test/out/",
+		Out:       outputDir,
+		Delim:     delim,
+		UseVendor: true,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("Unexpected error", err)
+	}
+
+	myScopePath := filepath.Join(outputDir, "include_vendor", "f_myscope_scope.go")
+	compareFiles(t, "expected/go/vendor/f_myscope_scope.txt", myScopePath)
+	myServicePath := filepath.Join(outputDir, "include_vendor", "f_myservice_service.go")
+	compareFiles(t, "expected/go/vendor/f_myservice_service.txt", myServicePath)
+	myServicePath = filepath.Join(outputDir, "include_vendor", "f_myservice.go")
+	compareFiles(t, "expected/go/vendor/f_myservice.txt", myServicePath)
+	ftypesPath := filepath.Join(outputDir, "include_vendor", "f_types.go")
+	compareFiles(t, "expected/go/vendor/f_types.txt", ftypesPath)
 }

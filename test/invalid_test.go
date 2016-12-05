@@ -41,3 +41,15 @@ func TestDuplicateStructFieldIds(t *testing.T) {
 		t.Fatal("Expected error")
 	}
 }
+
+func TestWildcardNamespaceWithVendorAnnotation(t *testing.T) {
+	options := compiler.Options{
+		File:  badNamespace,
+		Gen:   "go",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if err := compiler.Compile(options); err == nil {
+		t.Fatal("Expected error")
+	}
+}
