@@ -33,6 +33,7 @@ type Options struct {
 // Compile parses the Frugal IDL and generates code for it, returning an error
 // if something failed.
 func Compile(options Options) error {
+	var err error
 	defer globals.Reset()
 	globals.TopicDelimiter = options.Delim
 	globals.Gen = options.Gen
@@ -42,6 +43,10 @@ func Compile(options Options) error {
 	globals.Verbose = options.Verbose
 	globals.UseVendor = options.UseVendor
 	globals.FileDir = filepath.Dir(options.File)
+	globals.AbsFilePath, err = filepath.Abs(options.File)
+	if err != nil {
+		return err
+	}
 
 	defer func() {
 		if !options.RetainIntermediate {
@@ -58,12 +63,7 @@ func Compile(options Options) error {
 		}
 	}()
 
-	absFile, err := filepath.Abs(options.File)
-	if err != nil {
-		return err
-	}
-
-	_, err = compile(absFile, strings.HasSuffix(absFile, ".thrift"), true)
+	_, err = compile(globals.AbsFilePath, strings.HasSuffix(globals.AbsFilePath, ".thrift"), true)
 	return err
 }
 
@@ -172,8 +172,9 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	}
 
 	// If -use-vendor is set, check if this IDL has the "vendor" annotation on
-	// its namespace. If it does, we shouldn't generate code for it.
-	if namespace := frugal.Thrift.Namespace(lang); useVendor && namespace != nil {
+	// its namespace. If it does, we shouldn't generate code for it unless it
+	// is the target IDL file.
+	if namespace := frugal.Thrift.Namespace(lang); useVendor && namespace != nil && frugal.File != globals.AbsFilePath {
 		if _, vendored := namespace.Annotations.Vendor(); vendored {
 			generate = false
 		}

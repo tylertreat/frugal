@@ -17,6 +17,7 @@ const (
 	badNamespace            = "idl/bad_namespace.frugal"
 	includeVendor           = "idl/include_vendor.frugal"
 	includeDefaultVendor    = "idl/include_default_vendor.frugal"
+	vendorNamespace         = "idl/vendor_namespace.frugal"
 )
 
 var (

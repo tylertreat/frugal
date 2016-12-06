@@ -107,3 +107,19 @@ func TestValidGoVendorDefault(t *testing.T) {
 	ftypesPath := filepath.Join(outputDir, "include_default_vendor", "f_types.go")
 	compareFiles(t, "expected/go/default_vendor/f_types.txt", ftypesPath)
 }
+
+func TestValidGoVendorNamespaceTargetGenerate(t *testing.T) {
+	options := compiler.Options{
+		File:      vendorNamespace,
+		Gen:       "go:package_prefix=github.com/Workiva/frugal/test/out/",
+		Out:       outputDir,
+		Delim:     delim,
+		UseVendor: true,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("Unexpected error", err)
+	}
+
+	ftypesPath := filepath.Join(outputDir, "vendor_namespace", "f_types.go")
+	compareFiles(t, "expected/go/vendor_namespace/f_types.txt", ftypesPath)
+}
