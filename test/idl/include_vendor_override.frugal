@@ -1,4 +1,4 @@
-include "vendor_namespace.frugal" (vendor)
+include "vendor_namespace.frugal" (vendor="github.com/override/the/path/vendor_namespace")
 include "excepts.frugal"
 
 

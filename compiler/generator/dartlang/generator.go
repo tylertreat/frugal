@@ -188,10 +188,14 @@ func (g *Generator) addToPubspec(dir string) error {
 
 	includesSet := make(map[string]bool)
 	for _, include := range g.Frugal.ReferencedScopeIncludes() {
-		includesSet[include] = true
+		includesSet[include.Name] = true
 	}
-	for _, include := range g.Frugal.ReferencedServiceIncludes() {
-		includesSet[include] = true
+	servIncludes, err := g.Frugal.ReferencedServiceIncludes()
+	if err != nil {
+		return err
+	}
+	for _, include := range servIncludes {
+		includesSet[include.Name] = true
 	}
 	includes := make([]string, 0, len(includesSet))
 	for include := range includesSet {
@@ -1160,9 +1164,13 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import 'package:thrift/thrift.dart' as thrift;\n"
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
 	// import included packages
-	for _, include := range s.ReferencedIncludes() {
-		name := include
-		if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+	includes, err := s.ReferencedIncludes()
+	if err != nil {
+		return err
+	}
+	for _, include := range includes {
+		name := include.Name
+		if namespace := g.Frugal.NamespaceForInclude(include.Name, lang); namespace != nil {
 			name = namespace.Value
 		}
 
@@ -1180,7 +1188,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 		imports += fmt.Sprintf("import '%s.dart' as t_%s_file;\n", servSnake, servSnake)
 	}
 
-	_, err := file.WriteString(imports)
+	_, err = file.WriteString(imports)
 	return err
 }
 
@@ -1191,8 +1199,8 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
 	// import included packages
 	for _, include := range s.ReferencedIncludes() {
-		name := include
-		if namespace := s.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+		name := include.Name
+		if namespace := s.Frugal.NamespaceForInclude(include.Name, lang); namespace != nil {
 			name = namespace.Value
 		}
 

@@ -1055,7 +1055,7 @@ func (g *Generator) GenerateTypesImports(file *os.File) error {
 	protections := ""
 	pkgPrefix := g.Options[packagePrefixOption]
 	for _, include := range g.Frugal.Thrift.Includes {
-		contents += g.generateIncludeImport(include.Name, pkgPrefix)
+		contents += g.generateIncludeImport(include, pkgPrefix)
 		protections += g.generateImportProtection(include)
 	}
 
@@ -1086,7 +1086,7 @@ func (g *Generator) GenerateServiceResultArgsImports(file *os.File) error {
 	protections := ""
 	pkgPrefix := g.Options[packagePrefixOption]
 	for _, include := range g.Frugal.Thrift.Includes {
-		contents += g.generateIncludeImport(include.Name, pkgPrefix)
+		contents += g.generateIncludeImport(include, pkgPrefix)
 		protections += g.generateImportProtection(include)
 	}
 
@@ -1123,7 +1123,11 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	}
 
 	pkgPrefix := g.Options[packagePrefixOption]
-	for _, include := range s.ReferencedIncludes() {
+	includes, err := s.ReferencedIncludes()
+	if err != nil {
+		return err
+	}
+	for _, include := range includes {
 		imports += g.generateIncludeImport(include, pkgPrefix)
 	}
 
@@ -1134,7 +1138,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "var _ = fmt.Printf\n"
 	imports += "var _ = bytes.Equal"
 
-	_, err := file.WriteString(imports)
+	_, err = file.WriteString(imports)
 	return err
 }
 
@@ -1165,18 +1169,31 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	return err
 }
 
-func (g *Generator) generateIncludeImport(include, pkgPrefix string) string {
-	includeName := filepath.Base(include)
+func (g *Generator) generateIncludeImport(include *parser.Include, pkgPrefix string) string {
+	includeName := filepath.Base(include.Name)
 	importPath := fmt.Sprintf("%s%s", pkgPrefix, includeNameToImport(includeName))
 	namespace := g.Frugal.NamespaceForInclude(includeName, lang)
+	// If -use-vendor is set, the vendor path takes the following precedence:
+	//     1. path specified by the include vendor annotation.
+	//     2. path specified by the include's namespace vendor annotation.
+	//     3. if neither is specified, default to namespace value.
+
+	// 1. precedence from list above.
+	vendorPath, vendored := include.Annotations.Vendor()
+	vendored = vendored && globals.UseVendor
+
 	if namespace != nil {
 		importPath = fmt.Sprintf("%s%s", pkgPrefix, includeNameToImport(namespace.Value))
-		// If -use-vendor is set and a vendor annotation is present on the
-		// namespace, honor its import path.
-		if vendorPath, ok := namespace.Annotations.Vendor(); globals.UseVendor && ok && vendorPath != "" {
-			importPath = vendorPath
+		// 2. precedence from list above.
+		if nsVendorPath, ok := namespace.Annotations.Vendor(); ok && nsVendorPath != "" && vendorPath == "" {
+			vendorPath = nsVendorPath
 		}
 	}
+
+	if vendored && vendorPath != "" {
+		importPath = vendorPath
+	}
+
 	return fmt.Sprintf("\t\"%s\"\n", importPath)
 }
 

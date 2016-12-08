@@ -139,6 +139,7 @@ Grammar <- __ statements:( Statement __ )* (EOF / SyntaxError) {
             frugal.OrderedDefinitions[i] = strct
         case *Service:
             v.Comment = wrapper.comment
+            v.Thrift = frugal.Thrift
             thrift.Services = append(thrift.Services, v)
         case *Include:
             thrift.Includes = append(thrift.Includes, v)
@@ -172,12 +173,16 @@ Statement <- docstr:(DocString __)? statement:(ThriftStatement / FrugalStatement
 
 ThriftStatement <- Include / Namespace / Const / Enum / TypeDef / Struct / Exception / Union / Service
 
-Include <- "include" _ file:Literal EOS {
+Include <- "include" _ file:Literal _ annotations:TypeAnnotations? EOS {
     name := file.(string)
     if ix := strings.LastIndex(name, "."); ix > 0 {
         name = name[:ix]
     }
-    return &Include{Name: name, Value: file.(string)}, nil
+    return &Include{
+        Name:        name,
+        Value:       file.(string),
+        Annotations: toAnnotations(annotations),
+    }, nil
 }
 
 Namespace <- "namespace" _ scope:[*a-z.-]+ _ ns:Identifier _ annotations:TypeAnnotations? EOS {

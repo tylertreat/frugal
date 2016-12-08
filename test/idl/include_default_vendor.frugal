@@ -1,4 +1,4 @@
-include "default_vendor_namespace.frugal"
+include "default_vendor_namespace.frugal" (vendor)
 include "excepts.frugal"
 
 

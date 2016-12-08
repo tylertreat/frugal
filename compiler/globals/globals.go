@@ -16,7 +16,6 @@ var (
 	Gen             string
 	Out             string
 	FileDir         string
-	AbsFilePath     string
 	DryRun          bool
 	Recurse         bool
 	Verbose         bool
@@ -35,7 +34,6 @@ func Reset() {
 	Gen = ""
 	Out = ""
 	FileDir = ""
-	AbsFilePath = ""
 	DryRun = false
 	Recurse = false
 	Verbose = false

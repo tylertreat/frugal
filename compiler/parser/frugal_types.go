@@ -46,11 +46,11 @@ type Scope struct {
 
 // ReferencedIncludes returns a slice containing the referenced includes which
 // will need to be imported in generated code for this Scope.
-func (s *Scope) ReferencedIncludes() []string {
-	includes := []string{}
-	includesSet := make(map[string]bool)
+func (s *Scope) ReferencedIncludes() []*Include {
+	includes := []*Include{}
+	includesSet := make(map[string]*Include)
 	for _, op := range s.Operations {
-		includesSet, includes = addInclude(includesSet, includes, op.Type)
+		includesSet, includes = addInclude(includesSet, includes, op.Type, s.Frugal.Thrift)
 	}
 	return includes
 }
@@ -99,36 +99,48 @@ func (f *Frugal) ContainsFrugalDefinitions() bool {
 
 // ReferencedScopeIncludes returns a slice containing the referenced includes
 // which will need to be imported in generated code for scopes.
-func (f *Frugal) ReferencedScopeIncludes() []string {
-	includes := []string{}
-	includesSet := make(map[string]bool)
+func (f *Frugal) ReferencedScopeIncludes() []*Include {
+	includeNames := []string{}
+	includesSet := make(map[string]*Include)
 	for _, scope := range f.Scopes {
 		for _, include := range scope.ReferencedIncludes() {
-			if _, ok := includesSet[include]; !ok {
-				includesSet[include] = true
-				includes = append(includes, include)
+			if _, ok := includesSet[include.Name]; !ok {
+				includesSet[include.Name] = include
+				includeNames = append(includeNames, include.Name)
 			}
 		}
 	}
-	sort.Strings(includes)
+	sort.Strings(includeNames)
+	includes := make([]*Include, len(includeNames))
+	for i, include := range includeNames {
+		includes[i] = includesSet[include]
+	}
 	return includes
 }
 
 // ReferencedServiceIncludes returns a slice containing the referenced includes
 // which will need to be imported in generated code for services.
-func (f *Frugal) ReferencedServiceIncludes() []string {
-	includes := []string{}
-	includesSet := make(map[string]bool)
+func (f *Frugal) ReferencedServiceIncludes() ([]*Include, error) {
+	includeNames := []string{}
+	includesSet := make(map[string]*Include)
 	for _, service := range f.Thrift.Services {
-		for _, include := range service.ReferencedIncludes() {
-			if _, ok := includesSet[include]; !ok {
-				includesSet[include] = true
-				includes = append(includes, include)
+		servIncludes, err := service.ReferencedIncludes()
+		if err != nil {
+			return nil, err
+		}
+		for _, include := range servIncludes {
+			if _, ok := includesSet[include.Name]; !ok {
+				includesSet[include.Name] = include
+				includeNames = append(includeNames, include.Name)
 			}
 		}
 	}
-	sort.Strings(includes)
-	return includes
+	sort.Strings(includeNames)
+	includes := make([]*Include, len(includeNames))
+	for i, include := range includeNames {
+		includes[i] = includesSet[include]
+	}
+	return includes, nil
 }
 
 // UnderlyingType follows any typedefs to get the base IDL type.

@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 )
 
@@ -77,8 +78,9 @@ func TypeFromStruct(s *Struct) *Type {
 
 // Include represents an IDL file include.
 type Include struct {
-	Name  string
-	Value string
+	Name        string
+	Value       string
+	Annotations Annotations
 }
 
 // Namespace represents an IDL namespace.
@@ -244,6 +246,7 @@ type Service struct {
 	Extends     string
 	Methods     []*Method
 	Annotations Annotations
+	Thrift      *Thrift // Pointer back to containing Thrift
 }
 
 // ExtendsInclude returns the name of the include this service extends from, if
@@ -280,16 +283,21 @@ func (s *Service) TwowayMethods() []*Method {
 
 // ReferencedIncludes returns a slice containing the referenced includes which
 // will need to be imported in generated code for this Service.
-func (s *Service) ReferencedIncludes() []string {
-	includes := []string{}
-	includesSet := make(map[string]bool)
+func (s *Service) ReferencedIncludes() ([]*Include, error) {
+	includes := []*Include{}
+	includesSet := make(map[string]*Include)
 
 	// Check extended service.
 	if s.Extends != "" && strings.Contains(s.Extends, ".") {
-		reducedStr := s.Extends[0:strings.Index(s.Extends, ".")]
-		if _, ok := includesSet[reducedStr]; !ok {
-			includesSet[reducedStr] = true
-			includes = append(includes, reducedStr)
+		includeName := s.Extends[0:strings.Index(s.Extends, ".")]
+		include := s.Thrift.Include(includeName)
+		if include == nil {
+			return nil, fmt.Errorf("Service %s extends references invalid include %s",
+				s.Name, s.Extends)
+		}
+		if _, ok := includesSet[includeName]; !ok {
+			includesSet[includeName] = include
+			includes = append(includes, include)
 		}
 	}
 
@@ -297,37 +305,43 @@ func (s *Service) ReferencedIncludes() []string {
 	for _, method := range s.Methods {
 		// Check arguments.
 		for _, arg := range method.Arguments {
-			includesSet, includes = addInclude(includesSet, includes, arg.Type)
+			includesSet, includes = addInclude(includesSet, includes, arg.Type, s.Thrift)
 		}
 		// Check return type.
 		if method.ReturnType != nil {
-			includesSet, includes = addInclude(includesSet, includes, method.ReturnType)
+			includesSet, includes = addInclude(includesSet, includes, method.ReturnType, s.Thrift)
 		}
 		// Check exceptions.
 		for _, exception := range method.Exceptions {
-			includesSet, includes = addInclude(includesSet, includes, exception.Type)
+			includesSet, includes = addInclude(includesSet, includes, exception.Type, s.Thrift)
 		}
 	}
 
-	return includes
+	return includes, nil
 }
 
 // addInclude checks the given Type and adds any includes for it to the given
 // map and slice, returning the new map and slice.
-func addInclude(includesSet map[string]bool, includes []string, t *Type) (map[string]bool, []string) {
+func addInclude(includesSet map[string]*Include, includes []*Include, t *Type, thrift *Thrift) (map[string]*Include, []*Include) {
 	if strings.Contains(t.Name, ".") {
-		reducedStr := t.Name[0:strings.Index(t.Name, ".")]
-		if _, ok := includesSet[reducedStr]; !ok {
-			includesSet[reducedStr] = true
-			includes = append(includes, reducedStr)
+		includeName := t.Name[0:strings.Index(t.Name, ".")]
+		include := thrift.Include(includeName)
+		if include == nil {
+			// Referencing invalid include.
+			// TODO: return error
+			panic("wtf")
+		}
+		if _, ok := includesSet[includeName]; !ok {
+			includesSet[includeName] = include
+			includes = append(includes, include)
 		}
 	}
 	// Check container types.
 	if t.KeyType != nil {
-		includesSet, includes = addInclude(includesSet, includes, t.KeyType)
+		includesSet, includes = addInclude(includesSet, includes, t.KeyType, thrift)
 	}
 	if t.ValueType != nil {
-		includesSet, includes = addInclude(includesSet, includes, t.ValueType)
+		includesSet, includes = addInclude(includesSet, includes, t.ValueType, thrift)
 	}
 	return includesSet, includes
 }
@@ -408,6 +422,17 @@ func (t *Thrift) Namespace(scope string) *Namespace {
 	return t.namespaceIndex["*"]
 }
 
+// Include returns the Include with the given name.
+func (t *Thrift) Include(name string) *Include {
+	name = filepath.Base(name)
+	for _, include := range t.Includes {
+		if filepath.Base(include.Name) == name {
+			return include
+		}
+	}
+	return nil
+}
+
 // Identifier represents an IDL identifier.
 type Identifier string
 
@@ -438,18 +463,22 @@ func (a Annotations) Vendor() (string, bool) {
 
 // ReferencedIncludes returns a slice containing the referenced includes which
 // will need to be imported in generated code.
-func (t *Thrift) ReferencedIncludes() []string {
-	includes := []string{}
-	includesSet := make(map[string]bool)
+func (t *Thrift) ReferencedIncludes() ([]*Include, error) {
+	includes := []*Include{}
+	includesSet := make(map[string]*Include)
 	for _, serv := range t.Services {
-		for _, include := range serv.ReferencedIncludes() {
-			if _, ok := includesSet[include]; !ok {
-				includesSet[include] = true
+		servIncludes, err := serv.ReferencedIncludes()
+		if err != nil {
+			return nil, err
+		}
+		for _, include := range servIncludes {
+			if _, ok := includesSet[include.Name]; !ok {
+				includesSet[include.Name] = include
 				includes = append(includes, include)
 			}
 		}
 	}
-	return includes
+	return includes, nil
 }
 
 // ReferencedInternals returns a slice containing the referenced internals

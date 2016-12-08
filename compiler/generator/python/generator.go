@@ -775,7 +775,11 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from thrift.Thrift import TMessageType\n\n"
 
 	imports += g.generateServiceExtendsImport(s)
-	imports += g.generateServiceIncludeImports(s)
+	if imp, err := g.generateServiceIncludeImports(s); err != nil {
+		return err
+	} else {
+		imports += imp
+	}
 
 	_, err := file.WriteString(imports)
 	return err
@@ -790,12 +794,16 @@ func (g *Generator) generateServiceExtendsImport(s *parser.Service) string {
 	return fmt.Sprintf("from . import f_%s\n", s.Extends)
 }
 
-func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
+func (g *Generator) generateServiceIncludeImports(s *parser.Service) (string, error) {
 	imports := ""
 
 	// Import include modules.
-	for _, include := range s.ReferencedIncludes() {
-		namespace := g.getPackageNamespace(include)
+	includes, err := s.ReferencedIncludes()
+	if err != nil {
+		return "", err
+	}
+	for _, include := range includes {
+		namespace := g.getPackageNamespace(include.Name)
 		imports += fmt.Sprintf("import %s\n", namespace)
 	}
 
@@ -803,7 +811,7 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
 	imports += fmt.Sprintf("from .%s import *\n", s.Name)
 	imports += "from .ttypes import *\n"
 
-	return imports
+	return imports, nil
 }
 
 // GenerateScopeImports generates necessary imports for the given scope.
