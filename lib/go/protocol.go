@@ -141,7 +141,7 @@ func (f *FProtocol) ReadResponseHeader(ctx *FContext) error {
 func (f *FProtocol) writeHeader(headers map[string]string) error {
 	buff := writeMarshaler.marshalHeaders(headers)
 	if n, err := f.Transport().Write(buff); err != nil {
-		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error writing protocol headers: %s", err))
+		return thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error writing protocol headers in writeHeader: %s", err))
 	} else if n != len(buff) {
 		return thrift.NewTTransportException(thrift.UNKNOWN_PROTOCOL_EXCEPTION, "frugal: failed to write complete protocol headers")
 	}
@@ -156,7 +156,7 @@ func readHeader(reader io.Reader) (map[string]string, error) {
 		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 			return nil, err
 		}
-		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers: %s"))
+		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers in readHeader: %s", err))
 	}
 
 	marshaler, err := getMarshaler(buff[0])
@@ -265,7 +265,7 @@ func (v *v0ProtocolMarshaler) unmarshalHeaders(reader io.Reader) (map[string]str
 		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 			return nil, err
 		}
-		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers: %s"))
+		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers in unmarshalHeaders reading header size: %s", err))
 	}
 	size := int32(binary.BigEndian.Uint32(buff))
 	buff = make([]byte, size)
@@ -273,7 +273,7 @@ func (v *v0ProtocolMarshaler) unmarshalHeaders(reader io.Reader) (map[string]str
 		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 			return nil, err
 		}
-		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers: %s", err))
+		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers in unmarshalHeaders reading headers: %s", err))
 	}
 
 	return v.readPairs(buff, 0, size)

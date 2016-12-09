@@ -358,8 +358,7 @@ func TestNatsServerExpiredConnections(t *testing.T) {
 	mockTransportFactory.On("GetTransport", mock.AnythingOfType("*frugal.natsServiceTTransport")).Return(mockTransport)
 	proto := thrift.NewTJSONProtocol(mockTransport)
 	mockTProtocolFactory.On("GetProtocol", mockTransport).Return(proto)
-	server := NewFNatsServer(conn, "foo", 1*time.Millisecond, mockProcessor,
-		mockTransportFactory, protocolFactory)
+	server := NewFNatsServer(conn, "foo", 1, mockProcessor, mockTransportFactory, protocolFactory)
 
 	go func() {
 		assert.Nil(t, server.Serve())
