@@ -265,7 +265,7 @@ func (v *v0ProtocolMarshaler) unmarshalHeaders(reader io.Reader) (map[string]str
 		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 			return nil, err
 		}
-		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers in unmarshalHeaders: %s", err))
+		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers in unmarshalHeaders reading header size: %s", err))
 	}
 	size := int32(binary.BigEndian.Uint32(buff))
 	buff = make([]byte, size)
@@ -273,7 +273,7 @@ func (v *v0ProtocolMarshaler) unmarshalHeaders(reader io.Reader) (map[string]str
 		if e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {
 			return nil, err
 		}
-		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers in unmarshalHeaders (2): %s", err))
+		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error reading protocol headers in unmarshalHeaders reading headers: %s", err))
 	}
 
 	return v.readPairs(buff, 0, size)
