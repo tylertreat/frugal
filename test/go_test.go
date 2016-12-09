@@ -86,48 +86,17 @@ func TestValidGoVendor(t *testing.T) {
 	compareFiles(t, "expected/go/vendor/f_types.txt", ftypesPath)
 }
 
-func TestValidGoVendorDefault(t *testing.T) {
+func TestValidGoVendorPathNotSpecified(t *testing.T) {
 	options := compiler.Options{
-		File:      includeDefaultVendor,
+		File:      includeVendorNoPath,
 		Gen:       "go:package_prefix=github.com/Workiva/frugal/test/out/",
 		Out:       outputDir,
 		Delim:     delim,
 		UseVendor: true,
 	}
-	if err := compiler.Compile(options); err != nil {
-		t.Fatal("Unexpected error", err)
+	if err := compiler.Compile(options); err == nil {
+		t.Fatal("Expected error")
 	}
-
-	myScopePath := filepath.Join(outputDir, "include_default_vendor", "f_myscope_scope.go")
-	compareFiles(t, "expected/go/default_vendor/f_myscope_scope.txt", myScopePath)
-	myServicePath := filepath.Join(outputDir, "include_default_vendor", "f_myservice_service.go")
-	compareFiles(t, "expected/go/default_vendor/f_myservice_service.txt", myServicePath)
-	myServicePath = filepath.Join(outputDir, "include_default_vendor", "f_myservice.go")
-	compareFiles(t, "expected/go/default_vendor/f_myservice.txt", myServicePath)
-	ftypesPath := filepath.Join(outputDir, "include_default_vendor", "f_types.go")
-	compareFiles(t, "expected/go/default_vendor/f_types.txt", ftypesPath)
-}
-
-func TestValidGoVendorOverride(t *testing.T) {
-	options := compiler.Options{
-		File:      includeVendorOverride,
-		Gen:       "go:package_prefix=github.com/Workiva/frugal/test/out/",
-		Out:       outputDir,
-		Delim:     delim,
-		UseVendor: true,
-	}
-	if err := compiler.Compile(options); err != nil {
-		t.Fatal("Unexpected error", err)
-	}
-
-	myScopePath := filepath.Join(outputDir, "include_vendor_override", "f_myscope_scope.go")
-	compareFiles(t, "expected/go/vendor_override/f_myscope_scope.txt", myScopePath)
-	myServicePath := filepath.Join(outputDir, "include_vendor_override", "f_myservice_service.go")
-	compareFiles(t, "expected/go/vendor_override/f_myservice_service.txt", myServicePath)
-	myServicePath = filepath.Join(outputDir, "include_vendor_override", "f_myservice.go")
-	compareFiles(t, "expected/go/vendor_override/f_myservice.txt", myServicePath)
-	ftypesPath := filepath.Join(outputDir, "include_vendor_override", "f_types.go")
-	compareFiles(t, "expected/go/vendor_override/f_types.txt", ftypesPath)
 }
 
 func TestValidGoVendorNamespaceTargetGenerate(t *testing.T) {

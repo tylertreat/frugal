@@ -13,24 +13,15 @@ const (
 	// consumers of the IDL where the generated code is vendored so that
 	// consumers can generate code that points to it. This cannot be used with
 	// "*" namespaces since it is language-dependent. Consumers then use the
-	// "vendor" annotation on includes they wish to vendor, providing an
-	// optional value which overrides the path specified by the included IDL.
+	// "vendor" annotation on includes they wish to vendor. The value provided
+	// on the include-side "vendor" annotation, if any, is ignored.
 	//
 	// When an include is annotated with "vendor", Frugal will skip generating
 	// the include if -use-vendor is set since this flag indicates intention to
 	// use the vendored code as advertised by the "vendor" annotation.
 	//
-	// If no location is specified by the "vendor" annotation, it defaults to
-	// the namespace value, e.g. 'namespace java com.foo.bar (vendor)' defaults
-	// to 'import com.foo.bar' in the generated Java code, while
-	// 'namespace go foo (vendor="github.com/Workiva/my-repo/gen-go/foo")'
-	// generates Go code which uses
-	// 'import github.com/Workiva/my-repo/gen-go/foo'.
-	//
-	// If -use-vendor is set, the vendor path takes the following precedence:
-	//     1. path specified by the include vendor annotation.
-	//     2. path specified by the include's namespace vendor annotation.
-	//     3. if neither is specified, default to namespace value.
+	// If no location is specified by the "vendor" annotation, the behavior is
+	// defined by the language generator.
 	VendorAnnotation = "vendor"
 )
 

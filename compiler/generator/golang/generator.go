@@ -1055,7 +1055,11 @@ func (g *Generator) GenerateTypesImports(file *os.File) error {
 	protections := ""
 	pkgPrefix := g.Options[packagePrefixOption]
 	for _, include := range g.Frugal.Thrift.Includes {
-		contents += g.generateIncludeImport(include, pkgPrefix)
+		if imp, err := g.generateIncludeImport(include, pkgPrefix); err != nil {
+			return err
+		} else {
+			contents += imp
+		}
 		protections += g.generateImportProtection(include)
 	}
 
@@ -1086,7 +1090,11 @@ func (g *Generator) GenerateServiceResultArgsImports(file *os.File) error {
 	protections := ""
 	pkgPrefix := g.Options[packagePrefixOption]
 	for _, include := range g.Frugal.Thrift.Includes {
-		contents += g.generateIncludeImport(include, pkgPrefix)
+		if imp, err := g.generateIncludeImport(include, pkgPrefix); err != nil {
+			return err
+		} else {
+			contents += imp
+		}
 		protections += g.generateImportProtection(include)
 	}
 
@@ -1128,7 +1136,11 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 		return err
 	}
 	for _, include := range includes {
-		imports += g.generateIncludeImport(include, pkgPrefix)
+		if imp, err := g.generateIncludeImport(include, pkgPrefix); err != nil {
+			return err
+		} else {
+			imports += imp
+		}
 	}
 
 	imports += ")\n\n"
@@ -1160,7 +1172,11 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 
 	pkgPrefix := g.Options[packagePrefixOption]
 	for _, include := range g.Frugal.ReferencedScopeIncludes() {
-		imports += g.generateIncludeImport(include, pkgPrefix)
+		if imp, err := g.generateIncludeImport(include, pkgPrefix); err != nil {
+			return err
+		} else {
+			imports += imp
+		}
 	}
 
 	imports += ")"
@@ -1169,32 +1185,33 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	return err
 }
 
-func (g *Generator) generateIncludeImport(include *parser.Include, pkgPrefix string) string {
+func (g *Generator) generateIncludeImport(include *parser.Include, pkgPrefix string) (string, error) {
 	includeName := filepath.Base(include.Name)
 	importPath := fmt.Sprintf("%s%s", pkgPrefix, includeNameToImport(includeName))
 	namespace := g.Frugal.NamespaceForInclude(includeName, lang)
-	// If -use-vendor is set, the vendor path takes the following precedence:
-	//     1. path specified by the include vendor annotation.
-	//     2. path specified by the include's namespace vendor annotation.
-	//     3. if neither is specified, default to namespace value.
 
-	// 1. precedence from list above.
-	vendorPath, vendored := include.Annotations.Vendor()
+	_, vendored := include.Annotations.Vendor()
 	vendored = vendored && globals.UseVendor
+	vendorPath := ""
 
 	if namespace != nil {
 		importPath = fmt.Sprintf("%s%s", pkgPrefix, includeNameToImport(namespace.Value))
-		// 2. precedence from list above.
-		if nsVendorPath, ok := namespace.Annotations.Vendor(); ok && nsVendorPath != "" && vendorPath == "" {
+		if nsVendorPath, ok := namespace.Annotations.Vendor(); ok {
 			vendorPath = nsVendorPath
 		}
 	}
 
-	if vendored && vendorPath != "" {
+	// If -use-vendor is set and this include is vendored, honor the path
+	// specified by the include's namespace vendor annotation.
+	if vendored {
+		if vendorPath == "" {
+			return "", fmt.Errorf("Vendored include %s does not specify vendor path for go namespace",
+				include.Name)
+		}
 		importPath = vendorPath
 	}
 
-	return fmt.Sprintf("\t\"%s\"\n", importPath)
+	return fmt.Sprintf("\t\"%s\"\n", importPath), nil
 }
 
 func (g *Generator) generateImportProtection(include *parser.Include) string {

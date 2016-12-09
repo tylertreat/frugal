@@ -16,8 +16,7 @@ const (
 	frugalGenFile           = "idl/variety.frugal"
 	badNamespace            = "idl/bad_namespace.frugal"
 	includeVendor           = "idl/include_vendor.frugal"
-	includeDefaultVendor    = "idl/include_default_vendor.frugal"
-	includeVendorOverride   = "idl/include_vendor_override.frugal"
+	includeVendorNoPath     = "idl/include_vendor_no_path.frugal"
 	vendorNamespace         = "idl/vendor_namespace.frugal"
 )
 
