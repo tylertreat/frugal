@@ -284,6 +284,7 @@ func (s *Service) TwowayMethods() []*Method {
 // ReferencedIncludes returns a slice containing the referenced includes which
 // will need to be imported in generated code for this Service.
 func (s *Service) ReferencedIncludes() ([]*Include, error) {
+	var err error
 	includes := []*Include{}
 	includesSet := make(map[string]*Include)
 
@@ -305,15 +306,24 @@ func (s *Service) ReferencedIncludes() ([]*Include, error) {
 	for _, method := range s.Methods {
 		// Check arguments.
 		for _, arg := range method.Arguments {
-			includesSet, includes = addInclude(includesSet, includes, arg.Type, s.Thrift)
+			includesSet, includes, err = addInclude(includesSet, includes, arg.Type, s.Thrift)
+			if err != nil {
+				return nil, err
+			}
 		}
 		// Check return type.
 		if method.ReturnType != nil {
-			includesSet, includes = addInclude(includesSet, includes, method.ReturnType, s.Thrift)
+			includesSet, includes, err = addInclude(includesSet, includes, method.ReturnType, s.Thrift)
+		}
+		if err != nil {
+			return nil, err
 		}
 		// Check exceptions.
 		for _, exception := range method.Exceptions {
-			includesSet, includes = addInclude(includesSet, includes, exception.Type, s.Thrift)
+			includesSet, includes, err = addInclude(includesSet, includes, exception.Type, s.Thrift)
+		}
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -322,14 +332,13 @@ func (s *Service) ReferencedIncludes() ([]*Include, error) {
 
 // addInclude checks the given Type and adds any includes for it to the given
 // map and slice, returning the new map and slice.
-func addInclude(includesSet map[string]*Include, includes []*Include, t *Type, thrift *Thrift) (map[string]*Include, []*Include) {
+func addInclude(includesSet map[string]*Include, includes []*Include, t *Type, thrift *Thrift) (map[string]*Include, []*Include, error) {
+	var err error
 	if strings.Contains(t.Name, ".") {
 		includeName := t.Name[0:strings.Index(t.Name, ".")]
 		include := thrift.Include(includeName)
 		if include == nil {
-			// Referencing invalid include.
-			// TODO: return error
-			panic("wtf")
+			return nil, nil, fmt.Errorf("Type %s references invalid include %s", t.Name, include.Name)
 		}
 		if _, ok := includesSet[includeName]; !ok {
 			includesSet[includeName] = include
@@ -338,12 +347,15 @@ func addInclude(includesSet map[string]*Include, includes []*Include, t *Type, t
 	}
 	// Check container types.
 	if t.KeyType != nil {
-		includesSet, includes = addInclude(includesSet, includes, t.KeyType, thrift)
+		includesSet, includes, err = addInclude(includesSet, includes, t.KeyType, thrift)
+	}
+	if err != nil {
+		return nil, nil, err
 	}
 	if t.ValueType != nil {
-		includesSet, includes = addInclude(includesSet, includes, t.ValueType, thrift)
+		includesSet, includes, err = addInclude(includesSet, includes, t.ValueType, thrift)
 	}
-	return includesSet, includes
+	return includesSet, includes, err
 }
 
 // ReferencedInternals returns a slice containing the referenced internals

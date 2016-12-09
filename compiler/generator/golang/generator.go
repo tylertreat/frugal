@@ -1171,7 +1171,11 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	}
 
 	pkgPrefix := g.Options[packagePrefixOption]
-	for _, include := range g.Frugal.ReferencedScopeIncludes() {
+	scopeIncludes, err := g.Frugal.ReferencedScopeIncludes()
+	if err != nil {
+		return err
+	}
+	for _, include := range scopeIncludes {
 		if imp, err := g.generateIncludeImport(include, pkgPrefix); err != nil {
 			return err
 		} else {
@@ -1181,7 +1185,7 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 
 	imports += ")"
 
-	_, err := file.WriteString(imports)
+	_, err = file.WriteString(imports)
 	return err
 }
 

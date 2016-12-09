@@ -46,13 +46,17 @@ type Scope struct {
 
 // ReferencedIncludes returns a slice containing the referenced includes which
 // will need to be imported in generated code for this Scope.
-func (s *Scope) ReferencedIncludes() []*Include {
+func (s *Scope) ReferencedIncludes() ([]*Include, error) {
+	var err error
 	includes := []*Include{}
 	includesSet := make(map[string]*Include)
 	for _, op := range s.Operations {
-		includesSet, includes = addInclude(includesSet, includes, op.Type, s.Frugal.Thrift)
+		includesSet, includes, err = addInclude(includesSet, includes, op.Type, s.Frugal.Thrift)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return includes
+	return includes, nil
 }
 
 func (s *Scope) assignScope() {
@@ -99,11 +103,15 @@ func (f *Frugal) ContainsFrugalDefinitions() bool {
 
 // ReferencedScopeIncludes returns a slice containing the referenced includes
 // which will need to be imported in generated code for scopes.
-func (f *Frugal) ReferencedScopeIncludes() []*Include {
+func (f *Frugal) ReferencedScopeIncludes() ([]*Include, error) {
 	includeNames := []string{}
 	includesSet := make(map[string]*Include)
 	for _, scope := range f.Scopes {
-		for _, include := range scope.ReferencedIncludes() {
+		scopeIncludes, err := scope.ReferencedIncludes()
+		if err != nil {
+			return nil, err
+		}
+		for _, include := range scopeIncludes {
 			if _, ok := includesSet[include.Name]; !ok {
 				includesSet[include.Name] = include
 				includeNames = append(includeNames, include.Name)
@@ -115,7 +123,7 @@ func (f *Frugal) ReferencedScopeIncludes() []*Include {
 	for i, include := range includeNames {
 		includes[i] = includesSet[include]
 	}
-	return includes
+	return includes, nil
 }
 
 // ReferencedServiceIncludes returns a slice containing the referenced includes

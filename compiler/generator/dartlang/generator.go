@@ -187,7 +187,11 @@ func (g *Generator) addToPubspec(dir string) error {
 	}
 
 	includesSet := make(map[string]bool)
-	for _, include := range g.Frugal.ReferencedScopeIncludes() {
+	scopeIncludes, err := g.Frugal.ReferencedScopeIncludes()
+	if err != nil {
+		return err
+	}
+	for _, include := range scopeIncludes {
 		includesSet[include.Name] = true
 	}
 	servIncludes, err := g.Frugal.ReferencedServiceIncludes()
@@ -1198,7 +1202,11 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports += "import 'package:thrift/thrift.dart' as thrift;\n"
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
 	// import included packages
-	for _, include := range s.ReferencedIncludes() {
+	scopeIncludes, err := s.ReferencedIncludes()
+	if err != nil {
+		return err
+	}
+	for _, include := range scopeIncludes {
 		name := include.Name
 		if namespace := s.Frugal.NamespaceForInclude(include.Name, lang); namespace != nil {
 			name = namespace.Value
@@ -1210,7 +1218,7 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	// Import same package.
 	imports += g.getImportDeclaration(g.getNamespaceOrName())
 
-	_, err := file.WriteString(imports)
+	_, err = file.WriteString(imports)
 	return err
 }
 
