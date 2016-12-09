@@ -82,7 +82,7 @@ func main() {
 			Destination: &audit,
 		}, cli.BoolFlag{
 			Name:        "use-vendor",
-			Usage:       "do not generate code for vendored includes",
+			Usage:       "use specified import references for vendored includes and do not generate code for them (supported by go)",
 			Destination: &useVendor,
 		},
 	}
