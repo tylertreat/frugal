@@ -79,10 +79,10 @@ func TestReadResponseHeader(t *testing.T) {
 func TestWriteHeaderErroredWrite(t *testing.T) {
 	assert := assert.New(t)
 	mft := &mockFTransport{}
-	writeErr := errors.New("write falied")
+	writeErr := errors.New("write failed")
 	mft.On("Write", basicFrame).Return(0, writeErr)
 	proto := &FProtocol{tProtocolFactory.GetProtocol(mft)}
-	expectedErr := thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error writing protocol headers: %s", writeErr))
+	expectedErr := thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error writing protocol headers in writeHeader: %s", writeErr))
 	assert.Equal(expectedErr, proto.writeHeader(basicHeaders))
 	mft.AssertExpectations(t)
 }

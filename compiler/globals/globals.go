@@ -8,7 +8,7 @@ import (
 )
 
 // Version of the Frugal compiler.
-const Version = "1.22.0"
+const Version = "1.23.0"
 
 // Global variables.
 var (
