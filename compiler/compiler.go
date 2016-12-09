@@ -118,6 +118,11 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 		return nil, err
 	}
 
+	// TODO: Address as needed when more languages support vendoring.
+	if useVendor && lang != "go" {
+		return nil, fmt.Errorf("-use-vendor not supported by %s", lang)
+	}
+
 	// Gen with Frugal by default.
 	genWithFrugal := true
 	if genWithFrugalStr, ok := options["gen_with_frugal"]; ok {
