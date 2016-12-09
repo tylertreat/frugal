@@ -64,6 +64,8 @@ func TestValidGoFrugalCompiler(t *testing.T) {
 	compareFiles(t, "expected/go/variety/f_foo.txt", varietyFfooPath)
 }
 
+// Ensures correct import references are used when -use-vendor is set and the
+// IDL has a vendored include.
 func TestValidGoVendor(t *testing.T) {
 	options := compiler.Options{
 		File:      includeVendor,
@@ -86,6 +88,8 @@ func TestValidGoVendor(t *testing.T) {
 	compareFiles(t, "expected/go/vendor/f_types.txt", ftypesPath)
 }
 
+// Ensures an error is returned when -use-vendor is set and the vendored
+// include does not specify a path.
 func TestValidGoVendorPathNotSpecified(t *testing.T) {
 	options := compiler.Options{
 		File:      includeVendorNoPath,
@@ -99,6 +103,8 @@ func TestValidGoVendorPathNotSpecified(t *testing.T) {
 	}
 }
 
+// Ensures the target IDL is generated when -use-vendor is set and it has a
+// vendored namespace.
 func TestValidGoVendorNamespaceTargetGenerate(t *testing.T) {
 	options := compiler.Options{
 		File:      vendorNamespace,
