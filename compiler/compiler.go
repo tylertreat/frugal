@@ -66,10 +66,7 @@ func parseFrugal(file string) (*parser.Frugal, error) {
 
 // generateFrugal generates code for a frugal struct.
 func generateFrugal(f *parser.Frugal) error {
-	var (
-		gen       = globals.Gen
-		useVendor = globals.UseVendor
-	)
+	var gen = globals.Gen
 
 	lang, options, err := cleanGenParam(gen)
 	if err != nil {
@@ -77,7 +74,7 @@ func generateFrugal(f *parser.Frugal) error {
 	}
 
 	// TODO: Address as needed when more languages support vendoring.
-	if useVendor && lang != "go" {
+	if globals.UseVendor && lang != "go" {
 		return fmt.Errorf("-use-vendor not supported by %s", lang)
 	}
 
@@ -88,7 +85,7 @@ func generateFrugal(f *parser.Frugal) error {
 	}
 
 	// The parsed frugal contains everything needed to generate
-	if err := generateFrugalRec(f, g, true, useVendor, lang); err != nil {
+	if err := generateFrugalRec(f, g, true, lang); err != nil {
 		return err
 	}
 
@@ -97,7 +94,7 @@ func generateFrugal(f *parser.Frugal) error {
 
 // generateFrugalRec generates code for a frugal struct, recursively generating
 // code for includes
-func generateFrugalRec(f *parser.Frugal, g generator.ProgramGenerator, generate, useVendor bool, lang string) error {
+func generateFrugalRec(f *parser.Frugal, g generator.ProgramGenerator, generate bool, lang string) error {
 	if _, ok := globals.CompiledFiles[f.File]; ok {
 		// Already generated this file
 		return nil
@@ -123,7 +120,7 @@ func generateFrugalRec(f *parser.Frugal, g generator.ProgramGenerator, generate,
 	}
 
 	for _, inclFrugal := range f.ParsedIncludes {
-		if err := generateFrugalRec(inclFrugal, g, globals.Recurse, useVendor, lang); err != nil {
+		if err := generateFrugalRec(inclFrugal, g, globals.Recurse, lang); err != nil {
 			return err
 		}
 	}

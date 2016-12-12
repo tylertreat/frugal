@@ -3253,12 +3253,3 @@ func (g *Generator) generateAsync() bool {
 	_, ok := g.Options["async"]
 	return ok
 }
-
-var elemNum int
-
-// getElem returns a unique identifier name
-func getElem() string {
-	s := fmt.Sprintf("elem%d", elemNum)
-	elemNum++
-	return s
-}
