@@ -62,12 +62,14 @@ async def main():
     await publisher.open()
 
     async def response_handler(context, event):
+        preamble = context.get_request_header(PREAMBLE_HEADER)
+        ramble = context.get_request_header(RAMBLE_HEADER)
         response_event = Event(Message="Sending Response")
         response_context = FContext("Call")
-        await publisher.publish_EventCreated(response_context, "foo", "Client", "response", "{}".format(port), response_event)
+        await publisher.publish_EventCreated(response_context, preamble, ramble, "response", "{}".format(port), response_event)
 
     subscriber = EventsSubscriber(provider)
-    await subscriber.subscribe_EventCreated("foo", "Client", "call", "{}".format(args.port), response_handler)
+    await subscriber.subscribe_EventCreated("*", "*", "call", "{}".format(args.port), response_handler)
 
     if args.transport_type in ["stateless", "stateless-stateful"]:
         server = FNatsServer(nats_client,

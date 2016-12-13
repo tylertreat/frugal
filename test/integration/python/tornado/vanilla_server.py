@@ -70,15 +70,17 @@ def pub_sub(subject, protocol_factory):
     @gen.coroutine
     def response_handler(context, event):
         print("received {} : {}".format(context, event))
+        preamble = context.get_request_header(PREAMBLE_HEADER)
+        ramble = context.get_request_header(RAMBLE_HEADER)
         response_event = Event(Message="Sending Response")
         response_context = FContext("Call")
 
-        yield publisher.publish_EventCreated(response_context, "foo", "Client", "response", "{}".format(subject), response_event)
+        yield publisher.publish_EventCreated(response_context, preamble, ramble, "response", "{}".format(subject), response_event)
         print("Published event={}".format(response_event))
         publisher.close()
 
     subscriber = EventsSubscriber(provider)
-    yield subscriber.subscribe_EventCreated("foo", "Client", "call", "{}".format(subject), response_handler)
+    yield subscriber.subscribe_EventCreated("*", "*", "call", "{}".format(subject), response_handler)
 
 
 def tornado_thread(subject, protocol_factory):
