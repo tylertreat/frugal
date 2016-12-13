@@ -34,7 +34,7 @@ type Generator struct {
 	*generator.BaseGenerator
 	time      time.Time
 	outputDir string
-	writer    Writer
+	behavior  Behavior
 }
 
 func NewGenerator(options map[string]string) generator.LanguageGenerator {
@@ -42,7 +42,7 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 		&generator.BaseGenerator{Options: options},
 		globals.Now,
 		"",
-		new(defaultWriter),
+		new(defaultBehavior),
 	}
 }
 
@@ -82,13 +82,13 @@ func (g *Generator) getIsSetType(s *parser.Struct) (IsSetType, string) {
 
 func (g *Generator) SetupGenerator(outputDir string) error {
 	g.outputDir = outputDir
-	pluginName, ok := g.Options["plugin"]
+	pluginsStr, ok := g.Options["plugins"]
 	if ok {
-		p, err := plugin.LoadPlugin(pluginName)
+		plugins, err := plugin.LoadPlugins(strings.Split(pluginsStr, ":"))
 		if err != nil {
 			return err
 		}
-		g.writer = &pluginWriter{plugin: p, defaultWriter: g.writer}
+		g.behavior = newPluginBehavior(plugins, g.behavior)
 	}
 	return nil
 }
@@ -381,7 +381,7 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 		if idx == len(enum.Values)-1 {
 			terminator = ";"
 		}
-		enumValue, err := g.writer.WriteEnumValue(enum, value)
+		enumValue, err := g.behavior.GenerateEnumValue(enum, value)
 		if err != nil {
 			return err
 		}
@@ -390,7 +390,7 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents += "\n"
 
 	// Generate enum fields.
-	fields, err := g.writer.WriteEnumFields(enum)
+	fields, err := g.behavior.GenerateEnumFields(enum)
 	if err != nil {
 		return err
 	}
@@ -400,7 +400,7 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents += "\n"
 
 	// Generate enum constructors.
-	constructors, err := g.writer.WriteEnumConstructors(enum)
+	constructors, err := g.behavior.GenerateEnumConstructors(enum)
 	if err != nil {
 		return err
 	}
@@ -409,25 +409,13 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	}
 
 	// Generate enum methods.
-	methods, err := g.writer.WriteEnumMethods(enum)
+	methods, err := g.behavior.GenerateEnumMethods(enum)
 	if err != nil {
 		return err
 	}
 	for _, method := range methods {
 		contents += method.format(1, tab)
 	}
-
-	// TODO: extract to writer.
-	contents += fmt.Sprintf(tab+"public static %s findByValue(int value) {\n", enum.Name)
-	contents += tabtab + "switch (value) {\n"
-	for _, value := range enum.Values {
-		contents += fmt.Sprintf(tabtabtab+"case %d:\n", value.Value)
-		contents += fmt.Sprintf(tabtabtabtab+"return %s;\n", value.Name)
-	}
-	contents += tabtabtab + "default:\n"
-	contents += tabtabtabtab + "return null;\n"
-	contents += tabtab + "}\n"
-	contents += tab + "}\n"
 
 	contents += "}\n"
 

@@ -11,12 +11,16 @@ func (f *FrugalPlugin) Lookup(name string) interface{} {
 	return symbol
 }
 
-// LoadPlugins opens the FrugalPlugin with the given name and returns an error
-// if it fails to open.
-func LoadPlugin(name string) (*FrugalPlugin, error) {
-	p, err := plugin.Open(name)
-	if err != nil {
-		return nil, err
+// LoadPlugins opens the FrugalPlugins with the given names and returns an
+// error if any fail to open.
+func LoadPlugins(names []string) ([]*FrugalPlugin, error) {
+	plugins := make([]*FrugalPlugin, len(names))
+	for i, name := range names {
+		p, err := plugin.Open(name)
+		if err != nil {
+			return nil, err
+		}
+		plugins[i] = &FrugalPlugin{p}
 	}
-	return &FrugalPlugin{p}, nil
+	return plugins, nil
 }
