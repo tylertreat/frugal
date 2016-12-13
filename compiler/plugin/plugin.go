@@ -2,10 +2,13 @@ package plugin
 
 import "plugin"
 
+// FrugalPlugin wraps a plugin.Plugin.
 type FrugalPlugin struct {
+	Name   string
 	plugin *plugin.Plugin
 }
 
+// Lookup returns the symbol with the given name or nil if it doesn't exist.
 func (f *FrugalPlugin) Lookup(name string) interface{} {
 	symbol, _ := f.plugin.Lookup(name)
 	return symbol
@@ -20,7 +23,7 @@ func LoadPlugins(names []string) ([]*FrugalPlugin, error) {
 		if err != nil {
 			return nil, err
 		}
-		plugins[i] = &FrugalPlugin{p}
+		plugins[i] = &FrugalPlugin{Name: name, plugin: p}
 	}
 	return plugins, nil
 }
