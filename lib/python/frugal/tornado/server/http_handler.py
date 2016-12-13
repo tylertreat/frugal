@@ -41,12 +41,13 @@ class FTornadoHttpHandler(RequestHandler):
         iprot = self._protocol_factory.get_protocol(
             TMemoryBuffer(payload[4:])
         )
+
         # TODO could be better with this limit
         otrans = TMemoryOutputBuffer(0)
         oprot = self._protocol_factory.get_protocol(otrans)
 
         try:
-            yield self._processor.process(iprot, oprot)
+            yield gen.maybe_future(self._processor.process(iprot, oprot))
         except TApplicationException:
             # Continue so the exception is sent to the client
             pass

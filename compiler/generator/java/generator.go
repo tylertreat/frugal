@@ -290,11 +290,17 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) 
 		case parser.LocalEnum:
 			return "", fmt.Sprintf("%s.%s", idCtx.Enum.Name, idCtx.EnumValue.Name)
 		case parser.IncludeConstant:
-			return "", fmt.Sprintf("%s.%sConstants.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang),
-				idCtx.Include.Name, idCtx.Constant.Name)
+			include := idCtx.Include.Name
+			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+				include = namespace.Value
+			}
+			return "", fmt.Sprintf("%s.%sConstants.%s", include, idCtx.Include.Name, idCtx.Constant.Name)
 		case parser.IncludeEnum:
-			return "", fmt.Sprintf("%s.%s.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang),
-				idCtx.Enum.Name, idCtx.EnumValue.Name)
+			include := idCtx.Include.Name
+			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+				include = namespace.Value
+			}
+			return "", fmt.Sprintf("%s.%s.%s", include, idCtx.Enum.Name, idCtx.EnumValue.Name)
 		default:
 			panic(fmt.Sprintf("The Identifier %s has unexpected type %d", identifier, idCtx.Type))
 		}
@@ -2169,8 +2175,8 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, succi
 }
 
 func (g *Generator) GetOutputDir(dir string) string {
-	if pkg, ok := g.Frugal.Thrift.Namespace(lang); ok {
-		path := generator.GetPackageComponents(pkg)
+	if namespace := g.Frugal.Thrift.Namespace(lang); namespace != nil {
+		path := generator.GetPackageComponents(namespace.Value)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	}
 	return dir
@@ -2224,11 +2230,11 @@ func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
 }
 
 func (g *Generator) generatePackage(file *os.File) error {
-	pkg, ok := g.Frugal.Thrift.Namespace(lang)
-	if !ok {
+	namespace := g.Frugal.Thrift.Namespace(lang)
+	if namespace == nil {
 		return nil
 	}
-	_, err := file.WriteString(fmt.Sprintf("package %s;", pkg))
+	_, err := file.WriteString(fmt.Sprintf("package %s;", namespace.Value))
 	return err
 }
 
@@ -2659,7 +2665,12 @@ func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 	serviceName := "F" + service.ExtendsService()
 	include := service.ExtendsInclude()
 	if include != "" {
-		serviceName = g.Frugal.NamespaceForInclude(include, lang) + "." + serviceName
+		if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+			include = namespace.Value
+		} else {
+			return serviceName
+		}
+		serviceName = include + "." + serviceName
 	}
 	return serviceName
 }
@@ -3190,9 +3201,8 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 	param := t.ParamName()
 	include := t.IncludeName()
 	if include != "" {
-		parsed := g.Frugal.ParsedIncludes[include]
-		if namespace, ok := parsed.Thrift.Namespace(lang); ok {
-			return fmt.Sprintf("%s.%s", namespace, param)
+		if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+			return fmt.Sprintf("%s.%s", namespace.Value, param)
 		}
 	}
 	return param

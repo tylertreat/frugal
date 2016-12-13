@@ -2,8 +2,9 @@ package python
 
 import (
 	"fmt"
-	"strings"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
@@ -33,13 +34,17 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from thrift.Thrift import TMessageType\n"
 
 	// Import include modules.
-	for _, include := range s.ReferencedIncludes() {
-		namespace := a.getPackageNamespace(include)
+	includes, err := s.ReferencedIncludes()
+	if err != nil {
+		return err
+	}
+	for _, include := range includes {
+		namespace := a.getPackageNamespace(filepath.Base(include.Name))
 		imports += fmt.Sprintf("import %s.ttypes\n", namespace)
 		imports += fmt.Sprintf("import %s.constants\n", namespace)
 		if s.Extends != "" {
 			extendsSlice := strings.Split(s.Extends, ".")
-			extendsService := extendsSlice[len(extendsSlice) - 1]
+			extendsService := extendsSlice[len(extendsSlice)-1]
 			imports += fmt.Sprintf("import %s.f_%s\n", namespace, extendsService)
 		}
 	}
@@ -48,7 +53,7 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	// Import this service's modules.
 	imports += "from .ttypes import *\n"
 
-	_, err := file.WriteString(imports)
+	_, err = file.WriteString(imports)
 	return err
 }
 
