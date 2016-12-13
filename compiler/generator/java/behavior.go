@@ -197,6 +197,7 @@ func newPluginBehavior(plugins []*plugin.FrugalPlugin, defaultBehavior Behavior)
 				}
 				symbols = append(symbols, symbol)
 				b.symbolTable[hook] = symbols
+				fmt.Printf("Loaded plugin behavior %s from %s\n", hook, plugin.Name)
 			}
 		}
 	}
