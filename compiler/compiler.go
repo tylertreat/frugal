@@ -126,12 +126,7 @@ func generateFrugalRec(f *parser.Frugal, g generator.ProgramGenerator, generate 
 		}
 	}
 
-	// Generate Frugal code.
-	logv(fmt.Sprintf("Generating \"%s\" Frugal code for %s", lang, frugal.File))
-	if err := g.Generate(frugal, fullOut, genWithFrugal); err != nil {
-		return nil, fmt.Errorf("Code generation failed: %s", err)
-	}
-	return frugal, nil
+	return nil
 }
 
 // getProgramGenerator resolves the ProgramGenerator for the given language. It
