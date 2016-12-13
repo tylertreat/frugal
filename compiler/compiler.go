@@ -113,7 +113,7 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 	}
 
 	// Process options for specific generators.
-	lang, options, err := cleanGenParam(gen)
+	lang, options, err := CleanGenParam(gen)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,10 @@ func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
 
 	// Generate Frugal code.
 	logv(fmt.Sprintf("Generating \"%s\" Frugal code for %s", lang, frugal.File))
-	return frugal, g.Generate(frugal, fullOut, genWithFrugal)
+	if err := g.Generate(frugal, fullOut, genWithFrugal); err != nil {
+		return nil, fmt.Errorf("Code generation failed: %s", err)
+	}
+	return frugal, nil
 }
 
 // getProgramGenerator resolves the ProgramGenerator for the given language. It
@@ -245,9 +248,10 @@ func exists(path string) bool {
 	return err == nil
 }
 
-// cleanGenParam processes a string that includes an optional trailing
+// CleanGenParam processes a string that includes an optional trailing
 // options set.  Format: <language>:<name>=<value>,<name>=<value>,...
-func cleanGenParam(gen string) (lang string, options map[string]string, err error) {
+// TODO: unexport once plugin workaround is no longer needed in main.go.
+func CleanGenParam(gen string) (lang string, options map[string]string, err error) {
 	lang = gen
 	options = make(map[string]string)
 	if strings.Contains(gen, ":") {

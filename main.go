@@ -3,13 +3,15 @@ package main
 import (
 	"fmt"
 	"os"
+	"plugin"
 	"sort"
+
+	"github.com/urfave/cli"
 
 	"github.com/Workiva/frugal/compiler"
 	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
-	"github.com/urfave/cli"
 )
 
 const defaultTopicDelim = "."
@@ -121,6 +123,18 @@ func main() {
 			UseVendor:          useVendor,
 		}
 
+		// TODO: This is currently a workaround to https://github.com/golang/go/issues/17928.
+		// Remove once that has been released.
+		_, opts, err := compiler.CleanGenParam(gen)
+		if err != nil {
+			fmt.Printf("Failed to generate %s:\n\t%s\n", options.File, err.Error())
+			os.Exit(1)
+		}
+		if err := preloadPlugin(opts); err != nil {
+			fmt.Printf("Failed to generate %s:\n\t%s\n", options.File, err.Error())
+			os.Exit(1)
+		}
+
 		// Handle panics for graceful error messages.
 		defer func() {
 			if r := recover(); r != nil {
@@ -129,7 +143,6 @@ func main() {
 			}
 		}()
 
-		var err error
 		auditor := parser.NewAuditor()
 		for _, options.File = range c.Args() {
 			if audit == "" {
@@ -173,4 +186,16 @@ func genUsage() string {
 		langPrefix = "\n"
 	}
 	return usage
+}
+
+// preloadPlugin opens the Plugin specified by the "plugin" option, if any.
+// This is currently a workaround to https://github.com/golang/go/issues/17928.
+// TODO: remove once workaround is no longer needed.
+func preloadPlugin(options map[string]string) error {
+	name, ok := options["plugin"]
+	if !ok {
+		return nil
+	}
+	_, err := plugin.Open(name)
+	return err
 }
