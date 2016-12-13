@@ -1166,6 +1166,24 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 		contents += tabtab + fmt.Sprintf("self.add_to_processor_map('%s', _%s(Method(handler.%s, middleware), self.get_write_lock()))\n",
 			method.Name, method.Name, method.Name)
 	}
+	contents += "\n"
+
+	contents += tab + "def add_middleware(self, middleware):\n"
+	contents += g.generateDocString([]string{
+		"Adds the given ServiceMiddleware to the FProcessor. This should ",
+		"only called before the server is started.",
+		"Args:",
+		tab + "middleware: ServiceMiddleware",
+	}, tabtab)
+	contents += tabtab + "if middleware and not isinstance(middleware, list):\n"
+	contents += tabtabtab + "middleware = [middleware]\n"
+	contents += "\n"
+
+	for _, method := range service.Methods {
+		contents += tabtab + fmt.Sprintf("processor_function = self.get_from_processor_map('%s')\n", method.Name)
+		contents += tabtab + "processor_function._handler._add_middleware(middleware)\n"
+	}
+
 	contents += "\n\n"
 	return contents
 }

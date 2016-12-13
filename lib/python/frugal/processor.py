@@ -12,6 +12,13 @@ logger = logging.getLogger(__name__)
 class FProcessorFunction(object):
 
     def process(self, ctx, iprot, oprot):
+        """Processes the request from the input protocol and writes the
+        response to the output protocol.
+
+        Args:
+            iprot: input FProtocol
+            oprot: output FProtocol
+        """
         pass
 
 
@@ -21,6 +28,22 @@ class FProcessor(object):
     """
 
     def process(self, iprot, oprot):
+        """Processes the request from the input protocol and write the
+        response to the output protocol.
+
+        Args:
+            iprot: input FProtocol
+            oprot: output FProtocol
+        """
+        pass
+
+    def add_middleware(self, serviceMiddleware):
+        """Adds the given ServiceMiddleware to the FProcessor. This should
+        only called before the server is started.
+
+        Args:
+            serviceMiddleware: ServiceMiddleware
+        """
         pass
 
 
@@ -41,6 +64,10 @@ class FBaseProcessor(FProcessor):
         """
         with self._function_map_lock:
             self._processor_function_map[key] = proc
+
+    def get_from_processor_map(self, key):
+        """returns a processor function by key"""
+        return self._processor_function_map[key]
 
     def get_write_lock(self):
         """Return the write lock."""
@@ -94,3 +121,7 @@ class FBaseProcessor(FProcessor):
 
         logger.exception(ex)
         raise ex
+
+    def add_middleware(self, serviceMiddleware):
+
+        raise NotImplementedError("use add_middleware of the extender of this class")

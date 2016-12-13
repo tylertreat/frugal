@@ -723,6 +723,35 @@ class Processor(actual_base.python.f_BaseFoo.Processor):
         self.add_to_processor_map('getMyInt', _getMyInt(Method(handler.getMyInt, middleware), self.get_write_lock()))
         self.add_to_processor_map('use_subdir_struct', _use_subdir_struct(Method(handler.use_subdir_struct, middleware), self.get_write_lock()))
 
+    def add_middleware(self, middleware):
+        """
+        Adds the given ServiceMiddleware to the FProcessor. This should 
+        only called before the server is started.
+        Args:
+            middleware: ServiceMiddleware
+        """
+        if middleware and not isinstance(middleware, list):
+            middleware = [middleware]
+
+        processor_function = self.get_from_processor_map('ping')
+        processor_function._handler._add_middleware(middleware)
+        processor_function = self.get_from_processor_map('blah')
+        processor_function._handler._add_middleware(middleware)
+        processor_function = self.get_from_processor_map('oneWay')
+        processor_function._handler._add_middleware(middleware)
+        processor_function = self.get_from_processor_map('bin_method')
+        processor_function._handler._add_middleware(middleware)
+        processor_function = self.get_from_processor_map('param_modifiers')
+        processor_function._handler._add_middleware(middleware)
+        processor_function = self.get_from_processor_map('underlying_types_test')
+        processor_function._handler._add_middleware(middleware)
+        processor_function = self.get_from_processor_map('getThing')
+        processor_function._handler._add_middleware(middleware)
+        processor_function = self.get_from_processor_map('getMyInt')
+        processor_function._handler._add_middleware(middleware)
+        processor_function = self.get_from_processor_map('use_subdir_struct')
+        processor_function._handler._add_middleware(middleware)
+
 
 class _ping(FProcessorFunction):
 

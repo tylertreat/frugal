@@ -53,6 +53,13 @@ class Method(object):
 
         return self._handler(self._proxied_method, *args)
 
+    def _add_middleware(self, middleware):
+        handler = self._handler
+        if middleware:
+            for m in middleware:
+                handler = m(handler)
+        self._handler = handler
+
 
 def _compose_middleware(method, middleware):
     """Apply the given ServiceMiddleware to the provided method and return

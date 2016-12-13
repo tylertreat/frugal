@@ -215,6 +215,22 @@ class Processor(FBaseProcessor):
         self.add_to_processor_map('enterAlbumGiveaway', _enterAlbumGiveaway(Method(handler.enterAlbumGiveaway, middleware), self.get_write_lock()))
 
 
+    def add_middleware(self, middleware):
+        """
+        Adds the given ServiceMiddleware to the FProcessor. This should 
+        only called before the server is started.
+        Args:
+            middleware: ServiceMiddleware
+        """
+        if middleware and not isinstance(middleware, list):
+            middleware = [middleware]
+
+        processor_function = self.get_from_processor_map('buyAlbum')
+        processor_function._handler._add_middleware(middleware)
+        processor_function = self.get_from_processor_map('enterAlbumGiveaway')
+        processor_function._handler._add_middleware(middleware)
+
+
 class _buyAlbum(FProcessorFunction):
 
     def __init__(self, handler, lock):

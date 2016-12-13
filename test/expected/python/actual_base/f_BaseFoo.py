@@ -102,6 +102,19 @@ class Processor(FBaseProcessor):
         super(Processor, self).__init__()
         self.add_to_processor_map('basePing', _basePing(Method(handler.basePing, middleware), self.get_write_lock()))
 
+    def add_middleware(self, middleware):
+        """
+        Adds the given ServiceMiddleware to the FProcessor. This should 
+        only called before the server is started.
+        Args:
+            middleware: ServiceMiddleware
+        """
+        if middleware and not isinstance(middleware, list):
+            middleware = [middleware]
+
+        processor_function = self.get_from_processor_map('basePing')
+        processor_function._handler._add_middleware(middleware)
+
 
 class _basePing(FProcessorFunction):
 

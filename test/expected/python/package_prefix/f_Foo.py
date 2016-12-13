@@ -108,6 +108,19 @@ class Processor(generic_package_prefix.actual_base.python.f_BaseFoo.Processor):
         super(Processor, self).__init__(handler, middleware=middleware)
         self.add_to_processor_map('get_thing', _get_thing(Method(handler.get_thing, middleware), self.get_write_lock()))
 
+    def add_middleware(self, middleware):
+        """
+        Adds the given ServiceMiddleware to the FProcessor. This should 
+        only called before the server is started.
+        Args:
+            middleware: ServiceMiddleware
+        """
+        if middleware and not isinstance(middleware, list):
+            middleware = [middleware]
+
+        processor_function = self.get_from_processor_map('get_thing')
+        processor_function._handler._add_middleware(middleware)
+
 
 class _get_thing(FProcessorFunction):
 

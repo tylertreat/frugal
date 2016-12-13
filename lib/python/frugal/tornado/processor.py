@@ -42,6 +42,10 @@ class FBaseProcessor(FProcessor):
         """
         self._processor_function_map[key] = proc
 
+    def get_from_processor_map(self, key):
+        """returns a processor function by key"""
+        return self._processor_function_map[key]
+
     def get_write_lock(self):
         """Return the write lock."""
         return self._write_lock
