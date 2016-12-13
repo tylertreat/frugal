@@ -78,7 +78,7 @@ func StartClient(
 			close(resp)
 		})
 		ctx := frugal.NewFContext("Call")
-		ctx.AddRequestHeader(preableHeader, preamble)
+		ctx.AddRequestHeader(preambleHeader, preamble)
 		ctx.AddRequestHeader(rambleHeader, ramble)
 		event := &frugaltest.Event{Message: "Sending call"}
 		fmt.Print("Publishing... ")

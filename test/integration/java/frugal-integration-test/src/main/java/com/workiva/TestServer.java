@@ -215,7 +215,15 @@ public class TestServer {
                         try {
                             publisher.open();
                             String preamble = context.getRequestHeader(utils.PREAMBLE_HEADER);
+                            if (preamble == null || "".equals(preamble)) {
+                                System.out.println("Client did not provide preamble header");
+                                return;
+                            }
                             String ramble = context.getRequestHeader(utils.RAMBLE_HEADER);
+                            if (ramble == null || "".equals(ramble)) {
+                                System.out.println("Client did not provide ramble header");
+                                return;
+                            }
                             event = new Event(1, "received call");
                             publisher.publishEventCreated(new FContext("Call"), preamble, ramble, "response", Integer.toString(port), event);
 

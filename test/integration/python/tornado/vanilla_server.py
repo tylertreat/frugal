@@ -71,7 +71,13 @@ def pub_sub(subject, protocol_factory):
     def response_handler(context, event):
         print("received {} : {}".format(context, event))
         preamble = context.get_request_header(PREAMBLE_HEADER)
+        if preamble is None or preamble == "":
+            logging.error("Client did not provide preamble header")
+            return
         ramble = context.get_request_header(RAMBLE_HEADER)
+        if ramble is None or ramble == "":
+            logging.error("Client did not provide ramble header")
+            return
         response_event = Event(Message="Sending Response")
         response_context = FContext("Call")
 

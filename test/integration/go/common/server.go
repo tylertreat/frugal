@@ -54,7 +54,7 @@ func StartServer(
 				panic(err)
 			}
 			defer publisher.Close()
-			preamble, ok := ctx.RequestHeader(preableHeader)
+			preamble, ok := ctx.RequestHeader(preambleHeader)
 			if !ok {
 				log.Fatal("Client did provide a preamble header")
 			}

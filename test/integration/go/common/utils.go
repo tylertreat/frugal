@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	preableHeader = "preamble"
-	rambleHeader  = "ramble"
+	preambleHeader = "preamble"
+	rambleHeader   = "ramble"
 )
 
 func getNatsConn() *nats.Conn {
