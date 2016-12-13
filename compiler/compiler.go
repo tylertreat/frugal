@@ -175,7 +175,7 @@ func CleanGenParam(gen string) (lang string, options map[string]string, err erro
 	lang = gen
 	options = make(map[string]string)
 	if strings.Contains(gen, ":") {
-		s := strings.Split(gen, ":")
+		s := strings.SplitN(gen, ":", 2)
 		lang = s[0]
 		dirty := s[1]
 		var optionArray []string

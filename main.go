@@ -5,6 +5,7 @@ import (
 	"os"
 	"plugin"
 	"sort"
+	"strings"
 
 	"github.com/urfave/cli"
 
@@ -123,7 +124,7 @@ func main() {
 			fmt.Printf("Failed to generate %s:\n\t%s\n", options.File, err.Error())
 			os.Exit(1)
 		}
-		if err := preloadPlugin(opts); err != nil {
+		if err := preloadPlugins(opts); err != nil {
 			fmt.Printf("Failed to generate %s:\n\t%s\n", options.File, err.Error())
 			os.Exit(1)
 		}
@@ -181,14 +182,19 @@ func genUsage() string {
 	return usage
 }
 
-// preloadPlugin opens the Plugin specified by the "plugin" option, if any.
+// preloadPlugins opens the Plugins specified by the "plugins" option, if any.
 // This is currently a workaround to https://github.com/golang/go/issues/17928.
 // TODO: remove once workaround is no longer needed.
-func preloadPlugin(options map[string]string) error {
-	name, ok := options["plugin"]
+func preloadPlugins(options map[string]string) error {
+	namesStr, ok := options["plugins"]
 	if !ok {
 		return nil
 	}
-	_, err := plugin.Open(name)
-	return err
+	names := strings.Split(namesStr, ":")
+	for _, name := range names {
+		if _, err := plugin.Open(name); err != nil {
+			return err
+		}
+	}
+	return nil
 }
