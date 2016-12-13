@@ -8,7 +8,7 @@ import (
 )
 
 // Version of the Frugal compiler.
-const Version = "1.23.0"
+const Version = "1.24.0"
 
 // Global variables.
 var (
@@ -19,6 +19,7 @@ var (
 	DryRun          bool
 	Recurse         bool
 	Verbose         bool
+	UseVendor       bool
 	Now             = time.Now()
 	IntermediateIDL = []string{}
 	CompiledFiles   = make(map[string]*parser.Frugal)
@@ -36,6 +37,7 @@ func Reset() {
 	DryRun = false
 	Recurse = false
 	Verbose = false
+	UseVendor = false
 	Now = time.Now()
 	IntermediateIDL = []string{}
 	CompiledFiles = make(map[string]*parser.Frugal)
