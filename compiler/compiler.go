@@ -18,18 +18,20 @@ import (
 
 // Options contains compiler options for code generation.
 type Options struct {
-	File               string // Frugal file to generate
-	Gen                string // Language to generate
-	Out                string // Output location for generated code
-	Delim              string // Token delimiter for scope topics
-	DryRun             bool   // Do not generate code
-	Recurse            bool   // Generate includes
-	Verbose            bool   // Verbose mode
+	File      string // Frugal file to generate
+	Gen       string // Language to generate
+	Out       string // Output location for generated code
+	Delim     string // Token delimiter for scope topics
+	DryRun    bool   // Do not generate code
+	Recurse   bool   // Generate includes
+	Verbose   bool   // Verbose mode
+	UseVendor bool   // Do not generate code for vendored includes
 }
 
 // Compile parses the Frugal IDL and generates code for it, returning an error
 // if something failed.
 func Compile(options Options) error {
+	var err error
 	defer globals.Reset()
 	globals.TopicDelimiter = options.Delim
 	globals.Gen = options.Gen
@@ -37,13 +39,13 @@ func Compile(options Options) error {
 	globals.DryRun = options.DryRun
 	globals.Recurse = options.Recurse
 	globals.Verbose = options.Verbose
+	globals.UseVendor = options.UseVendor
 	globals.FileDir = filepath.Dir(options.File)
 
 	absFile, err := filepath.Abs(options.File)
 	if err != nil {
 		return err
 	}
-
 
 	frugal, err := parseFrugal(absFile)
 	if err != nil {
@@ -64,37 +66,22 @@ func parseFrugal(file string) (*parser.Frugal, error) {
 
 // generateFrugal generates code for a frugal struct.
 func generateFrugal(f *parser.Frugal) error {
-	var (
-		gen    = globals.Gen
-	)
+	var gen = globals.Gen
 
 	lang, options, err := cleanGenParam(gen)
 	if err != nil {
 		return err
 	}
 
-	// Resolve Frugal generator.
-	var g generator.ProgramGenerator
-	switch lang {
-	case "dart":
-		g = generator.NewProgramGenerator(dartlang.NewGenerator(options), false)
-	case "go":
-		// Make sure the package prefix ends with a "/"
-		if package_prefix, ok := options["package_prefix"]; ok {
-			if package_prefix != "" && !strings.HasSuffix(package_prefix, "/") {
-				options["package_prefix"] = package_prefix + "/"
-			}
-		}
+	// TODO: Address as needed when more languages support vendoring.
+	if globals.UseVendor && lang != "go" {
+		return fmt.Errorf("-use-vendor not supported by %s", lang)
+	}
 
-		g = generator.NewProgramGenerator(golang.NewGenerator(options), false)
-	case "java":
-		g = generator.NewProgramGenerator(java.NewGenerator(options), true)
-	case "py":
-		g = generator.NewProgramGenerator(python.NewGenerator(options), true)
-	case "html":
-		g = html.NewGenerator(options)
-	default:
-		return fmt.Errorf("Invalid gen value %s", gen)
+	// Resolve Frugal generator.
+	g, err := getProgramGenerator(lang, options)
+	if err != nil {
+		return err
 	}
 
 	// The parsed frugal contains everything needed to generate
@@ -139,6 +126,34 @@ func generateFrugalRec(f *parser.Frugal, g generator.ProgramGenerator, generate 
 	}
 
 	return nil
+}
+
+// getProgramGenerator resolves the ProgramGenerator for the given language. It
+// returns an error if the language is not supported.
+func getProgramGenerator(lang string, options map[string]string) (generator.ProgramGenerator, error) {
+	var g generator.ProgramGenerator
+	switch lang {
+	case "dart":
+		g = generator.NewProgramGenerator(dartlang.NewGenerator(options), false)
+	case "go":
+		// Make sure the package prefix ends with a "/"
+		if package_prefix, ok := options["package_prefix"]; ok {
+			if package_prefix != "" && !strings.HasSuffix(package_prefix, "/") {
+				options["package_prefix"] = package_prefix + "/"
+			}
+		}
+
+		g = generator.NewProgramGenerator(golang.NewGenerator(options), false)
+	case "java":
+		g = generator.NewProgramGenerator(java.NewGenerator(options), true)
+	case "py":
+		g = generator.NewProgramGenerator(python.NewGenerator(options), true)
+	case "html":
+		g = html.NewGenerator(options)
+	default:
+		return nil, fmt.Errorf("Invalid gen value %s", lang)
+	}
+	return g, nil
 }
 
 // exists determines if the file at the given path exists.

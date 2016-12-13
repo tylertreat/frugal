@@ -19,6 +19,7 @@ var (
 	DryRun         bool
 	Recurse        bool
 	Verbose        bool
+	UseVendor      bool
 	Now            = time.Now()
 	CompiledFiles  = make(map[string]*parser.Frugal)
 )
@@ -32,6 +33,7 @@ func Reset() {
 	DryRun = false
 	Recurse = false
 	Verbose = false
+	UseVendor = false
 	Now = time.Now()
 	CompiledFiles = make(map[string]*parser.Frugal)
 }

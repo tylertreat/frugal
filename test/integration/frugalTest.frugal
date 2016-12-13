@@ -39,11 +39,17 @@ enum Numberz
 typedef i64 id
 const id DEFAULT_ID = -1
 
-// acct = "foo"
-// mem = "Client"
+// preamble: client specified prefix stored in the FContext as the "preamble" 
+//           header. Servers should subscribe to "*" for this prefix and 
+//           publish a response with the preamble prefix specified by the 
+//           client.
+// ramble: client specified prefix stored in the FContext as the "ramble" 
+//         header. Servers should subscribe to "*" for this prefix and 
+//         publish a response with the preamble prefix specified by the 
+//         client.
 // role = "call" or "response"
 // RID = port - random ID to differentiate each client/server pair
-scope Events prefix {acct}.{mem}.{role}.{RID} {
+scope Events prefix {preamble}.{ramble}.{role}.{RID} {
     EventCreated: Event
 }
 

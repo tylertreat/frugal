@@ -11,6 +11,9 @@ import java.util.List;
 
 public class utils {
 
+    public static String PREAMBLE_HEADER = "preamble";
+    public static String RAMBLE_HEADER = "ramble";
+
     public static TProtocolFactory whichProtocolFactory (String protocol_type) throws Exception {
         List<String> validProtocols = new ArrayList<>();
         validProtocols.add("binary");

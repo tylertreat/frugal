@@ -484,8 +484,10 @@ public class TestClient {
             FSubscriberTransportFactory subscriberFactory = new FNatsSubscriberTransport.Factory(conn);
             FScopeProvider provider = new FScopeProvider(publisherFactory, subscriberFactory, new FProtocolFactory(protocolFactory));
 
+            String preamble = "foo";
+            String ramble = "bar";
             EventsSubscriber.Iface subscriber = new EventsSubscriber.Client(provider);
-            subscriber.subscribeEventCreated("foo", "Client", "response", Integer.toString(port), (ctx, event) -> {
+            subscriber.subscribeEventCreated(preamble, ramble, "response", Integer.toString(port), (ctx, event) -> {
                 System.out.println("Response received " + event);
                 queue.add(1);
             });
@@ -493,7 +495,10 @@ public class TestClient {
             EventsPublisher.Iface publisher = new EventsPublisher.Client(provider);
             publisher.open();
             Event event = new Event(1, "Sending Call");
-            publisher.publishEventCreated(new FContext("Call"), "foo", "Client", "call", Integer.toString(port), event);
+            FContext ctx = new FContext("Call");
+            ctx.addRequestHeader(utils.PREAMBLE_HEADER, preamble);
+            ctx.addRequestHeader(utils.RAMBLE_HEADER, ramble);
+            publisher.publishEventCreated(ctx, preamble, ramble, "call", Integer.toString(port), event);
             System.out.print("Publishing...    ");
 
             try {

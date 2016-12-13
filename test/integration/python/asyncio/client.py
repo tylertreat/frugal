@@ -112,13 +112,17 @@ async def test_pub_sub(nats_client, protocol_factory, port):
             response_received = True
 
     # Subscribe to response
+    preamble = "foo"
+    ramble = "bar"
     subscriber = EventsSubscriber(provider)
-    await subscriber.subscribe_EventCreated("foo", "Client", "response", "{}".format(port), subscribe_handler)
+    await subscriber.subscribe_EventCreated(preamble, ramble, "response", "{}".format(port), subscribe_handler)
 
     event = Event(Message="Sending Call")
     context = FContext("Call")
+    context.set_request_header(PREAMBLE_HEADER, preamble)
+    context.set_request_header(RAMBLE_HEADER, ramble)
     print("Publishing...")
-    await publisher.publish_EventCreated(context, "foo", "Client", "call", "{}".format(port), event)
+    await publisher.publish_EventCreated(context, preamble, ramble, "call", "{}".format(port), event)
 
     # Loop with sleep interval. Fail if not received within 3 seconds
     total_time = 0

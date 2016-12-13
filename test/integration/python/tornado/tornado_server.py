@@ -25,6 +25,7 @@ from frugal.tornado.transport import FNatsPublisherTransportFactory
 from frugal.tornado.transport import FNatsSubscriberTransportFactory
 
 from common.FrugalTestHandler import FrugalTestHandler
+from common.utils import *
 
 from nats.io.client import Client as NATS
 from thrift.protocol.TBinaryProtocol import TBinaryProtocolFactory
@@ -107,15 +108,23 @@ def main():
     @gen.coroutine
     def response_handler(context, event):
         print("received {} : {}".format(context, event))
+        preamble = context.get_request_header(PREAMBLE_HEADER)
+        if preamble is None or preamble == "":
+            logging.error("Client did not provide preamble header")
+            return
+        ramble = context.get_request_header(RAMBLE_HEADER)
+        if ramble is None or ramble == "":
+            logging.error("Client did not provide ramble header")
+            return
         response_event = Event(Message="Sending Response")
         response_context = FContext("Call")
         global publisher
         global port
-        yield publisher.publish_EventCreated(response_context, "foo", "Client", "response", "{}".format(port), response_event)
+        yield publisher.publish_EventCreated(response_context, preamble, ramble, "response", "{}".format(port), response_event)
         print("Published event={}".format(response_event))
 
     subscriber = EventsSubscriber(provider)
-    yield subscriber.subscribe_EventCreated("foo", "Client", "call", "{}".format(args.port), response_handler)
+    yield subscriber.subscribe_EventCreated("*", "*", "call", "{}".format(args.port), response_handler)
 
 
 def healthcheck(port):

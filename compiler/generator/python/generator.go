@@ -104,7 +104,10 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	contents += "from .ttypes import *\n\n"
 
 	for _, include := range g.Frugal.Thrift.Includes {
-		namespace := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang)
+		namespace := filepath.Base(include.Name)
+		if ns := g.Frugal.NamespaceForInclude(namespace, lang); ns != nil {
+			namespace = ns.Value
+		}
 		contents += fmt.Sprintf("import %s.ttypes\n", namespace)
 		contents += fmt.Sprintf("import %s.constants\n", namespace)
 		contents += "\n"
@@ -138,9 +141,17 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 		case parser.LocalEnum:
 			return idCtx.Type, fmt.Sprintf("%s.%s", idCtx.Enum.Name, idCtx.EnumValue.Name)
 		case parser.IncludeConstant:
-			return idCtx.Type, fmt.Sprintf("%s.constants.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang), idCtx.Constant.Name)
+			include := idCtx.Include.Name
+			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+				include = namespace.Value
+			}
+			return idCtx.Type, fmt.Sprintf("%s.constants.%s", include, idCtx.Constant.Name)
 		case parser.IncludeEnum:
-			return idCtx.Type, fmt.Sprintf("%s.ttypes.%s.%s", g.Frugal.NamespaceForInclude(idCtx.Include.Name, lang), idCtx.Enum.Name, idCtx.EnumValue.Name)
+			include := idCtx.Include.Name
+			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+				include = namespace.Value
+			}
+			return idCtx.Type, fmt.Sprintf("%s.ttypes.%s.%s", include, idCtx.Enum.Name, idCtx.EnumValue.Name)
 		default:
 			panic(fmt.Sprintf("The Identifier %s has unexpected type %d", identifier, idCtx.Type))
 		}
@@ -634,8 +645,8 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 
 // GetOutputDir returns the output directory for generated files.
 func (g *Generator) GetOutputDir(dir string) string {
-	if pkg, ok := g.Frugal.Thrift.Namespace(lang); ok {
-		path := generator.GetPackageComponents(pkg)
+	if namespace := g.Frugal.Thrift.Namespace(lang); namespace != nil {
+		path := generator.GetPackageComponents(namespace.Value)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
 		dir = filepath.Join(dir, g.Frugal.Name)
@@ -734,7 +745,11 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from thrift.Thrift import TMessageType\n\n"
 
 	imports += g.generateServiceExtendsImport(s)
-	imports += g.generateServiceIncludeImports(s)
+	if imp, err := g.generateServiceIncludeImports(s); err != nil {
+		return err
+	} else {
+		imports += imp
+	}
 
 	_, err := file.WriteString(imports)
 	return err
@@ -749,17 +764,21 @@ func (g *Generator) generateServiceExtendsImport(s *parser.Service) string {
 	return fmt.Sprintf("from . import f_%s\n", s.Extends)
 }
 
-func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
+func (g *Generator) generateServiceIncludeImports(s *parser.Service) (string, error) {
 	imports := ""
 
 	// Import include modules.
-	for _, include := range s.ReferencedIncludes() {
-		namespace := g.getPackageNamespace(include)
+	includes, err := s.ReferencedIncludes()
+	if err != nil {
+		return "", err
+	}
+	for _, include := range includes {
+		namespace := g.getPackageNamespace(filepath.Base(include.Name))
 		imports += fmt.Sprintf("import %s.ttypes\n", namespace)
 		imports += fmt.Sprintf("import %s.constants\n", namespace)
 		if s.Extends != "" {
 			extendsSlice := strings.Split(s.Extends, ".")
-			extendsService := extendsSlice[len(extendsSlice) - 1]
+			extendsService := extendsSlice[len(extendsSlice)-1]
 			imports += fmt.Sprintf("import %s.f_%s\n", namespace, extendsService)
 		}
 	}
@@ -767,7 +786,7 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) string {
 	// Import this service's modules.
 	imports += "from .ttypes import *\n"
 
-	return imports
+	return imports, nil
 }
 
 // GenerateScopeImports generates necessary imports for the given scope.
@@ -1108,7 +1127,6 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	return contents
 }
 
-
 func (g *Generator) generateServiceInterface(service *parser.Service) string {
 	contents := ""
 	if service.Extends != "" {
@@ -1365,8 +1383,11 @@ func (g *Generator) getTType(t *parser.Type) string {
 }
 
 func (g *Generator) getPackageNamespace(include string) string {
-	namespace := g.Frugal.NamespaceForInclude(include, lang)
-	return g.Options["package_prefix"] + namespace
+	name := include
+	if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+		name = namespace.Value
+	}
+	return g.Options["package_prefix"] + name
 }
 
 func getAsyncOpt(options map[string]string) concurrencyModel {

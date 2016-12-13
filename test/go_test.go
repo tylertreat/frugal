@@ -31,7 +31,7 @@ func TestValidGoFrugalCompiler(t *testing.T) {
 		Recurse: true,
 	}
 	if err := compiler.Compile(options); err != nil {
-		t.Fatal("unexpected error", err)
+		t.Fatal("Unexpected error", err)
 	}
 
 	baseFtypesPath := filepath.Join(outputDir, "actual_base", "golang", "f_types.go")
@@ -45,4 +45,59 @@ func TestValidGoFrugalCompiler(t *testing.T) {
 	compareFiles(t, "expected/go/variety/f_foo_service.txt", varietyFfooPath)
 	varietyFeventsScopePath := filepath.Join(outputDir, "variety", "f_events_scope.go")
 	compareFiles(t, "expected/go/variety/f_events_scope.txt", varietyFeventsScopePath)
+}
+
+// Ensures correct import references are used when -use-vendor is set and the
+// IDL has a vendored include.
+func TestValidGoVendor(t *testing.T) {
+	options := compiler.Options{
+		File:      includeVendor,
+		Gen:       "go:package_prefix=github.com/Workiva/frugal/test/out/",
+		Out:       outputDir,
+		Delim:     delim,
+		UseVendor: true,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("Unexpected error", err)
+	}
+
+	myScopePath := filepath.Join(outputDir, "include_vendor", "f_myscope_scope.go")
+	compareFiles(t, "expected/go/vendor/f_myscope_scope.txt", myScopePath)
+	myServicePath := filepath.Join(outputDir, "include_vendor", "f_myservice_service.go")
+	compareFiles(t, "expected/go/vendor/f_myservice_service.txt", myServicePath)
+	ftypesPath := filepath.Join(outputDir, "include_vendor", "f_types.go")
+	compareFiles(t, "expected/go/vendor/f_types.txt", ftypesPath)
+}
+
+// Ensures an error is returned when -use-vendor is set and the vendored
+// include does not specify a path.
+func TestValidGoVendorPathNotSpecified(t *testing.T) {
+	options := compiler.Options{
+		File:      includeVendorNoPath,
+		Gen:       "go:package_prefix=github.com/Workiva/frugal/test/out/",
+		Out:       outputDir,
+		Delim:     delim,
+		UseVendor: true,
+	}
+	if err := compiler.Compile(options); err == nil {
+		t.Fatal("Expected error")
+	}
+}
+
+// Ensures the target IDL is generated when -use-vendor is set and it has a
+// vendored namespace.
+func TestValidGoVendorNamespaceTargetGenerate(t *testing.T) {
+	options := compiler.Options{
+		File:      vendorNamespace,
+		Gen:       "go:package_prefix=github.com/Workiva/frugal/test/out/",
+		Out:       outputDir,
+		Delim:     delim,
+		UseVendor: true,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("Unexpected error", err)
+	}
+
+	ftypesPath := filepath.Join(outputDir, "vendor_namespace", "f_types.go")
+	compareFiles(t, "expected/go/vendor_namespace/f_types.txt", ftypesPath)
 }

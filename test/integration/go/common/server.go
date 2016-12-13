@@ -46,7 +46,7 @@ func StartServer(
 		subscriber := frugaltest.NewEventsSubscriber(provider)
 
 		// TODO: Document SubscribeEventCreated "user" cannot contain spaces
-		_, err = subscriber.SubscribeEventCreated("foo", "Client", "call", fmt.Sprintf("%d", port), func(ctx frugal.FContext, e *frugaltest.Event) {
+		_, err = subscriber.SubscribeEventCreated("*", "*", "call", fmt.Sprintf("%d", port), func(ctx frugal.FContext, e *frugaltest.Event) {
 			// Send a message back to the client
 			fmt.Printf("received %+v : %+v\n", ctx, e)
 			publisher := frugaltest.NewEventsPublisher(provider)
@@ -54,9 +54,18 @@ func StartServer(
 				panic(err)
 			}
 			defer publisher.Close()
+			preamble, ok := ctx.RequestHeader(preambleHeader)
+			if !ok {
+				log.Fatal("Client did provide a preamble header")
+			}
+			ramble, ok := ctx.RequestHeader(rambleHeader)
+			if !ok {
+				log.Fatal("Client did provide a ramble header")
+			}
+
 			ctx = frugal.NewFContext("Response")
 			event := &frugaltest.Event{Message: "received call"}
-			if err := publisher.PublishEventCreated(ctx, "foo", "Client", "response", fmt.Sprintf("%d", port), event); err != nil {
+			if err := publisher.PublishEventCreated(ctx, preamble, ramble, "response", fmt.Sprintf("%d", port), event); err != nil {
 				panic(err)
 			}
 			// Explicitly flushing the publish to ensure it is sent before the main thread exits
@@ -94,7 +103,7 @@ func StartServer(
 				frugal.NewFProtocolFactory(protocolFactory)))
 		server = &httpServer{hostPort: hostPort}
 	}
-	fmt.Println("Starting %v server...", transport)
+	fmt.Printf("Starting %v server...\n", transport)
 	if err := server.Serve(); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
