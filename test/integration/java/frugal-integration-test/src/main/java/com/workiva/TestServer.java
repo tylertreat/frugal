@@ -209,13 +209,23 @@ public class TestServer {
                 FScopeProvider provider = new FScopeProvider(publisherFactory, subscriberFactory, protocolFactory);
                 EventsSubscriber.Iface subscriber = new EventsSubscriber.Client(provider);
                 try {
-                    subscriber.subscribeEventCreated("foo", "Client", "call", Integer.toString(port), (context, event) -> {
+                    subscriber.subscribeEventCreated("*", "*", "call", Integer.toString(port), (context, event) -> {
                         System.out.format("received " + context + " : " + event);
                         EventsPublisher.Iface publisher = new EventsPublisher.Client(provider);
                         try {
                             publisher.open();
+                            String preamble = context.getRequestHeader(utils.PREAMBLE_HEADER);
+                            if (preamble == null || "".equals(preamble)) {
+                                System.out.println("Client did not provide preamble header");
+                                return;
+                            }
+                            String ramble = context.getRequestHeader(utils.RAMBLE_HEADER);
+                            if (ramble == null || "".equals(ramble)) {
+                                System.out.println("Client did not provide ramble header");
+                                return;
+                            }
                             event = new Event(1, "received call");
-                            publisher.publishEventCreated(new FContext("Call"), "foo", "Client", "response", Integer.toString(port), event);
+                            publisher.publishEventCreated(new FContext("Call"), preamble, ramble, "response", Integer.toString(port), event);
 
                         } catch (TException e) {
                             System.out.println("Error opening publisher to respond" + e.getMessage());
