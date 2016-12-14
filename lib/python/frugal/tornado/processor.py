@@ -11,10 +11,39 @@ logger = logging.getLogger(__name__)
 
 
 class FProcessorFunction(object):
+    """FProcessorFunction is a generic object that exposes a single process
+    call, which is used to handle a method invocation. FProcessorFunction
+    should be implemented by the generated code."""
+
+    def __init__(self, handler, lock):
+        """
+            Args:
+                handler: frugal.middleware.Method
+                lock: tornado.locks.Lock
+        """
+        self._handler = handler
+        self._lock = lock
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):
+        """Process the request from the input protocol and write the
+        response to the output protocol.
+
+        Args:
+            iprot: input FProtocol
+            oprot: output FProtocol
+        """
         pass
+
+    def add_middleware(self, middleware):
+        """Add the given middleware to the FProcessorFunction
+        This should only be called before the server is started.
+
+            Args:
+             middleware: ServiceMiddleware
+         """
+
+        self._handler.add_middleware(middleware)
 
 
 class FProcessor(object):
@@ -23,10 +52,29 @@ class FProcessor(object):
     """
     @gen.coroutine
     def process(self, iprot, oprot):
+        """Process the request from the input protocol and write the
+        response to the output protocol.
+
+        Args:
+            iprot: input FProtocol
+            oprot: output FProtocol
+        """
+        pass
+
+    def add_middleware(self, middleware):
+        """Add the given middleware to the FProcessor
+        This should only be called before the server is started.
+
+            Args:
+             middleware: ServiceMiddleware
+         """
         pass
 
 
 class FBaseProcessor(FProcessor):
+    """FBaseProcessor is a base implementation of FProcessor. FProcessors
+    should extend this and map FProcessorFunctions. This should only be used
+    by generated code."""
 
     def __init__(self):
         """Create new instance of FBaseProcessor that will process requests."""
@@ -94,3 +142,17 @@ class FBaseProcessor(FProcessor):
 
         logger.exception(ex)
         raise ex
+
+    def add_middleware(self, middleware):
+        """Add the given middleware to the FProcessor.
+        This should only be called before the server is started.
+
+        Args:
+            middleware: ServiceMiddleware
+        """
+
+        if middleware and not isinstance(middleware, list):
+            middleware = [middleware]
+
+        for proc in self._processor_function_map.values():
+            proc.add_middleware(middleware)

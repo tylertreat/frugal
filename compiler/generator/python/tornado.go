@@ -193,8 +193,8 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents := ""
 	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
-	contents += tabtab + "self._handler = handler\n"
-	contents += tabtab + "self._lock = lock\n\n"
+	contents += tabtab + fmt.Sprintf("super(_%s, self).__init__(handler, lock)\n", method.Name)
+	contents += "\n"
 
 	contents += tab + "@gen.coroutine\n"
 	contents += tab + "def process(self, ctx, iprot, oprot):\n"

@@ -56,6 +56,13 @@ def main():
     # Close the transport
     transport.close()
 
+def logging_middleware(next):
+    def handler(method, args):
+        print('==== CALLING %s ====', method.__name__)
+        ret = next(method, args)
+        print('==== CALLED  %s ====', method.__name__)
+        return ret
+    return handler
 
 if __name__ == '__main__':
     main()

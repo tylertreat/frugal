@@ -10,6 +10,7 @@ from frugal.protocol import FProtocolFactory
 from frugal.tornado.server.http_handler import FTornadoHttpHandler
 
 sys.path.append('gen-py.tornado')
+from http_client import logging_middleware
 from v1.music.f_Store import Processor as FStoreProcessor  # noqa
 from v1.music.f_Store import Iface  # noqa
 from v1.music.ttypes import Album, Track, PerfRightsOrg  # noqa
@@ -64,6 +65,10 @@ if __name__ == "__main__":
     # Incoming requests to the processor are passed to the handler.
     # Results from the handler are returned back to the client.
     processor = FStoreProcessor(StoreHandler())
+
+    # Optionally add middleware to the processor before starting the server.
+    # add_middleware can take a list or single middleware.
+    processor.add_middleware(logging_middleware)
 
     # Create a new music store server using the a tornado handler
     # and our configured processor and protocol

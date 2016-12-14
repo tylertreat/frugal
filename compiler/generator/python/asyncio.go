@@ -263,6 +263,7 @@ func (g *AsyncIOGenerator) generateProcessor(service *parser.Service) string {
 			method.Name, method.Name, method.Name)
 	}
 	contents += "\n\n"
+
 	return contents
 }
 
@@ -270,8 +271,8 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents := ""
 	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
-	contents += tabtab + "self._handler = handler\n"
-	contents += tabtab + "self._write_lock = lock\n\n"
+	contents += tabtab + fmt.Sprintf("super(_%s, self).__init__(handler, lock)\n", method.Name)
+	contents += "\n"
 
 	contents += tab + "async def process(self, ctx, iprot, oprot):\n"
 	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
@@ -289,7 +290,7 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 		contents += tabtabtab + "result.success = ret\n"
 	}
 	contents += tabtab + "except FRateLimitException as ex:\n"
-	contents += tabtabtab + "async with self._write_lock:\n"
+	contents += tabtabtab + "async with self._lock:\n"
 	contents += tabtabtabtab + fmt.Sprintf(
 		"_write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
 		method.Name)
@@ -300,12 +301,12 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	}
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
-		contents += tabtabtab + "async with self._write_lock:\n"
+		contents += tabtabtab + "async with self._lock:\n"
 		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.args[0])\n", method.Name)
 	}
 	contents += tabtabtab + "raise e from None\n"
 	if !method.Oneway {
-		contents += tabtab + "async with self._write_lock:\n"
+		contents += tabtab + "async with self._lock:\n"
 		contents += tabtabtab + "try:\n"
 		contents += tabtabtabtab + "oprot.write_response_headers(ctx)\n"
 		contents += tabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", method.Name)

@@ -564,8 +564,7 @@ class Processor(actual_base.python.f_BaseFoo.Processor):
 class _ping(FProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_ping, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = ping_args()
@@ -593,8 +592,7 @@ class _ping(FProcessorFunction):
 class _blah(FProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_blah, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = blah_args()
@@ -626,8 +624,7 @@ class _blah(FProcessorFunction):
 class _oneWay(FProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_oneWay, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = oneWay_args()
@@ -646,8 +643,7 @@ class _oneWay(FProcessorFunction):
 class _bin_method(FProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_bin_method, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = bin_method_args()
@@ -677,8 +673,7 @@ class _bin_method(FProcessorFunction):
 class _param_modifiers(FProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_param_modifiers, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = param_modifiers_args()
@@ -706,8 +701,7 @@ class _param_modifiers(FProcessorFunction):
 class _underlying_types_test(FProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_underlying_types_test, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = underlying_types_test_args()
@@ -735,8 +729,7 @@ class _underlying_types_test(FProcessorFunction):
 class _getThing(FProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_getThing, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = getThing_args()
@@ -764,8 +757,7 @@ class _getThing(FProcessorFunction):
 class _getMyInt(FProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_getMyInt, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = getMyInt_args()
@@ -793,8 +785,7 @@ class _getMyInt(FProcessorFunction):
 class _use_subdir_struct(FProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_use_subdir_struct, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = use_subdir_struct_args()

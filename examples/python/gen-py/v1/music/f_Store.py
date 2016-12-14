@@ -176,8 +176,7 @@ class Processor(FBaseProcessor):
 class _buyAlbum(FProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_buyAlbum, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = buyAlbum_args()
@@ -207,8 +206,7 @@ class _buyAlbum(FProcessorFunction):
 class _enterAlbumGiveaway(FProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_enterAlbumGiveaway, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = enterAlbumGiveaway_args()

@@ -132,8 +132,7 @@ class Processor(FBaseProcessor):
 class _basePing(FProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_basePing, self).__init__(handler, lock)
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):

@@ -53,6 +53,20 @@ class Method(object):
 
         return self._handler(self._proxied_method, *args)
 
+    def add_middleware(self, middleware):
+        """Add the given middleware to the Method.
+        This should only be called before the server is started.
+
+            Args:
+             middleware: ServiceMiddleware
+         """
+
+        handler = self._handler
+        if middleware:
+            for m in middleware:
+                handler = m(handler)
+        self._handler = handler
+
 
 def _compose_middleware(method, middleware):
     """Apply the given ServiceMiddleware to the provided method and return
