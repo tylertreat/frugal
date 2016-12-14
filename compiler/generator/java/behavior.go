@@ -36,19 +36,6 @@ var hooks = []string{
 // which the plugins are provided. For example, if plugins A, B, and C all
 // implement GenerateEnumValue, only A's will be invoked.
 type Behavior interface {
-	// GenerateEnumValue is called when generating enum values, e.g.
-	//
-	// public enum MyEnum implements TEnum {
-	//     FOO(1), // produced by a call to GenerateEnumValue
-	//     BAR(2),
-	//     BAZ(3);
-	//
-	//     ...
-	//
-	// If multiple plugins implement this hook, only one will be invoked. Note
-	// that Frugal requires the int value for wire-level compatibility.
-	GenerateEnumValue(enum *parser.Enum, value *parser.EnumValue) (EnumValue, error)
-
 	// GenerateEnumFields is called when generating enum fields, e.g.
 	//
 	// private final int value; // produced by a call to GenerateEnumFields
@@ -65,6 +52,19 @@ type Behavior interface {
 	//
 	// Note that Frugal requires the int value for wire-level compatibility.
 	GenerateEnumConstructors(enum *parser.Enum) ([]EnumConstructor, error)
+
+	// GenerateEnumValue is called when generating enum values, e.g.
+	//
+	// public enum MyEnum implements TEnum {
+	//     FOO(1), // produced by a call to GenerateEnumValue
+	//     BAR(2),
+	//     BAZ(3);
+	//
+	//     ...
+	//
+	// If multiple plugins implement this hook, only one will be invoked. Note
+	// that Frugal requires the int value for wire-level compatibility.
+	GenerateEnumValue(enum *parser.Enum, value *parser.EnumValue) (EnumValue, error)
 
 	// GenerateEnumMethods is called when generating enum methods, e.g.
 	//

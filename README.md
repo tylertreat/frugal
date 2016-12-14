@@ -325,19 +325,6 @@ $ frugal -gen java:plugins=plugin.so my_idl.frugal
 #### Supported Behavior Hooks (Java):
 
 ```go
-// GenerateEnumValue is called when generating enum values, e.g.
-//
-// public enum MyEnum implements TEnum {
-//     FOO(1), // produced by a call to GenerateEnumValue
-//     BAR(2),
-//     BAZ(3);
-//
-//     ...
-//
-// If multiple plugins implement this hook, only one will be invoked. Note that
-// Frugal requires the int value for wire-level compatibility.
-GenerateEnumValue(*parser.Enum, *parser.EnumValue) (java.EnumValue, error)
-
 // GenerateEnumFields is called when generating enum fields, e.g.
 //
 // private final int value; // produced by a call to GenerateEnumFields
@@ -354,6 +341,19 @@ GenerateEnumFields(enum *parser.Enum) ([]java.Field, error)
 // Note that Frugal requires the int value for wire-level compatibility.
 GenerateEnumConstructors(enum *parser.Enum) ([]java.EnumConstructor, error)
 
+// GenerateEnumValue is called when generating enum values, e.g.
+//
+// public enum MyEnum implements TEnum {
+//     FOO(1), // produced by a call to GenerateEnumValue
+//     BAR(2),
+//     BAZ(3);
+//
+//     ...
+//
+// If multiple plugins implement this hook, only one will be invoked. Note that
+// Frugal requires the int value for wire-level compatibility.
+GenerateEnumValue(*parser.Enum, *parser.EnumValue) (java.EnumValue, error)
+
 // GenerateEnumMethods is called when generating enum methods, e.g.
 //
 // public int getValue() {
@@ -361,7 +361,7 @@ GenerateEnumConstructors(enum *parser.Enum) ([]java.EnumConstructor, error)
 // }
 //
 // Note that Frugal requires the int value for wire-level compatibility.
-GenerateEnumMethods(enum *parser.Enum) ([]Method, error)
+GenerateEnumMethods(enum *parser.Enum) ([]java.Method, error)
 ```
 
 There are example plugins in the [examples](examples/plugins) directory.
