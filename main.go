@@ -3,9 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"plugin"
 	"sort"
-	"strings"
 
 	"github.com/urfave/cli"
 
@@ -18,15 +16,15 @@ import (
 const defaultTopicDelim = "."
 
 var (
-	help               bool
-	gen                string
-	out                string
-	delim              string
-	audit              string
-	recurse            bool
-	verbose            bool
-	version            bool
-	useVendor          bool
+	help      bool
+	gen       string
+	out       string
+	delim     string
+	audit     string
+	recurse   bool
+	verbose   bool
+	version   bool
+	useVendor bool
 )
 
 func main() {
@@ -109,12 +107,12 @@ func main() {
 		}
 
 		options := compiler.Options{
-			Gen:                gen,
-			Out:                out,
-			Delim:              delim,
-			Recurse:            recurse,
-			Verbose:            verbose,
-			UseVendor:          useVendor,
+			Gen:       gen,
+			Out:       out,
+			Delim:     delim,
+			Recurse:   recurse,
+			Verbose:   verbose,
+			UseVendor: useVendor,
 		}
 
 		// TODO: This is currently a workaround to https://github.com/golang/go/issues/17928.
@@ -180,21 +178,4 @@ func genUsage() string {
 		langPrefix = "\n"
 	}
 	return usage
-}
-
-// preloadPlugins opens the Plugins specified by the "plugins" option, if any.
-// This is currently a workaround to https://github.com/golang/go/issues/17928.
-// TODO: remove once workaround is no longer needed.
-func preloadPlugins(options map[string]string) error {
-	namesStr, ok := options["plugins"]
-	if !ok {
-		return nil
-	}
-	names := strings.Split(namesStr, ":")
-	for _, name := range names {
-		if _, err := plugin.Open(name); err != nil {
-			return err
-		}
-	}
-	return nil
 }

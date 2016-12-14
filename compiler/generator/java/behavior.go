@@ -181,7 +181,7 @@ type pluginBehavior struct {
 
 // newPluginBehavior returns a Behavior which is augmented by the given
 // FrugalPlugins.
-func newPluginBehavior(plugins []*plugin.FrugalPlugin, defaultBehavior Behavior) Behavior {
+func newPluginBehavior(plugins []plugin.FrugalPlugin, defaultBehavior Behavior) Behavior {
 	b := &pluginBehavior{
 		symbolTable:     make(map[string][]interface{}),
 		defaultBehavior: defaultBehavior,
@@ -197,7 +197,7 @@ func newPluginBehavior(plugins []*plugin.FrugalPlugin, defaultBehavior Behavior)
 				}
 				symbols = append(symbols, symbol)
 				b.symbolTable[hook] = symbols
-				fmt.Printf("Loaded plugin behavior %s from %s\n", hook, plugin.Name)
+				fmt.Printf("Loaded plugin behavior %s from %s\n", hook, plugin.Name())
 			}
 		}
 	}
