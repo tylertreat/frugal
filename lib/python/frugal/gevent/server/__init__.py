@@ -1,7 +1,5 @@
-from frugal.tornado.server.http_handler import FTornadoHttpHandler
-from frugal.tornado.server.nats_server import FNatsTornadoServer
+from frugal.gevent.server.nats_server import FNatsGeventServer
 
 __all__ = [
-    'FTornadoHttpHandler',
-    'FNatsTornadoServer',
+    'FNatGeventServer',
 ]

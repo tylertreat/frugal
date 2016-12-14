@@ -1,14 +1,13 @@
-from nats.io.utils import new_inbox
+from gnats.client.utils import new_inbox
 from thrift.transport.TTransport import TTransportException
-from tornado import gen
 
-from frugal.tornado.transport import FTornadoTransport
+from frugal.gevent.transport import FGeventTransport
 
 _NOT_OPEN = 'NATS not connected.'
 _ALREAD_OPEN = 'NATS transport already open.'
 
 
-class FNatsTransport(FTornadoTransport):
+class FNatsTransport(FGeventTransport):
     """FNatsTransport is an extension of FTransport. This is a "stateless"
     transport in the sense that there is no connection with a server. A request
     is simply published to a subject and responses are received on another
@@ -27,12 +26,11 @@ class FNatsTransport(FTornadoTransport):
         self._subject = subject
         self._inbox = inbox or new_inbox()
         self._is_open = False
-        self._sub_id = None
+        self._sub = None
 
     def is_open(self):
         return self._is_open and self._nats_client.is_connected
 
-    @gen.coroutine
     def open(self):
         """Subscribes to the configured inbox subject"""
         if not self._nats_client.is_connected:
@@ -44,24 +42,21 @@ class FNatsTransport(FTornadoTransport):
 
         cb = self._on_message_callback
         inbox = self._inbox
-        self._sub_id = yield self._nats_client.subscribe_async(inbox, cb=cb)
+        self._sub = self._nats_client.subscribe(inbox, cb=cb)
 
         self._is_open = True
 
-    @gen.coroutine
     def _on_message_callback(self, msg):
-        yield self.execute_frame(msg.data)
+        self.execute_frame(msg.data)
 
-    @gen.coroutine
     def close(self):
         """Unsubscribes from the inbox subject"""
-        if not self._sub_id:
+        if not self._sub:
             return
-        yield self._nats_client.flush()
-        yield self._nats_client.unsubscribe(self._sub_id)
+        self._nats_client.flush()
+        self._nats_client.unsubscribe(self._sub.id)
         self._is_open = False
 
-    @gen.coroutine
     def send(self, data):
         """Sends the buffered bytes over NATS"""
         if not self.is_open():
@@ -69,6 +64,6 @@ class FNatsTransport(FTornadoTransport):
 
         subject = self._subject
         inbox = self._inbox
-        yield self._nats_client.publish_request(subject, inbox, data)
+        self._nats_client.publish(subject, data, reply=inbox)
         # If we don't flush here the ioloop waits for 2 minutes before flushing
-        yield self._nats_client.flush()
+        self._nats_client.flush()
