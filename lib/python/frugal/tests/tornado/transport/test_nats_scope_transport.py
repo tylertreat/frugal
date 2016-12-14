@@ -6,7 +6,7 @@ from tornado.testing import gen_test, AsyncTestCase
 from thrift.transport.TTransport import TTransportException
 
 from frugal.exceptions import FMessageSizeException
-from frugal.tornado.transport import FNatsPublisherTranpsort
+from frugal.tornado.transport import FNatsPublisherTransport
 from frugal.tornado.transport import FNatsSubscriberTransport
 
 
@@ -17,7 +17,7 @@ class TestFNatsScopeTransport(AsyncTestCase):
 
         self.nats_client = mock.Mock()
 
-        self.publisher_transport = FNatsPublisherTranpsort(self.nats_client)
+        self.publisher_transport = FNatsPublisherTransport(self.nats_client)
         self.subscriber_transport = FNatsSubscriberTransport(
             self.nats_client, "Q")
 
