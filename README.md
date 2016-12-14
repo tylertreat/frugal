@@ -364,6 +364,8 @@ GenerateEnumConstructors(enum *parser.Enum) ([]java.EnumConstructor, error)
 GenerateEnumMethods(enum *parser.Enum) ([]Method, error)
 ```
 
+There are example plugins in the [examples](examples/plugins) directory.
+
 ## Thrift Parity
 
 Frugal is intended to be a superset of Thrift, meaning valid Thrift should be
