@@ -23,7 +23,7 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "import inspect\n\n"
 
 	imports += "from frugal.aio.processor import FBaseProcessor\n"
-	imports += "from frugal.aio.processor import FBaseProcessorFunction\n"
+	imports += "from frugal.aio.processor import FProcessorFunction\n"
 	imports += "from frugal.exceptions import FApplicationException\n"
 	imports += "from frugal.exceptions import FMessageSizeException\n"
 	imports += "from frugal.exceptions import FRateLimitException\n"
@@ -269,7 +269,7 @@ func (g *AsyncIOGenerator) generateProcessor(service *parser.Service) string {
 
 func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) string {
 	contents := ""
-	contents += fmt.Sprintf("class _%s(FBaseProcessorFunction):\n\n", method.Name)
+	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
 	contents += tabtab + fmt.Sprintf("super(_%s, self).__init__(handler, lock)\n", method.Name)
 	contents += "\n"

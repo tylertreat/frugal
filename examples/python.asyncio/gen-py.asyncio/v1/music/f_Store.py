@@ -11,7 +11,7 @@ from datetime import timedelta
 import inspect
 
 from frugal.aio.processor import FBaseProcessor
-from frugal.aio.processor import FBaseProcessorFunction
+from frugal.aio.processor import FProcessorFunction
 from frugal.exceptions import FApplicationException
 from frugal.exceptions import FMessageSizeException
 from frugal.exceptions import FRateLimitException
@@ -215,7 +215,7 @@ class Processor(FBaseProcessor):
         self.add_to_processor_map('enterAlbumGiveaway', _enterAlbumGiveaway(Method(handler.enterAlbumGiveaway, middleware), self.get_write_lock()))
 
 
-class _buyAlbum(FBaseProcessorFunction):
+class _buyAlbum(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_buyAlbum, self).__init__(handler, lock)
@@ -251,7 +251,7 @@ class _buyAlbum(FBaseProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "buyAlbum", e.args[0])
 
 
-class _enterAlbumGiveaway(FBaseProcessorFunction):
+class _enterAlbumGiveaway(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_enterAlbumGiveaway, self).__init__(handler, lock)

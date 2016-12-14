@@ -10,6 +10,7 @@ from frugal.protocol import FProtocolFactory
 from frugal.tornado.server.http_handler import FTornadoHttpHandler
 
 sys.path.append('gen-py.tornado')
+from http_client import logging_middleware
 from v1.music.f_Store import Processor as FStoreProcessor  # noqa
 from v1.music.f_Store import Iface  # noqa
 from v1.music.ttypes import Album, Track, PerfRightsOrg  # noqa
@@ -24,17 +25,6 @@ formatter = logging.Formatter(
     '%(asctime)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 root.addHandler(ch)
-
-
-def logging_middleware(next):
-    def invocation_handler(method, args):
-        service = '%s.%s' % (method.im_self.__module__,
-                             method.im_class.__name__)
-        print '==== CALLING %s.%s ====' % (service, method.im_func.func_name)
-        ret = next(method, args)
-        print '==== CALLED  %s.%s ====' % (service, method.im_func.func_name)
-        return ret
-    return invocation_handler
 
 
 class StoreHandler(Iface):

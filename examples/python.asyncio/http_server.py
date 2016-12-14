@@ -10,6 +10,7 @@ from frugal.protocol import FProtocolFactory
 from frugal.aio.server.http_handler import new_http_handler
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py.asyncio"))
+from http_client import logging_middleware
 from v1.music.f_Store import Processor as FStoreProcessor  # noqa
 from v1.music.f_Store import Iface  # noqa
 from v1.music.ttypes import Album, Track  # noqa
@@ -24,15 +25,6 @@ formatter = logging.Formatter(
     '%(asctime)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 root.addHandler(ch)
-
-
-def logging_middleware(next):
-    def handler(method, args):
-        print('==== CALLING %s ====', method.__name__)
-        ret = next(method, args)
-        print('==== CALLED  %s ====', method.__name__)
-        return ret
-    return handler
 
 
 class StoreHandler(Iface):

@@ -740,7 +740,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.exceptions import FRateLimitException\n"
 	imports += "from frugal.processor import FBaseProcessor\n"
-	imports += "from frugal.processor import FBaseProcessorFunction\n"
+	imports += "from frugal.processor import FProcessorFunction\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n\n"
 
@@ -1190,7 +1190,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 
 func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	contents := ""
-	contents += fmt.Sprintf("class _%s(FBaseProcessorFunction):\n\n", method.Name)
+	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
 	contents += tabtab + fmt.Sprintf("super(_%s, self).__init__(handler, lock)\n", method.Name)
 	contents += "\n"

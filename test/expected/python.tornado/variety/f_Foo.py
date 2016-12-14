@@ -15,7 +15,7 @@ from frugal.exceptions import FRateLimitException
 from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.tornado.processor import FBaseProcessor
-from frugal.tornado.processor import FBaseProcessorFunction
+from frugal.tornado.processor import FProcessorFunction
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
@@ -724,7 +724,7 @@ class Processor(actual_base.python.f_BaseFoo.Processor):
         self.add_to_processor_map('use_subdir_struct', _use_subdir_struct(Method(handler.use_subdir_struct, middleware), self.get_write_lock()))
 
 
-class _ping(FBaseProcessorFunction):
+class _ping(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_ping, self).__init__(handler, lock)
@@ -756,7 +756,7 @@ class _ping(FBaseProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "ping", e.message)
 
 
-class _blah(FBaseProcessorFunction):
+class _blah(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_blah, self).__init__(handler, lock)
@@ -792,7 +792,7 @@ class _blah(FBaseProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "blah", e.message)
 
 
-class _oneWay(FBaseProcessorFunction):
+class _oneWay(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_oneWay, self).__init__(handler, lock)
@@ -812,7 +812,7 @@ class _oneWay(FBaseProcessorFunction):
             raise e
 
 
-class _bin_method(FBaseProcessorFunction):
+class _bin_method(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_bin_method, self).__init__(handler, lock)
@@ -846,7 +846,7 @@ class _bin_method(FBaseProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "bin_method", e.message)
 
 
-class _param_modifiers(FBaseProcessorFunction):
+class _param_modifiers(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_param_modifiers, self).__init__(handler, lock)
@@ -878,7 +878,7 @@ class _param_modifiers(FBaseProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "param_modifiers", e.message)
 
 
-class _underlying_types_test(FBaseProcessorFunction):
+class _underlying_types_test(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_underlying_types_test, self).__init__(handler, lock)
@@ -910,7 +910,7 @@ class _underlying_types_test(FBaseProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "underlying_types_test", e.message)
 
 
-class _getThing(FBaseProcessorFunction):
+class _getThing(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_getThing, self).__init__(handler, lock)
@@ -942,7 +942,7 @@ class _getThing(FBaseProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "getThing", e.message)
 
 
-class _getMyInt(FBaseProcessorFunction):
+class _getMyInt(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_getMyInt, self).__init__(handler, lock)
@@ -974,7 +974,7 @@ class _getMyInt(FBaseProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "getMyInt", e.message)
 
 
-class _use_subdir_struct(FBaseProcessorFunction):
+class _use_subdir_struct(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_use_subdir_struct, self).__init__(handler, lock)

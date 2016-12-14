@@ -25,7 +25,7 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from frugal.exceptions import FTimeoutException\n"
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.tornado.processor import FBaseProcessor\n"
-	imports += "from frugal.tornado.processor import FBaseProcessorFunction\n"
+	imports += "from frugal.tornado.processor import FProcessorFunction\n"
 	imports += "from frugal.transport import TMemoryOutputBuffer\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
@@ -191,7 +191,7 @@ func (t *TornadoGenerator) generateServer(service *parser.Service) string {
 
 func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) string {
 	contents := ""
-	contents += fmt.Sprintf("class _%s(FBaseProcessorFunction):\n\n", method.Name)
+	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
 	contents += tabtab + fmt.Sprintf("super(_%s, self).__init__(handler, lock)\n", method.Name)
 	contents += "\n"

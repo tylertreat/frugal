@@ -11,7 +11,7 @@ from threading import Lock
 from frugal.middleware import Method
 from frugal.exceptions import FRateLimitException
 from frugal.processor import FBaseProcessor
-from frugal.processor import FBaseProcessorFunction
+from frugal.processor import FProcessorFunction
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 
@@ -561,7 +561,7 @@ class Processor(actual_base.python.f_BaseFoo.Processor):
         self.add_to_processor_map('use_subdir_struct', _use_subdir_struct(Method(handler.use_subdir_struct, middleware), self.get_write_lock()))
 
 
-class _ping(FBaseProcessorFunction):
+class _ping(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_ping, self).__init__(handler, lock)
@@ -589,7 +589,7 @@ class _ping(FBaseProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _blah(FBaseProcessorFunction):
+class _blah(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_blah, self).__init__(handler, lock)
@@ -621,7 +621,7 @@ class _blah(FBaseProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _oneWay(FBaseProcessorFunction):
+class _oneWay(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_oneWay, self).__init__(handler, lock)
@@ -640,7 +640,7 @@ class _oneWay(FBaseProcessorFunction):
             raise e
 
 
-class _bin_method(FBaseProcessorFunction):
+class _bin_method(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_bin_method, self).__init__(handler, lock)
@@ -670,7 +670,7 @@ class _bin_method(FBaseProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _param_modifiers(FBaseProcessorFunction):
+class _param_modifiers(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_param_modifiers, self).__init__(handler, lock)
@@ -698,7 +698,7 @@ class _param_modifiers(FBaseProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _underlying_types_test(FBaseProcessorFunction):
+class _underlying_types_test(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_underlying_types_test, self).__init__(handler, lock)
@@ -726,7 +726,7 @@ class _underlying_types_test(FBaseProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _getThing(FBaseProcessorFunction):
+class _getThing(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_getThing, self).__init__(handler, lock)
@@ -754,7 +754,7 @@ class _getThing(FBaseProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _getMyInt(FBaseProcessorFunction):
+class _getMyInt(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_getMyInt, self).__init__(handler, lock)
@@ -782,7 +782,7 @@ class _getMyInt(FBaseProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _use_subdir_struct(FBaseProcessorFunction):
+class _use_subdir_struct(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_use_subdir_struct, self).__init__(handler, lock)

@@ -11,7 +11,7 @@ from threading import Lock
 from frugal.middleware import Method
 from frugal.exceptions import FRateLimitException
 from frugal.processor import FBaseProcessor
-from frugal.processor import FBaseProcessorFunction
+from frugal.processor import FProcessorFunction
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 
@@ -109,7 +109,7 @@ class Processor(generic_package_prefix.actual_base.python.f_BaseFoo.Processor):
         self.add_to_processor_map('get_thing', _get_thing(Method(handler.get_thing, middleware), self.get_write_lock()))
 
 
-class _get_thing(FBaseProcessorFunction):
+class _get_thing(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_get_thing, self).__init__(handler, lock)

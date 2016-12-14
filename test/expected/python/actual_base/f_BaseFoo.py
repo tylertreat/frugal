@@ -11,7 +11,7 @@ from threading import Lock
 from frugal.middleware import Method
 from frugal.exceptions import FRateLimitException
 from frugal.processor import FBaseProcessor
-from frugal.processor import FBaseProcessorFunction
+from frugal.processor import FProcessorFunction
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 
@@ -103,7 +103,7 @@ class Processor(FBaseProcessor):
         self.add_to_processor_map('basePing', _basePing(Method(handler.basePing, middleware), self.get_write_lock()))
 
 
-class _basePing(FBaseProcessorFunction):
+class _basePing(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_basePing, self).__init__(handler, lock)

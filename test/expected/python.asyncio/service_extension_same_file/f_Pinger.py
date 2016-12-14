@@ -11,7 +11,7 @@ from datetime import timedelta
 import inspect
 
 from frugal.aio.processor import FBaseProcessor
-from frugal.aio.processor import FBaseProcessorFunction
+from frugal.aio.processor import FProcessorFunction
 from frugal.exceptions import FApplicationException
 from frugal.exceptions import FMessageSizeException
 from frugal.exceptions import FRateLimitException
@@ -124,7 +124,7 @@ class Processor(f_BasePinger.Processor):
         self.add_to_processor_map('ping', _ping(Method(handler.ping, middleware), self.get_write_lock()))
 
 
-class _ping(FBaseProcessorFunction):
+class _ping(FProcessorFunction):
 
     def __init__(self, handler, lock):
         super(_ping, self).__init__(handler, lock)

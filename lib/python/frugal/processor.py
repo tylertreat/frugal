@@ -12,7 +12,16 @@ logger = logging.getLogger(__name__)
 class FProcessorFunction(object):
     """FProcessorFunction is a generic object that exposes a single process
     call, which is used to handle a method invocation. FProcessorFunction
-    extends object."""
+    should be implemented by the generated code."""
+
+    def __init__(self, handler, lock):
+        """
+            Args:
+                handler: frugal.middleware.Method
+                lock: threading.Lock
+        """
+        self._handler = handler
+        self._lock = lock
 
     def process(self, ctx, iprot, oprot):
         """Process the request from the input protocol and write the
@@ -25,23 +34,6 @@ class FProcessorFunction(object):
         pass
 
     def add_middleware(self, middleware):
-       """Add the given middleware to the FProcessorFunction
-       This should only be called before the server is started.
-
-           Args:
-            middleware: ServiceMiddleware
-        """
-
-class FBaseProcessorFunction(FProcessorFunction):
-    """FBaseProcessorFunction is a base extension of FProcessorFunction.
-    FProcessorFunctions should extend this. This should only be used by generated
-    code."""
-
-    def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
-
-    def add_middleware(self, middleware):
         """Add the given middleware to the FProcessorFunction
         This should only be called before the server is started.
 
@@ -50,7 +42,6 @@ class FBaseProcessorFunction(FProcessorFunction):
          """
 
         self._handler.add_middleware(middleware)
-
 
 
 class FProcessor(object):
@@ -79,9 +70,9 @@ class FProcessor(object):
 
 
 class FBaseProcessor(FProcessor):
-    """FBaseProcessor is a base extension of FProcessor. FProcessors should
-    extend this and map FProcessorFunctions. This should only be used by
-    generated code."""
+    """FBaseProcessor is a base implementation of FProcessor. FProcessors
+    should extend this and map FProcessorFunctions. This should only be used
+    by generated code."""
 
     def __init__(self):
         """Create new instance of FBaseProcessor that will process requests."""
@@ -163,6 +154,6 @@ class FBaseProcessor(FProcessor):
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
 
-        for k, proc in self._processor_function_map.iteritems():
+        for proc in self._processor_function_map.values():
             proc.add_middleware(middleware)
 
