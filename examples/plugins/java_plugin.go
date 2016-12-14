@@ -23,11 +23,11 @@ Frugal plugins are implemented as dynamically linked libraries and supported
 in Go 1.8 and above. Note that the same version of Go used to build Frugal
 must be used to build the plugin. Plugins are built as follows:
 
-$ go build -buildmode=plugin plugin.go
+$ go build -buildmode=plugin java_plugin.go
 
 Plugins are then loaded using the "plugins" generator option:
 
-$ frugal -gen java:plugins=plugin.so my_idl.frugal
+$ frugal -gen java:plugins=java_plugin.so my_idl.frugal
 
 Supported Behavior Hooks (Java):
 
