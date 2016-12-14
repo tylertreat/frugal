@@ -46,7 +46,7 @@ var Languages = LanguageOptions{
 			"undated: suppress the date at @Generated annotations, " +
 			"suppress: suppress @Generated annotations entirely",
 		"async":   "Generate async client code using futures",
-		"plugins": "Code-generation plugin",
+		"plugins": "Colon-delimited list of plugins for augmenting code-generation behavior",
 	},
 	"dart": Options{
 		"library_prefix": "Generate code that can be used within an existing library. " +
