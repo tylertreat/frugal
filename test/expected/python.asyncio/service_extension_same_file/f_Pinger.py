@@ -11,7 +11,7 @@ from datetime import timedelta
 import inspect
 
 from frugal.aio.processor import FBaseProcessor
-from frugal.aio.processor import FProcessorFunction
+from frugal.aio.processor import FBaseProcessorFunction
 from frugal.exceptions import FApplicationException
 from frugal.exceptions import FMessageSizeException
 from frugal.exceptions import FRateLimitException
@@ -123,25 +123,11 @@ class Processor(f_BasePinger.Processor):
         super(Processor, self).__init__(handler, middleware=middleware)
         self.add_to_processor_map('ping', _ping(Method(handler.ping, middleware), self.get_write_lock()))
 
-    def add_middleware(self, middleware):
-        """
-        Adds the given ServiceMiddleware to the FProcessor. This should 
-        only called before the server is started.
-        Args:
-            middleware: ServiceMiddleware
-        """
-        if middleware and not isinstance(middleware, list):
-            middleware = [middleware]
 
-        processor_function = self.get_from_processor_map('ping')
-        processor_function._handler._add_middleware(middleware)
-
-
-class _ping(FProcessorFunction):
+class _ping(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._write_lock = lock
+        super(_ping, self).__init__(handler, lock)
 
     async def process(self, ctx, iprot, oprot):
         args = ping_args()
@@ -153,14 +139,14 @@ class _ping(FProcessorFunction):
             if inspect.iscoroutine(ret):
                 ret = await ret
         except FRateLimitException as ex:
-            async with self._write_lock:
+            async with self._lock:
                 _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "ping", ex.message)
                 return
         except Exception as e:
-            async with self._write_lock:
+            async with self._lock:
                 e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "ping", e.args[0])
             raise e from None
-        async with self._write_lock:
+        async with self._lock:
             try:
                 oprot.write_response_headers(ctx)
                 oprot.writeMessageBegin('ping', TMessageType.REPLY, 0)

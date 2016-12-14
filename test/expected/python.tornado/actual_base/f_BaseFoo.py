@@ -15,7 +15,7 @@ from frugal.exceptions import FRateLimitException
 from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.tornado.processor import FBaseProcessor
-from frugal.tornado.processor import FProcessorFunction
+from frugal.tornado.processor import FBaseProcessorFunction
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
@@ -128,25 +128,11 @@ class Processor(FBaseProcessor):
         super(Processor, self).__init__()
         self.add_to_processor_map('basePing', _basePing(Method(handler.basePing, middleware), self.get_write_lock()))
 
-    def add_middleware(self, middleware):
-        """
-        Adds the given ServiceMiddleware to the FProcessor. This should 
-        only called before the server is started.
-        Args:
-            middleware: ServiceMiddleware
-        """
-        if middleware and not isinstance(middleware, list):
-            middleware = [middleware]
 
-        processor_function = self.get_from_processor_map('basePing')
-        processor_function._handler._add_middleware(middleware)
-
-
-class _basePing(FProcessorFunction):
+class _basePing(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_basePing, self).__init__(handler, lock)
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):

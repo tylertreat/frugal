@@ -740,7 +740,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.exceptions import FRateLimitException\n"
 	imports += "from frugal.processor import FBaseProcessor\n"
-	imports += "from frugal.processor import FProcessorFunction\n"
+	imports += "from frugal.processor import FBaseProcessorFunction\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n\n"
 
@@ -1184,34 +1184,16 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 		contents += tabtab + fmt.Sprintf("self.add_to_processor_map('%s', _%s(Method(handler.%s, middleware), self.get_write_lock()))\n",
 			method.Name, method.Name, method.Name)
 	}
-	contents += "\n"
-
-	contents += tab + "def add_middleware(self, middleware):\n"
-	contents += g.generateDocString([]string{
-		"Adds the given ServiceMiddleware to the FProcessor. This should ",
-		"only called before the server is started.",
-		"Args:",
-		tab + "middleware: ServiceMiddleware",
-	}, tabtab)
-	contents += tabtab + "if middleware and not isinstance(middleware, list):\n"
-	contents += tabtabtab + "middleware = [middleware]\n"
-	contents += "\n"
-
-	for _, method := range service.Methods {
-		contents += tabtab + fmt.Sprintf("processor_function = self.get_from_processor_map('%s')\n", method.Name)
-		contents += tabtab + "processor_function._handler._add_middleware(middleware)\n"
-	}
-
 	contents += "\n\n"
 	return contents
 }
 
 func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	contents := ""
-	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
+	contents += fmt.Sprintf("class _%s(FBaseProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
-	contents += tabtab + "self._handler = handler\n"
-	contents += tabtab + "self._lock = lock\n\n"
+	contents += tabtab + fmt.Sprintf("super(_%s, self).__init__(handler, lock)\n", method.Name)
+	contents += "\n"
 
 	contents += tab + "def process(self, ctx, iprot, oprot):\n"
 	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)

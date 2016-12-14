@@ -15,7 +15,7 @@ from frugal.exceptions import FRateLimitException
 from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.tornado.processor import FBaseProcessor
-from frugal.tornado.processor import FProcessorFunction
+from frugal.tornado.processor import FBaseProcessorFunction
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
@@ -223,27 +223,10 @@ class Processor(FBaseProcessor):
         self.add_to_processor_map('enterAlbumGiveaway', _enterAlbumGiveaway(Method(handler.enterAlbumGiveaway, middleware), self.get_write_lock()))
 
 
-    def add_middleware(self, middleware):
-        """
-        Adds the given ServiceMiddleware to the FProcessor. This should 
-        only called before the server is started.
-        Args:
-            middleware: ServiceMiddleware
-        """
-        if middleware and not isinstance(middleware, list):
-            middleware = [middleware]
-
-        processor_function = self.get_from_processor_map('buyAlbum')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('enterAlbumGiveaway')
-        processor_function._handler._add_middleware(middleware)
-
-
-class _buyAlbum(FProcessorFunction):
+class _buyAlbum(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_buyAlbum, self).__init__(handler, lock)
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):
@@ -274,11 +257,10 @@ class _buyAlbum(FProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "buyAlbum", e.message)
 
 
-class _enterAlbumGiveaway(FProcessorFunction):
+class _enterAlbumGiveaway(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_enterAlbumGiveaway, self).__init__(handler, lock)
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):

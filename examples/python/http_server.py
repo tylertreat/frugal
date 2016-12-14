@@ -26,6 +26,16 @@ formatter = logging.Formatter(
 ch.setFormatter(formatter)
 root.addHandler(ch)
 
+def logging_middleware(next):
+    def invocation_handler(method, args):
+        service = '%s.%s' % (method.im_self.__module__,
+                             method.im_class.__name__)
+        print '==== CALLING %s.%s ====' % (service, method.im_func.func_name)
+        ret = next(method, args)
+        print '==== CALLED  %s.%s ====' % (service, method.im_func.func_name)
+        return ret
+    return invocation_handler
+
 
 class StoreHandler(Iface):
     """
@@ -67,6 +77,10 @@ def main():
     # Incoming requests to the processor are passed to the handler.
     # Results from the handler are returned back to the client.
     processor = FStoreProcessor(StoreHandler())
+
+    # Optionally add middleware to the processor before starting the server.
+    # add_middleware can take a list or single middleware.
+    processor.add_middleware(logging_middleware)
 
     # Create a new music store server using the processor,
     # The sever will listen on the configured URL

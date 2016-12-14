@@ -11,7 +11,7 @@ from threading import Lock
 from frugal.middleware import Method
 from frugal.exceptions import FRateLimitException
 from frugal.processor import FBaseProcessor
-from frugal.processor import FProcessorFunction
+from frugal.processor import FBaseProcessorFunction
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 
@@ -173,27 +173,10 @@ class Processor(FBaseProcessor):
         self.add_to_processor_map('enterAlbumGiveaway', _enterAlbumGiveaway(Method(handler.enterAlbumGiveaway, middleware), self.get_write_lock()))
 
 
-    def add_middleware(self, middleware):
-        """
-        Adds the given ServiceMiddleware to the FProcessor. This should 
-        only called before the server is started.
-        Args:
-            middleware: ServiceMiddleware
-        """
-        if middleware and not isinstance(middleware, list):
-            middleware = [middleware]
-
-        processor_function = self.get_from_processor_map('buyAlbum')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('enterAlbumGiveaway')
-        processor_function._handler._add_middleware(middleware)
-
-
-class _buyAlbum(FProcessorFunction):
+class _buyAlbum(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_buyAlbum, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = buyAlbum_args()
@@ -220,11 +203,10 @@ class _buyAlbum(FProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _enterAlbumGiveaway(FProcessorFunction):
+class _enterAlbumGiveaway(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_enterAlbumGiveaway, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = enterAlbumGiveaway_args()

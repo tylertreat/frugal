@@ -11,7 +11,7 @@ from datetime import timedelta
 import inspect
 
 from frugal.aio.processor import FBaseProcessor
-from frugal.aio.processor import FProcessorFunction
+from frugal.aio.processor import FBaseProcessorFunction
 from frugal.exceptions import FApplicationException
 from frugal.exceptions import FMessageSizeException
 from frugal.exceptions import FRateLimitException
@@ -215,27 +215,10 @@ class Processor(FBaseProcessor):
         self.add_to_processor_map('enterAlbumGiveaway', _enterAlbumGiveaway(Method(handler.enterAlbumGiveaway, middleware), self.get_write_lock()))
 
 
-    def add_middleware(self, middleware):
-        """
-        Adds the given ServiceMiddleware to the FProcessor. This should 
-        only called before the server is started.
-        Args:
-            middleware: ServiceMiddleware
-        """
-        if middleware and not isinstance(middleware, list):
-            middleware = [middleware]
-
-        processor_function = self.get_from_processor_map('buyAlbum')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('enterAlbumGiveaway')
-        processor_function._handler._add_middleware(middleware)
-
-
-class _buyAlbum(FProcessorFunction):
+class _buyAlbum(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._write_lock = lock
+        super(_buyAlbum, self).__init__(handler, lock)
 
     async def process(self, ctx, iprot, oprot):
         args = buyAlbum_args()
@@ -248,16 +231,16 @@ class _buyAlbum(FProcessorFunction):
                 ret = await ret
             result.success = ret
         except FRateLimitException as ex:
-            async with self._write_lock:
+            async with self._lock:
                 _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "buyAlbum", ex.message)
                 return
         except PurchasingError as error:
             result.error = error
         except Exception as e:
-            async with self._write_lock:
+            async with self._lock:
                 e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "buyAlbum", e.args[0])
             raise e from None
-        async with self._write_lock:
+        async with self._lock:
             try:
                 oprot.write_response_headers(ctx)
                 oprot.writeMessageBegin('buyAlbum', TMessageType.REPLY, 0)
@@ -268,11 +251,10 @@ class _buyAlbum(FProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "buyAlbum", e.args[0])
 
 
-class _enterAlbumGiveaway(FProcessorFunction):
+class _enterAlbumGiveaway(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._write_lock = lock
+        super(_enterAlbumGiveaway, self).__init__(handler, lock)
 
     async def process(self, ctx, iprot, oprot):
         args = enterAlbumGiveaway_args()
@@ -285,14 +267,14 @@ class _enterAlbumGiveaway(FProcessorFunction):
                 ret = await ret
             result.success = ret
         except FRateLimitException as ex:
-            async with self._write_lock:
+            async with self._lock:
                 _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", ex.message)
                 return
         except Exception as e:
-            async with self._write_lock:
+            async with self._lock:
                 e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "enterAlbumGiveaway", e.args[0])
             raise e from None
-        async with self._write_lock:
+        async with self._lock:
             try:
                 oprot.write_response_headers(ctx)
                 oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.REPLY, 0)

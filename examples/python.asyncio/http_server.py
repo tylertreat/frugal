@@ -26,6 +26,15 @@ ch.setFormatter(formatter)
 root.addHandler(ch)
 
 
+def logging_middleware(next):
+    def handler(method, args):
+        print('==== CALLING %s ====', method.__name__)
+        ret = next(method, args)
+        print('==== CALLED  %s ====', method.__name__)
+        return ret
+    return handler
+
+
 class StoreHandler(Iface):
     """
     A handler handles all incoming requests to the server.
@@ -57,6 +66,10 @@ if __name__ == '__main__':
     # Incoming requests to the processor are passed to the handler.
     # Results from the handler are returned back to the client.
     processor = FStoreProcessor(StoreHandler())
+
+    # Optionally add middleware to the processor before starting the server.
+    # add_middleware can take a list or single middleware.
+    processor.add_middleware(logging_middleware)
 
     store_handler = new_http_handler(processor, prot_factory)
     app = web.Application()

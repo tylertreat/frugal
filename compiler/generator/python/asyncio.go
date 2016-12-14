@@ -23,7 +23,7 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "import inspect\n\n"
 
 	imports += "from frugal.aio.processor import FBaseProcessor\n"
-	imports += "from frugal.aio.processor import FProcessorFunction\n"
+	imports += "from frugal.aio.processor import FBaseProcessorFunction\n"
 	imports += "from frugal.exceptions import FApplicationException\n"
 	imports += "from frugal.exceptions import FMessageSizeException\n"
 	imports += "from frugal.exceptions import FRateLimitException\n"
@@ -262,34 +262,17 @@ func (g *AsyncIOGenerator) generateProcessor(service *parser.Service) string {
 		contents += tabtab + fmt.Sprintf("self.add_to_processor_map('%s', _%s(Method(handler.%s, middleware), self.get_write_lock()))\n",
 			method.Name, method.Name, method.Name)
 	}
-	contents += "\n"
-
-	contents += tab + "def add_middleware(self, middleware):\n"
-	contents += g.generateDocString([]string{
-		"Adds the given ServiceMiddleware to the FProcessor. This should ",
-		"only called before the server is started.",
-		"Args:",
-		tab + "middleware: ServiceMiddleware",
-	}, tabtab)
-	contents += tabtab + "if middleware and not isinstance(middleware, list):\n"
-	contents += tabtabtab + "middleware = [middleware]\n"
-	contents += "\n"
-
-	for _, method := range service.Methods {
-		contents += tabtab + fmt.Sprintf("processor_function = self.get_from_processor_map('%s')\n", method.Name)
-		contents += tabtab + "processor_function._handler._add_middleware(middleware)\n"
-	}
-
 	contents += "\n\n"
+
 	return contents
 }
 
 func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) string {
 	contents := ""
-	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
+	contents += fmt.Sprintf("class _%s(FBaseProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
-	contents += tabtab + "self._handler = handler\n"
-	contents += tabtab + "self._write_lock = lock\n\n"
+	contents += tabtab + fmt.Sprintf("super(_%s, self).__init__(handler, lock)\n", method.Name)
+	contents += "\n"
 
 	contents += tab + "async def process(self, ctx, iprot, oprot):\n"
 	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
@@ -307,7 +290,7 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 		contents += tabtabtab + "result.success = ret\n"
 	}
 	contents += tabtab + "except FRateLimitException as ex:\n"
-	contents += tabtabtab + "async with self._write_lock:\n"
+	contents += tabtabtab + "async with self._lock:\n"
 	contents += tabtabtabtab + fmt.Sprintf(
 		"_write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
 		method.Name)
@@ -318,12 +301,12 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	}
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
-		contents += tabtabtab + "async with self._write_lock:\n"
+		contents += tabtabtab + "async with self._lock:\n"
 		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.args[0])\n", method.Name)
 	}
 	contents += tabtabtab + "raise e from None\n"
 	if !method.Oneway {
-		contents += tabtab + "async with self._write_lock:\n"
+		contents += tabtab + "async with self._lock:\n"
 		contents += tabtabtab + "try:\n"
 		contents += tabtabtabtab + "oprot.write_response_headers(ctx)\n"
 		contents += tabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", method.Name)

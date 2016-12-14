@@ -15,7 +15,7 @@ from frugal.exceptions import FRateLimitException
 from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.tornado.processor import FBaseProcessor
-from frugal.tornado.processor import FProcessorFunction
+from frugal.tornado.processor import FBaseProcessorFunction
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
@@ -723,41 +723,11 @@ class Processor(actual_base.python.f_BaseFoo.Processor):
         self.add_to_processor_map('getMyInt', _getMyInt(Method(handler.getMyInt, middleware), self.get_write_lock()))
         self.add_to_processor_map('use_subdir_struct', _use_subdir_struct(Method(handler.use_subdir_struct, middleware), self.get_write_lock()))
 
-    def add_middleware(self, middleware):
-        """
-        Adds the given ServiceMiddleware to the FProcessor. This should 
-        only called before the server is started.
-        Args:
-            middleware: ServiceMiddleware
-        """
-        if middleware and not isinstance(middleware, list):
-            middleware = [middleware]
 
-        processor_function = self.get_from_processor_map('ping')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('blah')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('oneWay')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('bin_method')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('param_modifiers')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('underlying_types_test')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('getThing')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('getMyInt')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('use_subdir_struct')
-        processor_function._handler._add_middleware(middleware)
-
-
-class _ping(FProcessorFunction):
+class _ping(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_ping, self).__init__(handler, lock)
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):
@@ -786,11 +756,10 @@ class _ping(FProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "ping", e.message)
 
 
-class _blah(FProcessorFunction):
+class _blah(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_blah, self).__init__(handler, lock)
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):
@@ -823,11 +792,10 @@ class _blah(FProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "blah", e.message)
 
 
-class _oneWay(FProcessorFunction):
+class _oneWay(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_oneWay, self).__init__(handler, lock)
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):
@@ -844,11 +812,10 @@ class _oneWay(FProcessorFunction):
             raise e
 
 
-class _bin_method(FProcessorFunction):
+class _bin_method(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_bin_method, self).__init__(handler, lock)
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):
@@ -879,11 +846,10 @@ class _bin_method(FProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "bin_method", e.message)
 
 
-class _param_modifiers(FProcessorFunction):
+class _param_modifiers(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_param_modifiers, self).__init__(handler, lock)
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):
@@ -912,11 +878,10 @@ class _param_modifiers(FProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "param_modifiers", e.message)
 
 
-class _underlying_types_test(FProcessorFunction):
+class _underlying_types_test(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_underlying_types_test, self).__init__(handler, lock)
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):
@@ -945,11 +910,10 @@ class _underlying_types_test(FProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "underlying_types_test", e.message)
 
 
-class _getThing(FProcessorFunction):
+class _getThing(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_getThing, self).__init__(handler, lock)
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):
@@ -978,11 +942,10 @@ class _getThing(FProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "getThing", e.message)
 
 
-class _getMyInt(FProcessorFunction):
+class _getMyInt(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_getMyInt, self).__init__(handler, lock)
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):
@@ -1011,11 +974,10 @@ class _getMyInt(FProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "getMyInt", e.message)
 
 
-class _use_subdir_struct(FProcessorFunction):
+class _use_subdir_struct(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_use_subdir_struct, self).__init__(handler, lock)
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):

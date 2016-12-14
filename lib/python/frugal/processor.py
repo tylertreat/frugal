@@ -10,9 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 class FProcessorFunction(object):
+    """FProcessorFunction is a generic object that exposes a single process
+    call, which is used to handle a method invocation. FProcessorFunction
+    extends object."""
 
     def process(self, ctx, iprot, oprot):
-        """Processes the request from the input protocol and writes the
+        """Process the request from the input protocol and write the
         response to the output protocol.
 
         Args:
@@ -21,14 +24,42 @@ class FProcessorFunction(object):
         """
         pass
 
+    def add_middleware(self, middleware):
+       """Add the given middleware to the FProcessorFunction
+       This should only be called before the server is started.
+
+           Args:
+            middleware: ServiceMiddleware
+        """
+
+class FBaseProcessorFunction(FProcessorFunction):
+    """FBaseProcessorFunction is a base extension of FProcessorFunction.
+    FProcessorFunctions should extend this. This should only be used by generated
+    code."""
+
+    def __init__(self, handler, lock):
+        self._handler = handler
+        self._lock = lock
+
+    def add_middleware(self, middleware):
+        """Add the given middleware to the FProcessorFunction
+        This should only be called before the server is started.
+
+            Args:
+             middleware: ServiceMiddleware
+         """
+
+        self._handler.add_middleware(middleware)
+
+
 
 class FProcessor(object):
     """FProcessor is a generic object which operates upon an input stream and
-    writes to some output stream.
+    writes to some output stream. FProcessor extends object.
     """
 
     def process(self, iprot, oprot):
-        """Processes the request from the input protocol and write the
+        """Process the request from the input protocol and write the
         response to the output protocol.
 
         Args:
@@ -48,6 +79,9 @@ class FProcessor(object):
 
 
 class FBaseProcessor(FProcessor):
+    """FBaseProcessor is a base extension of FProcessor. FProcessors should
+    extend this and map FProcessorFunctions. This should only be used by
+    generated code."""
 
     def __init__(self):
         """Create new instance of FBaseProcessor that will process requests."""
@@ -64,10 +98,6 @@ class FBaseProcessor(FProcessor):
         """
         with self._function_map_lock:
             self._processor_function_map[key] = proc
-
-    def get_from_processor_map(self, key):
-        """returns a processor function by key"""
-        return self._processor_function_map[key]
 
     def get_write_lock(self):
         """Return the write lock."""
@@ -122,6 +152,17 @@ class FBaseProcessor(FProcessor):
         logger.exception(ex)
         raise ex
 
-    def add_middleware(self, serviceMiddleware):
+    def add_middleware(self, middleware):
+        """Add the given middleware to the FProcessor.
+        This should only be called before the server is started.
 
-        raise NotImplementedError("use add_middleware of the extender of this class")
+        Args:
+            middleware: ServiceMiddleware
+        """
+
+        if middleware and not isinstance(middleware, list):
+            middleware = [middleware]
+
+        for k, proc in self._processor_function_map.iteritems():
+            proc.add_middleware(middleware)
+

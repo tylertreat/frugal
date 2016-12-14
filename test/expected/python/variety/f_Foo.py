@@ -11,7 +11,7 @@ from threading import Lock
 from frugal.middleware import Method
 from frugal.exceptions import FRateLimitException
 from frugal.processor import FBaseProcessor
-from frugal.processor import FProcessorFunction
+from frugal.processor import FBaseProcessorFunction
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 
@@ -560,41 +560,11 @@ class Processor(actual_base.python.f_BaseFoo.Processor):
         self.add_to_processor_map('getMyInt', _getMyInt(Method(handler.getMyInt, middleware), self.get_write_lock()))
         self.add_to_processor_map('use_subdir_struct', _use_subdir_struct(Method(handler.use_subdir_struct, middleware), self.get_write_lock()))
 
-    def add_middleware(self, middleware):
-        """
-        Adds the given ServiceMiddleware to the FProcessor. This should 
-        only called before the server is started.
-        Args:
-            middleware: ServiceMiddleware
-        """
-        if middleware and not isinstance(middleware, list):
-            middleware = [middleware]
 
-        processor_function = self.get_from_processor_map('ping')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('blah')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('oneWay')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('bin_method')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('param_modifiers')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('underlying_types_test')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('getThing')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('getMyInt')
-        processor_function._handler._add_middleware(middleware)
-        processor_function = self.get_from_processor_map('use_subdir_struct')
-        processor_function._handler._add_middleware(middleware)
-
-
-class _ping(FProcessorFunction):
+class _ping(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_ping, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = ping_args()
@@ -619,11 +589,10 @@ class _ping(FProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _blah(FProcessorFunction):
+class _blah(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_blah, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = blah_args()
@@ -652,11 +621,10 @@ class _blah(FProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _oneWay(FProcessorFunction):
+class _oneWay(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_oneWay, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = oneWay_args()
@@ -672,11 +640,10 @@ class _oneWay(FProcessorFunction):
             raise e
 
 
-class _bin_method(FProcessorFunction):
+class _bin_method(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_bin_method, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = bin_method_args()
@@ -703,11 +670,10 @@ class _bin_method(FProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _param_modifiers(FProcessorFunction):
+class _param_modifiers(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_param_modifiers, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = param_modifiers_args()
@@ -732,11 +698,10 @@ class _param_modifiers(FProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _underlying_types_test(FProcessorFunction):
+class _underlying_types_test(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_underlying_types_test, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = underlying_types_test_args()
@@ -761,11 +726,10 @@ class _underlying_types_test(FProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _getThing(FProcessorFunction):
+class _getThing(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_getThing, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = getThing_args()
@@ -790,11 +754,10 @@ class _getThing(FProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _getMyInt(FProcessorFunction):
+class _getMyInt(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_getMyInt, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = getMyInt_args()
@@ -819,11 +782,10 @@ class _getMyInt(FProcessorFunction):
             oprot.get_transport().flush()
 
 
-class _use_subdir_struct(FProcessorFunction):
+class _use_subdir_struct(FBaseProcessorFunction):
 
     def __init__(self, handler, lock):
-        self._handler = handler
-        self._lock = lock
+        super(_use_subdir_struct, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
         args = use_subdir_struct_args()
