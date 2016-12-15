@@ -8,7 +8,7 @@
 	"Deps": [
 		{
 			"ImportPath": "git.apache.org/thrift.git/lib/go/thrift",
-			"Rev": "cdc83335d60756c4bfb0d2c8af7933500c9e3c06"
+			"Rev": "0d9b713b173f35ce02552b2f4372899440a99b25"
 		},
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
