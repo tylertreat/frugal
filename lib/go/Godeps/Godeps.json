@@ -50,7 +50,8 @@
 		},
 		{
 			"ImportPath": "github.com/nats-io/nuid",
-			"Rev": "4f84f5f3b2786224e336af2e13dba0a0a80b76fa"
+			"Comment": "v1.0.0",
+			"Rev": "289cccf02c178dc782430d534e3c1f5b72af807f"
 		},
 		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
