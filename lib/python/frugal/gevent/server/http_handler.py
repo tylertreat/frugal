@@ -3,8 +3,6 @@ import logging
 
 from thrift.Thrift import TApplicationException
 from thrift.transport.TTransport import TMemoryBuffer
-from tornado import gen
-from tornado.web import RequestHandler
 
 from frugal.transport import TMemoryOutputBuffer
 
@@ -27,7 +25,6 @@ class FTornadoHttpHandler(RequestHandler):
         self._processor = processor
         self._protocol_factory = protocol_factory
 
-    @gen.coroutine
     def post(self):
         self.set_header('content-type', 'application/x-frugal')
 
@@ -47,7 +44,7 @@ class FTornadoHttpHandler(RequestHandler):
         oprot = self._protocol_factory.get_protocol(otrans)
 
         try:
-            yield gen.maybe_future(self._processor.process(iprot, oprot))
+            self._processor.process(iprot, oprot)
         except TApplicationException:
             # Continue so the exception is sent to the client
             pass

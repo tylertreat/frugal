@@ -3,13 +3,9 @@ import httplib
 import logging
 
 from thrift.transport.TTransport import TTransportException
-from tornado import gen
-from tornado.httpclient import AsyncHTTPClient
-from tornado.httpclient import HTTPError
-from tornado.httpclient import HTTPRequest
 
 from frugal.exceptions import FMessageSizeException
-from frugal.tornado.transport import FTornadoTransport
+from frugal.gevent.transport import FGeventTransport
 
 logger = logging.getLogger(__name__)
 
@@ -41,23 +37,18 @@ class FHttpTransport(FTornadoTransport):
 
         self._execute = None
 
-    @gen.coroutine
     def is_open(self):
         """Always returns True"""
-        # Tornado requires we raise a special exception to return a value.
-        raise gen.Return(True)
+        return True
 
-    @gen.coroutine
     def open(self):
         """No-op"""
         pass
 
-    @gen.coroutine
     def close(self):
         """no-op"""
         pass
 
-    @gen.coroutine
     def send(self, data):
         """
         Write the current buffer and execute the set callback with the
@@ -73,7 +64,7 @@ class FHttpTransport(FTornadoTransport):
                               headers=self._headers)
 
         try:
-            response = yield self._http.fetch(request)
+            response = self._http.fetch(request)
         except HTTPError as e:
             if e.code == httplib.REQUEST_ENTITY_TOO_LARGE:
                 raise TTransportException(type=TTransportException.UNKNOWN,
@@ -95,4 +86,4 @@ class FHttpTransport(FTornadoTransport):
             # One-way method, drop response
             return
 
-        yield self.execute_frame(decoded)
+        self.execute_frame(decoded)
