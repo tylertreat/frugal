@@ -1,12 +1,12 @@
 {
 	"ImportPath": "github.com/Workiva/frugal",
 	"GoVersion": "go1.5",
-	"GodepVersion": "v70",
+	"GodepVersion": "v75",
 	"Deps": [
 		{
 			"ImportPath": "github.com/urfave/cli",
-			"Comment": "v1.17.0-85-g4205e9c",
-			"Rev": "4205e9c4ee9672a8df5bb4fe486a8aa07e1e4037"
+			"Comment": "v1.19.1",
+			"Rev": "0bdeddeeb0f650497d603c4ad7b20cfe685682f6"
 		},
 		{
 			"ImportPath": "golang.org/x/tools/go/ast/astutil",
