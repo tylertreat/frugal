@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/Workiva/frugal/lib/go",
 	"GoVersion": "go1.5",
-	"GodepVersion": "v70",
+	"GodepVersion": "v75",
 	"Packages": [
 		"./..."
 	],
@@ -25,18 +25,18 @@
 		},
 		{
 			"ImportPath": "github.com/nats-io/gnatsd/conf",
-			"Comment": "v0.8.0",
-			"Rev": "3ff8ad706a6816b13c9277637e2e7d5bb406951a"
+			"Comment": "v0.9.4",
+			"Rev": "dcbf5d8d35659a9a43f2832a20d98b92eedceb9e"
 		},
 		{
 			"ImportPath": "github.com/nats-io/gnatsd/server",
-			"Comment": "v0.8.0",
-			"Rev": "3ff8ad706a6816b13c9277637e2e7d5bb406951a"
+			"Comment": "v0.9.4",
+			"Rev": "dcbf5d8d35659a9a43f2832a20d98b92eedceb9e"
 		},
 		{
 			"ImportPath": "github.com/nats-io/gnatsd/server/pse",
-			"Comment": "v0.8.0",
-			"Rev": "3ff8ad706a6816b13c9277637e2e7d5bb406951a"
+			"Comment": "v0.9.4",
+			"Rev": "dcbf5d8d35659a9a43f2832a20d98b92eedceb9e"
 		},
 		{
 			"ImportPath": "github.com/nats-io/nats",
