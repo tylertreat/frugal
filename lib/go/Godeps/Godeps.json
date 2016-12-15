@@ -40,14 +40,14 @@
 			"Rev": "dcbf5d8d35659a9a43f2832a20d98b92eedceb9e"
 		},
 		{
-			"ImportPath": "github.com/nats-io/nats",
-			"Comment": "v1.1.6-150-gfc85f44",
-			"Rev": "fc85f44c1659ab6610d76fd6bd0e44ad2cadf697"
+			"ImportPath": "github.com/nats-io/go-nats",
+			"Comment": "v1.2.2-6-g6b6bf39",
+			"Rev": "6b6bf392d34d01f57cc563ae123f00c13778bd57"
 		},
 		{
-			"ImportPath": "github.com/nats-io/nats/encoders/builtin",
-			"Comment": "v1.1.6-150-gfc85f44",
-			"Rev": "fc85f44c1659ab6610d76fd6bd0e44ad2cadf697"
+			"ImportPath": "github.com/nats-io/go-nats/encoders/builtin",
+			"Comment": "v1.2.2-6-g6b6bf39",
+			"Rev": "6b6bf392d34d01f57cc563ae123f00c13778bd57"
 		},
 		{
 			"ImportPath": "github.com/nats-io/nuid",
@@ -81,6 +81,21 @@
 		{
 			"ImportPath": "golang.org/x/sys/unix",
 			"Rev": "f64b50fbea64174967a8882830d621a18ee1548e"
+		},
+		{
+			"ImportPath": "github.com/nats-io/nats/encoders/builtin",
+			"Comment": "v1.2.2-6-g6b6bf39",
+			"Rev": "6b6bf392d34d01f57cc563ae123f00c13778bd57"
+		},
+		{
+			"ImportPath": "github.com/nats-io/nats/util",
+			"Comment": "v1.2.2-6-g6b6bf39",
+			"Rev": "6b6bf392d34d01f57cc563ae123f00c13778bd57"
+		},
+		{
+			"ImportPath": "github.com/nats-io/go-nats/util",
+			"Comment": "v1.2.2-6-g6b6bf39",
+			"Rev": "6b6bf392d34d01f57cc563ae123f00c13778bd57"
 		}
 	]
 }

@@ -23,12 +23,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/nats-io/go-nats/util"
 	"github.com/nats-io/nuid"
 )
 
 // Default Constants
 const (
-	Version                 = "1.2.0"
+	Version                 = "1.2.2"
 	DefaultURL              = "nats://localhost:4222"
 	DefaultPort             = 4222
 	DefaultMaxReconnect     = 60
@@ -44,6 +45,9 @@ const (
 
 // STALE_CONNECTION is for detection and proper handling of stale connections.
 const STALE_CONNECTION = "stale connection"
+
+// PERMISSIONS_ERR is for when nats server subject authorization has failed.
+const PERMISSIONS_ERR = "permissions violation"
 
 // Errors
 var (
@@ -81,6 +85,9 @@ var DefaultOptions = Options{
 	MaxPingsOut:      DefaultMaxPingOut,
 	SubChanLen:       DefaultMaxChanLen,
 	ReconnectBufSize: DefaultReconnectBufSize,
+	Dialer: &net.Dialer{
+		Timeout: DefaultTimeout,
+	},
 }
 
 // Status represents the state of the connection.
@@ -138,6 +145,13 @@ type Options struct {
 	// NOTE: This does not affect AsyncSubscriptions which are
 	// dictated by PendingLimits()
 	SubChanLen int
+
+	User     string
+	Password string
+	Token    string
+
+	// Dialer allows users setting a custom Dialer
+	Dialer *net.Dialer
 }
 
 const (
@@ -173,6 +187,7 @@ type Conn struct {
 	url     *url.URL
 	conn    net.Conn
 	srvPool []*srv
+	urls    map[string]struct{} // Keep track of all known URLs (used by processInfo)
 	bw      *bufio.Writer
 	pending *bytes.Buffer
 	fch     chan bool
@@ -255,17 +270,28 @@ type srv struct {
 	didConnect  bool
 	reconnects  int
 	lastAttempt time.Time
+	isImplicit  bool
 }
 
 type serverInfo struct {
-	Id           string `json:"server_id"`
-	Host         string `json:"host"`
-	Port         uint   `json:"port"`
-	Version      string `json:"version"`
-	AuthRequired bool   `json:"auth_required"`
-	TLSRequired  bool   `json:"tls_required"`
-	MaxPayload   int64  `json:"max_payload"`
+	Id           string   `json:"server_id"`
+	Host         string   `json:"host"`
+	Port         uint     `json:"port"`
+	Version      string   `json:"version"`
+	AuthRequired bool     `json:"auth_required"`
+	TLSRequired  bool     `json:"tls_required"`
+	MaxPayload   int64    `json:"max_payload"`
+	ConnectURLs  []string `json:"connect_urls,omitempty"`
 }
+
+const (
+	// clientProtoZero is the original client protocol from 2009.
+	// http://nats.io/documentation/internals/nats-protocol/
+	clientProtoZero = iota
+	// clientProtoInfo signals a client can receive more then the original INFO block.
+	// This can be used to update clients on other cluster members, etc.
+	clientProtoInfo
+)
 
 type connectInfo struct {
 	Verbose  bool   `json:"verbose"`
@@ -277,6 +303,7 @@ type connectInfo struct {
 	Name     string `json:"name"`
 	Lang     string `json:"lang"`
 	Version  string `json:"version"`
+	Protocol int    `json:"protocol"`
 }
 
 // MsgHandler is a callback function that processes messages delivered to
@@ -442,6 +469,34 @@ func ErrorHandler(cb ErrHandler) Option {
 	}
 }
 
+// UserInfo is an Option to set the username and password to
+// use when not included directly in the URLs.
+func UserInfo(user, password string) Option {
+	return func(o *Options) error {
+		o.User = user
+		o.Password = password
+		return nil
+	}
+}
+
+// Token is an Option to set the token to use when not included
+// directly in the URLs.
+func Token(token string) Option {
+	return func(o *Options) error {
+		o.Token = token
+		return nil
+	}
+}
+
+// Dialer is an Option to set the dialer which will be used when
+// attempting to establish a connection.
+func Dialer(dialer *net.Dialer) Option {
+	return func(o *Options) error {
+		o.Dialer = dialer
+		return nil
+	}
+}
+
 // Handler processing
 
 // SetDisconnectHandler will set the disconnect event handler.
@@ -509,6 +564,17 @@ func (o Options) Connect() (*Conn, error) {
 	// Default ReconnectBufSize
 	if nc.Opts.ReconnectBufSize == 0 {
 		nc.Opts.ReconnectBufSize = DefaultReconnectBufSize
+	}
+	// Ensure that Timeout is not 0
+	if nc.Opts.Timeout == 0 {
+		nc.Opts.Timeout = DefaultTimeout
+	}
+
+	// Allow custom Dialer for connecting using DialTimeout by default
+	if nc.Opts.Dialer == nil {
+		nc.Opts.Dialer = &net.Dialer{
+			Timeout: nc.Opts.Timeout,
+		}
 	}
 
 	if err := nc.setupServerPool(); err != nil {
@@ -614,44 +680,38 @@ const tlsScheme = "tls"
 // the NoRandomize flag is set.
 func (nc *Conn) setupServerPool() error {
 	nc.srvPool = make([]*srv, 0, srvPoolSize)
+	nc.urls = make(map[string]struct{}, srvPoolSize)
+
+	// Create srv objects from each url string in nc.Opts.Servers
+	// and add them to the pool
+	for _, urlString := range nc.Opts.Servers {
+		if err := nc.addURLToPool(urlString, false); err != nil {
+			return err
+		}
+	}
+
+	// Randomize if allowed to
+	if !nc.Opts.NoRandomize {
+		nc.shufflePool()
+	}
+
+	// Normally, if this one is set, Options.Servers should not be,
+	// but we always allowed that, so continue to do so.
 	if nc.Opts.Url != _EMPTY_ {
-		u, err := url.Parse(nc.Opts.Url)
-		if err != nil {
+		// Add to the end of the array
+		if err := nc.addURLToPool(nc.Opts.Url, false); err != nil {
 			return err
 		}
-		s := &srv{url: u}
-		nc.srvPool = append(nc.srvPool, s)
-	}
-
-	var srvrs []string
-	source := rand.NewSource(time.Now().UnixNano())
-	r := rand.New(source)
-
-	if nc.Opts.NoRandomize {
-		srvrs = nc.Opts.Servers
-	} else {
-		in := r.Perm(len(nc.Opts.Servers))
-		for _, i := range in {
-			srvrs = append(srvrs, nc.Opts.Servers[i])
+		// Then swap it with first to guarantee that Options.Url is tried first.
+		last := len(nc.srvPool) - 1
+		if last > 0 {
+			nc.srvPool[0], nc.srvPool[last] = nc.srvPool[last], nc.srvPool[0]
 		}
-	}
-	for _, urlString := range srvrs {
-		u, err := url.Parse(urlString)
-		if err != nil {
+	} else if len(nc.srvPool) <= 0 {
+		// Place default URL if pool is empty.
+		if err := nc.addURLToPool(DefaultURL, false); err != nil {
 			return err
 		}
-		s := &srv{url: u}
-		nc.srvPool = append(nc.srvPool, s)
-	}
-
-	// Place default URL if pool is empty.
-	if len(nc.srvPool) <= 0 {
-		u, err := url.Parse(DefaultURL)
-		if err != nil {
-			return err
-		}
-		s := &srv{url: u}
-		nc.srvPool = append(nc.srvPool, s)
 	}
 
 	// Check for Scheme hint to move to TLS mode.
@@ -668,6 +728,31 @@ func (nc *Conn) setupServerPool() error {
 	return nc.pickServer()
 }
 
+// addURLToPool adds an entry to the server pool
+func (nc *Conn) addURLToPool(sURL string, implicit bool) error {
+	u, err := url.Parse(sURL)
+	if err != nil {
+		return err
+	}
+	s := &srv{url: u, isImplicit: implicit}
+	nc.srvPool = append(nc.srvPool, s)
+	nc.urls[u.Host] = struct{}{}
+	return nil
+}
+
+// shufflePool swaps randomly elements in the server pool
+func (nc *Conn) shufflePool() {
+	if len(nc.srvPool) <= 1 {
+		return
+	}
+	source := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(source)
+	for i := range nc.srvPool {
+		j := r.Intn(i + 1)
+		nc.srvPool[i], nc.srvPool[j] = nc.srvPool[j], nc.srvPool[i]
+	}
+}
+
 // createConn will connect to the server and wrap the appropriate
 // bufio structures. It will do the right thing when an existing
 // connection is in place.
@@ -680,7 +765,9 @@ func (nc *Conn) createConn() (err error) {
 	} else {
 		cur.lastAttempt = time.Now()
 	}
-	nc.conn, err = net.DialTimeout("tcp", nc.url.Host, nc.Opts.Timeout)
+
+	dialer := nc.Opts.Dialer
+	nc.conn, err = dialer.Dial("tcp", nc.url.Host)
 	if err != nil {
 		return err
 	}
@@ -705,13 +792,13 @@ func (nc *Conn) makeTLSConn() {
 	// default to InsecureSkipVerify.
 	// TODO(dlc) - We should make the more secure version the default.
 	if nc.Opts.TLSConfig != nil {
-		tlsCopy := *nc.Opts.TLSConfig
+		tlsCopy := util.CloneTLSConfig(nc.Opts.TLSConfig)
 		// If its blank we will override it with the current host
 		if tlsCopy.ServerName == _EMPTY_ {
 			h, _, _ := net.SplitHostPort(nc.url.Host)
 			tlsCopy.ServerName = h
 		}
-		nc.conn = tls.Client(nc.conn, &tlsCopy)
+		nc.conn = tls.Client(nc.conn, tlsCopy)
 	} else {
 		nc.conn = tls.Client(nc.conn, &tls.Config{InsecureSkipVerify: true})
 	}
@@ -837,7 +924,8 @@ func (nc *Conn) connect() error {
 	// For first connect we walk all servers in the pool and try
 	// to connect immediately.
 	nc.mu.Lock()
-	for i := range nc.srvPool {
+	// The pool may change inside theloop iteration due to INFO protocol.
+	for i := 0; i < len(nc.srvPool); i++ {
 		nc.url = nc.srvPool[i].url
 
 		if err := nc.createConn(); err == nil {
@@ -949,10 +1037,15 @@ func (nc *Conn) connectProto() (string, error) {
 			user = u.Username()
 			pass, _ = u.Password()
 		}
+	} else {
+		// Take from options (pssibly all empty strings)
+		user = nc.Opts.User
+		pass = nc.Opts.Password
+		token = nc.Opts.Token
 	}
 	cinfo := connectInfo{o.Verbose, o.Pedantic,
 		user, pass, token,
-		o.Secure, o.Name, LangString, Version}
+		o.Secure, o.Name, LangString, Version, clientProtoInfo}
 	b, err := json.Marshal(cinfo)
 	if err != nil {
 		return _EMPTY_, ErrJsonParse
@@ -1352,7 +1445,7 @@ func (nc *Conn) waitForMsgs(s *Subscription) {
 		}
 
 		// Deliver the message.
-		if m != nil && (max <= 0 || delivered <= max) {
+		if m != nil && (max == 0 || delivered <= max) {
 			mcb(m)
 		}
 		// If we have hit the max for delivered msgs, remove sub.
@@ -1399,20 +1492,22 @@ func (nc *Conn) processMsg(data []byte) {
 
 	sub.mu.Lock()
 
-	// Subscription internal stats
-	sub.pMsgs++
-	if sub.pMsgs > sub.pMsgsMax {
-		sub.pMsgsMax = sub.pMsgs
-	}
-	sub.pBytes += len(m.Data)
-	if sub.pBytes > sub.pBytesMax {
-		sub.pBytesMax = sub.pBytes
-	}
+	// Subscription internal stats (applicable only for non ChanSubscription's)
+	if sub.typ != ChanSubscription {
+		sub.pMsgs++
+		if sub.pMsgs > sub.pMsgsMax {
+			sub.pMsgsMax = sub.pMsgs
+		}
+		sub.pBytes += len(m.Data)
+		if sub.pBytes > sub.pBytesMax {
+			sub.pBytesMax = sub.pBytes
+		}
 
-	// Check for a Slow Consumer
-	if (sub.pMsgsLimit > 0 && sub.pMsgs > sub.pMsgsLimit) ||
-		(sub.pBytesLimit > 0 && sub.pBytes > sub.pBytesLimit) {
-		goto slowConsumer
+		// Check for a Slow Consumer
+		if (sub.pMsgsLimit > 0 && sub.pMsgs > sub.pMsgsLimit) ||
+			(sub.pBytesLimit > 0 && sub.pBytes > sub.pBytesLimit) {
+			goto slowConsumer
+		}
 	}
 
 	// We have two modes of delivery. One is the channel, used by channel
@@ -1446,8 +1541,10 @@ slowConsumer:
 	sub.dropped++
 	nc.processSlowConsumer(sub)
 	// Undo stats from above
-	sub.pMsgs--
-	sub.pBytes -= len(m.Data)
+	if sub.typ != ChanSubscription {
+		sub.pMsgs--
+		sub.pBytes -= len(m.Data)
+	}
 	sub.mu.Unlock()
 	nc.mu.Unlock()
 	return
@@ -1461,6 +1558,15 @@ func (nc *Conn) processSlowConsumer(s *Subscription) {
 		nc.ach <- func() { nc.Opts.AsyncErrorCB(nc, s, ErrSlowConsumer) }
 	}
 	s.sc = true
+}
+
+// processPermissionsViolation is called when the server signals a subject
+// permissions violation on either publish or subscribe.
+func (nc *Conn) processPermissionsViolation(err string) {
+	nc.err = errors.New("nats: " + err)
+	if nc.Opts.AsyncErrorCB != nil {
+		nc.ach <- func() { nc.Opts.AsyncErrorCB(nc, nil, nc.err) }
+	}
 }
 
 // flusher is a separate Go routine that will process flush requests for the write
@@ -1532,11 +1638,38 @@ func (nc *Conn) processOK() {
 
 // processInfo is used to parse the info messages sent
 // from the server.
+// This function may update the server pool.
 func (nc *Conn) processInfo(info string) error {
 	if info == _EMPTY_ {
 		return nil
 	}
-	return json.Unmarshal([]byte(info), &nc.info)
+	if err := json.Unmarshal([]byte(info), &nc.info); err != nil {
+		return err
+	}
+	updated := false
+	urls := nc.info.ConnectURLs
+	for _, curl := range urls {
+		if _, present := nc.urls[curl]; !present {
+			if err := nc.addURLToPool(fmt.Sprintf("nats://%s", curl), true); err != nil {
+				continue
+			}
+			updated = true
+		}
+	}
+	if updated && !nc.Opts.NoRandomize {
+		nc.shufflePool()
+	}
+	return nil
+}
+
+// processAsyncInfo does the same than processInfo, but is called
+// from the parser. Calls processInfo under connection's lock
+// protection.
+func (nc *Conn) processAsyncInfo(info []byte) {
+	nc.mu.Lock()
+	// Ignore errors, we will simply not update the server pool...
+	nc.processInfo(string(info))
+	nc.mu.Unlock()
 }
 
 // LastError reports the last error encountered via the connection.
@@ -1546,7 +1679,10 @@ func (nc *Conn) LastError() error {
 	if nc == nil {
 		return ErrInvalidConnection
 	}
-	return nc.err
+	nc.mu.Lock()
+	err := nc.err
+	nc.mu.Unlock()
+	return err
 }
 
 // processErr processes any error messages from the server and
@@ -1558,6 +1694,8 @@ func (nc *Conn) processErr(e string) {
 	// FIXME(dlc) - process Slow Consumer signals special.
 	if e == STALE_CONNECTION {
 		nc.processOpErr(ErrStaleConnection)
+	} else if strings.HasPrefix(e, PERMISSIONS_ERR) {
+		nc.processPermissionsViolation(e)
 	} else {
 		nc.mu.Lock()
 		nc.err = errors.New("nats: " + e)
@@ -1694,20 +1832,22 @@ func (nc *Conn) publish(subj, reply string, data []byte) error {
 // Request will create an Inbox and perform a Request() call
 // with the Inbox reply and return the first reply received.
 // This is optimized for the case of multiple responses.
-func (nc *Conn) Request(subj string, data []byte, timeout time.Duration) (m *Msg, err error) {
+func (nc *Conn) Request(subj string, data []byte, timeout time.Duration) (*Msg, error) {
 	inbox := NewInbox()
 	ch := make(chan *Msg, RequestChanLen)
+
 	s, err := nc.subscribe(inbox, _EMPTY_, nil, ch)
 	if err != nil {
 		return nil, err
 	}
 	s.AutoUnsubscribe(1)
+	defer s.Unsubscribe()
+
 	err = nc.PublishRequest(subj, inbox, data)
-	if err == nil {
-		m, err = s.NextMsg(timeout)
+	if err != nil {
+		return nil, err
 	}
-	s.Unsubscribe()
-	return
+	return s.NextMsg(timeout)
 }
 
 // InboxPrefix is the prefix for all inbox subjects.
@@ -1951,7 +2091,7 @@ func (nc *Conn) unsubscribe(sub *Subscription, max int) error {
 // NextMsg() will return the next message available to a synchronous subscriber
 // or block until one is available. A timeout can be used to return when no
 // message has been delivered.
-func (s *Subscription) NextMsg(timeout time.Duration) (msg *Msg, err error) {
+func (s *Subscription) NextMsg(timeout time.Duration) (*Msg, error) {
 	if s == nil {
 		return nil, ErrBadSubscription
 	}
@@ -1986,6 +2126,8 @@ func (s *Subscription) NextMsg(timeout time.Duration) (msg *Msg, err error) {
 	s.mu.Unlock()
 
 	var ok bool
+	var msg *Msg
+
 	t := time.NewTimer(timeout)
 	defer t.Stop()
 
@@ -2020,7 +2162,7 @@ func (s *Subscription) NextMsg(timeout time.Duration) (msg *Msg, err error) {
 		return nil, ErrTimeout
 	}
 
-	return
+	return msg, nil
 }
 
 // Queued returns the number of queued messages in the client for this subscription.
@@ -2387,6 +2529,46 @@ func (nc *Conn) IsReconnecting() bool {
 	nc.mu.Lock()
 	defer nc.mu.Unlock()
 	return nc.isReconnecting()
+}
+
+// IsConnected tests if a Conn is connected.
+func (nc *Conn) IsConnected() bool {
+	nc.mu.Lock()
+	defer nc.mu.Unlock()
+	return nc.isConnected()
+}
+
+// caller must lock
+func (nc *Conn) getServers(implicitOnly bool) []string {
+	poolSize := len(nc.srvPool)
+	var servers = make([]string, 0)
+	for i := 0; i < poolSize; i++ {
+		if implicitOnly && !nc.srvPool[i].isImplicit {
+			continue
+		}
+		url := nc.srvPool[i].url
+		servers = append(servers, fmt.Sprintf("%s://%s", url.Scheme, url.Host))
+	}
+	return servers
+}
+
+// Servers returns the list of known server urls, including additional
+// servers discovered after a connection has been established.  If
+// authentication is enabled, use UserInfo or Token when connecting with
+// these urls.
+func (nc *Conn) Servers() []string {
+	nc.mu.Lock()
+	defer nc.mu.Unlock()
+	return nc.getServers(false)
+}
+
+// DiscoveredServers returns only the server urls that have been discovered
+// after a connection has been established. If authentication is enabled,
+// use UserInfo or Token when connecting with these urls.
+func (nc *Conn) DiscoveredServers() []string {
+	nc.mu.Lock()
+	defer nc.mu.Unlock()
+	return nc.getServers(true)
 }
 
 // Status returns the current state of the connection.
