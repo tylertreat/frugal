@@ -53,3 +53,7 @@ func (p *processor) Process(in, out *FProtocol) error {
 }
 
 func (p *processor) AddMiddleware(middleware ServiceMiddleware) {}
+
+func (p *processor) Annotations() map[string]map[string]string {
+	return nil
+}
