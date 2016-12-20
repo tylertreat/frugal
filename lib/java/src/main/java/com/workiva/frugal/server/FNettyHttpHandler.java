@@ -10,6 +10,9 @@ import io.netty.handler.codec.http.HttpUtil;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 
+/**
+ * Reference implementation of a Netty HTTP handler.
+ */
 public class FNettyHttpHandler extends ChannelInboundHandlerAdapter {
 
     private HttpRequest request;
