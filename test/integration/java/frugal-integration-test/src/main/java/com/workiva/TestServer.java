@@ -42,7 +42,6 @@ import org.apache.thrift.protocol.TProtocolFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -54,7 +53,7 @@ public class TestServer {
 
     public static boolean middlewareCalled = false;
 
-    public static void main(String [] args) {
+    public static void main(String[] args) {
         try {
             // default testing parameters, overwritten in Python runner
             int port = 9090;
@@ -91,8 +90,7 @@ public class TestServer {
             ConnectionFactory cf = new ConnectionFactory("nats://localhost:4222");
             Connection conn = cf.createConnection();
 
-            List<String> validTransports = new ArrayList<>();
-            validTransports.add("stateless");
+            List<String> validTransports = Arrays.asList("stateless", "http");
 
             if (!validTransports.contains(transport_type)) {
                 throw new Exception("Unknown transport type! " + transport_type);
@@ -113,18 +111,28 @@ public class TestServer {
                             fProtocolFactory,
                             new String[]{Integer.toString(port)}).build();
                     break;
+                case "http":
+                    break;
             }
 
             // Start a healthcheck server for the cross language tests
-            try {
-                HealthCheck healthcheck = new HealthCheck(port);
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
+            if (transport_type.equals("stateless")) {
+                try {
+                    new HealthCheck(port);
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
+                }
+
+                // Start server in separate thread
+                NatsServerThread serverThread = new NatsServerThread(server, transport_type);
+                serverThread.start();
+            } else {
+
+                // Start server in separate thread
+                NettyServerThread serverThread = new NettyServerThread(server, transport_type);
+                serverThread.start();
             }
 
-            // Start server in separate thread
-            runServer serverThread = new runServer(server, transport_type);
-            serverThread.start();
 
             // Wait for the middleware to be invoked, fail if it exceeds the longest client timeout (currently 20 sec)
             if (called.await(20, TimeUnit.SECONDS)) {
@@ -140,11 +148,11 @@ public class TestServer {
     }
 
 
-    private static class runServer extends Thread {
+    private static class NatsServerThread extends Thread {
         FServer server;
         String transport_type;
 
-        runServer(FServer server, String transport_type) {
+        NatsServerThread(FServer server, String transport_type) {
             this.server = server;
             this.transport_type = transport_type;
         }
@@ -159,6 +167,24 @@ public class TestServer {
         }
     }
 
+    private static class NettyServerThread extends Thread {
+        FServer server;
+        String transport_type;
+
+        NettyServerThread(FServer server, String transport_type) {
+            this.server = server;
+            this.transport_type = transport_type;
+        }
+
+        public void run() {
+            System.out.println("Starting " + transport_type + " server...");
+            try {
+                server.serve();
+            } catch (Exception e) {
+                System.out.printf("Exception starting server %s\n", e);
+            }
+        }
+    }
 
     private static class ServerMiddleware implements ServiceMiddleware {
         CountDownLatch called;
