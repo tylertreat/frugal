@@ -42,7 +42,6 @@ public class FNatsServer implements FServer {
     private final String[] subjects;
     private final String queue;
     private final long highWatermark;
-    private final FrameProcessor frameProcessor;
 
     private final CountDownLatch shutdownSignal = new CountDownLatch(1);
     private final ExecutorService executorService;
@@ -73,7 +72,6 @@ public class FNatsServer implements FServer {
         this.queue = queue;
         this.highWatermark = highWatermark;
         this.executorService = executorService;
-        this.frameProcessor = FrameProcessor.of(processor, protoFactory);
     }
 
     /**
@@ -257,7 +255,7 @@ public class FNatsServer implements FServer {
 
             executorService.submit(
                     new Request(message.getData(), System.currentTimeMillis(), message.getReplyTo(),
-                            highWatermark, frameProcessor, conn));
+                            highWatermark, inputProtoFactory, outputProtoFactory, processor, conn));
         };
     }
 
@@ -270,16 +268,21 @@ public class FNatsServer implements FServer {
         final long timestamp;
         final String reply;
         final long highWatermark;
-        final FrameProcessor frameProcessor;
+        final FProtocolFactory inputProtoFactory;
+        final FProtocolFactory outputProtoFactory;
+        final FProcessor processor;
         final Connection conn;
 
         Request(byte[] frameBytes, long timestamp, String reply, long highWatermark,
-                FrameProcessor frameProcessor, Connection conn) {
+                FProtocolFactory inputProtoFactory, FProtocolFactory outputProtoFactory,
+                FProcessor processor, Connection conn) {
             this.frameBytes = frameBytes;
             this.timestamp = timestamp;
             this.reply = reply;
             this.highWatermark = highWatermark;
-            this.frameProcessor = frameProcessor;
+            this.inputProtoFactory = inputProtoFactory;
+            this.outputProtoFactory = outputProtoFactory;
+            this.processor = processor;
             this.conn = conn;
         }
 
@@ -293,17 +296,29 @@ public class FNatsServer implements FServer {
         }
 
         private void process() {
+            // Read and process frame (exclude first 4 bytes which represent frame size).
+            byte[] frame = Arrays.copyOfRange(frameBytes, 4, frameBytes.length);
+            TTransport input = new TMemoryInputTransport(frame);
+
+            TMemoryOutputBuffer output = new TMemoryOutputBuffer(NATS_MAX_MESSAGE_SIZE);
             try {
-                byte[] output = frameProcessor.process(frameBytes);
-                try {
-                    conn.publish(reply, output);
-                } catch (IOException e) {
-                    LOGGER.warn("failed to send response: " + e.getMessage());
-                }
+                processor.process(inputProtoFactory.getProtocol(input), outputProtoFactory.getProtocol(output));
             } catch (TApplicationException e) {
                 LOGGER.error("user handler code returned unhandled error on request:" + e.getMessage());
-            } catch (TException | IOException e) {
+            } catch (TException e) {
                 LOGGER.error("user handler code returned unhandled error on request:" + e.getMessage());
+                return;
+            }
+
+            if (!output.hasWriteData()) {
+                return;
+            }
+
+            // Send response.
+            try {
+                conn.publish(reply, output.getWriteBytes());
+            } catch (IOException e) {
+                LOGGER.warn("failed to send response: " + e.getMessage());
             }
         }
 

@@ -1,6 +1,5 @@
 package com.workiva.frugal.server;
 
-import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.transport.TMemoryOutputBuffer;
@@ -12,15 +11,18 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpUtil;
-import io.netty.handler.codec.http.HttpVersion;
-import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.apache.thrift.transport.TTransport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TRANSFER_ENCODING;
@@ -34,15 +36,15 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * Default processor implementation for {@link FNettyHttpProcessor}.
- * TODO: Add logging
- * TODO: Custom headers
- * TODO: Testing
  */
 public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(FNatsServer.class);
 
     private final FProcessor processor;
     private final FProtocolFactory inProtocolFactory;
     private final FProtocolFactory outProtocolFactory;
+    private final Collection<Map.Entry<String, String>> customHeaders;
 
     private FDefaultNettyHttpProcessor(
             FProcessor processor,
@@ -51,10 +53,11 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
         this.processor = processor;
         this.inProtocolFactory = inProtocolFactory;
         this.outProtocolFactory = outProtocolFactory;
+        this.customHeaders = new ArrayList<>();
     }
 
     /**
-     * Create a new FrameProcessor, setting the input and output protocol.
+     * Create a new HTTP processer, setting the input and output protocol.
      *
      * @param processor       Frugal request processor
      * @param protocolFactory input and output protocol
@@ -65,7 +68,7 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
     }
 
     /**
-     * Create a new FrameProcessor, setting the input and output protocol.
+     * Create a new HTTP processor, setting the input and output protocol.
      *
      * @param processor          Frugal request processor
      * @param inProtocolFactory  input protocol
@@ -126,39 +129,75 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
         }
 
         ByteBuf body = request.content();
+        ByteBuf outputBuffer = Unpooled.EMPTY_BUFFER;
         try {
-            ByteBuf outputBuffer = processFrame(body);
-            Integer responseLimit = getResponseLimit(request.headers());
-            if (responseLimit > 0 && outputBuffer.readableBytes() > responseLimit) {
-                throw FMessageSizeException.response("Response body too large for client");
-            }
-
-            FullHttpResponse response = new DefaultFullHttpResponse(
-                    HTTP_1_1,
-                    OK,
-                    outputBuffer);
-
-
-            ZonedDateTime dateTime = ZonedDateTime.now();
-            DateTimeFormatter formatter = DateTimeFormatter.RFC_1123_DATE_TIME;
-
-            DefaultHttpHeaders headers = (DefaultHttpHeaders) response.headers();
-            headers.set(DATE, dateTime.format(formatter));
-            headers.set(CONTENT_TYPE, "application/x-frugal");
-            headers.set(CONTENT_TRANSFER_ENCODING, "base64");
-            headers.set(CONTENT_LENGTH, Integer.toString(outputBuffer.readableBytes()));
-
-            return response;
-        } catch (FMessageSizeException e) {
-            FullHttpResponse response = new DefaultFullHttpResponse(
-                    HTTP_1_1,
-                    REQUEST_ENTITY_TOO_LARGE);
-            return response;
+            outputBuffer = processFrame(body);
         } catch (TException e) {
-            FullHttpResponse response = new DefaultFullHttpResponse(
+            LOGGER.error("Frugal processor returned unhandled error:" + e);
+            return new DefaultFullHttpResponse(
                     HTTP_1_1,
                     INTERNAL_SERVER_ERROR);
-            return response;
         }
+
+        Integer responseLimit = getResponseLimit(request.headers());
+        if (responseLimit > 0 && outputBuffer.readableBytes() > responseLimit) {
+            LOGGER.error("Response size too large for client");
+            return new DefaultFullHttpResponse(
+                    HTTP_1_1,
+                    REQUEST_ENTITY_TOO_LARGE);
+        }
+
+        FullHttpResponse response = new DefaultFullHttpResponse(
+                HTTP_1_1,
+                OK,
+                outputBuffer);
+
+        ZonedDateTime dateTime = ZonedDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.RFC_1123_DATE_TIME;
+
+        DefaultHttpHeaders headers = (DefaultHttpHeaders) response.headers();
+        headers.set(DATE, dateTime.format(formatter));
+        headers.set(CONTENT_TYPE, "application/x-frugal");
+        headers.set(CONTENT_TRANSFER_ENCODING, "base64");
+        headers.set(CONTENT_LENGTH, Integer.toString(outputBuffer.readableBytes()));
+
+        // Add custom headers
+        for (Map.Entry<String, String> header : this.customHeaders) {
+            headers.set(header.getKey(), header.getValue());
+        }
+
+        return response;
+    }
+
+    /**
+     * Add a custom header to the returned response.
+     *
+     * @param key   Header name
+     * @param value Header value
+     */
+    public void addCustomHeader(final String key, final String value) {
+        this.customHeaders.add(new Map.Entry<String, String>() {
+            public String getKey() {
+                return key;
+            }
+
+            public String getValue() {
+                return value;
+            }
+
+            public String setValue(String value) {
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Add a map of custom header to the returned response.
+     *
+     * @param headers Map of header name, header value pairs.
+     */
+    public void setCustomHeaders(Collection<Map.Entry<String, String>> headers) {
+        this.customHeaders.clear();
+        this.customHeaders.addAll(headers);
     }
 }
