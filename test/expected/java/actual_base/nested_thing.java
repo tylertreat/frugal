@@ -105,17 +105,6 @@ public class nested_thing implements org.apache.thrift.TBase<nested_thing, neste
 		}
 	}
 
-	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.THINGS, new org.apache.thrift.meta_data.FieldMetaData("things", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, thing.class))));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(nested_thing.class, metaDataMap);
-	}
-
 	public nested_thing() {
 	}
 
@@ -179,12 +168,6 @@ public class nested_thing implements org.apache.thrift.TBase<nested_thing, neste
 	/** Returns true if field things is set (has been assigned a value) and false otherwise */
 	public boolean isSetThings() {
 		return this.things != null;
-	}
-
-	public void setThingsIsSet(boolean value) {
-		if (!value) {
-			this.things = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -323,7 +306,6 @@ public class nested_thing implements org.apache.thrift.TBase<nested_thing, neste
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -357,7 +339,6 @@ public class nested_thing implements org.apache.thrift.TBase<nested_thing, neste
 								struct.things.add(elem172);
 							}
 							iprot.readListEnd();
-							struct.setThingsIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -428,7 +409,6 @@ public class nested_thing implements org.apache.thrift.TBase<nested_thing, neste
 					elem177.read(iprot);
 					struct.things.add(elem177);
 				}
-				struct.setThingsIsSet(true);
 			}
 		}
 

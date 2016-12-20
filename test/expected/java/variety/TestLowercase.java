@@ -45,7 +45,7 @@ public class TestLowercase implements org.apache.thrift.TBase<TestLowercase, Tes
 		schemes.put(TupleScheme.class, new TestLowercaseTupleSchemeFactory());
 	}
 
-	public int lowercaseInt; // required
+	public Integer lowercaseInt; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		LOWERCASE_INT((short)1, "lowercaseInt")
@@ -105,33 +105,19 @@ public class TestLowercase implements org.apache.thrift.TBase<TestLowercase, Tes
 		}
 	}
 
-	// isset id assignments
-	private static final int __LOWERCASEINT_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.LOWERCASE_INT, new org.apache.thrift.meta_data.FieldMetaData("lowercaseInt", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(TestLowercase.class, metaDataMap);
-	}
-
 	public TestLowercase() {
 	}
 
 	public TestLowercase(
-		int lowercaseInt) {
+		Integer lowercaseInt) {
 		this();
 		this.lowercaseInt = lowercaseInt;
-		setLowercaseIntIsSet(true);
 	}
 
 	/**
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public TestLowercase(TestLowercase other) {
-		__isset_bitfield = other.__isset_bitfield;
 		this.lowercaseInt = other.lowercaseInt;
 	}
 
@@ -141,32 +127,26 @@ public class TestLowercase implements org.apache.thrift.TBase<TestLowercase, Tes
 
 	@Override
 	public void clear() {
-		setLowercaseIntIsSet(false);
 		this.lowercaseInt = 0;
 
 	}
 
-	public int getLowercaseInt() {
+	public Integer getLowercaseInt() {
 		return this.lowercaseInt;
 	}
 
-	public TestLowercase setLowercaseInt(int lowercaseInt) {
+	public TestLowercase setLowercaseInt(Integer lowercaseInt) {
 		this.lowercaseInt = lowercaseInt;
-		setLowercaseIntIsSet(true);
 		return this;
 	}
 
 	public void unsetLowercaseInt() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __LOWERCASEINT_ISSET_ID);
+		this.lowercaseInt = null;
 	}
 
 	/** Returns true if field lowercaseInt is set (has been assigned a value) and false otherwise */
 	public boolean isSetLowercaseInt() {
-		return EncodingUtils.testBit(__isset_bitfield, __LOWERCASEINT_ISSET_ID);
-	}
-
-	public void setLowercaseIntIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __LOWERCASEINT_ISSET_ID, value);
+		return this.lowercaseInt != null;
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -301,8 +281,6 @@ public class TestLowercase implements org.apache.thrift.TBase<TestLowercase, Tes
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -329,7 +307,6 @@ public class TestLowercase implements org.apache.thrift.TBase<TestLowercase, Tes
 					case 1: // LOWERCASE_INT
 						if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
 							struct.lowercaseInt = iprot.readI32();
-							struct.setLowercaseIntIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -385,7 +362,6 @@ public class TestLowercase implements org.apache.thrift.TBase<TestLowercase, Tes
 			BitSet incoming = iprot.readBitSet(1);
 			if (incoming.get(0)) {
 				struct.lowercaseInt = iprot.readI32();
-				struct.setLowercaseIntIsSet(true);
 			}
 		}
 

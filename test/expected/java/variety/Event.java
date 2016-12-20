@@ -53,7 +53,7 @@ public class Event implements org.apache.thrift.TBase<Event, Event._Fields>, jav
 	/**
 	 * ID is a unique identifier for an event.
 	 */
-	public long ID; // required
+	public Long ID; // required
 	/**
 	 * Message contains the event payload.
 	 */
@@ -126,31 +126,16 @@ public class Event implements org.apache.thrift.TBase<Event, Event._Fields>, jav
 		}
 	}
 
-	// isset id assignments
-	private static final int __ID_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.ID, new org.apache.thrift.meta_data.FieldMetaData("ID", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id")));
-		tmpMap.put(_Fields.MESSAGE, new org.apache.thrift.meta_data.FieldMetaData("Message", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Event.class, metaDataMap);
-	}
-
 	public Event() {
 		this.ID = varietyConstants.DEFAULT_ID;
 
 	}
 
 	public Event(
-		long ID,
+		Long ID,
 		String Message) {
 		this();
 		this.ID = ID;
-		setIDIsSet(true);
 		this.Message = Message;
 	}
 
@@ -158,7 +143,6 @@ public class Event implements org.apache.thrift.TBase<Event, Event._Fields>, jav
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public Event(Event other) {
-		__isset_bitfield = other.__isset_bitfield;
 		this.ID = other.ID;
 		if (other.isSetMessage()) {
 			this.Message = other.Message;
@@ -180,30 +164,25 @@ public class Event implements org.apache.thrift.TBase<Event, Event._Fields>, jav
 	/**
 	 * ID is a unique identifier for an event.
 	 */
-	public long getID() {
+	public Long getID() {
 		return this.ID;
 	}
 
 	/**
 	 * ID is a unique identifier for an event.
 	 */
-	public Event setID(long ID) {
+	public Event setID(Long ID) {
 		this.ID = ID;
-		setIDIsSet(true);
 		return this;
 	}
 
 	public void unsetID() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __ID_ISSET_ID);
+		this.ID = null;
 	}
 
 	/** Returns true if field ID is set (has been assigned a value) and false otherwise */
 	public boolean isSetID() {
-		return EncodingUtils.testBit(__isset_bitfield, __ID_ISSET_ID);
-	}
-
-	public void setIDIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __ID_ISSET_ID, value);
+		return this.ID != null;
 	}
 
 	/**
@@ -228,12 +207,6 @@ public class Event implements org.apache.thrift.TBase<Event, Event._Fields>, jav
 	/** Returns true if field Message is set (has been assigned a value) and false otherwise */
 	public boolean isSetMessage() {
 		return this.Message != null;
-	}
-
-	public void setMessageIsSet(boolean value) {
-		if (!value) {
-			this.Message = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -413,8 +386,6 @@ public class Event implements org.apache.thrift.TBase<Event, Event._Fields>, jav
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -441,7 +412,6 @@ public class Event implements org.apache.thrift.TBase<Event, Event._Fields>, jav
 					case 1: // ID
 						if (schemeField.type == org.apache.thrift.protocol.TType.I64) {
 							struct.ID = iprot.readI64();
-							struct.setIDIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -449,7 +419,6 @@ public class Event implements org.apache.thrift.TBase<Event, Event._Fields>, jav
 					case 2: // MESSAGE
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.Message = iprot.readString();
-							struct.setMessageIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -516,11 +485,9 @@ public class Event implements org.apache.thrift.TBase<Event, Event._Fields>, jav
 			BitSet incoming = iprot.readBitSet(2);
 			if (incoming.get(0)) {
 				struct.ID = iprot.readI64();
-				struct.setIDIsSet(true);
 			}
 			if (incoming.get(1)) {
 				struct.Message = iprot.readString();
-				struct.setMessageIsSet(true);
 			}
 		}
 

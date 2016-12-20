@@ -43,40 +43,6 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	}
 }
 
-// ADTs would be really nice
-type IsSetType int64
-
-const (
-	IsSetNone IsSetType = iota
-	IsSetBitfield
-	IsSetBitSet
-)
-
-// This is how java does isset checks, I'm open to changing this.
-func (g *Generator) getIsSetType(s *parser.Struct) (IsSetType, string) {
-	primitiveCount := 0
-	for _, field := range s.Fields {
-		if g.isJavaPrimitive(field.Type) {
-			primitiveCount += 1
-		}
-	}
-
-	switch {
-	case primitiveCount == 0:
-		return IsSetNone, ""
-	case 0 < primitiveCount && primitiveCount <= 8:
-		return IsSetBitfield, "byte"
-	case 8 < primitiveCount && primitiveCount <= 16:
-		return IsSetBitfield, "short"
-	case 16 < primitiveCount && primitiveCount <= 32:
-		return IsSetBitfield, "int"
-	case 32 < primitiveCount && primitiveCount <= 64:
-		return IsSetBitfield, "long"
-	default:
-		return IsSetBitSet, ""
-	}
-}
-
 func (g *Generator) SetupGenerator(outputDir string) error {
 	g.outputDir = outputDir
 	return nil
@@ -177,7 +143,7 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 	} else if underlyingType.IsContainer() {
 		switch underlyingType.Name {
 		case "list":
-			contents += fmt.Sprintf("%s = new ArrayList<%s>();\n", fieldName, containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType)))
+			contents += fmt.Sprintf("%s = new ArrayList<%s>();\n", fieldName, g.getJavaTypeFromThriftType(underlyingType.ValueType))
 			ind := tabtab
 			if needsStatic {
 				contents += ind + "static {\n"
@@ -195,7 +161,7 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 			}
 			return contents
 		case "set":
-			contents += fmt.Sprintf("%s = new HashSet<%s>();\n", fieldName, containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType)))
+			contents += fmt.Sprintf("%s = new HashSet<%s>();\n", fieldName, g.getJavaTypeFromThriftType(underlyingType.ValueType))
 			ind := tabtab
 			if needsStatic {
 				contents += ind + "static {\n"
@@ -214,8 +180,8 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 			return contents
 		case "map":
 			contents += fmt.Sprintf("%s = new HashMap<%s,%s>();\n",
-				fieldName, containerType(g.getJavaTypeFromThriftType(underlyingType.KeyType)),
-				containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType)))
+				fieldName, g.getJavaTypeFromThriftType(underlyingType.KeyType),
+				g.getJavaTypeFromThriftType(underlyingType.ValueType))
 			ind := tabtab
 			if needsStatic {
 				contents += tabtab + "static {\n"
@@ -475,7 +441,6 @@ func (g *Generator) generateUnion(union *parser.Struct, isArg, isResult bool) st
 
 	contents += g.generateDescriptors(union)
 	contents += g.generateFieldsEnum(union)
-	contents += g.generateMetaDataMap(union)
 	contents += g.generateUnionConstructors(union)
 	contents += g.generateUnionFieldConstructors(union)
 	contents += g.generateUnionCheckType(union)
@@ -543,8 +508,8 @@ func (g *Generator) generateUnionCheckType(union *parser.Struct) string {
 	contents += tab + "protected void checkType(_Fields setField, Object value) throws ClassCastException {\n"
 	contents += tabtab + "switch (setField) {\n"
 	for _, field := range union.Fields {
-		fieldType := containerType(g.getJavaTypeFromThriftType(field.Type))
-		unparametrizedType := containerType(g.getUnparametrizedJavaType(field.Type))
+		fieldType := g.getJavaTypeFromThriftType(field.Type)
+		unparametrizedType := g.getUnparametrizedJavaType(field.Type)
 		contents += fmt.Sprintf(tabtabtab+"case %s:\n", toConstantName(field.Name))
 		contents += fmt.Sprintf(tabtabtabtab+"if (value instanceof %s) {\n", unparametrizedType)
 		contents += tabtabtabtabtab + "break;\n"
@@ -632,7 +597,7 @@ func (g *Generator) generateUnionWrite(union *parser.Struct, scheme string) stri
 	contents += tabtab + "switch (setField_) {\n"
 	for _, field := range union.Fields {
 		constantName := toConstantName(field.Name)
-		javaContainerType := containerType(g.getJavaTypeFromThriftType(field.Type))
+		javaContainerType := g.getJavaTypeFromThriftType(field.Type)
 		contents += fmt.Sprintf(tabtabtab+"case %s:\n", constantName)
 		contents += fmt.Sprintf(tabtabtabtab+"%s %s = (%s)value_;\n", javaContainerType, field.Name, javaContainerType)
 		contents += g.generateWriteFieldRec(field, false, false, tabtabtabtab)
@@ -694,7 +659,7 @@ func (g *Generator) generateUnionGetSetFields(union *parser.Struct) string {
 		// get
 		contents += fmt.Sprintf(tab+"public %s get%s() {\n", javaType, titleName)
 		contents += fmt.Sprintf(tabtab+"if (getSetField() == _Fields.%s) {\n", constantName)
-		contents += fmt.Sprintf(tabtabtab+"return (%s)getFieldValue();\n", containerType(javaType))
+		contents += fmt.Sprintf(tabtabtab+"return (%s)getFieldValue();\n", javaType)
 		contents += tabtab + "} else {\n"
 		contents += fmt.Sprintf(tabtabtab+"throw new RuntimeException(\"Cannot get field '%s' because union is currently set to \" + getFieldDesc(getSetField()).name);\n", field.Name)
 		contents += tabtab + "}\n"
@@ -828,11 +793,6 @@ func (g *Generator) generateStruct(s *parser.Struct, isArg, isResult bool) strin
 
 	contents += g.generateFieldsEnum(s)
 
-	contents += g.generateIsSetVars(s)
-
-	contents += g.generateOptionals(s)
-	contents += g.generateMetaDataMap(s)
-
 	contents += g.generateDefaultConstructor(s)
 	contents += g.generateFullConstructor(s)
 	contents += g.generateCopyConstructor(s)
@@ -852,7 +812,6 @@ func (g *Generator) generateStruct(s *parser.Struct, isArg, isResult bool) strin
 		contents += g.generateSetField(s.Name, field)
 		contents += g.generateUnsetField(s, field)
 		contents += g.generateIsSetField(s, field)
-		contents += g.generateSetIsSetField(s, field)
 	}
 
 	contents += g.generateSetValue(s)
@@ -991,66 +950,6 @@ func (g *Generator) generateFieldsEnum(s *parser.Struct) string {
 	return contents
 }
 
-func (g *Generator) generateIsSetVars(s *parser.Struct) string {
-	contents := ""
-	contents += tab + "// isset id assignments\n"
-	primitiveCount := 0
-	for _, field := range s.Fields {
-		if g.isJavaPrimitive(field.Type) {
-			contents += fmt.Sprintf(tab+"private static final int %s = %d;\n",
-				g.getIsSetID(field.Name), primitiveCount)
-			primitiveCount += 1
-		}
-	}
-	isSetType, bitFieldType := g.getIsSetType(s)
-	switch isSetType {
-	case IsSetNone:
-	// Do nothing
-	case IsSetBitfield:
-		contents += fmt.Sprintf(tab+"private %s __isset_bitfield = 0;\n", bitFieldType)
-	case IsSetBitSet:
-		contents += fmt.Sprintf(tab+"private BitSet __isset_bit_vector = new BitSet(%d);\n", primitiveCount)
-	}
-	return contents
-}
-
-func (g *Generator) generateOptionals(s *parser.Struct) string {
-	// TODO 2.0 These don't appear to be used by anything
-	contents := ""
-
-	optionals := ""
-	sep := ""
-	for _, field := range s.Fields {
-		if field.Modifier != parser.Optional {
-			continue
-		}
-		optionals += fmt.Sprintf(sep+"_Fields.%s", toConstantName(field.Name))
-		sep = ","
-	}
-
-	if len(optionals) > 0 {
-		contents += fmt.Sprintf(tab+"private static final _Fields optionals[] = {%s};\n", optionals)
-	}
-
-	return contents
-}
-
-func (g *Generator) generateMetaDataMap(s *parser.Struct) string {
-	contents := ""
-	contents += tab + "public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;\n"
-	contents += tab + "static {\n"
-	contents += tabtab + "Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);\n"
-	for _, field := range s.Fields {
-		contents += fmt.Sprintf(tabtab+"tmpMap.put(_Fields.%s, new org.apache.thrift.meta_data.FieldMetaData(\"%s\", org.apache.thrift.TFieldRequirementType.%s,\n",
-			toConstantName(field.Name), field.Name, field.Modifier.String())
-		contents += fmt.Sprintf("%s));\n", g.generateMetaDataMapEntry(field.Type, tabtabtabtab))
-	}
-	contents += tabtab + "metaDataMap = Collections.unmodifiableMap(tmpMap);\n"
-	contents += fmt.Sprintf(tabtab+"org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(%s.class, metaDataMap);\n", s.Name)
-	contents += tab + "}\n\n"
-	return contents
-}
-
 func (g *Generator) generateDefaultConstructor(s *parser.Struct) string {
 	contents := ""
 	contents += fmt.Sprintf(tab+"public %s() {\n", s.Name)
@@ -1091,10 +990,6 @@ func (g *Generator) generateFullConstructor(s *parser.Struct) string {
 			} else {
 				contents += fmt.Sprintf(tabtab+"this.%s = %s;\n", field.Name, field.Name)
 			}
-
-			if g.isJavaPrimitive(field.Type) {
-				contents += fmt.Sprintf(tabtab+"set%sIsSet(true);\n", strings.Title(field.Name))
-			}
 		}
 		contents += tab + "}\n\n"
 	}
@@ -1105,17 +1000,6 @@ func (g *Generator) generateCopyConstructor(s *parser.Struct) string {
 	contents := ""
 	contents += g.GenerateBlockComment([]string{"Performs a deep copy on <i>other</i>."}, tab)
 	contents += fmt.Sprintf(tab+"public %s(%s other) {\n", s.Name, s.Name)
-
-	isSetType, _ := g.getIsSetType(s)
-	switch isSetType {
-	case IsSetNone:
-		// do nothing
-	case IsSetBitfield:
-		contents += tabtab + "__isset_bitfield = other.__isset_bitfield;\n"
-	case IsSetBitSet:
-		contents += tabtab + "__isset_bit_vector.clear();\n"
-		contents += tabtab + "__isset_bit_vector.or(other.__isset_bit_vector);\n"
-	}
 
 	for _, field := range s.Fields {
 		isPrimitive := g.isJavaPrimitive(g.Frugal.UnderlyingType(field.Type))
@@ -1153,7 +1037,6 @@ func (g *Generator) generateClear(s *parser.Struct) string {
 			val := g.generateConstantValueWrapper("this."+field.Name, field.Type, field.Default, false, false)
 			contents += fmt.Sprintf("%s\n", val)
 		} else if g.isJavaPrimitive(field.Type) {
-			contents += fmt.Sprintf(tabtab+"set%sIsSet(false);\n", strings.Title(field.Name))
 			val := ""
 			switch underlyingType.Name {
 			case "i8", "byte", "i16", "i32", "i64":
@@ -1192,7 +1075,7 @@ func (g *Generator) generateContainerIterator(field *parser.Field) string {
 
 	contents := ""
 	contents += fmt.Sprintf(tab+"public java.util.Iterator<%s> get%sIterator() {\n",
-		containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType)), strings.Title(field.Name))
+		g.getJavaTypeFromThriftType(underlyingType.ValueType), strings.Title(field.Name))
 	contents += fmt.Sprintf(tabtab+"return (this.%s == null) ? null : this.%s.iterator();\n", field.Name, field.Name)
 	contents += tab + "}\n\n"
 	return contents
@@ -1209,9 +1092,9 @@ func (g *Generator) generateContainerAddTo(field *parser.Field) string {
 		contents += fmt.Sprintf(tab+"public void addTo%s(%s elem) {\n", fieldTitle, valType)
 		newContainer := ""
 		if underlyingType.Name == "list" {
-			newContainer = fmt.Sprintf("new ArrayList<%s>()", containerType(valType))
+			newContainer = fmt.Sprintf("new ArrayList<%s>()", valType)
 		} else {
-			newContainer = fmt.Sprintf("new HashSet<%s>()", containerType(valType))
+			newContainer = fmt.Sprintf("new HashSet<%s>()", valType)
 		}
 		contents += fmt.Sprintf(tabtab+"if (this.%s == null) {\n", field.Name)
 		contents += fmt.Sprintf(tabtabtab+"this.%s = %s;\n", field.Name, newContainer)
@@ -1223,7 +1106,7 @@ func (g *Generator) generateContainerAddTo(field *parser.Field) string {
 			fieldTitle, g.getJavaTypeFromThriftType(underlyingType.KeyType), valType)
 		contents += fmt.Sprintf(tabtab+"if (this.%s == null) {\n", field.Name)
 		contents += fmt.Sprintf(tabtabtab+"this.%s = new HashMap<%s,%s>();\n",
-			field.Name, containerType(g.getJavaTypeFromThriftType(underlyingType.KeyType)), containerType(valType))
+			field.Name, g.getJavaTypeFromThriftType(underlyingType.KeyType), valType)
 		contents += tabtab + "}\n"
 		contents += fmt.Sprintf(tabtab+"this.%s.put(key, val);\n", field.Name)
 		contents += tab + "}\n\n"
@@ -1301,10 +1184,6 @@ func (g *Generator) generateSetField(structName string, field *parser.Field) str
 		contents += fmt.Sprintf(tabtab+"this.%s = %s;\n", field.Name, field.Name)
 	}
 
-	if g.isJavaPrimitive(field.Type) {
-		contents += fmt.Sprintf(tabtab+"set%sIsSet(true);\n", fieldTitle)
-	}
-
 	contents += tabtab + "return this;\n"
 	contents += tab + "}\n\n"
 
@@ -1315,69 +1194,16 @@ func (g *Generator) generateUnsetField(s *parser.Struct, field *parser.Field) st
 	contents := ""
 
 	contents += fmt.Sprintf(tab+"public void unset%s() {\n", strings.Title(field.Name))
-	if g.isJavaPrimitive(field.Type) {
-		isSetType, _ := g.getIsSetType(s)
-		isSetID := g.getIsSetID(field.Name)
-		switch isSetType {
-		case IsSetNone:
-			panic("IsSetNone occurred with a primitive")
-		case IsSetBitfield:
-			contents += fmt.Sprintf(tabtab+"__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, %s);\n", isSetID)
-		case IsSetBitSet:
-			contents += fmt.Sprintf(tabtab+"__isset_bit_vector.clear(%s);\n", isSetID)
-		}
-	} else {
-		contents += fmt.Sprintf(tabtab+"this.%s = null;\n", field.Name)
-	}
+	contents += fmt.Sprintf(tabtab+"this.%s = null;\n", field.Name)
 	contents += tab + "}\n\n"
 	return contents
-}
-
-func (g *Generator) getIsSetID(fieldName string) string {
-	return fmt.Sprintf("__%s_ISSET_ID", strings.ToUpper(fieldName))
 }
 
 func (g *Generator) generateIsSetField(s *parser.Struct, field *parser.Field) string {
 	contents := ""
 	contents += fmt.Sprintf(tab+"/** Returns true if field %s is set (has been assigned a value) and false otherwise */\n", field.Name)
 	contents += fmt.Sprintf(tab+"public boolean isSet%s() {\n", strings.Title(field.Name))
-	if g.isJavaPrimitive(field.Type) {
-		isSetType, _ := g.getIsSetType(s)
-		isSetID := g.getIsSetID(field.Name)
-		switch isSetType {
-		case IsSetNone:
-			panic("IsSetNone occurred with a primitive")
-		case IsSetBitfield:
-			contents += fmt.Sprintf(tabtab+"return EncodingUtils.testBit(__isset_bitfield, %s);\n", isSetID)
-		case IsSetBitSet:
-			contents += fmt.Sprintf(tabtab+"return __isset_bit_vector.get(%s);\n", isSetID)
-		}
-	} else {
-		contents += fmt.Sprintf(tabtab+"return this.%s != null;\n", field.Name)
-	}
-	contents += tab + "}\n\n"
-	return contents
-}
-
-func (g *Generator) generateSetIsSetField(s *parser.Struct, field *parser.Field) string {
-	contents := ""
-	contents += fmt.Sprintf(tab+"public void set%sIsSet(boolean value) {\n", strings.Title(field.Name))
-	if g.isJavaPrimitive(field.Type) {
-		isSetType, _ := g.getIsSetType(s)
-		isSetID := g.getIsSetID(field.Name)
-		switch isSetType {
-		case IsSetNone:
-			panic("IsSetNone occurred with a primitive")
-		case IsSetBitfield:
-			contents += fmt.Sprintf(tabtab+"__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, %s, value);\n", isSetID)
-		case IsSetBitSet:
-			contents += fmt.Sprintf(tabtab+"__isset_bit_vector.set(%s, value);\n", isSetID)
-		}
-	} else {
-		contents += tabtab + "if (!value) {\n"
-		contents += fmt.Sprintf(tabtabtab+"this.%s = null;\n", field.Name)
-		contents += tabtab + "}\n"
-	}
+	contents += fmt.Sprintf(tabtab+"return this.%s != null;\n", field.Name)
 	contents += tab + "}\n\n"
 	return contents
 }
@@ -1392,7 +1218,7 @@ func (g *Generator) generateSetValue(s *parser.Struct) string {
 		contents += tabtabtab + "if (value == null) {\n"
 		contents += fmt.Sprintf(tabtabtabtab+"unset%s();\n", fieldTitle)
 		contents += tabtabtab + "} else {\n"
-		contents += fmt.Sprintf(tabtabtabtab+"set%s((%s)value);\n", fieldTitle, containerType(g.getJavaTypeFromThriftType(field.Type)))
+		contents += fmt.Sprintf(tabtabtabtab+"set%s((%s)value);\n", fieldTitle, g.getJavaTypeFromThriftType(field.Type))
 		contents += tabtabtab + "}\n"
 		contents += tabtabtab + "break;\n\n"
 	}
@@ -1646,18 +1472,6 @@ func (g *Generator) generateReadObject(s *parser.Struct) string {
 	contents += tab + "private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {\n"
 	// isset stuff, don't do for unions
 	contents += tabtab + "try {\n"
-	if s.Type != parser.StructTypeUnion {
-		contents += tabtabtab + "// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.\n"
-		isSetType, _ := g.getIsSetType(s)
-		switch isSetType {
-		case IsSetNone:
-		// Do nothing
-		case IsSetBitfield:
-			contents += tabtabtab + "__isset_bitfield = 0;\n"
-		case IsSetBitSet:
-			contents += tabtabtab + "__isset_bit_vector = new BitSet(1);\n"
-		}
-	}
 
 	contents += tabtabtab + "read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));\n"
 	contents += tabtab + "} catch (org.apache.thrift.TException te) {\n"
@@ -1691,7 +1505,6 @@ func (g *Generator) generateStandardScheme(s *parser.Struct, isResult bool) stri
 		contents += fmt.Sprintf(tabtabtabtabtab+"case %d: // %s\n", field.ID, toConstantName(field.Name))
 		contents += fmt.Sprintf(tabtabtabtabtabtab+"if (schemeField.type == %s) {\n", g.getTType(field.Type))
 		contents += g.generateReadFieldRec(field, true, false, false, tabtabtabtabtabtabtab)
-		contents += fmt.Sprintf(tabtabtabtabtabtabtab+"struct.set%sIsSet(true);\n", strings.Title(field.Name))
 		contents += tabtabtabtabtabtab + "} else {\n"
 		contents += tabtabtabtabtabtabtab + "org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);\n"
 		contents += tabtabtabtabtabtab + "}\n"
@@ -1817,7 +1630,6 @@ func (g *Generator) generateTupleScheme(s *parser.Struct) string {
 		}
 
 		contents += g.generateReadFieldRec(field, true, true, false, tabtabtab)
-		contents += fmt.Sprintf(tabtabtab+"struct.set%sIsSet(true);\n", strings.Title(field.Name))
 	}
 
 	if numNonReqs > 0 {
@@ -1831,7 +1643,6 @@ func (g *Generator) generateTupleScheme(s *parser.Struct) string {
 
 			contents += fmt.Sprintf(tabtabtab+"if (incoming.get(%d)) {\n", nonReqFieldCount)
 			contents += g.generateReadFieldRec(field, true, true, false, tabtabtabtab)
-			contents += fmt.Sprintf(tabtabtabtab+"struct.set%sIsSet(true);\n", strings.Title(field.Name))
 			contents += tabtabtab + "}\n"
 			nonReqFieldCount += 1
 		}
@@ -1863,7 +1674,7 @@ func (g *Generator) generateCopyConstructorField(field *parser.Field, otherField
 	} else if underlyingType.IsContainer() {
 		contents := ""
 		valueType := g.getJavaTypeFromThriftType(underlyingType.ValueType)
-		containerValType := containerType(valueType)
+		containerValType := valueType
 		otherValElem := g.GetElem()
 		thisValElem := g.GetElem()
 		thisValField := parser.FieldFromType(underlyingType.ValueType, thisValElem)
@@ -1885,7 +1696,7 @@ func (g *Generator) generateCopyConstructorField(field *parser.Field, otherField
 			keyType := g.getJavaTypeFromThriftType(underlyingType.KeyType)
 			keyUnderlying := g.Frugal.UnderlyingType(underlyingType.KeyType)
 			valUnderlying := g.Frugal.UnderlyingType(underlyingType.ValueType)
-			containerKeyType := containerType(keyType)
+			containerKeyType := keyType
 
 			// If it's all primitives, optimization. Otherwise need to iterate
 			if (g.isJavaPrimitive(keyUnderlying) || keyUnderlying.Name == "string") &&
@@ -1912,50 +1723,6 @@ func (g *Generator) generateCopyConstructorField(field *parser.Field, otherField
 	panic("unrecognized type: " + underlyingType.Name)
 }
 
-func (g *Generator) generateMetaDataMapEntry(t *parser.Type, ind string) string {
-	underlyingType := g.Frugal.UnderlyingType(t)
-	ttype := g.getTType(underlyingType)
-	isThriftPrimitive := underlyingType.IsPrimitive()
-
-	// This indicates a typedef. For some reason java doesn't recurse on
-	// typedef'd types for meta data map entries
-	if t != underlyingType {
-		secondArg := ""
-		if underlyingType.Name == "binary" {
-			secondArg = ", true"
-		} else {
-			secondArg = fmt.Sprintf(", \"%s\"", t.Name)
-		}
-		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.FieldValueMetaData(%s%s)", ttype, secondArg)
-	}
-
-	if isThriftPrimitive {
-		boolArg := ""
-		if underlyingType.Name == "binary" {
-			boolArg = ", true"
-		}
-		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.FieldValueMetaData(%s%s)", ttype, boolArg)
-	} else if g.Frugal.IsStruct(underlyingType) {
-		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, %s.class)", g.qualifiedTypeName(underlyingType))
-	} else if g.Frugal.IsEnum(underlyingType) {
-		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, %s.class)", g.qualifiedTypeName(underlyingType))
-	} else if underlyingType.IsContainer() {
-		switch underlyingType.Name {
-		case "list":
-			valEntry := g.generateMetaDataMapEntry(underlyingType.ValueType, ind+tabtab)
-			return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,\n%s)", valEntry)
-		case "set":
-			valEntry := g.generateMetaDataMapEntry(underlyingType.ValueType, ind+tabtab)
-			return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.SetMetaData(org.apache.thrift.protocol.TType.SET,\n%s)", valEntry)
-		case "map":
-			keyEntry := g.generateMetaDataMapEntry(underlyingType.KeyType, ind+tabtab)
-			valEntry := g.generateMetaDataMapEntry(underlyingType.ValueType, ind+tabtab)
-			return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP,\n%s,\n%s)", keyEntry, valEntry)
-		}
-	}
-	panic("unrecognized type: " + underlyingType.Name)
-}
-
 // succinct means only read collection length instead of the whole header,
 // and don't read collection end.
 // containerTypes causes variables to be declared as objects instead of
@@ -1966,11 +1733,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, succin
 	accessPrefix := "struct."
 	javaType := g.getJavaTypeFromThriftType(field.Type)
 	if !first {
-		if containerTypes {
-			declPrefix = containerType(javaType) + " "
-		} else {
-			declPrefix = javaType + " "
-		}
+		declPrefix = javaType + " "
 		accessPrefix = ""
 	}
 
@@ -2008,7 +1771,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, succin
 		containerElem := g.GetElem()
 		counterElem := g.GetElem()
 
-		valType := containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType))
+		valType := g.getJavaTypeFromThriftType(underlyingType.ValueType)
 		valElem := g.GetElem()
 		valField := parser.FieldFromType(underlyingType.ValueType, valElem)
 		valContents := g.generateReadFieldRec(valField, false, succinct, containerTypes, ind+tab)
@@ -2054,7 +1817,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, succin
 				contents += fmt.Sprintf(ind+"org.apache.thrift.protocol.TMap %s = iprot.readMapBegin();\n", containerElem)
 			}
 
-			keyType := containerType(g.getJavaTypeFromThriftType(underlyingType.KeyType))
+			keyType := g.getJavaTypeFromThriftType(underlyingType.KeyType)
 			contents += fmt.Sprintf(ind+"%s%s = new HashMap<%s,%s>(2*%s.size);\n", declPrefix, field.Name, keyType, valType, containerElem)
 			contents += fmt.Sprintf(ind+"for (int %s = 0; %s < %s.size; ++%s) {\n", counterElem, counterElem, containerElem, counterElem)
 			keyElem := g.GetElem()
@@ -2157,7 +1920,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, succi
 					keyTType, valTType, accessPrefix, field.Name)
 			}
 			contents += fmt.Sprintf(ind+"for (Map.Entry<%s, %s> %s : %s%s.entrySet()) {\n",
-				containerType(keyJavaType), containerType(valJavaType), iterElem, accessPrefix, field.Name)
+				keyJavaType, valJavaType, iterElem, accessPrefix, field.Name)
 			keyField := parser.FieldFromType(underlyingType.KeyType, iterElem+".getKey()")
 			valField := parser.FieldFromType(underlyingType.ValueType, iterElem+".getValue()")
 			contents += g.generateWriteFieldRec(keyField, false, succinct, ind+tab)
@@ -2691,7 +2454,7 @@ func (g *Generator) generateContextualReturnValue(method *parser.Method, boxed b
 		}
 		return ret
 	}
-	ret := g.getJavaTypeFromThriftType(method.ReturnType)
+	ret := g.getUnboxedJavaType(method.ReturnType)
 	if boxed {
 		ret = containerType(ret)
 	}
@@ -3020,7 +2783,6 @@ func (g *Generator) generateServer(service *parser.Service) string {
 			contents += tabtabtabtabtab + fmt.Sprintf("handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
 		} else {
 			contents += tabtabtabtabtab + fmt.Sprintf("result.success = handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
-			contents += tabtabtabtabtab + "result.setSuccessIsSet(true);\n"
 		}
 		for _, exception := range method.Exceptions {
 			contents += tabtabtabtab + fmt.Sprintf("} catch (%s %s) {\n", g.getJavaTypeFromThriftType(exception.Type), exception.Name)
@@ -3101,17 +2863,22 @@ func (g *Generator) generateCallArgs(args []*parser.Field, prefix string) string
 }
 
 func (g *Generator) getJavaTypeFromThriftType(t *parser.Type) string {
-	return g._getJavaType(t, true)
+	return containerType(g._getJavaType(t, true))
 }
 
 func (g *Generator) getUnparametrizedJavaType(t *parser.Type) string {
-	return g._getJavaType(t, false)
+	return containerType(g._getJavaType(t, false))
+}
+
+func (g *Generator) getUnboxedJavaType(t *parser.Type) string {
+	return g._getJavaType(t, true)
 }
 
 func (g *Generator) _getJavaType(t *parser.Type, parametrized bool) string {
 	if t == nil {
 		return "void"
 	}
+
 	underlyingType := g.Frugal.UnderlyingType(t)
 	switch underlyingType.Name {
 	case "bool":

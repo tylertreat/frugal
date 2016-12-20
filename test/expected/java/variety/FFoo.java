@@ -75,16 +75,16 @@ public class FFoo {
 		/**
 		 * Blah the server.
 		 */
-		public long blah(FContext ctx, int num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception;
+		public long blah(FContext ctx, Integer num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception;
 
 		/**
 		 * oneway methods don't receive a response from the server.
 		 */
-		public void oneWay(FContext ctx, long id, java.util.Map<Integer, String> req) throws TException;
+		public void oneWay(FContext ctx, Long id, java.util.Map<Integer, String> req) throws TException;
 
 		public java.nio.ByteBuffer bin_method(FContext ctx, java.nio.ByteBuffer bin, String Str) throws TException, actual_base.java.api_exception;
 
-		public long param_modifiers(FContext ctx, int opt_num, int default_num, int req_num) throws TException;
+		public long param_modifiers(FContext ctx, Integer opt_num, Integer default_num, Integer req_num) throws TException;
 
 		public java.util.List<Long> underlying_types_test(FContext ctx, java.util.List<Long> list_type, java.util.Set<Long> set_type) throws TException;
 
@@ -116,14 +116,14 @@ public class FFoo {
 		/**
 		 * Blah the server.
 		 */
-		public long blah(FContext ctx, int num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception {
+		public long blah(FContext ctx, Integer num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception {
 			return proxy.blah(ctx, num, Str, event);
 		}
 
 		/**
 		 * oneway methods don't receive a response from the server.
 		 */
-		public void oneWay(FContext ctx, long id, java.util.Map<Integer, String> req) throws TException {
+		public void oneWay(FContext ctx, Long id, java.util.Map<Integer, String> req) throws TException {
 			proxy.oneWay(ctx, id, req);
 		}
 
@@ -131,7 +131,7 @@ public class FFoo {
 			return proxy.bin_method(ctx, bin, Str);
 		}
 
-		public long param_modifiers(FContext ctx, int opt_num, int default_num, int req_num) throws TException {
+		public long param_modifiers(FContext ctx, Integer opt_num, Integer default_num, Integer req_num) throws TException {
 			return proxy.param_modifiers(ctx, opt_num, default_num, req_num);
 		}
 
@@ -255,7 +255,7 @@ public class FFoo {
 		/**
 		 * Blah the server.
 		 */
-		public long blah(FContext ctx, int num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception {
+		public long blah(FContext ctx, Integer num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
@@ -357,7 +357,7 @@ public class FFoo {
 		/**
 		 * oneway methods don't receive a response from the server.
 		 */
-		public void oneWay(FContext ctx, long id, java.util.Map<Integer, String> req) throws TException {
+		public void oneWay(FContext ctx, Long id, java.util.Map<Integer, String> req) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			oprot.writeRequestHeader(ctx);
@@ -464,7 +464,7 @@ public class FFoo {
 			};
 		}
 
-		public long param_modifiers(FContext ctx, int opt_num, int default_num, int req_num) throws TException {
+		public long param_modifiers(FContext ctx, Integer opt_num, Integer default_num, Integer req_num) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
@@ -1014,7 +1014,6 @@ public class FFoo {
 				blah_result result = new blah_result();
 				try {
 					result.success = handler.blah(ctx, args.num, args.Str, args.event);
-					result.setSuccessIsSet(true);
 				} catch (AwesomeException awe) {
 					result.awe = awe;
 				} catch (actual_base.java.api_exception api) {
@@ -1080,7 +1079,6 @@ public class FFoo {
 				bin_method_result result = new bin_method_result();
 				try {
 					result.success = handler.bin_method(ctx, args.bin, args.Str);
-					result.setSuccessIsSet(true);
 				} catch (actual_base.java.api_exception api) {
 					result.api = api;
 				} catch (FRateLimitException e) {
@@ -1128,7 +1126,6 @@ public class FFoo {
 				param_modifiers_result result = new param_modifiers_result();
 				try {
 					result.success = handler.param_modifiers(ctx, args.opt_num, args.default_num, args.req_num);
-					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
 					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "param_modifiers", e.getMessage());
 					return;
@@ -1174,7 +1171,6 @@ public class FFoo {
 				underlying_types_test_result result = new underlying_types_test_result();
 				try {
 					result.success = handler.underlying_types_test(ctx, args.list_type, args.set_type);
-					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
 					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "underlying_types_test", e.getMessage());
 					return;
@@ -1220,7 +1216,6 @@ public class FFoo {
 				getThing_result result = new getThing_result();
 				try {
 					result.success = handler.getThing(ctx);
-					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
 					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getThing", e.getMessage());
 					return;
@@ -1266,7 +1261,6 @@ public class FFoo {
 				getMyInt_result result = new getMyInt_result();
 				try {
 					result.success = handler.getMyInt(ctx);
-					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
 					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getMyInt", e.getMessage());
 					return;
@@ -1312,7 +1306,6 @@ public class FFoo {
 				use_subdir_struct_result result = new use_subdir_struct_result();
 				try {
 					result.success = handler.use_subdir_struct(ctx, args.a);
-					result.setSuccessIsSet(true);
 				} catch (FRateLimitException e) {
 					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "use_subdir_struct", e.getMessage());
 					return;
@@ -1416,14 +1409,6 @@ public static class ping_args implements org.apache.thrift.TBase<ping_args, ping
 		public String getFieldName() {
 			return _fieldName;
 		}
-	}
-
-	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ping_args.class, metaDataMap);
 	}
 
 	public ping_args() {
@@ -1535,7 +1520,6 @@ public static class ping_args implements org.apache.thrift.TBase<ping_args, ping
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -1667,14 +1651,6 @@ public static class ping_result implements org.apache.thrift.TBase<ping_result, 
 		}
 	}
 
-	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ping_result.class, metaDataMap);
-	}
-
 	public ping_result() {
 	}
 
@@ -1784,7 +1760,6 @@ public static class ping_result implements org.apache.thrift.TBase<ping_result, 
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -1863,7 +1838,7 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 		schemes.put(TupleScheme.class, new blah_argsTupleSchemeFactory());
 	}
 
-	public int num; // required
+	public Integer num; // required
 	public String Str; // required
 	public Event event; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
@@ -1931,32 +1906,15 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 		}
 	}
 
-	// isset id assignments
-	private static final int __NUM_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.NUM, new org.apache.thrift.meta_data.FieldMetaData("num", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-		tmpMap.put(_Fields.STR, new org.apache.thrift.meta_data.FieldMetaData("Str", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.EVENT, new org.apache.thrift.meta_data.FieldMetaData("event", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Event.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(blah_args.class, metaDataMap);
-	}
-
 	public blah_args() {
 	}
 
 	public blah_args(
-		int num,
+		Integer num,
 		String Str,
 		Event event) {
 		this();
 		this.num = num;
-		setNumIsSet(true);
 		this.Str = Str;
 		this.event = event;
 	}
@@ -1965,7 +1923,6 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public blah_args(blah_args other) {
-		__isset_bitfield = other.__isset_bitfield;
 		this.num = other.num;
 		if (other.isSetStr()) {
 			this.Str = other.Str;
@@ -1981,7 +1938,6 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 
 	@Override
 	public void clear() {
-		setNumIsSet(false);
 		this.num = 0;
 
 		this.Str = null;
@@ -1990,27 +1946,22 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 
 	}
 
-	public int getNum() {
+	public Integer getNum() {
 		return this.num;
 	}
 
-	public blah_args setNum(int num) {
+	public blah_args setNum(Integer num) {
 		this.num = num;
-		setNumIsSet(true);
 		return this;
 	}
 
 	public void unsetNum() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __NUM_ISSET_ID);
+		this.num = null;
 	}
 
 	/** Returns true if field num is set (has been assigned a value) and false otherwise */
 	public boolean isSetNum() {
-		return EncodingUtils.testBit(__isset_bitfield, __NUM_ISSET_ID);
-	}
-
-	public void setNumIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __NUM_ISSET_ID, value);
+		return this.num != null;
 	}
 
 	public String getStr() {
@@ -2031,12 +1982,6 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 		return this.Str != null;
 	}
 
-	public void setStrIsSet(boolean value) {
-		if (!value) {
-			this.Str = null;
-		}
-	}
-
 	public Event getEvent() {
 		return this.event;
 	}
@@ -2053,12 +1998,6 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 	/** Returns true if field event is set (has been assigned a value) and false otherwise */
 	public boolean isSetEvent() {
 		return this.event != null;
-	}
-
-	public void setEventIsSet(boolean value) {
-		if (!value) {
-			this.event = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -2286,8 +2225,6 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -2314,7 +2251,6 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 					case 1: // NUM
 						if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
 							struct.num = iprot.readI32();
-							struct.setNumIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -2322,7 +2258,6 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 					case 2: // STR
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.Str = iprot.readString();
-							struct.setStrIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -2331,7 +2266,6 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
 							struct.event = new Event();
 							struct.event.read(iprot);
-							struct.setEventIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -2409,16 +2343,13 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 			BitSet incoming = iprot.readBitSet(3);
 			if (incoming.get(0)) {
 				struct.num = iprot.readI32();
-				struct.setNumIsSet(true);
 			}
 			if (incoming.get(1)) {
 				struct.Str = iprot.readString();
-				struct.setStrIsSet(true);
 			}
 			if (incoming.get(2)) {
 				struct.event = new Event();
 				struct.event.read(iprot);
-				struct.setEventIsSet(true);
 			}
 		}
 
@@ -2438,7 +2369,7 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 		schemes.put(TupleScheme.class, new blah_resultTupleSchemeFactory());
 	}
 
-	public long success; // required
+	public Long success; // required
 	public AwesomeException awe; // required
 	public actual_base.java.api_exception api; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
@@ -2506,32 +2437,15 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 		}
 	}
 
-	// isset id assignments
-	private static final int __SUCCESS_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
-		tmpMap.put(_Fields.AWE, new org.apache.thrift.meta_data.FieldMetaData("awe", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, AwesomeException.class)));
-		tmpMap.put(_Fields.API, new org.apache.thrift.meta_data.FieldMetaData("api", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, actual_base.java.api_exception.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(blah_result.class, metaDataMap);
-	}
-
 	public blah_result() {
 	}
 
 	public blah_result(
-		long success,
+		Long success,
 		AwesomeException awe,
 		actual_base.java.api_exception api) {
 		this();
 		this.success = success;
-		setSuccessIsSet(true);
 		this.awe = awe;
 		this.api = api;
 	}
@@ -2540,7 +2454,6 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public blah_result(blah_result other) {
-		__isset_bitfield = other.__isset_bitfield;
 		this.success = other.success;
 		if (other.isSetAwe()) {
 			this.awe = new AwesomeException(other.awe);
@@ -2556,7 +2469,6 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 
 	@Override
 	public void clear() {
-		setSuccessIsSet(false);
 		this.success = 0;
 
 		this.awe = null;
@@ -2565,27 +2477,22 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 
 	}
 
-	public long getSuccess() {
+	public Long getSuccess() {
 		return this.success;
 	}
 
-	public blah_result setSuccess(long success) {
+	public blah_result setSuccess(Long success) {
 		this.success = success;
-		setSuccessIsSet(true);
 		return this;
 	}
 
 	public void unsetSuccess() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __SUCCESS_ISSET_ID);
+		this.success = null;
 	}
 
 	/** Returns true if field success is set (has been assigned a value) and false otherwise */
 	public boolean isSetSuccess() {
-		return EncodingUtils.testBit(__isset_bitfield, __SUCCESS_ISSET_ID);
-	}
-
-	public void setSuccessIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __SUCCESS_ISSET_ID, value);
+		return this.success != null;
 	}
 
 	public AwesomeException getAwe() {
@@ -2606,12 +2513,6 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 		return this.awe != null;
 	}
 
-	public void setAweIsSet(boolean value) {
-		if (!value) {
-			this.awe = null;
-		}
-	}
-
 	public actual_base.java.api_exception getApi() {
 		return this.api;
 	}
@@ -2628,12 +2529,6 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 	/** Returns true if field api is set (has been assigned a value) and false otherwise */
 	public boolean isSetApi() {
 		return this.api != null;
-	}
-
-	public void setApiIsSet(boolean value) {
-		if (!value) {
-			this.api = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -2864,8 +2759,6 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -2892,7 +2785,6 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 					case 0: // SUCCESS
 						if (schemeField.type == org.apache.thrift.protocol.TType.I64) {
 							struct.success = iprot.readI64();
-							struct.setSuccessIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -2901,7 +2793,6 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
 							struct.awe = new AwesomeException();
 							struct.awe.read(iprot);
-							struct.setAweIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -2910,7 +2801,6 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
 							struct.api = new actual_base.java.api_exception();
 							struct.api.read(iprot);
-							struct.setApiIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -2990,17 +2880,14 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 			BitSet incoming = iprot.readBitSet(3);
 			if (incoming.get(0)) {
 				struct.success = iprot.readI64();
-				struct.setSuccessIsSet(true);
 			}
 			if (incoming.get(1)) {
 				struct.awe = new AwesomeException();
 				struct.awe.read(iprot);
-				struct.setAweIsSet(true);
 			}
 			if (incoming.get(2)) {
 				struct.api = new actual_base.java.api_exception();
 				struct.api.read(iprot);
-				struct.setApiIsSet(true);
 			}
 		}
 
@@ -3019,7 +2906,7 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 		schemes.put(TupleScheme.class, new oneWay_argsTupleSchemeFactory());
 	}
 
-	public long id; // required
+	public Long id; // required
 	public java.util.Map<Integer, String> req; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -3083,29 +2970,14 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 		}
 	}
 
-	// isset id assignments
-	private static final int __ID_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.ID, new org.apache.thrift.meta_data.FieldMetaData("id", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id")));
-		tmpMap.put(_Fields.REQ, new org.apache.thrift.meta_data.FieldMetaData("req", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.MAP, "request")));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(oneWay_args.class, metaDataMap);
-	}
-
 	public oneWay_args() {
 	}
 
 	public oneWay_args(
-		long id,
+		Long id,
 		java.util.Map<Integer, String> req) {
 		this();
 		this.id = id;
-		setIdIsSet(true);
 		this.req = req;
 	}
 
@@ -3113,7 +2985,6 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public oneWay_args(oneWay_args other) {
-		__isset_bitfield = other.__isset_bitfield;
 		this.id = other.id;
 		if (other.isSetReq()) {
 			this.req = new HashMap<Integer,String>(other.req);
@@ -3126,41 +2997,35 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 
 	@Override
 	public void clear() {
-		setIdIsSet(false);
 		this.id = 0;
 
 		this.req = null;
 
 	}
 
-	public long getId() {
+	public Long getId() {
 		return this.id;
 	}
 
-	public oneWay_args setId(long id) {
+	public oneWay_args setId(Long id) {
 		this.id = id;
-		setIdIsSet(true);
 		return this;
 	}
 
 	public void unsetId() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __ID_ISSET_ID);
+		this.id = null;
 	}
 
 	/** Returns true if field id is set (has been assigned a value) and false otherwise */
 	public boolean isSetId() {
-		return EncodingUtils.testBit(__isset_bitfield, __ID_ISSET_ID);
-	}
-
-	public void setIdIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __ID_ISSET_ID, value);
+		return this.id != null;
 	}
 
 	public int getReqSize() {
 		return (this.req == null) ? 0 : this.req.size();
 	}
 
-	public void putToReq(int key, String val) {
+	public void putToReq(Integer key, String val) {
 		if (this.req == null) {
 			this.req = new HashMap<Integer,String>();
 		}
@@ -3183,12 +3048,6 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 	/** Returns true if field req is set (has been assigned a value) and false otherwise */
 	public boolean isSetReq() {
 		return this.req != null;
-	}
-
-	public void setReqIsSet(boolean value) {
-		if (!value) {
-			this.req = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -3368,8 +3227,6 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -3396,7 +3253,6 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 					case 1: // ID
 						if (schemeField.type == org.apache.thrift.protocol.TType.I64) {
 							struct.id = iprot.readI64();
-							struct.setIdIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -3406,12 +3262,11 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 							org.apache.thrift.protocol.TMap elem128 = iprot.readMapBegin();
 							struct.req = new HashMap<Integer,String>(2*elem128.size);
 							for (int elem129 = 0; elem129 < elem128.size; ++elem129) {
-								int elem131 = iprot.readI32();
+								Integer elem131 = iprot.readI32();
 								String elem130 = iprot.readString();
 								struct.req.put(elem131, elem130);
 							}
 							iprot.readMapEnd();
-							struct.setReqIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -3487,17 +3342,15 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 			BitSet incoming = iprot.readBitSet(2);
 			if (incoming.get(0)) {
 				struct.id = iprot.readI64();
-				struct.setIdIsSet(true);
 			}
 			if (incoming.get(1)) {
 				org.apache.thrift.protocol.TMap elem134 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I32, org.apache.thrift.protocol.TType.STRING, iprot.readI32());
 				struct.req = new HashMap<Integer,String>(2*elem134.size);
 				for (int elem135 = 0; elem135 < elem134.size; ++elem135) {
-					int elem137 = iprot.readI32();
+					Integer elem137 = iprot.readI32();
 					String elem136 = iprot.readString();
 					struct.req.put(elem137, elem136);
 				}
-				struct.setReqIsSet(true);
 			}
 		}
 
@@ -3580,18 +3433,6 @@ public static class bin_method_args implements org.apache.thrift.TBase<bin_metho
 		}
 	}
 
-	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.BIN, new org.apache.thrift.meta_data.FieldMetaData("bin", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING, true)));
-		tmpMap.put(_Fields.STR, new org.apache.thrift.meta_data.FieldMetaData("Str", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(bin_method_args.class, metaDataMap);
-	}
-
 	public bin_method_args() {
 	}
 
@@ -3655,12 +3496,6 @@ public static class bin_method_args implements org.apache.thrift.TBase<bin_metho
 		return this.bin != null;
 	}
 
-	public void setBinIsSet(boolean value) {
-		if (!value) {
-			this.bin = null;
-		}
-	}
-
 	public String getStr() {
 		return this.Str;
 	}
@@ -3677,12 +3512,6 @@ public static class bin_method_args implements org.apache.thrift.TBase<bin_metho
 	/** Returns true if field Str is set (has been assigned a value) and false otherwise */
 	public boolean isSetStr() {
 		return this.Str != null;
-	}
-
-	public void setStrIsSet(boolean value) {
-		if (!value) {
-			this.Str = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -3866,7 +3695,6 @@ public static class bin_method_args implements org.apache.thrift.TBase<bin_metho
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -3893,7 +3721,6 @@ public static class bin_method_args implements org.apache.thrift.TBase<bin_metho
 					case 1: // BIN
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.bin = iprot.readBinary();
-							struct.setBinIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -3901,7 +3728,6 @@ public static class bin_method_args implements org.apache.thrift.TBase<bin_metho
 					case 2: // STR
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.Str = iprot.readString();
-							struct.setStrIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -3970,11 +3796,9 @@ public static class bin_method_args implements org.apache.thrift.TBase<bin_metho
 			BitSet incoming = iprot.readBitSet(2);
 			if (incoming.get(0)) {
 				struct.bin = iprot.readBinary();
-				struct.setBinIsSet(true);
 			}
 			if (incoming.get(1)) {
 				struct.Str = iprot.readString();
-				struct.setStrIsSet(true);
 			}
 		}
 
@@ -4057,18 +3881,6 @@ public static class bin_method_result implements org.apache.thrift.TBase<bin_met
 		}
 	}
 
-	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING, true)));
-		tmpMap.put(_Fields.API, new org.apache.thrift.meta_data.FieldMetaData("api", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, actual_base.java.api_exception.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(bin_method_result.class, metaDataMap);
-	}
-
 	public bin_method_result() {
 	}
 
@@ -4132,12 +3944,6 @@ public static class bin_method_result implements org.apache.thrift.TBase<bin_met
 		return this.success != null;
 	}
 
-	public void setSuccessIsSet(boolean value) {
-		if (!value) {
-			this.success = null;
-		}
-	}
-
 	public actual_base.java.api_exception getApi() {
 		return this.api;
 	}
@@ -4154,12 +3960,6 @@ public static class bin_method_result implements org.apache.thrift.TBase<bin_met
 	/** Returns true if field api is set (has been assigned a value) and false otherwise */
 	public boolean isSetApi() {
 		return this.api != null;
-	}
-
-	public void setApiIsSet(boolean value) {
-		if (!value) {
-			this.api = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -4346,7 +4146,6 @@ public static class bin_method_result implements org.apache.thrift.TBase<bin_met
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -4373,7 +4172,6 @@ public static class bin_method_result implements org.apache.thrift.TBase<bin_met
 					case 0: // SUCCESS
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.success = iprot.readBinary();
-							struct.setSuccessIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -4382,7 +4180,6 @@ public static class bin_method_result implements org.apache.thrift.TBase<bin_met
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
 							struct.api = new actual_base.java.api_exception();
 							struct.api.read(iprot);
-							struct.setApiIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -4451,12 +4248,10 @@ public static class bin_method_result implements org.apache.thrift.TBase<bin_met
 			BitSet incoming = iprot.readBitSet(2);
 			if (incoming.get(0)) {
 				struct.success = iprot.readBinary();
-				struct.setSuccessIsSet(true);
 			}
 			if (incoming.get(1)) {
 				struct.api = new actual_base.java.api_exception();
 				struct.api.read(iprot);
-				struct.setApiIsSet(true);
 			}
 		}
 
@@ -4476,9 +4271,9 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 		schemes.put(TupleScheme.class, new param_modifiers_argsTupleSchemeFactory());
 	}
 
-	public int opt_num; // required
-	public int default_num; // required
-	public int req_num; // required
+	public Integer opt_num; // required
+	public Integer default_num; // required
+	public Integer req_num; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		OPT_NUM((short)1, "opt_num"),
@@ -4544,45 +4339,23 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 		}
 	}
 
-	// isset id assignments
-	private static final int __OPT_NUM_ISSET_ID = 0;
-	private static final int __DEFAULT_NUM_ISSET_ID = 1;
-	private static final int __REQ_NUM_ISSET_ID = 2;
-	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.OPT_NUM, new org.apache.thrift.meta_data.FieldMetaData("opt_num", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-		tmpMap.put(_Fields.DEFAULT_NUM, new org.apache.thrift.meta_data.FieldMetaData("default_num", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-		tmpMap.put(_Fields.REQ_NUM, new org.apache.thrift.meta_data.FieldMetaData("req_num", org.apache.thrift.TFieldRequirementType.REQUIRED,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(param_modifiers_args.class, metaDataMap);
-	}
-
 	public param_modifiers_args() {
 	}
 
 	public param_modifiers_args(
-		int opt_num,
-		int default_num,
-		int req_num) {
+		Integer opt_num,
+		Integer default_num,
+		Integer req_num) {
 		this();
 		this.opt_num = opt_num;
-		setOpt_numIsSet(true);
 		this.default_num = default_num;
-		setDefault_numIsSet(true);
 		this.req_num = req_num;
-		setReq_numIsSet(true);
 	}
 
 	/**
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public param_modifiers_args(param_modifiers_args other) {
-		__isset_bitfield = other.__isset_bitfield;
 		this.opt_num = other.opt_num;
 		this.default_num = other.default_num;
 		this.req_num = other.req_num;
@@ -4594,84 +4367,66 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 
 	@Override
 	public void clear() {
-		setOpt_numIsSet(false);
 		this.opt_num = 0;
 
-		setDefault_numIsSet(false);
 		this.default_num = 0;
 
-		setReq_numIsSet(false);
 		this.req_num = 0;
 
 	}
 
-	public int getOpt_num() {
+	public Integer getOpt_num() {
 		return this.opt_num;
 	}
 
-	public param_modifiers_args setOpt_num(int opt_num) {
+	public param_modifiers_args setOpt_num(Integer opt_num) {
 		this.opt_num = opt_num;
-		setOpt_numIsSet(true);
 		return this;
 	}
 
 	public void unsetOpt_num() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __OPT_NUM_ISSET_ID);
+		this.opt_num = null;
 	}
 
 	/** Returns true if field opt_num is set (has been assigned a value) and false otherwise */
 	public boolean isSetOpt_num() {
-		return EncodingUtils.testBit(__isset_bitfield, __OPT_NUM_ISSET_ID);
+		return this.opt_num != null;
 	}
 
-	public void setOpt_numIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __OPT_NUM_ISSET_ID, value);
-	}
-
-	public int getDefault_num() {
+	public Integer getDefault_num() {
 		return this.default_num;
 	}
 
-	public param_modifiers_args setDefault_num(int default_num) {
+	public param_modifiers_args setDefault_num(Integer default_num) {
 		this.default_num = default_num;
-		setDefault_numIsSet(true);
 		return this;
 	}
 
 	public void unsetDefault_num() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __DEFAULT_NUM_ISSET_ID);
+		this.default_num = null;
 	}
 
 	/** Returns true if field default_num is set (has been assigned a value) and false otherwise */
 	public boolean isSetDefault_num() {
-		return EncodingUtils.testBit(__isset_bitfield, __DEFAULT_NUM_ISSET_ID);
+		return this.default_num != null;
 	}
 
-	public void setDefault_numIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __DEFAULT_NUM_ISSET_ID, value);
-	}
-
-	public int getReq_num() {
+	public Integer getReq_num() {
 		return this.req_num;
 	}
 
-	public param_modifiers_args setReq_num(int req_num) {
+	public param_modifiers_args setReq_num(Integer req_num) {
 		this.req_num = req_num;
-		setReq_numIsSet(true);
 		return this;
 	}
 
 	public void unsetReq_num() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __REQ_NUM_ISSET_ID);
+		this.req_num = null;
 	}
 
 	/** Returns true if field req_num is set (has been assigned a value) and false otherwise */
 	public boolean isSetReq_num() {
-		return EncodingUtils.testBit(__isset_bitfield, __REQ_NUM_ISSET_ID);
-	}
-
-	public void setReq_numIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __REQ_NUM_ISSET_ID, value);
+		return this.req_num != null;
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -4888,8 +4643,6 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -4916,7 +4669,6 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 					case 1: // OPT_NUM
 						if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
 							struct.opt_num = iprot.readI32();
-							struct.setOpt_numIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -4924,7 +4676,6 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 					case 2: // DEFAULT_NUM
 						if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
 							struct.default_num = iprot.readI32();
-							struct.setDefault_numIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -4932,7 +4683,6 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 					case 3: // REQ_NUM
 						if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
 							struct.req_num = iprot.readI32();
-							struct.setReq_numIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -5002,15 +4752,12 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 		public void read(org.apache.thrift.protocol.TProtocol prot, param_modifiers_args struct) throws org.apache.thrift.TException {
 			TTupleProtocol iprot = (TTupleProtocol) prot;
 			struct.req_num = iprot.readI32();
-			struct.setReq_numIsSet(true);
 			BitSet incoming = iprot.readBitSet(2);
 			if (incoming.get(0)) {
 				struct.opt_num = iprot.readI32();
-				struct.setOpt_numIsSet(true);
 			}
 			if (incoming.get(1)) {
 				struct.default_num = iprot.readI32();
-				struct.setDefault_numIsSet(true);
 			}
 		}
 
@@ -5028,7 +4775,7 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 		schemes.put(TupleScheme.class, new param_modifiers_resultTupleSchemeFactory());
 	}
 
-	public long success; // required
+	public Long success; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		SUCCESS((short)0, "success")
@@ -5088,33 +4835,19 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 		}
 	}
 
-	// isset id assignments
-	private static final int __SUCCESS_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(param_modifiers_result.class, metaDataMap);
-	}
-
 	public param_modifiers_result() {
 	}
 
 	public param_modifiers_result(
-		long success) {
+		Long success) {
 		this();
 		this.success = success;
-		setSuccessIsSet(true);
 	}
 
 	/**
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public param_modifiers_result(param_modifiers_result other) {
-		__isset_bitfield = other.__isset_bitfield;
 		this.success = other.success;
 	}
 
@@ -5124,32 +4857,26 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 
 	@Override
 	public void clear() {
-		setSuccessIsSet(false);
 		this.success = 0;
 
 	}
 
-	public long getSuccess() {
+	public Long getSuccess() {
 		return this.success;
 	}
 
-	public param_modifiers_result setSuccess(long success) {
+	public param_modifiers_result setSuccess(Long success) {
 		this.success = success;
-		setSuccessIsSet(true);
 		return this;
 	}
 
 	public void unsetSuccess() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __SUCCESS_ISSET_ID);
+		this.success = null;
 	}
 
 	/** Returns true if field success is set (has been assigned a value) and false otherwise */
 	public boolean isSetSuccess() {
-		return EncodingUtils.testBit(__isset_bitfield, __SUCCESS_ISSET_ID);
-	}
-
-	public void setSuccessIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __SUCCESS_ISSET_ID, value);
+		return this.success != null;
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -5284,8 +5011,6 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -5312,7 +5037,6 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 					case 0: // SUCCESS
 						if (schemeField.type == org.apache.thrift.protocol.TType.I64) {
 							struct.success = iprot.readI64();
-							struct.setSuccessIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -5370,7 +5094,6 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 			BitSet incoming = iprot.readBitSet(1);
 			if (incoming.get(0)) {
 				struct.success = iprot.readI64();
-				struct.setSuccessIsSet(true);
 			}
 		}
 
@@ -5453,20 +5176,6 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 		}
 	}
 
-	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.LIST_TYPE, new org.apache.thrift.meta_data.FieldMetaData("list_type", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id"))));
-		tmpMap.put(_Fields.SET_TYPE, new org.apache.thrift.meta_data.FieldMetaData("set_type", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.SetMetaData(org.apache.thrift.protocol.TType.SET,
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id"))));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(underlying_types_test_args.class, metaDataMap);
-	}
-
 	public underlying_types_test_args() {
 	}
 
@@ -5484,15 +5193,15 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 	public underlying_types_test_args(underlying_types_test_args other) {
 		if (other.isSetList_type()) {
 			this.list_type = new ArrayList<Long>(other.list_type.size());
-			for (long elem138 : other.list_type) {
-				long elem139 = elem138;
+			for (Long elem138 : other.list_type) {
+				Long elem139 = elem138;
 				this.list_type.add(elem139);
 			}
 		}
 		if (other.isSetSet_type()) {
 			this.set_type = new HashSet<Long>(other.set_type.size());
-			for (long elem140 : other.set_type) {
-				long elem141 = elem140;
+			for (Long elem140 : other.set_type) {
+				Long elem141 = elem140;
 				this.set_type.add(elem141);
 			}
 		}
@@ -5518,7 +5227,7 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 		return (this.list_type == null) ? null : this.list_type.iterator();
 	}
 
-	public void addToList_type(long elem) {
+	public void addToList_type(Long elem) {
 		if (this.list_type == null) {
 			this.list_type = new ArrayList<Long>();
 		}
@@ -5543,12 +5252,6 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 		return this.list_type != null;
 	}
 
-	public void setList_typeIsSet(boolean value) {
-		if (!value) {
-			this.list_type = null;
-		}
-	}
-
 	public int getSet_typeSize() {
 		return (this.set_type == null) ? 0 : this.set_type.size();
 	}
@@ -5557,7 +5260,7 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 		return (this.set_type == null) ? null : this.set_type.iterator();
 	}
 
-	public void addToSet_type(long elem) {
+	public void addToSet_type(Long elem) {
 		if (this.set_type == null) {
 			this.set_type = new HashSet<Long>();
 		}
@@ -5580,12 +5283,6 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 	/** Returns true if field set_type is set (has been assigned a value) and false otherwise */
 	public boolean isSetSet_type() {
 		return this.set_type != null;
-	}
-
-	public void setSet_typeIsSet(boolean value) {
-		if (!value) {
-			this.set_type = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -5769,7 +5466,6 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -5798,11 +5494,10 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 							org.apache.thrift.protocol.TList elem142 = iprot.readListBegin();
 							struct.list_type = new ArrayList<Long>(elem142.size);
 							for (int elem143 = 0; elem143 < elem142.size; ++elem143) {
-								long elem144 = iprot.readI64();
+								Long elem144 = iprot.readI64();
 								struct.list_type.add(elem144);
 							}
 							iprot.readListEnd();
-							struct.setList_typeIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -5812,11 +5507,10 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 							org.apache.thrift.protocol.TSet elem145 = iprot.readSetBegin();
 							struct.set_type = new HashSet<Long>(2*elem145.size);
 							for (int elem146 = 0; elem146 < elem145.size; ++elem146) {
-								long elem147 = iprot.readI64();
+								Long elem147 = iprot.readI64();
 								struct.set_type.add(elem147);
 							}
 							iprot.readSetEnd();
-							struct.setSet_typeIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -5839,7 +5533,7 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 			if (struct.list_type != null) {
 				oprot.writeFieldBegin(LIST_TYPE_FIELD_DESC);
 				oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, struct.list_type.size()));
-				for (long elem148 : struct.list_type) {
+				for (Long elem148 : struct.list_type) {
 					oprot.writeI64(elem148);
 				}
 				oprot.writeListEnd();
@@ -5848,7 +5542,7 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 			if (struct.set_type != null) {
 				oprot.writeFieldBegin(SET_TYPE_FIELD_DESC);
 				oprot.writeSetBegin(new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.I64, struct.set_type.size()));
-				for (long elem149 : struct.set_type) {
+				for (Long elem149 : struct.set_type) {
 					oprot.writeI64(elem149);
 				}
 				oprot.writeSetEnd();
@@ -5881,13 +5575,13 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetList_type()) {
 				oprot.writeI32(struct.list_type.size());
-				for (long elem150 : struct.list_type) {
+				for (Long elem150 : struct.list_type) {
 					oprot.writeI64(elem150);
 				}
 			}
 			if (struct.isSetSet_type()) {
 				oprot.writeI32(struct.set_type.size());
-				for (long elem151 : struct.set_type) {
+				for (Long elem151 : struct.set_type) {
 					oprot.writeI64(elem151);
 				}
 			}
@@ -5901,19 +5595,17 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 				org.apache.thrift.protocol.TList elem152 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
 				struct.list_type = new ArrayList<Long>(elem152.size);
 				for (int elem153 = 0; elem153 < elem152.size; ++elem153) {
-					long elem154 = iprot.readI64();
+					Long elem154 = iprot.readI64();
 					struct.list_type.add(elem154);
 				}
-				struct.setList_typeIsSet(true);
 			}
 			if (incoming.get(1)) {
 				org.apache.thrift.protocol.TSet elem155 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.I64, iprot.readI32());
 				struct.set_type = new HashSet<Long>(2*elem155.size);
 				for (int elem156 = 0; elem156 < elem155.size; ++elem156) {
-					long elem157 = iprot.readI64();
+					Long elem157 = iprot.readI64();
 					struct.set_type.add(elem157);
 				}
-				struct.setSet_typeIsSet(true);
 			}
 		}
 
@@ -5991,17 +5683,6 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 		}
 	}
 
-	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id"))));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(underlying_types_test_result.class, metaDataMap);
-	}
-
 	public underlying_types_test_result() {
 	}
 
@@ -6017,8 +5698,8 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 	public underlying_types_test_result(underlying_types_test_result other) {
 		if (other.isSetSuccess()) {
 			this.success = new ArrayList<Long>(other.success.size());
-			for (long elem158 : other.success) {
-				long elem159 = elem158;
+			for (Long elem158 : other.success) {
+				Long elem159 = elem158;
 				this.success.add(elem159);
 			}
 		}
@@ -6042,7 +5723,7 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 		return (this.success == null) ? null : this.success.iterator();
 	}
 
-	public void addToSuccess(long elem) {
+	public void addToSuccess(Long elem) {
 		if (this.success == null) {
 			this.success = new ArrayList<Long>();
 		}
@@ -6065,12 +5746,6 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 	/** Returns true if field success is set (has been assigned a value) and false otherwise */
 	public boolean isSetSuccess() {
 		return this.success != null;
-	}
-
-	public void setSuccessIsSet(boolean value) {
-		if (!value) {
-			this.success = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -6209,7 +5884,6 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -6238,11 +5912,10 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 							org.apache.thrift.protocol.TList elem160 = iprot.readListBegin();
 							struct.success = new ArrayList<Long>(elem160.size);
 							for (int elem161 = 0; elem161 < elem160.size; ++elem161) {
-								long elem162 = iprot.readI64();
+								Long elem162 = iprot.readI64();
 								struct.success.add(elem162);
 							}
 							iprot.readListEnd();
-							struct.setSuccessIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -6265,7 +5938,7 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 			if (struct.success != null) {
 				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
 				oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, struct.success.size()));
-				for (long elem163 : struct.success) {
+				for (Long elem163 : struct.success) {
 					oprot.writeI64(elem163);
 				}
 				oprot.writeListEnd();
@@ -6295,7 +5968,7 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 			oprot.writeBitSet(optionals, 1);
 			if (struct.isSetSuccess()) {
 				oprot.writeI32(struct.success.size());
-				for (long elem164 : struct.success) {
+				for (Long elem164 : struct.success) {
 					oprot.writeI64(elem164);
 				}
 			}
@@ -6309,10 +5982,9 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 				org.apache.thrift.protocol.TList elem165 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
 				struct.success = new ArrayList<Long>(elem165.size);
 				for (int elem166 = 0; elem166 < elem165.size; ++elem166) {
-					long elem167 = iprot.readI64();
+					Long elem167 = iprot.readI64();
 					struct.success.add(elem167);
 				}
-				struct.setSuccessIsSet(true);
 			}
 		}
 
@@ -6383,14 +6055,6 @@ public static class getThing_args implements org.apache.thrift.TBase<getThing_ar
 		public String getFieldName() {
 			return _fieldName;
 		}
-	}
-
-	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getThing_args.class, metaDataMap);
 	}
 
 	public getThing_args() {
@@ -6502,7 +6166,6 @@ public static class getThing_args implements org.apache.thrift.TBase<getThing_ar
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -6639,16 +6302,6 @@ public static class getThing_result implements org.apache.thrift.TBase<getThing_
 		}
 	}
 
-	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Thing.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getThing_result.class, metaDataMap);
-	}
-
 	public getThing_result() {
 	}
 
@@ -6693,12 +6346,6 @@ public static class getThing_result implements org.apache.thrift.TBase<getThing_
 	/** Returns true if field success is set (has been assigned a value) and false otherwise */
 	public boolean isSetSuccess() {
 		return this.success != null;
-	}
-
-	public void setSuccessIsSet(boolean value) {
-		if (!value) {
-			this.success = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -6840,7 +6487,6 @@ public static class getThing_result implements org.apache.thrift.TBase<getThing_
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -6868,7 +6514,6 @@ public static class getThing_result implements org.apache.thrift.TBase<getThing_
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
 							struct.success = new Thing();
 							struct.success.read(iprot);
-							struct.setSuccessIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -6927,7 +6572,6 @@ public static class getThing_result implements org.apache.thrift.TBase<getThing_
 			if (incoming.get(0)) {
 				struct.success = new Thing();
 				struct.success.read(iprot);
-				struct.setSuccessIsSet(true);
 			}
 		}
 
@@ -6998,14 +6642,6 @@ public static class getMyInt_args implements org.apache.thrift.TBase<getMyInt_ar
 		public String getFieldName() {
 			return _fieldName;
 		}
-	}
-
-	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getMyInt_args.class, metaDataMap);
 	}
 
 	public getMyInt_args() {
@@ -7117,7 +6753,6 @@ public static class getMyInt_args implements org.apache.thrift.TBase<getMyInt_ar
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -7194,7 +6829,7 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 		schemes.put(TupleScheme.class, new getMyInt_resultTupleSchemeFactory());
 	}
 
-	public int success; // required
+	public Integer success; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		SUCCESS((short)0, "success")
@@ -7254,33 +6889,19 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 		}
 	}
 
-	// isset id assignments
-	private static final int __SUCCESS_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32, "ValidTypes.MyInt")));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getMyInt_result.class, metaDataMap);
-	}
-
 	public getMyInt_result() {
 	}
 
 	public getMyInt_result(
-		int success) {
+		Integer success) {
 		this();
 		this.success = success;
-		setSuccessIsSet(true);
 	}
 
 	/**
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public getMyInt_result(getMyInt_result other) {
-		__isset_bitfield = other.__isset_bitfield;
 		this.success = other.success;
 	}
 
@@ -7290,32 +6911,26 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 
 	@Override
 	public void clear() {
-		setSuccessIsSet(false);
 		this.success = 0;
 
 	}
 
-	public int getSuccess() {
+	public Integer getSuccess() {
 		return this.success;
 	}
 
-	public getMyInt_result setSuccess(int success) {
+	public getMyInt_result setSuccess(Integer success) {
 		this.success = success;
-		setSuccessIsSet(true);
 		return this;
 	}
 
 	public void unsetSuccess() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __SUCCESS_ISSET_ID);
+		this.success = null;
 	}
 
 	/** Returns true if field success is set (has been assigned a value) and false otherwise */
 	public boolean isSetSuccess() {
-		return EncodingUtils.testBit(__isset_bitfield, __SUCCESS_ISSET_ID);
-	}
-
-	public void setSuccessIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __SUCCESS_ISSET_ID, value);
+		return this.success != null;
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -7450,8 +7065,6 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -7478,7 +7091,6 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 					case 0: // SUCCESS
 						if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
 							struct.success = iprot.readI32();
-							struct.setSuccessIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -7536,7 +7148,6 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 			BitSet incoming = iprot.readBitSet(1);
 			if (incoming.get(0)) {
 				struct.success = iprot.readI32();
-				struct.setSuccessIsSet(true);
 			}
 		}
 
@@ -7614,16 +7225,6 @@ public static class use_subdir_struct_args implements org.apache.thrift.TBase<us
 		}
 	}
 
-	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.A, new org.apache.thrift.meta_data.FieldMetaData("a", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, A.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(use_subdir_struct_args.class, metaDataMap);
-	}
-
 	public use_subdir_struct_args() {
 	}
 
@@ -7668,12 +7269,6 @@ public static class use_subdir_struct_args implements org.apache.thrift.TBase<us
 	/** Returns true if field a is set (has been assigned a value) and false otherwise */
 	public boolean isSetA() {
 		return this.a != null;
-	}
-
-	public void setAIsSet(boolean value) {
-		if (!value) {
-			this.a = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -7815,7 +7410,6 @@ public static class use_subdir_struct_args implements org.apache.thrift.TBase<us
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -7843,7 +7437,6 @@ public static class use_subdir_struct_args implements org.apache.thrift.TBase<us
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
 							struct.a = new A();
 							struct.a.read(iprot);
-							struct.setAIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -7902,7 +7495,6 @@ public static class use_subdir_struct_args implements org.apache.thrift.TBase<us
 			if (incoming.get(0)) {
 				struct.a = new A();
 				struct.a.read(iprot);
-				struct.setAIsSet(true);
 			}
 		}
 
@@ -7980,16 +7572,6 @@ public static class use_subdir_struct_result implements org.apache.thrift.TBase<
 		}
 	}
 
-	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, A.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(use_subdir_struct_result.class, metaDataMap);
-	}
-
 	public use_subdir_struct_result() {
 	}
 
@@ -8034,12 +7616,6 @@ public static class use_subdir_struct_result implements org.apache.thrift.TBase<
 	/** Returns true if field success is set (has been assigned a value) and false otherwise */
 	public boolean isSetSuccess() {
 		return this.success != null;
-	}
-
-	public void setSuccessIsSet(boolean value) {
-		if (!value) {
-			this.success = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -8181,7 +7757,6 @@ public static class use_subdir_struct_result implements org.apache.thrift.TBase<
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -8209,7 +7784,6 @@ public static class use_subdir_struct_result implements org.apache.thrift.TBase<
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
 							struct.success = new A();
 							struct.success.read(iprot);
-							struct.setSuccessIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -8268,7 +7842,6 @@ public static class use_subdir_struct_result implements org.apache.thrift.TBase<
 			if (incoming.get(0)) {
 				struct.success = new A();
 				struct.success.read(iprot);
-				struct.setSuccessIsSet(true);
 			}
 		}
 

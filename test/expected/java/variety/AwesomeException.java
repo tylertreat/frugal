@@ -49,7 +49,7 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 	/**
 	 * ID is a unique identifier for an awesome exception.
 	 */
-	public long ID; // required
+	public Long ID; // required
 	/**
 	 * Reason contains the error message.
 	 */
@@ -122,29 +122,14 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 		}
 	}
 
-	// isset id assignments
-	private static final int __ID_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.ID, new org.apache.thrift.meta_data.FieldMetaData("ID", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id")));
-		tmpMap.put(_Fields.REASON, new org.apache.thrift.meta_data.FieldMetaData("Reason", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(AwesomeException.class, metaDataMap);
-	}
-
 	public AwesomeException() {
 	}
 
 	public AwesomeException(
-		long ID,
+		Long ID,
 		String Reason) {
 		this();
 		this.ID = ID;
-		setIDIsSet(true);
 		this.Reason = Reason;
 	}
 
@@ -152,7 +137,6 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public AwesomeException(AwesomeException other) {
-		__isset_bitfield = other.__isset_bitfield;
 		this.ID = other.ID;
 		if (other.isSetReason()) {
 			this.Reason = other.Reason;
@@ -165,7 +149,6 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 
 	@Override
 	public void clear() {
-		setIDIsSet(false);
 		this.ID = 0;
 
 		this.Reason = null;
@@ -175,30 +158,25 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 	/**
 	 * ID is a unique identifier for an awesome exception.
 	 */
-	public long getID() {
+	public Long getID() {
 		return this.ID;
 	}
 
 	/**
 	 * ID is a unique identifier for an awesome exception.
 	 */
-	public AwesomeException setID(long ID) {
+	public AwesomeException setID(Long ID) {
 		this.ID = ID;
-		setIDIsSet(true);
 		return this;
 	}
 
 	public void unsetID() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __ID_ISSET_ID);
+		this.ID = null;
 	}
 
 	/** Returns true if field ID is set (has been assigned a value) and false otherwise */
 	public boolean isSetID() {
-		return EncodingUtils.testBit(__isset_bitfield, __ID_ISSET_ID);
-	}
-
-	public void setIDIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __ID_ISSET_ID, value);
+		return this.ID != null;
 	}
 
 	/**
@@ -223,12 +201,6 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 	/** Returns true if field Reason is set (has been assigned a value) and false otherwise */
 	public boolean isSetReason() {
 		return this.Reason != null;
-	}
-
-	public void setReasonIsSet(boolean value) {
-		if (!value) {
-			this.Reason = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -408,8 +380,6 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -436,7 +406,6 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 					case 1: // ID
 						if (schemeField.type == org.apache.thrift.protocol.TType.I64) {
 							struct.ID = iprot.readI64();
-							struct.setIDIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -444,7 +413,6 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 					case 2: // REASON
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.Reason = iprot.readString();
-							struct.setReasonIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -511,11 +479,9 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 			BitSet incoming = iprot.readBitSet(2);
 			if (incoming.get(0)) {
 				struct.ID = iprot.readI64();
-				struct.setIDIsSet(true);
 			}
 			if (incoming.get(1)) {
 				struct.Reason = iprot.readString();
-				struct.setReasonIsSet(true);
 			}
 		}
 

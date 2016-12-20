@@ -46,14 +46,14 @@ public class NatsPublisher {
         // Publish a winner announcement
         Album album = new Album();
         album.setASIN(UUID.randomUUID().toString());
-        album.setDuration(1200);
+        album.setDuration(1200.0);
         album.addToTracks(
                 new Track(
                         "Comme des enfants",
                         "Coeur de pirate",
                         "Grosse Boîte",
                         "Béatrice Martin",
-                        169,
+                        169.0,
                         PerfRightsOrg.ASCAP));
         publisher.publishWinner(new FContext(), album);
 

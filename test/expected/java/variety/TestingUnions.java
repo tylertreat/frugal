@@ -118,25 +118,6 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 		}
 	}
 
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.AN_ID, new org.apache.thrift.meta_data.FieldMetaData("AnID", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id")));
-		tmpMap.put(_Fields.A_STRING, new org.apache.thrift.meta_data.FieldMetaData("aString", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.SOMEOTHERTHING, new org.apache.thrift.meta_data.FieldMetaData("someotherthing", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32, "int")));
-		tmpMap.put(_Fields.AN_INT16, new org.apache.thrift.meta_data.FieldMetaData("AnInt16", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I16)));
-		tmpMap.put(_Fields.REQUESTS, new org.apache.thrift.meta_data.FieldMetaData("Requests", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.MAP, "request")));
-		tmpMap.put(_Fields.BIN_FIELD_IN_UNION, new org.apache.thrift.meta_data.FieldMetaData("bin_field_in_union", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING, true)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(TestingUnions.class, metaDataMap);
-	}
-
 	public TestingUnions() {
 		super();
 	}
@@ -152,7 +133,7 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 		return new TestingUnions(this);
 	}
 
-	public static TestingUnions AnID(long value) {
+	public static TestingUnions AnID(Long value) {
 		TestingUnions x = new TestingUnions();
 		x.setAnID(value);
 		return x;
@@ -164,13 +145,13 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 		return x;
 	}
 
-	public static TestingUnions someotherthing(int value) {
+	public static TestingUnions someotherthing(Integer value) {
 		TestingUnions x = new TestingUnions();
 		x.setSomeotherthing(value);
 		return x;
 	}
 
-	public static TestingUnions AnInt16(short value) {
+	public static TestingUnions AnInt16(Short value) {
 		TestingUnions x = new TestingUnions();
 		x.setAnInt16(value);
 		return x;
@@ -442,7 +423,7 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 	}
 
 
-	public long getAnID() {
+	public Long getAnID() {
 		if (getSetField() == _Fields.AN_ID) {
 			return (Long)getFieldValue();
 		} else {
@@ -450,7 +431,7 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 		}
 	}
 
-	public void setAnID(long value) {
+	public void setAnID(Long value) {
 		setField_ = _Fields.AN_ID;
 		value_ = value;
 	}
@@ -469,7 +450,7 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 		value_ = value;
 	}
 
-	public int getSomeotherthing() {
+	public Integer getSomeotherthing() {
 		if (getSetField() == _Fields.SOMEOTHERTHING) {
 			return (Integer)getFieldValue();
 		} else {
@@ -477,12 +458,12 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 		}
 	}
 
-	public void setSomeotherthing(int value) {
+	public void setSomeotherthing(Integer value) {
 		setField_ = _Fields.SOMEOTHERTHING;
 		value_ = value;
 	}
 
-	public short getAnInt16() {
+	public Short getAnInt16() {
 		if (getSetField() == _Fields.AN_INT16) {
 			return (Short)getFieldValue();
 		} else {
@@ -490,7 +471,7 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 		}
 	}
 
-	public void setAnInt16(short value) {
+	public void setAnInt16(Short value) {
 		setField_ = _Fields.AN_INT16;
 		value_ = value;
 	}

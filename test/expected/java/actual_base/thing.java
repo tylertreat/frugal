@@ -46,7 +46,7 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 		schemes.put(TupleScheme.class, new thingTupleSchemeFactory());
 	}
 
-	public int an_id; // required
+	public Integer an_id; // required
 	public String a_string; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -110,29 +110,14 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 		}
 	}
 
-	// isset id assignments
-	private static final int __AN_ID_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.AN_ID, new org.apache.thrift.meta_data.FieldMetaData("an_id", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-		tmpMap.put(_Fields.A_STRING, new org.apache.thrift.meta_data.FieldMetaData("a_string", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(thing.class, metaDataMap);
-	}
-
 	public thing() {
 	}
 
 	public thing(
-		int an_id,
+		Integer an_id,
 		String a_string) {
 		this();
 		this.an_id = an_id;
-		setAn_idIsSet(true);
 		this.a_string = a_string;
 	}
 
@@ -140,7 +125,6 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public thing(thing other) {
-		__isset_bitfield = other.__isset_bitfield;
 		this.an_id = other.an_id;
 		if (other.isSetA_string()) {
 			this.a_string = other.a_string;
@@ -153,34 +137,28 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 
 	@Override
 	public void clear() {
-		setAn_idIsSet(false);
 		this.an_id = 0;
 
 		this.a_string = null;
 
 	}
 
-	public int getAn_id() {
+	public Integer getAn_id() {
 		return this.an_id;
 	}
 
-	public thing setAn_id(int an_id) {
+	public thing setAn_id(Integer an_id) {
 		this.an_id = an_id;
-		setAn_idIsSet(true);
 		return this;
 	}
 
 	public void unsetAn_id() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __AN_ID_ISSET_ID);
+		this.an_id = null;
 	}
 
 	/** Returns true if field an_id is set (has been assigned a value) and false otherwise */
 	public boolean isSetAn_id() {
-		return EncodingUtils.testBit(__isset_bitfield, __AN_ID_ISSET_ID);
-	}
-
-	public void setAn_idIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __AN_ID_ISSET_ID, value);
+		return this.an_id != null;
 	}
 
 	public String getA_string() {
@@ -199,12 +177,6 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 	/** Returns true if field a_string is set (has been assigned a value) and false otherwise */
 	public boolean isSetA_string() {
 		return this.a_string != null;
-	}
-
-	public void setA_stringIsSet(boolean value) {
-		if (!value) {
-			this.a_string = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -384,8 +356,6 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -412,7 +382,6 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 					case 1: // AN_ID
 						if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
 							struct.an_id = iprot.readI32();
-							struct.setAn_idIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -420,7 +389,6 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 					case 2: // A_STRING
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.a_string = iprot.readString();
-							struct.setA_stringIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -487,11 +455,9 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 			BitSet incoming = iprot.readBitSet(2);
 			if (incoming.get(0)) {
 				struct.an_id = iprot.readI32();
-				struct.setAn_idIsSet(true);
 			}
 			if (incoming.get(1)) {
 				struct.a_string = iprot.readString();
-				struct.setA_stringIsSet(true);
 			}
 		}
 

@@ -57,7 +57,7 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 	public String artist; // required
 	public String publisher; // required
 	public String composer; // required
-	public double duration; // required
+	public Double duration; // required
 	public PerfRightsOrg pro; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -133,28 +133,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 		}
 	}
 
-	// isset id assignments
-	private static final int __DURATION_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.TITLE, new org.apache.thrift.meta_data.FieldMetaData("title", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.ARTIST, new org.apache.thrift.meta_data.FieldMetaData("artist", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.PUBLISHER, new org.apache.thrift.meta_data.FieldMetaData("publisher", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.COMPOSER, new org.apache.thrift.meta_data.FieldMetaData("composer", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.DURATION, new org.apache.thrift.meta_data.FieldMetaData("duration", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE, "Minutes")));
-		tmpMap.put(_Fields.PRO, new org.apache.thrift.meta_data.FieldMetaData("pro", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, PerfRightsOrg.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Track.class, metaDataMap);
-	}
-
 	public Track() {
 	}
 
@@ -163,7 +141,7 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 		String artist,
 		String publisher,
 		String composer,
-		double duration,
+		Double duration,
 		PerfRightsOrg pro) {
 		this();
 		this.title = title;
@@ -171,7 +149,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 		this.publisher = publisher;
 		this.composer = composer;
 		this.duration = duration;
-		setDurationIsSet(true);
 		this.pro = pro;
 	}
 
@@ -179,7 +156,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public Track(Track other) {
-		__isset_bitfield = other.__isset_bitfield;
 		if (other.isSetTitle()) {
 			this.title = other.title;
 		}
@@ -212,7 +188,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 
 		this.composer = null;
 
-		setDurationIsSet(false);
 		this.duration = 0.0;
 
 		this.pro = null;
@@ -237,12 +212,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 		return this.title != null;
 	}
 
-	public void setTitleIsSet(boolean value) {
-		if (!value) {
-			this.title = null;
-		}
-	}
-
 	public String getArtist() {
 		return this.artist;
 	}
@@ -259,12 +228,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 	/** Returns true if field artist is set (has been assigned a value) and false otherwise */
 	public boolean isSetArtist() {
 		return this.artist != null;
-	}
-
-	public void setArtistIsSet(boolean value) {
-		if (!value) {
-			this.artist = null;
-		}
 	}
 
 	public String getPublisher() {
@@ -285,12 +248,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 		return this.publisher != null;
 	}
 
-	public void setPublisherIsSet(boolean value) {
-		if (!value) {
-			this.publisher = null;
-		}
-	}
-
 	public String getComposer() {
 		return this.composer;
 	}
@@ -309,33 +266,22 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 		return this.composer != null;
 	}
 
-	public void setComposerIsSet(boolean value) {
-		if (!value) {
-			this.composer = null;
-		}
-	}
-
-	public double getDuration() {
+	public Double getDuration() {
 		return this.duration;
 	}
 
-	public Track setDuration(double duration) {
+	public Track setDuration(Double duration) {
 		this.duration = duration;
-		setDurationIsSet(true);
 		return this;
 	}
 
 	public void unsetDuration() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __DURATION_ISSET_ID);
+		this.duration = null;
 	}
 
 	/** Returns true if field duration is set (has been assigned a value) and false otherwise */
 	public boolean isSetDuration() {
-		return EncodingUtils.testBit(__isset_bitfield, __DURATION_ISSET_ID);
-	}
-
-	public void setDurationIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __DURATION_ISSET_ID, value);
+		return this.duration != null;
 	}
 
 	public PerfRightsOrg getPro() {
@@ -354,12 +300,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 	/** Returns true if field pro is set (has been assigned a value) and false otherwise */
 	public boolean isSetPro() {
 		return this.pro != null;
-	}
-
-	public void setProIsSet(boolean value) {
-		if (!value) {
-			this.pro = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -719,8 +659,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -747,7 +685,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 					case 1: // TITLE
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.title = iprot.readString();
-							struct.setTitleIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -755,7 +692,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 					case 2: // ARTIST
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.artist = iprot.readString();
-							struct.setArtistIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -763,7 +699,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 					case 3: // PUBLISHER
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.publisher = iprot.readString();
-							struct.setPublisherIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -771,7 +706,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 					case 4: // COMPOSER
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.composer = iprot.readString();
-							struct.setComposerIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -779,7 +713,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 					case 5: // DURATION
 						if (schemeField.type == org.apache.thrift.protocol.TType.DOUBLE) {
 							struct.duration = iprot.readDouble();
-							struct.setDurationIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -787,7 +720,6 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 					case 6: // PRO
 						if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
 							struct.pro = PerfRightsOrg.findByValue(iprot.readI32());
-							struct.setProIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -898,27 +830,21 @@ public class Track implements org.apache.thrift.TBase<Track, Track._Fields>, jav
 			BitSet incoming = iprot.readBitSet(6);
 			if (incoming.get(0)) {
 				struct.title = iprot.readString();
-				struct.setTitleIsSet(true);
 			}
 			if (incoming.get(1)) {
 				struct.artist = iprot.readString();
-				struct.setArtistIsSet(true);
 			}
 			if (incoming.get(2)) {
 				struct.publisher = iprot.readString();
-				struct.setPublisherIsSet(true);
 			}
 			if (incoming.get(3)) {
 				struct.composer = iprot.readString();
-				struct.setComposerIsSet(true);
 			}
 			if (incoming.get(4)) {
 				struct.duration = iprot.readDouble();
-				struct.setDurationIsSet(true);
 			}
 			if (incoming.get(5)) {
 				struct.pro = PerfRightsOrg.findByValue(iprot.readI32());
-				struct.setProIsSet(true);
 			}
 		}
 

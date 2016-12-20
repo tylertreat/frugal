@@ -52,7 +52,7 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 	}
 
 	public java.util.List<Track> tracks; // required
-	public double duration; // required
+	public Double duration; // required
 	public String ASIN; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -119,34 +119,16 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 		}
 	}
 
-	// isset id assignments
-	private static final int __DURATION_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.TRACKS, new org.apache.thrift.meta_data.FieldMetaData("tracks", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Track.class))));
-		tmpMap.put(_Fields.DURATION, new org.apache.thrift.meta_data.FieldMetaData("duration", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE, "Minutes")));
-		tmpMap.put(_Fields.ASIN, new org.apache.thrift.meta_data.FieldMetaData("ASIN", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Album.class, metaDataMap);
-	}
-
 	public Album() {
 	}
 
 	public Album(
 		java.util.List<Track> tracks,
-		double duration,
+		Double duration,
 		String ASIN) {
 		this();
 		this.tracks = tracks;
 		this.duration = duration;
-		setDurationIsSet(true);
 		this.ASIN = ASIN;
 	}
 
@@ -154,7 +136,6 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public Album(Album other) {
-		__isset_bitfield = other.__isset_bitfield;
 		if (other.isSetTracks()) {
 			this.tracks = new ArrayList<Track>(other.tracks.size());
 			for (Track elem0 : other.tracks) {
@@ -176,7 +157,6 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 	public void clear() {
 		this.tracks = null;
 
-		setDurationIsSet(false);
 		this.duration = 0.0;
 
 		this.ASIN = null;
@@ -216,33 +196,22 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 		return this.tracks != null;
 	}
 
-	public void setTracksIsSet(boolean value) {
-		if (!value) {
-			this.tracks = null;
-		}
-	}
-
-	public double getDuration() {
+	public Double getDuration() {
 		return this.duration;
 	}
 
-	public Album setDuration(double duration) {
+	public Album setDuration(Double duration) {
 		this.duration = duration;
-		setDurationIsSet(true);
 		return this;
 	}
 
 	public void unsetDuration() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __DURATION_ISSET_ID);
+		this.duration = null;
 	}
 
 	/** Returns true if field duration is set (has been assigned a value) and false otherwise */
 	public boolean isSetDuration() {
-		return EncodingUtils.testBit(__isset_bitfield, __DURATION_ISSET_ID);
-	}
-
-	public void setDurationIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __DURATION_ISSET_ID, value);
+		return this.duration != null;
 	}
 
 	public String getASIN() {
@@ -261,12 +230,6 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 	/** Returns true if field ASIN is set (has been assigned a value) and false otherwise */
 	public boolean isSetASIN() {
 		return this.ASIN != null;
-	}
-
-	public void setASINIsSet(boolean value) {
-		if (!value) {
-			this.ASIN = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -491,8 +454,6 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -526,7 +487,6 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 								struct.tracks.add(elem4);
 							}
 							iprot.readListEnd();
-							struct.setTracksIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -534,7 +494,6 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 					case 2: // DURATION
 						if (schemeField.type == org.apache.thrift.protocol.TType.DOUBLE) {
 							struct.duration = iprot.readDouble();
-							struct.setDurationIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -542,7 +501,6 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 					case 3: // ASIN
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.ASIN = iprot.readString();
-							struct.setASINIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -633,15 +591,12 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 					elem9.read(iprot);
 					struct.tracks.add(elem9);
 				}
-				struct.setTracksIsSet(true);
 			}
 			if (incoming.get(1)) {
 				struct.duration = iprot.readDouble();
-				struct.setDurationIsSet(true);
 			}
 			if (incoming.get(2)) {
 				struct.ASIN = iprot.readString();
-				struct.setASINIsSet(true);
 			}
 		}
 

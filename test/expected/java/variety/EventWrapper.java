@@ -54,14 +54,14 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		schemes.put(TupleScheme.class, new EventWrapperTupleSchemeFactory());
 	}
 
-	public long ID; // optional
+	public Long ID; // optional
 	public Event Ev; // required
 	public java.util.List<Event> Events; // required
 	public java.util.Set<Event> Events2; // required
 	public java.util.Map<Long, Event> EventMap; // required
 	public java.util.List<java.util.List<Integer>> Nums; // required
 	public java.util.List<ItsAnEnum> Enums; // required
-	public boolean aBoolField; // required
+	public Boolean aBoolField; // required
 	public TestingUnions a_union; // required
 	public String typedefOfTypedef; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
@@ -150,45 +150,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		}
 	}
 
-	// isset id assignments
-	private static final int __ID_ISSET_ID = 0;
-	private static final int __ABOOLFIELD_ISSET_ID = 1;
-	private byte __isset_bitfield = 0;
-	private static final _Fields optionals[] = {_Fields.ID};
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.ID, new org.apache.thrift.meta_data.FieldMetaData("ID", org.apache.thrift.TFieldRequirementType.OPTIONAL,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id")));
-		tmpMap.put(_Fields.EV, new org.apache.thrift.meta_data.FieldMetaData("Ev", org.apache.thrift.TFieldRequirementType.REQUIRED,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Event.class)));
-		tmpMap.put(_Fields.EVENTS, new org.apache.thrift.meta_data.FieldMetaData("Events", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Event.class))));
-		tmpMap.put(_Fields.EVENTS2, new org.apache.thrift.meta_data.FieldMetaData("Events2", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.SetMetaData(org.apache.thrift.protocol.TType.SET,
-						new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Event.class))));
-		tmpMap.put(_Fields.EVENT_MAP, new org.apache.thrift.meta_data.FieldMetaData("EventMap", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP,
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id"),
-						new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Event.class))));
-		tmpMap.put(_Fields.NUMS, new org.apache.thrift.meta_data.FieldMetaData("Nums", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-								new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32, "int")))));
-		tmpMap.put(_Fields.ENUMS, new org.apache.thrift.meta_data.FieldMetaData("Enums", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, ItsAnEnum.class))));
-		tmpMap.put(_Fields.A_BOOL_FIELD, new org.apache.thrift.meta_data.FieldMetaData("aBoolField", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.BOOL)));
-		tmpMap.put(_Fields.A_UNION, new org.apache.thrift.meta_data.FieldMetaData("a_union", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, TestingUnions.class)));
-		tmpMap.put(_Fields.TYPEDEF_OF_TYPEDEF, new org.apache.thrift.meta_data.FieldMetaData("typedefOfTypedef", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING, "t2_string")));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(EventWrapper.class, metaDataMap);
-	}
-
 	public EventWrapper() {
 	}
 
@@ -199,7 +160,7 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		java.util.Map<Long, Event> EventMap,
 		java.util.List<java.util.List<Integer>> Nums,
 		java.util.List<ItsAnEnum> Enums,
-		boolean aBoolField,
+		Boolean aBoolField,
 		TestingUnions a_union,
 		String typedefOfTypedef) {
 		this();
@@ -210,7 +171,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		this.Nums = Nums;
 		this.Enums = Enums;
 		this.aBoolField = aBoolField;
-		setABoolFieldIsSet(true);
 		this.a_union = a_union;
 		this.typedefOfTypedef = typedefOfTypedef;
 	}
@@ -219,7 +179,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public EventWrapper(EventWrapper other) {
-		__isset_bitfield = other.__isset_bitfield;
 		this.ID = other.ID;
 		if (other.isSetEv()) {
 			this.Ev = new Event(other.Ev);
@@ -241,7 +200,7 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		if (other.isSetEventMap()) {
 			this.EventMap = new HashMap<Long,Event>(other.EventMap.size());
 			for (Map.Entry<Long, Event> elem57 : other.EventMap.entrySet()) {
-				long elem59 = elem57.getKey();
+				Long elem59 = elem57.getKey();
 				Event elem58 = new Event(elem57.getValue());
 				this.EventMap.put(elem59, elem58);
 			}
@@ -250,8 +209,8 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 			this.Nums = new ArrayList<java.util.List<Integer>>(other.Nums.size());
 			for (java.util.List<Integer> elem60 : other.Nums) {
 				java.util.List<Integer> elem61 = new ArrayList<Integer>(elem60.size());
-				for (int elem62 : elem60) {
-					int elem63 = elem62;
+				for (Integer elem62 : elem60) {
+					Integer elem63 = elem62;
 					elem61.add(elem63);
 				}
 				this.Nums.add(elem61);
@@ -279,7 +238,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 
 	@Override
 	public void clear() {
-		setIDIsSet(false);
 		this.ID = 0;
 
 		this.Ev = null;
@@ -294,7 +252,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 
 		this.Enums = null;
 
-		setABoolFieldIsSet(false);
 		this.aBoolField = false;
 
 		this.a_union = null;
@@ -303,27 +260,22 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 
 	}
 
-	public long getID() {
+	public Long getID() {
 		return this.ID;
 	}
 
-	public EventWrapper setID(long ID) {
+	public EventWrapper setID(Long ID) {
 		this.ID = ID;
-		setIDIsSet(true);
 		return this;
 	}
 
 	public void unsetID() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __ID_ISSET_ID);
+		this.ID = null;
 	}
 
 	/** Returns true if field ID is set (has been assigned a value) and false otherwise */
 	public boolean isSetID() {
-		return EncodingUtils.testBit(__isset_bitfield, __ID_ISSET_ID);
-	}
-
-	public void setIDIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __ID_ISSET_ID, value);
+		return this.ID != null;
 	}
 
 	public Event getEv() {
@@ -342,12 +294,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 	/** Returns true if field Ev is set (has been assigned a value) and false otherwise */
 	public boolean isSetEv() {
 		return this.Ev != null;
-	}
-
-	public void setEvIsSet(boolean value) {
-		if (!value) {
-			this.Ev = null;
-		}
 	}
 
 	public int getEventsSize() {
@@ -383,12 +329,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		return this.Events != null;
 	}
 
-	public void setEventsIsSet(boolean value) {
-		if (!value) {
-			this.Events = null;
-		}
-	}
-
 	public int getEvents2Size() {
 		return (this.Events2 == null) ? 0 : this.Events2.size();
 	}
@@ -422,17 +362,11 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		return this.Events2 != null;
 	}
 
-	public void setEvents2IsSet(boolean value) {
-		if (!value) {
-			this.Events2 = null;
-		}
-	}
-
 	public int getEventMapSize() {
 		return (this.EventMap == null) ? 0 : this.EventMap.size();
 	}
 
-	public void putToEventMap(long key, Event val) {
+	public void putToEventMap(Long key, Event val) {
 		if (this.EventMap == null) {
 			this.EventMap = new HashMap<Long,Event>();
 		}
@@ -455,12 +389,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 	/** Returns true if field EventMap is set (has been assigned a value) and false otherwise */
 	public boolean isSetEventMap() {
 		return this.EventMap != null;
-	}
-
-	public void setEventMapIsSet(boolean value) {
-		if (!value) {
-			this.EventMap = null;
-		}
 	}
 
 	public int getNumsSize() {
@@ -496,12 +424,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		return this.Nums != null;
 	}
 
-	public void setNumsIsSet(boolean value) {
-		if (!value) {
-			this.Nums = null;
-		}
-	}
-
 	public int getEnumsSize() {
 		return (this.Enums == null) ? 0 : this.Enums.size();
 	}
@@ -535,33 +457,22 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		return this.Enums != null;
 	}
 
-	public void setEnumsIsSet(boolean value) {
-		if (!value) {
-			this.Enums = null;
-		}
-	}
-
-	public boolean isABoolField() {
+	public Boolean isABoolField() {
 		return this.aBoolField;
 	}
 
-	public EventWrapper setABoolField(boolean aBoolField) {
+	public EventWrapper setABoolField(Boolean aBoolField) {
 		this.aBoolField = aBoolField;
-		setABoolFieldIsSet(true);
 		return this;
 	}
 
 	public void unsetABoolField() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __ABOOLFIELD_ISSET_ID);
+		this.aBoolField = null;
 	}
 
 	/** Returns true if field aBoolField is set (has been assigned a value) and false otherwise */
 	public boolean isSetABoolField() {
-		return EncodingUtils.testBit(__isset_bitfield, __ABOOLFIELD_ISSET_ID);
-	}
-
-	public void setABoolFieldIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __ABOOLFIELD_ISSET_ID, value);
+		return this.aBoolField != null;
 	}
 
 	public TestingUnions getA_union() {
@@ -582,12 +493,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		return this.a_union != null;
 	}
 
-	public void setA_unionIsSet(boolean value) {
-		if (!value) {
-			this.a_union = null;
-		}
-	}
-
 	public String getTypedefOfTypedef() {
 		return this.typedefOfTypedef;
 	}
@@ -604,12 +509,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 	/** Returns true if field typedefOfTypedef is set (has been assigned a value) and false otherwise */
 	public boolean isSetTypedefOfTypedef() {
 		return this.typedefOfTypedef != null;
-	}
-
-	public void setTypedefOfTypedefIsSet(boolean value) {
-		if (!value) {
-			this.typedefOfTypedef = null;
-		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -1153,8 +1052,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -1181,7 +1078,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 					case 1: // ID
 						if (schemeField.type == org.apache.thrift.protocol.TType.I64) {
 							struct.ID = iprot.readI64();
-							struct.setIDIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -1190,7 +1086,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
 							struct.Ev = new Event();
 							struct.Ev.read(iprot);
-							struct.setEvIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -1205,7 +1100,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 								struct.Events.add(elem68);
 							}
 							iprot.readListEnd();
-							struct.setEventsIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -1220,7 +1114,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 								struct.Events2.add(elem71);
 							}
 							iprot.readSetEnd();
-							struct.setEvents2IsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -1230,13 +1123,12 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 							org.apache.thrift.protocol.TMap elem72 = iprot.readMapBegin();
 							struct.EventMap = new HashMap<Long,Event>(2*elem72.size);
 							for (int elem73 = 0; elem73 < elem72.size; ++elem73) {
-								long elem75 = iprot.readI64();
+								Long elem75 = iprot.readI64();
 								Event elem74 = new Event();
 								elem74.read(iprot);
 								struct.EventMap.put(elem75, elem74);
 							}
 							iprot.readMapEnd();
-							struct.setEventMapIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -1249,14 +1141,13 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 								org.apache.thrift.protocol.TList elem79 = iprot.readListBegin();
 								java.util.List<Integer> elem78 = new ArrayList<Integer>(elem79.size);
 								for (int elem80 = 0; elem80 < elem79.size; ++elem80) {
-									int elem81 = iprot.readI32();
+									Integer elem81 = iprot.readI32();
 									elem78.add(elem81);
 								}
 								iprot.readListEnd();
 								struct.Nums.add(elem78);
 							}
 							iprot.readListEnd();
-							struct.setNumsIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -1270,7 +1161,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 								struct.Enums.add(elem84);
 							}
 							iprot.readListEnd();
-							struct.setEnumsIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -1278,7 +1168,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 					case 8: // A_BOOL_FIELD
 						if (schemeField.type == org.apache.thrift.protocol.TType.BOOL) {
 							struct.aBoolField = iprot.readBool();
-							struct.setABoolFieldIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -1287,7 +1176,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
 							struct.a_union = new TestingUnions();
 							struct.a_union.read(iprot);
-							struct.setA_unionIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -1295,7 +1183,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 					case 10: // TYPEDEF_OF_TYPEDEF
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.typedefOfTypedef = iprot.readString();
-							struct.setTypedefOfTypedefIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -1358,7 +1245,7 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 				oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.LIST, struct.Nums.size()));
 				for (java.util.List<Integer> elem88 : struct.Nums) {
 					oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, elem88.size()));
-					for (int elem89 : elem88) {
+					for (Integer elem89 : elem88) {
 						oprot.writeI32(elem89);
 					}
 					oprot.writeListEnd();
@@ -1461,7 +1348,7 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 				oprot.writeI32(struct.Nums.size());
 				for (java.util.List<Integer> elem94 : struct.Nums) {
 					oprot.writeI32(elem94.size());
-					for (int elem95 : elem94) {
+					for (Integer elem95 : elem94) {
 						oprot.writeI32(elem95);
 					}
 				}
@@ -1488,11 +1375,9 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 			TTupleProtocol iprot = (TTupleProtocol) prot;
 			struct.Ev = new Event();
 			struct.Ev.read(iprot);
-			struct.setEvIsSet(true);
 			BitSet incoming = iprot.readBitSet(9);
 			if (incoming.get(0)) {
 				struct.ID = iprot.readI64();
-				struct.setIDIsSet(true);
 			}
 			if (incoming.get(1)) {
 				org.apache.thrift.protocol.TList elem97 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
@@ -1502,7 +1387,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 					elem99.read(iprot);
 					struct.Events.add(elem99);
 				}
-				struct.setEventsIsSet(true);
 			}
 			if (incoming.get(2)) {
 				org.apache.thrift.protocol.TSet elem100 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
@@ -1512,18 +1396,16 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 					elem102.read(iprot);
 					struct.Events2.add(elem102);
 				}
-				struct.setEvents2IsSet(true);
 			}
 			if (incoming.get(3)) {
 				org.apache.thrift.protocol.TMap elem103 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I64, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
 				struct.EventMap = new HashMap<Long,Event>(2*elem103.size);
 				for (int elem104 = 0; elem104 < elem103.size; ++elem104) {
-					long elem106 = iprot.readI64();
+					Long elem106 = iprot.readI64();
 					Event elem105 = new Event();
 					elem105.read(iprot);
 					struct.EventMap.put(elem106, elem105);
 				}
-				struct.setEventMapIsSet(true);
 			}
 			if (incoming.get(4)) {
 				org.apache.thrift.protocol.TList elem107 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.LIST, iprot.readI32());
@@ -1532,12 +1414,11 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 					org.apache.thrift.protocol.TList elem110 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, iprot.readI32());
 					java.util.List<Integer> elem109 = new ArrayList<Integer>(elem110.size);
 					for (int elem111 = 0; elem111 < elem110.size; ++elem111) {
-						int elem112 = iprot.readI32();
+						Integer elem112 = iprot.readI32();
 						elem109.add(elem112);
 					}
 					struct.Nums.add(elem109);
 				}
-				struct.setNumsIsSet(true);
 			}
 			if (incoming.get(5)) {
 				org.apache.thrift.protocol.TList elem113 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, iprot.readI32());
@@ -1546,20 +1427,16 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 					ItsAnEnum elem115 = ItsAnEnum.findByValue(iprot.readI32());
 					struct.Enums.add(elem115);
 				}
-				struct.setEnumsIsSet(true);
 			}
 			if (incoming.get(6)) {
 				struct.aBoolField = iprot.readBool();
-				struct.setABoolFieldIsSet(true);
 			}
 			if (incoming.get(7)) {
 				struct.a_union = new TestingUnions();
 				struct.a_union.read(iprot);
-				struct.setA_unionIsSet(true);
 			}
 			if (incoming.get(8)) {
 				struct.typedefOfTypedef = iprot.readString();
-				struct.setTypedefOfTypedefIsSet(true);
 			}
 		}
 

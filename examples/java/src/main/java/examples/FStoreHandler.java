@@ -34,7 +34,7 @@ public class FStoreHandler implements FStore.Iface {
                         "Coeur de pirate",
                         "Grosse Boîte",
                         "Béatrice Martin",
-                        169,
+                        169.0,
                         PerfRightsOrg.ASCAP));
         return album;
     }

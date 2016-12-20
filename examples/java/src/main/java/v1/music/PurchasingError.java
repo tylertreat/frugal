@@ -51,7 +51,7 @@ public class PurchasingError extends TException implements org.apache.thrift.TBa
 	}
 
 	public String message; // required
-	public short error_code; // required
+	public Short error_code; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		MESSAGE((short)1, "message"),
@@ -114,37 +114,21 @@ public class PurchasingError extends TException implements org.apache.thrift.TBa
 		}
 	}
 
-	// isset id assignments
-	private static final int __ERROR_CODE_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.MESSAGE, new org.apache.thrift.meta_data.FieldMetaData("message", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.ERROR_CODE, new org.apache.thrift.meta_data.FieldMetaData("error_code", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I16)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(PurchasingError.class, metaDataMap);
-	}
-
 	public PurchasingError() {
 	}
 
 	public PurchasingError(
 		String message,
-		short error_code) {
+		Short error_code) {
 		this();
 		this.message = message;
 		this.error_code = error_code;
-		setError_codeIsSet(true);
 	}
 
 	/**
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public PurchasingError(PurchasingError other) {
-		__isset_bitfield = other.__isset_bitfield;
 		if (other.isSetMessage()) {
 			this.message = other.message;
 		}
@@ -159,7 +143,6 @@ public class PurchasingError extends TException implements org.apache.thrift.TBa
 	public void clear() {
 		this.message = null;
 
-		setError_codeIsSet(false);
 		this.error_code = 0;
 
 	}
@@ -182,33 +165,22 @@ public class PurchasingError extends TException implements org.apache.thrift.TBa
 		return this.message != null;
 	}
 
-	public void setMessageIsSet(boolean value) {
-		if (!value) {
-			this.message = null;
-		}
-	}
-
-	public short getError_code() {
+	public Short getError_code() {
 		return this.error_code;
 	}
 
-	public PurchasingError setError_code(short error_code) {
+	public PurchasingError setError_code(Short error_code) {
 		this.error_code = error_code;
-		setError_codeIsSet(true);
 		return this;
 	}
 
 	public void unsetError_code() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __ERROR_CODE_ISSET_ID);
+		this.error_code = null;
 	}
 
 	/** Returns true if field error_code is set (has been assigned a value) and false otherwise */
 	public boolean isSetError_code() {
-		return EncodingUtils.testBit(__isset_bitfield, __ERROR_CODE_ISSET_ID);
-	}
-
-	public void setError_codeIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __ERROR_CODE_ISSET_ID, value);
+		return this.error_code != null;
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -388,8 +360,6 @@ public class PurchasingError extends TException implements org.apache.thrift.TBa
 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
-			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -416,7 +386,6 @@ public class PurchasingError extends TException implements org.apache.thrift.TBa
 					case 1: // MESSAGE
 						if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
 							struct.message = iprot.readString();
-							struct.setMessageIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -424,7 +393,6 @@ public class PurchasingError extends TException implements org.apache.thrift.TBa
 					case 2: // ERROR_CODE
 						if (schemeField.type == org.apache.thrift.protocol.TType.I16) {
 							struct.error_code = iprot.readI16();
-							struct.setError_codeIsSet(true);
 						} else {
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
@@ -491,11 +459,9 @@ public class PurchasingError extends TException implements org.apache.thrift.TBa
 			BitSet incoming = iprot.readBitSet(2);
 			if (incoming.get(0)) {
 				struct.message = iprot.readString();
-				struct.setMessageIsSet(true);
 			}
 			if (incoming.get(1)) {
 				struct.error_code = iprot.readI16();
-				struct.setError_codeIsSet(true);
 			}
 		}
 
