@@ -1,5 +1,8 @@
 package com.workiva.frugal.server;
 
+import com.workiva.frugal.processor.FProcessor;
+import com.workiva.frugal.protocol.FProtocolFactory;
+import com.workiva.frugal.transport.TMemoryOutputBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -9,6 +12,7 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -19,7 +23,13 @@ import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 import io.netty.util.CharsetUtil;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.thrift.TException;
+import org.apache.thrift.transport.TMemoryInputTransport;
+import org.apache.thrift.transport.TTransport;
 
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
@@ -30,10 +40,24 @@ public class FNettyHttpHandler extends SimpleChannelInboundHandler<Object> {
     private HttpRequest request;
     private Integer responseLimit;
 
-    /**
-     * Buffer that stores the incoming request.
-     */
+    private final FrameProcessor frameProcessor;
     private final StringBuilder requestBuffer = new StringBuilder();
+
+    private FNettyHttpHandler(FProcessor processor,
+                              FProtocolFactory inProtocolFactory,
+                              FProtocolFactory outProtocolFactory) {
+        this.frameProcessor = FrameProcessor.of(processor, inProtocolFactory, outProtocolFactory);
+    }
+
+    public static FNettyHttpHandler of(FProcessor processor, FProtocolFactory protocolFactory) {
+        return new FNettyHttpHandler(processor, protocolFactory, protocolFactory);
+    }
+
+    public static FNettyHttpHandler of(FProcessor processor,
+                                       FProtocolFactory inProtocolFactory,
+                                       FProtocolFactory outProtocolFactory) {
+        return new FNettyHttpHandler(processor, inProtocolFactory, outProtocolFactory);
+    }
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
@@ -57,33 +81,70 @@ public class FNettyHttpHandler extends SimpleChannelInboundHandler<Object> {
 
             ByteBuf content = httpContent.content();
             if (content.isReadable()) {
-                requestBuffer.append()
-                requestBuffer.append("CONTENT: ");
                 requestBuffer.append(content.toString(CharsetUtil.UTF_8));
-                requestBuffer.append("\r\n");
             }
 
             if (msg instanceof LastHttpContent) {
-                requestBuffer.append("END OF CONTENT\r\n");
 
                 LastHttpContent trailer = (LastHttpContent) msg;
-                if (!trailer.trailingHeaders().isEmpty()) {
-                    requestBuffer.append("\r\n");
-                    for (CharSequence name : trailer.trailingHeaders().names()) {
-                        for (CharSequence value : trailer.trailingHeaders().getAll(name)) {
-                            requestBuffer.append("TRAILING HEADER: ");
-                            requestBuffer.append(name).append(" = ").append(value).append("\r\n");
-                        }
-                    }
-                    requestBuffer.append("\r\n");
-                }
-
                 if (!writeResponse(trailer, ctx)) {
                     // If keep-alive is off, close the connection once the content is fully written.
                     ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
                 }
             }
         }
+    }
+
+    /**
+     * Process the request and write the result.
+     *
+     * @param currentObj
+     * @param ctx
+     * @return
+     */
+    protected boolean writeResponse(HttpObject currentObj, ChannelHandlerContext ctx) {
+
+        // Process the frame, and set HTTP status
+        HttpResponseStatus status = currentObj.decoderResult().isSuccess() ? OK : BAD_REQUEST;
+        byte[] responseBytes = new byte[0];
+        try {
+            frameProcessor.process(requestBuffer.toString().getBytes());
+            // Check size
+            if (responseBytes.length > responseLimit) {
+                status = REQUEST_ENTITY_TOO_LARGE;
+            }
+
+        } catch (TException | IOException e) {
+            status = BAD_REQUEST;
+        }
+
+        // Build the response object.
+        FullHttpResponse response = new DefaultFullHttpResponse(
+                HTTP_1_1,
+                status,
+                Unpooled.copiedBuffer(responseBytes));
+
+        // Set response headers
+        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/x-frugal");
+        response.headers().set(HttpHeaderNames.CONTENT_TRANSFER_ENCODING, "base64");
+        response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
+
+        // Decide whether to close the connection or not.
+        boolean keepAlive = HttpUtil.isKeepAlive(request);
+        if (keepAlive) {
+            // Add keep alive header as per:
+            response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+        }
+
+        // Write the response.
+        ctx.write(response);
+
+        return keepAlive;
+    }
+
+    private static void send100Continue(ChannelHandlerContext ctx) {
+        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, CONTINUE);
+        ctx.write(response);
     }
 
     /**
@@ -104,50 +165,6 @@ public class FNettyHttpHandler extends SimpleChannelInboundHandler<Object> {
         return responseLimit;
     }
 
-    private boolean writeResponse(HttpObject currentObj, ChannelHandlerContext ctx) {
-        // Decide whether to close the connection or not.
-        boolean keepAlive = HttpUtil.isKeepAlive(request);
-        // Build the response object.
-        FullHttpResponse response = new DefaultFullHttpResponse(
-                HTTP_1_1, currentObj.decoderResult().isSuccess() ? OK : BAD_REQUEST,
-                Unpooled.copiedBuffer(requestBuffer.toString(), CharsetUtil.UTF_8));
-
-        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=UTF-8");
-
-        if (keepAlive) {
-            // Add 'Content-Length' header only for a keep-alive connection.
-            response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
-            // Add keep alive header as per:
-            // - http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
-            response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-        }
-
-        // Encode the cookie.
-        String cookieString = request.headers().get(HttpHeaderNames.COOKIE);
-        if (cookieString != null) {
-            Set<Cookie> cookies = ServerCookieDecoder.STRICT.decode(cookieString);
-            if (!cookies.isEmpty()) {
-                // Reset the cookies if necessary.
-                for (Cookie cookie : cookies) {
-                    response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(cookie));
-                }
-            }
-        } else {
-            // Browser sent no cookie.  Add some.
-            response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode("key1", "value1"));
-            response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode("key2", "value2"));
-        }
-
-        // Write the response.
-        ctx.write(response);
-
-        return keepAlive;
-    }
-
-    private static void send100Continue(ChannelHandlerContext ctx) {
-        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, CONTINUE);
-        ctx.write(response);
-    }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {

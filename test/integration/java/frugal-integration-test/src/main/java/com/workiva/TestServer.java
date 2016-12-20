@@ -25,6 +25,7 @@ import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
 import com.workiva.frugal.server.FNatsServer;
+import com.workiva.frugal.server.FNettyHttpHandler;
 import com.workiva.frugal.server.FServer;
 import com.workiva.frugal.transport.FPublisherTransportFactory;
 import com.workiva.frugal.transport.FNatsPublisherTransport;
@@ -37,6 +38,13 @@ import frugal.test.FFrugalTest;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
 import io.nats.client.Constants;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TProtocolFactory;
 
@@ -127,9 +135,9 @@ public class TestServer {
                 NatsServerThread serverThread = new NatsServerThread(server, transport_type);
                 serverThread.start();
             } else {
-
                 // Start server in separate thread
-                NettyServerThread serverThread = new NettyServerThread(server, transport_type);
+                FNettyHttpHandler handler = FNettyHttpHandler.of(processor, fProtocolFactory);
+                NettyServerThread serverThread = new NettyServerThread(port, handler);
                 serverThread.start();
             }
 
@@ -168,20 +176,32 @@ public class TestServer {
     }
 
     private static class NettyServerThread extends Thread {
-        FServer server;
-        String transport_type;
+        Integer port;
+        FNettyHttpHandler handler;
 
-        NettyServerThread(FServer server, String transport_type) {
-            this.server = server;
-            this.transport_type = transport_type;
+        NettyServerThread(Integer port, FNettyHttpHandler handler) {
+            this.port = port;
+            this.handler = handler;
         }
 
         public void run() {
-            System.out.println("Starting " + transport_type + " server...");
+            EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+            EventLoopGroup workerGroup = new NioEventLoopGroup();
             try {
-                server.serve();
-            } catch (Exception e) {
-                System.out.printf("Exception starting server %s\n", e);
+                ServerBootstrap b = new ServerBootstrap();
+                b.group(bossGroup, workerGroup)
+                        .channel(NioServerSocketChannel.class)
+                        .handler(new LoggingHandler(LogLevel.INFO))
+                        .childHandler(new NettyHttpInitializer(handler));
+
+                Channel ch = b.bind(port).sync().channel();
+
+                ch.closeFuture().sync();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                bossGroup.shutdownGracefully();
+                workerGroup.shutdownGracefully();
             }
         }
     }
