@@ -1219,6 +1219,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += "\t\tprotocolFactory:  protocolFactory,\n"
 	publisher += "\t\tmethods:   methods,\n"
 	publisher += "\t}\n"
+	publisher += "\tmiddleware = append(middleware, provider.GetMiddleware()...)\n"
 	for _, op := range scope.Operations {
 		publisher += fmt.Sprintf("\tmethods[\"publish%s\"] = frugal.NewMethod(publisher, publisher.publish%s, \"publish%s\", middleware)\n",
 			op.Name, op.Name, op.Name)
@@ -1357,6 +1358,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 	subscriber += fmt.Sprintf("func New%sSubscriber(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) %sSubscriber {\n",
 		scopeCamel, scopeCamel)
+	subscriber += "\tmiddleware = append(middleware, provider.GetMiddleware()...)\n"
 	subscriber += fmt.Sprintf("\treturn &%sSubscriber{provider: provider, middleware: middleware}\n", scopeLower)
 	subscriber += "}\n\n"
 
@@ -1518,16 +1520,17 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf(
-		"func NewF%sClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *F%sClient {\n",
+		"func NewF%sClient(provider *frugal.FServiceProvider, middleware ...frugal.ServiceMiddleware) *F%sClient {\n",
 		servTitle, servTitle)
+	contents += "\tmiddleware = append(middleware, provider.GetMiddleware()...)\n"
 	contents += "\tmethods := make(map[string]*frugal.Method)\n"
 	contents += fmt.Sprintf("\tclient := &F%sClient{\n", servTitle)
 	if service.Extends != "" {
-		contents += fmt.Sprintf("\t\tF%sClient: %sNewF%sClient(t, p, middleware...),\n",
+		contents += fmt.Sprintf("\t\tF%sClient: %sNewF%sClient(provider.GetTransport(), provider.GetProtocolFactory(), middleware...),\n",
 			service.ExtendsService(), g.getServiceExtendsNamespace(service), service.ExtendsService())
 	}
-	contents += "\t\ttransport:       t,\n"
-	contents += "\t\tprotocolFactory: p,\n"
+	contents += "\t\ttransport:       provider.GetTransport(),\n"
+	contents += "\t\tprotocolFactory: provider.GetProtocolFactory(),\n"
 	contents += "\t\tmethods:         methods,\n"
 	contents += "\t}\n"
 	for _, method := range service.Methods {

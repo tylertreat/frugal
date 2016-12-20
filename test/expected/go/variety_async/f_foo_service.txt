@@ -49,12 +49,13 @@ type FFooClient struct {
 	methods         map[string]*frugal.Method
 }
 
-func NewFFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FFooClient {
+func NewFFooClient(provider *frugal.FServiceProvider, middleware ...frugal.ServiceMiddleware) *FFooClient {
+	middleware = append(middleware, provider.GetMiddleware()...)
 	methods := make(map[string]*frugal.Method)
 	client := &FFooClient{
-		FBaseFooClient:  golang.NewFBaseFooClient(t, p, middleware...),
-		transport:       t,
-		protocolFactory: p,
+		FBaseFooClient:  golang.NewFBaseFooClient(provider.GetTransport(), provider.GetProtocolFactory(), middleware...),
+		transport:       provider.GetTransport(),
+		protocolFactory: provider.GetProtocolFactory(),
 		methods:         methods,
 	}
 	methods["ping"] = frugal.NewMethod(client, client.ping, "ping", middleware)
