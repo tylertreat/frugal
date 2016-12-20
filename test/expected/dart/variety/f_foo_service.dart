@@ -12,7 +12,7 @@ import 'package:frugal/frugal.dart' as frugal;
 import 'package:actual_base_dart/actual_base_dart.dart' as t_actual_base_dart;
 import 'package:validStructs/validStructs.dart' as t_validStructs;
 import 'package:ValidTypes/ValidTypes.dart' as t_ValidTypes;
-import 'package:subdir_include/subdir_include.dart' as t_subdir_include;
+import 'package:subdir_include_ns/subdir_include_ns.dart' as t_subdir_include_ns;
 import 'package:variety/variety.dart' as t_variety;
 
 
@@ -39,7 +39,7 @@ abstract class FFoo extends t_actual_base_dart.FBaseFoo {
 
   Future<int> getMyInt(frugal.FContext ctx);
 
-  Future<t_subdir_include.A> use_subdir_struct(frugal.FContext ctx, t_subdir_include.A a);
+  Future<t_subdir_include_ns.A> use_subdir_struct(frugal.FContext ctx, t_subdir_include_ns.A a);
 }
 
 /// This is a thrift service. Frugal will generate bindings that include
@@ -591,11 +591,11 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     return getMyIntCallback;
   }
 
-  Future<t_subdir_include.A> use_subdir_struct(frugal.FContext ctx, t_subdir_include.A a) {
-    return this._methods['use_subdir_struct']([ctx, a]) as Future<t_subdir_include.A>;
+  Future<t_subdir_include_ns.A> use_subdir_struct(frugal.FContext ctx, t_subdir_include_ns.A a) {
+    return this._methods['use_subdir_struct']([ctx, a]) as Future<t_subdir_include_ns.A>;
   }
 
-  Future<t_subdir_include.A> _use_subdir_struct(frugal.FContext ctx, t_subdir_include.A a) async {
+  Future<t_subdir_include_ns.A> _use_subdir_struct(frugal.FContext ctx, t_subdir_include_ns.A a) async {
     var controller = new StreamController();
     var closeSubscription = _transport.onClose.listen((_) {
       controller.addError(new thrift.TTransportError(
@@ -2774,16 +2774,16 @@ class use_subdir_struct_args implements thrift.TBase {
   static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("use_subdir_struct_args");
   static final thrift.TField _A_FIELD_DESC = new thrift.TField("a", thrift.TType.STRUCT, 1);
 
-  t_subdir_include.A _a;
+  t_subdir_include_ns.A _a;
   static const int A = 1;
 
 
   use_subdir_struct_args() {
   }
 
-  t_subdir_include.A get a => this._a;
+  t_subdir_include_ns.A get a => this._a;
 
-  set a(t_subdir_include.A a) {
+  set a(t_subdir_include_ns.A a) {
     this._a = a;
   }
 
@@ -2808,7 +2808,7 @@ class use_subdir_struct_args implements thrift.TBase {
         if(value == null) {
           unsetA();
         } else {
-          this.a = value as t_subdir_include.A;
+          this.a = value as t_subdir_include_ns.A;
         }
         break;
 
@@ -2838,7 +2838,7 @@ class use_subdir_struct_args implements thrift.TBase {
       switch(field.id) {
         case A:
           if(field.type == thrift.TType.STRUCT) {
-            a = new t_subdir_include.A();
+            a = new t_subdir_include_ns.A();
             a.read(iprot);
           } else {
             thrift.TProtocolUtil.skip(iprot, field.type);
@@ -2893,16 +2893,16 @@ class use_subdir_struct_result implements thrift.TBase {
   static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("use_subdir_struct_result");
   static final thrift.TField _SUCCESS_FIELD_DESC = new thrift.TField("success", thrift.TType.STRUCT, 0);
 
-  t_subdir_include.A _success;
+  t_subdir_include_ns.A _success;
   static const int SUCCESS = 0;
 
 
   use_subdir_struct_result() {
   }
 
-  t_subdir_include.A get success => this._success;
+  t_subdir_include_ns.A get success => this._success;
 
-  set success(t_subdir_include.A success) {
+  set success(t_subdir_include_ns.A success) {
     this._success = success;
   }
 
@@ -2927,7 +2927,7 @@ class use_subdir_struct_result implements thrift.TBase {
         if(value == null) {
           unsetSuccess();
         } else {
-          this.success = value as t_subdir_include.A;
+          this.success = value as t_subdir_include_ns.A;
         }
         break;
 
@@ -2957,7 +2957,7 @@ class use_subdir_struct_result implements thrift.TBase {
       switch(field.id) {
         case SUCCESS:
           if(field.type == thrift.TType.STRUCT) {
-            success = new t_subdir_include.A();
+            success = new t_subdir_include_ns.A();
             success.read(iprot);
           } else {
             thrift.TProtocolUtil.skip(iprot, field.type);
