@@ -18,9 +18,6 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
  */
 public class FNettyHttpHandler extends ChannelInboundHandlerAdapter {
 
-    private HttpRequest request;
-    private Integer responseLimit;
-
     private final FNettyHttpProcessor processor;
 
     private FNettyHttpHandler(FNettyHttpProcessor processor) {

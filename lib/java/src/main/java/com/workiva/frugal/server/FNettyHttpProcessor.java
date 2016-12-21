@@ -9,10 +9,10 @@ import io.netty.handler.codec.http.FullHttpResponse;
 public interface FNettyHttpProcessor {
 
     /**
-     * Process one frame of data.
+     * Process an HTTP request and return an HTTP response.
      *
      * @param request an HTTP request
-     * @return an HTTP response, processed by an FProcessor
+     * @return a valid Frugal HTTP response
      */
     FullHttpResponse process(FullHttpRequest request);
 }

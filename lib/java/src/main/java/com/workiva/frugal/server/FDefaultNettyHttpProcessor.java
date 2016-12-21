@@ -40,12 +40,12 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 /**
  * Default processor implementation for {@link FNettyHttpProcessor}.
  * <p>
- * HTTP may include an X-Frugal-Payload-Limit * header setting the size
+ * The HTTP request may include an X-Frugal-Payload-Limit header setting the size
  * limit of responses from the server.
  * <p>
  * The HTTP processor returns a 500 response for any runtime errors when executing
- * a frame, and a 413 response if the response exceeds the payload limit specified
- * by the client.
+ * a frame, a 400 response for an invalid frame, and a 413 response if the response
+ * exceeds the payload limit specified by the client.
  * <p>
  * Both the request and response are base64 encoded.
  */
@@ -182,15 +182,14 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
                 OK,
                 outputBuffer);
 
-        ZonedDateTime dateTime = ZonedDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.RFC_1123_DATE_TIME;
-
         DefaultHttpHeaders headers = (DefaultHttpHeaders) response.headers();
         // Add custom headers
         for (Map.Entry<String, String> header : this.customHeaders) {
             headers.set(header.getKey(), header.getValue());
         }
         // Add required headers
+        ZonedDateTime dateTime = ZonedDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.RFC_1123_DATE_TIME;
         headers.set(DATE, dateTime.format(formatter));
         headers.set(CONTENT_TYPE, "application/x-frugal");
         headers.set(CONTENT_TRANSFER_ENCODING, "base64");
@@ -222,7 +221,7 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
     }
 
     /**
-     * Add a map of custom header to the returned response.
+     * Add a map of custom headers to the returned response.
      *
      * @param headers Map of header name, header value pairs.
      */
