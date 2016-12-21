@@ -12,6 +12,9 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 
 /**
  * Reference implementation of a Netty HTTP handler.
+ *
+ * This handler uses {@link FDefaultNettyHttpProcessor} to process HTTP requests
+ * using a Frugal processor and protocol.
  */
 public class FNettyHttpHandler extends ChannelInboundHandlerAdapter {
 
@@ -48,7 +51,6 @@ public class FNettyHttpHandler extends ChannelInboundHandlerAdapter {
             }
         }
     }
-
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {

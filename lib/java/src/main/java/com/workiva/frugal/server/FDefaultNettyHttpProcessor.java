@@ -18,6 +18,7 @@ import org.apache.thrift.transport.TTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TRANSFER_ENCODING;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderNames.DATE;
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -37,6 +39,15 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * Default processor implementation for {@link FNettyHttpProcessor}.
+ * <p>
+ * HTTP may include an X-Frugal-Payload-Limit * header setting the size
+ * limit of responses from the server.
+ * <p>
+ * The HTTP processor returns a 500 response for any runtime errors when executing
+ * a frame, and a 413 response if the response exceeds the payload limit specified
+ * by the client.
+ * <p>
+ * Both the request and response are base64 encoded.
  */
 public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
 
@@ -106,27 +117,32 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
      *
      * @param inputBuffer an input frame
      * @return The processes frame as an output buffer
-     * @throws TException if error processing frame
+     * @throws TException  if error processing frame
+     * @throws IOException if frame is invalid error processing frame
      */
-    protected ByteBuf processFrame(ByteBuf inputBuffer) throws TException {
+    public ByteBuf processFrame(ByteBuf inputBuffer) throws TException, IOException {
+        // Read base64 encoded input
         byte[] encodedBytes = new byte[inputBuffer.readableBytes()];
         inputBuffer.readBytes(encodedBytes);
         byte[] inputBytes = Base64.decodeBase64(encodedBytes);
 
-        // Exclude first 4 bytes which represent frame size
-        byte[] inputFrame = Arrays.copyOfRange(inputBytes, 4, inputBytes.length);
+        if (inputBytes.length <= 4) {
+            throw new IOException("Invalid request frame");
+        }
 
+        // Process a frame, exclude frame length (first 4 bytes)
+        byte[] inputFrame = Arrays.copyOfRange(inputBytes, 4, inputBytes.length);
         TTransport inTransport = new TMemoryInputTransport(inputFrame);
         TMemoryOutputBuffer outTransport = new TMemoryOutputBuffer();
-
         processor.process(inProtocolFactory.getProtocol(inTransport), outProtocolFactory.getProtocol(outTransport));
 
+        // Write base64 encoded output
         byte[] outputBytes = Base64.encodeBase64(outTransport.getWriteBytes());
         return Unpooled.copiedBuffer(outputBytes);
     }
 
     /**
-     * Process one frame of data.
+     * Process an HTTP request and return an HTTP response.
      *
      * @param request an HTTP request
      * @return an HTTP response, processed by an FProcessor
@@ -142,10 +158,15 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
         try {
             outputBuffer = processFrame(body);
         } catch (TException e) {
-            LOGGER.error("Frugal processor returned unhandled error:" + e);
+            LOGGER.error("Frugal processor returned unhandled error:", e);
             return new DefaultFullHttpResponse(
                     HTTP_1_1,
                     INTERNAL_SERVER_ERROR);
+        } catch (IOException e) {
+            LOGGER.error("Frugal processor invalid frame:", e);
+            return new DefaultFullHttpResponse(
+                    HTTP_1_1,
+                    BAD_REQUEST);
         }
 
         Integer responseLimit = getResponseLimit(request.headers());
@@ -165,15 +186,15 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
         DateTimeFormatter formatter = DateTimeFormatter.RFC_1123_DATE_TIME;
 
         DefaultHttpHeaders headers = (DefaultHttpHeaders) response.headers();
-        headers.set(DATE, dateTime.format(formatter));
-        headers.set(CONTENT_TYPE, "application/x-frugal");
-        headers.set(CONTENT_TRANSFER_ENCODING, "base64");
-        headers.set(CONTENT_LENGTH, Integer.toString(outputBuffer.readableBytes()));
-
         // Add custom headers
         for (Map.Entry<String, String> header : this.customHeaders) {
             headers.set(header.getKey(), header.getValue());
         }
+        // Add required headers
+        headers.set(DATE, dateTime.format(formatter));
+        headers.set(CONTENT_TYPE, "application/x-frugal");
+        headers.set(CONTENT_TRANSFER_ENCODING, "base64");
+        headers.set(CONTENT_LENGTH, Integer.toString(outputBuffer.readableBytes()));
 
         return response;
     }
