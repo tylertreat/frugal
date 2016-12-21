@@ -11,6 +11,7 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpUtil;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.apache.thrift.transport.TTransport;
@@ -108,8 +109,9 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
      * @throws TException if error processing frame
      */
     protected ByteBuf processFrame(ByteBuf inputBuffer) throws TException {
-        byte[] inputBytes = new byte[inputBuffer.readableBytes()];
-        inputBuffer.readBytes(inputBytes);
+        byte[] encodedBytes = new byte[inputBuffer.readableBytes()];
+        inputBuffer.readBytes(encodedBytes);
+        byte[] inputBytes = Base64.decodeBase64(encodedBytes);
 
         // Exclude first 4 bytes which represent frame size
         byte[] inputFrame = Arrays.copyOfRange(inputBytes, 4, inputBytes.length);
@@ -119,7 +121,8 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
 
         processor.process(inProtocolFactory.getProtocol(inTransport), outProtocolFactory.getProtocol(outTransport));
 
-        return Unpooled.copiedBuffer(outTransport.getWriteBytes());
+        byte[] outputBytes = Base64.encodeBase64(outTransport.getWriteBytes());
+        return Unpooled.copiedBuffer(outputBytes);
     }
 
     /**

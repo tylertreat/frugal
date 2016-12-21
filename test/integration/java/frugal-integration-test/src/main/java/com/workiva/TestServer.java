@@ -21,11 +21,14 @@ package com.workiva;
 
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
+import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
+import com.workiva.frugal.server.FDefaultNettyHttpProcessor;
 import com.workiva.frugal.server.FNatsServer;
 import com.workiva.frugal.server.FNettyHttpHandler;
+import com.workiva.frugal.server.FNettyHttpProcessor;
 import com.workiva.frugal.server.FServer;
 import com.workiva.frugal.transport.FPublisherTransportFactory;
 import com.workiva.frugal.transport.FNatsPublisherTransport;
@@ -136,8 +139,8 @@ public class TestServer {
                 serverThread.start();
             } else {
                 // Start server in separate thread
-                FNettyHttpHandler handler = FNettyHttpHandler.of(processor, fProtocolFactory);
-                NettyServerThread serverThread = new NettyServerThread(port, handler);
+                FNettyHttpHandlerFactory handlerFactory = new FNettyHttpHandlerFactory(processor, fProtocolFactory);
+                NettyServerThread serverThread = new NettyServerThread(port, handlerFactory);
                 serverThread.start();
             }
 
@@ -175,13 +178,13 @@ public class TestServer {
         }
     }
 
-    private static class NettyServerThread extends Thread {
+    public static class NettyServerThread extends Thread {
         Integer port;
-        FNettyHttpHandler handler;
+        final FNettyHttpHandlerFactory handlerFactory;
 
-        NettyServerThread(Integer port, FNettyHttpHandler handler) {
+        NettyServerThread(Integer port, FNettyHttpHandlerFactory handlerFactory) {
             this.port = port;
-            this.handler = handler;
+            this.handlerFactory = handlerFactory;
         }
 
         public void run() {
@@ -192,7 +195,7 @@ public class TestServer {
                 b.group(bossGroup, workerGroup)
                         .channel(NioServerSocketChannel.class)
                         .handler(new LoggingHandler(LogLevel.INFO))
-                        .childHandler(new NettyHttpInitializer(handler));
+                        .childHandler(new NettyHttpInitializer(handlerFactory));
 
                 Channel ch = b.bind(port).sync().channel();
 
@@ -204,6 +207,23 @@ public class TestServer {
                 workerGroup.shutdownGracefully();
             }
         }
+    }
+
+    public static class FNettyHttpHandlerFactory {
+
+        final FProcessor processor;
+        final FProtocolFactory protocolFactory;
+
+        FNettyHttpHandlerFactory(FProcessor processor, FProtocolFactory protocolFactory) {
+            this.processor = processor;
+            this.protocolFactory = protocolFactory;
+        }
+
+        public FNettyHttpHandler newHandler() {
+            FNettyHttpProcessor httpProcessor = FDefaultNettyHttpProcessor.of(processor, protocolFactory);
+            return FNettyHttpHandler.of(httpProcessor);
+        }
+
     }
 
     private static class ServerMiddleware implements ServiceMiddleware {
