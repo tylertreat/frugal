@@ -95,23 +95,24 @@ func (a *AsyncIOGenerator) generateClient(service *parser.Service) string {
 		contents += "class Client(Iface):\n\n"
 	}
 
-	contents += tab + "def __init__(self, transport, protocol_factory, middleware=None):\n"
+	contents += tab + "def __init__(self, provider, middleware=None):\n"
 	contents += a.generateDocString([]string{
-		"Create a new Client with a transport and protocol factory.\n",
+		"Create a new Client with an FServiceProvider containing a transport",
+		"and protocol factory.\n",
 		"Args:",
-		tab + "transport: FTransport",
-		tab + "protocol_factory: FProtocolFactory",
+		tab + "provider: FServiceProvider",
 		tab + "middleware: ServiceMiddleware or list of ServiceMiddleware",
 	}, tabtab)
+	contents += tabtab + "middleware = middleware or []\n"
 	contents += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	contents += tabtabtab + "middleware = [middleware]\n"
 	if service.Extends != "" {
-		contents += tabtab + "super(Client, self).__init__(transport, protocol_factory,\n"
-		contents += tabtab + "                             middleware=middleware)\n"
+		contents += tabtab + "super(Client, self).__init__(provider, middleware=middleware)\n"
 		contents += tabtab + "self._methods.update("
 	} else {
-		contents += tabtab + "self._transport = transport\n"
-		contents += tabtab + "self._protocol_factory = protocol_factory\n"
+		contents += tabtab + "self._transport = provider.get_transport()\n"
+		contents += tabtab + "self._protocol_factory = provider.get_protocol_factory()\n"
+		contents += tabtab + "middleware += provider.get_middleware()\n"
 		contents += tabtab + "self._methods = "
 	}
 	contents += "{\n"
@@ -341,8 +342,10 @@ func (a *AsyncIOGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope
 		tab + "middleware: ServiceMiddleware or list of ServiceMiddleware",
 	}, tabtab)
 	subscriber += "\n"
+	subscriber += tabtab + "middleware = middleware or []\n"
 	subscriber += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	subscriber += tabtabtab + "middleware = [middleware]\n"
+	subscriber += tabtab + "middleware += provider.get_middleware()\n"
 	subscriber += tabtab + "self._middleware = middleware\n"
 	subscriber += tabtab + "self._provider = provider\n\n"
 
