@@ -30,13 +30,13 @@ type FMyServiceClient struct {
 }
 
 func NewFMyServiceClient(provider *frugal.FServiceProvider, middleware ...frugal.ServiceMiddleware) *FMyServiceClient {
-	middleware = append(middleware, provider.GetMiddleware()...)
 	methods := make(map[string]*frugal.Method)
 	client := &FMyServiceClient{
 		transport:       provider.GetTransport(),
 		protocolFactory: provider.GetProtocolFactory(),
 		methods:         methods,
 	}
+	middleware = append(middleware, provider.GetMiddleware()...)
 	methods["getItem"] = frugal.NewMethod(client, client.getItem, "getItem", middleware)
 	return client
 }
