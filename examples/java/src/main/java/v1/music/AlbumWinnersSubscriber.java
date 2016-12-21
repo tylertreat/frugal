@@ -21,8 +21,9 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.thrift.protocol.*;
 
-import javax.annotation.Generated;
+import java.util.Arrays;
 import java.util.logging.Logger;
+import javax.annotation.Generated;
 
 
 
@@ -58,7 +59,7 @@ public class AlbumWinnersSubscriber {
 
 		public Client(FScopeProvider provider, ServiceMiddleware... middleware) {
 			this.provider = provider;
-			this.middleware = middleware;
+			this.middleware = provider.getMiddleware().addAll(Arrays.asList(middleware)).toArray(new ServiceMiddleware[0]);
 		}
 
 		public FSubscription subscribeWinner(final WinnerHandler handler) throws TException {

@@ -1,16 +1,22 @@
 package com.workiva.frugal.provider;
 
+import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.transport.FTransport;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * FServiceProvider is the service equivalent of FScopeProvider. It produces
- * FTransports and FProtocols for use by RPC service clients.
+ * FTransports and FProtocols for use by RPC service clients. The main
+ * purpose of this is to provide a shim for adding middleware to a client.
  */
 public class FServiceProvider {
 
     private FTransport transport;
     private FProtocolFactory protocolFactory;
+    private List<ServiceMiddleware> middleware = new ArrayList<>();
 
     public FServiceProvider(FTransport transport, FProtocolFactory protocolFactory) {
         this.transport = transport;
@@ -33,5 +39,13 @@ public class FServiceProvider {
      */
     public FProtocolFactory getProtocolFactory() {
         return protocolFactory;
+    }
+
+    public void addMiddleware(ServiceMiddleware middleware) {
+        this.middleware.add(middleware);
+    }
+
+    public List<ServiceMiddleware> getMiddleware() {
+        return middleware;
     }
 }

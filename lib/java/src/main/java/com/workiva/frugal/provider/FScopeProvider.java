@@ -1,16 +1,21 @@
 package com.workiva.frugal.provider;
 
+import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.transport.FPublisherTransport;
 import com.workiva.frugal.transport.FPublisherTransportFactory;
 import com.workiva.frugal.transport.FSubscriberTransport;
 import com.workiva.frugal.transport.FSubscriberTransportFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * FScopeProvider produces FPublisherTransports, FSubscriberTransports, and
  * FProtocols for use by pub/sub scopes. It does this by wrapping an
  * FPublisherTransportFactory, an FSubscriberTransportFactory, and an
- * FProtocolFactory.
+ * FProtocolFactory. This also provides a shim for adding middleware to a
+ * publisher or subscriber.
  */
 public class FScopeProvider {
 
@@ -20,6 +25,7 @@ public class FScopeProvider {
     public static class Publisher {
         private FPublisherTransport transport;
         private FProtocolFactory protocolFactory;
+        private List<ServiceMiddleware> middleware = new ArrayList<>();
 
         private Publisher(FPublisherTransport t, FProtocolFactory pf) {
             transport = t;
@@ -33,6 +39,14 @@ public class FScopeProvider {
         public FProtocolFactory getProtocolFactory() {
             return protocolFactory;
         }
+
+        public void addMiddleware(ServiceMiddleware middleware) {
+            this.middleware.add(middleware);
+        }
+
+        public List<ServiceMiddleware> getMiddleware() {
+            return middleware;
+        }
     }
 
     /**
@@ -41,6 +55,7 @@ public class FScopeProvider {
     public static class Subscriber {
         private FSubscriberTransport transport;
         private FProtocolFactory protocolFactory;
+        private List<ServiceMiddleware> middleware = new ArrayList<>();
 
         private Subscriber (FSubscriberTransport t, FProtocolFactory pf) {
             transport = t;
@@ -53,6 +68,14 @@ public class FScopeProvider {
 
         public FProtocolFactory getProtocolFactory() {
             return protocolFactory;
+        }
+
+        public void addMiddleware(ServiceMiddleware middleware) {
+            this.middleware.add(middleware);
+        }
+
+        public List<ServiceMiddleware> getMiddleware() {
+            return middleware;
         }
     }
 

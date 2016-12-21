@@ -2,7 +2,8 @@ package frugal
 
 // FScopeProvider produces FScopeTransports and FProtocols for use by pub/sub
 // scopes. It does this by wrapping an FScopeTransportFactory and
-// FProtocolFactory.
+// FProtocolFactory. This also provides a shim for adding middleware to a
+// publisher or subscriber.
 type FScopeProvider struct {
 	publisherTransportFactory  FPublisherTransportFactory
 	subscriberTransportFactory FSubscriberTransportFactory
@@ -45,7 +46,8 @@ func (p *FScopeProvider) GetMiddleware() []ServiceMiddleware {
 }
 
 // FServiceProvider produces FTransports and FProtocolFactories for use by RPC
-// service clients.
+// service clients. The main purpose of this is to provide a shim for adding
+// middleware to a client.
 type FServiceProvider struct {
 	transport       FTransport
 	protocolFactory *FProtocolFactory

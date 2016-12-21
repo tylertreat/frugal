@@ -1522,17 +1522,17 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += fmt.Sprintf(
 		"func NewF%sClient(provider *frugal.FServiceProvider, middleware ...frugal.ServiceMiddleware) *F%sClient {\n",
 		servTitle, servTitle)
-	contents += "\tmiddleware = append(middleware, provider.GetMiddleware()...)\n"
 	contents += "\tmethods := make(map[string]*frugal.Method)\n"
 	contents += fmt.Sprintf("\tclient := &F%sClient{\n", servTitle)
 	if service.Extends != "" {
-		contents += fmt.Sprintf("\t\tF%sClient: %sNewF%sClient(provider.GetTransport(), provider.GetProtocolFactory(), middleware...),\n",
+		contents += fmt.Sprintf("\t\tF%sClient: %sNewF%sClient(provider, middleware...),\n",
 			service.ExtendsService(), g.getServiceExtendsNamespace(service), service.ExtendsService())
 	}
 	contents += "\t\ttransport:       provider.GetTransport(),\n"
 	contents += "\t\tprotocolFactory: provider.GetProtocolFactory(),\n"
 	contents += "\t\tmethods:         methods,\n"
 	contents += "\t}\n"
+	contents += "\tmiddleware = append(middleware, provider.GetMiddleware()...)\n"
 	for _, method := range service.Methods {
 		name := generator.LowercaseFirstLetter(method.Name)
 		contents += fmt.Sprintf("\tmethods[\"%s\"] = frugal.NewMethod(client, client.%s, \"%s\", middleware)\n", name, name, name)
