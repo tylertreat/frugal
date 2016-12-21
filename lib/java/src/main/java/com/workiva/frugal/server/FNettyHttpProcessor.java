@@ -11,8 +11,8 @@ public interface FNettyHttpProcessor {
     /**
      * Process one frame of data.
      *
-     * @param request a HTML request
-     * @return The processed frame
+     * @param request an HTTP request
+     * @return an HTTP response, processed by an FProcessor
      */
     FullHttpResponse process(FullHttpRequest request);
 }

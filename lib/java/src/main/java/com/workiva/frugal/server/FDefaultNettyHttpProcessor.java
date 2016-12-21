@@ -122,6 +122,12 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
         return Unpooled.copiedBuffer(outTransport.getWriteBytes());
     }
 
+    /**
+     * Process one frame of data.
+     *
+     * @param request an HTTP request
+     * @return an HTTP response, processed by an FProcessor
+     */
     @Override
     public FullHttpResponse process(FullHttpRequest request) {
         if (HttpUtil.is100ContinueExpected(request)) {
