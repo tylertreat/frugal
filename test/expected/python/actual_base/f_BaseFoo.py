@@ -30,22 +30,24 @@ class Iface(object):
 
 class Client(Iface):
 
-    def __init__(self, transport, protocol_factory, middleware=None):
+    def __init__(self, provider, middleware=None):
         """
-        Create a new Client with a transport and protocol factory.
+        Create a new Client with an FServiceProvider containing a transport
+        and protocol factory.
 
         Args:
-            transport: FSynchronousTransport
-            protocol_factory: FProtocolFactory
+            provider: FServiceProvider with FSynchronousTransport
             middleware: ServiceMiddleware or list of ServiceMiddleware
         """
+        middleware = middleware or []
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
-        self._transport = transport
-        self._protocol_factory = protocol_factory
-        self._oprot = protocol_factory.get_protocol(transport)
-        self._iprot = protocol_factory.get_protocol(transport)
+        self._transport = provider.get_transport()
+        self._protocol_factory = provider.get_protocol_factory()
+        self._oprot = self._protocol_factory.get_protocol(self._transport)
+        self._iprot = self._protocol_factory.get_protocol(self._transport)
         self._write_lock = Lock()
+        middleware += provider.get_middleware()
         self._methods = {
             'basePing': Method(self._basePing, middleware),
         }

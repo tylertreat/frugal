@@ -108,6 +108,7 @@ func (a *AsyncIOGenerator) generateClient(service *parser.Service) string {
 	contents += tabtabtab + "middleware = [middleware]\n"
 	if service.Extends != "" {
 		contents += tabtab + "super(Client, self).__init__(provider, middleware=middleware)\n"
+		contents += tabtab + "middleware += provider.get_middleware()\n"
 		contents += tabtab + "self._methods.update("
 	} else {
 		contents += tabtab + "self._transport = provider.get_transport()\n"
