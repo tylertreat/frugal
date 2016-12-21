@@ -51,7 +51,7 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  */
 public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FNatsServer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FDefaultNettyHttpProcessor.class);
 
     private final FProcessor processor;
     private final FProtocolFactory inProtocolFactory;
