@@ -2337,6 +2337,7 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports += "import org.apache.thrift.protocol.*;\n\n"
 
 	imports += "import java.util.Arrays;\n"
+	imports += "import java.util.List;\n"
 	imports += "import java.util.logging.Logger;\n"
 	imports += "import javax.annotation.Generated;\n"
 
@@ -2405,7 +2406,9 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 
 	publisher += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
 	publisher += fmt.Sprintf(tabtabtab+"target = new Internal%sPublisher(provider);\n", scopeTitle)
-	publisher += tabtabtab + "middleware = provider.getMiddleware().addAll(Arrays.asList(middleware)).toArray(new ServiceMiddleware[0]);\n"
+	publisher += tabtabtab + "List<ServiceMiddleware> combined = provider.getMiddleware();\n"
+	publisher += tabtabtab + "combined.addAll(Arrays.asList(middleware));\n"
+	publisher += tabtabtab + "middleware = combined.toArray(new ServiceMiddleware[0]);\n"
 	publisher += tabtabtab + "proxy = InvocationHandler.composeMiddleware(target, Iface.class, middleware);\n"
 	publisher += tabtab + "}\n\n"
 
@@ -2569,7 +2572,9 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 
 	subscriber += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
 	subscriber += tabtabtab + "this.provider = provider;\n"
-	subscriber += tabtabtab + "this.middleware = provider.getMiddleware().addAll(Arrays.asList(middleware)).toArray(new ServiceMiddleware[0]);\n"
+	subscriber += tabtabtab + "List<ServiceMiddleware> combined = provider.getMiddleware();\n"
+	subscriber += tabtabtab + "combined.addAll(Arrays.asList(middleware));\n"
+	subscriber += tabtabtab + "this.middleware = combined.toArray(new ServiceMiddleware[0]);\n"
 	subscriber += tabtab + "}\n\n"
 
 	for _, op := range scope.Operations {
@@ -2734,7 +2739,9 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += tabtabtab + "super(provider, middleware);\n"
 	}
 	contents += tabtabtab + "Iface client = new InternalClient(provider.getTransport(), provider.getProtocolFactory());\n"
-	contents += tabtabtab + "middleware = provider.getMiddleware().addAll(Arrays.asList(middleware)).toArray(new ServiceMiddleware[0]);\n"
+	contents += tabtabtab + "List<ServiceMiddleware> combined = provider.getMiddleware();\n"
+	contents += tabtabtab + "combined.addAll(Arrays.asList(middleware));\n"
+	contents += tabtabtab + "middleware = combined.toArray(new ServiceMiddleware[0]);\n"
 	contents += tabtabtab + "proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);\n"
 	contents += tabtab + "}\n\n"
 

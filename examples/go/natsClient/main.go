@@ -34,7 +34,7 @@ func main() {
 
 	// Create a client using NATS to send messages with our desired
 	// protocol
-	storeClient := music.NewFStoreClient(natsT, fProtocolFactory, newLoggingMiddleware())
+	storeClient := music.NewFStoreClient(frugal.NewFServiceProvider(natsT, fProtocolFactory), newLoggingMiddleware())
 
 	// Request to buy an album
 	album, err := storeClient.BuyAlbum(frugal.NewFContext("corr-id-1"), "ASIN-1290AIUBOA89", "ACCOUNT-12345")

@@ -75,7 +75,9 @@ public class FBaseFoo {
 
 		public Client(FServiceProvider provider, ServiceMiddleware... middleware) {
 			Iface client = new InternalClient(provider.getTransport(), provider.getProtocolFactory());
-			middleware = provider.getMiddleware().addAll(Arrays.asList(middleware)).toArray(new ServiceMiddleware[0]);
+			List<ServiceMiddleware> combined = provider.getMiddleware();
+			combined.addAll(Arrays.asList(middleware));
+			middleware = combined.toArray(new ServiceMiddleware[0]);
 			proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);
 		}
 

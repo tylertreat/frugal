@@ -22,6 +22,7 @@ import org.apache.thrift.transport.TTransportException;
 import org.apache.thrift.protocol.*;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
 import javax.annotation.Generated;
 
@@ -62,7 +63,9 @@ public class EventsSubscriber {
 
 		public Client(FScopeProvider provider, ServiceMiddleware... middleware) {
 			this.provider = provider;
-			this.middleware = provider.getMiddleware().addAll(Arrays.asList(middleware)).toArray(new ServiceMiddleware[0]);
+			List<ServiceMiddleware> combined = provider.getMiddleware();
+			combined.addAll(Arrays.asList(middleware));
+			this.middleware = combined.toArray(new ServiceMiddleware[0]);
 		}
 
 		/**

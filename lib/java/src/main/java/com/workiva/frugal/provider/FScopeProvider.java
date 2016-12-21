@@ -25,7 +25,6 @@ public class FScopeProvider {
     public static class Publisher {
         private FPublisherTransport transport;
         private FProtocolFactory protocolFactory;
-        private List<ServiceMiddleware> middleware = new ArrayList<>();
 
         private Publisher(FPublisherTransport t, FProtocolFactory pf) {
             transport = t;
@@ -39,14 +38,6 @@ public class FScopeProvider {
         public FProtocolFactory getProtocolFactory() {
             return protocolFactory;
         }
-
-        public void addMiddleware(ServiceMiddleware middleware) {
-            this.middleware.add(middleware);
-        }
-
-        public List<ServiceMiddleware> getMiddleware() {
-            return middleware;
-        }
     }
 
     /**
@@ -55,9 +46,8 @@ public class FScopeProvider {
     public static class Subscriber {
         private FSubscriberTransport transport;
         private FProtocolFactory protocolFactory;
-        private List<ServiceMiddleware> middleware = new ArrayList<>();
 
-        private Subscriber (FSubscriberTransport t, FProtocolFactory pf) {
+        private Subscriber(FSubscriberTransport t, FProtocolFactory pf) {
             transport = t;
             protocolFactory = pf;
         }
@@ -69,19 +59,12 @@ public class FScopeProvider {
         public FProtocolFactory getProtocolFactory() {
             return protocolFactory;
         }
-
-        public void addMiddleware(ServiceMiddleware middleware) {
-            this.middleware.add(middleware);
-        }
-
-        public List<ServiceMiddleware> getMiddleware() {
-            return middleware;
-        }
     }
 
     private FPublisherTransportFactory publisherTransportFactory;
     private FSubscriberTransportFactory subscriberTransportFactory;
     private FProtocolFactory protocolFactory;
+    private List<ServiceMiddleware> middleware = new ArrayList<>();
 
     public FScopeProvider(FPublisherTransportFactory ptf, FSubscriberTransportFactory stf,
                           FProtocolFactory pf) {
@@ -110,5 +93,13 @@ public class FScopeProvider {
     public Subscriber buildSubscriber() {
         FSubscriberTransport transport = subscriberTransportFactory.getTransport();
         return new Subscriber(transport, protocolFactory);
+    }
+
+    public void addMiddleware(ServiceMiddleware middleware) {
+        this.middleware.add(middleware);
+    }
+
+    public List<ServiceMiddleware> getMiddleware() {
+        return middleware;
     }
 }
