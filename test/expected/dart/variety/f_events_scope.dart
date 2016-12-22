@@ -23,8 +23,12 @@ class EventsPublisher {
   EventsPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
     transport = provider.publisherTransportFactory.getTransport();
     protocolFactory = provider.protocolFactory;
+    var combined = provider.getMiddleware();
+    if (middleware != null) {
+      combined.addAll(middleware);
+    }
     this._methods = {};
-    this._methods['EventCreated'] = new frugal.FMethod(this._publishEventCreated, 'Events', 'publishEventCreated', middleware);
+    this._methods['EventCreated'] = new frugal.FMethod(this._publishEventCreated, 'Events', 'publishEventCreated', combined);
   }
 
   Future open() {
@@ -63,7 +67,12 @@ class EventsSubscriber {
   final frugal.FScopeProvider provider;
   final List<frugal.Middleware> _middleware;
 
-  EventsSubscriber(this.provider, [this._middleware]) {}
+  EventsSubscriber(this.provider, [List<frugal.Middleware> middleware]) {
+    this._middleware = provider.getMiddleware();
+    if (middleware != null) {
+      this._middleware.addAll(middleware);
+    }
+}
 
   /// This is a docstring.
   Future<frugal.FSubscription> subscribeEventCreated(String user, dynamic onEvent(frugal.FContext ctx, t_variety.Event req)) async {

@@ -20,11 +20,15 @@ abstract class FBaseFoo {
 class FBaseFooClient implements FBaseFoo {
   Map<String, frugal.FMethod> _methods;
 
-  FBaseFooClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware]) {
-    _transport = transport;
-    _protocolFactory = protocolFactory;
+  FBaseFooClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware]) {
+    _transport = provider.transport;
+    _protocolFactory = provider.protocolFactory;
+    var combined = provider.getMiddleware();
+    if (middleware != null) {
+      combined.addAll(middleware);
+    }
     this._methods = {};
-    this._methods['basePing'] = new frugal.FMethod(this._basePing, 'BaseFoo', 'basePing', middleware);
+    this._methods['basePing'] = new frugal.FMethod(this._basePing, 'BaseFoo', 'basePing', combined);
   }
 
   frugal.FTransport _transport;

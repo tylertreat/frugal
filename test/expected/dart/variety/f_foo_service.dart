@@ -47,20 +47,24 @@ abstract class FFoo extends t_actual_base_dart.FBaseFoo {
 class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   Map<String, frugal.FMethod> _methods;
 
-  FFooClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware])
-      : super(transport, protocolFactory) {
-    _transport = transport;
-    _protocolFactory = protocolFactory;
+  FFooClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware])
+      : super(provider, middleware) {
+    _transport = provider.transport;
+    _protocolFactory = provider.protocolFactory;
+    var combined = provider.getMiddleware();
+    if (middleware != null) {
+      combined.addAll(middleware);
+    }
     this._methods = {};
-    this._methods['ping'] = new frugal.FMethod(this._ping, 'Foo', 'ping', middleware);
-    this._methods['blah'] = new frugal.FMethod(this._blah, 'Foo', 'blah', middleware);
-    this._methods['oneWay'] = new frugal.FMethod(this._oneWay, 'Foo', 'oneWay', middleware);
-    this._methods['bin_method'] = new frugal.FMethod(this._bin_method, 'Foo', 'bin_method', middleware);
-    this._methods['param_modifiers'] = new frugal.FMethod(this._param_modifiers, 'Foo', 'param_modifiers', middleware);
-    this._methods['underlying_types_test'] = new frugal.FMethod(this._underlying_types_test, 'Foo', 'underlying_types_test', middleware);
-    this._methods['getThing'] = new frugal.FMethod(this._getThing, 'Foo', 'getThing', middleware);
-    this._methods['getMyInt'] = new frugal.FMethod(this._getMyInt, 'Foo', 'getMyInt', middleware);
-    this._methods['use_subdir_struct'] = new frugal.FMethod(this._use_subdir_struct, 'Foo', 'use_subdir_struct', middleware);
+    this._methods['ping'] = new frugal.FMethod(this._ping, 'Foo', 'ping', combined);
+    this._methods['blah'] = new frugal.FMethod(this._blah, 'Foo', 'blah', combined);
+    this._methods['oneWay'] = new frugal.FMethod(this._oneWay, 'Foo', 'oneWay', combined);
+    this._methods['bin_method'] = new frugal.FMethod(this._bin_method, 'Foo', 'bin_method', combined);
+    this._methods['param_modifiers'] = new frugal.FMethod(this._param_modifiers, 'Foo', 'param_modifiers', combined);
+    this._methods['underlying_types_test'] = new frugal.FMethod(this._underlying_types_test, 'Foo', 'underlying_types_test', combined);
+    this._methods['getThing'] = new frugal.FMethod(this._getThing, 'Foo', 'getThing', combined);
+    this._methods['getMyInt'] = new frugal.FMethod(this._getMyInt, 'Foo', 'getMyInt', combined);
+    this._methods['use_subdir_struct'] = new frugal.FMethod(this._use_subdir_struct, 'Foo', 'use_subdir_struct', combined);
   }
 
   frugal.FTransport _transport;

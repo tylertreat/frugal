@@ -1249,9 +1249,13 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "transport = provider.publisherTransportFactory.getTransport();\n"
 	publishers += tabtab + "protocolFactory = provider.protocolFactory;\n"
+	publishers += tabtab + "var combined = provider.getMiddleware();\n"
+	publishers += tabtab + "if (middleware != null) {\n"
+	publishers += tabtabtab + "combined.addAll(middleware);\n"
+	publishers += tabtab + "}\n"
 	publishers += tabtab + "this._methods = {};\n"
 	for _, operation := range scope.Operations {
-		publishers += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._publish%s, '%s', 'publish%s', middleware);\n",
+		publishers += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._publish%s, '%s', 'publish%s', combined);\n",
 			operation.Name, operation.Name, strings.Title(scope.Name), operation.Name)
 	}
 	publishers += tab + "}\n\n"
@@ -1333,7 +1337,12 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	subscribers += tab + "final frugal.FScopeProvider provider;\n"
 	subscribers += tab + "final List<frugal.Middleware> _middleware;\n\n"
 
-	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider, [this._middleware]) {}\n\n", strings.Title(scope.Name))
+	subscribers += tab + fmt.Sprintf("%sSubscriber(this.provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
+	subscribers += tabtab + "this._middleware = provider.getMiddleware();\n"
+	subscribers += tabtab + "if (middleware != null) {\n"
+	subscribers += tabtabtab + "this._middleware.addAll(middleware);\n"
+	subscribers += tabtab + "}\n"
+	subscribers += "}\n\n"
 
 	args := ""
 	if len(scope.Prefix.Variables) > 0 {
@@ -1451,21 +1460,27 @@ func (g *Generator) generateClient(service *parser.Service) string {
 			servTitle, servTitle)
 	}
 	contents += tab + "Map<String, frugal.FMethod> _methods;\n\n"
+
 	if service.Extends != "" {
-		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware])\n", servTitle)
-		contents += tabtabtab + ": super(transport, protocolFactory) {\n"
+		contents += tab + fmt.Sprintf("F%sClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware])\n", servTitle)
+		contents += tabtabtab + ": super(provider, middleware) {\n"
 	} else {
-		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware]) {\n", servTitle)
+		contents += tab + fmt.Sprintf("F%sClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware]) {\n", servTitle)
 	}
-	contents += tabtab + "_transport = transport;\n"
-	contents += tabtab + "_protocolFactory = protocolFactory;\n"
+	contents += tabtab + "_transport = provider.transport;\n"
+	contents += tabtab + "_protocolFactory = provider.protocolFactory;\n"
+	contents += tabtab + "var combined = provider.getMiddleware();\n"
+	contents += tabtab + "if (middleware != null) {\n"
+	contents += tabtabtab + "combined.addAll(middleware);\n"
+	contents += tabtab + "}\n"
 	contents += tabtab + "this._methods = {};\n"
 	for _, method := range service.Methods {
 		nameLower := generator.LowercaseFirstLetter(method.Name)
-		contents += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._%s, '%s', '%s', middleware);\n",
+		contents += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._%s, '%s', '%s', combined);\n",
 			nameLower, nameLower, servTitle, nameLower)
 	}
 	contents += tab + "}\n\n"
+
 	contents += tab + "frugal.FTransport _transport;\n"
 	contents += tab + "frugal.FProtocolFactory _protocolFactory;\n"
 	contents += "\n"
@@ -1474,6 +1489,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += g.generateClientMethod(service, method)
 	}
 	contents += "}\n\n"
+
 	return contents
 }
 
