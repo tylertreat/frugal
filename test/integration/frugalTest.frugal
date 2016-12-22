@@ -251,6 +251,13 @@ service FrugalTest
   map<i32,map<i32,i32>> testMapMap(1: i32 hello),
 
   /**
+   * Prints 'TestUppercaseMethod("%s")' where '%s' with thing as 'true' or 'false'
+   * @param bool  thing - the bool data to print
+   * @return bool  - returns the bool 'thing'
+   */
+  bool TestUppercaseMethod(1: bool thing),
+
+  /**
    * So you think you've got this all worked, out eh?
    *
    * Creates a the returned map with these values and prints it out:

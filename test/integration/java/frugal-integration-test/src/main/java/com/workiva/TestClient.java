@@ -158,6 +158,21 @@ public class TestClient {
             }
 
             /**
+             * BOOL TESTS
+             */
+            boolean bl = testClient.testBool(context, true);
+            if (!bl) {
+                returnCode |= 1;
+                System.out.println("*** FAILURE ***\n");
+            }
+
+            bl = testClient.testBool(context, false);
+            if (bl) {
+                returnCode |= 1;
+                System.out.println("*** FAILURE ***\n");
+            }
+
+            /**
              * BYTE TEST
              */
             byte i8 = testClient.testByte(context, (byte) 1);
@@ -364,6 +379,15 @@ public class TestClient {
                     returnCode |= 1;
                     System.out.println("*** FAILURE ***\n");
                 }
+            }
+
+            /**
+             * BOOL TESTS
+             */
+            boolean uppercase = testClient.TestUppercaseMethod(context, true);
+            if (!uppercase) {
+                returnCode |= 1;
+                System.out.println("*** FAILURE ***\n");
             }
 
             /**

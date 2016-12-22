@@ -1522,8 +1522,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 	contents += fmt.Sprintf(indent+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.%s, 0));\n",
 		nameLower, msgType)
-	contents += fmt.Sprintf(indent+"%s_args args = new %s_args();\n",
-		nameLower, nameLower)
+	contents += fmt.Sprintf(indent+"%s_args args = new %s_args();\n", method.Name, method.Name)
 	for _, arg := range method.Arguments {
 		argLower := generator.LowercaseFirstLetter(arg.Name)
 		contents += fmt.Sprintf(indent+"args.%s = %s;\n", argLower, argLower)
@@ -1574,8 +1573,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtab + "throw error;\n"
 	contents += tabtabtabtab + "}\n\n"
 
-	contents += fmt.Sprintf(tabtabtabtab+"%s_result result = new %s_result();\n",
-		nameLower, nameLower)
+	contents += fmt.Sprintf(tabtabtabtab+"%s_result result = new %s_result();\n", method.Name, method.Name)
 	contents += tabtabtabtab + "result.read(iprot);\n"
 	contents += tabtabtabtab + "iprot.readMessageEnd();\n"
 	if method.ReturnType == nil {
