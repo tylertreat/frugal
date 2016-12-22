@@ -46,6 +46,6 @@ public class FServiceProvider {
     }
 
     public List<ServiceMiddleware> getMiddleware() {
-        return middleware;
+        return new ArrayList<>(middleware);
     }
 }

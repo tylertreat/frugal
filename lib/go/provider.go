@@ -42,7 +42,9 @@ func (p *FScopeProvider) AddMiddleware(middleware ServiceMiddleware) {
 
 // GetMiddleware returns the ServiceMiddleware added to this FScopeProvider.
 func (p *FScopeProvider) GetMiddleware() []ServiceMiddleware {
-	return p.middleware
+	middleware := make([]ServiceMiddleware, len(p.middleware))
+	copy(middleware, p.middleware)
+	return middleware
 }
 
 // FServiceProvider produces FTransports and FProtocolFactories for use by RPC
@@ -81,5 +83,7 @@ func (f *FServiceProvider) AddMiddleware(middleware ServiceMiddleware) {
 
 // GetMiddleware returns the ServiceMiddleware added to this FServiceProvider.
 func (f *FServiceProvider) GetMiddleware() []ServiceMiddleware {
-	return f.middleware
+	middleware := make([]ServiceMiddleware, len(f.middleware))
+	copy(middleware, f.middleware)
+	return middleware
 }

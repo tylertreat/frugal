@@ -40,7 +40,7 @@ class FScopeProvider(object):
 
     def get_middleware(self):
         """Return the ServiceMiddleware added to this FScopeProvider."""
-        return self._middleware
+        return list(self._middleware)
 
 
 class FServiceProvider(object):
@@ -72,4 +72,4 @@ class FServiceProvider(object):
 
     def get_middleware(self):
         """Return the ServiceMiddleware added to this FServiceProvider."""
-        return self._middleware
+        return list(self._middleware)

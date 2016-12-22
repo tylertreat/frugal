@@ -100,6 +100,6 @@ public class FScopeProvider {
     }
 
     public List<ServiceMiddleware> getMiddleware() {
-        return middleware;
+        return new ArrayList<>(middleware);
     }
 }
