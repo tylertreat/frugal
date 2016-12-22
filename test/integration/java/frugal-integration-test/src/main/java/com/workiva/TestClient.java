@@ -24,6 +24,7 @@ import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
+import com.workiva.frugal.provider.FServiceProvider;
 import com.workiva.frugal.transport.FHttpTransport;
 import com.workiva.frugal.transport.FTransport;
 import com.workiva.frugal.transport.FTransportFactory;
@@ -129,7 +130,7 @@ public class TestClient {
             System.exit(1);
         }
 
-        FFrugalTest.Client testClient = new FFrugalTest.Client(fTransport, new FProtocolFactory(protocolFactory), new ClientMiddleware());
+        FFrugalTest.Client testClient = new FFrugalTest.Client(new FServiceProvider(fTransport, new FProtocolFactory(protocolFactory)), new ClientMiddleware());
 
         Insanity insane = new Insanity();
         FContext context = new FContext("");

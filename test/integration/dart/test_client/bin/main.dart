@@ -175,7 +175,7 @@ Future _initTestClient(
   await transport.open();
 
   fProtocolFactory = new FProtocolFactory(getProtocolFactory(protocolType));
-  client = new FFrugalTestClient(transport, fProtocolFactory, [clientMiddleware()]);
+  client = new FFrugalTestClient(new FServiceProvider(transport, fProtocolFactory), [clientMiddleware()]);
 }
 
 List<FTest> _createTests() {
