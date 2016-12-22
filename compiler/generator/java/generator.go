@@ -2805,7 +2805,7 @@ func (g *Generator) generateInternalClient(service *parser.Service) string {
 }
 
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
-	methodLower := generator.LowercaseFirstLetter(method.Name)
+	methodLower := parser.LowercaseFirstLetter(method.Name)
 
 	contents := ""
 	if method.Comment != nil {
@@ -2977,7 +2977,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtab + "java.util.Map<String, FProcessorFunction> processMap = new java.util.HashMap<>();\n"
 	}
 	for _, method := range service.Methods {
-		contents += tabtabtab + fmt.Sprintf("processMap.put(\"%s\", new %s());\n", generator.LowercaseFirstLetter(method.Name), strings.Title(method.Name))
+		contents += tabtabtab + fmt.Sprintf("processMap.put(\"%s\", new %s());\n", parser.LowercaseFirstLetter(method.Name), strings.Title(method.Name))
 	}
 	contents += tabtabtab + "return processMap;\n"
 	contents += tabtab + "}\n\n"
@@ -2991,7 +2991,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	contents += tabtab + "}\n\n"
 
 	for _, method := range service.Methods {
-		methodLower := generator.LowercaseFirstLetter(method.Name)
+		methodLower := parser.LowercaseFirstLetter(method.Name)
 		contents += tabtab + fmt.Sprintf("private class %s implements FProcessorFunction {\n\n", strings.Title(method.Name))
 
 		contents += tabtabtab + "public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {\n"

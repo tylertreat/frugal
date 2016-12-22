@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Workiva/frugal/compiler/generator"
 	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
 )
@@ -125,7 +124,7 @@ func (t *TornadoGenerator) generateClientSendMethod(method *parser.Method) strin
 	contents += tabtab + "buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())\n"
 	contents += tabtab + "oprot = self._protocol_factory.get_protocol(buffer)\n"
 	contents += tabtab + "oprot.write_request_headers(ctx)\n"
-	contents += tabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", generator.LowercaseFirstLetter(method.Name))
+	contents += tabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", parser.LowercaseFirstLetter(method.Name))
 	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
 	for _, arg := range method.Arguments {
 		contents += tabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
@@ -191,7 +190,7 @@ func (t *TornadoGenerator) generateServer(service *parser.Service) string {
 }
 
 func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) string {
-	methodLower := generator.LowercaseFirstLetter(method.Name)
+	methodLower := parser.LowercaseFirstLetter(method.Name)
 	contents := ""
 	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
