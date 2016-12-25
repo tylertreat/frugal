@@ -12,7 +12,7 @@ from frugal.transport import TMemoryOutputBuffer
 logger = logging.getLogger(__name__)
 
 
-class FNatsTornadoServer(FServer):
+class FNatsServer(FServer):
     """An implementation of FServer which uses NATS as the underlying transport.
     Clients must connect with the FNatsTransport"""
 
