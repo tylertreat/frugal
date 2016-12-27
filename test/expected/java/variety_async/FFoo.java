@@ -293,24 +293,15 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-									ex = new FRateLimitException(e.getMessage());
-								}
-								try {
-									result.put(ex);
-									return;
-								} catch (InterruptedException ie) {
-									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "Ping interrupted: " + ie.getMessage());
-								}
+							TException returnedException = e;
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+								returnedException = FMessageSizeException.response(e.getMessage());
 							}
 							try {
-								result.put(e);
-							} finally {
-								throw e;
+								result.put(returnedException);
+								return;
+							} catch (InterruptedException ie) {
+								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "Ping interrupted: " + ie.getMessage());
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -395,24 +386,15 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-									ex = new FRateLimitException(e.getMessage());
-								}
-								try {
-									result.put(ex);
-									return;
-								} catch (InterruptedException ie) {
-									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "blah interrupted: " + ie.getMessage());
-								}
+							TException returnedException = e;
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+								returnedException = FMessageSizeException.response(e.getMessage());
 							}
 							try {
-								result.put(e);
-							} finally {
-								throw e;
+								result.put(returnedException);
+								return;
+							} catch (InterruptedException ie) {
+								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "blah interrupted: " + ie.getMessage());
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -505,24 +487,15 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-									ex = new FRateLimitException(e.getMessage());
-								}
-								try {
-									result.put(ex);
-									return;
-								} catch (InterruptedException ie) {
-									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "bin_method interrupted: " + ie.getMessage());
-								}
+							TException returnedException = e;
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+								returnedException = FMessageSizeException.response(e.getMessage());
 							}
 							try {
-								result.put(e);
-							} finally {
-								throw e;
+								result.put(returnedException);
+								return;
+							} catch (InterruptedException ie) {
+								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "bin_method interrupted: " + ie.getMessage());
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -598,24 +571,15 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-									ex = new FRateLimitException(e.getMessage());
-								}
-								try {
-									result.put(ex);
-									return;
-								} catch (InterruptedException ie) {
-									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "param_modifiers interrupted: " + ie.getMessage());
-								}
+							TException returnedException = e;
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+								returnedException = FMessageSizeException.response(e.getMessage());
 							}
 							try {
-								result.put(e);
-							} finally {
-								throw e;
+								result.put(returnedException);
+								return;
+							} catch (InterruptedException ie) {
+								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "param_modifiers interrupted: " + ie.getMessage());
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -690,24 +654,15 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-									ex = new FRateLimitException(e.getMessage());
-								}
-								try {
-									result.put(ex);
-									return;
-								} catch (InterruptedException ie) {
-									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "underlying_types_test interrupted: " + ie.getMessage());
-								}
+							TException returnedException = e;
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+								returnedException = FMessageSizeException.response(e.getMessage());
 							}
 							try {
-								result.put(e);
-							} finally {
-								throw e;
+								result.put(returnedException);
+								return;
+							} catch (InterruptedException ie) {
+								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "underlying_types_test interrupted: " + ie.getMessage());
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -780,24 +735,15 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-									ex = new FRateLimitException(e.getMessage());
-								}
-								try {
-									result.put(ex);
-									return;
-								} catch (InterruptedException ie) {
-									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getThing interrupted: " + ie.getMessage());
-								}
+							TException returnedException = e;
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+								returnedException = FMessageSizeException.response(e.getMessage());
 							}
 							try {
-								result.put(e);
-							} finally {
-								throw e;
+								result.put(returnedException);
+								return;
+							} catch (InterruptedException ie) {
+								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getThing interrupted: " + ie.getMessage());
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -870,24 +816,15 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-									ex = new FRateLimitException(e.getMessage());
-								}
-								try {
-									result.put(ex);
-									return;
-								} catch (InterruptedException ie) {
-									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getMyInt interrupted: " + ie.getMessage());
-								}
+							TException returnedException = e;
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+								returnedException = FMessageSizeException.response(e.getMessage());
 							}
 							try {
-								result.put(e);
-							} finally {
-								throw e;
+								result.put(returnedException);
+								return;
+							} catch (InterruptedException ie) {
+								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getMyInt interrupted: " + ie.getMessage());
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -961,24 +898,15 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-									ex = new FRateLimitException(e.getMessage());
-								}
-								try {
-									result.put(ex);
-									return;
-								} catch (InterruptedException ie) {
-									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "use_subdir_struct interrupted: " + ie.getMessage());
-								}
+							TException returnedException = e;
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+								returnedException = FMessageSizeException.response(e.getMessage());
 							}
 							try {
-								result.put(e);
-							} finally {
-								throw e;
+								result.put(returnedException);
+								return;
+							} catch (InterruptedException ie) {
+								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "use_subdir_struct interrupted: " + ie.getMessage());
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -1052,8 +980,10 @@ public class FFoo {
 				Ping_result result = new Ping_result();
 				try {
 					handler.Ping(ctx);
-				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "ping", e.getMessage());
+				} catch (TApplicationException e) {
+					oprot.writeResponseHeader(ctx);
+					oprot.writeMessageBegin(new TMessage("ping", TMessageType.EXCEPTION, 0));
+					e.write(oprot);
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1102,8 +1032,10 @@ public class FFoo {
 					result.awe = awe;
 				} catch (actual_base.java.api_exception api) {
 					result.api = api;
-				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "blah", e.getMessage());
+				} catch (TApplicationException e) {
+					oprot.writeResponseHeader(ctx);
+					oprot.writeMessageBegin(new TMessage("blah", TMessageType.EXCEPTION, 0));
+					e.write(oprot);
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1166,8 +1098,10 @@ public class FFoo {
 					result.setSuccessIsSet(true);
 				} catch (actual_base.java.api_exception api) {
 					result.api = api;
-				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "bin_method", e.getMessage());
+				} catch (TApplicationException e) {
+					oprot.writeResponseHeader(ctx);
+					oprot.writeMessageBegin(new TMessage("bin_method", TMessageType.EXCEPTION, 0));
+					e.write(oprot);
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1212,8 +1146,10 @@ public class FFoo {
 				try {
 					result.success = handler.param_modifiers(ctx, args.opt_num, args.default_num, args.req_num);
 					result.setSuccessIsSet(true);
-				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "param_modifiers", e.getMessage());
+				} catch (TApplicationException e) {
+					oprot.writeResponseHeader(ctx);
+					oprot.writeMessageBegin(new TMessage("param_modifiers", TMessageType.EXCEPTION, 0));
+					e.write(oprot);
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1258,8 +1194,10 @@ public class FFoo {
 				try {
 					result.success = handler.underlying_types_test(ctx, args.list_type, args.set_type);
 					result.setSuccessIsSet(true);
-				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "underlying_types_test", e.getMessage());
+				} catch (TApplicationException e) {
+					oprot.writeResponseHeader(ctx);
+					oprot.writeMessageBegin(new TMessage("underlying_types_test", TMessageType.EXCEPTION, 0));
+					e.write(oprot);
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1304,8 +1242,10 @@ public class FFoo {
 				try {
 					result.success = handler.getThing(ctx);
 					result.setSuccessIsSet(true);
-				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getThing", e.getMessage());
+				} catch (TApplicationException e) {
+					oprot.writeResponseHeader(ctx);
+					oprot.writeMessageBegin(new TMessage("getThing", TMessageType.EXCEPTION, 0));
+					e.write(oprot);
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1350,8 +1290,10 @@ public class FFoo {
 				try {
 					result.success = handler.getMyInt(ctx);
 					result.setSuccessIsSet(true);
-				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getMyInt", e.getMessage());
+				} catch (TApplicationException e) {
+					oprot.writeResponseHeader(ctx);
+					oprot.writeMessageBegin(new TMessage("getMyInt", TMessageType.EXCEPTION, 0));
+					e.write(oprot);
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1396,8 +1338,10 @@ public class FFoo {
 				try {
 					result.success = handler.use_subdir_struct(ctx, args.a);
 					result.setSuccessIsSet(true);
-				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "use_subdir_struct", e.getMessage());
+				} catch (TApplicationException e) {
+					oprot.writeResponseHeader(ctx);
+					oprot.writeMessageBegin(new TMessage("use_subdir_struct", TMessageType.EXCEPTION, 0));
+					e.write(oprot);
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {

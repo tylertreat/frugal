@@ -154,24 +154,15 @@ public class FStore {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-									ex = new FRateLimitException(e.getMessage());
-								}
-								try {
-									result.put(ex);
-									return;
-								} catch (InterruptedException ie) {
-									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "buyAlbum interrupted: " + ie.getMessage());
-								}
+							TException returnedException = e;
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+								returnedException = FMessageSizeException.response(e.getMessage());
 							}
 							try {
-								result.put(e);
-							} finally {
-								throw e;
+								result.put(returnedException);
+								return;
+							} catch (InterruptedException ie) {
+								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "buyAlbum interrupted: " + ie.getMessage());
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -246,24 +237,15 @@ public class FStore {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-									ex = new FRateLimitException(e.getMessage());
-								}
-								try {
-									result.put(ex);
-									return;
-								} catch (InterruptedException ie) {
-									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "enterAlbumGiveaway interrupted: " + ie.getMessage());
-								}
+							TException returnedException = e;
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+								returnedException = FMessageSizeException.response(e.getMessage());
 							}
 							try {
-								result.put(e);
-							} finally {
-								throw e;
+								result.put(returnedException);
+								return;
+							} catch (InterruptedException ie) {
+								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "enterAlbumGiveaway interrupted: " + ie.getMessage());
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -331,8 +313,10 @@ public class FStore {
 					result.setSuccessIsSet(true);
 				} catch (PurchasingError error) {
 					result.error = error;
-				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "buyAlbum", e.getMessage());
+				} catch (TApplicationException e) {
+					oprot.writeResponseHeader(ctx);
+					oprot.writeMessageBegin(new TMessage("buyAlbum", TMessageType.EXCEPTION, 0));
+					e.write(oprot);
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -377,8 +361,10 @@ public class FStore {
 				try {
 					result.success = handler.enterAlbumGiveaway(ctx, args.email, args.name);
 					result.setSuccessIsSet(true);
-				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", e.getMessage());
+				} catch (TApplicationException e) {
+					oprot.writeResponseHeader(ctx);
+					oprot.writeMessageBegin(new TMessage("enterAlbumGiveaway", TMessageType.EXCEPTION, 0));
+					e.write(oprot);
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
