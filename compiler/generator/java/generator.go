@@ -2973,6 +2973,24 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	contents += tabtabtab + "return processMap;\n"
 	contents += tabtab + "}\n\n"
 
+	contents += tabtab + "protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {\n"
+	if service.Extends != "" {
+		contents += tabtabtab + "java.util.Map<String, java.util.Map<String, String>> annotationsMap = super.getAnnotationsMap();\n"
+	} else {
+		contents += tabtabtab + "java.util.Map<String, java.util.Map<String, String>> annotationsMap = new java.util.HashMap<>();\n"
+	}
+	for _, method := range service.Methods {
+		if len(method.Annotations) > 0 {
+			contents += tabtabtab + fmt.Sprintf("java.util.Map<String, String> %sMap = new java.util.HashMap<>();\n", method.Name)
+			for _, annotation := range method.Annotations {
+				contents += tabtabtab + fmt.Sprintf("%sMap.put(\"%s\", \"%s\");\n", method.Name, annotation.Name, annotation.Value)
+			}
+			contents += tabtabtab + fmt.Sprintf("annotationsMap.put(\"%s\", %sMap);\n", parser.LowercaseFirstLetter(method.Name), method.Name)
+		}
+	}
+	contents += tabtabtab + "return annotationsMap;\n"
+	contents += tabtab + "}\n\n"
+
 	contents += tabtab + "@Override\n"
 	contents += tabtab + "public void addMiddleware(ServiceMiddleware middleware) {\n"
 	if service.Extends != "" {

@@ -873,6 +873,11 @@ public class FFoo {
 			return processMap;
 		}
 
+		protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {
+			java.util.Map<String, java.util.Map<String, String>> annotationsMap = super.getAnnotationsMap();
+			return annotationsMap;
+		}
+
 		@Override
 		public void addMiddleware(ServiceMiddleware middleware) {
 			super.addMiddleware(middleware);

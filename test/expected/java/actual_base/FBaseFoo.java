@@ -184,6 +184,11 @@ public class FBaseFoo {
 			return processMap;
 		}
 
+		protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {
+			java.util.Map<String, java.util.Map<String, String>> annotationsMap = new java.util.HashMap<>();
+			return annotationsMap;
+		}
+
 		@Override
 		public void addMiddleware(ServiceMiddleware middleware) {
 			handler = InvocationHandler.composeMiddleware(handler, Iface.class, new ServiceMiddleware[]{middleware});
