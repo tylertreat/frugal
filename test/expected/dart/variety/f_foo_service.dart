@@ -84,13 +84,13 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       var oprot = _protocolFactory.getProtocol(memoryBuffer);
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
-      ping_args args = new ping_args();
+      Ping_args args = new Ping_args();
       args.write(oprot);
       oprot.writeMessageEnd();
       await _transport.send(memoryBuffer.writeBytes);
 
       return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
-        throw new frugal.FTimeoutError.withMessage("Foo.ping timed out after ${ctx.timeout}");
+        throw new frugal.FTimeoutError.withMessage("Foo.Ping timed out after ${ctx.timeout}");
       });
     } finally {
       closeSubscription.cancel();
@@ -118,7 +118,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
           throw error;
         }
 
-        ping_result result = new ping_result();
+        Ping_result result = new Ping_result();
         result.read(iprot);
         iprot.readMessageEnd();
         controller.add(null);
@@ -664,12 +664,12 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
 
 }
 
-class ping_args implements thrift.TBase {
-  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("ping_args");
+class Ping_args implements thrift.TBase {
+  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("Ping_args");
 
 
 
-  ping_args() {
+  Ping_args() {
   }
 
   getFieldValue(int fieldID) {
@@ -724,7 +724,7 @@ class ping_args implements thrift.TBase {
   }
 
   String toString() {
-    StringBuffer ret = new StringBuffer("ping_args(");
+    StringBuffer ret = new StringBuffer("Ping_args(");
 
     ret.write(")");
 
@@ -736,12 +736,12 @@ class ping_args implements thrift.TBase {
     // check that fields of type enum have valid values
   }
 }
-class ping_result implements thrift.TBase {
-  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("ping_result");
+class Ping_result implements thrift.TBase {
+  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("Ping_result");
 
 
 
-  ping_result() {
+  Ping_result() {
   }
 
   getFieldValue(int fieldID) {
@@ -796,7 +796,7 @@ class ping_result implements thrift.TBase {
   }
 
   String toString() {
-    StringBuffer ret = new StringBuffer("ping_result(");
+    StringBuffer ret = new StringBuffer("Ping_result(");
 
     ret.write(")");
 

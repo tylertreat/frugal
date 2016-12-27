@@ -116,6 +116,11 @@ public class FrugalTestHandler implements FFrugalTest.Iface {
         }
 
         @Override
+        public boolean TestUppercaseMethod(FContext ctx, boolean thing) throws TException {
+            return thing;
+        }
+
+        @Override
         public Map<Long, Map<Numberz, Insanity>> testInsanity(FContext ctx, Insanity argument) throws TException {
             Map<Numberz, Insanity> mp1 = new HashMap<>();
             mp1.put(Numberz.findByValue(2), argument);

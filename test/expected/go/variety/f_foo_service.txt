@@ -1800,7 +1800,7 @@ func (p *FooPingArgs) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *FooPingArgs) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("ping_args"); err != nil {
+	if err := oprot.WriteStructBegin("Ping_args"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -1853,7 +1853,7 @@ func (p *FooPingResult) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *FooPingResult) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("ping_result"); err != nil {
+	if err := oprot.WriteStructBegin("Ping_result"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if err := oprot.WriteFieldStop(); err != nil {

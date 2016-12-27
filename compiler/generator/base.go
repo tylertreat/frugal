@@ -3,17 +3,9 @@ package generator
 import (
 	"fmt"
 	"os"
-	"unicode"
 
 	"github.com/Workiva/frugal/compiler/parser"
 )
-
-// LowercaseFirstLetter of the string.
-func LowercaseFirstLetter(s string) string {
-	runes := []rune(s)
-	runes[0] = unicode.ToLower(runes[0])
-	return string(runes)
-}
 
 // BaseGenerator contains base generator logic which language generators can
 // extend.

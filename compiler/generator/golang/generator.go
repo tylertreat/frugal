@@ -1178,7 +1178,7 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 // GeneratePublisher generates the publisher for the given scope.
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
 	var (
-		scopeLower = generator.LowercaseFirstLetter(scope.Name)
+		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeCamel = snakeToCamel(scope.Name)
 		publisher  = ""
 	)
@@ -1247,7 +1247,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operation, args string) string {
 	var (
-		scopeLower = generator.LowercaseFirstLetter(scope.Name)
+		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		publisher  = ""
 	)
 
@@ -1270,7 +1270,7 @@ func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operat
 
 func (g *Generator) generateInternalPublishMethod(scope *parser.Scope, op *parser.Operation, args string) string {
 	var (
-		scopeLower = generator.LowercaseFirstLetter(scope.Name)
+		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeTitle = strings.Title(scope.Name)
 		publisher  = ""
 	)
@@ -1324,7 +1324,7 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 // GenerateSubscriber generates the subscriber for the given scope.
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	var (
-		scopeLower = generator.LowercaseFirstLetter(scope.Name)
+		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeCamel = snakeToCamel(scope.Name)
 		subscriber = ""
 	)
@@ -1373,7 +1373,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Operation, args string) string {
 	var (
-		scopeLower = generator.LowercaseFirstLetter(scope.Name)
+		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeTitle = strings.Title(scope.Name)
 		subscriber = ""
 	)
@@ -1531,7 +1531,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	contents += "\t\tmethods:         methods,\n"
 	contents += "\t}\n"
 	for _, method := range service.Methods {
-		name := generator.LowercaseFirstLetter(method.Name)
+		name := parser.LowercaseFirstLetter(method.Name)
 		contents += fmt.Sprintf("\tmethods[\"%s\"] = frugal.NewMethod(client, client.%s, \"%s\", middleware)\n", name, name, name)
 	}
 	contents += "\treturn client\n"
@@ -1587,7 +1587,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	var (
 		servTitle = snakeToCamel(service.Name)
 		nameTitle = snakeToCamel(method.Name)
-		nameLower = generator.LowercaseFirstLetter(method.Name)
+		nameLower = parser.LowercaseFirstLetter(method.Name)
 	)
 
 	contents := ""
@@ -1625,7 +1625,7 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	var (
 		servTitle = snakeToCamel(service.Name)
 		nameTitle = snakeToCamel(method.Name)
-		nameLower = generator.LowercaseFirstLetter(method.Name)
+		nameLower = parser.LowercaseFirstLetter(method.Name)
 	)
 
 	contents := ""
@@ -1808,7 +1808,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 		contents += fmt.Sprintf("\tp := &F%sProcessor{frugal.NewFBaseProcessor()}\n", servTitle)
 	}
 	for _, method := range service.Methods {
-		methodLower := generator.LowercaseFirstLetter(method.Name)
+		methodLower := parser.LowercaseFirstLetter(method.Name)
 		contents += fmt.Sprintf(
 			"\tp.AddToProcessorMap(\"%s\", &%sF%s{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.%s, \"%s\", middleware))})\n",
 			methodLower, servLower, snakeToCamel(method.Name), snakeToCamel(method.Name), snakeToCamel(method.Name))
@@ -1832,7 +1832,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 		servTitle = snakeToCamel(service.Name)
 		servLower = strings.ToLower(service.Name)
 		nameTitle = snakeToCamel(method.Name)
-		nameLower = generator.LowercaseFirstLetter(method.Name)
+		nameLower = parser.LowercaseFirstLetter(method.Name)
 	)
 
 	contents := fmt.Sprintf("type %sF%s struct {\n", servLower, nameTitle)
@@ -1978,7 +1978,7 @@ func (g *Generator) generateCallArgs(method *parser.Method) string {
 
 func (g *Generator) generateErrTooLarge(service *parser.Service, method *parser.Method) string {
 	servLower := strings.ToLower(service.Name)
-	nameLower := generator.LowercaseFirstLetter(method.Name)
+	nameLower := parser.LowercaseFirstLetter(method.Name)
 	contents := "\t\tif frugal.IsErrTooLarge(err2) {\n"
 	contents += fmt.Sprintf(
 		"\t\t\t%sWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, \"%s\", err2.Error())\n",
@@ -1992,7 +1992,7 @@ func (g *Generator) generateErrTooLarge(service *parser.Service, method *parser.
 func (g *Generator) generateMethodException(prefix string, service *parser.Service, method *parser.Method) string {
 	contents := ""
 	servLower := strings.ToLower(service.Name)
-	nameLower := generator.LowercaseFirstLetter(method.Name)
+	nameLower := parser.LowercaseFirstLetter(method.Name)
 	if !method.Oneway {
 		contents += prefix + "p.GetWriteMutex().Lock()\n"
 		msg := fmt.Sprintf("\"Internal error processing %s: \"+err2.Error()", nameLower)

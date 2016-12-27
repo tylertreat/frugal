@@ -75,7 +75,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestBool() call: ", err)
 	}
 	if !bl {
-		log.Fatalf("Unexpected TestBool() result expected true, got %f ", bl)
+		log.Fatalf("Unexpected TestBool() result expected true, got %t ", bl)
 	}
 
 	bl, err = client.TestBool(ctx, false)
@@ -83,7 +83,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestBool() call: ", err)
 	}
 	if bl {
-		log.Fatalf("Unexpected TestBool() result expected false, got %f ", bl)
+		log.Fatalf("Unexpected TestBool() result expected false, got %t ", bl)
 	}
 
 	b, err := client.TestByte(ctx, 42)
@@ -211,6 +211,14 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 	}
 	if !reflect.DeepEqual(mapmap, rmapmap) {
 		log.Fatalf("Unexpected TestMapMap() result expected %#v, got %#v ", rmapmap, mapmap)
+	}
+
+	upper, err := client.TestUppercaseMethod(ctx, true)
+	if err != nil {
+		log.Fatal("Unexpected error in TestUppercaseMethod() call: ", err)
+	}
+	if !upper {
+		log.Fatalf("Unexpected TestUppercaseMethod() result expected true, got %t ", upper)
 	}
 
 	crazy := frugaltest.NewInsanity()

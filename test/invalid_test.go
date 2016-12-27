@@ -18,6 +18,54 @@ func TestInvalid(t *testing.T) {
 	}
 }
 
+func TestDuplicateServices(t *testing.T) {
+	options := compiler.Options{
+		File:  duplicateServices,
+		Gen:   "go",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if compiler.Compile(options) == nil {
+		t.Fatal("Expected error")
+	}
+}
+
+func TestDuplicateScopes(t *testing.T) {
+	options := compiler.Options{
+		File:  duplicateScopes,
+		Gen:   "go",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if compiler.Compile(options) == nil {
+		t.Fatal("Expected error")
+	}
+}
+
+func TestDuplicateMethods(t *testing.T) {
+	options := compiler.Options{
+		File:  duplicateMethods,
+		Gen:   "go",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if compiler.Compile(options) == nil {
+		t.Fatal("Expected error")
+	}
+}
+
+func TestDuplicateOperations(t *testing.T) {
+	options := compiler.Options{
+		File:  duplicateOperations,
+		Gen:   "go",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if compiler.Compile(options) == nil {
+		t.Fatal("Expected error")
+	}
+}
+
 func TestDuplicateMethodArgIds(t *testing.T) {
 	options := compiler.Options{
 		File:  duplicateMethodArgIds,
