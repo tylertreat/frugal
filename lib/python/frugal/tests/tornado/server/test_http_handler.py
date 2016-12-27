@@ -7,7 +7,7 @@ from tornado.testing import AsyncHTTPTestCase
 from tornado.web import Application
 
 from frugal.protocol import FProtocolFactory
-from frugal.tornado.server import FTornadoHttpHandler
+from frugal.tornado.server import FHttpHandler
 
 
 class TestFTornadoHTTPHandler(AsyncHTTPTestCase):
@@ -20,7 +20,7 @@ class TestFTornadoHTTPHandler(AsyncHTTPTestCase):
         prot_factory = FProtocolFactory(
                 TBinaryProtocol.TBinaryProtocolFactory())
         return Application([
-            ('/frugal', FTornadoHttpHandler, {
+            ('/frugal', FHttpHandler, {
                 'processor': self.processor,
                 'protocol_factory': prot_factory,
             })

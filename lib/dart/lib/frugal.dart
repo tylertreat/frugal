@@ -26,6 +26,7 @@ export 'src/frugal.dart'
         FSubscription,
         FTimeoutError,
         FTransport,
+        FTransportError,
         FTransportMonitor,
         InvocationHandler,
         Middleware,

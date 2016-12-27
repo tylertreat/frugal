@@ -102,6 +102,11 @@ func (p *printingHandler) TestMapMap(ctx frugal.FContext, hello int32) (r map[in
 	return
 }
 
+// TestBool returns the bool argument it was called with
+func (p *printingHandler) TestUppercaseMethod(ctx frugal.FContext, thing bool) (r bool, err error) {
+	return thing, nil
+}
+
 // TestInsanity takes an insanity argument and returns it in a map:
 //
 //   { 1 => { 2 => argument,

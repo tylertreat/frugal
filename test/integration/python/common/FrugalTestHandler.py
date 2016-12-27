@@ -75,6 +75,10 @@ class FrugalTestHandler(Iface):
         mapmap = {-4: e, 4: d}
         return mapmap
 
+    def TestUppercaseMethod(self, ctx, thing):
+        print("test_uppercase_method({})".format(thing))
+        return thing
+
     def testInsanity(self, ctx, argument):
         print("test_insanity({})".format(argument))
         return {1:

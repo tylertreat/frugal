@@ -1021,7 +1021,7 @@ func (g *Generator) generateClientSendMethod(method *parser.Method) string {
 	contents += tabtab + "with self._write_lock:\n"
 	contents += tabtabtab + "oprot.get_transport().set_timeout(ctx.timeout)\n"
 	contents += tabtabtab + "oprot.write_request_headers(ctx)\n"
-	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
+	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", parser.LowercaseFirstLetter(method.Name))
 	contents += tabtabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
 	for _, arg := range method.Arguments {
 		contents += tabtabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
@@ -1182,13 +1182,14 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	}
 	for _, method := range service.Methods {
 		contents += tabtab + fmt.Sprintf("self.add_to_processor_map('%s', _%s(Method(handler.%s, middleware), self.get_write_lock()))\n",
-			method.Name, method.Name, method.Name)
+			parser.LowercaseFirstLetter(method.Name), method.Name, method.Name)
 	}
 	contents += "\n\n"
 	return contents
 }
 
 func (g *Generator) generateProcessorFunction(method *parser.Method) string {
+	methodLower := parser.LowercaseFirstLetter(method.Name)
 	contents := ""
 	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
@@ -1218,18 +1219,18 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	contents += tabtabtab + "with self._lock:\n"
 	contents += tabtabtabtab +
 		fmt.Sprintf("_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
-			method.Name)
+			methodLower)
 	contents += tabtabtabtab + "return\n"
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", method.Name)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", methodLower)
 	}
 	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {
 		contents += tabtab + "with self._lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
-		contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", method.Name)
+		contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", methodLower)
 		contents += tabtabtab + "result.write(oprot)\n"
 		contents += tabtabtab + "oprot.writeMessageEnd()\n"
 		contents += tabtabtab + "oprot.get_transport().flush()\n"

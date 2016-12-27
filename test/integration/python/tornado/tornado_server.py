@@ -20,7 +20,7 @@ from frugal_test.f_Events_subscriber import EventsSubscriber
 from frugal_test.f_FrugalTest import Processor
 from frugal_test.ttypes import Event
 
-from frugal.tornado.server import FNatsTornadoServer, FTornadoHttpHandler
+from frugal.tornado.server import FNatsServer, FHttpHandler
 from frugal.tornado.transport import FNatsPublisherTransportFactory
 from frugal.tornado.transport import FNatsSubscriberTransportFactory
 
@@ -75,7 +75,7 @@ def main():
     processor = Processor(handler)
 
     if args.transport_type == "stateless":
-        server = FNatsTornadoServer(nats_client, [subject],
+        server = FNatsServer(nats_client, [subject],
                                     processor, protocol_factory)
 
         # start healthcheck so the test runner knows the server is running
@@ -87,7 +87,7 @@ def main():
         factories = {'processor': processor,
                      'protocol_factory': protocol_factory}
 
-        server = Application([(r'/', FTornadoHttpHandler, factories)])
+        server = Application([(r'/', FHttpHandler, factories)])
 
         print("Starting {} server...".format(args.transport_type))
         server.listen(port)

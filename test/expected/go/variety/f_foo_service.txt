@@ -156,14 +156,9 @@ func (f *FFooClient) recvPingHandler(ctx frugal.FContext, resultC chan<- struct{
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
-				err = frugal.ErrRateLimitExceeded
-				errorC <- err
-				return nil
-			}
 			err = error1
 			errorC <- err
-			return err
+			return nil
 		}
 		if mTypeId != thrift.REPLY {
 			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "ping failed: invalid message type")
@@ -276,14 +271,9 @@ func (f *FFooClient) recvBlahHandler(ctx frugal.FContext, resultC chan<- int64, 
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
-				err = frugal.ErrRateLimitExceeded
-				errorC <- err
-				return nil
-			}
 			err = error1
 			errorC <- err
-			return err
+			return nil
 		}
 		if mTypeId != thrift.REPLY {
 			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "blah failed: invalid message type")
@@ -444,14 +434,9 @@ func (f *FFooClient) recvBinMethodHandler(ctx frugal.FContext, resultC chan<- []
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
-				err = frugal.ErrRateLimitExceeded
-				errorC <- err
-				return nil
-			}
 			err = error1
 			errorC <- err
-			return err
+			return nil
 		}
 		if mTypeId != thrift.REPLY {
 			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "bin_method failed: invalid message type")
@@ -567,14 +552,9 @@ func (f *FFooClient) recvParamModifiersHandler(ctx frugal.FContext, resultC chan
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
-				err = frugal.ErrRateLimitExceeded
-				errorC <- err
-				return nil
-			}
 			err = error1
 			errorC <- err
-			return err
+			return nil
 		}
 		if mTypeId != thrift.REPLY {
 			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "param_modifiers failed: invalid message type")
@@ -685,14 +665,9 @@ func (f *FFooClient) recvUnderlyingTypesTestHandler(ctx frugal.FContext, resultC
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
-				err = frugal.ErrRateLimitExceeded
-				errorC <- err
-				return nil
-			}
 			err = error1
 			errorC <- err
-			return err
+			return nil
 		}
 		if mTypeId != thrift.REPLY {
 			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "underlying_types_test failed: invalid message type")
@@ -800,14 +775,9 @@ func (f *FFooClient) recvGetThingHandler(ctx frugal.FContext, resultC chan<- *va
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
-				err = frugal.ErrRateLimitExceeded
-				errorC <- err
-				return nil
-			}
 			err = error1
 			errorC <- err
-			return err
+			return nil
 		}
 		if mTypeId != thrift.REPLY {
 			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getThing failed: invalid message type")
@@ -915,14 +885,9 @@ func (f *FFooClient) recvGetMyIntHandler(ctx frugal.FContext, resultC chan<- Val
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
-				err = frugal.ErrRateLimitExceeded
-				errorC <- err
-				return nil
-			}
 			err = error1
 			errorC <- err
-			return err
+			return nil
 		}
 		if mTypeId != thrift.REPLY {
 			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getMyInt failed: invalid message type")
@@ -1032,14 +997,9 @@ func (f *FFooClient) recvUseSubdirStructHandler(ctx frugal.FContext, resultC cha
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
-				err = frugal.ErrRateLimitExceeded
-				errorC <- err
-				return nil
-			}
 			err = error1
 			errorC <- err
-			return err
+			return nil
 		}
 		if mTypeId != thrift.REPLY {
 			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "use_subdir_struct failed: invalid message type")
@@ -1104,9 +1064,13 @@ func (p *fooFPing) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) 
 		err2 = ret[0].(error)
 	}
 	if err2 != nil {
-		if err2 == frugal.ErrRateLimitExceeded {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "ping", "Rate limit exceeded")
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("ping", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1181,9 +1145,13 @@ func (p *fooFBlah) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) 
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		if err2 == frugal.ErrRateLimitExceeded {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "blah", "Rate limit exceeded")
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("blah", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1264,9 +1232,13 @@ func (p *fooFOneWay) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol
 		err2 = ret[0].(error)
 	}
 	if err2 != nil {
-		if err2 == frugal.ErrRateLimitExceeded {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "oneWay", "Rate limit exceeded")
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("oneWay", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1301,9 +1273,13 @@ func (p *fooFBinMethod) Process(ctx frugal.FContext, iprot, oprot *frugal.FProto
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		if err2 == frugal.ErrRateLimitExceeded {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "bin_method", "Rate limit exceeded")
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("bin_method", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1386,9 +1362,13 @@ func (p *fooFParamModifiers) Process(ctx frugal.FContext, iprot, oprot *frugal.F
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		if err2 == frugal.ErrRateLimitExceeded {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "param_modifiers", "Rate limit exceeded")
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("param_modifiers", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1466,9 +1446,13 @@ func (p *fooFUnderlyingTypesTest) Process(ctx frugal.FContext, iprot, oprot *fru
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		if err2 == frugal.ErrRateLimitExceeded {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "underlying_types_test", "Rate limit exceeded")
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("underlying_types_test", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1546,9 +1530,13 @@ func (p *fooFGetThing) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtoc
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		if err2 == frugal.ErrRateLimitExceeded {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "getThing", "Rate limit exceeded")
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("getThing", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1626,9 +1614,13 @@ func (p *fooFGetMyInt) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtoc
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		if err2 == frugal.ErrRateLimitExceeded {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "getMyInt", "Rate limit exceeded")
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("getMyInt", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1706,9 +1698,13 @@ func (p *fooFUseSubdirStruct) Process(ctx frugal.FContext, iprot, oprot *frugal.
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		if err2 == frugal.ErrRateLimitExceeded {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
 			p.GetWriteMutex().Lock()
-			fooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "use_subdir_struct", "Rate limit exceeded")
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("use_subdir_struct", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -1804,7 +1800,7 @@ func (p *FooPingArgs) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *FooPingArgs) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("ping_args"); err != nil {
+	if err := oprot.WriteStructBegin("Ping_args"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -1857,7 +1853,7 @@ func (p *FooPingResult) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *FooPingResult) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("ping_result"); err != nil {
+	if err := oprot.WriteStructBegin("Ping_result"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
