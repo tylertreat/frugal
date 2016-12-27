@@ -327,51 +327,69 @@ func (f *Frugal) assignFrugal() {
 // names and the Thrift is valid.
 func (f *Frugal) validate() error {
 	// Ensure there are no duplicate names between services and scopes.
-	names := make(map[string]bool)
+	names := make(map[string]string)
 	for _, service := range f.Thrift.Services {
 		// Since not every language supports (exported) upper/lowercase
 		// class first letters, index by lowercasing the first letter.
-		serviceLower := LowercaseFirstLetter(service.Name)
-		if _, ok := names[serviceLower]; ok {
-			return fmt.Errorf("Duplicate service name %s", service.Name)
+		lowercaseService := LowercaseFirstLetter(service.Name)
+		if providedService, ok := names[lowercaseService]; ok {
+			if service.Name == providedService {
+				return fmt.Errorf("Duplicate service name %s", service.Name)
+			}
+			return getConflictError("Services", service.Name, providedService)
 		}
-		names[serviceLower] = true
+		names[lowercaseService] = service.Name
 
-		methodNames := make(map[string]bool)
+		methodNames := make(map[string]string)
 		for _, method := range service.Methods {
 			// Since not every language supports (exported) upper/lowercase
 			// method first letters, index by lowercasing the first letter.
-			methodLower := LowercaseFirstLetter(method.Name)
-			if _, ok := methodNames[methodLower]; ok {
-				return fmt.Errorf("Duplicate method name %s", method.Name)
+			lowercaseMethod := LowercaseFirstLetter(method.Name)
+			if providedMethod, ok := methodNames[lowercaseMethod]; ok {
+				if method.Name == providedMethod {
+					return fmt.Errorf("Duplicate method name %s", method.Name)
+				}
+				return getConflictError("Methods", method.Name, providedMethod)
 			}
-			methodNames[methodLower] = true
+			methodNames[lowercaseMethod] = method.Name
 		}
 	}
 
-	names = make(map[string]bool)
+	names = make(map[string]string)
 	for _, scope := range f.Scopes {
 		// Since not every language supports (exported) upper/lowercase
 		// class first letters, index by lowercasing the first letter.
-		scopeLower := LowercaseFirstLetter(scope.Name)
-		if _, ok := names[scopeLower]; ok {
-			return fmt.Errorf("Duplicate scope name %s", scope.Name)
+		lowercaseScope := LowercaseFirstLetter(scope.Name)
+		if providedScope, ok := names[lowercaseScope]; ok {
+			if scope.Name == providedScope {
+				return fmt.Errorf("Duplicate scope name %s", scope.Name)
+			}
+			return getConflictError("Scopes", scope.Name, providedScope)
 		}
-		names[scopeLower] = true
+		names[lowercaseScope] = scope.Name
 
-		opNames := make(map[string]bool)
+		opNames := make(map[string]string)
 		for _, op := range scope.Operations {
 			// Since not every language supports (exported) upper/lowercase
 			// method first letters, index by lowercasing the first letter.
-			opLower := LowercaseFirstLetter(op.Name)
-			if _, ok := opNames[opLower]; ok {
-				return fmt.Errorf("Duplicate operation name %s", op.Name)
+			lowercaseOp := LowercaseFirstLetter(op.Name)
+			if providedOp, ok := opNames[lowercaseOp]; ok {
+				if op.Name == providedOp {
+					return fmt.Errorf("Duplicate operation name %s", op.Name)
+				}
+				return getConflictError("Operations", op.Name, providedOp)
 			}
-			opNames[opLower] = true
+			opNames[lowercaseOp] = op.Name
 		}
 	}
 
 	return f.Thrift.validate(f.ParsedIncludes)
+}
+
+func getConflictError(type_, name1, name2 string) error {
+	return fmt.Errorf("%s %s and %s conflict. Some languages do not support"+
+		" exported lowercase classes/methods. Only one of %s or %s may be used.",
+		type_, name1, name2, name1, name2)
 }
 
 func (f *Frugal) sort() {
