@@ -89,3 +89,28 @@ func TestValidJavaFrugalCompiler(t *testing.T) {
 	nestedThingPath := filepath.Join(outputDir, "actual_base", "java", "nested_thing.java")
 	compareFiles(t, "expected/java/actual_base/nested_thing.java", nestedThingPath)
 }
+
+func TestValidJavaBoxedPrimitives(t *testing.T) {
+	defer globals.Reset()
+	nowBefore := globals.Now
+	defer func() {
+		globals.Now = nowBefore
+	}()
+	globals.Now = time.Date(2015, 11, 24, 0, 0, 0, 0, time.UTC)
+
+	options := compiler.Options{
+		File:    frugalGenFile,
+		Gen:     "java:boxed_primitives",
+		Out:     outputDir + "/boxed_primitives",
+		Delim:   delim,
+		Recurse: true,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("Unexpected error", err)
+	}
+
+	fooPath := filepath.Join(outputDir, "boxed_primitives", "variety", "java", "FFoo.java")
+	compareFiles(t, "expected/java/boxed_primitives/FFoo.java", fooPath)
+	testingDefaultsPath := filepath.Join(outputDir, "boxed_primitives", "variety", "java", "TestingDefaults.java")
+	compareFiles(t, "expected/java/boxed_primitives/TestingDefaults.java", testingDefaultsPath)
+}

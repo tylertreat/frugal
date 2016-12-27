@@ -166,7 +166,7 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 	@Override
 	public void clear() {
 		setIDIsSet(false);
-		this.ID = 0;
+		this.ID = 0L;
 
 		this.Reason = null;
 
@@ -465,11 +465,13 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 
 			oprot.writeStructBegin(STRUCT_DESC);
 			oprot.writeFieldBegin(ID_FIELD_DESC);
-			oprot.writeI64(struct.ID);
+			long elem192 = struct.ID;
+			oprot.writeI64(elem192);
 			oprot.writeFieldEnd();
 			if (struct.Reason != null) {
 				oprot.writeFieldBegin(REASON_FIELD_DESC);
-				oprot.writeString(struct.Reason);
+				String elem193 = struct.Reason;
+				oprot.writeString(elem193);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -498,10 +500,12 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetID()) {
-				oprot.writeI64(struct.ID);
+				long elem194 = struct.ID;
+				oprot.writeI64(elem194);
 			}
 			if (struct.isSetReason()) {
-				oprot.writeString(struct.Reason);
+				String elem195 = struct.Reason;
+				oprot.writeString(elem195);
 			}
 		}
 
