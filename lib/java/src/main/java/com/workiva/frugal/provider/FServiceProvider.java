@@ -5,6 +5,7 @@ import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.transport.FTransport;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -23,6 +24,13 @@ public class FServiceProvider {
         this.protocolFactory = protocolFactory;
     }
 
+    public FServiceProvider(FTransport transport, FProtocolFactory protocolFactory,
+                            ServiceMiddleware ...middleware) {
+        this.transport = transport;
+        this.protocolFactory = protocolFactory;
+        this.middleware = Arrays.asList(middleware);
+    }
+
     /**
      * Get the FTransport from the provider.
      *
@@ -39,10 +47,6 @@ public class FServiceProvider {
      */
     public FProtocolFactory getProtocolFactory() {
         return protocolFactory;
-    }
-
-    public void addMiddleware(ServiceMiddleware middleware) {
-        this.middleware.add(middleware);
     }
 
     public List<ServiceMiddleware> getMiddleware() {

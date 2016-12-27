@@ -29,10 +29,8 @@ class FStoreClient implements FStore {
   FStoreClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware]) {
     _transport = provider.transport;
     _protocolFactory = provider.protocolFactory;
-    var combined = provider.getMiddleware();
-    if (middleware != null) {
-      combined.addAll(middleware);
-    }
+    var combined = middleware ?? [];
+    combined.addAll(provider.middleware);
     this._methods = {};
     this._methods['buyAlbum'] = new frugal.FMethod(this._buyAlbum, 'Store', 'buyAlbum', combined);
     this._methods['enterAlbumGiveaway'] = new frugal.FMethod(this._enterAlbumGiveaway, 'Store', 'enterAlbumGiveaway', combined);

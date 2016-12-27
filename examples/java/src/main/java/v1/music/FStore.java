@@ -81,8 +81,8 @@ public class FStore {
 
 		public Client(FServiceProvider provider, ServiceMiddleware... middleware) {
 			Iface client = new InternalClient(provider.getTransport(), provider.getProtocolFactory());
-			List<ServiceMiddleware> combined = provider.getMiddleware();
-			combined.addAll(Arrays.asList(middleware));
+			List<ServiceMiddleware> combined = Arrays.asList(middleware);
+			combined.addAll(provider.getMiddleware());
 			middleware = combined.toArray(new ServiceMiddleware[0]);
 			proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);
 		}

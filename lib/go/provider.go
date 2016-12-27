@@ -12,12 +12,13 @@ type FScopeProvider struct {
 }
 
 // NewFScopeProvider creates a new FScopeProvider using the given factories.
-func NewFScopeProvider(pub FPublisherTransportFactory, sub FSubscriberTransportFactory, prot *FProtocolFactory) *FScopeProvider {
+func NewFScopeProvider(pub FPublisherTransportFactory, sub FSubscriberTransportFactory,
+	prot *FProtocolFactory, middleware ...ServiceMiddleware) *FScopeProvider {
 	return &FScopeProvider{
 		publisherTransportFactory:  pub,
 		subscriberTransportFactory: sub,
 		protocolFactory:            prot,
-		middleware:                 []ServiceMiddleware{},
+		middleware:                 middleware,
 	}
 }
 
@@ -35,12 +36,7 @@ func (p *FScopeProvider) NewSubscriber() (FSubscriberTransport, *FProtocolFactor
 	return transport, p.protocolFactory
 }
 
-// AddMiddleware adds the given ServiceMiddleware to the FScopeProvider.
-func (p *FScopeProvider) AddMiddleware(middleware ServiceMiddleware) {
-	p.middleware = append(p.middleware, middleware)
-}
-
-// GetMiddleware returns the ServiceMiddleware added to this FScopeProvider.
+// GetMiddleware returns the ServiceMiddleware stored on this FScopeProvider.
 func (p *FScopeProvider) GetMiddleware() []ServiceMiddleware {
 	middleware := make([]ServiceMiddleware, len(p.middleware))
 	copy(middleware, p.middleware)
@@ -58,11 +54,11 @@ type FServiceProvider struct {
 
 // NewFServiceProvider creates a new FServiceProvider containing the given
 // FTransport and FProtocolFactory.
-func NewFServiceProvider(transport FTransport, protocolFactory *FProtocolFactory) *FServiceProvider {
+func NewFServiceProvider(transport FTransport, protocolFactory *FProtocolFactory, middleware ...ServiceMiddleware) *FServiceProvider {
 	return &FServiceProvider{
 		transport:       transport,
 		protocolFactory: protocolFactory,
-		middleware:      []ServiceMiddleware{},
+		middleware:      middleware,
 	}
 }
 
@@ -76,12 +72,7 @@ func (f *FServiceProvider) GetProtocolFactory() *FProtocolFactory {
 	return f.protocolFactory
 }
 
-// AddMiddleware adds the given ServiceMiddleware to the FServiceProvider.
-func (f *FServiceProvider) AddMiddleware(middleware ServiceMiddleware) {
-	f.middleware = append(f.middleware, middleware)
-}
-
-// GetMiddleware returns the ServiceMiddleware added to this FServiceProvider.
+// GetMiddleware returns the ServiceMiddleware stored on this FServiceProvider.
 func (f *FServiceProvider) GetMiddleware() []ServiceMiddleware {
 	middleware := make([]ServiceMiddleware, len(f.middleware))
 	copy(middleware, f.middleware)

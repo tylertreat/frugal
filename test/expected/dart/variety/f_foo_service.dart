@@ -51,10 +51,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       : super(provider, middleware) {
     _transport = provider.transport;
     _protocolFactory = provider.protocolFactory;
-    var combined = provider.getMiddleware();
-    if (middleware != null) {
-      combined.addAll(middleware);
-    }
+    var combined = middleware ?? [];
+    combined.addAll(provider.middleware);
     this._methods = {};
     this._methods['ping'] = new frugal.FMethod(this._ping, 'Foo', 'ping', combined);
     this._methods['blah'] = new frugal.FMethod(this._blah, 'Foo', 'blah', combined);

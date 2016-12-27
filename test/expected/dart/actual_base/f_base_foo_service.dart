@@ -23,10 +23,8 @@ class FBaseFooClient implements FBaseFoo {
   FBaseFooClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware]) {
     _transport = provider.transport;
     _protocolFactory = provider.protocolFactory;
-    var combined = provider.getMiddleware();
-    if (middleware != null) {
-      combined.addAll(middleware);
-    }
+    var combined = middleware ?? [];
+    combined.addAll(provider.middleware);
     this._methods = {};
     this._methods['basePing'] = new frugal.FMethod(this._basePing, 'BaseFoo', 'basePing', combined);
   }

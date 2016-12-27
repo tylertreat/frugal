@@ -60,8 +60,8 @@ public class AlbumWinnersSubscriber {
 
 		public Client(FScopeProvider provider, ServiceMiddleware... middleware) {
 			this.provider = provider;
-			List<ServiceMiddleware> combined = provider.getMiddleware();
-			combined.addAll(Arrays.asList(middleware));
+			List<ServiceMiddleware> combined = middleware;
+			combined.addAll(Arrays.asList(provider.getMiddleware()));
 			this.middleware = combined.toArray(new ServiceMiddleware[0]);
 		}
 

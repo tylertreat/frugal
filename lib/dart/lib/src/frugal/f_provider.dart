@@ -16,21 +16,16 @@ class FScopeProvider {
   final FProtocolFactory protocolFactory;
 
   /// Middleware applied to publishers and subscribers.
-  final List<Middleware> _middleware = [];
+  final List<Middleware> _middleware;
 
   /// Creates a new [FScopeProvider].
   FScopeProvider(this.publisherTransportFactory,
-      this.subscriberTransportFactory, this.protocolFactory);
+      this.subscriberTransportFactory, this.protocolFactory,
+      {List<Middleware> middleware: null})
+      : _middleware = middleware ?? [];
 
-  /// Adds the given middleware to the FScopeProvider.
-  void addMiddleware(Middleware middleware) {
-    this._middleware.add(middleware);
-  }
-
-  /// Returns the middleware added to this FScopeProvider.
-  List<Middleware> getMiddleware() {
-    return new List.from(this._middleware);
-  }
+  /// The middleware stored on this FScopeProvider.
+  List<Middleware> get middleware => new List.from(this._middleware);
 }
 
 /// The service equivalent of [FScopeProvider]. It produces [FTransport] and
@@ -44,18 +39,13 @@ class FServiceProvider {
   final FProtocolFactory protocolFactory;
 
   /// Middleware applied to clients.
-  final List<Middleware> _middleware = [];
+  final List<Middleware> _middleware;
 
   /// Creates a new [FServiceProvider].
-  FServiceProvider(this.transport, this.protocolFactory);
+  FServiceProvider(this.transport, this.protocolFactory,
+      {List<Middleware> middleware: null})
+      : _middleware = middleware ?? [];
 
-  /// Adds the given middleware to the FScopeProvider.
-  void addMiddleware(Middleware middleware) {
-    this._middleware.add(middleware);
-  }
-
-  /// Returns the middleware added to this FScopeProvider.
-  List<Middleware> getMiddleware() {
-    return new List.from(this._middleware);
-  }
+  /// The middleware stored on this FServiceProvider.
+  List<Middleware> get middleware => new List.from(this._middleware);
 }

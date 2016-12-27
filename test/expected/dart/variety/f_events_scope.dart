@@ -23,10 +23,8 @@ class EventsPublisher {
   EventsPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
     transport = provider.publisherTransportFactory.getTransport();
     protocolFactory = provider.protocolFactory;
-    var combined = provider.getMiddleware();
-    if (middleware != null) {
-      combined.addAll(middleware);
-    }
+    var combined = middleware ?? [];
+    combined.addAll(provider.middleware);
     this._methods = {};
     this._methods['EventCreated'] = new frugal.FMethod(this._publishEventCreated, 'Events', 'publishEventCreated', combined);
   }
@@ -68,10 +66,8 @@ class EventsSubscriber {
   final List<frugal.Middleware> _middleware;
 
   EventsSubscriber(this.provider, [List<frugal.Middleware> middleware]) {
-    this._middleware = provider.getMiddleware();
-    if (middleware != null) {
-      this._middleware.addAll(middleware);
-    }
+    this._middleware = middeware ?? [];
+    this._middleware.addAll(provider.middleware);
 }
 
   /// This is a docstring.

@@ -59,8 +59,8 @@ public class AlbumWinnersPublisher {
 
 		public Client(FScopeProvider provider, ServiceMiddleware... middleware) {
 			target = new InternalAlbumWinnersPublisher(provider);
-			List<ServiceMiddleware> combined = provider.getMiddleware();
-			combined.addAll(Arrays.asList(middleware));
+			List<ServiceMiddleware> combined = middleware;
+			combined.addAll(Arrays.asList(provider.getMiddleware()));
 			middleware = combined.toArray(new ServiceMiddleware[0]);
 			proxy = InvocationHandler.composeMiddleware(target, Iface.class, middleware);
 		}

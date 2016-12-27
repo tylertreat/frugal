@@ -1249,10 +1249,8 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "transport = provider.publisherTransportFactory.getTransport();\n"
 	publishers += tabtab + "protocolFactory = provider.protocolFactory;\n"
-	publishers += tabtab + "var combined = provider.getMiddleware();\n"
-	publishers += tabtab + "if (middleware != null) {\n"
-	publishers += tabtabtab + "combined.addAll(middleware);\n"
-	publishers += tabtab + "}\n"
+	publishers += tabtab + "var combined = middleware ?? [];\n"
+	publishers += tabtab + "combined.addAll(provider.middleware);\n"
 	publishers += tabtab + "this._methods = {};\n"
 	for _, operation := range scope.Operations {
 		publishers += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._publish%s, '%s', 'publish%s', combined);\n",
@@ -1338,10 +1336,8 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	subscribers += tab + "final List<frugal.Middleware> _middleware;\n\n"
 
 	subscribers += tab + fmt.Sprintf("%sSubscriber(this.provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
-	subscribers += tabtab + "this._middleware = provider.getMiddleware();\n"
-	subscribers += tabtab + "if (middleware != null) {\n"
-	subscribers += tabtabtab + "this._middleware.addAll(middleware);\n"
-	subscribers += tabtab + "}\n"
+	subscribers += tabtab + "this._middleware = middeware ?? [];\n"
+	subscribers += tabtab + "this._middleware.addAll(provider.middleware);\n"
 	subscribers += "}\n\n"
 
 	args := ""
@@ -1469,10 +1465,8 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	}
 	contents += tabtab + "_transport = provider.transport;\n"
 	contents += tabtab + "_protocolFactory = provider.protocolFactory;\n"
-	contents += tabtab + "var combined = provider.getMiddleware();\n"
-	contents += tabtab + "if (middleware != null) {\n"
-	contents += tabtabtab + "combined.addAll(middleware);\n"
-	contents += tabtab + "}\n"
+	contents += tabtab + "var combined = middleware ?? [];\n"
+	contents += tabtab + "combined.addAll(provider.middleware);\n"
 	contents += tabtab + "this._methods = {};\n"
 	for _, method := range service.Methods {
 		nameLower := generator.LowercaseFirstLetter(method.Name)

@@ -2406,8 +2406,8 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 
 	publisher += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
 	publisher += fmt.Sprintf(tabtabtab+"target = new Internal%sPublisher(provider);\n", scopeTitle)
-	publisher += tabtabtab + "List<ServiceMiddleware> combined = provider.getMiddleware();\n"
-	publisher += tabtabtab + "combined.addAll(Arrays.asList(middleware));\n"
+	publisher += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
+	publisher += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
 	publisher += tabtabtab + "middleware = combined.toArray(new ServiceMiddleware[0]);\n"
 	publisher += tabtabtab + "proxy = InvocationHandler.composeMiddleware(target, Iface.class, middleware);\n"
 	publisher += tabtab + "}\n\n"
@@ -2572,8 +2572,8 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 
 	subscriber += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
 	subscriber += tabtabtab + "this.provider = provider;\n"
-	subscriber += tabtabtab + "List<ServiceMiddleware> combined = provider.getMiddleware();\n"
-	subscriber += tabtabtab + "combined.addAll(Arrays.asList(middleware));\n"
+	subscriber += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
+	subscriber += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
 	subscriber += tabtabtab + "this.middleware = combined.toArray(new ServiceMiddleware[0]);\n"
 	subscriber += tabtab + "}\n\n"
 
@@ -2739,8 +2739,8 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += tabtabtab + "super(provider, middleware);\n"
 	}
 	contents += tabtabtab + "Iface client = new InternalClient(provider.getTransport(), provider.getProtocolFactory());\n"
-	contents += tabtabtab + "List<ServiceMiddleware> combined = provider.getMiddleware();\n"
-	contents += tabtabtab + "combined.addAll(Arrays.asList(middleware));\n"
+	contents += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
+	contents += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
 	contents += tabtabtab + "middleware = combined.toArray(new ServiceMiddleware[0]);\n"
 	contents += tabtabtab + "proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);\n"
 	contents += tabtab + "}\n\n"
