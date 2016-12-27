@@ -111,11 +111,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         Ping_result result = new Ping_result();
@@ -178,11 +175,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         blah_result result = new blah_result();
@@ -276,11 +270,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         bin_method_result result = new bin_method_result();
@@ -353,11 +344,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         param_modifiers_result result = new param_modifiers_result();
@@ -425,11 +413,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         underlying_types_test_result result = new underlying_types_test_result();
@@ -495,11 +480,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         getThing_result result = new getThing_result();
@@ -565,11 +547,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         getMyInt_result result = new getMyInt_result();
@@ -636,11 +615,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         use_subdir_struct_result result = new use_subdir_struct_result();
