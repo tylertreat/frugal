@@ -21,10 +21,6 @@ const (
 	// TAPPLICATION_RESPONSE_TOO_LARGE is a TApplicationException error type
 	// indicating the response exceeded the size limit.
 	TAPPLICATION_RESPONSE_TOO_LARGE = 100
-
-	// TAPPLICATION_RATE_LIMIT_EXCEEDED is a TApplicationException error type
-	// indicating the client exceeded its rate limit.
-	TAPPLICATION_RATE_LIMIT_EXCEEDED = 102
 )
 
 var (
@@ -33,11 +29,6 @@ var (
 	// invalid state. If this is returned, the transport should be
 	// reinitialized.
 	ErrTransportClosed = errors.New("frugal: transport was unexpectedly closed")
-
-	// ErrRateLimitExceeded is returned when the client exceeds its rate limit.
-	ErrRateLimitExceeded = thrift.NewTApplicationException(
-		TAPPLICATION_RATE_LIMIT_EXCEEDED,
-		"client exceeded rate limit")
 )
 
 // IsErrTooLarge indicates if the given error is a TTransportException
