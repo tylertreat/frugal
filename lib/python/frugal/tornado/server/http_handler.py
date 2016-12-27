@@ -11,7 +11,7 @@ from frugal.transport import TMemoryOutputBuffer
 logger = logging.getLogger(__name__)
 
 
-class FTornadoHttpHandler(RequestHandler):
+class FHttpHandler(RequestHandler):
     """
     This class implements a Tornado web server request handler to interface
     with a frugal HTTP client.
