@@ -294,6 +294,13 @@ List<FTest> _createTests() {
     }
   }));
 
+  tests.add(new FTest(1, 'testUppercaseMethod', () async {
+    var input = true;
+    var result = await client.testUppercaseMethod(ctx, input);
+    if (result != input) throw new FTestError(result, input);
+  }));
+
+
   tests.add(new FTest(1, 'testInsanity', () async {
     var input = new Insanity();
     input.userMap = {Numberz.FIVE: 5000};

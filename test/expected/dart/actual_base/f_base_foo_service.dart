@@ -76,11 +76,8 @@ class FBaseFooClient implements FBaseFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         basePing_result result = new basePing_result();

@@ -18,19 +18,27 @@ type FProcessor interface {
 	// AddMiddleware adds the given ServiceMiddleware to the FProcessor. This
 	// should only be called before the server is started.
 	AddMiddleware(ServiceMiddleware)
+
+	// Annotations returns a map of method name to annotations as defined in
+	// the service IDL that is serviced by this processor.
+	Annotations() map[string]map[string]string
 }
 
 // FBaseProcessor is a base implementation of FProcessor. FProcessors should
 // embed this and register FProcessorFunctions. This should only be used by
 // generated code.
 type FBaseProcessor struct {
-	writeMu    sync.Mutex
-	processMap map[string]FProcessorFunction
+	writeMu        sync.Mutex
+	processMap     map[string]FProcessorFunction
+	annotationsMap map[string]map[string]string
 }
 
 // NewFBaseProcessor returns a new FBaseProcessor which FProcessors can extend.
 func NewFBaseProcessor() *FBaseProcessor {
-	return &FBaseProcessor{processMap: make(map[string]FProcessorFunction)}
+	return &FBaseProcessor{
+		processMap:     make(map[string]FProcessorFunction),
+		annotationsMap: make(map[string]map[string]string),
+	}
 }
 
 // Process the request from the input protocol and write the response to the
@@ -84,6 +92,19 @@ func (f *FBaseProcessor) AddMiddleware(middleware ServiceMiddleware) {
 // AddToProcessorMap registers the given FProcessorFunction.
 func (f *FBaseProcessor) AddToProcessorMap(key string, proc FProcessorFunction) {
 	f.processMap[key] = proc
+}
+
+// AddToAnnotationsMap registers the given annotations to the given method.
+func (f *FBaseProcessor) AddToAnnotationsMap(method string, annotations map[string]string) {
+	f.annotationsMap[method] = annotations
+}
+
+// Annotations returns a map of method name to annotations as defined in
+// the service IDL that is serviced by this processor.
+// TODO: Need to deep copy the nested maps to avoid consumers mutating this
+// TODO: reference.
+func (f *FBaseProcessor) Annotations() map[string]map[string]string {
+	return f.annotationsMap
 }
 
 // GetWriteMutex returns the Mutex which FProcessorFunctions should use to

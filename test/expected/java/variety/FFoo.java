@@ -72,7 +72,7 @@ public class FFoo {
 		/**
 		 * Ping the server.
 		 */
-		public void ping(FContext ctx) throws TException;
+		public void Ping(FContext ctx) throws TException;
 
 		/**
 		 * Blah the server.
@@ -114,8 +114,8 @@ public class FFoo {
 		/**
 		 * Ping the server.
 		 */
-		public void ping(FContext ctx) throws TException {
-			proxy.ping(ctx);
+		public void Ping(FContext ctx) throws TException {
+			proxy.Ping(ctx);
 		}
 
 		/**
@@ -171,7 +171,7 @@ public class FFoo {
 		/**
 		 * Ping the server.
 		 */
-		public void ping(FContext ctx) throws TException {
+		public void Ping(FContext ctx) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
@@ -179,7 +179,7 @@ public class FFoo {
 			try {
 				oprot.writeRequestHeader(ctx);
 				oprot.writeMessageBegin(new TMessage("ping", TMessageType.CALL, 0));
-				ping_args args = new ping_args();
+				Ping_args args = new Ping_args();
 				args.write(oprot);
 				oprot.writeMessageEnd();
 				transport.send(memoryBuffer.getWriteBytes());
@@ -188,15 +188,15 @@ public class FFoo {
 				try {
 					res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);
 				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "ping interrupted: " + e.getMessage());
+					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "Ping interrupted: " + e.getMessage());
 				}
 				if (res == null) {
-					throw new FTimeoutException("ping timed out");
+					throw new FTimeoutException("Ping timed out");
 				}
 				if (res instanceof TException) {
 					throw (TException) res;
 				}
-				ping_result r = (ping_result) res;
+				Ping_result r = (Ping_result) res;
 			} finally {
 				transport.unregister(ctx);
 			}
@@ -210,7 +210,7 @@ public class FFoo {
 						iprot.readResponseHeader(ctx);
 						TMessage message = iprot.readMessageBegin();
 						if (!message.name.equals("ping")) {
-							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "ping failed: wrong method name");
+							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "Ping failed: wrong method name");
 						}
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
@@ -226,7 +226,7 @@ public class FFoo {
 									result.put(ex);
 									return;
 								} catch (InterruptedException ie) {
-									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "ping interrupted: " + ie.getMessage());
+									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "Ping interrupted: " + ie.getMessage());
 								}
 							}
 							try {
@@ -236,15 +236,15 @@ public class FFoo {
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
-							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "ping failed: invalid message type");
+							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "Ping failed: invalid message type");
 						}
-						ping_result res = new ping_result();
+						Ping_result res = new Ping_result();
 						res.read(iprot);
 						iprot.readMessageEnd();
 						try {
 							result.put(res);
 						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "ping interrupted: " + e.getMessage());
+							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "Ping interrupted: " + e.getMessage());
 						}
 					} catch (TException e) {
 						try {
@@ -959,27 +959,27 @@ public class FFoo {
 		private class Ping implements FProcessorFunction {
 
 			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
-				ping_args args = new ping_args();
+				Ping_args args = new Ping_args();
 				try {
 					args.read(iprot);
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "ping", e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "Ping", e.getMessage());
 					}
 					throw e;
 				}
 
 				iprot.readMessageEnd();
-				ping_result result = new ping_result();
+				Ping_result result = new Ping_result();
 				try {
-					handler.ping(ctx);
+					handler.Ping(ctx);
 				} catch (FRateLimitException e) {
 					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "ping", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "ping", "Internal error processing ping: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "ping", "Internal error processing Ping: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -1357,14 +1357,14 @@ public class FFoo {
 
 	}
 
-public static class ping_args implements org.apache.thrift.TBase<ping_args, ping_args._Fields>, java.io.Serializable, Cloneable, Comparable<ping_args> {
-	private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("ping_args");
+public static class Ping_args implements org.apache.thrift.TBase<Ping_args, Ping_args._Fields>, java.io.Serializable, Cloneable, Comparable<Ping_args> {
+	private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("Ping_args");
 
 
 	private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
 	static {
-		schemes.put(StandardScheme.class, new ping_argsStandardSchemeFactory());
-		schemes.put(TupleScheme.class, new ping_argsTupleSchemeFactory());
+		schemes.put(StandardScheme.class, new Ping_argsStandardSchemeFactory());
+		schemes.put(TupleScheme.class, new Ping_argsTupleSchemeFactory());
 	}
 
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
@@ -1428,20 +1428,20 @@ public static class ping_args implements org.apache.thrift.TBase<ping_args, ping
 	static {
 		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
 		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ping_args.class, metaDataMap);
+		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Ping_args.class, metaDataMap);
 	}
 
-	public ping_args() {
+	public Ping_args() {
 	}
 
 	/**
 	 * Performs a deep copy on <i>other</i>.
 	 */
-	public ping_args(ping_args other) {
+	public Ping_args(Ping_args other) {
 	}
 
-	public ping_args deepCopy() {
-		return new ping_args(this);
+	public Ping_args deepCopy() {
+		return new Ping_args(this);
 	}
 
 	@Override
@@ -1474,12 +1474,12 @@ public static class ping_args implements org.apache.thrift.TBase<ping_args, ping
 	public boolean equals(Object that) {
 		if (that == null)
 			return false;
-		if (that instanceof ping_args)
-			return this.equals((ping_args)that);
+		if (that instanceof Ping_args)
+			return this.equals((Ping_args)that);
 		return false;
 	}
 
-	public boolean equals(ping_args that) {
+	public boolean equals(Ping_args that) {
 		if (that == null)
 			return false;
 
@@ -1494,7 +1494,7 @@ public static class ping_args implements org.apache.thrift.TBase<ping_args, ping
 	}
 
 	@Override
-	public int compareTo(ping_args other) {
+	public int compareTo(Ping_args other) {
 		if (!getClass().equals(other.getClass())) {
 			return getClass().getName().compareTo(other.getClass().getName());
 		}
@@ -1518,7 +1518,7 @@ public static class ping_args implements org.apache.thrift.TBase<ping_args, ping
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder("ping_args(");
+		StringBuilder sb = new StringBuilder("Ping_args(");
 		boolean first = true;
 
 		sb.append(")");
@@ -1547,15 +1547,15 @@ public static class ping_args implements org.apache.thrift.TBase<ping_args, ping
 		}
 	}
 
-	private static class ping_argsStandardSchemeFactory implements SchemeFactory {
-		public ping_argsStandardScheme getScheme() {
-			return new ping_argsStandardScheme();
+	private static class Ping_argsStandardSchemeFactory implements SchemeFactory {
+		public Ping_argsStandardScheme getScheme() {
+			return new Ping_argsStandardScheme();
 		}
 	}
 
-	private static class ping_argsStandardScheme extends StandardScheme<ping_args> {
+	private static class Ping_argsStandardScheme extends StandardScheme<Ping_args> {
 
-		public void read(org.apache.thrift.protocol.TProtocol iprot, ping_args struct) throws org.apache.thrift.TException {
+		public void read(org.apache.thrift.protocol.TProtocol iprot, Ping_args struct) throws org.apache.thrift.TException {
 			org.apache.thrift.protocol.TField schemeField;
 			iprot.readStructBegin();
 			while (true) {
@@ -1575,7 +1575,7 @@ public static class ping_args implements org.apache.thrift.TBase<ping_args, ping
 			struct.validate();
 		}
 
-		public void write(org.apache.thrift.protocol.TProtocol oprot, ping_args struct) throws org.apache.thrift.TException {
+		public void write(org.apache.thrift.protocol.TProtocol oprot, Ping_args struct) throws org.apache.thrift.TException {
 			struct.validate();
 
 			oprot.writeStructBegin(STRUCT_DESC);
@@ -1585,35 +1585,35 @@ public static class ping_args implements org.apache.thrift.TBase<ping_args, ping
 
 	}
 
-	private static class ping_argsTupleSchemeFactory implements SchemeFactory {
-		public ping_argsTupleScheme getScheme() {
-			return new ping_argsTupleScheme();
+	private static class Ping_argsTupleSchemeFactory implements SchemeFactory {
+		public Ping_argsTupleScheme getScheme() {
+			return new Ping_argsTupleScheme();
 		}
 	}
 
-	private static class ping_argsTupleScheme extends TupleScheme<ping_args> {
+	private static class Ping_argsTupleScheme extends TupleScheme<Ping_args> {
 
 		@Override
-		public void write(org.apache.thrift.protocol.TProtocol prot, ping_args struct) throws org.apache.thrift.TException {
+		public void write(org.apache.thrift.protocol.TProtocol prot, Ping_args struct) throws org.apache.thrift.TException {
 			TTupleProtocol oprot = (TTupleProtocol) prot;
 		}
 
 		@Override
-		public void read(org.apache.thrift.protocol.TProtocol prot, ping_args struct) throws org.apache.thrift.TException {
+		public void read(org.apache.thrift.protocol.TProtocol prot, Ping_args struct) throws org.apache.thrift.TException {
 			TTupleProtocol iprot = (TTupleProtocol) prot;
 		}
 
 	}
 
 }
-public static class ping_result implements org.apache.thrift.TBase<ping_result, ping_result._Fields>, java.io.Serializable, Cloneable, Comparable<ping_result> {
-	private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("ping_result");
+public static class Ping_result implements org.apache.thrift.TBase<Ping_result, Ping_result._Fields>, java.io.Serializable, Cloneable, Comparable<Ping_result> {
+	private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("Ping_result");
 
 
 	private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
 	static {
-		schemes.put(StandardScheme.class, new ping_resultStandardSchemeFactory());
-		schemes.put(TupleScheme.class, new ping_resultTupleSchemeFactory());
+		schemes.put(StandardScheme.class, new Ping_resultStandardSchemeFactory());
+		schemes.put(TupleScheme.class, new Ping_resultTupleSchemeFactory());
 	}
 
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
@@ -1677,20 +1677,20 @@ public static class ping_result implements org.apache.thrift.TBase<ping_result, 
 	static {
 		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
 		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ping_result.class, metaDataMap);
+		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Ping_result.class, metaDataMap);
 	}
 
-	public ping_result() {
+	public Ping_result() {
 	}
 
 	/**
 	 * Performs a deep copy on <i>other</i>.
 	 */
-	public ping_result(ping_result other) {
+	public Ping_result(Ping_result other) {
 	}
 
-	public ping_result deepCopy() {
-		return new ping_result(this);
+	public Ping_result deepCopy() {
+		return new Ping_result(this);
 	}
 
 	@Override
@@ -1723,12 +1723,12 @@ public static class ping_result implements org.apache.thrift.TBase<ping_result, 
 	public boolean equals(Object that) {
 		if (that == null)
 			return false;
-		if (that instanceof ping_result)
-			return this.equals((ping_result)that);
+		if (that instanceof Ping_result)
+			return this.equals((Ping_result)that);
 		return false;
 	}
 
-	public boolean equals(ping_result that) {
+	public boolean equals(Ping_result that) {
 		if (that == null)
 			return false;
 
@@ -1743,7 +1743,7 @@ public static class ping_result implements org.apache.thrift.TBase<ping_result, 
 	}
 
 	@Override
-	public int compareTo(ping_result other) {
+	public int compareTo(Ping_result other) {
 		if (!getClass().equals(other.getClass())) {
 			return getClass().getName().compareTo(other.getClass().getName());
 		}
@@ -1767,7 +1767,7 @@ public static class ping_result implements org.apache.thrift.TBase<ping_result, 
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder("ping_result(");
+		StringBuilder sb = new StringBuilder("Ping_result(");
 		boolean first = true;
 
 		sb.append(")");
@@ -1796,15 +1796,15 @@ public static class ping_result implements org.apache.thrift.TBase<ping_result, 
 		}
 	}
 
-	private static class ping_resultStandardSchemeFactory implements SchemeFactory {
-		public ping_resultStandardScheme getScheme() {
-			return new ping_resultStandardScheme();
+	private static class Ping_resultStandardSchemeFactory implements SchemeFactory {
+		public Ping_resultStandardScheme getScheme() {
+			return new Ping_resultStandardScheme();
 		}
 	}
 
-	private static class ping_resultStandardScheme extends StandardScheme<ping_result> {
+	private static class Ping_resultStandardScheme extends StandardScheme<Ping_result> {
 
-		public void read(org.apache.thrift.protocol.TProtocol iprot, ping_result struct) throws org.apache.thrift.TException {
+		public void read(org.apache.thrift.protocol.TProtocol iprot, Ping_result struct) throws org.apache.thrift.TException {
 			org.apache.thrift.protocol.TField schemeField;
 			iprot.readStructBegin();
 			while (true) {
@@ -1824,7 +1824,7 @@ public static class ping_result implements org.apache.thrift.TBase<ping_result, 
 			struct.validate();
 		}
 
-		public void write(org.apache.thrift.protocol.TProtocol oprot, ping_result struct) throws org.apache.thrift.TException {
+		public void write(org.apache.thrift.protocol.TProtocol oprot, Ping_result struct) throws org.apache.thrift.TException {
 			struct.validate();
 
 			oprot.writeStructBegin(STRUCT_DESC);
@@ -1834,21 +1834,21 @@ public static class ping_result implements org.apache.thrift.TBase<ping_result, 
 
 	}
 
-	private static class ping_resultTupleSchemeFactory implements SchemeFactory {
-		public ping_resultTupleScheme getScheme() {
-			return new ping_resultTupleScheme();
+	private static class Ping_resultTupleSchemeFactory implements SchemeFactory {
+		public Ping_resultTupleScheme getScheme() {
+			return new Ping_resultTupleScheme();
 		}
 	}
 
-	private static class ping_resultTupleScheme extends TupleScheme<ping_result> {
+	private static class Ping_resultTupleScheme extends TupleScheme<Ping_result> {
 
 		@Override
-		public void write(org.apache.thrift.protocol.TProtocol prot, ping_result struct) throws org.apache.thrift.TException {
+		public void write(org.apache.thrift.protocol.TProtocol prot, Ping_result struct) throws org.apache.thrift.TException {
 			TTupleProtocol oprot = (TTupleProtocol) prot;
 		}
 
 		@Override
-		public void read(org.apache.thrift.protocol.TProtocol prot, ping_result struct) throws org.apache.thrift.TException {
+		public void read(org.apache.thrift.protocol.TProtocol prot, Ping_result struct) throws org.apache.thrift.TException {
 			TTupleProtocol iprot = (TTupleProtocol) prot;
 		}
 

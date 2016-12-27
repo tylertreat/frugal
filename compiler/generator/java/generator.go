@@ -2817,6 +2817,8 @@ func (g *Generator) generateInternalClient(service *parser.Service) string {
 }
 
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
+	methodLower := parser.LowercaseFirstLetter(method.Name)
+
 	contents := ""
 	if method.Comment != nil {
 		contents += g.GenerateBlockComment(method.Comment, tabtab)
@@ -2837,7 +2839,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	if method.Oneway {
 		msgType = "ONEWAY"
 	}
-	contents += indent + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", method.Name, msgType)
+	contents += indent + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", methodLower, msgType)
 	contents += indent + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
 	for _, arg := range method.Arguments {
 		contents += indent + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
@@ -2896,7 +2898,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtab + "try {\n"
 	contents += tabtabtabtabtabtab + "iprot.readResponseHeader(ctx);\n"
 	contents += tabtabtabtabtabtab + "TMessage message = iprot.readMessageBegin();\n"
-	contents += tabtabtabtabtabtab + fmt.Sprintf("if (!message.name.equals(\"%s\")) {\n", method.Name)
+	contents += tabtabtabtabtabtab + fmt.Sprintf("if (!message.name.equals(\"%s\")) {\n", methodLower)
 	contents += tabtabtabtabtabtabtab + fmt.Sprintf(
 		"throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, \"%s failed: wrong method name\");\n",
 		method.Name)
@@ -2987,7 +2989,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtab + "java.util.Map<String, FProcessorFunction> processMap = new java.util.HashMap<>();\n"
 	}
 	for _, method := range service.Methods {
-		contents += tabtabtab + fmt.Sprintf("processMap.put(\"%s\", new %s());\n", method.Name, strings.Title(method.Name))
+		contents += tabtabtab + fmt.Sprintf("processMap.put(\"%s\", new %s());\n", parser.LowercaseFirstLetter(method.Name), strings.Title(method.Name))
 	}
 	contents += tabtabtab + "return processMap;\n"
 	contents += tabtab + "}\n\n"
@@ -3001,6 +3003,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	contents += tabtab + "}\n\n"
 
 	for _, method := range service.Methods {
+		methodLower := parser.LowercaseFirstLetter(method.Name)
 		contents += tabtab + fmt.Sprintf("private class %s implements FProcessorFunction {\n\n", strings.Title(method.Name))
 
 		contents += tabtabtab + "public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {\n"
@@ -3040,20 +3043,20 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		}
 		contents += tabtabtabtab + "} catch (FRateLimitException e) {\n"
 		contents += tabtabtabtabtab + fmt.Sprintf("writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, \"%s\", e.getMessage());\n",
-			method.Name)
+			methodLower)
 		contents += tabtabtabtabtab + "return;\n"
 		contents += tabtabtabtab + "} catch (TException e) {\n"
 		contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"
 		contents += tabtabtabtabtabtab + fmt.Sprintf(
 			"e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, \"%s\", \"Internal error processing %s: \" + e.getMessage());\n",
-			method.Name, method.Name)
+			methodLower, method.Name)
 		contents += tabtabtabtabtab + "}\n"
 		contents += tabtabtabtabtab + "throw e;\n"
 		contents += tabtabtabtab + "}\n"
 		contents += tabtabtabtab + "synchronized (WRITE_LOCK) {\n"
 		contents += tabtabtabtabtab + "try {\n"
 		contents += tabtabtabtabtabtab + "oprot.writeResponseHeader(ctx);\n"
-		contents += tabtabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.REPLY, 0));\n", method.Name)
+		contents += tabtabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.REPLY, 0));\n", methodLower)
 		contents += tabtabtabtabtabtab + "result.write(oprot);\n"
 		contents += tabtabtabtabtabtab + "oprot.writeMessageEnd();\n"
 		contents += tabtabtabtabtabtab + "oprot.getTransport().flush();\n"
@@ -3061,7 +3064,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtabtabtab + "if (e instanceof FMessageSizeException) {\n"
 		contents += tabtabtabtabtabtabtab + fmt.Sprintf(
 			"writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \" + e.getMessage());\n",
-			method.Name)
+			methodLower)
 		contents += tabtabtabtabtabtab + "} else {\n"
 		contents += tabtabtabtabtabtabtab + "throw e;\n"
 		contents += tabtabtabtabtabtab + "}\n"
