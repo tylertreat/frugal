@@ -140,6 +140,17 @@ provides allows a Thrift TTransport to be used as an FTransport.
 
 FTransportFactory produces FTransports by wrapping a provided TTransport.
 
+## FTransportMonitor		
+
+FTransportMonitor watches and heals an FTransport. It exposes a number of hooks		
+which can be used to add logic around FTransport events, such as unexpected		
+disconnects, expected disconnects, failed reconnects, and successful		
+reconnects.		
+
+Most Frugal implementations include a base FTransportMonitor which implements		
+basic reconnect logic with backoffs and max attempts. This can be extended or		
+reimplemented to provide custom logic.
+
 ## Scope
 
 Scopes do not map directly to an actual object but are an important concept
