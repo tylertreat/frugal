@@ -1,3 +1,32 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Glossary](#glossary)
+  - [FAsyncCallback*](#fasynccallback)
+  - [FContext](#fcontext)
+  - [FProcessor](#fprocessor)
+  - [FProcessorFunction*](#fprocessorfunction)
+  - [FProtocol](#fprotocol)
+  - [FProtocolFactory](#fprotocolfactory)
+  - [FScopeProvider](#fscopeprovider)
+  - [FPublisherTransport*](#fpublishertransport)
+  - [FSubscriberTransport*](#fsubscribertransport)
+  - [FPublisherTransportFactory*](#fpublishertransportfactory)
+  - [FSubscriberTransportFactory*](#fsubscribertransportfactory)
+  - [FServer](#fserver)
+  - [FServiceProvider](#fserviceprovider)
+  - [FSubscription](#fsubscription)
+  - [FRegistry*](#fregistry)
+  - [FTransport](#ftransport)
+  - [FTransportFactory](#ftransportfactory)
+  - [FTransportMonitor](#ftransportmonitor)
+  - [Scope](#scope)
+  - [Service](#service)
+  - [ServiceMiddleware](#servicemiddleware)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Glossary
 
 This describes at a high level some of the concepts found in Frugal. Most
@@ -138,15 +167,15 @@ allows a Thrift TTransport to be used as an FTransport.
 
 FTransportFactory produces FTransports by wrapping a provided TTransport.
 
-## FTransportMonitor		
+## FTransportMonitor
 
-FTransportMonitor watches and heals an FTransport. It exposes a number of hooks		
-which can be used to add logic around FTransport events, such as unexpected		
-disconnects, expected disconnects, failed reconnects, and successful		
-reconnects.		
+FTransportMonitor watches and heals an FTransport. It exposes a number of hooks
+which can be used to add logic around FTransport events, such as unexpected
+disconnects, expected disconnects, failed reconnects, and successful
+reconnects.
 
-Most Frugal implementations include a base FTransportMonitor which implements		
-basic reconnect logic with backoffs and max attempts. This can be extended or		
+Most Frugal implementations include a base FTransportMonitor which implements
+basic reconnect logic with backoffs and max attempts. This can be extended or
 reimplemented to provide custom logic.
 
 ## Scope
