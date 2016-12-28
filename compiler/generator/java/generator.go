@@ -2906,26 +2906,17 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtabtab + "if (message.type == TMessageType.EXCEPTION) {\n"
 	contents += tabtabtabtabtabtabtab + "TApplicationException e = TApplicationException.read(iprot);\n"
 	contents += tabtabtabtabtabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtabtabtabtabtab + "if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {\n"
-	contents += tabtabtabtabtabtabtabtab + "TException ex = e;\n"
-	contents += tabtabtabtabtabtabtabtab + "if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {\n"
-	contents += tabtabtabtabtabtabtabtabtab + "ex = FMessageSizeException.response(e.getMessage());\n"
-	contents += tabtabtabtabtabtabtabtab + "} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {\n"
-	contents += tabtabtabtabtabtabtabtabtab + "ex = new FRateLimitException(e.getMessage());\n"
-	contents += tabtabtabtabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtabtabtabtab + "try {\n"
-	contents += tabtabtabtabtabtabtabtabtab + "result.put(ex);\n"
-	contents += tabtabtabtabtabtabtabtabtab + "return;\n"
-	contents += tabtabtabtabtabtabtabtab + "} catch (InterruptedException ie) {\n"
-	contents += tabtabtabtabtabtabtabtabtab + fmt.Sprintf(
-		"throw new TApplicationException(TApplicationException.INTERNAL_ERROR, \"%s interrupted: \" + ie.getMessage());\n",
-		method.Name)
-	contents += tabtabtabtabtabtabtabtab + "}\n"
+	contents += tabtabtabtabtabtabtab + "TException returnedException = e;\n"
+	contents += tabtabtabtabtabtabtab + "if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {\n"
+	contents += tabtabtabtabtabtabtabtab + "returnedException = FMessageSizeException.response(e.getMessage());\n"
 	contents += tabtabtabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtabtabtab + "try {\n"
-	contents += tabtabtabtabtabtabtabtab + "result.put(e);\n"
-	contents += tabtabtabtabtabtabtab + "} finally {\n"
-	contents += tabtabtabtabtabtabtabtab + "throw e;\n"
+	contents += tabtabtabtabtabtabtabtab + "result.put(returnedException);\n"
+	contents += tabtabtabtabtabtabtabtab + "return;\n"
+	contents += tabtabtabtabtabtabtab + "} catch (InterruptedException ie) {\n"
+	contents += tabtabtabtabtabtabtabtab + fmt.Sprintf(
+		"throw new TApplicationException(TApplicationException.INTERNAL_ERROR, \"%s interrupted: \" + ie.getMessage());\n",
+		method.Name)
 	contents += tabtabtabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtabtab + "if (message.type != TMessageType.REPLY) {\n"
@@ -2994,6 +2985,24 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	contents += tabtabtab + "return processMap;\n"
 	contents += tabtab + "}\n\n"
 
+	contents += tabtab + "protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {\n"
+	if service.Extends != "" {
+		contents += tabtabtab + "java.util.Map<String, java.util.Map<String, String>> annotationsMap = super.getAnnotationsMap();\n"
+	} else {
+		contents += tabtabtab + "java.util.Map<String, java.util.Map<String, String>> annotationsMap = new java.util.HashMap<>();\n"
+	}
+	for _, method := range service.Methods {
+		if len(method.Annotations) > 0 {
+			contents += tabtabtab + fmt.Sprintf("java.util.Map<String, String> %sMap = new java.util.HashMap<>();\n", method.Name)
+			for _, annotation := range method.Annotations {
+				contents += tabtabtab + fmt.Sprintf("%sMap.put(\"%s\", \"%s\");\n", method.Name, annotation.Name, annotation.Value)
+			}
+			contents += tabtabtab + fmt.Sprintf("annotationsMap.put(\"%s\", %sMap);\n", parser.LowercaseFirstLetter(method.Name), method.Name)
+		}
+	}
+	contents += tabtabtab + "return annotationsMap;\n"
+	contents += tabtab + "}\n\n"
+
 	contents += tabtab + "@Override\n"
 	contents += tabtab + "public void addMiddleware(ServiceMiddleware middleware) {\n"
 	if service.Extends != "" {
@@ -3041,9 +3050,10 @@ func (g *Generator) generateServer(service *parser.Service) string {
 			contents += tabtabtabtab + fmt.Sprintf("} catch (%s %s) {\n", g.getJavaTypeFromThriftType(exception.Type), exception.Name)
 			contents += tabtabtabtabtab + fmt.Sprintf("result.%s = %s;\n", exception.Name, exception.Name)
 		}
-		contents += tabtabtabtab + "} catch (FRateLimitException e) {\n"
-		contents += tabtabtabtabtab + fmt.Sprintf("writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, \"%s\", e.getMessage());\n",
-			methodLower)
+		contents += tabtabtabtab + "} catch (TApplicationException e) {\n"
+		contents += tabtabtabtabtab + "oprot.writeResponseHeader(ctx);\n"
+		contents += tabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.EXCEPTION, 0));\n", methodLower)
+		contents += tabtabtabtabtab + "e.write(oprot);\n"
 		contents += tabtabtabtabtab + "return;\n"
 		contents += tabtabtabtab + "} catch (TException e) {\n"
 		contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"

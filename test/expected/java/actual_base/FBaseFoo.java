@@ -140,24 +140,15 @@ public class FBaseFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-									ex = new FRateLimitException(e.getMessage());
-								}
-								try {
-									result.put(ex);
-									return;
-								} catch (InterruptedException ie) {
-									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "basePing interrupted: " + ie.getMessage());
-								}
+							TException returnedException = e;
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+								returnedException = FMessageSizeException.response(e.getMessage());
 							}
 							try {
-								result.put(e);
-							} finally {
-								throw e;
+								result.put(returnedException);
+								return;
+							} catch (InterruptedException ie) {
+								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "basePing interrupted: " + ie.getMessage());
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -198,6 +189,11 @@ public class FBaseFoo {
 			return processMap;
 		}
 
+		protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {
+			java.util.Map<String, java.util.Map<String, String>> annotationsMap = new java.util.HashMap<>();
+			return annotationsMap;
+		}
+
 		@Override
 		public void addMiddleware(ServiceMiddleware middleware) {
 			handler = InvocationHandler.composeMiddleware(handler, Iface.class, new ServiceMiddleware[]{middleware});
@@ -221,8 +217,10 @@ public class FBaseFoo {
 				basePing_result result = new basePing_result();
 				try {
 					handler.basePing(ctx);
-				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "basePing", e.getMessage());
+				} catch (TApplicationException e) {
+					oprot.writeResponseHeader(ctx);
+					oprot.writeMessageBegin(new TMessage("basePing", TMessageType.EXCEPTION, 0));
+					e.write(oprot);
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
