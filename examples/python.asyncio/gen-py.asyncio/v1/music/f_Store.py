@@ -50,19 +50,21 @@ class Iface(object):
 
 class Client(Iface):
 
-    def __init__(self, transport, protocol_factory, middleware=None):
+    def __init__(self, provider, middleware=None):
         """
-        Create a new Client with a transport and protocol factory.
+        Create a new Client with an FServiceProvider containing a transport
+        and protocol factory.
 
         Args:
-            transport: FTransport
-            protocol_factory: FProtocolFactory
+            provider: FServiceProvider
             middleware: ServiceMiddleware or list of ServiceMiddleware
         """
+        middleware = middleware or []
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
-        self._transport = transport
-        self._protocol_factory = protocol_factory
+        self._transport = provider.get_transport()
+        self._protocol_factory = provider.get_protocol_factory()
+        middleware += provider.get_middleware()
         self._methods = {
             'buyAlbum': Method(self._buyAlbum, middleware),
             'enterAlbumGiveaway': Method(self._enterAlbumGiveaway, middleware),

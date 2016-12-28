@@ -46,6 +46,7 @@ import com.workiva.frugal.processor.FBaseProcessor;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFunction;
 import com.workiva.frugal.protocol.*;
+import com.workiva.frugal.provider.FServiceProvider;
 import com.workiva.frugal.transport.FTransport;
 import com.workiva.frugal.transport.TMemoryOutputBuffer;
 import org.apache.thrift.TApplicationException;
@@ -55,6 +56,7 @@ import org.apache.thrift.protocol.TMessageType;
 import org.apache.thrift.transport.TTransport;
 
 import javax.annotation.Generated;
+import java.util.Arrays;
 import java.util.concurrent.*;
 
 
@@ -100,9 +102,12 @@ public class FFoo {
 
 		private Iface proxy;
 
-		public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {
-			super(transport, protocolFactory, middleware);
-			Iface client = new InternalClient(transport, protocolFactory);
+		public Client(FServiceProvider provider, ServiceMiddleware... middleware) {
+			super(provider, middleware);
+			Iface client = new InternalClient(provider.getTransport(), provider.getProtocolFactory());
+			List<ServiceMiddleware> combined = Arrays.asList(middleware);
+			combined.addAll(provider.getMiddleware());
+			middleware = combined.toArray(new ServiceMiddleware[0]);
 			proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);
 		}
 

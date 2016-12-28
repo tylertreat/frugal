@@ -27,13 +27,14 @@ type FBaseFooClient struct {
 	methods         map[string]*frugal.Method
 }
 
-func NewFBaseFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FBaseFooClient {
+func NewFBaseFooClient(provider *frugal.FServiceProvider, middleware ...frugal.ServiceMiddleware) *FBaseFooClient {
 	methods := make(map[string]*frugal.Method)
 	client := &FBaseFooClient{
-		transport:       t,
-		protocolFactory: p,
+		transport:       provider.GetTransport(),
+		protocolFactory: provider.GetProtocolFactory(),
 		methods:         methods,
 	}
+	middleware = append(middleware, provider.GetMiddleware()...)
 	methods["basePing"] = frugal.NewMethod(client, client.basePing, "basePing", middleware)
 	return client
 }

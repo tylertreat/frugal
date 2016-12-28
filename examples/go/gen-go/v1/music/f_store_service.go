@@ -32,13 +32,14 @@ type FStoreClient struct {
 	methods         map[string]*frugal.Method
 }
 
-func NewFStoreClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FStoreClient {
+func NewFStoreClient(provider *frugal.FServiceProvider, middleware ...frugal.ServiceMiddleware) *FStoreClient {
 	methods := make(map[string]*frugal.Method)
 	client := &FStoreClient{
-		transport:       t,
-		protocolFactory: p,
+		transport:       provider.GetTransport(),
+		protocolFactory: provider.GetProtocolFactory(),
 		methods:         methods,
 	}
+	middleware = append(middleware, provider.GetMiddleware()...)
 	methods["buyAlbum"] = frugal.NewMethod(client, client.buyAlbum, "buyAlbum", middleware)
 	methods["enterAlbumGiveaway"] = frugal.NewMethod(client, client.enterAlbumGiveaway, "enterAlbumGiveaway", middleware)
 	return client

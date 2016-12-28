@@ -23,8 +23,10 @@ class AlbumWinnersPublisher {
   AlbumWinnersPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {
     transport = provider.publisherTransportFactory.getTransport();
     protocolFactory = provider.protocolFactory;
+    var combined = middleware ?? [];
+    combined.addAll(provider.middleware);
     this._methods = {};
-    this._methods['Winner'] = new frugal.FMethod(this._publishWinner, 'AlbumWinners', 'publishWinner', middleware);
+    this._methods['Winner'] = new frugal.FMethod(this._publishWinner, 'AlbumWinners', 'publishWinner', combined);
   }
 
   Future open() {
@@ -62,7 +64,10 @@ class AlbumWinnersSubscriber {
   final frugal.FScopeProvider provider;
   final List<frugal.Middleware> _middleware;
 
-  AlbumWinnersSubscriber(this.provider, [this._middleware]) {}
+  AlbumWinnersSubscriber(this.provider, [List<frugal.Middleware> middleware]) {
+    this._middleware = middeware ?? [];
+    this._middleware.addAll(provider.middleware);
+}
 
   Future<frugal.FSubscription> subscribeWinner(dynamic onAlbum(frugal.FContext ctx, t_v1_music.Album req)) async {
     var op = "Winner";

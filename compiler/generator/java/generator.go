@@ -2304,6 +2304,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import com.workiva.frugal.processor.FProcessor;\n"
 	imports += "import com.workiva.frugal.processor.FProcessorFunction;\n"
 	imports += "import com.workiva.frugal.protocol.*;\n"
+	imports += "import com.workiva.frugal.provider.FServiceProvider;\n"
 	imports += "import com.workiva.frugal.transport.FTransport;\n"
 	imports += "import com.workiva.frugal.transport.TMemoryOutputBuffer;\n"
 	imports += "import org.apache.thrift.TApplicationException;\n"
@@ -2313,6 +2314,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import org.apache.thrift.transport.TTransport;\n\n"
 
 	imports += "import javax.annotation.Generated;\n"
+	imports += "import java.util.Arrays;\n"
 	imports += "import java.util.concurrent.*;\n"
 
 	_, err := file.WriteString(imports)
@@ -2334,8 +2336,10 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports += "import org.apache.thrift.transport.TTransportException;\n"
 	imports += "import org.apache.thrift.protocol.*;\n\n"
 
-	imports += "import javax.annotation.Generated;\n"
+	imports += "import java.util.Arrays;\n"
+	imports += "import java.util.List;\n"
 	imports += "import java.util.logging.Logger;\n"
+	imports += "import javax.annotation.Generated;\n"
 
 	_, err := file.WriteString(imports)
 	return err
@@ -2402,6 +2406,9 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 
 	publisher += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
 	publisher += fmt.Sprintf(tabtabtab+"target = new Internal%sPublisher(provider);\n", scopeTitle)
+	publisher += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
+	publisher += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
+	publisher += tabtabtab + "middleware = combined.toArray(new ServiceMiddleware[0]);\n"
 	publisher += tabtabtab + "proxy = InvocationHandler.composeMiddleware(target, Iface.class, middleware);\n"
 	publisher += tabtab + "}\n\n"
 
@@ -2565,7 +2572,9 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 
 	subscriber += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
 	subscriber += tabtabtab + "this.provider = provider;\n"
-	subscriber += tabtabtab + "this.middleware = middleware;\n"
+	subscriber += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
+	subscriber += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
+	subscriber += tabtabtab + "this.middleware = combined.toArray(new ServiceMiddleware[0]);\n"
 	subscriber += tabtab + "}\n\n"
 
 	for _, op := range scope.Operations {
@@ -2725,11 +2734,14 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	}
 	contents += tabtab + "private Iface proxy;\n\n"
 
-	contents += tabtab + "public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {\n"
+	contents += tabtab + "public Client(FServiceProvider provider, ServiceMiddleware... middleware) {\n"
 	if service.Extends != "" {
-		contents += tabtabtab + "super(transport, protocolFactory, middleware);\n"
+		contents += tabtabtab + "super(provider, middleware);\n"
 	}
-	contents += tabtabtab + "Iface client = new InternalClient(transport, protocolFactory);\n"
+	contents += tabtabtab + "Iface client = new InternalClient(provider.getTransport(), provider.getProtocolFactory());\n"
+	contents += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
+	contents += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
+	contents += tabtabtab + "middleware = combined.toArray(new ServiceMiddleware[0]);\n"
 	contents += tabtabtab + "proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);\n"
 	contents += tabtab + "}\n\n"
 

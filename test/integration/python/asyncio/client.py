@@ -7,6 +7,7 @@ sys.path.append('..')
 
 from frugal.context import FContext
 from frugal.provider import FScopeProvider
+from frugal.provider import FServiceProvider
 from frugal.aio.transport import (
     FNatsTransport,
     FHttpTransport,
@@ -53,7 +54,7 @@ async def main():
         print("Unknown transport type: {type}".format(type=args.transport_type))
         sys.exit(1)
 
-    client = FrugalTestClient(transport, protocol_factory, client_middleware)
+    client = FrugalTestClient(FServiceProvider(transport, protocol_factory), client_middleware)
     ctx = FContext("test")
 
     await test_rpc(client, ctx)
