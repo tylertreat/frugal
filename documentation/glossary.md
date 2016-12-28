@@ -123,8 +123,6 @@ executed, and unregistered.
 
 ## FTransport
 
-FTransport is Frugal's equivalent of Thrift's TTransport.
-
 FTransport is Frugal's equivalent of Thrift's TTransport. FTransport is
 comparable to Thrift's TTransport in that it represents the transport layer
 for frugal clients. However, frugal is callback based and sends only framed
@@ -134,7 +132,7 @@ FTransport also has an FRegistry, so it provides methods for registering
 and unregistering an FAsyncCallback to an FContext.
 
 Most Frugal language libraries include an FAdapterTransport implementation, which
-provides allows a Thrift TTransport to be used as an FTransport.
+allows a Thrift TTransport to be used as an FTransport.
 
 ## FTransportFactory
 
