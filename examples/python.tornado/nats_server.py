@@ -36,6 +36,8 @@ class StoreHandler(Iface):
     A handler handles all incoming requests to the server.
     The handler must satisfy the interface the server exposes.
     """
+
+    # Handlers can also be coroutines.
     @gen.coroutine
     def buyAlbum(self, ctx, ASIN, acct):
         """
