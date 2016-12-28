@@ -45,11 +45,6 @@ which operates upon an input stream and writes to an output stream.
 Specifically, an FProcessor is provided to an FServer in order to wire up a
 service handler to process requests.
 
-## FProcessorFactory
-
-FProcessorFactory produces FProcessors and is used by an FServer. It takes a
-TTransport and returns an FProcessor wrapping it.
-
 ## FProcessorFunction*
 
 FProcessorFunction is used internally by generated code. An FProcessor
@@ -79,26 +74,27 @@ and protocols in a composable manner.
 
 FScopeProvider is used exclusively for pub/sub and produces FScopeTransports
 and FProtocols for use by pub/sub scopes. It does this by wrapping an
-FScopeTransportFactory and FProtocolFactory.
+FPublisherTransportFactory, an FSubscriberTransportFactory, and FProtocolFactory.
 
-## FScopeTransport*
+## FPublisherTransport*
+FPublisherTransport is a transport that publishes messages to a pub/sub topic.
 
-FScopeTransport extends Thrift's TTransport and is used exclusively for pub/sub
-scopes. Subscribers use an FScopeTransport to subscribe to a pub/sub topic.
-Publishers use it to publish to a topic.
+## FSubscriberTransport*
+FSubscriberTransport is a transport that subscribes to a pub/sub topic. It receives
+and processes messages published to the subscribed topic.
 
-## FScopeTransportFactory*
+## FPublisherTransportFactory*
+FPublisherTransportFactory produces FPublisherTransports, and is generally used by
+an FScopeProvider.
 
-FScopeTransportFactory produces FScopeTransports and is typically used by an
-FScopeProvider.
+## FSubscriberTransportFactory*
+FSubscriberTransportFactory produces FSubscriberTransports, and is generally used
+by an FScopeProvider.
 
 ## FServer
 
 FServer is Frugal's equivalent of Thrift's TServer. It's used to run a Frugal
-RPC service by executing an FProcessor on client connections. FServer can
-optionally support a high-water mark which is the maximum amount of time a
-request is allowed to be enqueued before triggering server overload logic (e.g.
-load shedding).
+RPC service by executing an FProcessor on client connections.
 
 Currently, Frugal includes two implementations of FServer: FSimpleServer, which
 is a basic, accept-loop based server that supports traditional Thrift
@@ -113,55 +109,36 @@ FTransports and FProtocols for use by RPC service clients.
 ## FSubscription
 
 FSubscription is a subscription to a pub/sub topic created by a scope. The
-topic subscription is actually handled by an FScopeTransport, which the
-FSubscription wraps. Each FSubscription should have its own FScopeTransport.
+topic subscription is actually handled by an FSubscriberTransport, which the
+FSubscription wraps. Each FSubscription should have its own FSubscriberTransport.
 The FSubscription is used to unsubscribe from the topic.
 
 ## FRegistry*
 
 FRegistry is responsible for multiplexing and handling received messages.
-Typically there is a client implementation and a server implementation. An
-FRegistry is used by an FTransport.
-
-The client implementation is used on the client side, which is making RPCs.
+Typically registries are only used by a client FTransport, which is making RPCs.
 When a request is made, an FAsyncCallback is registered to an FContext. When a
 response for the FContext is received, the FAsyncCallback is looked up,
 executed, and unregistered.
 
-The server implementation is used on the server side, which is handling RPCs.
-It does not actually register FAsyncCallbacks but rather has an FProcessor
-registered with it. When a message is received, it's buffered and passed to
-the FProcessor to be handled.
-
 ## FTransport
 
-FTransport is Frugal's equivalent of Thrift's TTransport. FTransport extends
-TTransport and exposes some additional methods. An FTransport typically has an
-FRegistry, so it provides methods for setting the FRegistry and registering and
-unregistering an FAsyncCallback to an FContext. It also allows a way for
-setting an FTransportMonitor and a high-water mark provided by an FServer.
+FTransport is Frugal's equivalent of Thrift's TTransport.
 
-FTransport wraps a TTransport, meaning all existing TTransport implementations
-will work in Frugal. However, all FTransports must use a framed protocol,
-typically implemented by wrapping a TFramedTransport.
+FTransport is Frugal's equivalent of Thrift's TTransport. FTransport is
+comparable to Thrift's TTransport in that it represents the transport layer
+for frugal clients. However, frugal is callback based and sends only framed
+data. Due to this, instead of read, write, and flush methods, FTransport has
+a send method that sends framed frugal messages. To handle callback data, an
+FTransport also has an FRegistry, so it provides methods for registering
+and unregistering an FAsyncCallback to an FContext.
 
-Most Frugal language libraries include an FMuxTransport implementation, which
-uses a worker pool to handle messages in parallel.
+Most Frugal language libraries include an FAdapterTransport implementation, which
+provides allows a Thrift TTransport to be used as an FTransport.
 
 ## FTransportFactory
 
 FTransportFactory produces FTransports by wrapping a provided TTransport.
-
-## FTransportMonitor
-
-FTransportMonitor watches and heals an FTransport. It exposes a number of hooks
-which can be used to add logic around FTransport events, such as unexpected
-disconnects, expected disconnects, failed reconnects, and successful
-reconnects.
-
-Most Frugal implementations include a base FTransportMonitor which implements
-basic reconnect logic with backoffs and max attempts. This can be extended or
-reimplemented to provide custom logic.
 
 ## Scope
 
