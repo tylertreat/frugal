@@ -48,9 +48,9 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 
 func (g *Generator) getLibraryName() string {
 	if ns := g.Frugal.Thrift.Namespace(lang); ns != nil {
-		return generator.LowercaseFirstLetter(toLibraryName(ns.Value))
+		return parser.LowercaseFirstLetter(toLibraryName(ns.Value))
 	}
-	return generator.LowercaseFirstLetter(g.Frugal.Name)
+	return parser.LowercaseFirstLetter(g.Frugal.Name)
 }
 
 // SetupGenerator performs any setup logic before generation.
@@ -1249,9 +1249,11 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
 	publishers += tabtab + "transport = provider.publisherTransportFactory.getTransport();\n"
 	publishers += tabtab + "protocolFactory = provider.protocolFactory;\n"
+	publishers += tabtab + "var combined = middleware ?? [];\n"
+	publishers += tabtab + "combined.addAll(provider.middleware);\n"
 	publishers += tabtab + "this._methods = {};\n"
 	for _, operation := range scope.Operations {
-		publishers += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._publish%s, '%s', 'publish%s', middleware);\n",
+		publishers += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._publish%s, '%s', 'publish%s', combined);\n",
 			operation.Name, operation.Name, strings.Title(scope.Name), operation.Name)
 	}
 	publishers += tab + "}\n\n"
@@ -1333,7 +1335,10 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	subscribers += tab + "final frugal.FScopeProvider provider;\n"
 	subscribers += tab + "final List<frugal.Middleware> _middleware;\n\n"
 
-	subscribers += fmt.Sprintf(tab+"%sSubscriber(this.provider, [this._middleware]) {}\n\n", strings.Title(scope.Name))
+	subscribers += tab + fmt.Sprintf("%sSubscriber(this.provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
+	subscribers += tabtab + "this._middleware = middeware ?? [];\n"
+	subscribers += tabtab + "this._middleware.addAll(provider.middleware);\n"
+	subscribers += "}\n\n"
 
 	args := ""
 	if len(scope.Prefix.Variables) > 0 {
@@ -1416,7 +1421,7 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 			contents += g.GenerateInlineComment(method.Comment, tab+"/")
 		}
 		contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s);\n",
-			g.generateReturnArg(method), generator.LowercaseFirstLetter(method.Name), g.generateInputArgs(method.Arguments))
+			g.generateReturnArg(method), parser.LowercaseFirstLetter(method.Name), g.generateInputArgs(method.Arguments))
 	}
 	contents += "}\n\n"
 	return contents
@@ -1451,21 +1456,25 @@ func (g *Generator) generateClient(service *parser.Service) string {
 			servTitle, servTitle)
 	}
 	contents += tab + "Map<String, frugal.FMethod> _methods;\n\n"
+
 	if service.Extends != "" {
-		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware])\n", servTitle)
-		contents += tabtabtab + ": super(transport, protocolFactory) {\n"
+		contents += tab + fmt.Sprintf("F%sClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware])\n", servTitle)
+		contents += tabtabtab + ": super(provider, middleware) {\n"
 	} else {
-		contents += fmt.Sprintf(tab+"F%sClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware]) {\n", servTitle)
+		contents += tab + fmt.Sprintf("F%sClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware]) {\n", servTitle)
 	}
-	contents += tabtab + "_transport = transport;\n"
-	contents += tabtab + "_protocolFactory = protocolFactory;\n"
+	contents += tabtab + "_transport = provider.transport;\n"
+	contents += tabtab + "_protocolFactory = provider.protocolFactory;\n"
+	contents += tabtab + "var combined = middleware ?? [];\n"
+	contents += tabtab + "combined.addAll(provider.middleware);\n"
 	contents += tabtab + "this._methods = {};\n"
 	for _, method := range service.Methods {
-		nameLower := generator.LowercaseFirstLetter(method.Name)
-		contents += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._%s, '%s', '%s', middleware);\n",
+		nameLower := parser.LowercaseFirstLetter(method.Name)
+		contents += fmt.Sprintf(tabtab+"this._methods['%s'] = new frugal.FMethod(this._%s, '%s', '%s', combined);\n",
 			nameLower, nameLower, servTitle, nameLower)
 	}
 	contents += tab + "}\n\n"
+
 	contents += tab + "frugal.FTransport _transport;\n"
 	contents += tab + "frugal.FProtocolFactory _protocolFactory;\n"
 	contents += "\n"
@@ -1474,12 +1483,13 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += g.generateClientMethod(service, method)
 	}
 	contents += "}\n\n"
+
 	return contents
 }
 
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
 	nameTitle := strings.Title(method.Name)
-	nameLower := generator.LowercaseFirstLetter(method.Name)
+	nameLower := parser.LowercaseFirstLetter(method.Name)
 
 	contents := ""
 	if method.Comment != nil {
@@ -1522,10 +1532,9 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 	contents += fmt.Sprintf(indent+"oprot.writeMessageBegin(new thrift.TMessage(\"%s\", thrift.TMessageType.%s, 0));\n",
 		nameLower, msgType)
-	contents += fmt.Sprintf(indent+"%s_args args = new %s_args();\n",
-		nameLower, nameLower)
+	contents += fmt.Sprintf(indent+"%s_args args = new %s_args();\n", method.Name, method.Name)
 	for _, arg := range method.Arguments {
-		argLower := generator.LowercaseFirstLetter(arg.Name)
+		argLower := parser.LowercaseFirstLetter(arg.Name)
 		contents += fmt.Sprintf(indent+"args.%s = %s;\n", argLower, argLower)
 	}
 	contents += indent + "args.write(oprot);\n"
@@ -1567,15 +1576,11 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtabtab + "controller.addError(new frugal.FMessageSizeError.response(message: error.message));\n"
 	contents += tabtabtabtabtabtab + "return;\n"
 	contents += tabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtab + "if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {\n"
-	contents += tabtabtabtabtabtab + "controller.addError(new frugal.FRateLimitError(message: error.message));\n"
-	contents += tabtabtabtabtabtab + "return;\n"
-	contents += tabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtab + "throw error;\n"
+	contents += tabtabtabtabtab + "controller.addError(error);\n"
+	contents += tabtabtabtabtab + "return;\n"
 	contents += tabtabtabtab + "}\n\n"
 
-	contents += fmt.Sprintf(tabtabtabtab+"%s_result result = new %s_result();\n",
-		nameLower, nameLower)
+	contents += fmt.Sprintf(tabtabtabtab+"%s_result result = new %s_result();\n", method.Name, method.Name)
 	contents += tabtabtabtab + "result.read(iprot);\n"
 	contents += tabtabtabtab + "iprot.readMessageEnd();\n"
 	if method.ReturnType == nil {
@@ -1614,7 +1619,7 @@ func (g *Generator) generateReturnArg(method *parser.Method) string {
 func (g *Generator) generateInputArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += ", " + g.getDartTypeFromThriftType(arg.Type) + " " + generator.LowercaseFirstLetter(arg.Name)
+		argStr += ", " + g.getDartTypeFromThriftType(arg.Type) + " " + parser.LowercaseFirstLetter(arg.Name)
 	}
 	return argStr
 }
@@ -1622,7 +1627,7 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 func (g *Generator) generateInputArgsWithoutTypes(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += ", " + generator.LowercaseFirstLetter(arg.Name)
+		argStr += ", " + parser.LowercaseFirstLetter(arg.Name)
 	}
 	return argStr
 }
@@ -1630,8 +1635,8 @@ func (g *Generator) generateInputArgsWithoutTypes(args []*parser.Field) string {
 func (g *Generator) generateErrors(method *parser.Method) string {
 	contents := ""
 	for _, exp := range method.Exceptions {
-		contents += fmt.Sprintf(tabtabtabtab+"if (result.%s != null) {\n", generator.LowercaseFirstLetter(exp.Name))
-		contents += fmt.Sprintf(tabtabtabtabtab+"controller.addError(result.%s);\n", generator.LowercaseFirstLetter(exp.Name))
+		contents += fmt.Sprintf(tabtabtabtab+"if (result.%s != null) {\n", parser.LowercaseFirstLetter(exp.Name))
+		contents += fmt.Sprintf(tabtabtabtabtab+"controller.addError(result.%s);\n", parser.LowercaseFirstLetter(exp.Name))
 		contents += tabtabtabtabtab + "return;\n"
 		contents += tabtabtabtab + "}\n"
 	}

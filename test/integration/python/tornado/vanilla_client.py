@@ -7,6 +7,7 @@ sys.path.append('gen-py')
 sys.path.append('..')
 
 from frugal.context import FContext
+from frugal.provider import FServiceProvider
 from frugal.transport.http_transport import FHttpTransport
 
 from common.test_definitions import rpc_test_definitions
@@ -35,7 +36,7 @@ def main():
     transport.open()
 
     ctx = FContext("test")
-    client = FrugalTestClient(transport, protocol_factory, client_middleware)
+    client = FrugalTestClient(FServiceProvider(transport, protocol_factory), client_middleware)
 
     # Scope generation is not currently supported with vanilla python
     # TODO: Add Pub/Sub test once scopes are supported

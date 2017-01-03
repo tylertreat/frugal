@@ -31,8 +31,10 @@ class EventsPublisher(object):
             middleware: ServiceMiddleware or list of ServiceMiddleware
         """
 
+        middleware = middleware or []
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
+        middleware += provider.get_middleware()
         self._transport, self._protocol_factory = provider.new_publisher()
         self._methods = {
             'publish_EventCreated': Method(self._publish_EventCreated, middleware),

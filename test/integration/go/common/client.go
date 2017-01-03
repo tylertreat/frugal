@@ -111,6 +111,6 @@ func StartClient(
 		return nil, fmt.Errorf("Error opening transport %s", err)
 	}
 
-	client = frugaltest.NewFFrugalTestClient(trans, fProtocolFactory, clientLoggingMiddleware(clientMiddlewareCalled))
+	client = frugaltest.NewFFrugalTestClient(frugal.NewFServiceProvider(trans, fProtocolFactory), clientLoggingMiddleware(clientMiddlewareCalled))
 	return
 }

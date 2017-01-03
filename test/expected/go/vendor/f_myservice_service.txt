@@ -29,13 +29,14 @@ type FMyServiceClient struct {
 	methods         map[string]*frugal.Method
 }
 
-func NewFMyServiceClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FMyServiceClient {
+func NewFMyServiceClient(provider *frugal.FServiceProvider, middleware ...frugal.ServiceMiddleware) *FMyServiceClient {
 	methods := make(map[string]*frugal.Method)
 	client := &FMyServiceClient{
-		transport:       t,
-		protocolFactory: p,
+		transport:       provider.GetTransport(),
+		protocolFactory: provider.GetProtocolFactory(),
 		methods:         methods,
 	}
+	middleware = append(middleware, provider.GetMiddleware()...)
 	methods["getItem"] = frugal.NewMethod(client, client.getItem, "getItem", middleware)
 	return client
 }
@@ -127,14 +128,9 @@ func (f *FMyServiceClient) recvGetItemHandler(ctx frugal.FContext, resultC chan<
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
-				err = frugal.ErrRateLimitExceeded
-				errorC <- err
-				return nil
-			}
 			err = error1
 			errorC <- err
-			return err
+			return nil
 		}
 		if mTypeId != thrift.REPLY {
 			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getItem failed: invalid message type")
@@ -195,9 +191,13 @@ func (p *myserviceFGetItem) Process(ctx frugal.FContext, iprot, oprot *frugal.FP
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		if err2 == frugal.ErrRateLimitExceeded {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
 			p.GetWriteMutex().Lock()
-			myserviceWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "getItem", "Rate limit exceeded")
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("getItem", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
 			p.GetWriteMutex().Unlock()
 			return nil
 		}

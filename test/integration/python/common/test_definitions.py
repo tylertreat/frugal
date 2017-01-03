@@ -70,6 +70,8 @@ def rpc_test_definitions():
     mapmap = {-4: e, 4: d}
     tests['testMapMap'] = dict(args=[42], expected_result=mapmap)
 
+    tests['TestUppercaseMethod'] = dict(args=[True], expected_result=True)
+
     truck1 = Xtruct("Goodbye4", 4, 4, 4)
     truck2 = Xtruct("Hello2", 2, 2, 2)
     insanity = Insanity()

@@ -7,6 +7,7 @@ from thrift.protocol import TBinaryProtocol
 
 from frugal.context import FContext
 from frugal.protocol import FProtocolFactory
+from frugal.provider import FServiceProvider
 from frugal.transport.http_transport import FHttpTransport
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py"))
@@ -25,7 +26,7 @@ ch.setFormatter(formatter)
 root.addHandler(ch)
 
 
-URL = 'http://localhost:9090/frugal'
+URL = 'http://localhost:9090'
 
 
 def main():
@@ -41,7 +42,7 @@ def main():
 
     # Using the configured transport and protocol, create a client
     # to talk to the music store service.
-    store_client = FStoreClient(transport, prot_factory)
+    store_client = FStoreClient(FServiceProvider(transport, prot_factory))
 
     album = store_client.buyAlbum(FContext(),
                                   str(uuid.uuid4()),
@@ -56,6 +57,7 @@ def main():
     # Close the transport
     transport.close()
 
+
 def logging_middleware(next):
     def handler(method, args):
         print('==== CALLING %s ====', method.__name__)
@@ -63,6 +65,7 @@ def logging_middleware(next):
         print('==== CALLED  %s ====', method.__name__)
         return ret
     return handler
+
 
 if __name__ == '__main__':
     main()

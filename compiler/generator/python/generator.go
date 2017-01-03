@@ -823,8 +823,10 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	}, tabtab)
 	publisher += "\n"
 
+	publisher += tabtab + "middleware = middleware or []\n"
 	publisher += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	publisher += tabtabtab + "middleware = [middleware]\n"
+	publisher += tabtab + "middleware += provider.get_middleware()\n"
 	publisher += tabtab + "self._transport, self._protocol_factory = provider.new_publisher()\n"
 	publisher += tabtab + "self._methods = {\n"
 	for _, op := range scope.Operations {
@@ -1021,7 +1023,7 @@ func (g *Generator) generateClientSendMethod(method *parser.Method) string {
 	contents += tabtab + "with self._write_lock:\n"
 	contents += tabtabtab + "oprot.get_transport().set_timeout(ctx.timeout)\n"
 	contents += tabtabtab + "oprot.write_request_headers(ctx)\n"
-	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
+	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", parser.LowercaseFirstLetter(method.Name))
 	contents += tabtabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
 	for _, arg := range method.Arguments {
 		contents += tabtabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
@@ -1072,36 +1074,35 @@ func (g *Generator) generateClientConstructor(service *parser.Service, async boo
 		contents += "class Client(Iface):\n\n"
 	}
 
-	contents += tab + "def __init__(self, transport, protocol_factory, middleware=None):\n"
+	contents += tab + "def __init__(self, provider, middleware=None):\n"
 	docstring := []string{
-		"Create a new Client with a transport and protocol factory.\n",
+		"Create a new Client with an FServiceProvider containing a transport",
+		"and protocol factory.\n",
 		"Args:",
 	}
 	if async {
-		docstring = append(docstring, tab+"transport: FTransport")
+		docstring = append(docstring, tab+"provider: FServiceProvider")
 	} else {
-		docstring = append(docstring, tab+"transport: FSynchronousTransport")
+		docstring = append(docstring, tab+"provider: FServiceProvider with FSynchronousTransport")
 	}
-	docstring = append(
-		docstring,
-		tab+"protocol_factory: FProtocolFactory",
-		tab+"middleware: ServiceMiddleware or list of ServiceMiddleware",
-	)
+	docstring = append(docstring, tab+"middleware: ServiceMiddleware or list of ServiceMiddleware")
 	contents += g.generateDocString(docstring, tabtab)
+	contents += tabtab + "middleware = middleware or []\n"
 	contents += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	contents += tabtabtab + "middleware = [middleware]\n"
 	if service.Extends != "" {
-		contents += tabtab + "super(Client, self).__init__(transport, protocol_factory,\n"
-		contents += tabtab + "                             middleware=middleware)\n"
+		contents += tabtab + "super(Client, self).__init__(provider, middleware=middleware)\n"
+		contents += tabtab + "middleware += provider.get_middleware()\n"
 		contents += tabtab + "self._methods.update("
 	} else {
-		contents += tabtab + "self._transport = transport\n"
-		contents += tabtab + "self._protocol_factory = protocol_factory\n"
-		contents += tabtab + "self._oprot = protocol_factory.get_protocol(transport)\n"
+		contents += tabtab + "self._transport = provider.get_transport()\n"
+		contents += tabtab + "self._protocol_factory = provider.get_protocol_factory()\n"
+		contents += tabtab + "self._oprot = self._protocol_factory.get_protocol(self._transport)\n"
 		if !async {
-			contents += tabtab + "self._iprot = protocol_factory.get_protocol(transport)\n"
+			contents += tabtab + "self._iprot = self._protocol_factory.get_protocol(self._transport)\n"
 		}
 		contents += tabtab + "self._write_lock = Lock()\n"
+		contents += tabtab + "middleware += provider.get_middleware()\n"
 		contents += tabtab + "self._methods = "
 	}
 	contents += "{\n"
@@ -1182,13 +1183,14 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 	}
 	for _, method := range service.Methods {
 		contents += tabtab + fmt.Sprintf("self.add_to_processor_map('%s', _%s(Method(handler.%s, middleware), self.get_write_lock()))\n",
-			method.Name, method.Name, method.Name)
+			parser.LowercaseFirstLetter(method.Name), method.Name, method.Name)
 	}
 	contents += "\n\n"
 	return contents
 }
 
 func (g *Generator) generateProcessorFunction(method *parser.Method) string {
+	methodLower := parser.LowercaseFirstLetter(method.Name)
 	contents := ""
 	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
@@ -1218,18 +1220,18 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	contents += tabtabtab + "with self._lock:\n"
 	contents += tabtabtabtab +
 		fmt.Sprintf("_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
-			method.Name)
+			methodLower)
 	contents += tabtabtabtab + "return\n"
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", method.Name)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", methodLower)
 	}
 	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {
 		contents += tabtab + "with self._lock:\n"
 		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
-		contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", method.Name)
+		contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", methodLower)
 		contents += tabtabtab + "result.write(oprot)\n"
 		contents += tabtabtab + "oprot.writeMessageEnd()\n"
 		contents += tabtabtab + "oprot.get_transport().flush()\n"

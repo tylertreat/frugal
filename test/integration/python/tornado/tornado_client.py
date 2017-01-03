@@ -8,6 +8,7 @@ sys.path.append('..')
 
 from frugal.context import FContext
 from frugal.provider import FScopeProvider
+from frugal.provider import FServiceProvider
 
 from frugal.tornado.transport import (
     FNatsPublisherTransportFactory,
@@ -66,7 +67,7 @@ def main():
         logging.error(ex)
         raise gen.Return()
 
-    client = FrugalTestClient(transport, protocol_factory, client_middleware)
+    client = FrugalTestClient(FServiceProvider(transport, protocol_factory), client_middleware)
 
     ctx = FContext("test")
 

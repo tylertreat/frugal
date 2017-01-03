@@ -32,13 +32,14 @@ type FStoreClient struct {
 	methods         map[string]*frugal.Method
 }
 
-func NewFStoreClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FStoreClient {
+func NewFStoreClient(provider *frugal.FServiceProvider, middleware ...frugal.ServiceMiddleware) *FStoreClient {
 	methods := make(map[string]*frugal.Method)
 	client := &FStoreClient{
-		transport:       t,
-		protocolFactory: p,
+		transport:       provider.GetTransport(),
+		protocolFactory: provider.GetProtocolFactory(),
 		methods:         methods,
 	}
+	middleware = append(middleware, provider.GetMiddleware()...)
 	methods["buyAlbum"] = frugal.NewMethod(client, client.buyAlbum, "buyAlbum", middleware)
 	methods["enterAlbumGiveaway"] = frugal.NewMethod(client, client.enterAlbumGiveaway, "enterAlbumGiveaway", middleware)
 	return client
@@ -134,14 +135,9 @@ func (f *FStoreClient) recvBuyAlbumHandler(ctx frugal.FContext, resultC chan<- *
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
-				err = frugal.ErrRateLimitExceeded
-				errorC <- err
-				return nil
-			}
 			err = error1
 			errorC <- err
-			return err
+			return nil
 		}
 		if mTypeId != thrift.REPLY {
 			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "buyAlbum failed: invalid message type")
@@ -256,14 +252,9 @@ func (f *FStoreClient) recvEnterAlbumGiveawayHandler(ctx frugal.FContext, result
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
-				err = frugal.ErrRateLimitExceeded
-				errorC <- err
-				return nil
-			}
 			err = error1
 			errorC <- err
-			return err
+			return nil
 		}
 		if mTypeId != thrift.REPLY {
 			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "enterAlbumGiveaway failed: invalid message type")
@@ -291,7 +282,13 @@ type FStoreProcessor struct {
 func NewFStoreProcessor(handler FStore, middleware ...frugal.ServiceMiddleware) *FStoreProcessor {
 	p := &FStoreProcessor{frugal.NewFBaseProcessor()}
 	p.AddToProcessorMap("buyAlbum", &storeFBuyAlbum{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.BuyAlbum, "BuyAlbum", middleware))})
+	p.AddToAnnotationsMap("buyAlbum", map[string]string{
+		"auth": "false",
+	})
 	p.AddToProcessorMap("enterAlbumGiveaway", &storeFEnterAlbumGiveaway{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.EnterAlbumGiveaway, "EnterAlbumGiveaway", middleware))})
+	p.AddToAnnotationsMap("enterAlbumGiveaway", map[string]string{
+		"foo": "bar",
+	})
 	return p
 }
 
@@ -321,9 +318,13 @@ func (p *storeFBuyAlbum) Process(ctx frugal.FContext, iprot, oprot *frugal.FProt
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		if err2 == frugal.ErrRateLimitExceeded {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
 			p.GetWriteMutex().Lock()
-			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "buyAlbum", "Rate limit exceeded")
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("buyAlbum", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
 			p.GetWriteMutex().Unlock()
 			return nil
 		}
@@ -406,9 +407,13 @@ func (p *storeFEnterAlbumGiveaway) Process(ctx frugal.FContext, iprot, oprot *fr
 		err2 = ret[1].(error)
 	}
 	if err2 != nil {
-		if err2 == frugal.ErrRateLimitExceeded {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
 			p.GetWriteMutex().Lock()
-			storeWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", "Rate limit exceeded")
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("enterAlbumGiveaway", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
 			p.GetWriteMutex().Unlock()
 			return nil
 		}

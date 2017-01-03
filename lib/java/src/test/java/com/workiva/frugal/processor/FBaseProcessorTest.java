@@ -28,18 +28,20 @@ import static org.mockito.Mockito.when;
 public class FBaseProcessorTest {
 
     private final String oneWay = "oneWay";
-    private HashMap<String, FProcessorFunction> map;
+    private Map<String, FProcessorFunction> procMap;
     private FProcessorFunction oneWayFunction;
+    private Map<String, Map<String, String>> annoMap;
     private FBaseProcessor processor;
     private FProtocol iprot;
     private FProtocol oprot;
 
     @Before
     public void setUp() throws Exception {
-        map = new HashMap<>();
+        procMap = new HashMap<>();
+        annoMap = new HashMap<>();
         oneWayFunction = mock(FProcessorFunction.class);
 
-        processor = new TestFProcessor(map);
+        processor = new TestFProcessor(procMap, annoMap);
 
         iprot = mock(FProtocol.class);
         oprot = mock(FProtocol.class);
@@ -48,7 +50,7 @@ public class FBaseProcessorTest {
     @Test
     public void testProcess() throws Exception {
 
-        map.put(oneWay, oneWayFunction);
+        procMap.put(oneWay, oneWayFunction);
 
         FContext ctx = new FContext();
         TMessage thriftMessage = new TMessage(oneWay, (byte) 0x00, 1);
@@ -86,17 +88,35 @@ public class FBaseProcessorTest {
         }
     }
 
+    @Test
+    public void testGetAnnotationsMap() {
+        Map<String, String> fooMap = new HashMap<>();
+        fooMap.put("foo", "bar");
+        annoMap.put("baz", fooMap);
+
+        Map<String, Map<String, String>> actualMap = processor.getAnnotationsMap();
+        assertEquals(fooMap, actualMap.get("baz"));
+    }
+
     private class TestFProcessor extends FBaseProcessor {
 
         private Map<String, FProcessorFunction> procMap;
+        private Map<String, Map<String, String>> annoMap;
 
-        public TestFProcessor(Map<String, FProcessorFunction> procMap) {
+        public TestFProcessor(Map<String, FProcessorFunction> procMap,
+                              Map<String, Map<String, String>> annoMap) {
             this.procMap = procMap;
+            this.annoMap = annoMap;
         }
 
         @Override
         public Map<String, FProcessorFunction> getProcessMap() {
             return procMap;
+        }
+
+        @Override
+        protected Map<String, Map<String, String>> getAnnotationsMap() {
+            return annoMap;
         }
 
         @Override

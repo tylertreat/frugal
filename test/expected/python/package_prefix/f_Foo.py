@@ -34,19 +34,20 @@ class Iface(generic_package_prefix.actual_base.python.f_BaseFoo.Iface):
 
 class Client(generic_package_prefix.actual_base.python.f_BaseFoo.Client, Iface):
 
-    def __init__(self, transport, protocol_factory, middleware=None):
+    def __init__(self, provider, middleware=None):
         """
-        Create a new Client with a transport and protocol factory.
+        Create a new Client with an FServiceProvider containing a transport
+        and protocol factory.
 
         Args:
-            transport: FSynchronousTransport
-            protocol_factory: FProtocolFactory
+            provider: FServiceProvider with FSynchronousTransport
             middleware: ServiceMiddleware or list of ServiceMiddleware
         """
+        middleware = middleware or []
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
-        super(Client, self).__init__(transport, protocol_factory,
-                                     middleware=middleware)
+        super(Client, self).__init__(provider, middleware=middleware)
+        middleware += provider.get_middleware()
         self._methods.update({
             'get_thing': Method(self._get_thing, middleware),
         })

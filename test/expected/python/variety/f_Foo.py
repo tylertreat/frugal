@@ -36,7 +36,7 @@ class Iface(actual_base.python.f_BaseFoo.Iface):
     a frugal Context for each service call.
     """
 
-    def ping(self, ctx):
+    def Ping(self, ctx):
         """
         Ping the server.
         
@@ -121,21 +121,22 @@ class Iface(actual_base.python.f_BaseFoo.Iface):
 
 class Client(actual_base.python.f_BaseFoo.Client, Iface):
 
-    def __init__(self, transport, protocol_factory, middleware=None):
+    def __init__(self, provider, middleware=None):
         """
-        Create a new Client with a transport and protocol factory.
+        Create a new Client with an FServiceProvider containing a transport
+        and protocol factory.
 
         Args:
-            transport: FSynchronousTransport
-            protocol_factory: FProtocolFactory
+            provider: FServiceProvider with FSynchronousTransport
             middleware: ServiceMiddleware or list of ServiceMiddleware
         """
+        middleware = middleware or []
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
-        super(Client, self).__init__(transport, protocol_factory,
-                                     middleware=middleware)
+        super(Client, self).__init__(provider, middleware=middleware)
+        middleware += provider.get_middleware()
         self._methods.update({
-            'ping': Method(self._ping, middleware),
+            'Ping': Method(self._Ping, middleware),
             'blah': Method(self._blah, middleware),
             'oneWay': Method(self._oneWay, middleware),
             'bin_method': Method(self._bin_method, middleware),
@@ -146,31 +147,31 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             'use_subdir_struct': Method(self._use_subdir_struct, middleware),
         })
 
-    def ping(self, ctx):
+    def Ping(self, ctx):
         """
         Ping the server.
         
         Args:
             ctx: FContext
         """
-        return self._methods['ping']([ctx])
+        return self._methods['Ping']([ctx])
 
-    def _ping(self, ctx):
-        self._send_ping(ctx)
-        self._recv_ping(ctx)
+    def _Ping(self, ctx):
+        self._send_Ping(ctx)
+        self._recv_Ping(ctx)
 
-    def _send_ping(self, ctx):
+    def _send_Ping(self, ctx):
         oprot = self._oprot
         with self._write_lock:
             oprot.get_transport().set_timeout(ctx.timeout)
             oprot.write_request_headers(ctx)
             oprot.writeMessageBegin('ping', TMessageType.CALL, 0)
-            args = ping_args()
+            args = Ping_args()
             args.write(oprot)
             oprot.writeMessageEnd()
             oprot.get_transport().flush()
 
-    def _recv_ping(self, ctx):
+    def _recv_Ping(self, ctx):
         self._iprot.read_response_headers(ctx)
         _, mtype, _ = self._iprot.readMessageBegin()
         if mtype == TMessageType.EXCEPTION:
@@ -180,7 +181,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
                 raise FRateLimitException(x.message)
             raise x
-        result = ping_result()
+        result = Ping_result()
         result.read(self._iprot)
         self._iprot.readMessageEnd()
         return
@@ -550,7 +551,7 @@ class Processor(actual_base.python.f_BaseFoo.Processor):
             middleware = [middleware]
 
         super(Processor, self).__init__(handler, middleware=middleware)
-        self.add_to_processor_map('ping', _ping(Method(handler.ping, middleware), self.get_write_lock()))
+        self.add_to_processor_map('ping', _Ping(Method(handler.Ping, middleware), self.get_write_lock()))
         self.add_to_processor_map('blah', _blah(Method(handler.blah, middleware), self.get_write_lock()))
         self.add_to_processor_map('oneWay', _oneWay(Method(handler.oneWay, middleware), self.get_write_lock()))
         self.add_to_processor_map('bin_method', _bin_method(Method(handler.bin_method, middleware), self.get_write_lock()))
@@ -561,16 +562,16 @@ class Processor(actual_base.python.f_BaseFoo.Processor):
         self.add_to_processor_map('use_subdir_struct', _use_subdir_struct(Method(handler.use_subdir_struct, middleware), self.get_write_lock()))
 
 
-class _ping(FProcessorFunction):
+class _Ping(FProcessorFunction):
 
     def __init__(self, handler, lock):
-        super(_ping, self).__init__(handler, lock)
+        super(_Ping, self).__init__(handler, lock)
 
     def process(self, ctx, iprot, oprot):
-        args = ping_args()
+        args = Ping_args()
         args.read(iprot)
         iprot.readMessageEnd()
-        result = ping_result()
+        result = Ping_result()
         try:
             self._handler([ctx])
         except FRateLimitException as ex:
@@ -819,7 +820,7 @@ def _write_application_exception(ctx, oprot, typ, method, message):
     oprot.get_transport().flush()
     return x
 
-class ping_args(object):
+class Ping_args(object):
     def read(self, iprot):
         iprot.readStructBegin()
         while True:
@@ -832,7 +833,7 @@ class ping_args(object):
         iprot.readStructEnd()
 
     def write(self, oprot):
-        oprot.writeStructBegin('ping_args')
+        oprot.writeStructBegin('Ping_args')
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -854,7 +855,7 @@ class ping_args(object):
     def __ne__(self, other):
         return not (self == other)
 
-class ping_result(object):
+class Ping_result(object):
     def read(self, iprot):
         iprot.readStructBegin()
         while True:
@@ -867,7 +868,7 @@ class ping_result(object):
         iprot.readStructEnd()
 
     def write(self, oprot):
-        oprot.writeStructBegin('ping_result')
+        oprot.writeStructBegin('Ping_result')
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 

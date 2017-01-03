@@ -24,6 +24,7 @@ import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
+import com.workiva.frugal.provider.FServiceProvider;
 import com.workiva.frugal.transport.FHttpTransport;
 import com.workiva.frugal.transport.FTransport;
 import com.workiva.frugal.transport.FTransportFactory;
@@ -129,7 +130,7 @@ public class TestClient {
             System.exit(1);
         }
 
-        FFrugalTest.Client testClient = new FFrugalTest.Client(fTransport, new FProtocolFactory(protocolFactory), new ClientMiddleware());
+        FFrugalTest.Client testClient = new FFrugalTest.Client(new FServiceProvider(fTransport, new FProtocolFactory(protocolFactory)), new ClientMiddleware());
 
         Insanity insane = new Insanity();
         FContext context = new FContext("");
@@ -153,6 +154,21 @@ public class TestClient {
              */
             String s = testClient.testString(context, "Test");
             if (!s.equals("Test")) {
+                returnCode |= 1;
+                System.out.println("*** FAILURE ***\n");
+            }
+
+            /**
+             * BOOL TESTS
+             */
+            boolean bl = testClient.testBool(context, true);
+            if (!bl) {
+                returnCode |= 1;
+                System.out.println("*** FAILURE ***\n");
+            }
+
+            bl = testClient.testBool(context, false);
+            if (bl) {
                 returnCode |= 1;
                 System.out.println("*** FAILURE ***\n");
             }
@@ -364,6 +380,15 @@ public class TestClient {
                     returnCode |= 1;
                     System.out.println("*** FAILURE ***\n");
                 }
+            }
+
+            /**
+             * BOOL TESTS
+             */
+            boolean uppercase = testClient.TestUppercaseMethod(context, true);
+            if (!uppercase) {
+                returnCode |= 1;
+                System.out.println("*** FAILURE ***\n");
             }
 
             /**

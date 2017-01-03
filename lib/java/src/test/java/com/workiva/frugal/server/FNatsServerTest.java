@@ -19,6 +19,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -207,6 +208,10 @@ public class FNatsServerTest {
         public void addMiddleware(ServiceMiddleware middleware) {
         }
 
+        @Override
+        public Map<String, Map<String, String>> getAnnotations() {
+            return null;
+        }
     }
 
 }
