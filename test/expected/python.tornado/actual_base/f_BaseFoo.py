@@ -11,7 +11,6 @@ from threading import Lock
 
 from frugal.exceptions import FApplicationException
 from frugal.exceptions import FMessageSizeException
-from frugal.exceptions import FRateLimitException
 from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.tornado.processor import FBaseProcessor
@@ -103,9 +102,6 @@ class Client(Iface):
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
                     future.set_exception(FMessageSizeException.response(x.message))
                     return
-                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException(x.message))
-                    return
                 future.set_exception(x)
                 return
             result = basePing_result()
@@ -144,9 +140,9 @@ class _basePing(FProcessorFunction):
         result = basePing_result()
         try:
             yield gen.maybe_future(self._handler([ctx]))
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             with (yield self._lock.acquire()):
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "basePing", ex.message)
+                _write_application_exception(ctx, oprot, method="basePing", exception=ex)
                 return
         except Exception as e:
             with (yield self._lock.acquire()):
@@ -163,8 +159,11 @@ class _basePing(FProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "basePing", e.message)
 
 
-def _write_application_exception(ctx, oprot, typ, method, message):
-    x = TApplicationException(type=typ, message=message)
+def _write_application_exception(ctx, oprot, typ, method, message, exception=None):
+    if(exception != None):
+        x = exception
+    else:
+        x = TApplicationException(type=typ, message=message)
     oprot.write_response_headers(ctx)
     oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
     x.write(oprot)

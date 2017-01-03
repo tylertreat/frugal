@@ -11,7 +11,6 @@ from threading import Lock
 
 from frugal.exceptions import FApplicationException
 from frugal.exceptions import FMessageSizeException
-from frugal.exceptions import FRateLimitException
 from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.tornado.processor import FBaseProcessor
@@ -123,9 +122,6 @@ class Client(Iface):
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
                     future.set_exception(FMessageSizeException.response(x.message))
                     return
-                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException(x.message))
-                    return
                 future.set_exception(x)
                 return
             result = buyAlbum_result()
@@ -191,9 +187,6 @@ class Client(Iface):
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
                     future.set_exception(FMessageSizeException.response(x.message))
                     return
-                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException(x.message))
-                    return
                 future.set_exception(x)
                 return
             result = enterAlbumGiveaway_result()
@@ -222,7 +215,9 @@ class Processor(FBaseProcessor):
 
         super(Processor, self).__init__()
         self.add_to_processor_map('buyAlbum', _buyAlbum(Method(handler.buyAlbum, middleware), self.get_write_lock()))
+        self.add_to_annotations_map('buyAlbum', {'auth': 'false'})
         self.add_to_processor_map('enterAlbumGiveaway', _enterAlbumGiveaway(Method(handler.enterAlbumGiveaway, middleware), self.get_write_lock()))
+        self.add_to_annotations_map('enterAlbumGiveaway', {'foo': 'bar'})
 
 
 class _buyAlbum(FProcessorFunction):
@@ -240,9 +235,9 @@ class _buyAlbum(FProcessorFunction):
             result.success = yield gen.maybe_future(self._handler([ctx, args.ASIN, args.acct]))
         except PurchasingError as error:
             result.error = error
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             with (yield self._lock.acquire()):
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "buyAlbum", ex.message)
+                _write_application_exception(ctx, oprot, method="buyAlbum", exception=ex)
                 return
         except Exception as e:
             with (yield self._lock.acquire()):
@@ -272,9 +267,9 @@ class _enterAlbumGiveaway(FProcessorFunction):
         result = enterAlbumGiveaway_result()
         try:
             result.success = yield gen.maybe_future(self._handler([ctx, args.email, args.name]))
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             with (yield self._lock.acquire()):
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", ex.message)
+                _write_application_exception(ctx, oprot, method="enterAlbumGiveaway", exception=ex)
                 return
         except Exception as e:
             with (yield self._lock.acquire()):
@@ -291,8 +286,11 @@ class _enterAlbumGiveaway(FProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", e.message)
 
 
-def _write_application_exception(ctx, oprot, typ, method, message):
-    x = TApplicationException(type=typ, message=message)
+def _write_application_exception(ctx, oprot, typ, method, message, exception=None):
+    if(exception != None):
+        x = exception
+    else:
+        x = TApplicationException(type=typ, message=message)
     oprot.write_response_headers(ctx)
     oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
     x.write(oprot)

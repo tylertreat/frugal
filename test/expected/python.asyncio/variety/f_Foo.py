@@ -14,7 +14,6 @@ from frugal.aio.processor import FBaseProcessor
 from frugal.aio.processor import FProcessorFunction
 from frugal.exceptions import FApplicationException
 from frugal.exceptions import FMessageSizeException
-from frugal.exceptions import FRateLimitException
 from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.transport import TMemoryOutputBuffer
@@ -197,9 +196,6 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
                     future.set_exception(FMessageSizeException.response(x.message))
                     return
-                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException(x.message))
-                    return
                 future.set_exception(x)
                 return
             result = Ping_result()
@@ -258,9 +254,6 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 iprot.readMessageEnd()
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
                     future.set_exception(FMessageSizeException.response(x.message))
-                    return
-                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
                 return
@@ -354,9 +347,6 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
                     future.set_exception(FMessageSizeException.response(x.message))
                     return
-                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException(x.message))
-                    return
                 future.set_exception(x)
                 return
             result = bin_method_result()
@@ -422,9 +412,6 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
                     future.set_exception(FMessageSizeException.response(x.message))
                     return
-                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException(x.message))
-                    return
                 future.set_exception(x)
                 return
             result = param_modifiers_result()
@@ -485,9 +472,6 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
                     future.set_exception(FMessageSizeException.response(x.message))
                     return
-                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException(x.message))
-                    return
                 future.set_exception(x)
                 return
             result = underlying_types_test_result()
@@ -544,9 +528,6 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
                     future.set_exception(FMessageSizeException.response(x.message))
                     return
-                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException(x.message))
-                    return
                 future.set_exception(x)
                 return
             result = getThing_result()
@@ -602,9 +583,6 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 iprot.readMessageEnd()
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
                     future.set_exception(FMessageSizeException.response(x.message))
-                    return
-                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException(x.message))
                     return
                 future.set_exception(x)
                 return
@@ -664,9 +642,6 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
                     future.set_exception(FMessageSizeException.response(x.message))
                     return
-                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException(x.message))
-                    return
                 future.set_exception(x)
                 return
             result = use_subdir_struct_result()
@@ -719,9 +694,9 @@ class _Ping(FProcessorFunction):
             ret = self._handler([ctx])
             if inspect.iscoroutine(ret):
                 ret = await ret
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             async with self._lock:
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "ping", ex.message)
+                _write_application_exception(ctx, oprot, method="ping", exception=ex)
                 return
         except Exception as e:
             async with self._lock:
@@ -753,9 +728,9 @@ class _blah(FProcessorFunction):
             if inspect.iscoroutine(ret):
                 ret = await ret
             result.success = ret
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             async with self._lock:
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "blah", ex.message)
+                _write_application_exception(ctx, oprot, method="blah", exception=ex)
                 return
         except AwesomeException as awe:
             result.awe = awe
@@ -789,9 +764,9 @@ class _oneWay(FProcessorFunction):
             ret = self._handler([ctx, args.id, args.req])
             if inspect.iscoroutine(ret):
                 ret = await ret
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             async with self._lock:
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "oneWay", ex.message)
+                _write_application_exception(ctx, oprot, method="oneWay", exception=ex)
                 return
         except Exception as e:
             raise e from None
@@ -812,9 +787,9 @@ class _bin_method(FProcessorFunction):
             if inspect.iscoroutine(ret):
                 ret = await ret
             result.success = ret
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             async with self._lock:
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "bin_method", ex.message)
+                _write_application_exception(ctx, oprot, method="bin_method", exception=ex)
                 return
         except actual_base.python.ttypes.api_exception as api:
             result.api = api
@@ -848,9 +823,9 @@ class _param_modifiers(FProcessorFunction):
             if inspect.iscoroutine(ret):
                 ret = await ret
             result.success = ret
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             async with self._lock:
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "param_modifiers", ex.message)
+                _write_application_exception(ctx, oprot, method="param_modifiers", exception=ex)
                 return
         except Exception as e:
             async with self._lock:
@@ -882,9 +857,9 @@ class _underlying_types_test(FProcessorFunction):
             if inspect.iscoroutine(ret):
                 ret = await ret
             result.success = ret
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             async with self._lock:
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "underlying_types_test", ex.message)
+                _write_application_exception(ctx, oprot, method="underlying_types_test", exception=ex)
                 return
         except Exception as e:
             async with self._lock:
@@ -916,9 +891,9 @@ class _getThing(FProcessorFunction):
             if inspect.iscoroutine(ret):
                 ret = await ret
             result.success = ret
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             async with self._lock:
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getThing", ex.message)
+                _write_application_exception(ctx, oprot, method="getThing", exception=ex)
                 return
         except Exception as e:
             async with self._lock:
@@ -950,9 +925,9 @@ class _getMyInt(FProcessorFunction):
             if inspect.iscoroutine(ret):
                 ret = await ret
             result.success = ret
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             async with self._lock:
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getMyInt", ex.message)
+                _write_application_exception(ctx, oprot, method="getMyInt", exception=ex)
                 return
         except Exception as e:
             async with self._lock:
@@ -984,9 +959,9 @@ class _use_subdir_struct(FProcessorFunction):
             if inspect.iscoroutine(ret):
                 ret = await ret
             result.success = ret
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             async with self._lock:
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "use_subdir_struct", ex.message)
+                _write_application_exception(ctx, oprot, method="use_subdir_struct", exception=ex)
                 return
         except Exception as e:
             async with self._lock:
@@ -1003,8 +978,11 @@ class _use_subdir_struct(FProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "use_subdir_struct", e.args[0])
 
 
-def _write_application_exception(ctx, oprot, typ, method, message):
-    x = TApplicationException(type=typ, message=message)
+def _write_application_exception(ctx, oprot, typ, method, message, exception=None):
+    if(exception != None):
+        x = exception
+    else:
+        x = TApplicationException(type=typ, message=message)
     oprot.write_response_headers(ctx)
     oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
     x.write(oprot)

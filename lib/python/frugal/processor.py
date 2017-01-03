@@ -77,8 +77,8 @@ class FBaseProcessor(FProcessor):
     def __init__(self):
         """Create new instance of FBaseProcessor that will process requests."""
         self._processor_function_map = {}
+        self._annotations_map = {}
         self._write_lock = Lock()
-        self._function_map_lock = Lock()
 
     def add_to_processor_map(self, key, proc):
         """Register the given FProcessorFunction.
@@ -87,8 +87,16 @@ class FBaseProcessor(FProcessor):
             key: processor function name
             proc: FProcessorFunction
         """
-        with self._function_map_lock:
-            self._processor_function_map[key] = proc
+        self._processor_function_map[key] = proc
+
+    def add_to_annotations_map(self, key, annotation):
+        """Register the given annotation dictionary
+
+        Args:
+            key: method name
+            annotation: annotation dictionary
+        """
+        self._annotations_map[key] = annotation
 
     def get_write_lock(self):
         """Return the write lock."""
@@ -108,8 +116,7 @@ class FBaseProcessor(FProcessor):
         context = iprot.read_request_headers()
         name, _, _ = iprot.readMessageBegin()
 
-        with self._function_map_lock:
-            processor_function = self._processor_function_map.get(name)
+        processor_function = self._processor_function_map.get(name)
 
         # If the function was in our dict, call process on it.
         if processor_function:

@@ -79,6 +79,7 @@ class FBaseProcessor(FProcessor):
     def __init__(self):
         """Create new instance of FBaseProcessor that will process requests."""
         self._processor_function_map = {}
+        self._annotations_map = {}
         self._write_lock = Lock()
 
     def add_to_processor_map(self, key, proc):
@@ -89,6 +90,15 @@ class FBaseProcessor(FProcessor):
             proc: FProcessorFunction
         """
         self._processor_function_map[key] = proc
+
+    def add_to_annotations_map(self, key, annotation):
+        """Register the given annotation dictionary
+
+        Args:
+            key: method name
+            annotation: annotation dictionary
+        """
+        self._annotations_map[key] = annotation
 
     def get_write_lock(self):
         """Return the write lock."""

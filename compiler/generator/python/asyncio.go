@@ -26,7 +26,6 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from frugal.aio.processor import FProcessorFunction\n"
 	imports += "from frugal.exceptions import FApplicationException\n"
 	imports += "from frugal.exceptions import FMessageSizeException\n"
-	imports += "from frugal.exceptions import FRateLimitException\n"
 	imports += "from frugal.exceptions import FTimeoutException\n"
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.transport import TMemoryOutputBuffer\n"
@@ -197,9 +196,6 @@ func (a *AsyncIOGenerator) generateClientRecvMethod(method *parser.Method) strin
 	contents += tabtabtabtab + "if x.type == FApplicationException.RESPONSE_TOO_LARGE:\n"
 	contents += tabtabtabtabtab + "future.set_exception(FMessageSizeException.response(x.message))\n"
 	contents += tabtabtabtabtab + "return\n"
-	contents += tabtabtabtab + "if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:\n"
-	contents += tabtabtabtabtab + "future.set_exception(FRateLimitException(x.message))\n"
-	contents += tabtabtabtabtab + "return\n"
 	contents += tabtabtabtab + "future.set_exception(x)\n"
 	contents += tabtabtabtab + "return\n"
 	contents += tabtabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
@@ -261,8 +257,17 @@ func (g *AsyncIOGenerator) generateProcessor(service *parser.Service) string {
 		contents += tabtab + "super(Processor, self).__init__()\n"
 	}
 	for _, method := range service.Methods {
+		methodLower := parser.LowercaseFirstLetter(method.Name)
 		contents += tabtab + fmt.Sprintf("self.add_to_processor_map('%s', _%s(Method(handler.%s, middleware), self.get_write_lock()))\n",
-			parser.LowercaseFirstLetter(method.Name), method.Name, method.Name)
+			methodLower, method.Name, method.Name)
+		if len(method.Annotations) > 0 {
+			annotations := make([]string, len(method.Annotations))
+			for i, annotation := range method.Annotations {
+				annotations[i] = fmt.Sprintf("'%s': '%s'", annotation.Name, annotation.Value)
+			}
+			contents += tabtab +
+				fmt.Sprintf("self.add_to_annotations_map('%s', {%s})\n", methodLower, strings.Join(annotations, ", "))
+		}
 	}
 	contents += "\n\n"
 
@@ -292,11 +297,11 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	if method.ReturnType != nil {
 		contents += tabtabtab + "result.success = ret\n"
 	}
-	contents += tabtab + "except FRateLimitException as ex:\n"
+	contents += tabtab + "except TApplicationException as ex:\n"
 	contents += tabtabtab + "async with self._lock:\n"
-	contents += tabtabtabtab + fmt.Sprintf(
-		"_write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
-		methodLower)
+	contents += tabtabtabtab +
+		fmt.Sprintf("_write_application_exception(ctx, oprot, method=\"%s\", exception=ex)\n",
+			methodLower)
 	contents += tabtabtabtab + "return\n"
 	for _, err := range method.Exceptions {
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", a.qualifiedTypeName(err.Type), err.Name)

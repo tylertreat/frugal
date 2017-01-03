@@ -14,7 +14,6 @@ from frugal.aio.processor import FBaseProcessor
 from frugal.aio.processor import FProcessorFunction
 from frugal.exceptions import FApplicationException
 from frugal.exceptions import FMessageSizeException
-from frugal.exceptions import FRateLimitException
 from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.transport import TMemoryOutputBuffer
@@ -97,9 +96,6 @@ class Client(Iface):
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
                     future.set_exception(FMessageSizeException.response(x.message))
                     return
-                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException(x.message))
-                    return
                 future.set_exception(x)
                 return
             result = basePing_result()
@@ -139,9 +135,9 @@ class _basePing(FProcessorFunction):
             ret = self._handler([ctx])
             if inspect.iscoroutine(ret):
                 ret = await ret
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             async with self._lock:
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "basePing", ex.message)
+                _write_application_exception(ctx, oprot, method="basePing", exception=ex)
                 return
         except Exception as e:
             async with self._lock:
@@ -158,8 +154,11 @@ class _basePing(FProcessorFunction):
                 raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "basePing", e.args[0])
 
 
-def _write_application_exception(ctx, oprot, typ, method, message):
-    x = TApplicationException(type=typ, message=message)
+def _write_application_exception(ctx, oprot, typ, method, message, exception=None):
+    if(exception != None):
+        x = exception
+    else:
+        x = TApplicationException(type=typ, message=message)
     oprot.write_response_headers(ctx)
     oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
     x.write(oprot)
