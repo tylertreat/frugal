@@ -32,7 +32,7 @@ func runTestScript(script string, scriptDir string, wg *sync.WaitGroup){
 	out, err := exec.Command("/bin/bash", fullScript).CombinedOutput();
 
 	if err != nil {
-		fmt.Printf("Script '%s' failed with output:\n%s", script, out))
+		fmt.Printf("Script '%s' failed with output:\n%s", script, out)
 	}
 
 
@@ -40,7 +40,7 @@ func runTestScript(script string, scriptDir string, wg *sync.WaitGroup){
 	err2 := writeFile(logFile, out)
 
 	if err2 != nil {
-		fmt.Printf("Writing log file '%s' failed with error:%s", logFile, err2))
+		fmt.Printf("Writing log file '%s' failed with error:%s", logFile, err2)
 	}
 
 	if err != nil || err2 != nil {
