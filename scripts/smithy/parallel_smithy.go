@@ -5,10 +5,14 @@ import (
 	"sync"
 	"io/ioutil"
 	"os"
-	"fmt"
+	log "github.com/Sirupsen/logrus"
 )
 
 func main(){
+	// By setting ForceColors = true, this tricks logrus into thinking it is writing
+	// to a terminal output - this allows linebreaks and colors to be displayed on the
+	// Smithy webview
+	log.SetFormatter(&log.TextFormatter{ForceColors: true})
 
 	testScriptDir := "scripts/smithy/"
 	// For new/removed files, update smithy.yaml to no longer print
@@ -28,11 +32,11 @@ func main(){
 
 func runTestScript(script string, scriptDir string, wg *sync.WaitGroup){
 	fullScript := scriptDir + script
-	fmt.Println("Running script:", script)
+	log.Info("Running script:", script)
 	out, err := exec.Command("/bin/bash", fullScript).CombinedOutput();
 
 	if err != nil {
-		fmt.Printf("Script '%s' failed with output:\n%s", script, out)
+		log.Errorf("Script '%s' failed with output:\n%s", script, out)
 	}
 
 
@@ -40,14 +44,14 @@ func runTestScript(script string, scriptDir string, wg *sync.WaitGroup){
 	err2 := writeFile(logFile, out)
 
 	if err2 != nil {
-		fmt.Printf("Writing log file '%s' failed with error:%s", logFile, err2)
+		log.Errorf("Writing log file '%s' failed with error:%s", logFile, err2)
 	}
 
 	if err != nil || err2 != nil {
 		os.Exit(1)
 	}
 
-	fmt.Println("Test script complete:", script)
+	log.Info("Test script complete:", script)
 	wg.Done()
 
 }
