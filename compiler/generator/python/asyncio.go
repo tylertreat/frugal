@@ -300,7 +300,7 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += tabtab + "except TApplicationException as ex:\n"
 	contents += tabtabtab + "async with self._lock:\n"
 	contents += tabtabtabtab +
-		fmt.Sprintf("_write_application_exception(ctx, oprot, method=\"%s\", exception=ex)\n",
+		fmt.Sprintf("_write_application_exception(ctx, oprot, \"%s\", exception=ex)\n",
 			methodLower)
 	contents += tabtabtabtab + "return\n"
 	for _, err := range method.Exceptions {
@@ -310,7 +310,7 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "async with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.args[0])\n", methodLower)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", type=TApplicationException.UNKNOWN, message=e.args[0])\n", methodLower)
 	}
 	contents += tabtabtab + "raise e from None\n"
 	if !method.Oneway {
@@ -323,7 +323,7 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 		contents += tabtabtabtab + "oprot.get_transport().flush()\n"
 		contents += tabtabtab + "except FMessageSizeException as e:\n"
 		contents += tabtabtabtab + fmt.Sprintf(
-			"raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, \"%s\", e.args[0])\n", methodLower)
+			"raise _write_application_exception(ctx, oprot, \"%s\", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])\n", methodLower)
 	}
 	contents += "\n\n"
 

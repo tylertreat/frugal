@@ -1229,13 +1229,13 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	contents += tabtab + "except TApplicationException as ex:\n"
 	contents += tabtabtab + "with self._lock:\n"
 	contents += tabtabtabtab +
-		fmt.Sprintf("_write_application_exception(ctx, oprot, method=\"%s\", exception=ex)\n",
+		fmt.Sprintf("_write_application_exception(ctx, oprot, \"%s\", exception=ex)\n",
 			methodLower)
 	contents += tabtabtabtab + "return\n"
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", methodLower)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", type=TApplicationException.UNKNOWN, message=e.message)\n", methodLower)
 	}
 	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {
@@ -1248,7 +1248,7 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 		contents += tabtabtabtab + "oprot.get_transport().flush()\n"
 		contents += tabtabtab + "except FMessageSizeException as e:\n"
 		contents += tabtabtabtab + fmt.Sprintf(
-			"raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, \"%s\", e.args[0])\n", methodLower)
+			"raise _write_application_exception(ctx, oprot, \"%s\", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])\n", methodLower)
 	}
 	contents += "\n\n"
 
@@ -1256,8 +1256,8 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 }
 
 func (g *Generator) generateWriteApplicationException() string {
-	contents := "def _write_application_exception(ctx, oprot, typ, method, message, exception=None):\n"
-	contents += tab + "if(exception != None):\n"
+	contents := "def _write_application_exception(ctx, oprot, method, type=None, message=None, exception=None):\n"
+	contents += tab + "if exception is not None:\n"
 	contents += tabtab + "x = exception\n"
 	contents += tab + "else:\n"
 	contents += tabtab + "x = TApplicationException(type=typ, message=message)\n"

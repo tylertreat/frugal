@@ -216,13 +216,13 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += tabtab + "except TApplicationException as ex:\n"
 	contents += tabtabtab + "with (yield self._lock.acquire()):\n"
 	contents += tabtabtabtab +
-		fmt.Sprintf("_write_application_exception(ctx, oprot, method=\"%s\", exception=ex)\n",
+		fmt.Sprintf("_write_application_exception(ctx, oprot, \"%s\", exception=ex)\n",
 			methodLower)
 	contents += tabtabtabtab + "return\n"
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with (yield self._lock.acquire()):\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", methodLower)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", type=TApplicationException.UNKNOWN, message=e.message)\n", methodLower)
 	}
 	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {
@@ -235,7 +235,7 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 		contents += tabtabtabtab + "oprot.get_transport().flush()\n"
 		contents += tabtabtab + "except FMessageSizeException as e:\n"
 		contents += tabtabtabtab + fmt.Sprintf(
-			"raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, \"%s\", e.message)\n", methodLower)
+			"raise _write_application_exception(ctx, oprot, \"%s\", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.message)\n", methodLower)
 	}
 	contents += "\n\n"
 

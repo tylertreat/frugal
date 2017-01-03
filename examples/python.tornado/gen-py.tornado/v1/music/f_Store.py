@@ -237,11 +237,11 @@ class _buyAlbum(FProcessorFunction):
             result.error = error
         except TApplicationException as ex:
             with (yield self._lock.acquire()):
-                _write_application_exception(ctx, oprot, method="buyAlbum", exception=ex)
+                _write_application_exception(ctx, oprot, "buyAlbum", exception=ex)
                 return
         except Exception as e:
             with (yield self._lock.acquire()):
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "buyAlbum", e.message)
+                e = _write_application_exception(ctx, oprot, "buyAlbum", type=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with (yield self._lock.acquire()):
             try:
@@ -251,7 +251,7 @@ class _buyAlbum(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "buyAlbum", e.message)
+                raise _write_application_exception(ctx, oprot, "buyAlbum", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.message)
 
 
 class _enterAlbumGiveaway(FProcessorFunction):
@@ -269,11 +269,11 @@ class _enterAlbumGiveaway(FProcessorFunction):
             result.success = yield gen.maybe_future(self._handler([ctx, args.email, args.name]))
         except TApplicationException as ex:
             with (yield self._lock.acquire()):
-                _write_application_exception(ctx, oprot, method="enterAlbumGiveaway", exception=ex)
+                _write_application_exception(ctx, oprot, "enterAlbumGiveaway", exception=ex)
                 return
         except Exception as e:
             with (yield self._lock.acquire()):
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "enterAlbumGiveaway", e.message)
+                e = _write_application_exception(ctx, oprot, "enterAlbumGiveaway", type=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with (yield self._lock.acquire()):
             try:
@@ -283,11 +283,11 @@ class _enterAlbumGiveaway(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", e.message)
+                raise _write_application_exception(ctx, oprot, "enterAlbumGiveaway", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.message)
 
 
-def _write_application_exception(ctx, oprot, typ, method, message, exception=None):
-    if(exception != None):
+def _write_application_exception(ctx, oprot, method, type=None, message=None, exception=None):
+    if exception is not None:
         x = exception
     else:
         x = TApplicationException(type=typ, message=message)

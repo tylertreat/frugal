@@ -91,14 +91,14 @@ class FBaseProcessor(FProcessor):
         """
         self._processor_function_map[key] = proc
 
-    def add_to_annotations_map(self, key, annotation):
+    def add_to_annotations_map(self, method_name, annotation):
         """Register the given annotation dictionary
 
         Args:
-            key: method name
+            method_name: method name
             annotation: annotation dictionary
         """
-        self._annotations_map[key] = annotation
+        self._annotations_map[method_name] = annotation
 
     def get_write_lock(self):
         """Return the write lock."""

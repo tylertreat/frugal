@@ -142,11 +142,11 @@ class _basePing(FProcessorFunction):
             yield gen.maybe_future(self._handler([ctx]))
         except TApplicationException as ex:
             with (yield self._lock.acquire()):
-                _write_application_exception(ctx, oprot, method="basePing", exception=ex)
+                _write_application_exception(ctx, oprot, "basePing", exception=ex)
                 return
         except Exception as e:
             with (yield self._lock.acquire()):
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "basePing", e.message)
+                e = _write_application_exception(ctx, oprot, "basePing", type=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with (yield self._lock.acquire()):
             try:
@@ -156,11 +156,11 @@ class _basePing(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "basePing", e.message)
+                raise _write_application_exception(ctx, oprot, "basePing", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.message)
 
 
-def _write_application_exception(ctx, oprot, typ, method, message, exception=None):
-    if(exception != None):
+def _write_application_exception(ctx, oprot, method, type=None, message=None, exception=None):
+    if exception is not None:
         x = exception
     else:
         x = TApplicationException(type=typ, message=message)
