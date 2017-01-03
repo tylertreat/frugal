@@ -90,7 +90,7 @@ class FStatelessNatsTornadoServer(FServer):
         oprot = self._oprot_factory.get_protocol(out_transport)
 
         try:
-            self._processor.process(iprot, oprot)
+            yield gen.maybe_future(self._processor.process(iprot, oprot))
         except TException as ex:
             logger.exception(ex)
             return
