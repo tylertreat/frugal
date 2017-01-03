@@ -2738,7 +2738,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	if service.Extends != "" {
 		contents += tabtabtab + "super(provider, middleware);\n"
 	}
-	contents += tabtabtab + "Iface client = new InternalClient(provider.getTransport(), provider.getProtocolFactory());\n"
+	contents += tabtabtab + "Iface client = new InternalClient(provider);\n"
 	contents += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
 	contents += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
 	contents += tabtabtab + "middleware = combined.toArray(new ServiceMiddleware[0]);\n"
@@ -2800,12 +2800,12 @@ func (g *Generator) generateInternalClient(service *parser.Service) string {
 	contents += tabtab + "private FTransport transport;\n"
 	contents += tabtab + "private FProtocolFactory protocolFactory;\n"
 
-	contents += tabtab + "public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {\n"
+	contents += tabtab + "public InternalClient(FServiceProvider provider) {\n"
 	if service.Extends != "" {
-		contents += tabtabtab + "super(transport, protocolFactory);\n"
+		contents += tabtabtab + "super(provider);\n"
 	}
-	contents += tabtabtab + "this.transport = transport;\n"
-	contents += tabtabtab + "this.protocolFactory = protocolFactory;\n"
+	contents += tabtabtab + "this.transport = provider.getTransport();\n"
+	contents += tabtabtab + "this.protocolFactory = provider.getProtocolFactory();\n"
 	contents += tabtab + "}\n\n"
 
 	for _, method := range service.Methods {

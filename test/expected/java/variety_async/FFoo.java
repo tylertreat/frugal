@@ -104,7 +104,7 @@ public class FFoo {
 
 		public Client(FServiceProvider provider, ServiceMiddleware... middleware) {
 			super(provider, middleware);
-			Iface client = new InternalClient(provider.getTransport(), provider.getProtocolFactory());
+			Iface client = new InternalClient(provider);
 			List<ServiceMiddleware> combined = Arrays.asList(middleware);
 			combined.addAll(provider.getMiddleware());
 			middleware = combined.toArray(new ServiceMiddleware[0]);
@@ -245,10 +245,10 @@ public class FFoo {
 
 		private FTransport transport;
 		private FProtocolFactory protocolFactory;
-		public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {
-			super(transport, protocolFactory);
-			this.transport = transport;
-			this.protocolFactory = protocolFactory;
+		public InternalClient(FServiceProvider provider) {
+			super(provider);
+			this.transport = provider.getTransport();
+			this.protocolFactory = provider.getProtocolFactory();
 		}
 
 		/**
