@@ -158,23 +158,3 @@ func (f *FBaseProcessorFunction) AddMiddleware(middleware ServiceMiddleware) {
 func (f *FBaseProcessorFunction) InvokeMethod(args []interface{}) Results {
 	return f.handler.Invoke(args)
 }
-
-// FProcessorFactory produces FProcessors and is used by an FServer. It takes a
-// TTransport and returns an FProcessor wrapping it.
-type FProcessorFactory interface {
-	GetProcessor(trans thrift.TTransport) FProcessor
-}
-
-type fProcessorFactory struct {
-	processor FProcessor
-}
-
-// NewFProcessorFactory creates a new FProcessorFactory for creating new
-// FProcessors.
-func NewFProcessorFactory(p FProcessor) FProcessorFactory {
-	return &fProcessorFactory{processor: p}
-}
-
-func (p *fProcessorFactory) GetProcessor(trans thrift.TTransport) FProcessor {
-	return p.processor
-}
