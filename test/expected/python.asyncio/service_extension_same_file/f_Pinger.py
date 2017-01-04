@@ -14,7 +14,6 @@ from frugal.aio.processor import FBaseProcessor
 from frugal.aio.processor import FProcessorFunction
 from frugal.exceptions import FApplicationException
 from frugal.exceptions import FMessageSizeException
-from frugal.exceptions import FRateLimitException
 from frugal.exceptions import FTimeoutException
 from frugal.middleware import Method
 from frugal.transport import TMemoryOutputBuffer
@@ -97,9 +96,6 @@ class Client(f_BasePinger.Client, Iface):
                 if x.type == FApplicationException.RESPONSE_TOO_LARGE:
                     future.set_exception(FMessageSizeException.response(x.message))
                     return
-                if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:
-                    future.set_exception(FRateLimitException(x.message))
-                    return
                 future.set_exception(x)
                 return
             result = ping_result()
@@ -139,13 +135,13 @@ class _ping(FProcessorFunction):
             ret = self._handler([ctx])
             if inspect.iscoroutine(ret):
                 ret = await ret
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             async with self._lock:
-                _write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "ping", ex.message)
+                _write_application_exception(ctx, oprot, "ping", exception=ex)
                 return
         except Exception as e:
             async with self._lock:
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "ping", e.args[0])
+                e = _write_application_exception(ctx, oprot, "ping", type=TApplicationException.UNKNOWN, message=e.args[0])
             raise e from None
         async with self._lock:
             try:
@@ -155,11 +151,14 @@ class _ping(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, "ping", e.args[0])
+                raise _write_application_exception(ctx, oprot, "ping", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
-def _write_application_exception(ctx, oprot, typ, method, message):
-    x = TApplicationException(type=typ, message=message)
+def _write_application_exception(ctx, oprot, method, type=None, message=None, exception=None):
+    if exception is not None:
+        x = exception
+    else:
+        x = TApplicationException(type=typ, message=message)
     oprot.write_response_headers(ctx)
     oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
     x.write(oprot)
