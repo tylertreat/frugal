@@ -1,3 +1,4 @@
+import copy
 import logging
 
 from thrift.Thrift import TApplicationException
@@ -99,6 +100,10 @@ class FBaseProcessor(FProcessor):
             annotation: annotation dictionary
         """
         self._annotations_map[method_name] = annotation
+
+    def get_annotations_map(self):
+        """Return a deepcopy of the annotations map"""
+        return copy.deepcopy(self._annotations_map)
 
     def get_write_lock(self):
         """Return the write lock."""
