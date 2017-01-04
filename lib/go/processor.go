@@ -101,10 +101,16 @@ func (f *FBaseProcessor) AddToAnnotationsMap(method string, annotations map[stri
 
 // Annotations returns a map of method name to annotations as defined in
 // the service IDL that is serviced by this processor.
-// TODO: Need to deep copy the nested maps to avoid consumers mutating this
-// TODO: reference.
 func (f *FBaseProcessor) Annotations() map[string]map[string]string {
-	return f.annotationsMap
+	annoCopy := make(map[string]map[string]string)
+	for k, v := range f.annotationsMap {
+		methodCopy := make(map[string]string)
+		for mk, mv := range v {
+			methodCopy[mk] = mv
+		}
+		annoCopy[k] = methodCopy
+	}
+	return annoCopy
 }
 
 // GetWriteMutex returns the Mutex which FProcessorFunctions should use to
