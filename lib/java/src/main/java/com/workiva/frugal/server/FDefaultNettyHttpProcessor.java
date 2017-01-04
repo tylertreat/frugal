@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -69,7 +70,7 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
     }
 
     /**
-     * Create a new HTTP processer, setting the input and output protocol.
+     * Create a new HTTP processor, setting the input and output protocol.
      *
      * @param processor       Frugal request processor
      * @param protocolFactory input and output protocol
@@ -117,8 +118,8 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
      *
      * @param inputBuffer an input frame
      * @return The processes frame as an output buffer
-     * @throws TException  if error processing frame
-     * @throws IOException if frame is invalid error processing frame
+     * @throws TException  if an application error occurred when processing a validly formed frame
+     * @throws IOException if the frame is invalid, not conforming to the Frugal protocol
      */
     public ByteBuf processFrame(ByteBuf inputBuffer) throws TException, IOException {
         // Read base64 encoded input
@@ -159,19 +160,31 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
             outputBuffer = processFrame(body);
         } catch (TException e) {
             LOGGER.error("Frugal processor returned unhandled error:", e);
+            String errorMessage = "";
+            if (e.getMessage() != null) {
+                errorMessage = e.getMessage();
+            }
             return new DefaultFullHttpResponse(
                     HTTP_1_1,
-                    INTERNAL_SERVER_ERROR);
+                    INTERNAL_SERVER_ERROR,
+                    Unpooled.copiedBuffer(errorMessage.getBytes()));
+
         } catch (IOException e) {
             LOGGER.error("Frugal processor invalid frame:", e);
+            String errorMessage = "";
+            if (e.getMessage() != null) {
+                errorMessage = e.getMessage();
+            }
             return new DefaultFullHttpResponse(
                     HTTP_1_1,
-                    BAD_REQUEST);
+                    BAD_REQUEST,
+                    Unpooled.copiedBuffer(errorMessage.getBytes()));
         }
 
         Integer responseLimit = getResponseLimit(request.headers());
         if (responseLimit > 0 && outputBuffer.readableBytes() > responseLimit) {
-            LOGGER.error("Response size too large for client");
+            LOGGER.error("Response size too large for client." +
+                    " Received: " + outputBuffer.readableBytes() + ", Limit: " + responseLimit);
             return new DefaultFullHttpResponse(
                     HTTP_1_1,
                     REQUEST_ENTITY_TOO_LARGE);
@@ -205,19 +218,7 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
      * @param value Header value
      */
     public void addCustomHeader(final String key, final String value) {
-        this.customHeaders.add(new Map.Entry<String, String>() {
-            public String getKey() {
-                return key;
-            }
-
-            public String getValue() {
-                return value;
-            }
-
-            public String setValue(String value) {
-                return null;
-            }
-        });
+        this.customHeaders.add(new AbstractMap.SimpleEntry<>(key, value));
     }
 
     /**
