@@ -74,7 +74,7 @@ public class FBaseFoo {
 		private Iface proxy;
 
 		public Client(FServiceProvider provider, ServiceMiddleware... middleware) {
-			Iface client = new InternalClient(provider.getTransport(), provider.getProtocolFactory());
+			Iface client = new InternalClient(provider);
 			List<ServiceMiddleware> combined = Arrays.asList(middleware);
 			combined.addAll(provider.getMiddleware());
 			middleware = combined.toArray(new ServiceMiddleware[0]);
@@ -91,9 +91,9 @@ public class FBaseFoo {
 
 		private FTransport transport;
 		private FProtocolFactory protocolFactory;
-		public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {
-			this.transport = transport;
-			this.protocolFactory = protocolFactory;
+		public InternalClient(FServiceProvider provider) {
+			this.transport = provider.getTransport();
+			this.protocolFactory = provider.getProtocolFactory();
 		}
 
 		public void basePing(FContext ctx) throws TException {
