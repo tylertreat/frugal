@@ -119,3 +119,23 @@ func TestFBaseProcessorNoProcessorFunction(t *testing.T) {
 	assert.Equal(t, "Unknown function ping", appErr.Error())
 	mockTransport.AssertExpectations(t)
 }
+
+// Ensures FBaseProcessor correctly returns the annotations stored on the
+// processor.
+func TestFBaseProcessorAnnotations(t *testing.T) {
+	assert := assert.New(t)
+	processor := NewFBaseProcessor()
+	processor.AddToAnnotationsMap("foo", map[string]string{
+		"bar":   "baz",
+		"boosh": "boom",
+	})
+	annoMap := processor.Annotations()
+	assert.Equal("baz", annoMap["foo"]["bar"])
+	assert.Equal("boom", annoMap["foo"]["boosh"])
+
+	// Verify that we cannot modify the underlying map
+	delete(annoMap, "foo")
+	annoMap = processor.Annotations()
+	assert.Equal("baz", annoMap["foo"]["bar"])
+	assert.Equal("boom", annoMap["foo"]["boosh"])
+}
