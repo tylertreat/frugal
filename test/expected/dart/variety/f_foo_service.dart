@@ -47,20 +47,22 @@ abstract class FFoo extends t_actual_base_dart.FBaseFoo {
 class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   Map<String, frugal.FMethod> _methods;
 
-  FFooClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware])
-      : super(transport, protocolFactory) {
-    _transport = transport;
-    _protocolFactory = protocolFactory;
+  FFooClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware])
+      : super(provider, middleware) {
+    _transport = provider.transport;
+    _protocolFactory = provider.protocolFactory;
+    var combined = middleware ?? [];
+    combined.addAll(provider.middleware);
     this._methods = {};
-    this._methods['ping'] = new frugal.FMethod(this._ping, 'Foo', 'ping', middleware);
-    this._methods['blah'] = new frugal.FMethod(this._blah, 'Foo', 'blah', middleware);
-    this._methods['oneWay'] = new frugal.FMethod(this._oneWay, 'Foo', 'oneWay', middleware);
-    this._methods['bin_method'] = new frugal.FMethod(this._bin_method, 'Foo', 'bin_method', middleware);
-    this._methods['param_modifiers'] = new frugal.FMethod(this._param_modifiers, 'Foo', 'param_modifiers', middleware);
-    this._methods['underlying_types_test'] = new frugal.FMethod(this._underlying_types_test, 'Foo', 'underlying_types_test', middleware);
-    this._methods['getThing'] = new frugal.FMethod(this._getThing, 'Foo', 'getThing', middleware);
-    this._methods['getMyInt'] = new frugal.FMethod(this._getMyInt, 'Foo', 'getMyInt', middleware);
-    this._methods['use_subdir_struct'] = new frugal.FMethod(this._use_subdir_struct, 'Foo', 'use_subdir_struct', middleware);
+    this._methods['ping'] = new frugal.FMethod(this._ping, 'Foo', 'ping', combined);
+    this._methods['blah'] = new frugal.FMethod(this._blah, 'Foo', 'blah', combined);
+    this._methods['oneWay'] = new frugal.FMethod(this._oneWay, 'Foo', 'oneWay', combined);
+    this._methods['bin_method'] = new frugal.FMethod(this._bin_method, 'Foo', 'bin_method', combined);
+    this._methods['param_modifiers'] = new frugal.FMethod(this._param_modifiers, 'Foo', 'param_modifiers', combined);
+    this._methods['underlying_types_test'] = new frugal.FMethod(this._underlying_types_test, 'Foo', 'underlying_types_test', combined);
+    this._methods['getThing'] = new frugal.FMethod(this._getThing, 'Foo', 'getThing', combined);
+    this._methods['getMyInt'] = new frugal.FMethod(this._getMyInt, 'Foo', 'getMyInt', combined);
+    this._methods['use_subdir_struct'] = new frugal.FMethod(this._use_subdir_struct, 'Foo', 'use_subdir_struct', combined);
   }
 
   frugal.FTransport _transport;
@@ -84,13 +86,13 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
       var oprot = _protocolFactory.getProtocol(memoryBuffer);
       oprot.writeRequestHeader(ctx);
       oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
-      ping_args args = new ping_args();
+      Ping_args args = new Ping_args();
       args.write(oprot);
       oprot.writeMessageEnd();
       await _transport.send(memoryBuffer.writeBytes);
 
       return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
-        throw new frugal.FTimeoutError.withMessage("Foo.ping timed out after ${ctx.timeout}");
+        throw new frugal.FTimeoutError.withMessage("Foo.Ping timed out after ${ctx.timeout}");
       });
     } finally {
       closeSubscription.cancel();
@@ -111,14 +113,11 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
-        ping_result result = new ping_result();
+        Ping_result result = new Ping_result();
         result.read(iprot);
         iprot.readMessageEnd();
         controller.add(null);
@@ -178,11 +177,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         blah_result result = new blah_result();
@@ -276,11 +272,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         bin_method_result result = new bin_method_result();
@@ -353,11 +346,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         param_modifiers_result result = new param_modifiers_result();
@@ -425,11 +415,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         underlying_types_test_result result = new underlying_types_test_result();
@@ -495,11 +482,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         getThing_result result = new getThing_result();
@@ -565,11 +549,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         getMyInt_result result = new getMyInt_result();
@@ -636,11 +617,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         use_subdir_struct_result result = new use_subdir_struct_result();
@@ -664,12 +642,12 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
 
 }
 
-class ping_args implements thrift.TBase {
-  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("ping_args");
+class Ping_args implements thrift.TBase {
+  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("Ping_args");
 
 
 
-  ping_args() {
+  Ping_args() {
   }
 
   getFieldValue(int fieldID) {
@@ -724,7 +702,7 @@ class ping_args implements thrift.TBase {
   }
 
   String toString() {
-    StringBuffer ret = new StringBuffer("ping_args(");
+    StringBuffer ret = new StringBuffer("Ping_args(");
 
     ret.write(")");
 
@@ -736,12 +714,12 @@ class ping_args implements thrift.TBase {
     // check that fields of type enum have valid values
   }
 }
-class ping_result implements thrift.TBase {
-  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("ping_result");
+class Ping_result implements thrift.TBase {
+  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("Ping_result");
 
 
 
-  ping_result() {
+  Ping_result() {
   }
 
   getFieldValue(int fieldID) {
@@ -796,7 +774,7 @@ class ping_result implements thrift.TBase {
   }
 
   String toString() {
-    StringBuffer ret = new StringBuffer("ping_result(");
+    StringBuffer ret = new StringBuffer("Ping_result(");
 
     ret.write(")");
 

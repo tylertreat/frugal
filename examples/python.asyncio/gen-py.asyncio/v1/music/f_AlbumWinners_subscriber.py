@@ -40,8 +40,10 @@ class AlbumWinnersSubscriber(object):
             middleware: ServiceMiddleware or list of ServiceMiddleware
         """
 
+        middleware = middleware or []
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
+        middleware += provider.get_middleware()
         self._middleware = middleware
         self._provider = provider
 

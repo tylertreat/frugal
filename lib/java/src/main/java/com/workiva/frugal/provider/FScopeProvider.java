@@ -1,16 +1,22 @@
 package com.workiva.frugal.provider;
 
+import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.transport.FPublisherTransport;
 import com.workiva.frugal.transport.FPublisherTransportFactory;
 import com.workiva.frugal.transport.FSubscriberTransport;
 import com.workiva.frugal.transport.FSubscriberTransportFactory;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * FScopeProvider produces FPublisherTransports, FSubscriberTransports, and
  * FProtocols for use by pub/sub scopes. It does this by wrapping an
  * FPublisherTransportFactory, an FSubscriberTransportFactory, and an
- * FProtocolFactory.
+ * FProtocolFactory. This also provides a shim for adding middleware to a
+ * publisher or subscriber.
  */
 public class FScopeProvider {
 
@@ -42,7 +48,7 @@ public class FScopeProvider {
         private FSubscriberTransport transport;
         private FProtocolFactory protocolFactory;
 
-        private Subscriber (FSubscriberTransport t, FProtocolFactory pf) {
+        private Subscriber(FSubscriberTransport t, FProtocolFactory pf) {
             transport = t;
             protocolFactory = pf;
         }
@@ -59,12 +65,14 @@ public class FScopeProvider {
     private FPublisherTransportFactory publisherTransportFactory;
     private FSubscriberTransportFactory subscriberTransportFactory;
     private FProtocolFactory protocolFactory;
+    private List<ServiceMiddleware> middleware;
 
     public FScopeProvider(FPublisherTransportFactory ptf, FSubscriberTransportFactory stf,
-                          FProtocolFactory pf) {
+                          FProtocolFactory pf, ServiceMiddleware ...middleware) {
         publisherTransportFactory = ptf;
         subscriberTransportFactory = stf;
         protocolFactory = pf;
+        this.middleware = Arrays.asList(middleware);
     }
 
     /**
@@ -87,5 +95,9 @@ public class FScopeProvider {
     public Subscriber buildSubscriber() {
         FSubscriberTransport transport = subscriberTransportFactory.getTransport();
         return new Subscriber(transport, protocolFactory);
+    }
+
+    public List<ServiceMiddleware> getMiddleware() {
+        return new ArrayList<>(middleware);
     }
 }

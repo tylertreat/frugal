@@ -46,6 +46,7 @@ import com.workiva.frugal.processor.FBaseProcessor;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFunction;
 import com.workiva.frugal.protocol.*;
+import com.workiva.frugal.provider.FServiceProvider;
 import com.workiva.frugal.transport.FTransport;
 import com.workiva.frugal.transport.TMemoryOutputBuffer;
 import org.apache.thrift.TApplicationException;
@@ -55,6 +56,7 @@ import org.apache.thrift.protocol.TMessageType;
 import org.apache.thrift.transport.TTransport;
 
 import javax.annotation.Generated;
+import java.util.Arrays;
 import java.util.concurrent.*;
 
 
@@ -71,8 +73,11 @@ public class FBaseFoo {
 
 		private Iface proxy;
 
-		public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {
-			Iface client = new InternalClient(transport, protocolFactory);
+		public Client(FServiceProvider provider, ServiceMiddleware... middleware) {
+			Iface client = new InternalClient(provider);
+			List<ServiceMiddleware> combined = Arrays.asList(middleware);
+			combined.addAll(provider.getMiddleware());
+			middleware = combined.toArray(new ServiceMiddleware[0]);
 			proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);
 		}
 
@@ -86,9 +91,9 @@ public class FBaseFoo {
 
 		private FTransport transport;
 		private FProtocolFactory protocolFactory;
-		public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {
-			this.transport = transport;
-			this.protocolFactory = protocolFactory;
+		public InternalClient(FServiceProvider provider) {
+			this.transport = provider.getTransport();
+			this.protocolFactory = provider.getProtocolFactory();
 		}
 
 		public void basePing(FContext ctx) throws TException {
@@ -135,24 +140,15 @@ public class FBaseFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-								TException ex = e;
-								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-									ex = FMessageSizeException.response(e.getMessage());
-								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
-									ex = new FRateLimitException(e.getMessage());
-								}
-								try {
-									result.put(ex);
-									return;
-								} catch (InterruptedException ie) {
-									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "basePing interrupted: " + ie.getMessage());
-								}
+							TException returnedException = e;
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+								returnedException = FMessageSizeException.response(e.getMessage());
 							}
 							try {
-								result.put(e);
-							} finally {
-								throw e;
+								result.put(returnedException);
+								return;
+							} catch (InterruptedException ie) {
+								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "basePing interrupted: " + ie.getMessage());
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -193,6 +189,11 @@ public class FBaseFoo {
 			return processMap;
 		}
 
+		protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {
+			java.util.Map<String, java.util.Map<String, String>> annotationsMap = new java.util.HashMap<>();
+			return annotationsMap;
+		}
+
 		@Override
 		public void addMiddleware(ServiceMiddleware middleware) {
 			handler = InvocationHandler.composeMiddleware(handler, Iface.class, new ServiceMiddleware[]{middleware});
@@ -216,8 +217,10 @@ public class FBaseFoo {
 				basePing_result result = new basePing_result();
 				try {
 					handler.basePing(ctx);
-				} catch (FRateLimitException e) {
-					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "basePing", e.getMessage());
+				} catch (TApplicationException e) {
+					oprot.writeResponseHeader(ctx);
+					oprot.writeMessageBegin(new TMessage("basePing", TMessageType.EXCEPTION, 0));
+					e.write(oprot);
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {

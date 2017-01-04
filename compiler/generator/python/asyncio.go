@@ -26,7 +26,6 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from frugal.aio.processor import FProcessorFunction\n"
 	imports += "from frugal.exceptions import FApplicationException\n"
 	imports += "from frugal.exceptions import FMessageSizeException\n"
-	imports += "from frugal.exceptions import FRateLimitException\n"
 	imports += "from frugal.exceptions import FTimeoutException\n"
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.transport import TMemoryOutputBuffer\n"
@@ -95,23 +94,25 @@ func (a *AsyncIOGenerator) generateClient(service *parser.Service) string {
 		contents += "class Client(Iface):\n\n"
 	}
 
-	contents += tab + "def __init__(self, transport, protocol_factory, middleware=None):\n"
+	contents += tab + "def __init__(self, provider, middleware=None):\n"
 	contents += a.generateDocString([]string{
-		"Create a new Client with a transport and protocol factory.\n",
+		"Create a new Client with an FServiceProvider containing a transport",
+		"and protocol factory.\n",
 		"Args:",
-		tab + "transport: FTransport",
-		tab + "protocol_factory: FProtocolFactory",
+		tab + "provider: FServiceProvider",
 		tab + "middleware: ServiceMiddleware or list of ServiceMiddleware",
 	}, tabtab)
+	contents += tabtab + "middleware = middleware or []\n"
 	contents += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	contents += tabtabtab + "middleware = [middleware]\n"
 	if service.Extends != "" {
-		contents += tabtab + "super(Client, self).__init__(transport, protocol_factory,\n"
-		contents += tabtab + "                             middleware=middleware)\n"
+		contents += tabtab + "super(Client, self).__init__(provider, middleware=middleware)\n"
+		contents += tabtab + "middleware += provider.get_middleware()\n"
 		contents += tabtab + "self._methods.update("
 	} else {
-		contents += tabtab + "self._transport = transport\n"
-		contents += tabtab + "self._protocol_factory = protocol_factory\n"
+		contents += tabtab + "self._transport = provider.get_transport()\n"
+		contents += tabtab + "self._protocol_factory = provider.get_protocol_factory()\n"
+		contents += tabtab + "middleware += provider.get_middleware()\n"
 		contents += tabtab + "self._methods = "
 	}
 	contents += "{\n"
@@ -170,7 +171,7 @@ func (a *AsyncIOGenerator) generateClientSendMethod(method *parser.Method) strin
 	contents += tabtab + "buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())\n"
 	contents += tabtab + "oprot = self._protocol_factory.get_protocol(buffer)\n"
 	contents += tabtab + "oprot.write_request_headers(ctx)\n"
-	contents += tabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
+	contents += tabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", parser.LowercaseFirstLetter(method.Name))
 	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
 	for _, arg := range method.Arguments {
 		contents += tabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
@@ -194,9 +195,6 @@ func (a *AsyncIOGenerator) generateClientRecvMethod(method *parser.Method) strin
 	contents += tabtabtabtab + "iprot.readMessageEnd()\n"
 	contents += tabtabtabtab + "if x.type == FApplicationException.RESPONSE_TOO_LARGE:\n"
 	contents += tabtabtabtabtab + "future.set_exception(FMessageSizeException.response(x.message))\n"
-	contents += tabtabtabtabtab + "return\n"
-	contents += tabtabtabtab + "if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:\n"
-	contents += tabtabtabtabtab + "future.set_exception(FRateLimitException(x.message))\n"
 	contents += tabtabtabtabtab + "return\n"
 	contents += tabtabtabtab + "future.set_exception(x)\n"
 	contents += tabtabtabtab + "return\n"
@@ -259,8 +257,17 @@ func (g *AsyncIOGenerator) generateProcessor(service *parser.Service) string {
 		contents += tabtab + "super(Processor, self).__init__()\n"
 	}
 	for _, method := range service.Methods {
+		methodLower := parser.LowercaseFirstLetter(method.Name)
 		contents += tabtab + fmt.Sprintf("self.add_to_processor_map('%s', _%s(Method(handler.%s, middleware), self.get_write_lock()))\n",
-			method.Name, method.Name, method.Name)
+			methodLower, method.Name, method.Name)
+		if len(method.Annotations) > 0 {
+			annotations := make([]string, len(method.Annotations))
+			for i, annotation := range method.Annotations {
+				annotations[i] = fmt.Sprintf("'%s': '%s'", annotation.Name, annotation.Value)
+			}
+			contents += tabtab +
+				fmt.Sprintf("self.add_to_annotations_map('%s', {%s})\n", methodLower, strings.Join(annotations, ", "))
+		}
 	}
 	contents += "\n\n"
 
@@ -268,6 +275,7 @@ func (g *AsyncIOGenerator) generateProcessor(service *parser.Service) string {
 }
 
 func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) string {
+	methodLower := parser.LowercaseFirstLetter(method.Name)
 	contents := ""
 	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
@@ -289,11 +297,11 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	if method.ReturnType != nil {
 		contents += tabtabtab + "result.success = ret\n"
 	}
-	contents += tabtab + "except FRateLimitException as ex:\n"
+	contents += tabtab + "except TApplicationException as ex:\n"
 	contents += tabtabtab + "async with self._lock:\n"
-	contents += tabtabtabtab + fmt.Sprintf(
-		"_write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
-		method.Name)
+	contents += tabtabtabtab +
+		fmt.Sprintf("_write_application_exception(ctx, oprot, \"%s\", exception=ex)\n",
+			methodLower)
 	contents += tabtabtabtab + "return\n"
 	for _, err := range method.Exceptions {
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", a.qualifiedTypeName(err.Type), err.Name)
@@ -302,20 +310,20 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "async with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.args[0])\n", method.Name)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", type=TApplicationException.UNKNOWN, message=e.args[0])\n", methodLower)
 	}
 	contents += tabtabtab + "raise e from None\n"
 	if !method.Oneway {
 		contents += tabtab + "async with self._lock:\n"
 		contents += tabtabtab + "try:\n"
 		contents += tabtabtabtab + "oprot.write_response_headers(ctx)\n"
-		contents += tabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", method.Name)
+		contents += tabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", methodLower)
 		contents += tabtabtabtab + "result.write(oprot)\n"
 		contents += tabtabtabtab + "oprot.writeMessageEnd()\n"
 		contents += tabtabtabtab + "oprot.get_transport().flush()\n"
 		contents += tabtabtab + "except FMessageSizeException as e:\n"
 		contents += tabtabtabtab + fmt.Sprintf(
-			"raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, \"%s\", e.args[0])\n", method.Name)
+			"raise _write_application_exception(ctx, oprot, \"%s\", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])\n", methodLower)
 	}
 	contents += "\n\n"
 
@@ -341,8 +349,10 @@ func (a *AsyncIOGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope
 		tab + "middleware: ServiceMiddleware or list of ServiceMiddleware",
 	}, tabtab)
 	subscriber += "\n"
+	subscriber += tabtab + "middleware = middleware or []\n"
 	subscriber += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	subscriber += tabtabtab + "middleware = [middleware]\n"
+	subscriber += tabtab + "middleware += provider.get_middleware()\n"
 	subscriber += tabtab + "self._middleware = middleware\n"
 	subscriber += tabtab + "self._provider = provider\n\n"
 

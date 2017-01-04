@@ -11,6 +11,7 @@ import org.apache.thrift.protocol.TType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -22,6 +23,7 @@ public abstract class FBaseProcessor implements FProcessor {
     protected static final Object WRITE_LOCK = new Object();
 
     private Map<String, FProcessorFunction> processMap;
+    private Map<String, Map<String, String>> annotationsMap;
 
     @Override
     public void process(FProtocol iprot, FProtocol oprot) throws TException {
@@ -65,4 +67,19 @@ public abstract class FBaseProcessor implements FProcessor {
      * @return FProcessorFunction map
      */
     protected abstract Map<String, FProcessorFunction> getProcessMap();
+
+    /**
+     * Returns the map of method names to annotations.
+     *
+     * @return annotations map
+     */
+    protected abstract Map<String, Map<String, String>> getAnnotationsMap();
+
+    @Override
+    public Map<String, Map<String, String>> getAnnotations() {
+        if (annotationsMap == null) {
+            annotationsMap = getAnnotationsMap();
+        }
+        return new HashMap<>(annotationsMap);
+    }
 }

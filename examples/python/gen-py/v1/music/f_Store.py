@@ -9,7 +9,7 @@
 from threading import Lock
 
 from frugal.middleware import Method
-from frugal.exceptions import FRateLimitException
+from frugal.exceptions import FApplicationException, FMessageSizeException
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
 from thrift.Thrift import TApplicationException
@@ -45,22 +45,24 @@ class Iface(object):
 
 class Client(Iface):
 
-    def __init__(self, transport, protocol_factory, middleware=None):
+    def __init__(self, provider, middleware=None):
         """
-        Create a new Client with a transport and protocol factory.
+        Create a new Client with an FServiceProvider containing a transport
+        and protocol factory.
 
         Args:
-            transport: FSynchronousTransport
-            protocol_factory: FProtocolFactory
+            provider: FServiceProvider with FSynchronousTransport
             middleware: ServiceMiddleware or list of ServiceMiddleware
         """
+        middleware = middleware or []
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
-        self._transport = transport
-        self._protocol_factory = protocol_factory
-        self._oprot = protocol_factory.get_protocol(transport)
-        self._iprot = protocol_factory.get_protocol(transport)
+        self._transport = provider.get_transport()
+        self._protocol_factory = provider.get_protocol_factory()
+        self._oprot = self._protocol_factory.get_protocol(self._transport)
+        self._iprot = self._protocol_factory.get_protocol(self._transport)
         self._write_lock = Lock()
+        middleware += provider.get_middleware()
         self._methods = {
             'buyAlbum': Method(self._buyAlbum, middleware),
             'enterAlbumGiveaway': Method(self._enterAlbumGiveaway, middleware),
@@ -99,8 +101,8 @@ class Client(Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
-            if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
-                raise FRateLimitException(x.message)
+            if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                raise FMessageSizeException.response(x.message)
             raise x
         result = buyAlbum_result()
         result.read(self._iprot)
@@ -145,8 +147,8 @@ class Client(Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
-            if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
-                raise FRateLimitException(x.message)
+            if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                raise FMessageSizeException.response(x.message)
             raise x
         result = enterAlbumGiveaway_result()
         result.read(self._iprot)
@@ -170,7 +172,9 @@ class Processor(FBaseProcessor):
 
         super(Processor, self).__init__()
         self.add_to_processor_map('buyAlbum', _buyAlbum(Method(handler.buyAlbum, middleware), self.get_write_lock()))
+        self.add_to_annotations_map('buyAlbum', {'auth': 'false'})
         self.add_to_processor_map('enterAlbumGiveaway', _enterAlbumGiveaway(Method(handler.enterAlbumGiveaway, middleware), self.get_write_lock()))
+        self.add_to_annotations_map('enterAlbumGiveaway', {'foo': 'bar'})
 
 
 class _buyAlbum(FProcessorFunction):
@@ -187,20 +191,23 @@ class _buyAlbum(FProcessorFunction):
             result.success = self._handler([ctx, args.ASIN, args.acct])
         except PurchasingError as error:
             result.error = error
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             with self._lock:
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "buyAlbum", ex.message)
+                _write_application_exception(ctx, oprot, "buyAlbum", exception=ex)
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "buyAlbum", e.message)
+                e = _write_application_exception(ctx, oprot, "buyAlbum", type=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with self._lock:
-            oprot.write_response_headers(ctx)
-            oprot.writeMessageBegin('buyAlbum', TMessageType.REPLY, 0)
-            result.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('buyAlbum', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, "buyAlbum", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
 class _enterAlbumGiveaway(FProcessorFunction):
@@ -215,24 +222,30 @@ class _enterAlbumGiveaway(FProcessorFunction):
         result = enterAlbumGiveaway_result()
         try:
             result.success = self._handler([ctx, args.email, args.name])
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             with self._lock:
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "enterAlbumGiveaway", ex.message)
+                _write_application_exception(ctx, oprot, "enterAlbumGiveaway", exception=ex)
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "enterAlbumGiveaway", e.message)
+                e = _write_application_exception(ctx, oprot, "enterAlbumGiveaway", type=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with self._lock:
-            oprot.write_response_headers(ctx)
-            oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.REPLY, 0)
-            result.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('enterAlbumGiveaway', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, "enterAlbumGiveaway", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
-def _write_application_exception(ctx, oprot, typ, method, message):
-    x = TApplicationException(type=typ, message=message)
+def _write_application_exception(ctx, oprot, method, type=None, message=None, exception=None):
+    if exception is not None:
+        x = exception
+    else:
+        x = TApplicationException(type=typ, message=message)
     oprot.write_response_headers(ctx)
     oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
     x.write(oprot)

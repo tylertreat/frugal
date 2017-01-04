@@ -27,13 +27,14 @@ type FBaseFooClient struct {
 	methods         map[string]*frugal.Method
 }
 
-func NewFBaseFooClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *FBaseFooClient {
+func NewFBaseFooClient(provider *frugal.FServiceProvider, middleware ...frugal.ServiceMiddleware) *FBaseFooClient {
 	methods := make(map[string]*frugal.Method)
 	client := &FBaseFooClient{
-		transport:       t,
-		protocolFactory: p,
+		transport:       provider.GetTransport(),
+		protocolFactory: provider.GetProtocolFactory(),
 		methods:         methods,
 	}
+	middleware = append(middleware, provider.GetMiddleware()...)
 	methods["basePing"] = frugal.NewMethod(client, client.basePing, "basePing", middleware)
 	return client
 }
@@ -124,14 +125,9 @@ func (f *FBaseFooClient) recvBasePingHandler(ctx frugal.FContext, resultC chan<-
 				errorC <- err
 				return nil
 			}
-			if error1.TypeId() == frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED {
-				err = frugal.ErrRateLimitExceeded
-				errorC <- err
-				return nil
-			}
 			err = error1
 			errorC <- err
-			return err
+			return nil
 		}
 		if mTypeId != thrift.REPLY {
 			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "basePing failed: invalid message type")
@@ -188,9 +184,13 @@ func (p *basefooFBasePing) Process(ctx frugal.FContext, iprot, oprot *frugal.FPr
 		err2 = ret[0].(error)
 	}
 	if err2 != nil {
-		if err2 == frugal.ErrRateLimitExceeded {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
 			p.GetWriteMutex().Lock()
-			basefooWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RATE_LIMIT_EXCEEDED, "basePing", "Rate limit exceeded")
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("basePing", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
 			p.GetWriteMutex().Unlock()
 			return nil
 		}

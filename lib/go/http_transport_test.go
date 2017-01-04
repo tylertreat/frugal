@@ -46,6 +46,10 @@ func (m *mockFProcessorForHTTP) Process(iprot, oprot *FProtocol) error {
 
 func (m *mockFProcessorForHTTP) AddMiddleware(middleware ServiceMiddleware) {}
 
+func (m *mockFProcessorForHTTP) Annotations() map[string]map[string]string {
+	return nil
+}
+
 type mockWriteCloser struct {
 	writeErr error
 	closeErr error

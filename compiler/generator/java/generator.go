@@ -2304,6 +2304,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import com.workiva.frugal.processor.FProcessor;\n"
 	imports += "import com.workiva.frugal.processor.FProcessorFunction;\n"
 	imports += "import com.workiva.frugal.protocol.*;\n"
+	imports += "import com.workiva.frugal.provider.FServiceProvider;\n"
 	imports += "import com.workiva.frugal.transport.FTransport;\n"
 	imports += "import com.workiva.frugal.transport.TMemoryOutputBuffer;\n"
 	imports += "import org.apache.thrift.TApplicationException;\n"
@@ -2313,6 +2314,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import org.apache.thrift.transport.TTransport;\n\n"
 
 	imports += "import javax.annotation.Generated;\n"
+	imports += "import java.util.Arrays;\n"
 	imports += "import java.util.concurrent.*;\n"
 
 	_, err := file.WriteString(imports)
@@ -2334,8 +2336,10 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports += "import org.apache.thrift.transport.TTransportException;\n"
 	imports += "import org.apache.thrift.protocol.*;\n\n"
 
-	imports += "import javax.annotation.Generated;\n"
+	imports += "import java.util.Arrays;\n"
+	imports += "import java.util.List;\n"
 	imports += "import java.util.logging.Logger;\n"
+	imports += "import javax.annotation.Generated;\n"
 
 	_, err := file.WriteString(imports)
 	return err
@@ -2402,6 +2406,9 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 
 	publisher += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
 	publisher += fmt.Sprintf(tabtabtab+"target = new Internal%sPublisher(provider);\n", scopeTitle)
+	publisher += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
+	publisher += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
+	publisher += tabtabtab + "middleware = combined.toArray(new ServiceMiddleware[0]);\n"
 	publisher += tabtabtab + "proxy = InvocationHandler.composeMiddleware(target, Iface.class, middleware);\n"
 	publisher += tabtab + "}\n\n"
 
@@ -2565,7 +2572,9 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 
 	subscriber += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
 	subscriber += tabtabtab + "this.provider = provider;\n"
-	subscriber += tabtabtab + "this.middleware = middleware;\n"
+	subscriber += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
+	subscriber += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
+	subscriber += tabtabtab + "this.middleware = combined.toArray(new ServiceMiddleware[0]);\n"
 	subscriber += tabtab + "}\n\n"
 
 	for _, op := range scope.Operations {
@@ -2725,11 +2734,14 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	}
 	contents += tabtab + "private Iface proxy;\n\n"
 
-	contents += tabtab + "public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {\n"
+	contents += tabtab + "public Client(FServiceProvider provider, ServiceMiddleware... middleware) {\n"
 	if service.Extends != "" {
-		contents += tabtabtab + "super(transport, protocolFactory, middleware);\n"
+		contents += tabtabtab + "super(provider, middleware);\n"
 	}
-	contents += tabtabtab + "Iface client = new InternalClient(transport, protocolFactory);\n"
+	contents += tabtabtab + "Iface client = new InternalClient(provider);\n"
+	contents += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
+	contents += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
+	contents += tabtabtab + "middleware = combined.toArray(new ServiceMiddleware[0]);\n"
 	contents += tabtabtab + "proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);\n"
 	contents += tabtab + "}\n\n"
 
@@ -2788,12 +2800,12 @@ func (g *Generator) generateInternalClient(service *parser.Service) string {
 	contents += tabtab + "private FTransport transport;\n"
 	contents += tabtab + "private FProtocolFactory protocolFactory;\n"
 
-	contents += tabtab + "public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {\n"
+	contents += tabtab + "public InternalClient(FServiceProvider provider) {\n"
 	if service.Extends != "" {
-		contents += tabtabtab + "super(transport, protocolFactory);\n"
+		contents += tabtabtab + "super(provider);\n"
 	}
-	contents += tabtabtab + "this.transport = transport;\n"
-	contents += tabtabtab + "this.protocolFactory = protocolFactory;\n"
+	contents += tabtabtab + "this.transport = provider.getTransport();\n"
+	contents += tabtabtab + "this.protocolFactory = provider.getProtocolFactory();\n"
 	contents += tabtab + "}\n\n"
 
 	for _, method := range service.Methods {
@@ -2805,6 +2817,8 @@ func (g *Generator) generateInternalClient(service *parser.Service) string {
 }
 
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
+	methodLower := parser.LowercaseFirstLetter(method.Name)
+
 	contents := ""
 	if method.Comment != nil {
 		contents += g.GenerateBlockComment(method.Comment, tabtab)
@@ -2825,7 +2839,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	if method.Oneway {
 		msgType = "ONEWAY"
 	}
-	contents += indent + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", method.Name, msgType)
+	contents += indent + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", methodLower, msgType)
 	contents += indent + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
 	for _, arg := range method.Arguments {
 		contents += indent + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
@@ -2884,7 +2898,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtab + "try {\n"
 	contents += tabtabtabtabtabtab + "iprot.readResponseHeader(ctx);\n"
 	contents += tabtabtabtabtabtab + "TMessage message = iprot.readMessageBegin();\n"
-	contents += tabtabtabtabtabtab + fmt.Sprintf("if (!message.name.equals(\"%s\")) {\n", method.Name)
+	contents += tabtabtabtabtabtab + fmt.Sprintf("if (!message.name.equals(\"%s\")) {\n", methodLower)
 	contents += tabtabtabtabtabtabtab + fmt.Sprintf(
 		"throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, \"%s failed: wrong method name\");\n",
 		method.Name)
@@ -2892,26 +2906,17 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtabtabtab + "if (message.type == TMessageType.EXCEPTION) {\n"
 	contents += tabtabtabtabtabtabtab + "TApplicationException e = TApplicationException.read(iprot);\n"
 	contents += tabtabtabtabtabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtabtabtabtabtab + "if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {\n"
-	contents += tabtabtabtabtabtabtabtab + "TException ex = e;\n"
-	contents += tabtabtabtabtabtabtabtab + "if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {\n"
-	contents += tabtabtabtabtabtabtabtabtab + "ex = FMessageSizeException.response(e.getMessage());\n"
-	contents += tabtabtabtabtabtabtabtab + "} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {\n"
-	contents += tabtabtabtabtabtabtabtabtab + "ex = new FRateLimitException(e.getMessage());\n"
-	contents += tabtabtabtabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtabtabtabtab + "try {\n"
-	contents += tabtabtabtabtabtabtabtabtab + "result.put(ex);\n"
-	contents += tabtabtabtabtabtabtabtabtab + "return;\n"
-	contents += tabtabtabtabtabtabtabtab + "} catch (InterruptedException ie) {\n"
-	contents += tabtabtabtabtabtabtabtabtab + fmt.Sprintf(
-		"throw new TApplicationException(TApplicationException.INTERNAL_ERROR, \"%s interrupted: \" + ie.getMessage());\n",
-		method.Name)
-	contents += tabtabtabtabtabtabtabtab + "}\n"
+	contents += tabtabtabtabtabtabtab + "TException returnedException = e;\n"
+	contents += tabtabtabtabtabtabtab + "if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {\n"
+	contents += tabtabtabtabtabtabtabtab + "returnedException = FMessageSizeException.response(e.getMessage());\n"
 	contents += tabtabtabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtabtabtab + "try {\n"
-	contents += tabtabtabtabtabtabtabtab + "result.put(e);\n"
-	contents += tabtabtabtabtabtabtab + "} finally {\n"
-	contents += tabtabtabtabtabtabtabtab + "throw e;\n"
+	contents += tabtabtabtabtabtabtabtab + "result.put(returnedException);\n"
+	contents += tabtabtabtabtabtabtabtab + "return;\n"
+	contents += tabtabtabtabtabtabtab + "} catch (InterruptedException ie) {\n"
+	contents += tabtabtabtabtabtabtabtab + fmt.Sprintf(
+		"throw new TApplicationException(TApplicationException.INTERNAL_ERROR, \"%s interrupted: \" + ie.getMessage());\n",
+		method.Name)
 	contents += tabtabtabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtabtab + "}\n"
 	contents += tabtabtabtabtabtab + "if (message.type != TMessageType.REPLY) {\n"
@@ -2975,9 +2980,27 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtab + "java.util.Map<String, FProcessorFunction> processMap = new java.util.HashMap<>();\n"
 	}
 	for _, method := range service.Methods {
-		contents += tabtabtab + fmt.Sprintf("processMap.put(\"%s\", new %s());\n", method.Name, strings.Title(method.Name))
+		contents += tabtabtab + fmt.Sprintf("processMap.put(\"%s\", new %s());\n", parser.LowercaseFirstLetter(method.Name), strings.Title(method.Name))
 	}
 	contents += tabtabtab + "return processMap;\n"
+	contents += tabtab + "}\n\n"
+
+	contents += tabtab + "protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {\n"
+	if service.Extends != "" {
+		contents += tabtabtab + "java.util.Map<String, java.util.Map<String, String>> annotationsMap = super.getAnnotationsMap();\n"
+	} else {
+		contents += tabtabtab + "java.util.Map<String, java.util.Map<String, String>> annotationsMap = new java.util.HashMap<>();\n"
+	}
+	for _, method := range service.Methods {
+		if len(method.Annotations) > 0 {
+			contents += tabtabtab + fmt.Sprintf("java.util.Map<String, String> %sMap = new java.util.HashMap<>();\n", method.Name)
+			for _, annotation := range method.Annotations {
+				contents += tabtabtab + fmt.Sprintf("%sMap.put(\"%s\", \"%s\");\n", method.Name, annotation.Name, annotation.Value)
+			}
+			contents += tabtabtab + fmt.Sprintf("annotationsMap.put(\"%s\", %sMap);\n", parser.LowercaseFirstLetter(method.Name), method.Name)
+		}
+	}
+	contents += tabtabtab + "return annotationsMap;\n"
 	contents += tabtab + "}\n\n"
 
 	contents += tabtab + "@Override\n"
@@ -2989,6 +3012,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	contents += tabtab + "}\n\n"
 
 	for _, method := range service.Methods {
+		methodLower := parser.LowercaseFirstLetter(method.Name)
 		contents += tabtab + fmt.Sprintf("private class %s implements FProcessorFunction {\n\n", strings.Title(method.Name))
 
 		contents += tabtabtab + "public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {\n"
@@ -3026,22 +3050,23 @@ func (g *Generator) generateServer(service *parser.Service) string {
 			contents += tabtabtabtab + fmt.Sprintf("} catch (%s %s) {\n", g.getJavaTypeFromThriftType(exception.Type), exception.Name)
 			contents += tabtabtabtabtab + fmt.Sprintf("result.%s = %s;\n", exception.Name, exception.Name)
 		}
-		contents += tabtabtabtab + "} catch (FRateLimitException e) {\n"
-		contents += tabtabtabtabtab + fmt.Sprintf("writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, \"%s\", e.getMessage());\n",
-			method.Name)
+		contents += tabtabtabtab + "} catch (TApplicationException e) {\n"
+		contents += tabtabtabtabtab + "oprot.writeResponseHeader(ctx);\n"
+		contents += tabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.EXCEPTION, 0));\n", methodLower)
+		contents += tabtabtabtabtab + "e.write(oprot);\n"
 		contents += tabtabtabtabtab + "return;\n"
 		contents += tabtabtabtab + "} catch (TException e) {\n"
 		contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"
 		contents += tabtabtabtabtabtab + fmt.Sprintf(
 			"e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, \"%s\", \"Internal error processing %s: \" + e.getMessage());\n",
-			method.Name, method.Name)
+			methodLower, method.Name)
 		contents += tabtabtabtabtab + "}\n"
 		contents += tabtabtabtabtab + "throw e;\n"
 		contents += tabtabtabtab + "}\n"
 		contents += tabtabtabtab + "synchronized (WRITE_LOCK) {\n"
 		contents += tabtabtabtabtab + "try {\n"
 		contents += tabtabtabtabtabtab + "oprot.writeResponseHeader(ctx);\n"
-		contents += tabtabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.REPLY, 0));\n", method.Name)
+		contents += tabtabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.REPLY, 0));\n", methodLower)
 		contents += tabtabtabtabtabtab + "result.write(oprot);\n"
 		contents += tabtabtabtabtabtab + "oprot.writeMessageEnd();\n"
 		contents += tabtabtabtabtabtab + "oprot.getTransport().flush();\n"
@@ -3049,7 +3074,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtabtabtab + "if (e instanceof FMessageSizeException) {\n"
 		contents += tabtabtabtabtabtabtab + fmt.Sprintf(
 			"writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \" + e.getMessage());\n",
-			method.Name)
+			methodLower)
 		contents += tabtabtabtabtabtab + "} else {\n"
 		contents += tabtabtabtabtabtabtab + "throw e;\n"
 		contents += tabtabtabtabtabtab + "}\n"

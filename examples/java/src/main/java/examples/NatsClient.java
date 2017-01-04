@@ -2,6 +2,7 @@ package examples;
 
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
+import com.workiva.frugal.provider.FServiceProvider;
 import com.workiva.frugal.transport.FNatsTransport;
 import com.workiva.frugal.transport.FTransport;
 import io.nats.client.Connection;
@@ -34,7 +35,7 @@ public class NatsClient {
         transport.open();
 
         // Create a new client for the music store
-        FStore.Client storeClient = new FStore.Client(transport, protocolFactory);
+        FStore.Client storeClient = new FStore.Client(new FServiceProvider(transport, protocolFactory));
 
         // Request to buy an album
         Album album = storeClient.buyAlbum(new FContext("corr-id-1"), "ASIN-1290AIUBOA89", "ACCOUNT-12345");

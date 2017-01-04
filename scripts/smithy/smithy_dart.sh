@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-CODECOV_TOKEN='bQ4MgjJ0G2Y73v8JNX6L7yMK9679nbYB'
-GORACE="halt_on_error=1"
-
-# DART
 # Wrap up package for pub
 cd $FRUGAL_HOME
 tar -C lib/dart -czf $SMITHY_ROOT/frugal.pub.tgz .

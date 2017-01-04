@@ -35,6 +35,7 @@ func NewAlbumWinnersPublisher(provider *frugal.FScopeProvider, middleware ...fru
 		protocolFactory: protocolFactory,
 		methods:         methods,
 	}
+	middleware = append(middleware, provider.GetMiddleware()...)
 	methods["publishWinner"] = frugal.NewMethod(publisher, publisher.publishWinner, "publishWinner", middleware)
 	return publisher
 }
@@ -92,6 +93,7 @@ type albumWinnersSubscriber struct {
 }
 
 func NewAlbumWinnersSubscriber(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) AlbumWinnersSubscriber {
+	middleware = append(middleware, provider.GetMiddleware()...)
 	return &albumWinnersSubscriber{provider: provider, middleware: middleware}
 }
 

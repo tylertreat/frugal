@@ -9,7 +9,7 @@
 from threading import Lock
 
 from frugal.middleware import Method
-from frugal.exceptions import FRateLimitException
+from frugal.exceptions import FApplicationException, FMessageSizeException
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
 from thrift.Thrift import TApplicationException
@@ -34,19 +34,20 @@ class Iface(generic_package_prefix.actual_base.python.f_BaseFoo.Iface):
 
 class Client(generic_package_prefix.actual_base.python.f_BaseFoo.Client, Iface):
 
-    def __init__(self, transport, protocol_factory, middleware=None):
+    def __init__(self, provider, middleware=None):
         """
-        Create a new Client with a transport and protocol factory.
+        Create a new Client with an FServiceProvider containing a transport
+        and protocol factory.
 
         Args:
-            transport: FSynchronousTransport
-            protocol_factory: FProtocolFactory
+            provider: FServiceProvider with FSynchronousTransport
             middleware: ServiceMiddleware or list of ServiceMiddleware
         """
+        middleware = middleware or []
         if middleware and not isinstance(middleware, list):
             middleware = [middleware]
-        super(Client, self).__init__(transport, protocol_factory,
-                                     middleware=middleware)
+        super(Client, self).__init__(provider, middleware=middleware)
+        middleware += provider.get_middleware()
         self._methods.update({
             'get_thing': Method(self._get_thing, middleware),
         })
@@ -82,8 +83,8 @@ class Client(generic_package_prefix.actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
-            if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:
-                raise FRateLimitException(x.message)
+            if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+                raise FMessageSizeException.response(x.message)
             raise x
         result = get_thing_result()
         result.read(self._iprot)
@@ -121,24 +122,30 @@ class _get_thing(FProcessorFunction):
         result = get_thing_result()
         try:
             result.success = self._handler([ctx, args.the_thing])
-        except FRateLimitException as ex:
+        except TApplicationException as ex:
             with self._lock:
-                _write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, "get_thing", ex.message)
+                _write_application_exception(ctx, oprot, "get_thing", exception=ex)
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, "get_thing", e.message)
+                e = _write_application_exception(ctx, oprot, "get_thing", type=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with self._lock:
-            oprot.write_response_headers(ctx)
-            oprot.writeMessageBegin('get_thing', TMessageType.REPLY, 0)
-            result.write(oprot)
-            oprot.writeMessageEnd()
-            oprot.get_transport().flush()
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('get_thing', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except FMessageSizeException as e:
+                raise _write_application_exception(ctx, oprot, "get_thing", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
-def _write_application_exception(ctx, oprot, typ, method, message):
-    x = TApplicationException(type=typ, message=message)
+def _write_application_exception(ctx, oprot, method, type=None, message=None, exception=None):
+    if exception is not None:
+        x = exception
+    else:
+        x = TApplicationException(type=typ, message=message)
     oprot.write_response_headers(ctx)
     oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)
     x.write(oprot)

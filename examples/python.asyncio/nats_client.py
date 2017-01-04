@@ -10,6 +10,7 @@ from thrift.transport.TTransport import TTransportException
 import uuid
 from frugal.context import FContext
 from frugal.protocol import FProtocolFactory
+from frugal.provider import FServiceProvider
 from frugal.aio.transport import FNatsTransport
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py.asyncio"))
@@ -52,7 +53,7 @@ async def main():
 
     # Using the configured transport and protocol, create a client
     # to talk to the music store service.
-    store_client = FStoreClient(nats_transport, prot_factory,
+    store_client = FStoreClient(FServiceProvider(nats_transport, prot_factory),
                                 middleware=logging_middleware)
 
     album = await store_client.buyAlbum(FContext(),

@@ -1,3 +1,4 @@
+import copy
 import logging
 from asyncio import Lock
 
@@ -77,6 +78,7 @@ class FBaseProcessor(FProcessor):
     def __init__(self):
         """Create new instance of FBaseProcessor that will process requests."""
         self._processor_function_map = {}
+        self._annotations_map = {}
         self._write_lock = Lock()
 
     def add_to_processor_map(self, key: str, proc: FProcessorFunction):
@@ -87,6 +89,19 @@ class FBaseProcessor(FProcessor):
             proc: FProcessorFunction
         """
         self._processor_function_map[key] = proc
+
+    def add_to_annotations_map(self, method_name, annotation):
+        """Register the given annotation dictionary
+
+        Args:
+            method_name: method name
+            annotation: annotation dictionary
+        """
+        self._annotations_map[method_name] = annotation
+
+    def get_annotations_map(self):
+        """Return a deepcopy of the annotations map"""
+        return copy.deepcopy(self._annotations_map)
 
     def get_write_lock(self):
         """Return the write lock."""

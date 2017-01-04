@@ -26,12 +26,14 @@ abstract class FStore {
 class FStoreClient implements FStore {
   Map<String, frugal.FMethod> _methods;
 
-  FStoreClient(frugal.FTransport transport, frugal.FProtocolFactory protocolFactory, [List<frugal.Middleware> middleware]) {
-    _transport = transport;
-    _protocolFactory = protocolFactory;
+  FStoreClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware]) {
+    _transport = provider.transport;
+    _protocolFactory = provider.protocolFactory;
+    var combined = middleware ?? [];
+    combined.addAll(provider.middleware);
     this._methods = {};
-    this._methods['buyAlbum'] = new frugal.FMethod(this._buyAlbum, 'Store', 'buyAlbum', middleware);
-    this._methods['enterAlbumGiveaway'] = new frugal.FMethod(this._enterAlbumGiveaway, 'Store', 'enterAlbumGiveaway', middleware);
+    this._methods['buyAlbum'] = new frugal.FMethod(this._buyAlbum, 'Store', 'buyAlbum', combined);
+    this._methods['enterAlbumGiveaway'] = new frugal.FMethod(this._enterAlbumGiveaway, 'Store', 'enterAlbumGiveaway', combined);
   }
 
   frugal.FTransport _transport;
@@ -83,11 +85,8 @@ class FStoreClient implements FStore {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         buyAlbum_result result = new buyAlbum_result();
@@ -159,11 +158,8 @@ class FStoreClient implements FStore {
             controller.addError(new frugal.FMessageSizeError.response(message: error.message));
             return;
           }
-          if (error.type == frugal.FApplicationError.RATE_LIMIT_EXCEEDED) {
-            controller.addError(new frugal.FRateLimitError(message: error.message));
-            return;
-          }
-          throw error;
+          controller.addError(error);
+          return;
         }
 
         enterAlbumGiveaway_result result = new enterAlbumGiveaway_result();

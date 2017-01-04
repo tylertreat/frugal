@@ -175,7 +175,7 @@ Future _initTestClient(
   await transport.open();
 
   fProtocolFactory = new FProtocolFactory(getProtocolFactory(protocolType));
-  client = new FFrugalTestClient(transport, fProtocolFactory, [clientMiddleware()]);
+  client = new FFrugalTestClient(new FServiceProvider(transport, fProtocolFactory), [clientMiddleware()]);
 }
 
 List<FTest> _createTests() {
@@ -293,6 +293,13 @@ List<FTest> _createTests() {
       throw new FTestError(result, 'Map<int, Map<int, int>>');
     }
   }));
+
+  tests.add(new FTest(1, 'testUppercaseMethod', () async {
+    var input = true;
+    var result = await client.testUppercaseMethod(ctx, input);
+    if (result != input) throw new FTestError(result, input);
+  }));
+
 
   tests.add(new FTest(1, 'testInsanity', () async {
     var input = new Insanity();

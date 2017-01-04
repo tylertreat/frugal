@@ -8,7 +8,7 @@ import (
 // connection.
 type FSimpleServer struct {
 	quit             chan struct{}
-	processorFactory FProcessorFactory
+	processor FProcessor
 	serverTransport  thrift.TServerTransport
 	protocolFactory  *FProtocolFactory
 }
@@ -16,15 +16,15 @@ type FSimpleServer struct {
 // NewFSimpleServer creates a new FSimpleServer which is a simple FServer that
 // starts a goroutine for each connection.
 func NewFSimpleServer(
-	processorFactory FProcessorFactory,
+	processor FProcessor,
 	serverTransport thrift.TServerTransport,
 	protocolFactory *FProtocolFactory) *FSimpleServer {
 
 	return &FSimpleServer{
-		processorFactory: processorFactory,
-		serverTransport:  serverTransport,
-		protocolFactory:  protocolFactory,
-		quit:             make(chan struct{}, 1),
+		processor:       processor,
+		serverTransport: serverTransport,
+		protocolFactory: protocolFactory,
+		quit:            make(chan struct{}, 1),
 	}
 }
 
@@ -75,7 +75,7 @@ func (p *FSimpleServer) accept(client thrift.TTransport) error {
 	framed := NewTFramedTransport(client)
 	iprot := p.protocolFactory.GetProtocol(framed)
 	oprot := p.protocolFactory.GetProtocol(framed)
-	processor := p.processorFactory.GetProcessor(framed)
+	processor := p.processor
 
 	logger().Debug("frugal: client connection accepted")
 

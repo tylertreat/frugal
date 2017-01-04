@@ -70,3 +70,9 @@ class TestFBaseProcessor(unittest.TestCase):
         assert(args[0]._get_op_id() == 1)
         assert(args[1] == iprot)
         assert(args[2] == oprot)
+
+    def test_annotations_map(self):
+        processor = FBaseProcessor()
+        expected = {'foo': 'bar'}
+        processor.add_to_annotations_map('baz', expected)
+        assert(processor._annotations_map['baz'] == expected)

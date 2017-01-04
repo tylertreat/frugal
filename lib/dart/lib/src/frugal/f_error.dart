@@ -16,9 +16,6 @@ class FError extends TError {
 class FApplicationError extends TApplicationError {
   /// Indicates the response was too large for the transport.
   static const int RESPONSE_TOO_LARGE = 100;
-
-  /// Indicates a rate limit was exceeded.
-  static const int RATE_LIMIT_EXCEEDED = 102;
 }
 
 /// Contains [TTransportError] constants.
@@ -44,13 +41,6 @@ class FMessageSizeError extends TTransportError {
   FMessageSizeError.response(
       {String message: "response was too large for the transport"})
       : super(FTransportError.RESPONSE_TOO_LARGE, message);
-}
-
-/// FRateLimitError indicates that an application has breached a rate threshold.
-class FRateLimitError extends TApplicationError {
-  /// Create an [FRateLimitError] with the given message.
-  FRateLimitError({String message: "rate limit exceeded"})
-      : super(FApplicationError.RATE_LIMIT_EXCEEDED, message);
 }
 
 /// Indicates a frugal request timed out.
