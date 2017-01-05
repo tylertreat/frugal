@@ -580,7 +580,7 @@ class _Ping(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "ping", type=TApplicationException.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "ping", typ=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -590,7 +590,7 @@ class _Ping(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, "ping", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
+                raise _write_application_exception(ctx, oprot, "ping", typ=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
 class _blah(FProcessorFunction):
@@ -615,7 +615,7 @@ class _blah(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "blah", type=TApplicationException.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "blah", typ=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -625,7 +625,7 @@ class _blah(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, "blah", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
+                raise _write_application_exception(ctx, oprot, "blah", typ=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
 class _oneWay(FProcessorFunction):
@@ -667,7 +667,7 @@ class _bin_method(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "bin_method", type=TApplicationException.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "bin_method", typ=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -677,7 +677,7 @@ class _bin_method(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, "bin_method", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
+                raise _write_application_exception(ctx, oprot, "bin_method", typ=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
 class _param_modifiers(FProcessorFunction):
@@ -698,7 +698,7 @@ class _param_modifiers(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "param_modifiers", type=TApplicationException.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "param_modifiers", typ=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -708,7 +708,7 @@ class _param_modifiers(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, "param_modifiers", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
+                raise _write_application_exception(ctx, oprot, "param_modifiers", typ=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
 class _underlying_types_test(FProcessorFunction):
@@ -729,7 +729,7 @@ class _underlying_types_test(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "underlying_types_test", type=TApplicationException.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "underlying_types_test", typ=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -739,7 +739,7 @@ class _underlying_types_test(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, "underlying_types_test", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
+                raise _write_application_exception(ctx, oprot, "underlying_types_test", typ=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
 class _getThing(FProcessorFunction):
@@ -760,7 +760,7 @@ class _getThing(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "getThing", type=TApplicationException.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "getThing", typ=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -770,7 +770,7 @@ class _getThing(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, "getThing", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
+                raise _write_application_exception(ctx, oprot, "getThing", typ=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
 class _getMyInt(FProcessorFunction):
@@ -791,7 +791,7 @@ class _getMyInt(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "getMyInt", type=TApplicationException.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "getMyInt", typ=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -801,7 +801,7 @@ class _getMyInt(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, "getMyInt", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
+                raise _write_application_exception(ctx, oprot, "getMyInt", typ=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
 class _use_subdir_struct(FProcessorFunction):
@@ -822,7 +822,7 @@ class _use_subdir_struct(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "use_subdir_struct", type=TApplicationException.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "use_subdir_struct", typ=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -832,10 +832,10 @@ class _use_subdir_struct(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, "use_subdir_struct", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
+                raise _write_application_exception(ctx, oprot, "use_subdir_struct", typ=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
-def _write_application_exception(ctx, oprot, method, type=None, message=None, exception=None):
+def _write_application_exception(ctx, oprot, method, typ=None, message=None, exception=None):
     if exception is not None:
         x = exception
     else:

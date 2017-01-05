@@ -128,7 +128,7 @@ class _get_thing(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "get_thing", type=TApplicationException.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "get_thing", typ=TApplicationException.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -138,10 +138,10 @@ class _get_thing(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, "get_thing", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
+                raise _write_application_exception(ctx, oprot, "get_thing", typ=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
-def _write_application_exception(ctx, oprot, method, type=None, message=None, exception=None):
+def _write_application_exception(ctx, oprot, method, typ=None, message=None, exception=None):
     if exception is not None:
         x = exception
     else:

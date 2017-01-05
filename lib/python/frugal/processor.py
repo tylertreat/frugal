@@ -60,13 +60,17 @@ class FProcessor(object):
         """
         pass
 
-    def add_middleware(self, serviceMiddleware):
+    def add_middleware(self, service_middleware):
         """Adds the given ServiceMiddleware to the FProcessor. This should
         only called before the server is started.
 
         Args:
-            serviceMiddleware: ServiceMiddleware
+            service_middleware: ServiceMiddleware
         """
+        pass
+
+    def get_annotations_map(self):
+        """Return a deepcopy of the annotations map"""
         pass
 
 

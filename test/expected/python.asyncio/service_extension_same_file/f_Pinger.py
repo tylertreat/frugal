@@ -141,7 +141,7 @@ class _ping(FProcessorFunction):
                 return
         except Exception as e:
             async with self._lock:
-                e = _write_application_exception(ctx, oprot, "ping", type=TApplicationException.UNKNOWN, message=e.args[0])
+                e = _write_application_exception(ctx, oprot, "ping", typ=TApplicationException.UNKNOWN, message=e.args[0])
             raise e from None
         async with self._lock:
             try:
@@ -151,10 +151,10 @@ class _ping(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except FMessageSizeException as e:
-                raise _write_application_exception(ctx, oprot, "ping", type=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
+                raise _write_application_exception(ctx, oprot, "ping", typ=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])
 
 
-def _write_application_exception(ctx, oprot, method, type=None, message=None, exception=None):
+def _write_application_exception(ctx, oprot, method, typ=None, message=None, exception=None):
     if exception is not None:
         x = exception
     else:

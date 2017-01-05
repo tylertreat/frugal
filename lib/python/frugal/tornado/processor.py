@@ -71,6 +71,10 @@ class FProcessor(object):
          """
         pass
 
+    def get_annotations_map(self):
+        """Return a deepcopy of the annotations map"""
+        pass
+
 
 class FBaseProcessor(FProcessor):
     """FBaseProcessor is a base implementation of FProcessor. FProcessors
