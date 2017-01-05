@@ -157,9 +157,9 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 		__isset_bitfield = other.__isset_bitfield;
 		if (other.isSetTracks()) {
 			this.tracks = new ArrayList<Track>(other.tracks.size());
-			for (Track elem0 : other.tracks) {
-				Track elem1 = new Track(elem0);
-				this.tracks.add(elem1);
+			for (Track elem12 : other.tracks) {
+				Track elem13 = new Track(elem12);
+				this.tracks.add(elem13);
 			}
 		}
 		this.duration = other.duration;
@@ -518,12 +518,12 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 				switch (schemeField.id) {
 					case 1: // TRACKS
 						if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
-							org.apache.thrift.protocol.TList elem2 = iprot.readListBegin();
-							struct.tracks = new ArrayList<Track>(elem2.size);
-							for (int elem3 = 0; elem3 < elem2.size; ++elem3) {
-								Track elem4 = new Track();
-								elem4.read(iprot);
-								struct.tracks.add(elem4);
+							org.apache.thrift.protocol.TList elem14 = iprot.readListBegin();
+							struct.tracks = new ArrayList<Track>(elem14.size);
+							for (int elem15 = 0; elem15 < elem14.size; ++elem15) {
+								Track elem16 = new Track();
+								elem16.read(iprot);
+								struct.tracks.add(elem16);
 							}
 							iprot.readListEnd();
 							struct.setTracksIsSet(true);
@@ -565,18 +565,20 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 			if (struct.tracks != null) {
 				oprot.writeFieldBegin(TRACKS_FIELD_DESC);
 				oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.tracks.size()));
-				for (Track elem5 : struct.tracks) {
-					elem5.write(oprot);
+				for (Track elem17 : struct.tracks) {
+					elem17.write(oprot);
 				}
 				oprot.writeListEnd();
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldBegin(DURATION_FIELD_DESC);
-			oprot.writeDouble(struct.duration);
+			double elem18 = struct.duration;
+			oprot.writeDouble(elem18);
 			oprot.writeFieldEnd();
 			if (struct.ASIN != null) {
 				oprot.writeFieldBegin(ASIN_FIELD_DESC);
-				oprot.writeString(struct.ASIN);
+				String elem19 = struct.ASIN;
+				oprot.writeString(elem19);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -609,15 +611,17 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 			oprot.writeBitSet(optionals, 3);
 			if (struct.isSetTracks()) {
 				oprot.writeI32(struct.tracks.size());
-				for (Track elem6 : struct.tracks) {
-					elem6.write(oprot);
+				for (Track elem20 : struct.tracks) {
+					elem20.write(oprot);
 				}
 			}
 			if (struct.isSetDuration()) {
-				oprot.writeDouble(struct.duration);
+				double elem21 = struct.duration;
+				oprot.writeDouble(elem21);
 			}
 			if (struct.isSetASIN()) {
-				oprot.writeString(struct.ASIN);
+				String elem22 = struct.ASIN;
+				oprot.writeString(elem22);
 			}
 		}
 
@@ -626,12 +630,12 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 			TTupleProtocol iprot = (TTupleProtocol) prot;
 			BitSet incoming = iprot.readBitSet(3);
 			if (incoming.get(0)) {
-				org.apache.thrift.protocol.TList elem7 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-				struct.tracks = new ArrayList<Track>(elem7.size);
-				for (int elem8 = 0; elem8 < elem7.size; ++elem8) {
-					Track elem9 = new Track();
-					elem9.read(iprot);
-					struct.tracks.add(elem9);
+				org.apache.thrift.protocol.TList elem23 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+				struct.tracks = new ArrayList<Track>(elem23.size);
+				for (int elem24 = 0; elem24 < elem23.size; ++elem24) {
+					Track elem25 = new Track();
+					elem25.read(iprot);
+					struct.tracks.add(elem25);
 				}
 				struct.setTracksIsSet(true);
 			}
