@@ -350,7 +350,8 @@ public class TestLowercase implements org.apache.thrift.TBase<TestLowercase, Tes
 
 			oprot.writeStructBegin(STRUCT_DESC);
 			oprot.writeFieldBegin(LOWERCASE_INT_FIELD_DESC);
-			oprot.writeI32(struct.lowercaseInt);
+			int elem1 = struct.lowercaseInt;
+			oprot.writeI32(elem1);
 			oprot.writeFieldEnd();
 			oprot.writeFieldStop();
 			oprot.writeStructEnd();
@@ -375,7 +376,8 @@ public class TestLowercase implements org.apache.thrift.TBase<TestLowercase, Tes
 			}
 			oprot.writeBitSet(optionals, 1);
 			if (struct.isSetLowercaseInt()) {
-				oprot.writeI32(struct.lowercaseInt);
+				int elem2 = struct.lowercaseInt;
+				oprot.writeI32(elem2);
 			}
 		}
 

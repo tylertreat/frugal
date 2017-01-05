@@ -470,11 +470,13 @@ public class Event implements org.apache.thrift.TBase<Event, Event._Fields>, jav
 
 			oprot.writeStructBegin(STRUCT_DESC);
 			oprot.writeFieldBegin(ID_FIELD_DESC);
-			oprot.writeI64(struct.ID);
+			long elem3 = struct.ID;
+			oprot.writeI64(elem3);
 			oprot.writeFieldEnd();
 			if (struct.Message != null) {
 				oprot.writeFieldBegin(MESSAGE_FIELD_DESC);
-				oprot.writeString(struct.Message);
+				String elem4 = struct.Message;
+				oprot.writeString(elem4);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -503,10 +505,12 @@ public class Event implements org.apache.thrift.TBase<Event, Event._Fields>, jav
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetID()) {
-				oprot.writeI64(struct.ID);
+				long elem5 = struct.ID;
+				oprot.writeI64(elem5);
 			}
 			if (struct.isSetMessage()) {
-				oprot.writeString(struct.Message);
+				String elem6 = struct.Message;
+				oprot.writeString(elem6);
 			}
 		}
 
