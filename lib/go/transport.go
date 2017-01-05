@@ -89,7 +89,7 @@ type FTransport interface {
 
 	// Send transmits the given data. Implementations of send should be
 	// threadsafe.
-	Send([]byte) error
+	Send(FContext, []byte) error
 
 	// GetRequestSizeLimit returns the maximum number of bytes that can be
 	// transmitted. Returns a non-positive number to indicate an unbounded

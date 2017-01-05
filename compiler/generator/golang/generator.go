@@ -1676,7 +1676,7 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 
 	contents += "\tdata := buffer.Bytes()\n"
 
-	contents += "\tif err = f.transport.Send(data); err != nil {\n"
+	contents += "\tif err = f.transport.Send(ctx, data); err != nil {\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n\n"
 

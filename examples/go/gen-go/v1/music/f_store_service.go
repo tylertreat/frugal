@@ -86,7 +86,7 @@ func (f *FStoreClient) buyAlbum(ctx frugal.FContext, asin string, acct string) (
 		return
 	}
 	data := buffer.Bytes()
-	if err = f.transport.Send(data); err != nil {
+	if err = f.transport.Send(ctx, data); err != nil {
 		return
 	}
 
@@ -203,7 +203,7 @@ func (f *FStoreClient) enterAlbumGiveaway(ctx frugal.FContext, email string, nam
 		return
 	}
 	data := buffer.Bytes()
-	if err = f.transport.Send(data); err != nil {
+	if err = f.transport.Send(ctx, data); err != nil {
 		return
 	}
 

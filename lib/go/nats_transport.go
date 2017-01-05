@@ -93,7 +93,7 @@ func (f *fNatsTransport) Close() error {
 }
 
 // Send transmits the given data. The data is expected to already be framed.
-func (f *fNatsTransport) Send(data []byte) error {
+func (f *fNatsTransport) Send(_ FContext, data []byte) error {
 	if !f.IsOpen() {
 		return f.getClosedConditionError("flush:")
 	}

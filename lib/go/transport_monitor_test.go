@@ -310,7 +310,7 @@ func (m *mockFTransport) IsOpen() bool {
 	return args.Get(0).(bool)
 }
 
-func (m *mockFTransport) Send(data []byte) error {
+func (m *mockFTransport) Send(_ FContext, data []byte) error {
 	m.Lock()
 	defer m.Unlock()
 	return m.Called().Error(0)

@@ -37,7 +37,7 @@ func TestFStatelessNatsServer(t *testing.T) {
 
 	// Send a request.
 	message := []byte{0, 0, 0, 5, 1, 2, 3, 4, 5}
-	assert.Nil(t, tr.Send(message))
+	assert.Nil(t, tr.Send(nil, message))
 	time.Sleep(50 * time.Millisecond)
 	r.AssertExpectations(t)
 }

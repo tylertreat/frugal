@@ -166,7 +166,7 @@ func (f *fAdapterTransport) close(cause error) error {
 }
 
 // Send transmits the given data.
-func (f *fAdapterTransport) Send(payload []byte) error {
+func (f *fAdapterTransport) Send(_ FContext, payload []byte) error {
 	if _, err := f.transport.Write(payload); err != nil {
 		return err
 	}

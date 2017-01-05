@@ -2,6 +2,7 @@ package frugal
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
@@ -192,7 +193,7 @@ func (h *fHTTPTransport) Close() error {
 }
 
 // Send transmits the given data. The data is expected to already be framed.
-func (h *fHTTPTransport) Send(data []byte) error {
+func (h *fHTTPTransport) Send(ctx FContext, data []byte) error {
 	if !h.IsOpen() {
 		return h.getClosedConditionError("flush:")
 	}
@@ -208,7 +209,7 @@ func (h *fHTTPTransport) Send(data []byte) error {
 	}
 
 	// Make the HTTP request
-	response, err := h.makeRequest(data)
+	response, err := h.makeRequest(ctx, data)
 	if err != nil {
 		return thrift.NewTTransportExceptionFromError(err)
 	}
@@ -244,7 +245,7 @@ func (h *fHTTPTransport) GetRequestSizeLimit() uint {
 func (h *fHTTPTransport) SetMonitor(monitor FTransportMonitor) {
 }
 
-func (h *fHTTPTransport) makeRequest(requestPayload []byte) ([]byte, error) {
+func (h *fHTTPTransport) makeRequest(fCtx FContext, requestPayload []byte) ([]byte, error) {
 	// Encode request payload
 	encoded := new(bytes.Buffer)
 	encoder := newEncoder(encoded)
@@ -256,10 +257,13 @@ func (h *fHTTPTransport) makeRequest(requestPayload []byte) ([]byte, error) {
 	}
 
 	// Initialize request
+	ctx, cancel := context.WithTimeout(context.Background(), fCtx.Timeout())
+	defer cancel()
 	request, err := http.NewRequest("POST", h.url, encoded)
 	if err != nil {
 		return nil, err
 	}
+	request = request.WithContext(ctx)
 
 	// Add request headers
 	request.Header.Add(contentTypeHeader, frugalContentType)
@@ -272,6 +276,7 @@ func (h *fHTTPTransport) makeRequest(requestPayload []byte) ([]byte, error) {
 	// Make request
 	response, err := h.client.Do(request)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 

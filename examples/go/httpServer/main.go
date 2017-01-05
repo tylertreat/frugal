@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -24,10 +25,8 @@ func main() {
 
 	// Start the server using the configured processor, and protocol
 	http.HandleFunc("/frugal", frugal.NewFrugalHandlerFunc(processor, fProtocolFactory))
-	func() {
-		fmt.Println("Starting the http server...")
-		http.ListenAndServe(":9090", http.DefaultServeMux)
-	}()
+	fmt.Println("Starting the http server...")
+	log.Fatal(http.ListenAndServe(":9090", http.DefaultServeMux))
 }
 
 // StoreHandler handles all incoming requests to the server.

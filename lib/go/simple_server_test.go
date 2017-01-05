@@ -11,7 +11,6 @@ import (
 
 const simpleServerAddr = "localhost:5535"
 
-
 // Ensures FSimpleServer accepts connections.
 func TestSimpleServer(t *testing.T) {
 	mockFProcessor := new(mockFProcessor)
@@ -45,7 +44,7 @@ func TestSimpleServer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Nil(t, fTransport.Send(make([]byte, 10)))
+	assert.Nil(t, fTransport.Send(nil, make([]byte, 10)))
 	time.Sleep(5 * time.Millisecond)
 
 	assert.Nil(t, server.Stop())
