@@ -46,7 +46,6 @@ import com.workiva.frugal.processor.FBaseProcessor;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.processor.FProcessorFunction;
 import com.workiva.frugal.protocol.*;
-import com.workiva.frugal.provider.FServiceProvider;
 import com.workiva.frugal.transport.FTransport;
 import com.workiva.frugal.transport.TMemoryOutputBuffer;
 import org.apache.thrift.TApplicationException;
@@ -56,7 +55,6 @@ import org.apache.thrift.protocol.TMessageType;
 import org.apache.thrift.transport.TTransport;
 
 import javax.annotation.Generated;
-import java.util.Arrays;
 import java.util.concurrent.*;
 
 
@@ -77,22 +75,22 @@ public class FFoo {
 		/**
 		 * Blah the server.
 		 */
-		public long blah(FContext ctx, int num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception;
+		public Long blah(FContext ctx, Integer num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception;
 
 		/**
 		 * oneway methods don't receive a response from the server.
 		 */
-		public void oneWay(FContext ctx, long id, java.util.Map<Integer, String> req) throws TException;
+		public void oneWay(FContext ctx, Long id, java.util.Map<Integer, String> req) throws TException;
 
 		public java.nio.ByteBuffer bin_method(FContext ctx, java.nio.ByteBuffer bin, String Str) throws TException, actual_base.java.api_exception;
 
-		public long param_modifiers(FContext ctx, int opt_num, int default_num, int req_num) throws TException;
+		public Long param_modifiers(FContext ctx, Integer opt_num, Integer default_num, Integer req_num) throws TException;
 
 		public java.util.List<Long> underlying_types_test(FContext ctx, java.util.List<Long> list_type, java.util.Set<Long> set_type) throws TException;
 
 		public Thing getThing(FContext ctx) throws TException;
 
-		public int getMyInt(FContext ctx) throws TException;
+		public Integer getMyInt(FContext ctx) throws TException;
 
 		public A use_subdir_struct(FContext ctx, A a) throws TException;
 
@@ -102,12 +100,9 @@ public class FFoo {
 
 		private Iface proxy;
 
-		public Client(FServiceProvider provider, ServiceMiddleware... middleware) {
-			super(provider, middleware);
-			Iface client = new InternalClient(provider);
-			List<ServiceMiddleware> combined = Arrays.asList(middleware);
-			combined.addAll(provider.getMiddleware());
-			middleware = combined.toArray(new ServiceMiddleware[0]);
+		public Client(FTransport transport, FProtocolFactory protocolFactory, ServiceMiddleware... middleware) {
+			super(transport, protocolFactory, middleware);
+			Iface client = new InternalClient(transport, protocolFactory);
 			proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);
 		}
 
@@ -121,14 +116,14 @@ public class FFoo {
 		/**
 		 * Blah the server.
 		 */
-		public long blah(FContext ctx, int num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception {
+		public Long blah(FContext ctx, Integer num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception {
 			return proxy.blah(ctx, num, Str, event);
 		}
 
 		/**
 		 * oneway methods don't receive a response from the server.
 		 */
-		public void oneWay(FContext ctx, long id, java.util.Map<Integer, String> req) throws TException {
+		public void oneWay(FContext ctx, Long id, java.util.Map<Integer, String> req) throws TException {
 			proxy.oneWay(ctx, id, req);
 		}
 
@@ -136,7 +131,7 @@ public class FFoo {
 			return proxy.bin_method(ctx, bin, Str);
 		}
 
-		public long param_modifiers(FContext ctx, int opt_num, int default_num, int req_num) throws TException {
+		public Long param_modifiers(FContext ctx, Integer opt_num, Integer default_num, Integer req_num) throws TException {
 			return proxy.param_modifiers(ctx, opt_num, default_num, req_num);
 		}
 
@@ -148,7 +143,7 @@ public class FFoo {
 			return proxy.getThing(ctx);
 		}
 
-		public int getMyInt(FContext ctx) throws TException {
+		public Integer getMyInt(FContext ctx) throws TException {
 			return proxy.getMyInt(ctx);
 		}
 
@@ -162,10 +157,10 @@ public class FFoo {
 
 		private FTransport transport;
 		private FProtocolFactory protocolFactory;
-		public InternalClient(FServiceProvider provider) {
-			super(provider);
-			this.transport = provider.getTransport();
-			this.protocolFactory = provider.getProtocolFactory();
+		public InternalClient(FTransport transport, FProtocolFactory protocolFactory) {
+			super(transport, protocolFactory);
+			this.transport = transport;
+			this.protocolFactory = protocolFactory;
 		}
 
 		/**
@@ -215,15 +210,24 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
+								}
+								try {
+									result.put(ex);
+									return;
+								} catch (InterruptedException ie) {
+									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "Ping interrupted: " + ie.getMessage());
+								}
 							}
 							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "Ping interrupted: " + ie.getMessage());
+								result.put(e);
+							} finally {
+								throw e;
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -251,7 +255,7 @@ public class FFoo {
 		/**
 		 * Blah the server.
 		 */
-		public long blah(FContext ctx, int num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception {
+		public Long blah(FContext ctx, Integer num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
@@ -308,15 +312,24 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
+								}
+								try {
+									result.put(ex);
+									return;
+								} catch (InterruptedException ie) {
+									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "blah interrupted: " + ie.getMessage());
+								}
 							}
 							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "blah interrupted: " + ie.getMessage());
+								result.put(e);
+							} finally {
+								throw e;
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -344,7 +357,7 @@ public class FFoo {
 		/**
 		 * oneway methods don't receive a response from the server.
 		 */
-		public void oneWay(FContext ctx, long id, java.util.Map<Integer, String> req) throws TException {
+		public void oneWay(FContext ctx, Long id, java.util.Map<Integer, String> req) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			oprot.writeRequestHeader(ctx);
@@ -409,15 +422,24 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
+								}
+								try {
+									result.put(ex);
+									return;
+								} catch (InterruptedException ie) {
+									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "bin_method interrupted: " + ie.getMessage());
+								}
 							}
 							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "bin_method interrupted: " + ie.getMessage());
+								result.put(e);
+							} finally {
+								throw e;
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -442,7 +464,7 @@ public class FFoo {
 			};
 		}
 
-		public long param_modifiers(FContext ctx, int opt_num, int default_num, int req_num) throws TException {
+		public Long param_modifiers(FContext ctx, Integer opt_num, Integer default_num, Integer req_num) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
@@ -493,15 +515,24 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
+								}
+								try {
+									result.put(ex);
+									return;
+								} catch (InterruptedException ie) {
+									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "param_modifiers interrupted: " + ie.getMessage());
+								}
 							}
 							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "param_modifiers interrupted: " + ie.getMessage());
+								result.put(e);
+							} finally {
+								throw e;
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -576,15 +607,24 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
+								}
+								try {
+									result.put(ex);
+									return;
+								} catch (InterruptedException ie) {
+									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "underlying_types_test interrupted: " + ie.getMessage());
+								}
 							}
 							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "underlying_types_test interrupted: " + ie.getMessage());
+								result.put(e);
+							} finally {
+								throw e;
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -657,15 +697,24 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
+								}
+								try {
+									result.put(ex);
+									return;
+								} catch (InterruptedException ie) {
+									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getThing interrupted: " + ie.getMessage());
+								}
 							}
 							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getThing interrupted: " + ie.getMessage());
+								result.put(e);
+							} finally {
+								throw e;
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -690,7 +739,7 @@ public class FFoo {
 			};
 		}
 
-		public int getMyInt(FContext ctx) throws TException {
+		public Integer getMyInt(FContext ctx) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
@@ -738,15 +787,24 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
+								}
+								try {
+									result.put(ex);
+									return;
+								} catch (InterruptedException ie) {
+									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getMyInt interrupted: " + ie.getMessage());
+								}
 							}
 							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getMyInt interrupted: " + ie.getMessage());
+								result.put(e);
+							} finally {
+								throw e;
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -820,15 +878,24 @@ public class FFoo {
 						if (message.type == TMessageType.EXCEPTION) {
 							TApplicationException e = TApplicationException.read(iprot);
 							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
+							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE || e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+								TException ex = e;
+								if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+									ex = FMessageSizeException.response(e.getMessage());
+								} else if (e.getType() == FApplicationException.RATE_LIMIT_EXCEEDED) {
+									ex = new FRateLimitException(e.getMessage());
+								}
+								try {
+									result.put(ex);
+									return;
+								} catch (InterruptedException ie) {
+									throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "use_subdir_struct interrupted: " + ie.getMessage());
+								}
 							}
 							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "use_subdir_struct interrupted: " + ie.getMessage());
+								result.put(e);
+							} finally {
+								throw e;
 							}
 						}
 						if (message.type != TMessageType.REPLY) {
@@ -878,11 +945,6 @@ public class FFoo {
 			return processMap;
 		}
 
-		protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {
-			java.util.Map<String, java.util.Map<String, String>> annotationsMap = super.getAnnotationsMap();
-			return annotationsMap;
-		}
-
 		@Override
 		public void addMiddleware(ServiceMiddleware middleware) {
 			super.addMiddleware(middleware);
@@ -907,10 +969,8 @@ public class FFoo {
 				Ping_result result = new Ping_result();
 				try {
 					handler.Ping(ctx);
-				} catch (TApplicationException e) {
-					oprot.writeResponseHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("ping", TMessageType.EXCEPTION, 0));
-					e.write(oprot);
+				} catch (FRateLimitException e) {
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "ping", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -959,10 +1019,8 @@ public class FFoo {
 					result.awe = awe;
 				} catch (actual_base.java.api_exception api) {
 					result.api = api;
-				} catch (TApplicationException e) {
-					oprot.writeResponseHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("blah", TMessageType.EXCEPTION, 0));
-					e.write(oprot);
+				} catch (FRateLimitException e) {
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "blah", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1025,10 +1083,8 @@ public class FFoo {
 					result.setSuccessIsSet(true);
 				} catch (actual_base.java.api_exception api) {
 					result.api = api;
-				} catch (TApplicationException e) {
-					oprot.writeResponseHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("bin_method", TMessageType.EXCEPTION, 0));
-					e.write(oprot);
+				} catch (FRateLimitException e) {
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "bin_method", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1073,10 +1129,8 @@ public class FFoo {
 				try {
 					result.success = handler.param_modifiers(ctx, args.opt_num, args.default_num, args.req_num);
 					result.setSuccessIsSet(true);
-				} catch (TApplicationException e) {
-					oprot.writeResponseHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("param_modifiers", TMessageType.EXCEPTION, 0));
-					e.write(oprot);
+				} catch (FRateLimitException e) {
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "param_modifiers", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1121,10 +1175,8 @@ public class FFoo {
 				try {
 					result.success = handler.underlying_types_test(ctx, args.list_type, args.set_type);
 					result.setSuccessIsSet(true);
-				} catch (TApplicationException e) {
-					oprot.writeResponseHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("underlying_types_test", TMessageType.EXCEPTION, 0));
-					e.write(oprot);
+				} catch (FRateLimitException e) {
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "underlying_types_test", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1169,10 +1221,8 @@ public class FFoo {
 				try {
 					result.success = handler.getThing(ctx);
 					result.setSuccessIsSet(true);
-				} catch (TApplicationException e) {
-					oprot.writeResponseHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("getThing", TMessageType.EXCEPTION, 0));
-					e.write(oprot);
+				} catch (FRateLimitException e) {
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getThing", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1217,10 +1267,8 @@ public class FFoo {
 				try {
 					result.success = handler.getMyInt(ctx);
 					result.setSuccessIsSet(true);
-				} catch (TApplicationException e) {
-					oprot.writeResponseHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("getMyInt", TMessageType.EXCEPTION, 0));
-					e.write(oprot);
+				} catch (FRateLimitException e) {
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "getMyInt", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1265,10 +1313,8 @@ public class FFoo {
 				try {
 					result.success = handler.use_subdir_struct(ctx, args.a);
 					result.setSuccessIsSet(true);
-				} catch (TApplicationException e) {
-					oprot.writeResponseHeader(ctx);
-					oprot.writeMessageBegin(new TMessage("use_subdir_struct", TMessageType.EXCEPTION, 0));
-					e.write(oprot);
+				} catch (FRateLimitException e) {
+					writeApplicationException(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, "use_subdir_struct", e.getMessage());
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -1817,7 +1863,7 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 		schemes.put(TupleScheme.class, new blah_argsTupleSchemeFactory());
 	}
 
-	public int num; // required
+	public Integer num; // required
 	public String Str; // required
 	public Event event; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
@@ -1886,8 +1932,6 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 	}
 
 	// isset id assignments
-	private static final int __NUM_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
 	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
 	static {
 		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -1905,12 +1949,11 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 	}
 
 	public blah_args(
-		int num,
+		Integer num,
 		String Str,
 		Event event) {
 		this();
 		this.num = num;
-		setNumIsSet(true);
 		this.Str = Str;
 		this.event = event;
 	}
@@ -1919,8 +1962,9 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public blah_args(blah_args other) {
-		__isset_bitfield = other.__isset_bitfield;
-		this.num = other.num;
+		if (other.isSetNum()) {
+			this.num = other.num;
+		}
 		if (other.isSetStr()) {
 			this.Str = other.Str;
 		}
@@ -1935,8 +1979,7 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 
 	@Override
 	public void clear() {
-		setNumIsSet(false);
-		this.num = 0;
+		this.num = null;
 
 		this.Str = null;
 
@@ -1944,27 +1987,28 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 
 	}
 
-	public int getNum() {
+	public Integer getNum() {
 		return this.num;
 	}
 
-	public blah_args setNum(int num) {
+	public blah_args setNum(Integer num) {
 		this.num = num;
-		setNumIsSet(true);
 		return this;
 	}
 
 	public void unsetNum() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __NUM_ISSET_ID);
+		this.num = null;
 	}
 
 	/** Returns true if field num is set (has been assigned a value) and false otherwise */
 	public boolean isSetNum() {
-		return EncodingUtils.testBit(__isset_bitfield, __NUM_ISSET_ID);
+		return this.num != null;
 	}
 
 	public void setNumIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __NUM_ISSET_ID, value);
+		if (!value) {
+			this.num = null;
+		}
 	}
 
 	public String getStr() {
@@ -2089,12 +2133,12 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 		if (that == null)
 			return false;
 
-		boolean this_present_num = true;
-		boolean that_present_num = true;
+		boolean this_present_num = true && this.isSetNum();
+		boolean that_present_num = true && that.isSetNum();
 		if (this_present_num || that_present_num) {
 			if (!(this_present_num && that_present_num))
 				return false;
-			if (this.num != that.num)
+			if (!this.num.equals(that.num))
 				return false;
 		}
 
@@ -2123,7 +2167,7 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 	public int hashCode() {
 		List<Object> list = new ArrayList<Object>();
 
-		boolean present_num = true;
+		boolean present_num = true && (isSetNum());
 		list.add(present_num);
 		if (present_num)
 			list.add(num);
@@ -2200,7 +2244,11 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 		boolean first = true;
 
 		sb.append("num:");
-		sb.append(this.num);
+		if (this.num == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.num);
+		}
 		first = false;
 		if (!first) sb.append(", ");
 		sb.append("Str:");
@@ -2241,7 +2289,6 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
 			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -2306,7 +2353,10 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 
 			oprot.writeStructBegin(STRUCT_DESC);
 			oprot.writeFieldBegin(NUM_FIELD_DESC);
-			int elem196 = struct.num;
+			Integer elem196 = struct.num;
+			if (elem196 == null) {
+				elem196 = 0;
+			}
 			oprot.writeI32(elem196);
 			oprot.writeFieldEnd();
 			if (struct.Str != null) {
@@ -2349,7 +2399,10 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 			}
 			oprot.writeBitSet(optionals, 3);
 			if (struct.isSetNum()) {
-				int elem198 = struct.num;
+				Integer elem198 = struct.num;
+				if (elem198 == null) {
+					elem198 = 0;
+				}
 				oprot.writeI32(elem198);
 			}
 			if (struct.isSetStr()) {
@@ -2396,7 +2449,7 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 		schemes.put(TupleScheme.class, new blah_resultTupleSchemeFactory());
 	}
 
-	public long success; // required
+	public Long success; // required
 	public AwesomeException awe; // required
 	public actual_base.java.api_exception api; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
@@ -2465,8 +2518,6 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 	}
 
 	// isset id assignments
-	private static final int __SUCCESS_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
 	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
 	static {
 		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -2484,12 +2535,11 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 	}
 
 	public blah_result(
-		long success,
+		Long success,
 		AwesomeException awe,
 		actual_base.java.api_exception api) {
 		this();
 		this.success = success;
-		setSuccessIsSet(true);
 		this.awe = awe;
 		this.api = api;
 	}
@@ -2498,8 +2548,9 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public blah_result(blah_result other) {
-		__isset_bitfield = other.__isset_bitfield;
-		this.success = other.success;
+		if (other.isSetSuccess()) {
+			this.success = other.success;
+		}
 		if (other.isSetAwe()) {
 			this.awe = new AwesomeException(other.awe);
 		}
@@ -2514,8 +2565,7 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 
 	@Override
 	public void clear() {
-		setSuccessIsSet(false);
-		this.success = 0L;
+		this.success = null;
 
 		this.awe = null;
 
@@ -2523,27 +2573,28 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 
 	}
 
-	public long getSuccess() {
+	public Long getSuccess() {
 		return this.success;
 	}
 
-	public blah_result setSuccess(long success) {
+	public blah_result setSuccess(Long success) {
 		this.success = success;
-		setSuccessIsSet(true);
 		return this;
 	}
 
 	public void unsetSuccess() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __SUCCESS_ISSET_ID);
+		this.success = null;
 	}
 
 	/** Returns true if field success is set (has been assigned a value) and false otherwise */
 	public boolean isSetSuccess() {
-		return EncodingUtils.testBit(__isset_bitfield, __SUCCESS_ISSET_ID);
+		return this.success != null;
 	}
 
 	public void setSuccessIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __SUCCESS_ISSET_ID, value);
+		if (!value) {
+			this.success = null;
+		}
 	}
 
 	public AwesomeException getAwe() {
@@ -2668,12 +2719,12 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 		if (that == null)
 			return false;
 
-		boolean this_present_success = true;
-		boolean that_present_success = true;
+		boolean this_present_success = true && this.isSetSuccess();
+		boolean that_present_success = true && that.isSetSuccess();
 		if (this_present_success || that_present_success) {
 			if (!(this_present_success && that_present_success))
 				return false;
-			if (this.success != that.success)
+			if (!this.success.equals(that.success))
 				return false;
 		}
 
@@ -2702,7 +2753,7 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 	public int hashCode() {
 		List<Object> list = new ArrayList<Object>();
 
-		boolean present_success = true;
+		boolean present_success = true && (isSetSuccess());
 		list.add(present_success);
 		if (present_success)
 			list.add(success);
@@ -2779,7 +2830,11 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 		boolean first = true;
 
 		sb.append("success:");
-		sb.append(this.success);
+		if (this.success == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.success);
+		}
 		first = false;
 		if (!first) sb.append(", ");
 		sb.append("awe:");
@@ -2823,7 +2878,6 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
 			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -2890,7 +2944,10 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.isSetSuccess()) {
 				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
-				long elem200 = struct.success;
+				Long elem200 = struct.success;
+				if (elem200 == null) {
+					elem200 = 0L;
+				}
 				oprot.writeI64(elem200);
 				oprot.writeFieldEnd();
 			}
@@ -2933,7 +2990,10 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 			}
 			oprot.writeBitSet(optionals, 3);
 			if (struct.isSetSuccess()) {
-				long elem201 = struct.success;
+				Long elem201 = struct.success;
+				if (elem201 == null) {
+					elem201 = 0L;
+				}
 				oprot.writeI64(elem201);
 			}
 			if (struct.isSetAwe()) {
@@ -2979,7 +3039,7 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 		schemes.put(TupleScheme.class, new oneWay_argsTupleSchemeFactory());
 	}
 
-	public long id; // required
+	public Long id; // required
 	public java.util.Map<Integer, String> req; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -3044,8 +3104,6 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 	}
 
 	// isset id assignments
-	private static final int __ID_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
 	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
 	static {
 		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -3061,11 +3119,10 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 	}
 
 	public oneWay_args(
-		long id,
+		Long id,
 		java.util.Map<Integer, String> req) {
 		this();
 		this.id = id;
-		setIdIsSet(true);
 		this.req = req;
 	}
 
@@ -3073,10 +3130,16 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public oneWay_args(oneWay_args other) {
-		__isset_bitfield = other.__isset_bitfield;
-		this.id = other.id;
+		if (other.isSetId()) {
+			this.id = other.id;
+		}
 		if (other.isSetReq()) {
-			this.req = new HashMap<Integer,String>(other.req);
+			this.req = new HashMap<Integer,String>(other.req.size());
+			for (Map.Entry<Integer, String> elem202 : other.req.entrySet()) {
+				Integer elem204 = elem202.getKey();
+				String elem203 = elem202.getValue();
+				this.req.put(elem204, elem203);
+			}
 		}
 	}
 
@@ -3086,41 +3149,41 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 
 	@Override
 	public void clear() {
-		setIdIsSet(false);
-		this.id = 0L;
+		this.id = null;
 
 		this.req = null;
 
 	}
 
-	public long getId() {
+	public Long getId() {
 		return this.id;
 	}
 
-	public oneWay_args setId(long id) {
+	public oneWay_args setId(Long id) {
 		this.id = id;
-		setIdIsSet(true);
 		return this;
 	}
 
 	public void unsetId() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __ID_ISSET_ID);
+		this.id = null;
 	}
 
 	/** Returns true if field id is set (has been assigned a value) and false otherwise */
 	public boolean isSetId() {
-		return EncodingUtils.testBit(__isset_bitfield, __ID_ISSET_ID);
+		return this.id != null;
 	}
 
 	public void setIdIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __ID_ISSET_ID, value);
+		if (!value) {
+			this.id = null;
+		}
 	}
 
 	public int getReqSize() {
 		return (this.req == null) ? 0 : this.req.size();
 	}
 
-	public void putToReq(int key, String val) {
+	public void putToReq(Integer key, String val) {
 		if (this.req == null) {
 			this.req = new HashMap<Integer,String>();
 		}
@@ -3212,12 +3275,12 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 		if (that == null)
 			return false;
 
-		boolean this_present_id = true;
-		boolean that_present_id = true;
+		boolean this_present_id = true && this.isSetId();
+		boolean that_present_id = true && that.isSetId();
 		if (this_present_id || that_present_id) {
 			if (!(this_present_id && that_present_id))
 				return false;
-			if (this.id != that.id)
+			if (!this.id.equals(that.id))
 				return false;
 		}
 
@@ -3237,7 +3300,7 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 	public int hashCode() {
 		List<Object> list = new ArrayList<Object>();
 
-		boolean present_id = true;
+		boolean present_id = true && (isSetId());
 		list.add(present_id);
 		if (present_id)
 			list.add(id);
@@ -3299,7 +3362,11 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 		boolean first = true;
 
 		sb.append("id:");
-		sb.append(this.id);
+		if (this.id == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.id);
+		}
 		first = false;
 		if (!first) sb.append(", ");
 		sb.append("req:");
@@ -3329,7 +3396,6 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
 			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -3363,12 +3429,12 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 						break;
 					case 2: // REQ
 						if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
-							org.apache.thrift.protocol.TMap elem204 = iprot.readMapBegin();
-							struct.req = new HashMap<Integer,String>(2*elem204.size);
-							for (int elem205 = 0; elem205 < elem204.size; ++elem205) {
-								int elem207 = iprot.readI32();
-								String elem206 = iprot.readString();
-								struct.req.put(elem207, elem206);
+							org.apache.thrift.protocol.TMap elem205 = iprot.readMapBegin();
+							struct.req = new HashMap<Integer,String>(2*elem205.size);
+							for (int elem206 = 0; elem206 < elem205.size; ++elem206) {
+								Integer elem208 = iprot.readI32();
+								String elem207 = iprot.readString();
+								struct.req.put(elem208, elem207);
 							}
 							iprot.readMapEnd();
 							struct.setReqIsSet(true);
@@ -3392,17 +3458,23 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 
 			oprot.writeStructBegin(STRUCT_DESC);
 			oprot.writeFieldBegin(ID_FIELD_DESC);
-			long elem208 = struct.id;
-			oprot.writeI64(elem208);
+			Long elem209 = struct.id;
+			if (elem209 == null) {
+				elem209 = 0L;
+			}
+			oprot.writeI64(elem209);
 			oprot.writeFieldEnd();
 			if (struct.req != null) {
 				oprot.writeFieldBegin(REQ_FIELD_DESC);
 				oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I32, org.apache.thrift.protocol.TType.STRING, struct.req.size()));
-				for (Map.Entry<Integer, String> elem209 : struct.req.entrySet()) {
-					int elem210 = elem209.getKey();
-					oprot.writeI32(elem210);
-					String elem211 = elem209.getValue();
-					oprot.writeString(elem211);
+				for (Map.Entry<Integer, String> elem210 : struct.req.entrySet()) {
+					Integer elem211 = elem210.getKey();
+					if (elem211 == null) {
+						elem211 = 0;
+					}
+					oprot.writeI32(elem211);
+					String elem212 = elem210.getValue();
+					oprot.writeString(elem212);
 				}
 				oprot.writeMapEnd();
 				oprot.writeFieldEnd();
@@ -3433,16 +3505,22 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetId()) {
-				long elem212 = struct.id;
-				oprot.writeI64(elem212);
+				Long elem213 = struct.id;
+				if (elem213 == null) {
+					elem213 = 0L;
+				}
+				oprot.writeI64(elem213);
 			}
 			if (struct.isSetReq()) {
 				oprot.writeI32(struct.req.size());
-				for (Map.Entry<Integer, String> elem213 : struct.req.entrySet()) {
-					int elem214 = elem213.getKey();
-					oprot.writeI32(elem214);
-					String elem215 = elem213.getValue();
-					oprot.writeString(elem215);
+				for (Map.Entry<Integer, String> elem214 : struct.req.entrySet()) {
+					Integer elem215 = elem214.getKey();
+					if (elem215 == null) {
+						elem215 = 0;
+					}
+					oprot.writeI32(elem215);
+					String elem216 = elem214.getValue();
+					oprot.writeString(elem216);
 				}
 			}
 		}
@@ -3456,12 +3534,12 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 				struct.setIdIsSet(true);
 			}
 			if (incoming.get(1)) {
-				org.apache.thrift.protocol.TMap elem216 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I32, org.apache.thrift.protocol.TType.STRING, iprot.readI32());
-				struct.req = new HashMap<Integer,String>(2*elem216.size);
-				for (int elem217 = 0; elem217 < elem216.size; ++elem217) {
-					int elem219 = iprot.readI32();
-					String elem218 = iprot.readString();
-					struct.req.put(elem219, elem218);
+				org.apache.thrift.protocol.TMap elem217 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I32, org.apache.thrift.protocol.TType.STRING, iprot.readI32());
+				struct.req = new HashMap<Integer,String>(2*elem217.size);
+				for (int elem218 = 0; elem218 < elem217.size; ++elem218) {
+					Integer elem220 = iprot.readI32();
+					String elem219 = iprot.readString();
+					struct.req.put(elem220, elem219);
 				}
 				struct.setReqIsSet(true);
 			}
@@ -3889,14 +3967,14 @@ public static class bin_method_args implements org.apache.thrift.TBase<bin_metho
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.bin != null) {
 				oprot.writeFieldBegin(BIN_FIELD_DESC);
-				java.nio.ByteBuffer elem220 = struct.bin;
-				oprot.writeBinary(elem220);
+				java.nio.ByteBuffer elem221 = struct.bin;
+				oprot.writeBinary(elem221);
 				oprot.writeFieldEnd();
 			}
 			if (struct.Str != null) {
 				oprot.writeFieldBegin(STR_FIELD_DESC);
-				String elem221 = struct.Str;
-				oprot.writeString(elem221);
+				String elem222 = struct.Str;
+				oprot.writeString(elem222);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -3925,12 +4003,12 @@ public static class bin_method_args implements org.apache.thrift.TBase<bin_metho
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetBin()) {
-				java.nio.ByteBuffer elem222 = struct.bin;
-				oprot.writeBinary(elem222);
+				java.nio.ByteBuffer elem223 = struct.bin;
+				oprot.writeBinary(elem223);
 			}
 			if (struct.isSetStr()) {
-				String elem223 = struct.Str;
-				oprot.writeString(elem223);
+				String elem224 = struct.Str;
+				oprot.writeString(elem224);
 			}
 		}
 
@@ -4374,8 +4452,8 @@ public static class bin_method_result implements org.apache.thrift.TBase<bin_met
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.success != null) {
 				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
-				java.nio.ByteBuffer elem224 = struct.success;
-				oprot.writeBinary(elem224);
+				java.nio.ByteBuffer elem225 = struct.success;
+				oprot.writeBinary(elem225);
 				oprot.writeFieldEnd();
 			}
 			if (struct.api != null) {
@@ -4409,8 +4487,8 @@ public static class bin_method_result implements org.apache.thrift.TBase<bin_met
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetSuccess()) {
-				java.nio.ByteBuffer elem225 = struct.success;
-				oprot.writeBinary(elem225);
+				java.nio.ByteBuffer elem226 = struct.success;
+				oprot.writeBinary(elem226);
 			}
 			if (struct.isSetApi()) {
 				struct.api.write(oprot);
@@ -4448,9 +4526,9 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 		schemes.put(TupleScheme.class, new param_modifiers_argsTupleSchemeFactory());
 	}
 
-	public int opt_num; // required
-	public int default_num; // required
-	public int req_num; // required
+	public Integer opt_num; // required
+	public Integer default_num; // required
+	public Integer req_num; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		OPT_NUM((short)1, "opt_num"),
@@ -4517,10 +4595,6 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 	}
 
 	// isset id assignments
-	private static final int __OPT_NUM_ISSET_ID = 0;
-	private static final int __DEFAULT_NUM_ISSET_ID = 1;
-	private static final int __REQ_NUM_ISSET_ID = 2;
-	private byte __isset_bitfield = 0;
 	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
 	static {
 		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -4538,26 +4612,28 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 	}
 
 	public param_modifiers_args(
-		int opt_num,
-		int default_num,
-		int req_num) {
+		Integer opt_num,
+		Integer default_num,
+		Integer req_num) {
 		this();
 		this.opt_num = opt_num;
-		setOpt_numIsSet(true);
 		this.default_num = default_num;
-		setDefault_numIsSet(true);
 		this.req_num = req_num;
-		setReq_numIsSet(true);
 	}
 
 	/**
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public param_modifiers_args(param_modifiers_args other) {
-		__isset_bitfield = other.__isset_bitfield;
-		this.opt_num = other.opt_num;
-		this.default_num = other.default_num;
-		this.req_num = other.req_num;
+		if (other.isSetOpt_num()) {
+			this.opt_num = other.opt_num;
+		}
+		if (other.isSetDefault_num()) {
+			this.default_num = other.default_num;
+		}
+		if (other.isSetReq_num()) {
+			this.req_num = other.req_num;
+		}
 	}
 
 	public param_modifiers_args deepCopy() {
@@ -4566,84 +4642,84 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 
 	@Override
 	public void clear() {
-		setOpt_numIsSet(false);
-		this.opt_num = 0;
+		this.opt_num = null;
 
-		setDefault_numIsSet(false);
-		this.default_num = 0;
+		this.default_num = null;
 
-		setReq_numIsSet(false);
-		this.req_num = 0;
+		this.req_num = null;
 
 	}
 
-	public int getOpt_num() {
+	public Integer getOpt_num() {
 		return this.opt_num;
 	}
 
-	public param_modifiers_args setOpt_num(int opt_num) {
+	public param_modifiers_args setOpt_num(Integer opt_num) {
 		this.opt_num = opt_num;
-		setOpt_numIsSet(true);
 		return this;
 	}
 
 	public void unsetOpt_num() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __OPT_NUM_ISSET_ID);
+		this.opt_num = null;
 	}
 
 	/** Returns true if field opt_num is set (has been assigned a value) and false otherwise */
 	public boolean isSetOpt_num() {
-		return EncodingUtils.testBit(__isset_bitfield, __OPT_NUM_ISSET_ID);
+		return this.opt_num != null;
 	}
 
 	public void setOpt_numIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __OPT_NUM_ISSET_ID, value);
+		if (!value) {
+			this.opt_num = null;
+		}
 	}
 
-	public int getDefault_num() {
+	public Integer getDefault_num() {
 		return this.default_num;
 	}
 
-	public param_modifiers_args setDefault_num(int default_num) {
+	public param_modifiers_args setDefault_num(Integer default_num) {
 		this.default_num = default_num;
-		setDefault_numIsSet(true);
 		return this;
 	}
 
 	public void unsetDefault_num() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __DEFAULT_NUM_ISSET_ID);
+		this.default_num = null;
 	}
 
 	/** Returns true if field default_num is set (has been assigned a value) and false otherwise */
 	public boolean isSetDefault_num() {
-		return EncodingUtils.testBit(__isset_bitfield, __DEFAULT_NUM_ISSET_ID);
+		return this.default_num != null;
 	}
 
 	public void setDefault_numIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __DEFAULT_NUM_ISSET_ID, value);
+		if (!value) {
+			this.default_num = null;
+		}
 	}
 
-	public int getReq_num() {
+	public Integer getReq_num() {
 		return this.req_num;
 	}
 
-	public param_modifiers_args setReq_num(int req_num) {
+	public param_modifiers_args setReq_num(Integer req_num) {
 		this.req_num = req_num;
-		setReq_numIsSet(true);
 		return this;
 	}
 
 	public void unsetReq_num() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __REQ_NUM_ISSET_ID);
+		this.req_num = null;
 	}
 
 	/** Returns true if field req_num is set (has been assigned a value) and false otherwise */
 	public boolean isSetReq_num() {
-		return EncodingUtils.testBit(__isset_bitfield, __REQ_NUM_ISSET_ID);
+		return this.req_num != null;
 	}
 
 	public void setReq_numIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __REQ_NUM_ISSET_ID, value);
+		if (!value) {
+			this.req_num = null;
+		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -4720,30 +4796,30 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 		if (that == null)
 			return false;
 
-		boolean this_present_opt_num = true;
-		boolean that_present_opt_num = true;
+		boolean this_present_opt_num = true && this.isSetOpt_num();
+		boolean that_present_opt_num = true && that.isSetOpt_num();
 		if (this_present_opt_num || that_present_opt_num) {
 			if (!(this_present_opt_num && that_present_opt_num))
 				return false;
-			if (this.opt_num != that.opt_num)
+			if (!this.opt_num.equals(that.opt_num))
 				return false;
 		}
 
-		boolean this_present_default_num = true;
-		boolean that_present_default_num = true;
+		boolean this_present_default_num = true && this.isSetDefault_num();
+		boolean that_present_default_num = true && that.isSetDefault_num();
 		if (this_present_default_num || that_present_default_num) {
 			if (!(this_present_default_num && that_present_default_num))
 				return false;
-			if (this.default_num != that.default_num)
+			if (!this.default_num.equals(that.default_num))
 				return false;
 		}
 
-		boolean this_present_req_num = true;
-		boolean that_present_req_num = true;
+		boolean this_present_req_num = true && this.isSetReq_num();
+		boolean that_present_req_num = true && that.isSetReq_num();
 		if (this_present_req_num || that_present_req_num) {
 			if (!(this_present_req_num && that_present_req_num))
 				return false;
-			if (this.req_num != that.req_num)
+			if (!this.req_num.equals(that.req_num))
 				return false;
 		}
 
@@ -4754,17 +4830,17 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 	public int hashCode() {
 		List<Object> list = new ArrayList<Object>();
 
-		boolean present_opt_num = true;
+		boolean present_opt_num = true && (isSetOpt_num());
 		list.add(present_opt_num);
 		if (present_opt_num)
 			list.add(opt_num);
 
-		boolean present_default_num = true;
+		boolean present_default_num = true && (isSetDefault_num());
 		list.add(present_default_num);
 		if (present_default_num)
 			list.add(default_num);
 
-		boolean present_req_num = true;
+		boolean present_req_num = true && (isSetReq_num());
 		list.add(present_req_num);
 		if (present_req_num)
 			list.add(req_num);
@@ -4831,15 +4907,27 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 		boolean first = true;
 
 		sb.append("opt_num:");
-		sb.append(this.opt_num);
+		if (this.opt_num == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.opt_num);
+		}
 		first = false;
 		if (!first) sb.append(", ");
 		sb.append("default_num:");
-		sb.append(this.default_num);
+		if (this.default_num == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.default_num);
+		}
 		first = false;
 		if (!first) sb.append(", ");
 		sb.append("req_num:");
-		sb.append(this.req_num);
+		if (this.req_num == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.req_num);
+		}
 		first = false;
 		sb.append(")");
 		return sb.toString();
@@ -4847,6 +4935,9 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 
 	public void validate() throws org.apache.thrift.TException {
 		// check for required fields
+		if (req_num == null) {
+			throw new org.apache.thrift.protocol.TProtocolException("Required field 'req_num' was not present! Struct: " + toString());
+		}
 		// check for sub-struct validity
 	}
 
@@ -4861,7 +4952,6 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
 			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -4917,9 +5007,6 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 			iprot.readStructEnd();
 
 			// check for required fields of primitive type, which can't be checked in the validate method
-			if (!struct.isSetReq_num()) {
-				throw new org.apache.thrift.protocol.TProtocolException("Required field 'req_num' was not found in serialized data! Struct: " + toString());
-			}
 			struct.validate();
 		}
 
@@ -4928,16 +5015,25 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 
 			oprot.writeStructBegin(STRUCT_DESC);
 			oprot.writeFieldBegin(OPT_NUM_FIELD_DESC);
-			int elem226 = struct.opt_num;
-			oprot.writeI32(elem226);
-			oprot.writeFieldEnd();
-			oprot.writeFieldBegin(DEFAULT_NUM_FIELD_DESC);
-			int elem227 = struct.default_num;
+			Integer elem227 = struct.opt_num;
+			if (elem227 == null) {
+				elem227 = 0;
+			}
 			oprot.writeI32(elem227);
 			oprot.writeFieldEnd();
-			oprot.writeFieldBegin(REQ_NUM_FIELD_DESC);
-			int elem228 = struct.req_num;
+			oprot.writeFieldBegin(DEFAULT_NUM_FIELD_DESC);
+			Integer elem228 = struct.default_num;
+			if (elem228 == null) {
+				elem228 = 0;
+			}
 			oprot.writeI32(elem228);
+			oprot.writeFieldEnd();
+			oprot.writeFieldBegin(REQ_NUM_FIELD_DESC);
+			Integer elem229 = struct.req_num;
+			if (elem229 == null) {
+				elem229 = 0;
+			}
+			oprot.writeI32(elem229);
 			oprot.writeFieldEnd();
 			oprot.writeFieldStop();
 			oprot.writeStructEnd();
@@ -4956,8 +5052,11 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 		@Override
 		public void write(org.apache.thrift.protocol.TProtocol prot, param_modifiers_args struct) throws org.apache.thrift.TException {
 			TTupleProtocol oprot = (TTupleProtocol) prot;
-			int elem229 = struct.req_num;
-			oprot.writeI32(elem229);
+			Integer elem230 = struct.req_num;
+			if (elem230 == null) {
+				elem230 = 0;
+			}
+			oprot.writeI32(elem230);
 			BitSet optionals = new BitSet();
 			if (struct.isSetOpt_num()) {
 				optionals.set(0);
@@ -4967,12 +5066,18 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetOpt_num()) {
-				int elem230 = struct.opt_num;
-				oprot.writeI32(elem230);
+				Integer elem231 = struct.opt_num;
+				if (elem231 == null) {
+					elem231 = 0;
+				}
+				oprot.writeI32(elem231);
 			}
 			if (struct.isSetDefault_num()) {
-				int elem231 = struct.default_num;
-				oprot.writeI32(elem231);
+				Integer elem232 = struct.default_num;
+				if (elem232 == null) {
+					elem232 = 0;
+				}
+				oprot.writeI32(elem232);
 			}
 		}
 
@@ -5006,7 +5111,7 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 		schemes.put(TupleScheme.class, new param_modifiers_resultTupleSchemeFactory());
 	}
 
-	public long success; // required
+	public Long success; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		SUCCESS((short)0, "success")
@@ -5067,8 +5172,6 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 	}
 
 	// isset id assignments
-	private static final int __SUCCESS_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
 	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
 	static {
 		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -5082,18 +5185,18 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 	}
 
 	public param_modifiers_result(
-		long success) {
+		Long success) {
 		this();
 		this.success = success;
-		setSuccessIsSet(true);
 	}
 
 	/**
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public param_modifiers_result(param_modifiers_result other) {
-		__isset_bitfield = other.__isset_bitfield;
-		this.success = other.success;
+		if (other.isSetSuccess()) {
+			this.success = other.success;
+		}
 	}
 
 	public param_modifiers_result deepCopy() {
@@ -5102,32 +5205,32 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 
 	@Override
 	public void clear() {
-		setSuccessIsSet(false);
-		this.success = 0L;
+		this.success = null;
 
 	}
 
-	public long getSuccess() {
+	public Long getSuccess() {
 		return this.success;
 	}
 
-	public param_modifiers_result setSuccess(long success) {
+	public param_modifiers_result setSuccess(Long success) {
 		this.success = success;
-		setSuccessIsSet(true);
 		return this;
 	}
 
 	public void unsetSuccess() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __SUCCESS_ISSET_ID);
+		this.success = null;
 	}
 
 	/** Returns true if field success is set (has been assigned a value) and false otherwise */
 	public boolean isSetSuccess() {
-		return EncodingUtils.testBit(__isset_bitfield, __SUCCESS_ISSET_ID);
+		return this.success != null;
 	}
 
 	public void setSuccessIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __SUCCESS_ISSET_ID, value);
+		if (!value) {
+			this.success = null;
+		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -5178,12 +5281,12 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 		if (that == null)
 			return false;
 
-		boolean this_present_success = true;
-		boolean that_present_success = true;
+		boolean this_present_success = true && this.isSetSuccess();
+		boolean that_present_success = true && that.isSetSuccess();
 		if (this_present_success || that_present_success) {
 			if (!(this_present_success && that_present_success))
 				return false;
-			if (this.success != that.success)
+			if (!this.success.equals(that.success))
 				return false;
 		}
 
@@ -5194,7 +5297,7 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 	public int hashCode() {
 		List<Object> list = new ArrayList<Object>();
 
-		boolean present_success = true;
+		boolean present_success = true && (isSetSuccess());
 		list.add(present_success);
 		if (present_success)
 			list.add(success);
@@ -5241,7 +5344,11 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 		boolean first = true;
 
 		sb.append("success:");
-		sb.append(this.success);
+		if (this.success == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.success);
+		}
 		first = false;
 		sb.append(")");
 		return sb.toString();
@@ -5263,7 +5370,6 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
 			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -5312,8 +5418,11 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.isSetSuccess()) {
 				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
-				long elem232 = struct.success;
-				oprot.writeI64(elem232);
+				Long elem233 = struct.success;
+				if (elem233 == null) {
+					elem233 = 0L;
+				}
+				oprot.writeI64(elem233);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -5339,8 +5448,11 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 			}
 			oprot.writeBitSet(optionals, 1);
 			if (struct.isSetSuccess()) {
-				long elem233 = struct.success;
-				oprot.writeI64(elem233);
+				Long elem234 = struct.success;
+				if (elem234 == null) {
+					elem234 = 0L;
+				}
+				oprot.writeI64(elem234);
 			}
 		}
 
@@ -5464,16 +5576,16 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 	public underlying_types_test_args(underlying_types_test_args other) {
 		if (other.isSetList_type()) {
 			this.list_type = new ArrayList<Long>(other.list_type.size());
-			for (long elem234 : other.list_type) {
-				long elem235 = elem234;
-				this.list_type.add(elem235);
+			for (Long elem235 : other.list_type) {
+				Long elem236 = elem235;
+				this.list_type.add(elem236);
 			}
 		}
 		if (other.isSetSet_type()) {
 			this.set_type = new HashSet<Long>(other.set_type.size());
-			for (long elem236 : other.set_type) {
-				long elem237 = elem236;
-				this.set_type.add(elem237);
+			for (Long elem237 : other.set_type) {
+				Long elem238 = elem237;
+				this.set_type.add(elem238);
 			}
 		}
 	}
@@ -5498,7 +5610,7 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 		return (this.list_type == null) ? null : this.list_type.iterator();
 	}
 
-	public void addToList_type(long elem) {
+	public void addToList_type(Long elem) {
 		if (this.list_type == null) {
 			this.list_type = new ArrayList<Long>();
 		}
@@ -5537,7 +5649,7 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 		return (this.set_type == null) ? null : this.set_type.iterator();
 	}
 
-	public void addToSet_type(long elem) {
+	public void addToSet_type(Long elem) {
 		if (this.set_type == null) {
 			this.set_type = new HashSet<Long>();
 		}
@@ -5775,11 +5887,11 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 				switch (schemeField.id) {
 					case 1: // LIST_TYPE
 						if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
-							org.apache.thrift.protocol.TList elem238 = iprot.readListBegin();
-							struct.list_type = new ArrayList<Long>(elem238.size);
-							for (int elem239 = 0; elem239 < elem238.size; ++elem239) {
-								long elem240 = iprot.readI64();
-								struct.list_type.add(elem240);
+							org.apache.thrift.protocol.TList elem239 = iprot.readListBegin();
+							struct.list_type = new ArrayList<Long>(elem239.size);
+							for (int elem240 = 0; elem240 < elem239.size; ++elem240) {
+								Long elem241 = iprot.readI64();
+								struct.list_type.add(elem241);
 							}
 							iprot.readListEnd();
 							struct.setList_typeIsSet(true);
@@ -5789,11 +5901,11 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 						break;
 					case 2: // SET_TYPE
 						if (schemeField.type == org.apache.thrift.protocol.TType.SET) {
-							org.apache.thrift.protocol.TSet elem241 = iprot.readSetBegin();
-							struct.set_type = new HashSet<Long>(2*elem241.size);
-							for (int elem242 = 0; elem242 < elem241.size; ++elem242) {
-								long elem243 = iprot.readI64();
-								struct.set_type.add(elem243);
+							org.apache.thrift.protocol.TSet elem242 = iprot.readSetBegin();
+							struct.set_type = new HashSet<Long>(2*elem242.size);
+							for (int elem243 = 0; elem243 < elem242.size; ++elem243) {
+								Long elem244 = iprot.readI64();
+								struct.set_type.add(elem244);
 							}
 							iprot.readSetEnd();
 							struct.setSet_typeIsSet(true);
@@ -5819,9 +5931,12 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 			if (struct.list_type != null) {
 				oprot.writeFieldBegin(LIST_TYPE_FIELD_DESC);
 				oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, struct.list_type.size()));
-				for (long elem244 : struct.list_type) {
-					long elem245 = elem244;
-					oprot.writeI64(elem245);
+				for (Long elem245 : struct.list_type) {
+					Long elem246 = elem245;
+					if (elem246 == null) {
+						elem246 = 0L;
+					}
+					oprot.writeI64(elem246);
 				}
 				oprot.writeListEnd();
 				oprot.writeFieldEnd();
@@ -5829,9 +5944,12 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 			if (struct.set_type != null) {
 				oprot.writeFieldBegin(SET_TYPE_FIELD_DESC);
 				oprot.writeSetBegin(new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.I64, struct.set_type.size()));
-				for (long elem246 : struct.set_type) {
-					long elem247 = elem246;
-					oprot.writeI64(elem247);
+				for (Long elem247 : struct.set_type) {
+					Long elem248 = elem247;
+					if (elem248 == null) {
+						elem248 = 0L;
+					}
+					oprot.writeI64(elem248);
 				}
 				oprot.writeSetEnd();
 				oprot.writeFieldEnd();
@@ -5863,16 +5981,22 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetList_type()) {
 				oprot.writeI32(struct.list_type.size());
-				for (long elem248 : struct.list_type) {
-					long elem249 = elem248;
-					oprot.writeI64(elem249);
+				for (Long elem249 : struct.list_type) {
+					Long elem250 = elem249;
+					if (elem250 == null) {
+						elem250 = 0L;
+					}
+					oprot.writeI64(elem250);
 				}
 			}
 			if (struct.isSetSet_type()) {
 				oprot.writeI32(struct.set_type.size());
-				for (long elem250 : struct.set_type) {
-					long elem251 = elem250;
-					oprot.writeI64(elem251);
+				for (Long elem251 : struct.set_type) {
+					Long elem252 = elem251;
+					if (elem252 == null) {
+						elem252 = 0L;
+					}
+					oprot.writeI64(elem252);
 				}
 			}
 		}
@@ -5882,20 +6006,20 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 			TTupleProtocol iprot = (TTupleProtocol) prot;
 			BitSet incoming = iprot.readBitSet(2);
 			if (incoming.get(0)) {
-				org.apache.thrift.protocol.TList elem252 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
-				struct.list_type = new ArrayList<Long>(elem252.size);
-				for (int elem253 = 0; elem253 < elem252.size; ++elem253) {
-					long elem254 = iprot.readI64();
-					struct.list_type.add(elem254);
+				org.apache.thrift.protocol.TList elem253 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
+				struct.list_type = new ArrayList<Long>(elem253.size);
+				for (int elem254 = 0; elem254 < elem253.size; ++elem254) {
+					Long elem255 = iprot.readI64();
+					struct.list_type.add(elem255);
 				}
 				struct.setList_typeIsSet(true);
 			}
 			if (incoming.get(1)) {
-				org.apache.thrift.protocol.TSet elem255 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.I64, iprot.readI32());
-				struct.set_type = new HashSet<Long>(2*elem255.size);
-				for (int elem256 = 0; elem256 < elem255.size; ++elem256) {
-					long elem257 = iprot.readI64();
-					struct.set_type.add(elem257);
+				org.apache.thrift.protocol.TSet elem256 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.I64, iprot.readI32());
+				struct.set_type = new HashSet<Long>(2*elem256.size);
+				for (int elem257 = 0; elem257 < elem256.size; ++elem257) {
+					Long elem258 = iprot.readI64();
+					struct.set_type.add(elem258);
 				}
 				struct.setSet_typeIsSet(true);
 			}
@@ -6001,9 +6125,9 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 	public underlying_types_test_result(underlying_types_test_result other) {
 		if (other.isSetSuccess()) {
 			this.success = new ArrayList<Long>(other.success.size());
-			for (long elem258 : other.success) {
-				long elem259 = elem258;
-				this.success.add(elem259);
+			for (Long elem259 : other.success) {
+				Long elem260 = elem259;
+				this.success.add(elem260);
 			}
 		}
 	}
@@ -6026,7 +6150,7 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 		return (this.success == null) ? null : this.success.iterator();
 	}
 
-	public void addToSuccess(long elem) {
+	public void addToSuccess(Long elem) {
 		if (this.success == null) {
 			this.success = new ArrayList<Long>();
 		}
@@ -6219,11 +6343,11 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 				switch (schemeField.id) {
 					case 0: // SUCCESS
 						if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
-							org.apache.thrift.protocol.TList elem260 = iprot.readListBegin();
-							struct.success = new ArrayList<Long>(elem260.size);
-							for (int elem261 = 0; elem261 < elem260.size; ++elem261) {
-								long elem262 = iprot.readI64();
-								struct.success.add(elem262);
+							org.apache.thrift.protocol.TList elem261 = iprot.readListBegin();
+							struct.success = new ArrayList<Long>(elem261.size);
+							for (int elem262 = 0; elem262 < elem261.size; ++elem262) {
+								Long elem263 = iprot.readI64();
+								struct.success.add(elem263);
 							}
 							iprot.readListEnd();
 							struct.setSuccessIsSet(true);
@@ -6249,9 +6373,12 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 			if (struct.success != null) {
 				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
 				oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, struct.success.size()));
-				for (long elem263 : struct.success) {
-					long elem264 = elem263;
-					oprot.writeI64(elem264);
+				for (Long elem264 : struct.success) {
+					Long elem265 = elem264;
+					if (elem265 == null) {
+						elem265 = 0L;
+					}
+					oprot.writeI64(elem265);
 				}
 				oprot.writeListEnd();
 				oprot.writeFieldEnd();
@@ -6280,9 +6407,12 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 			oprot.writeBitSet(optionals, 1);
 			if (struct.isSetSuccess()) {
 				oprot.writeI32(struct.success.size());
-				for (long elem265 : struct.success) {
-					long elem266 = elem265;
-					oprot.writeI64(elem266);
+				for (Long elem266 : struct.success) {
+					Long elem267 = elem266;
+					if (elem267 == null) {
+						elem267 = 0L;
+					}
+					oprot.writeI64(elem267);
 				}
 			}
 		}
@@ -6292,11 +6422,11 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 			TTupleProtocol iprot = (TTupleProtocol) prot;
 			BitSet incoming = iprot.readBitSet(1);
 			if (incoming.get(0)) {
-				org.apache.thrift.protocol.TList elem267 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
-				struct.success = new ArrayList<Long>(elem267.size);
-				for (int elem268 = 0; elem268 < elem267.size; ++elem268) {
-					long elem269 = iprot.readI64();
-					struct.success.add(elem269);
+				org.apache.thrift.protocol.TList elem268 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
+				struct.success = new ArrayList<Long>(elem268.size);
+				for (int elem269 = 0; elem269 < elem268.size; ++elem269) {
+					Long elem270 = iprot.readI64();
+					struct.success.add(elem270);
 				}
 				struct.setSuccessIsSet(true);
 			}
@@ -7180,7 +7310,7 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 		schemes.put(TupleScheme.class, new getMyInt_resultTupleSchemeFactory());
 	}
 
-	public int success; // required
+	public Integer success; // required
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		SUCCESS((short)0, "success")
@@ -7241,8 +7371,6 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 	}
 
 	// isset id assignments
-	private static final int __SUCCESS_ISSET_ID = 0;
-	private byte __isset_bitfield = 0;
 	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
 	static {
 		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -7256,18 +7384,18 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 	}
 
 	public getMyInt_result(
-		int success) {
+		Integer success) {
 		this();
 		this.success = success;
-		setSuccessIsSet(true);
 	}
 
 	/**
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public getMyInt_result(getMyInt_result other) {
-		__isset_bitfield = other.__isset_bitfield;
-		this.success = other.success;
+		if (other.isSetSuccess()) {
+			this.success = other.success;
+		}
 	}
 
 	public getMyInt_result deepCopy() {
@@ -7276,32 +7404,32 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 
 	@Override
 	public void clear() {
-		setSuccessIsSet(false);
-		this.success = 0;
+		this.success = null;
 
 	}
 
-	public int getSuccess() {
+	public Integer getSuccess() {
 		return this.success;
 	}
 
-	public getMyInt_result setSuccess(int success) {
+	public getMyInt_result setSuccess(Integer success) {
 		this.success = success;
-		setSuccessIsSet(true);
 		return this;
 	}
 
 	public void unsetSuccess() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __SUCCESS_ISSET_ID);
+		this.success = null;
 	}
 
 	/** Returns true if field success is set (has been assigned a value) and false otherwise */
 	public boolean isSetSuccess() {
-		return EncodingUtils.testBit(__isset_bitfield, __SUCCESS_ISSET_ID);
+		return this.success != null;
 	}
 
 	public void setSuccessIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __SUCCESS_ISSET_ID, value);
+		if (!value) {
+			this.success = null;
+		}
 	}
 
 	public void setFieldValue(_Fields field, Object value) {
@@ -7352,12 +7480,12 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 		if (that == null)
 			return false;
 
-		boolean this_present_success = true;
-		boolean that_present_success = true;
+		boolean this_present_success = true && this.isSetSuccess();
+		boolean that_present_success = true && that.isSetSuccess();
 		if (this_present_success || that_present_success) {
 			if (!(this_present_success && that_present_success))
 				return false;
-			if (this.success != that.success)
+			if (!this.success.equals(that.success))
 				return false;
 		}
 
@@ -7368,7 +7496,7 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 	public int hashCode() {
 		List<Object> list = new ArrayList<Object>();
 
-		boolean present_success = true;
+		boolean present_success = true && (isSetSuccess());
 		list.add(present_success);
 		if (present_success)
 			list.add(success);
@@ -7415,7 +7543,11 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 		boolean first = true;
 
 		sb.append("success:");
-		sb.append(this.success);
+		if (this.success == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.success);
+		}
 		first = false;
 		sb.append(")");
 		return sb.toString();
@@ -7437,7 +7569,6 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
 			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -7486,8 +7617,11 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.isSetSuccess()) {
 				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
-				int elem270 = struct.success;
-				oprot.writeI32(elem270);
+				Integer elem271 = struct.success;
+				if (elem271 == null) {
+					elem271 = 0;
+				}
+				oprot.writeI32(elem271);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -7513,8 +7647,11 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 			}
 			oprot.writeBitSet(optionals, 1);
 			if (struct.isSetSuccess()) {
-				int elem271 = struct.success;
-				oprot.writeI32(elem271);
+				Integer elem272 = struct.success;
+				if (elem272 == null) {
+					elem272 = 0;
+				}
+				oprot.writeI32(elem272);
 			}
 		}
 

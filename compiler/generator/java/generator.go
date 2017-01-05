@@ -1154,17 +1154,7 @@ func (g *Generator) generateClear(s *parser.Struct) string {
 			contents += fmt.Sprintf("%s\n", val)
 		} else if g.isJavaPrimitive(field.Type) {
 			contents += fmt.Sprintf(tabtab+"set%sIsSet(false);\n", strings.Title(field.Name))
-			val := ""
-			switch underlyingType.Name {
-			case "i8", "byte", "i16", "i32", "i64":
-				val = "0"
-			case "double":
-				val = "0.0"
-			case "bool":
-				val = "false"
-			default:
-				panic("invalid type: " + underlyingType.Name)
-			}
+			val := g.getPrimitiveDefaultValue(underlyingType)
 			contents += fmt.Sprintf(tabtab+"this.%s = %s;\n\n", field.Name, val)
 		} else {
 			contents += fmt.Sprintf(tabtab+"this.%s = null;\n\n", field.Name)
@@ -1721,15 +1711,15 @@ func (g *Generator) generateStandardScheme(s *parser.Struct, isResult bool) stri
 	contents += tabtabtab + "struct.validate();\n\n"
 	contents += tabtabtab + "oprot.writeStructBegin(STRUCT_DESC);\n"
 	for _, field := range s.Fields {
-		isPrimitive := g.isJavaPrimitive(field.Type)
+		isKindOfPrimitive := g.canBeJavaPrimitive(field.Type)
 		ind := tabtabtab
 		optInd := tabtabtab
-		if !isPrimitive {
+		if !isKindOfPrimitive {
 			contents += fmt.Sprintf(ind+"if (struct.%s != null) {\n", field.Name)
 			ind += tab
 			optInd += tab
 		}
-		opt := field.Modifier == parser.Optional || (isResult && isPrimitive)
+		opt := field.Modifier == parser.Optional || (isResult && isKindOfPrimitive)
 		if opt {
 			contents += fmt.Sprintf(ind+"if (struct.isSet%s()) {\n", strings.Title(field.Name))
 			ind += tab
@@ -1742,7 +1732,7 @@ func (g *Generator) generateStandardScheme(s *parser.Struct, isResult bool) stri
 		if opt {
 			contents += optInd + "}\n"
 		}
-		if !isPrimitive {
+		if !isKindOfPrimitive {
 			contents += tabtabtab + "}\n"
 		}
 	}
@@ -1844,7 +1834,7 @@ func (g *Generator) generateTupleScheme(s *parser.Struct) string {
 
 func (g *Generator) generateCopyConstructorField(field *parser.Field, otherFieldName string, first bool, ind string) string {
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
-	isPrimitive := g.isJavaPrimitive(underlyingType)
+	isPrimitive := g.canBeJavaPrimitive(underlyingType)
 	accessPrefix := "this."
 	declPrefix := "this."
 	if !first {
@@ -2084,33 +2074,47 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, succi
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	isEnum := g.Frugal.IsEnum(underlyingType)
 	if underlyingType.IsPrimitive() || isEnum {
+		elem := g.GetElem()
+
+		// Store the value in an intermittent value
+		// This allows writing a default value if using boxed primitives
+		// and the value is "null"
+		contents += fmt.Sprintf(ind+"%s %s = %s%s;\n",
+			g.getJavaTypeFromThriftType(underlyingType), elem, accessPrefix, field.Name)
+		if g.canBeJavaPrimitive(underlyingType) && g.generateBoxedPrimitives() {
+			contents += fmt.Sprintf(ind+"if (%s == null) {\n", elem)
+			val := g.getPrimitiveDefaultValue(underlyingType)
+			contents += fmt.Sprintf(ind+tab+"%s = %s;\n", elem, val)
+			contents += fmt.Sprintf(ind+"}\n")
+		}
+
 		write := ind + "oprot.write"
 		switch underlyingType.Name {
 		case "bool":
-			write += "Bool(%s%s);\n"
+			write += "Bool(%s);\n"
 		case "byte", "i8":
-			write += "Byte(%s%s);\n"
+			write += "Byte(%s);\n"
 		case "i16":
-			write += "I16(%s%s);\n"
+			write += "I16(%s);\n"
 		case "i32":
-			write += "I32(%s%s);\n"
+			write += "I32(%s);\n"
 		case "i64":
-			write += "I64(%s%s);\n"
+			write += "I64(%s);\n"
 		case "double":
-			write += "Double(%s%s);\n"
+			write += "Double(%s);\n"
 		case "string":
-			write += "String(%s%s);\n"
+			write += "String(%s);\n"
 		case "binary":
-			write += "Binary(%s%s);\n"
+			write += "Binary(%s);\n"
 		default:
 			if isEnum {
-				write += "I32(%s%s.getValue());\n"
+				write += "I32(%s.getValue());\n"
 			} else {
 				panic("unknown thrift type: " + underlyingType.Name)
 			}
 		}
 
-		contents += fmt.Sprintf(write, accessPrefix, field.Name)
+		contents += fmt.Sprintf(write, elem)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(ind+"%s%s.write(oprot);\n", accessPrefix, field.Name)
 	} else if underlyingType.IsContainer() {
@@ -3126,7 +3130,11 @@ func (g *Generator) generateCallArgs(args []*parser.Field, prefix string) string
 }
 
 func (g *Generator) getJavaTypeFromThriftType(t *parser.Type) string {
-	return g._getJavaType(t, true)
+	javaType := g._getJavaType(t, true)
+	if g.generateBoxedPrimitives() {
+		return containerType(javaType)
+	}
+	return javaType
 }
 
 func (g *Generator) getUnparametrizedJavaType(t *parser.Type) string {
@@ -3201,7 +3209,7 @@ func (g *Generator) getTType(t *parser.Type) string {
 	return fmt.Sprintf("org.apache.thrift.protocol.TType.%s", ttype)
 }
 
-func (g *Generator) isJavaPrimitive(t *parser.Type) bool {
+func (g *Generator) canBeJavaPrimitive(t *parser.Type) bool {
 	underlyingType := g.Frugal.UnderlyingType(t)
 	switch underlyingType.Name {
 	case "bool", "byte", "i8", "i16", "i32", "i64", "double":
@@ -3209,6 +3217,39 @@ func (g *Generator) isJavaPrimitive(t *parser.Type) bool {
 	default:
 		return false
 	}
+}
+
+func (g *Generator) isJavaPrimitive(t *parser.Type) bool {
+	if g.generateBoxedPrimitives() {
+		// If boxing primitives, nothing is a primitive
+		return false
+	}
+
+	return g.canBeJavaPrimitive(t)
+}
+
+func (g *Generator) getPrimitiveDefaultValue(t *parser.Type) string {
+	switch name := g.Frugal.UnderlyingType(t).Name; name {
+	case "bool":
+		return "false"
+	case "i8", "byte":
+		return "(byte)0"
+	case "i16":
+		return "(short)0"
+	case "i32":
+		return "0"
+	case "i64":
+		return "0L"
+	case "double":
+		return "0.0"
+	default:
+		panic(fmt.Sprintf("%s is not a primitive", name))
+	}
+}
+
+func (g *Generator) generateBoxedPrimitives() bool {
+	_, ok := g.Options["boxed_primitives"]
+	return ok
 }
 
 func containerType(typeName string) string {

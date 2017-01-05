@@ -62,14 +62,14 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		schemes.put(TupleScheme.class, new TestingDefaultsTupleSchemeFactory());
 	}
 
-	public long ID2; // optional
+	public Long ID2; // optional
 	public Event ev1; // required
 	public Event ev2; // required
-	public long ID; // required
+	public Long ID; // required
 	public String thing; // required
 	public String thing2; // optional
 	public java.util.List<Integer> listfield; // required
-	public long ID3; // required
+	public Long ID3; // required
 	public java.nio.ByteBuffer bin_field; // required
 	public java.nio.ByteBuffer bin_field2; // optional
 	public java.nio.ByteBuffer bin_field3; // required
@@ -191,10 +191,6 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 	}
 
 	// isset id assignments
-	private static final int __ID2_ISSET_ID = 0;
-	private static final int __ID_ISSET_ID = 1;
-	private static final int __ID3_ISSET_ID = 2;
-	private byte __isset_bitfield = 0;
 	private static final _Fields optionals[] = {_Fields.I_D2,_Fields.THING2,_Fields.BIN_FIELD2,_Fields.BIN_FIELD4,_Fields.LIST2,_Fields.LIST3,_Fields.A_MAP};
 	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
 	static {
@@ -299,10 +295,10 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 	public TestingDefaults(
 		Event ev1,
 		Event ev2,
-		long ID,
+		Long ID,
 		String thing,
 		java.util.List<Integer> listfield,
-		long ID3,
+		Long ID3,
 		java.nio.ByteBuffer bin_field,
 		java.nio.ByteBuffer bin_field3,
 		java.util.List<Integer> list4,
@@ -312,11 +308,9 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		this.ev1 = ev1;
 		this.ev2 = ev2;
 		this.ID = ID;
-		setIDIsSet(true);
 		this.thing = thing;
 		this.listfield = listfield;
 		this.ID3 = ID3;
-		setID3IsSet(true);
 		this.bin_field = org.apache.thrift.TBaseHelper.copyBinary(bin_field);
 		this.bin_field3 = org.apache.thrift.TBaseHelper.copyBinary(bin_field3);
 		this.list4 = list4;
@@ -328,15 +322,18 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 	 * Performs a deep copy on <i>other</i>.
 	 */
 	public TestingDefaults(TestingDefaults other) {
-		__isset_bitfield = other.__isset_bitfield;
-		this.ID2 = other.ID2;
+		if (other.isSetID2()) {
+			this.ID2 = other.ID2;
+		}
 		if (other.isSetEv1()) {
 			this.ev1 = new Event(other.ev1);
 		}
 		if (other.isSetEv2()) {
 			this.ev2 = new Event(other.ev2);
 		}
-		this.ID = other.ID;
+		if (other.isSetID()) {
+			this.ID = other.ID;
+		}
 		if (other.isSetThing()) {
 			this.thing = other.thing;
 		}
@@ -345,12 +342,14 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		}
 		if (other.isSetListfield()) {
 			this.listfield = new ArrayList<Integer>(other.listfield.size());
-			for (int elem7 : other.listfield) {
-				int elem8 = elem7;
+			for (Integer elem7 : other.listfield) {
+				Integer elem8 = elem7;
 				this.listfield.add(elem8);
 			}
 		}
-		this.ID3 = other.ID3;
+		if (other.isSetID3()) {
+			this.ID3 = other.ID3;
+		}
 		if (other.isSetBin_field()) {
 			this.bin_field = org.apache.thrift.TBaseHelper.copyBinary(other.bin_field);
 		}
@@ -365,22 +364,22 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		}
 		if (other.isSetList2()) {
 			this.list2 = new ArrayList<Integer>(other.list2.size());
-			for (int elem9 : other.list2) {
-				int elem10 = elem9;
+			for (Integer elem9 : other.list2) {
+				Integer elem10 = elem9;
 				this.list2.add(elem10);
 			}
 		}
 		if (other.isSetList3()) {
 			this.list3 = new ArrayList<Integer>(other.list3.size());
-			for (int elem11 : other.list3) {
-				int elem12 = elem11;
+			for (Integer elem11 : other.list3) {
+				Integer elem12 = elem11;
 				this.list3.add(elem12);
 			}
 		}
 		if (other.isSetList4()) {
 			this.list4 = new ArrayList<Integer>(other.list4.size());
-			for (int elem13 : other.list4) {
-				int elem14 = elem13;
+			for (Integer elem13 : other.list4) {
+				Integer elem14 = elem13;
 				this.list4.add(elem14);
 			}
 		}
@@ -459,27 +458,28 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 
 	}
 
-	public long getID2() {
+	public Long getID2() {
 		return this.ID2;
 	}
 
-	public TestingDefaults setID2(long ID2) {
+	public TestingDefaults setID2(Long ID2) {
 		this.ID2 = ID2;
-		setID2IsSet(true);
 		return this;
 	}
 
 	public void unsetID2() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __ID2_ISSET_ID);
+		this.ID2 = null;
 	}
 
 	/** Returns true if field ID2 is set (has been assigned a value) and false otherwise */
 	public boolean isSetID2() {
-		return EncodingUtils.testBit(__isset_bitfield, __ID2_ISSET_ID);
+		return this.ID2 != null;
 	}
 
 	public void setID2IsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __ID2_ISSET_ID, value);
+		if (!value) {
+			this.ID2 = null;
+		}
 	}
 
 	public Event getEv1() {
@@ -530,27 +530,28 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		}
 	}
 
-	public long getID() {
+	public Long getID() {
 		return this.ID;
 	}
 
-	public TestingDefaults setID(long ID) {
+	public TestingDefaults setID(Long ID) {
 		this.ID = ID;
-		setIDIsSet(true);
 		return this;
 	}
 
 	public void unsetID() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __ID_ISSET_ID);
+		this.ID = null;
 	}
 
 	/** Returns true if field ID is set (has been assigned a value) and false otherwise */
 	public boolean isSetID() {
-		return EncodingUtils.testBit(__isset_bitfield, __ID_ISSET_ID);
+		return this.ID != null;
 	}
 
 	public void setIDIsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __ID_ISSET_ID, value);
+		if (!value) {
+			this.ID = null;
+		}
 	}
 
 	public String getThing() {
@@ -609,7 +610,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		return (this.listfield == null) ? null : this.listfield.iterator();
 	}
 
-	public void addToListfield(int elem) {
+	public void addToListfield(Integer elem) {
 		if (this.listfield == null) {
 			this.listfield = new ArrayList<Integer>();
 		}
@@ -640,27 +641,28 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		}
 	}
 
-	public long getID3() {
+	public Long getID3() {
 		return this.ID3;
 	}
 
-	public TestingDefaults setID3(long ID3) {
+	public TestingDefaults setID3(Long ID3) {
 		this.ID3 = ID3;
-		setID3IsSet(true);
 		return this;
 	}
 
 	public void unsetID3() {
-		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __ID3_ISSET_ID);
+		this.ID3 = null;
 	}
 
 	/** Returns true if field ID3 is set (has been assigned a value) and false otherwise */
 	public boolean isSetID3() {
-		return EncodingUtils.testBit(__isset_bitfield, __ID3_ISSET_ID);
+		return this.ID3 != null;
 	}
 
 	public void setID3IsSet(boolean value) {
-		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __ID3_ISSET_ID, value);
+		if (!value) {
+			this.ID3 = null;
+		}
 	}
 
 	public byte[] getBin_field() {
@@ -807,7 +809,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		return (this.list2 == null) ? null : this.list2.iterator();
 	}
 
-	public void addToList2(int elem) {
+	public void addToList2(Integer elem) {
 		if (this.list2 == null) {
 			this.list2 = new ArrayList<Integer>();
 		}
@@ -846,7 +848,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		return (this.list3 == null) ? null : this.list3.iterator();
 	}
 
-	public void addToList3(int elem) {
+	public void addToList3(Integer elem) {
 		if (this.list3 == null) {
 			this.list3 = new ArrayList<Integer>();
 		}
@@ -885,7 +887,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		return (this.list4 == null) ? null : this.list4.iterator();
 	}
 
-	public void addToList4(int elem) {
+	public void addToList4(Integer elem) {
 		if (this.list4 == null) {
 			this.list4 = new ArrayList<Integer>();
 		}
@@ -1273,7 +1275,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		if (this_present_ID2 || that_present_ID2) {
 			if (!(this_present_ID2 && that_present_ID2))
 				return false;
-			if (this.ID2 != that.ID2)
+			if (!this.ID2.equals(that.ID2))
 				return false;
 		}
 
@@ -1295,12 +1297,12 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 				return false;
 		}
 
-		boolean this_present_ID = true;
-		boolean that_present_ID = true;
+		boolean this_present_ID = true && this.isSetID();
+		boolean that_present_ID = true && that.isSetID();
 		if (this_present_ID || that_present_ID) {
 			if (!(this_present_ID && that_present_ID))
 				return false;
-			if (this.ID != that.ID)
+			if (!this.ID.equals(that.ID))
 				return false;
 		}
 
@@ -1331,12 +1333,12 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 				return false;
 		}
 
-		boolean this_present_ID3 = true;
-		boolean that_present_ID3 = true;
+		boolean this_present_ID3 = true && this.isSetID3();
+		boolean that_present_ID3 = true && that.isSetID3();
 		if (this_present_ID3 || that_present_ID3) {
 			if (!(this_present_ID3 && that_present_ID3))
 				return false;
-			if (this.ID3 != that.ID3)
+			if (!this.ID3.equals(that.ID3))
 				return false;
 		}
 
@@ -1452,7 +1454,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		if (present_ev2)
 			list.add(ev2);
 
-		boolean present_ID = true;
+		boolean present_ID = true && (isSetID());
 		list.add(present_ID);
 		if (present_ID)
 			list.add(ID);
@@ -1472,7 +1474,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		if (present_listfield)
 			list.add(listfield);
 
-		boolean present_ID3 = true;
+		boolean present_ID3 = true && (isSetID3());
 		list.add(present_ID3);
 		if (present_ID3)
 			list.add(ID3);
@@ -1740,7 +1742,11 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 
 		if (isSetID2()) {
 			sb.append("ID2:");
-			sb.append(this.ID2);
+			if (this.ID2 == null) {
+				sb.append("null");
+			} else {
+				sb.append(this.ID2);
+			}
 			first = false;
 		}
 		if (!first) sb.append(", ");
@@ -1761,7 +1767,11 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		first = false;
 		if (!first) sb.append(", ");
 		sb.append("ID:");
-		sb.append(this.ID);
+		if (this.ID == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.ID);
+		}
 		first = false;
 		if (!first) sb.append(", ");
 		sb.append("thing:");
@@ -1791,7 +1801,11 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		first = false;
 		if (!first) sb.append(", ");
 		sb.append("ID3:");
-		sb.append(this.ID3);
+		if (this.ID3 == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.ID3);
+		}
 		first = false;
 		if (!first) sb.append(", ");
 		sb.append("bin_field:");
@@ -1915,7 +1929,6 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
 		try {
 			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-			__isset_bitfield = 0;
 			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
 		} catch (org.apache.thrift.TException te) {
 			throw new java.io.IOException(te);
@@ -1994,7 +2007,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 							org.apache.thrift.protocol.TList elem17 = iprot.readListBegin();
 							struct.listfield = new ArrayList<Integer>(elem17.size);
 							for (int elem18 = 0; elem18 < elem17.size; ++elem18) {
-								int elem19 = iprot.readI32();
+								Integer elem19 = iprot.readI32();
 								struct.listfield.add(elem19);
 							}
 							iprot.readListEnd();
@@ -2048,7 +2061,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 							org.apache.thrift.protocol.TList elem20 = iprot.readListBegin();
 							struct.list2 = new ArrayList<Integer>(elem20.size);
 							for (int elem21 = 0; elem21 < elem20.size; ++elem21) {
-								int elem22 = iprot.readI32();
+								Integer elem22 = iprot.readI32();
 								struct.list2.add(elem22);
 							}
 							iprot.readListEnd();
@@ -2062,7 +2075,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 							org.apache.thrift.protocol.TList elem23 = iprot.readListBegin();
 							struct.list3 = new ArrayList<Integer>(elem23.size);
 							for (int elem24 = 0; elem24 < elem23.size; ++elem24) {
-								int elem25 = iprot.readI32();
+								Integer elem25 = iprot.readI32();
 								struct.list3.add(elem25);
 							}
 							iprot.readListEnd();
@@ -2076,7 +2089,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 							org.apache.thrift.protocol.TList elem26 = iprot.readListBegin();
 							struct.list4 = new ArrayList<Integer>(elem26.size);
 							for (int elem27 = 0; elem27 < elem26.size; ++elem27) {
-								int elem28 = iprot.readI32();
+								Integer elem28 = iprot.readI32();
 								struct.list4.add(elem28);
 							}
 							iprot.readListEnd();
@@ -2133,7 +2146,10 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.isSetID2()) {
 				oprot.writeFieldBegin(I_D2_FIELD_DESC);
-				long elem33 = struct.ID2;
+				Long elem33 = struct.ID2;
+				if (elem33 == null) {
+					elem33 = 0L;
+				}
 				oprot.writeI64(elem33);
 				oprot.writeFieldEnd();
 			}
@@ -2148,7 +2164,10 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldBegin(ID_FIELD_DESC);
-			long elem34 = struct.ID;
+			Long elem34 = struct.ID;
+			if (elem34 == null) {
+				elem34 = 0L;
+			}
 			oprot.writeI64(elem34);
 			oprot.writeFieldEnd();
 			if (struct.thing != null) {
@@ -2168,15 +2187,21 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 			if (struct.listfield != null) {
 				oprot.writeFieldBegin(LISTFIELD_FIELD_DESC);
 				oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, struct.listfield.size()));
-				for (int elem37 : struct.listfield) {
-					int elem38 = elem37;
+				for (Integer elem37 : struct.listfield) {
+					Integer elem38 = elem37;
+					if (elem38 == null) {
+						elem38 = 0;
+					}
 					oprot.writeI32(elem38);
 				}
 				oprot.writeListEnd();
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldBegin(I_D3_FIELD_DESC);
-			long elem39 = struct.ID3;
+			Long elem39 = struct.ID3;
+			if (elem39 == null) {
+				elem39 = 0L;
+			}
 			oprot.writeI64(elem39);
 			oprot.writeFieldEnd();
 			if (struct.bin_field != null) {
@@ -2211,8 +2236,11 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 				if (struct.isSetList2()) {
 					oprot.writeFieldBegin(LIST2_FIELD_DESC);
 					oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, struct.list2.size()));
-					for (int elem44 : struct.list2) {
-						int elem45 = elem44;
+					for (Integer elem44 : struct.list2) {
+						Integer elem45 = elem44;
+						if (elem45 == null) {
+							elem45 = 0;
+						}
 						oprot.writeI32(elem45);
 					}
 					oprot.writeListEnd();
@@ -2223,8 +2251,11 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 				if (struct.isSetList3()) {
 					oprot.writeFieldBegin(LIST3_FIELD_DESC);
 					oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, struct.list3.size()));
-					for (int elem46 : struct.list3) {
-						int elem47 = elem46;
+					for (Integer elem46 : struct.list3) {
+						Integer elem47 = elem46;
+						if (elem47 == null) {
+							elem47 = 0;
+						}
 						oprot.writeI32(elem47);
 					}
 					oprot.writeListEnd();
@@ -2234,8 +2265,11 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 			if (struct.list4 != null) {
 				oprot.writeFieldBegin(LIST4_FIELD_DESC);
 				oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, struct.list4.size()));
-				for (int elem48 : struct.list4) {
-					int elem49 = elem48;
+				for (Integer elem48 : struct.list4) {
+					Integer elem49 = elem48;
+					if (elem49 == null) {
+						elem49 = 0;
+					}
 					oprot.writeI32(elem49);
 				}
 				oprot.writeListEnd();
@@ -2339,7 +2373,10 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 			}
 			oprot.writeBitSet(optionals, 16);
 			if (struct.isSetID2()) {
-				long elem57 = struct.ID2;
+				Long elem57 = struct.ID2;
+				if (elem57 == null) {
+					elem57 = 0L;
+				}
 				oprot.writeI64(elem57);
 			}
 			if (struct.isSetEv1()) {
@@ -2349,7 +2386,10 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 				struct.ev2.write(oprot);
 			}
 			if (struct.isSetID()) {
-				long elem58 = struct.ID;
+				Long elem58 = struct.ID;
+				if (elem58 == null) {
+					elem58 = 0L;
+				}
 				oprot.writeI64(elem58);
 			}
 			if (struct.isSetThing()) {
@@ -2362,13 +2402,19 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 			}
 			if (struct.isSetListfield()) {
 				oprot.writeI32(struct.listfield.size());
-				for (int elem61 : struct.listfield) {
-					int elem62 = elem61;
+				for (Integer elem61 : struct.listfield) {
+					Integer elem62 = elem61;
+					if (elem62 == null) {
+						elem62 = 0;
+					}
 					oprot.writeI32(elem62);
 				}
 			}
 			if (struct.isSetID3()) {
-				long elem63 = struct.ID3;
+				Long elem63 = struct.ID3;
+				if (elem63 == null) {
+					elem63 = 0L;
+				}
 				oprot.writeI64(elem63);
 			}
 			if (struct.isSetBin_field()) {
@@ -2389,22 +2435,31 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 			}
 			if (struct.isSetList2()) {
 				oprot.writeI32(struct.list2.size());
-				for (int elem68 : struct.list2) {
-					int elem69 = elem68;
+				for (Integer elem68 : struct.list2) {
+					Integer elem69 = elem68;
+					if (elem69 == null) {
+						elem69 = 0;
+					}
 					oprot.writeI32(elem69);
 				}
 			}
 			if (struct.isSetList3()) {
 				oprot.writeI32(struct.list3.size());
-				for (int elem70 : struct.list3) {
-					int elem71 = elem70;
+				for (Integer elem70 : struct.list3) {
+					Integer elem71 = elem70;
+					if (elem71 == null) {
+						elem71 = 0;
+					}
 					oprot.writeI32(elem71);
 				}
 			}
 			if (struct.isSetList4()) {
 				oprot.writeI32(struct.list4.size());
-				for (int elem72 : struct.list4) {
-					int elem73 = elem72;
+				for (Integer elem72 : struct.list4) {
+					Integer elem73 = elem72;
+					if (elem73 == null) {
+						elem73 = 0;
+					}
 					oprot.writeI32(elem73);
 				}
 			}
@@ -2457,7 +2512,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 				org.apache.thrift.protocol.TList elem77 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, iprot.readI32());
 				struct.listfield = new ArrayList<Integer>(elem77.size);
 				for (int elem78 = 0; elem78 < elem77.size; ++elem78) {
-					int elem79 = iprot.readI32();
+					Integer elem79 = iprot.readI32();
 					struct.listfield.add(elem79);
 				}
 				struct.setListfieldIsSet(true);
@@ -2486,7 +2541,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 				org.apache.thrift.protocol.TList elem80 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, iprot.readI32());
 				struct.list2 = new ArrayList<Integer>(elem80.size);
 				for (int elem81 = 0; elem81 < elem80.size; ++elem81) {
-					int elem82 = iprot.readI32();
+					Integer elem82 = iprot.readI32();
 					struct.list2.add(elem82);
 				}
 				struct.setList2IsSet(true);
@@ -2495,7 +2550,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 				org.apache.thrift.protocol.TList elem83 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, iprot.readI32());
 				struct.list3 = new ArrayList<Integer>(elem83.size);
 				for (int elem84 = 0; elem84 < elem83.size; ++elem84) {
-					int elem85 = iprot.readI32();
+					Integer elem85 = iprot.readI32();
 					struct.list3.add(elem85);
 				}
 				struct.setList3IsSet(true);
@@ -2504,7 +2559,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 				org.apache.thrift.protocol.TList elem86 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, iprot.readI32());
 				struct.list4 = new ArrayList<Integer>(elem86.size);
 				for (int elem87 = 0; elem87 < elem86.size; ++elem87) {
-					int elem88 = iprot.readI32();
+					Integer elem88 = iprot.readI32();
 					struct.list4.add(elem88);
 				}
 				struct.setList4IsSet(true);
