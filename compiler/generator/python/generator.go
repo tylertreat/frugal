@@ -1235,7 +1235,7 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", typ=TApplicationException.UNKNOWN, message=e.message)\n", methodLower)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationException.UNKNOWN, message=e.message)\n", methodLower)
 	}
 	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {
@@ -1248,7 +1248,7 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 		contents += tabtabtabtab + "oprot.get_transport().flush()\n"
 		contents += tabtabtab + "except FMessageSizeException as e:\n"
 		contents += tabtabtabtab + fmt.Sprintf(
-			"raise _write_application_exception(ctx, oprot, \"%s\", typ=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])\n", methodLower)
+			"raise _write_application_exception(ctx, oprot, \"%s\", ex_code=FApplicationException.RESPONSE_TOO_LARGE, message=e.args[0])\n", methodLower)
 	}
 	contents += "\n\n"
 
@@ -1256,11 +1256,11 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 }
 
 func (g *Generator) generateWriteApplicationException() string {
-	contents := "def _write_application_exception(ctx, oprot, method, typ=None, message=None, exception=None):\n"
+	contents := "def _write_application_exception(ctx, oprot, method, ex_code=None, message=None, exception=None):\n"
 	contents += tab + "if exception is not None:\n"
 	contents += tabtab + "x = exception\n"
 	contents += tab + "else:\n"
-	contents += tabtab + "x = TApplicationException(type=typ, message=message)\n"
+	contents += tabtab + "x = TApplicationException(type=ex_code, message=message)\n"
 	contents += tab + "oprot.write_response_headers(ctx)\n"
 	contents += tab + "oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)\n"
 	contents += tab + "x.write(oprot)\n"
