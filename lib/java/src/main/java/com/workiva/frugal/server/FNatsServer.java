@@ -255,7 +255,7 @@ public class FNatsServer implements FServer {
 
             executorService.submit(
                     new Request(message.getData(), System.currentTimeMillis(), message.getReplyTo(),
-                        highWatermark, inputProtoFactory, outputProtoFactory, processor, conn));
+                            highWatermark, inputProtoFactory, outputProtoFactory, processor, conn));
         };
     }
 

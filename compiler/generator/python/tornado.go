@@ -21,7 +21,6 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 
 	imports += "from frugal.exceptions import FApplicationException\n"
 	imports += "from frugal.exceptions import FMessageSizeException\n"
-	imports += "from frugal.exceptions import FRateLimitException\n"
 	imports += "from frugal.exceptions import FTimeoutException\n"
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.tornado.processor import FBaseProcessor\n"
@@ -149,9 +148,6 @@ func (t *TornadoGenerator) generateClientRecvMethod(method *parser.Method) strin
 	contents += tabtabtabtab + "if x.type == FApplicationException.RESPONSE_TOO_LARGE:\n"
 	contents += tabtabtabtabtab + "future.set_exception(FMessageSizeException.response(x.message))\n"
 	contents += tabtabtabtabtab + "return\n"
-	contents += tabtabtabtab + "if x.type == FApplicationException.RATE_LIMIT_EXCEEDED:\n"
-	contents += tabtabtabtabtab + "future.set_exception(FRateLimitException(x.message))\n"
-	contents += tabtabtabtabtab + "return\n"
 	contents += tabtabtabtab + "future.set_exception(x)\n"
 	contents += tabtabtabtab + "return\n"
 	contents += tabtabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
@@ -217,16 +213,16 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", t.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
-	contents += tabtab + "except FRateLimitException as ex:\n"
+	contents += tabtab + "except TApplicationException as ex:\n"
 	contents += tabtabtab + "with (yield self._lock.acquire()):\n"
 	contents += tabtabtabtab +
-		fmt.Sprintf("_write_application_exception(ctx, oprot, FApplicationException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
+		fmt.Sprintf("_write_application_exception(ctx, oprot, \"%s\", exception=ex)\n",
 			methodLower)
 	contents += tabtabtabtab + "return\n"
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with (yield self._lock.acquire()):\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", methodLower)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationException.UNKNOWN, message=e.message)\n", methodLower)
 	}
 	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {
@@ -239,7 +235,7 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 		contents += tabtabtabtab + "oprot.get_transport().flush()\n"
 		contents += tabtabtab + "except FMessageSizeException as e:\n"
 		contents += tabtabtabtab + fmt.Sprintf(
-			"raise _write_application_exception(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, \"%s\", e.message)\n", methodLower)
+			"raise _write_application_exception(ctx, oprot, \"%s\", ex_code=FApplicationException.RESPONSE_TOO_LARGE, message=e.message)\n", methodLower)
 	}
 	contents += "\n\n"
 

@@ -21,10 +21,14 @@ package com.workiva;
 
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
+import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
+import com.workiva.frugal.server.FDefaultNettyHttpProcessor;
 import com.workiva.frugal.server.FNatsServer;
+import com.workiva.frugal.server.FNettyHttpHandler;
+import com.workiva.frugal.server.FNettyHttpProcessor;
 import com.workiva.frugal.server.FServer;
 import com.workiva.frugal.transport.FPublisherTransportFactory;
 import com.workiva.frugal.transport.FNatsPublisherTransport;
@@ -37,12 +41,18 @@ import frugal.test.FFrugalTest;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
 import io.nats.client.Constants;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TProtocolFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -54,7 +64,7 @@ public class TestServer {
 
     public static boolean middlewareCalled = false;
 
-    public static void main(String [] args) {
+    public static void main(String[] args) {
         try {
             // default testing parameters, overwritten in Python runner
             int port = 9090;
@@ -91,8 +101,7 @@ public class TestServer {
             ConnectionFactory cf = new ConnectionFactory("nats://localhost:4222");
             Connection conn = cf.createConnection();
 
-            List<String> validTransports = new ArrayList<>();
-            validTransports.add("stateless");
+            List<String> validTransports = Arrays.asList("stateless", "http");
 
             if (!validTransports.contains(transport_type)) {
                 throw new Exception("Unknown transport type! " + transport_type);
@@ -113,18 +122,28 @@ public class TestServer {
                             fProtocolFactory,
                             new String[]{Integer.toString(port)}).build();
                     break;
+                case "http":
+                    break;
             }
 
             // Start a healthcheck server for the cross language tests
-            try {
-                HealthCheck healthcheck = new HealthCheck(port);
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
+            if (transport_type.equals("stateless")) {
+                try {
+                    new HealthCheck(port);
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
+                }
+
+                // Start server in separate thread
+                NatsServerThread serverThread = new NatsServerThread(server, transport_type);
+                serverThread.start();
+            } else {
+                // Start server in separate thread
+                FNettyHttpHandlerFactory handlerFactory = new FNettyHttpHandlerFactory(processor, fProtocolFactory);
+                NettyServerThread serverThread = new NettyServerThread(port, handlerFactory);
+                serverThread.start();
             }
 
-            // Start server in separate thread
-            runServer serverThread = new runServer(server, transport_type);
-            serverThread.start();
 
             // Wait for the middleware to be invoked, fail if it exceeds the longest client timeout (currently 20 sec)
             if (called.await(20, TimeUnit.SECONDS)) {
@@ -140,11 +159,11 @@ public class TestServer {
     }
 
 
-    private static class runServer extends Thread {
+    private static class NatsServerThread extends Thread {
         FServer server;
         String transport_type;
 
-        runServer(FServer server, String transport_type) {
+        NatsServerThread(FServer server, String transport_type) {
             this.server = server;
             this.transport_type = transport_type;
         }
@@ -159,6 +178,53 @@ public class TestServer {
         }
     }
 
+    public static class NettyServerThread extends Thread {
+        Integer port;
+        final FNettyHttpHandlerFactory handlerFactory;
+
+        NettyServerThread(Integer port, FNettyHttpHandlerFactory handlerFactory) {
+            this.port = port;
+            this.handlerFactory = handlerFactory;
+        }
+
+        public void run() {
+            EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+            EventLoopGroup workerGroup = new NioEventLoopGroup();
+            try {
+                ServerBootstrap b = new ServerBootstrap();
+                b.group(bossGroup, workerGroup)
+                        .channel(NioServerSocketChannel.class)
+                        .handler(new LoggingHandler(LogLevel.INFO))
+                        .childHandler(new NettyHttpInitializer(handlerFactory));
+
+                Channel ch = b.bind(port).sync().channel();
+
+                ch.closeFuture().sync();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                bossGroup.shutdownGracefully();
+                workerGroup.shutdownGracefully();
+            }
+        }
+    }
+
+    public static class FNettyHttpHandlerFactory {
+
+        final FProcessor processor;
+        final FProtocolFactory protocolFactory;
+
+        FNettyHttpHandlerFactory(FProcessor processor, FProtocolFactory protocolFactory) {
+            this.processor = processor;
+            this.protocolFactory = protocolFactory;
+        }
+
+        public FNettyHttpHandler newHandler() {
+            FNettyHttpProcessor httpProcessor = FDefaultNettyHttpProcessor.of(processor, protocolFactory);
+            return FNettyHttpHandler.of(httpProcessor);
+        }
+
+    }
 
     private static class ServerMiddleware implements ServiceMiddleware {
         CountDownLatch called;

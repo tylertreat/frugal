@@ -37,10 +37,13 @@ class StoreHandler(Iface):
     The handler must satisfy the interface the server exposes.
     """
 
+    # Handlers can also be coroutines.
+    @gen.coroutine
     def buyAlbum(self, ctx, ASIN, acct):
         """
         Return an album; always buy the same one.
         """
+        yield gen.moment
         album = Album()
         album.ASIN = str(uuid.uuid4())
         album.duration = 12000
@@ -51,7 +54,7 @@ class StoreHandler(Iface):
                               duration=169,
                               pro=PerfRightsOrg.ASCAP)]
 
-        return album
+        raise gen.Return(album)
 
     def enterAlbumGiveaway(self, ctx, email, name):
         """

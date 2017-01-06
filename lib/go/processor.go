@@ -101,10 +101,16 @@ func (f *FBaseProcessor) AddToAnnotationsMap(method string, annotations map[stri
 
 // Annotations returns a map of method name to annotations as defined in
 // the service IDL that is serviced by this processor.
-// TODO: Need to deep copy the nested maps to avoid consumers mutating this
-// TODO: reference.
 func (f *FBaseProcessor) Annotations() map[string]map[string]string {
-	return f.annotationsMap
+	annoCopy := make(map[string]map[string]string)
+	for k, v := range f.annotationsMap {
+		methodCopy := make(map[string]string)
+		for mk, mv := range v {
+			methodCopy[mk] = mv
+		}
+		annoCopy[k] = methodCopy
+	}
+	return annoCopy
 }
 
 // GetWriteMutex returns the Mutex which FProcessorFunctions should use to
@@ -157,24 +163,4 @@ func (f *FBaseProcessorFunction) AddMiddleware(middleware ServiceMiddleware) {
 // InvokeMethod invokes the handler method.
 func (f *FBaseProcessorFunction) InvokeMethod(args []interface{}) Results {
 	return f.handler.Invoke(args)
-}
-
-// FProcessorFactory produces FProcessors and is used by an FServer. It takes a
-// TTransport and returns an FProcessor wrapping it.
-type FProcessorFactory interface {
-	GetProcessor(trans thrift.TTransport) FProcessor
-}
-
-type fProcessorFactory struct {
-	processor FProcessor
-}
-
-// NewFProcessorFactory creates a new FProcessorFactory for creating new
-// FProcessors.
-func NewFProcessorFactory(p FProcessor) FProcessorFactory {
-	return &fProcessorFactory{processor: p}
-}
-
-func (p *fProcessorFactory) GetProcessor(trans thrift.TTransport) FProcessor {
-	return p.processor
 }

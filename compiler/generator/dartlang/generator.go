@@ -1312,8 +1312,8 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	subscribers += tab + "final frugal.FScopeProvider provider;\n"
 	subscribers += tab + "final List<frugal.Middleware> _middleware;\n\n"
 
-	subscribers += tab + fmt.Sprintf("%sSubscriber(this.provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
-	subscribers += tabtab + "this._middleware = middeware ?? [];\n"
+	subscribers += tab + fmt.Sprintf("%sSubscriber(this.provider, [List<frugal.Middleware> middleware])\n", strings.Title(scope.Name))
+	subscribers += tabtabtab + ": this._middleware = middleware ?? [] {\n"
 	subscribers += tabtab + "this._middleware.addAll(provider.middleware);\n"
 	subscribers += "}\n\n"
 

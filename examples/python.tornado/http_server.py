@@ -7,7 +7,7 @@ import uuid
 import tornado
 from thrift.protocol import TBinaryProtocol
 from frugal.protocol import FProtocolFactory
-from frugal.tornado.server.http_handler import FTornadoHttpHandler
+from frugal.tornado.server.http_handler import FHttpHandler
 
 sys.path.append('gen-py.tornado')
 from http_client import logging_middleware
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # and our configured processor and protocol
     application = tornado.web.Application([
         (r"/frugal",
-            FTornadoHttpHandler,
+            FHttpHandler,
             dict(processor=processor, protocol_factory=prot_factory))
     ])
     application.listen(9090)
