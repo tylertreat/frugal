@@ -95,6 +95,19 @@
         </dependency>
     </dependencies>
 
+    <repositories>
+        <repository>
+            <id>workiva-dev</id>
+            <name>workiva-dev</name>
+            <url>https://artifactory.workiva.org/artifactory/workiva-dev</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <build>
         <plugins>
             <plugin>
