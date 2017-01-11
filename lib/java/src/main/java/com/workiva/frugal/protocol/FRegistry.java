@@ -1,6 +1,9 @@
 package com.workiva.frugal.protocol;
 
 import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransportException;
+
+import java.util.concurrent.BlockingQueue;
 
 
 /**
@@ -14,13 +17,26 @@ import org.apache.thrift.TException;
 public interface FRegistry extends AutoCloseable {
 
     /**
-     * Register a callback for the given FContext.
+     * Poison pill placed in all registered queues when <code>close</code> is called.
+     */
+    byte[] POISON_PILL = new byte[0];
+
+    /**
+     * Assign an opid to the given <code>FContext</code> and make a placeholder for the given
+     * opid in the registry.
+     *
+     * @param context <code>FContext</code> to assign an opid.
+     * @throws TTransportException if the given context is already registered to a callback.
+     */
+    void assignOpId(FContext context) throws TTransportException;
+
+    /**
+     * Register a queue for the given FContext.
      *
      * @param context  the FContext to register.
-     * @param callback the callback to register.
-     * @throws TException if the given context is already registered to a callback.
+     * @param queue    the queue to place responses directed at this context.
      */
-    void register(FContext context, FAsyncCallback callback) throws TException;
+    void register(FContext context, BlockingQueue<byte[]> queue);
 
     /**
      * Unregister the callback for the given FContext.

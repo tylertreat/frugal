@@ -1,14 +1,18 @@
 package com.workiva.frugal.transport;
 
+import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FRegistry;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -167,27 +171,92 @@ public class FAdapterTransportTest {
     }
 
     /**
-     * Ensures send calls through to write and flush the underlying transport.
+     * Ensures request calls through to write and flush the underlying transport.
      */
     @Test
-    public void testSend() throws TTransportException {
-        byte[] buff = new byte[]{1, 2, 3, 4};
-
+    public void testRequest() throws TTransportException {
+        byte[] expectedResponse = "hi".getBytes();
+        tr.registry = new MockRegistry(expectedResponse);
         when(mockTr.isOpen()).thenReturn(true);
+        Mockito.doNothing().when(mockTr).open();
         tr.open();
 
-        tr.send(buff);
+        FContext context = new FContext();
+        byte[] buff = "helloworld".getBytes();
+        byte[] actualResponse = tr.request(context, false, buff);
+        assertArrayEquals(expectedResponse, actualResponse);
 
         verify(mockTr).write(buff);
         verify(mockTr).flush();
     }
 
     /**
-     * Ensures send throws TTransportException if the transport is not open.
+     * Ensures request throws TTransportException if the transport is not open.
      */
     @Test(expected = TTransportException.class)
     public void test_notOpen() throws TTransportException {
-        tr.send(null);
+        tr.request(null, false, new byte[0]);
     }
 
+
+    class MockRegistry implements FRegistry {
+
+        byte[] response;
+
+        MockRegistry(byte[] response) {
+            this.response = response;
+        }
+
+        /**
+         * @param context
+         * @throws TTransportException if the given context is already registered to a callback.
+         */
+        @Override
+        public void assignOpId(FContext context) throws TTransportException {
+
+        }
+
+        /**
+         * Register a queue for the given FContext.
+         *
+         * @param context the FContext to register.
+         * @param queue   the queue to place responses directed at this context.
+         */
+        @Override
+        public void register(FContext context, BlockingQueue<byte[]> queue) {
+            try {
+                queue.put(response);
+            } catch (Exception ignored) {
+            }
+        }
+
+        /**
+         * Unregister the callback for the given FContext.
+         *
+         * @param context the FContext to unregister.
+         */
+        @Override
+        public void unregister(FContext context) {
+
+        }
+
+        /**
+         * Dispatch a single Frugal message frame.
+         *
+         * @param frame an entire Frugal message frame.
+         * @throws TException if execution failed.
+         */
+        @Override
+        public void execute(byte[] frame) throws TException {
+
+        }
+
+        /**
+         * Interrupt any registered contexts.
+         */
+        @Override
+        public void close() {
+
+        }
+    }
 }

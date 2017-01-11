@@ -37,8 +37,6 @@ import org.slf4j.LoggerFactory;
 import com.workiva.frugal.exception.FApplicationException;
 import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.exception.FMessageSizeException;
-import com.workiva.frugal.exception.FRateLimitException;
-import com.workiva.frugal.exception.FTimeoutException;
 import com.workiva.frugal.exception.FTransportException;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
@@ -53,8 +51,7 @@ import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TMessage;
 import org.apache.thrift.protocol.TMessageType;
-import org.apache.thrift.transport.TTransport;
-
+import org.apache.thrift.transport.TMemoryInputTransport;
 import javax.annotation.Generated;
 import java.util.Arrays;
 import java.util.concurrent.*;
@@ -174,173 +171,85 @@ public class FFoo {
 		public void Ping(FContext ctx) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			transport.register(ctx, recvPingHandler(ctx, result));
-			try {
-				oprot.writeRequestHeader(ctx);
-				oprot.writeMessageBegin(new TMessage("ping", TMessageType.CALL, 0));
-				Ping_args args = new Ping_args();
-				args.write(oprot);
-				oprot.writeMessageEnd();
-				transport.send(memoryBuffer.getWriteBytes());
+			transport.assignOpId(ctx);
+			oprot.writeRequestHeader(ctx);
+			oprot.writeMessageBegin(new TMessage("ping", TMessageType.CALL, 0));
+			Ping_args args = new Ping_args();
+			args.write(oprot);
+			oprot.writeMessageEnd();
+			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-				Object res = null;
-				try {
-					res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);
-				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "Ping interrupted: " + e.getMessage());
-				}
-				if (res == null) {
-					throw new FTimeoutException("Ping timed out");
-				}
-				if (res instanceof TException) {
-					throw (TException) res;
-				}
-				Ping_result r = (Ping_result) res;
-			} finally {
-				transport.unregister(ctx);
+			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			iprot.readResponseHeader(ctx);
+			TMessage message = iprot.readMessageBegin();
+			if (!message.name.equals("ping")) {
+				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "Ping failed: wrong method name");
 			}
-		}
-
-		private FAsyncCallback recvPingHandler(final FContext ctx, final BlockingQueue<Object> result) {
-			return new FAsyncCallback() {
-				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
-					try {
-						iprot.readResponseHeader(ctx);
-						TMessage message = iprot.readMessageBegin();
-						if (!message.name.equals("ping")) {
-							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "Ping failed: wrong method name");
-						}
-						if (message.type == TMessageType.EXCEPTION) {
-							TApplicationException e = TApplicationException.read(iprot);
-							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
-							}
-							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "Ping interrupted: " + ie.getMessage());
-							}
-						}
-						if (message.type != TMessageType.REPLY) {
-							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "Ping failed: invalid message type");
-						}
-						Ping_result res = new Ping_result();
-						res.read(iprot);
-						iprot.readMessageEnd();
-						try {
-							result.put(res);
-						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "Ping interrupted: " + e.getMessage());
-						}
-					} catch (TException e) {
-						try {
-							result.put(e);
-						} finally {
-							throw e;
-						}
-					}
+			if (message.type == TMessageType.EXCEPTION) {
+				TApplicationException e = TApplicationException.read(iprot);
+				iprot.readMessageEnd();
+				TException returnedException = e;
+				if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+					returnedException = FMessageSizeException.response(e.getMessage());
 				}
-			};
+				throw returnedException;
+			}
+			if (message.type != TMessageType.REPLY) {
+				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "Ping failed: invalid message type");
+			}
+			Ping_result res = new Ping_result();
+			res.read(iprot);
+			iprot.readMessageEnd();
 		}
-
 		/**
 		 * Blah the server.
 		 */
 		public Long blah(FContext ctx, Integer num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			transport.register(ctx, recvBlahHandler(ctx, result));
-			try {
-				oprot.writeRequestHeader(ctx);
-				oprot.writeMessageBegin(new TMessage("blah", TMessageType.CALL, 0));
-				blah_args args = new blah_args();
-				args.setNum(num);
-				args.setStr(Str);
-				args.setEvent(event);
-				args.write(oprot);
-				oprot.writeMessageEnd();
-				transport.send(memoryBuffer.getWriteBytes());
+			transport.assignOpId(ctx);
+			oprot.writeRequestHeader(ctx);
+			oprot.writeMessageBegin(new TMessage("blah", TMessageType.CALL, 0));
+			blah_args args = new blah_args();
+			args.setNum(num);
+			args.setStr(Str);
+			args.setEvent(event);
+			args.write(oprot);
+			oprot.writeMessageEnd();
+			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-				Object res = null;
-				try {
-					res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);
-				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "blah interrupted: " + e.getMessage());
-				}
-				if (res == null) {
-					throw new FTimeoutException("blah timed out");
-				}
-				if (res instanceof TException) {
-					throw (TException) res;
-				}
-				blah_result r = (blah_result) res;
-				if (r.isSetSuccess()) {
-					return r.success;
-				}
-				if (r.awe != null) {
-					throw r.awe;
-				}
-				if (r.api != null) {
-					throw r.api;
-				}
-				throw new TApplicationException(TApplicationException.MISSING_RESULT, "blah failed: unknown result");
-			} finally {
-				transport.unregister(ctx);
+			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			iprot.readResponseHeader(ctx);
+			TMessage message = iprot.readMessageBegin();
+			if (!message.name.equals("blah")) {
+				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "blah failed: wrong method name");
 			}
-		}
-
-		private FAsyncCallback recvBlahHandler(final FContext ctx, final BlockingQueue<Object> result) {
-			return new FAsyncCallback() {
-				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
-					try {
-						iprot.readResponseHeader(ctx);
-						TMessage message = iprot.readMessageBegin();
-						if (!message.name.equals("blah")) {
-							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "blah failed: wrong method name");
-						}
-						if (message.type == TMessageType.EXCEPTION) {
-							TApplicationException e = TApplicationException.read(iprot);
-							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
-							}
-							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "blah interrupted: " + ie.getMessage());
-							}
-						}
-						if (message.type != TMessageType.REPLY) {
-							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "blah failed: invalid message type");
-						}
-						blah_result res = new blah_result();
-						res.read(iprot);
-						iprot.readMessageEnd();
-						try {
-							result.put(res);
-						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "blah interrupted: " + e.getMessage());
-						}
-					} catch (TException e) {
-						try {
-							result.put(e);
-						} finally {
-							throw e;
-						}
-					}
+			if (message.type == TMessageType.EXCEPTION) {
+				TApplicationException e = TApplicationException.read(iprot);
+				iprot.readMessageEnd();
+				TException returnedException = e;
+				if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+					returnedException = FMessageSizeException.response(e.getMessage());
 				}
-			};
+				throw returnedException;
+			}
+			if (message.type != TMessageType.REPLY) {
+				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "blah failed: invalid message type");
+			}
+			blah_result res = new blah_result();
+			res.read(iprot);
+			iprot.readMessageEnd();
+			if (res.isSetSuccess()) {
+				return res.success;
+			}
+			if (res.awe != null) {
+				throw res.awe;
+			}
+			if (res.api != null) {
+				throw res.api;
+			}
+			throw new TApplicationException(TApplicationException.MISSING_RESULT, "blah failed: unknown result");
 		}
-
 		/**
 		 * oneway methods don't receive a response from the server.
 		 */
@@ -354,505 +263,241 @@ public class FFoo {
 			args.setReq(req);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			transport.send(memoryBuffer.getWriteBytes());
+			transport.request(ctx, true, memoryBuffer.getWriteBytes());
 		}
 		public java.nio.ByteBuffer bin_method(FContext ctx, java.nio.ByteBuffer bin, String Str) throws TException, actual_base.java.api_exception {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			transport.register(ctx, recvBin_methodHandler(ctx, result));
-			try {
-				oprot.writeRequestHeader(ctx);
-				oprot.writeMessageBegin(new TMessage("bin_method", TMessageType.CALL, 0));
-				bin_method_args args = new bin_method_args();
-				args.setBin(bin);
-				args.setStr(Str);
-				args.write(oprot);
-				oprot.writeMessageEnd();
-				transport.send(memoryBuffer.getWriteBytes());
+			transport.assignOpId(ctx);
+			oprot.writeRequestHeader(ctx);
+			oprot.writeMessageBegin(new TMessage("bin_method", TMessageType.CALL, 0));
+			bin_method_args args = new bin_method_args();
+			args.setBin(bin);
+			args.setStr(Str);
+			args.write(oprot);
+			oprot.writeMessageEnd();
+			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-				Object res = null;
-				try {
-					res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);
-				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "bin_method interrupted: " + e.getMessage());
-				}
-				if (res == null) {
-					throw new FTimeoutException("bin_method timed out");
-				}
-				if (res instanceof TException) {
-					throw (TException) res;
-				}
-				bin_method_result r = (bin_method_result) res;
-				if (r.isSetSuccess()) {
-					return r.success;
-				}
-				if (r.api != null) {
-					throw r.api;
-				}
-				throw new TApplicationException(TApplicationException.MISSING_RESULT, "bin_method failed: unknown result");
-			} finally {
-				transport.unregister(ctx);
+			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			iprot.readResponseHeader(ctx);
+			TMessage message = iprot.readMessageBegin();
+			if (!message.name.equals("bin_method")) {
+				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "bin_method failed: wrong method name");
 			}
-		}
-
-		private FAsyncCallback recvBin_methodHandler(final FContext ctx, final BlockingQueue<Object> result) {
-			return new FAsyncCallback() {
-				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
-					try {
-						iprot.readResponseHeader(ctx);
-						TMessage message = iprot.readMessageBegin();
-						if (!message.name.equals("bin_method")) {
-							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "bin_method failed: wrong method name");
-						}
-						if (message.type == TMessageType.EXCEPTION) {
-							TApplicationException e = TApplicationException.read(iprot);
-							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
-							}
-							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "bin_method interrupted: " + ie.getMessage());
-							}
-						}
-						if (message.type != TMessageType.REPLY) {
-							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "bin_method failed: invalid message type");
-						}
-						bin_method_result res = new bin_method_result();
-						res.read(iprot);
-						iprot.readMessageEnd();
-						try {
-							result.put(res);
-						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "bin_method interrupted: " + e.getMessage());
-						}
-					} catch (TException e) {
-						try {
-							result.put(e);
-						} finally {
-							throw e;
-						}
-					}
+			if (message.type == TMessageType.EXCEPTION) {
+				TApplicationException e = TApplicationException.read(iprot);
+				iprot.readMessageEnd();
+				TException returnedException = e;
+				if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+					returnedException = FMessageSizeException.response(e.getMessage());
 				}
-			};
+				throw returnedException;
+			}
+			if (message.type != TMessageType.REPLY) {
+				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "bin_method failed: invalid message type");
+			}
+			bin_method_result res = new bin_method_result();
+			res.read(iprot);
+			iprot.readMessageEnd();
+			if (res.isSetSuccess()) {
+				return res.success;
+			}
+			if (res.api != null) {
+				throw res.api;
+			}
+			throw new TApplicationException(TApplicationException.MISSING_RESULT, "bin_method failed: unknown result");
 		}
-
 		public Long param_modifiers(FContext ctx, Integer opt_num, Integer default_num, Integer req_num) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			transport.register(ctx, recvParam_modifiersHandler(ctx, result));
-			try {
-				oprot.writeRequestHeader(ctx);
-				oprot.writeMessageBegin(new TMessage("param_modifiers", TMessageType.CALL, 0));
-				param_modifiers_args args = new param_modifiers_args();
-				args.setOpt_num(opt_num);
-				args.setDefault_num(default_num);
-				args.setReq_num(req_num);
-				args.write(oprot);
-				oprot.writeMessageEnd();
-				transport.send(memoryBuffer.getWriteBytes());
+			transport.assignOpId(ctx);
+			oprot.writeRequestHeader(ctx);
+			oprot.writeMessageBegin(new TMessage("param_modifiers", TMessageType.CALL, 0));
+			param_modifiers_args args = new param_modifiers_args();
+			args.setOpt_num(opt_num);
+			args.setDefault_num(default_num);
+			args.setReq_num(req_num);
+			args.write(oprot);
+			oprot.writeMessageEnd();
+			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-				Object res = null;
-				try {
-					res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);
-				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "param_modifiers interrupted: " + e.getMessage());
-				}
-				if (res == null) {
-					throw new FTimeoutException("param_modifiers timed out");
-				}
-				if (res instanceof TException) {
-					throw (TException) res;
-				}
-				param_modifiers_result r = (param_modifiers_result) res;
-				if (r.isSetSuccess()) {
-					return r.success;
-				}
-				throw new TApplicationException(TApplicationException.MISSING_RESULT, "param_modifiers failed: unknown result");
-			} finally {
-				transport.unregister(ctx);
+			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			iprot.readResponseHeader(ctx);
+			TMessage message = iprot.readMessageBegin();
+			if (!message.name.equals("param_modifiers")) {
+				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "param_modifiers failed: wrong method name");
 			}
-		}
-
-		private FAsyncCallback recvParam_modifiersHandler(final FContext ctx, final BlockingQueue<Object> result) {
-			return new FAsyncCallback() {
-				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
-					try {
-						iprot.readResponseHeader(ctx);
-						TMessage message = iprot.readMessageBegin();
-						if (!message.name.equals("param_modifiers")) {
-							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "param_modifiers failed: wrong method name");
-						}
-						if (message.type == TMessageType.EXCEPTION) {
-							TApplicationException e = TApplicationException.read(iprot);
-							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
-							}
-							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "param_modifiers interrupted: " + ie.getMessage());
-							}
-						}
-						if (message.type != TMessageType.REPLY) {
-							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "param_modifiers failed: invalid message type");
-						}
-						param_modifiers_result res = new param_modifiers_result();
-						res.read(iprot);
-						iprot.readMessageEnd();
-						try {
-							result.put(res);
-						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "param_modifiers interrupted: " + e.getMessage());
-						}
-					} catch (TException e) {
-						try {
-							result.put(e);
-						} finally {
-							throw e;
-						}
-					}
+			if (message.type == TMessageType.EXCEPTION) {
+				TApplicationException e = TApplicationException.read(iprot);
+				iprot.readMessageEnd();
+				TException returnedException = e;
+				if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+					returnedException = FMessageSizeException.response(e.getMessage());
 				}
-			};
+				throw returnedException;
+			}
+			if (message.type != TMessageType.REPLY) {
+				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "param_modifiers failed: invalid message type");
+			}
+			param_modifiers_result res = new param_modifiers_result();
+			res.read(iprot);
+			iprot.readMessageEnd();
+			if (res.isSetSuccess()) {
+				return res.success;
+			}
+			throw new TApplicationException(TApplicationException.MISSING_RESULT, "param_modifiers failed: unknown result");
 		}
-
 		public java.util.List<Long> underlying_types_test(FContext ctx, java.util.List<Long> list_type, java.util.Set<Long> set_type) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			transport.register(ctx, recvUnderlying_types_testHandler(ctx, result));
-			try {
-				oprot.writeRequestHeader(ctx);
-				oprot.writeMessageBegin(new TMessage("underlying_types_test", TMessageType.CALL, 0));
-				underlying_types_test_args args = new underlying_types_test_args();
-				args.setList_type(list_type);
-				args.setSet_type(set_type);
-				args.write(oprot);
-				oprot.writeMessageEnd();
-				transport.send(memoryBuffer.getWriteBytes());
+			transport.assignOpId(ctx);
+			oprot.writeRequestHeader(ctx);
+			oprot.writeMessageBegin(new TMessage("underlying_types_test", TMessageType.CALL, 0));
+			underlying_types_test_args args = new underlying_types_test_args();
+			args.setList_type(list_type);
+			args.setSet_type(set_type);
+			args.write(oprot);
+			oprot.writeMessageEnd();
+			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-				Object res = null;
-				try {
-					res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);
-				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "underlying_types_test interrupted: " + e.getMessage());
-				}
-				if (res == null) {
-					throw new FTimeoutException("underlying_types_test timed out");
-				}
-				if (res instanceof TException) {
-					throw (TException) res;
-				}
-				underlying_types_test_result r = (underlying_types_test_result) res;
-				if (r.isSetSuccess()) {
-					return r.success;
-				}
-				throw new TApplicationException(TApplicationException.MISSING_RESULT, "underlying_types_test failed: unknown result");
-			} finally {
-				transport.unregister(ctx);
+			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			iprot.readResponseHeader(ctx);
+			TMessage message = iprot.readMessageBegin();
+			if (!message.name.equals("underlying_types_test")) {
+				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "underlying_types_test failed: wrong method name");
 			}
-		}
-
-		private FAsyncCallback recvUnderlying_types_testHandler(final FContext ctx, final BlockingQueue<Object> result) {
-			return new FAsyncCallback() {
-				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
-					try {
-						iprot.readResponseHeader(ctx);
-						TMessage message = iprot.readMessageBegin();
-						if (!message.name.equals("underlying_types_test")) {
-							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "underlying_types_test failed: wrong method name");
-						}
-						if (message.type == TMessageType.EXCEPTION) {
-							TApplicationException e = TApplicationException.read(iprot);
-							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
-							}
-							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "underlying_types_test interrupted: " + ie.getMessage());
-							}
-						}
-						if (message.type != TMessageType.REPLY) {
-							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "underlying_types_test failed: invalid message type");
-						}
-						underlying_types_test_result res = new underlying_types_test_result();
-						res.read(iprot);
-						iprot.readMessageEnd();
-						try {
-							result.put(res);
-						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "underlying_types_test interrupted: " + e.getMessage());
-						}
-					} catch (TException e) {
-						try {
-							result.put(e);
-						} finally {
-							throw e;
-						}
-					}
+			if (message.type == TMessageType.EXCEPTION) {
+				TApplicationException e = TApplicationException.read(iprot);
+				iprot.readMessageEnd();
+				TException returnedException = e;
+				if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+					returnedException = FMessageSizeException.response(e.getMessage());
 				}
-			};
+				throw returnedException;
+			}
+			if (message.type != TMessageType.REPLY) {
+				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "underlying_types_test failed: invalid message type");
+			}
+			underlying_types_test_result res = new underlying_types_test_result();
+			res.read(iprot);
+			iprot.readMessageEnd();
+			if (res.isSetSuccess()) {
+				return res.success;
+			}
+			throw new TApplicationException(TApplicationException.MISSING_RESULT, "underlying_types_test failed: unknown result");
 		}
-
 		public Thing getThing(FContext ctx) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			transport.register(ctx, recvGetThingHandler(ctx, result));
-			try {
-				oprot.writeRequestHeader(ctx);
-				oprot.writeMessageBegin(new TMessage("getThing", TMessageType.CALL, 0));
-				getThing_args args = new getThing_args();
-				args.write(oprot);
-				oprot.writeMessageEnd();
-				transport.send(memoryBuffer.getWriteBytes());
+			transport.assignOpId(ctx);
+			oprot.writeRequestHeader(ctx);
+			oprot.writeMessageBegin(new TMessage("getThing", TMessageType.CALL, 0));
+			getThing_args args = new getThing_args();
+			args.write(oprot);
+			oprot.writeMessageEnd();
+			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-				Object res = null;
-				try {
-					res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);
-				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getThing interrupted: " + e.getMessage());
-				}
-				if (res == null) {
-					throw new FTimeoutException("getThing timed out");
-				}
-				if (res instanceof TException) {
-					throw (TException) res;
-				}
-				getThing_result r = (getThing_result) res;
-				if (r.isSetSuccess()) {
-					return r.success;
-				}
-				throw new TApplicationException(TApplicationException.MISSING_RESULT, "getThing failed: unknown result");
-			} finally {
-				transport.unregister(ctx);
+			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			iprot.readResponseHeader(ctx);
+			TMessage message = iprot.readMessageBegin();
+			if (!message.name.equals("getThing")) {
+				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "getThing failed: wrong method name");
 			}
-		}
-
-		private FAsyncCallback recvGetThingHandler(final FContext ctx, final BlockingQueue<Object> result) {
-			return new FAsyncCallback() {
-				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
-					try {
-						iprot.readResponseHeader(ctx);
-						TMessage message = iprot.readMessageBegin();
-						if (!message.name.equals("getThing")) {
-							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "getThing failed: wrong method name");
-						}
-						if (message.type == TMessageType.EXCEPTION) {
-							TApplicationException e = TApplicationException.read(iprot);
-							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
-							}
-							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getThing interrupted: " + ie.getMessage());
-							}
-						}
-						if (message.type != TMessageType.REPLY) {
-							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "getThing failed: invalid message type");
-						}
-						getThing_result res = new getThing_result();
-						res.read(iprot);
-						iprot.readMessageEnd();
-						try {
-							result.put(res);
-						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getThing interrupted: " + e.getMessage());
-						}
-					} catch (TException e) {
-						try {
-							result.put(e);
-						} finally {
-							throw e;
-						}
-					}
+			if (message.type == TMessageType.EXCEPTION) {
+				TApplicationException e = TApplicationException.read(iprot);
+				iprot.readMessageEnd();
+				TException returnedException = e;
+				if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+					returnedException = FMessageSizeException.response(e.getMessage());
 				}
-			};
+				throw returnedException;
+			}
+			if (message.type != TMessageType.REPLY) {
+				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "getThing failed: invalid message type");
+			}
+			getThing_result res = new getThing_result();
+			res.read(iprot);
+			iprot.readMessageEnd();
+			if (res.isSetSuccess()) {
+				return res.success;
+			}
+			throw new TApplicationException(TApplicationException.MISSING_RESULT, "getThing failed: unknown result");
 		}
-
 		public Integer getMyInt(FContext ctx) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			transport.register(ctx, recvGetMyIntHandler(ctx, result));
-			try {
-				oprot.writeRequestHeader(ctx);
-				oprot.writeMessageBegin(new TMessage("getMyInt", TMessageType.CALL, 0));
-				getMyInt_args args = new getMyInt_args();
-				args.write(oprot);
-				oprot.writeMessageEnd();
-				transport.send(memoryBuffer.getWriteBytes());
+			transport.assignOpId(ctx);
+			oprot.writeRequestHeader(ctx);
+			oprot.writeMessageBegin(new TMessage("getMyInt", TMessageType.CALL, 0));
+			getMyInt_args args = new getMyInt_args();
+			args.write(oprot);
+			oprot.writeMessageEnd();
+			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-				Object res = null;
-				try {
-					res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);
-				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getMyInt interrupted: " + e.getMessage());
-				}
-				if (res == null) {
-					throw new FTimeoutException("getMyInt timed out");
-				}
-				if (res instanceof TException) {
-					throw (TException) res;
-				}
-				getMyInt_result r = (getMyInt_result) res;
-				if (r.isSetSuccess()) {
-					return r.success;
-				}
-				throw new TApplicationException(TApplicationException.MISSING_RESULT, "getMyInt failed: unknown result");
-			} finally {
-				transport.unregister(ctx);
+			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			iprot.readResponseHeader(ctx);
+			TMessage message = iprot.readMessageBegin();
+			if (!message.name.equals("getMyInt")) {
+				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "getMyInt failed: wrong method name");
 			}
-		}
-
-		private FAsyncCallback recvGetMyIntHandler(final FContext ctx, final BlockingQueue<Object> result) {
-			return new FAsyncCallback() {
-				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
-					try {
-						iprot.readResponseHeader(ctx);
-						TMessage message = iprot.readMessageBegin();
-						if (!message.name.equals("getMyInt")) {
-							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "getMyInt failed: wrong method name");
-						}
-						if (message.type == TMessageType.EXCEPTION) {
-							TApplicationException e = TApplicationException.read(iprot);
-							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
-							}
-							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getMyInt interrupted: " + ie.getMessage());
-							}
-						}
-						if (message.type != TMessageType.REPLY) {
-							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "getMyInt failed: invalid message type");
-						}
-						getMyInt_result res = new getMyInt_result();
-						res.read(iprot);
-						iprot.readMessageEnd();
-						try {
-							result.put(res);
-						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "getMyInt interrupted: " + e.getMessage());
-						}
-					} catch (TException e) {
-						try {
-							result.put(e);
-						} finally {
-							throw e;
-						}
-					}
+			if (message.type == TMessageType.EXCEPTION) {
+				TApplicationException e = TApplicationException.read(iprot);
+				iprot.readMessageEnd();
+				TException returnedException = e;
+				if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+					returnedException = FMessageSizeException.response(e.getMessage());
 				}
-			};
+				throw returnedException;
+			}
+			if (message.type != TMessageType.REPLY) {
+				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "getMyInt failed: invalid message type");
+			}
+			getMyInt_result res = new getMyInt_result();
+			res.read(iprot);
+			iprot.readMessageEnd();
+			if (res.isSetSuccess()) {
+				return res.success;
+			}
+			throw new TApplicationException(TApplicationException.MISSING_RESULT, "getMyInt failed: unknown result");
 		}
-
 		public A use_subdir_struct(FContext ctx, A a) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			transport.register(ctx, recvUse_subdir_structHandler(ctx, result));
-			try {
-				oprot.writeRequestHeader(ctx);
-				oprot.writeMessageBegin(new TMessage("use_subdir_struct", TMessageType.CALL, 0));
-				use_subdir_struct_args args = new use_subdir_struct_args();
-				args.setA(a);
-				args.write(oprot);
-				oprot.writeMessageEnd();
-				transport.send(memoryBuffer.getWriteBytes());
+			transport.assignOpId(ctx);
+			oprot.writeRequestHeader(ctx);
+			oprot.writeMessageBegin(new TMessage("use_subdir_struct", TMessageType.CALL, 0));
+			use_subdir_struct_args args = new use_subdir_struct_args();
+			args.setA(a);
+			args.write(oprot);
+			oprot.writeMessageEnd();
+			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-				Object res = null;
-				try {
-					res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);
-				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "use_subdir_struct interrupted: " + e.getMessage());
-				}
-				if (res == null) {
-					throw new FTimeoutException("use_subdir_struct timed out");
-				}
-				if (res instanceof TException) {
-					throw (TException) res;
-				}
-				use_subdir_struct_result r = (use_subdir_struct_result) res;
-				if (r.isSetSuccess()) {
-					return r.success;
-				}
-				throw new TApplicationException(TApplicationException.MISSING_RESULT, "use_subdir_struct failed: unknown result");
-			} finally {
-				transport.unregister(ctx);
+			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			iprot.readResponseHeader(ctx);
+			TMessage message = iprot.readMessageBegin();
+			if (!message.name.equals("use_subdir_struct")) {
+				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "use_subdir_struct failed: wrong method name");
 			}
-		}
-
-		private FAsyncCallback recvUse_subdir_structHandler(final FContext ctx, final BlockingQueue<Object> result) {
-			return new FAsyncCallback() {
-				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
-					try {
-						iprot.readResponseHeader(ctx);
-						TMessage message = iprot.readMessageBegin();
-						if (!message.name.equals("use_subdir_struct")) {
-							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "use_subdir_struct failed: wrong method name");
-						}
-						if (message.type == TMessageType.EXCEPTION) {
-							TApplicationException e = TApplicationException.read(iprot);
-							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
-							}
-							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "use_subdir_struct interrupted: " + ie.getMessage());
-							}
-						}
-						if (message.type != TMessageType.REPLY) {
-							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "use_subdir_struct failed: invalid message type");
-						}
-						use_subdir_struct_result res = new use_subdir_struct_result();
-						res.read(iprot);
-						iprot.readMessageEnd();
-						try {
-							result.put(res);
-						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "use_subdir_struct interrupted: " + e.getMessage());
-						}
-					} catch (TException e) {
-						try {
-							result.put(e);
-						} finally {
-							throw e;
-						}
-					}
+			if (message.type == TMessageType.EXCEPTION) {
+				TApplicationException e = TApplicationException.read(iprot);
+				iprot.readMessageEnd();
+				TException returnedException = e;
+				if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+					returnedException = FMessageSizeException.response(e.getMessage());
 				}
-			};
+				throw returnedException;
+			}
+			if (message.type != TMessageType.REPLY) {
+				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "use_subdir_struct failed: invalid message type");
+			}
+			use_subdir_struct_result res = new use_subdir_struct_result();
+			res.read(iprot);
+			iprot.readMessageEnd();
+			if (res.isSetSuccess()) {
+				return res.success;
+			}
+			throw new TApplicationException(TApplicationException.MISSING_RESULT, "use_subdir_struct failed: unknown result");
 		}
-
 	}
 
 	public static class Processor extends actual_base.java.FBaseFoo.Processor implements FProcessor {

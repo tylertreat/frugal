@@ -1,6 +1,7 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FMessageSizeException;
+import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FRegistry;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpStatus;
@@ -22,6 +23,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -38,6 +40,7 @@ public class FHttpTransportTest {
     private CloseableHttpClient client;
     private String url = "http://foo.com";
     private FHttpTransport transport;
+    private FContext context = new FContext();
 
     @Before
     public void setUp() {
@@ -58,11 +61,11 @@ public class FHttpTransportTest {
     public void testSend_sizeException() throws TTransportException {
         int requestSizeLimit = 1024 * 4;
         transport = new FHttpTransport.Builder(client, url).withRequestSizeLimit(requestSizeLimit).build();
-        transport.send(new byte[requestSizeLimit + 1]);
+        transport.request(context, false, new byte[requestSizeLimit + 1]);
     }
 
     @Test
-    public void testSend() throws TException, IOException {
+    public void testRequest() throws TException, IOException {
         int responseSizeLimit = 1024 * 4;
         transport = new FHttpTransport.Builder(client, url).withResponseSizeLimit(responseSizeLimit).build();
 
@@ -78,12 +81,10 @@ public class FHttpTransportTest {
         ArgumentCaptor<HttpPost> topicCaptor = ArgumentCaptor.forClass(HttpPost.class);
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
-        FRegistry mockRegistry = mock(FRegistry.class);
-        transport.registry = mockRegistry;
         byte[] buff = "helloserver".getBytes();
-        transport.send(buff);
+        byte[] actualResponse = transport.request(context, false, buff);
 
-        verify(mockRegistry).execute(responsePayload);
+        assertArrayEquals(responsePayload, actualResponse);
 
         HttpPost actual = topicCaptor.getValue();
         HttpPost expected = validRequest(buff, responseSizeLimit);
@@ -96,7 +97,7 @@ public class FHttpTransportTest {
     public void testSend_requestIOException() throws TTransportException, IOException {
         byte[] buff = "helloserver".getBytes();
         when(client.execute(any(HttpPost.class))).thenThrow(new IOException());
-        transport.send(buff);
+        transport.request(context, false, buff);
     }
 
     @Test(expected = FMessageSizeException.class)
@@ -111,7 +112,7 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         byte[] buff = "helloserver".getBytes();
-        transport.send(buff);
+        transport.request(context, false, buff);
     }
 
     @Test(expected = TTransportException.class)
@@ -125,7 +126,7 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         byte[] buff = "helloserver".getBytes();
-        transport.send(buff);
+        transport.request(context, false, buff);
     }
 
     @Test(expected = TTransportException.class)
@@ -144,7 +145,7 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         byte[] buff = "helloserver".getBytes();
-        transport.send(buff);
+        transport.request(context, false, buff);
     }
 
     @Test(expected = TTransportException.class)
@@ -163,7 +164,7 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         byte[] buff = "helloserver".getBytes();
-        transport.send(buff);
+        transport.request(context, false, buff);
     }
 
     @Test
@@ -184,7 +185,7 @@ public class FHttpTransportTest {
         FRegistry mockRegistry = mock(FRegistry.class);
         transport.registry = mockRegistry;
         byte[] buff = "helloserver".getBytes();
-        transport.send(buff);
+        transport.request(context, true, buff);
 
         verify(mockRegistry, never()).execute(any(byte[].class));
     }

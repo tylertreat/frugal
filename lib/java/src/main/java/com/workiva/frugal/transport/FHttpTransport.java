@@ -2,22 +2,26 @@ package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FMessageSizeException;
 
+import com.workiva.frugal.protocol.FContext;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 
 /**
@@ -35,8 +39,7 @@ public class FHttpTransport extends FTransport {
     private final String url;
     private final int responseSizeLimit;
 
-    private FHttpTransport(CloseableHttpClient httpClient, String url,
-                           int requestSizeLimit, int responseSizeLimit) {
+    private FHttpTransport(CloseableHttpClient httpClient, String url, int requestSizeLimit, int responseSizeLimit) {
         super();
         this.httpClient = httpClient;
         this.url = url;
@@ -125,12 +128,23 @@ public class FHttpTransport extends FTransport {
     }
 
     /**
+     * This is a no-op for FHttpTransport as the opid is not needed.
+     *
+     * @param context <code>FContext</code> to assign an opid.
+     * @throws TTransportException
+     */
+    @Override
+    public void assignOpId(FContext context) throws TTransportException {
+        return;
+    }
+
+    /**
      * Sends the framed frugal payload over HTTP.
      *
      * @throws TTransportException if there was an error writing out data.
      */
     @Override
-    public void send(byte[] payload) throws TTransportException {
+    public byte[] request(FContext context, boolean oneway, byte[] payload) throws TTransportException {
         int requestSizeLimit = getRequestSizeLimit();
         if (requestSizeLimit > 0 && payload.length > requestSizeLimit) {
             throw FMessageSizeException.request(
@@ -138,7 +152,7 @@ public class FHttpTransport extends FTransport {
                             requestSizeLimit, payload.length));
         }
 
-        byte[] response = makeRequest(payload);
+        byte[] response = makeRequest(context, payload);
 
         // All responses should be framed with 4 bytes
         if (response.length < 4) {
@@ -151,18 +165,12 @@ public class FHttpTransport extends FTransport {
             if (ByteBuffer.wrap(response).getInt() != 0) {
                 throw new TTransportException("missing data");
             }
-            return;
+            return null;
         }
-
-        // Put the frame in the buffer
-        try {
-            executeFrame(response);
-        } catch (TException e) {
-            throw new TTransportException("could not execute response callback: " + e.getMessage());
-        }
+        return Arrays.copyOfRange(response, 4, response.length);
     }
 
-    private byte[] makeRequest(byte[] requestPayload) throws TTransportException {
+    private byte[] makeRequest(FContext context, byte[] requestPayload) throws TTransportException {
         // Encode request payload
         String encoded = Base64.encodeBase64String(requestPayload);
         StringEntity requestEntity = new StringEntity(encoded, ContentType.create("application/x-frugal", "utf-8"));
@@ -175,12 +183,17 @@ public class FHttpTransport extends FTransport {
             request.setHeader("x-frugal-payload-limit", Integer.toString(responseSizeLimit));
         }
         request.setEntity(requestEntity);
+        request.setConfig(RequestConfig.custom().setConnectTimeout((int) context.getTimeout()).build());
+        request.setConfig(RequestConfig.custom().setSocketTimeout((int) context.getTimeout()).build());
 
         // Make request
         CloseableHttpResponse response;
         try {
             response = httpClient.execute(request);
+        } catch (ConnectTimeoutException | SocketTimeoutException e) {
+            throw new TTransportException(TTransportException.TIMED_OUT, "http request timed out");
         } catch (IOException e) {
+            System.out.println(e.getClass());
             throw new TTransportException("http request failed: " + e.getMessage());
         }
 

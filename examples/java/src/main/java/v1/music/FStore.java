@@ -37,8 +37,6 @@ import org.slf4j.LoggerFactory;
 import com.workiva.frugal.exception.FApplicationException;
 import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.exception.FMessageSizeException;
-import com.workiva.frugal.exception.FRateLimitException;
-import com.workiva.frugal.exception.FTimeoutException;
 import com.workiva.frugal.exception.FTransportException;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
@@ -53,8 +51,7 @@ import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TMessage;
 import org.apache.thrift.protocol.TMessageType;
-import org.apache.thrift.transport.TTransport;
-
+import org.apache.thrift.transport.TMemoryInputTransport;
 import javax.annotation.Generated;
 import java.util.Arrays;
 import java.util.concurrent.*;
@@ -109,172 +106,84 @@ public class FStore {
 		public Album buyAlbum(FContext ctx, String ASIN, String acct) throws TException, PurchasingError {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			transport.register(ctx, recvBuyAlbumHandler(ctx, result));
-			try {
-				oprot.writeRequestHeader(ctx);
-				oprot.writeMessageBegin(new TMessage("buyAlbum", TMessageType.CALL, 0));
-				buyAlbum_args args = new buyAlbum_args();
-				args.setASIN(ASIN);
-				args.setAcct(acct);
-				args.write(oprot);
-				oprot.writeMessageEnd();
-				transport.send(memoryBuffer.getWriteBytes());
+			transport.assignOpId(ctx);
+			oprot.writeRequestHeader(ctx);
+			oprot.writeMessageBegin(new TMessage("buyAlbum", TMessageType.CALL, 0));
+			buyAlbum_args args = new buyAlbum_args();
+			args.setASIN(ASIN);
+			args.setAcct(acct);
+			args.write(oprot);
+			oprot.writeMessageEnd();
+			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-				Object res = null;
-				try {
-					res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);
-				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "buyAlbum interrupted: " + e.getMessage());
-				}
-				if (res == null) {
-					throw new FTimeoutException("buyAlbum timed out");
-				}
-				if (res instanceof TException) {
-					throw (TException) res;
-				}
-				buyAlbum_result r = (buyAlbum_result) res;
-				if (r.isSetSuccess()) {
-					return r.success;
-				}
-				if (r.error != null) {
-					throw r.error;
-				}
-				throw new TApplicationException(TApplicationException.MISSING_RESULT, "buyAlbum failed: unknown result");
-			} finally {
-				transport.unregister(ctx);
+			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			iprot.readResponseHeader(ctx);
+			TMessage message = iprot.readMessageBegin();
+			if (!message.name.equals("buyAlbum")) {
+				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "buyAlbum failed: wrong method name");
 			}
-		}
-
-		private FAsyncCallback recvBuyAlbumHandler(final FContext ctx, final BlockingQueue<Object> result) {
-			return new FAsyncCallback() {
-				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
-					try {
-						iprot.readResponseHeader(ctx);
-						TMessage message = iprot.readMessageBegin();
-						if (!message.name.equals("buyAlbum")) {
-							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "buyAlbum failed: wrong method name");
-						}
-						if (message.type == TMessageType.EXCEPTION) {
-							TApplicationException e = TApplicationException.read(iprot);
-							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
-							}
-							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "buyAlbum interrupted: " + ie.getMessage());
-							}
-						}
-						if (message.type != TMessageType.REPLY) {
-							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "buyAlbum failed: invalid message type");
-						}
-						buyAlbum_result res = new buyAlbum_result();
-						res.read(iprot);
-						iprot.readMessageEnd();
-						try {
-							result.put(res);
-						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "buyAlbum interrupted: " + e.getMessage());
-						}
-					} catch (TException e) {
-						try {
-							result.put(e);
-						} finally {
-							throw e;
-						}
-					}
+			if (message.type == TMessageType.EXCEPTION) {
+				TApplicationException e = TApplicationException.read(iprot);
+				iprot.readMessageEnd();
+				TException returnedException = e;
+				if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+					returnedException = FMessageSizeException.response(e.getMessage());
 				}
-			};
+				throw returnedException;
+			}
+			if (message.type != TMessageType.REPLY) {
+				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "buyAlbum failed: invalid message type");
+			}
+			buyAlbum_result res = new buyAlbum_result();
+			res.read(iprot);
+			iprot.readMessageEnd();
+			if (res.isSetSuccess()) {
+				return res.success;
+			}
+			if (res.error != null) {
+				throw res.error;
+			}
+			throw new TApplicationException(TApplicationException.MISSING_RESULT, "buyAlbum failed: unknown result");
 		}
-
 		public boolean enterAlbumGiveaway(FContext ctx, String email, String name) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			transport.register(ctx, recvEnterAlbumGiveawayHandler(ctx, result));
-			try {
-				oprot.writeRequestHeader(ctx);
-				oprot.writeMessageBegin(new TMessage("enterAlbumGiveaway", TMessageType.CALL, 0));
-				enterAlbumGiveaway_args args = new enterAlbumGiveaway_args();
-				args.setEmail(email);
-				args.setName(name);
-				args.write(oprot);
-				oprot.writeMessageEnd();
-				transport.send(memoryBuffer.getWriteBytes());
+			transport.assignOpId(ctx);
+			oprot.writeRequestHeader(ctx);
+			oprot.writeMessageBegin(new TMessage("enterAlbumGiveaway", TMessageType.CALL, 0));
+			enterAlbumGiveaway_args args = new enterAlbumGiveaway_args();
+			args.setEmail(email);
+			args.setName(name);
+			args.write(oprot);
+			oprot.writeMessageEnd();
+			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-				Object res = null;
-				try {
-					res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);
-				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "enterAlbumGiveaway interrupted: " + e.getMessage());
-				}
-				if (res == null) {
-					throw new FTimeoutException("enterAlbumGiveaway timed out");
-				}
-				if (res instanceof TException) {
-					throw (TException) res;
-				}
-				enterAlbumGiveaway_result r = (enterAlbumGiveaway_result) res;
-				if (r.isSetSuccess()) {
-					return r.success;
-				}
-				throw new TApplicationException(TApplicationException.MISSING_RESULT, "enterAlbumGiveaway failed: unknown result");
-			} finally {
-				transport.unregister(ctx);
+			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			iprot.readResponseHeader(ctx);
+			TMessage message = iprot.readMessageBegin();
+			if (!message.name.equals("enterAlbumGiveaway")) {
+				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "enterAlbumGiveaway failed: wrong method name");
 			}
-		}
-
-		private FAsyncCallback recvEnterAlbumGiveawayHandler(final FContext ctx, final BlockingQueue<Object> result) {
-			return new FAsyncCallback() {
-				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
-					try {
-						iprot.readResponseHeader(ctx);
-						TMessage message = iprot.readMessageBegin();
-						if (!message.name.equals("enterAlbumGiveaway")) {
-							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "enterAlbumGiveaway failed: wrong method name");
-						}
-						if (message.type == TMessageType.EXCEPTION) {
-							TApplicationException e = TApplicationException.read(iprot);
-							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
-							}
-							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "enterAlbumGiveaway interrupted: " + ie.getMessage());
-							}
-						}
-						if (message.type != TMessageType.REPLY) {
-							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "enterAlbumGiveaway failed: invalid message type");
-						}
-						enterAlbumGiveaway_result res = new enterAlbumGiveaway_result();
-						res.read(iprot);
-						iprot.readMessageEnd();
-						try {
-							result.put(res);
-						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "enterAlbumGiveaway interrupted: " + e.getMessage());
-						}
-					} catch (TException e) {
-						try {
-							result.put(e);
-						} finally {
-							throw e;
-						}
-					}
+			if (message.type == TMessageType.EXCEPTION) {
+				TApplicationException e = TApplicationException.read(iprot);
+				iprot.readMessageEnd();
+				TException returnedException = e;
+				if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+					returnedException = FMessageSizeException.response(e.getMessage());
 				}
-			};
+				throw returnedException;
+			}
+			if (message.type != TMessageType.REPLY) {
+				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "enterAlbumGiveaway failed: invalid message type");
+			}
+			enterAlbumGiveaway_result res = new enterAlbumGiveaway_result();
+			res.read(iprot);
+			iprot.readMessageEnd();
+			if (res.isSetSuccess()) {
+				return res.success;
+			}
+			throw new TApplicationException(TApplicationException.MISSING_RESULT, "enterAlbumGiveaway failed: unknown result");
 		}
-
 	}
 
 	public static class Processor extends FBaseProcessor implements FProcessor {

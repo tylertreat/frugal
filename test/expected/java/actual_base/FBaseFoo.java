@@ -37,8 +37,6 @@ import org.slf4j.LoggerFactory;
 import com.workiva.frugal.exception.FApplicationException;
 import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.exception.FMessageSizeException;
-import com.workiva.frugal.exception.FRateLimitException;
-import com.workiva.frugal.exception.FTimeoutException;
 import com.workiva.frugal.exception.FTransportException;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
@@ -53,8 +51,7 @@ import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TMessage;
 import org.apache.thrift.protocol.TMessageType;
-import org.apache.thrift.transport.TTransport;
-
+import org.apache.thrift.transport.TMemoryInputTransport;
 import javax.annotation.Generated;
 import java.util.Arrays;
 import java.util.concurrent.*;
@@ -99,80 +96,36 @@ public class FBaseFoo {
 		public void basePing(FContext ctx) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);
-			transport.register(ctx, recvBasePingHandler(ctx, result));
-			try {
-				oprot.writeRequestHeader(ctx);
-				oprot.writeMessageBegin(new TMessage("basePing", TMessageType.CALL, 0));
-				basePing_args args = new basePing_args();
-				args.write(oprot);
-				oprot.writeMessageEnd();
-				transport.send(memoryBuffer.getWriteBytes());
+			transport.assignOpId(ctx);
+			oprot.writeRequestHeader(ctx);
+			oprot.writeMessageBegin(new TMessage("basePing", TMessageType.CALL, 0));
+			basePing_args args = new basePing_args();
+			args.write(oprot);
+			oprot.writeMessageEnd();
+			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-				Object res = null;
-				try {
-					res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);
-				} catch (InterruptedException e) {
-					throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "basePing interrupted: " + e.getMessage());
-				}
-				if (res == null) {
-					throw new FTimeoutException("basePing timed out");
-				}
-				if (res instanceof TException) {
-					throw (TException) res;
-				}
-				basePing_result r = (basePing_result) res;
-			} finally {
-				transport.unregister(ctx);
+			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			iprot.readResponseHeader(ctx);
+			TMessage message = iprot.readMessageBegin();
+			if (!message.name.equals("basePing")) {
+				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "basePing failed: wrong method name");
 			}
-		}
-
-		private FAsyncCallback recvBasePingHandler(final FContext ctx, final BlockingQueue<Object> result) {
-			return new FAsyncCallback() {
-				public void onMessage(TTransport tr) throws TException {
-					FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);
-					try {
-						iprot.readResponseHeader(ctx);
-						TMessage message = iprot.readMessageBegin();
-						if (!message.name.equals("basePing")) {
-							throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "basePing failed: wrong method name");
-						}
-						if (message.type == TMessageType.EXCEPTION) {
-							TApplicationException e = TApplicationException.read(iprot);
-							iprot.readMessageEnd();
-							TException returnedException = e;
-							if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
-								returnedException = FMessageSizeException.response(e.getMessage());
-							}
-							try {
-								result.put(returnedException);
-								return;
-							} catch (InterruptedException ie) {
-								throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "basePing interrupted: " + ie.getMessage());
-							}
-						}
-						if (message.type != TMessageType.REPLY) {
-							throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "basePing failed: invalid message type");
-						}
-						basePing_result res = new basePing_result();
-						res.read(iprot);
-						iprot.readMessageEnd();
-						try {
-							result.put(res);
-						} catch (InterruptedException e) {
-							throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "basePing interrupted: " + e.getMessage());
-						}
-					} catch (TException e) {
-						try {
-							result.put(e);
-						} finally {
-							throw e;
-						}
-					}
+			if (message.type == TMessageType.EXCEPTION) {
+				TApplicationException e = TApplicationException.read(iprot);
+				iprot.readMessageEnd();
+				TException returnedException = e;
+				if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {
+					returnedException = FMessageSizeException.response(e.getMessage());
 				}
-			};
+				throw returnedException;
+			}
+			if (message.type != TMessageType.REPLY) {
+				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "basePing failed: invalid message type");
+			}
+			basePing_result res = new basePing_result();
+			res.read(iprot);
+			iprot.readMessageEnd();
 		}
-
 	}
 
 	public static class Processor extends FBaseProcessor implements FProcessor {

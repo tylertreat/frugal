@@ -2085,7 +2085,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, succi
 			contents += fmt.Sprintf(ind+"if (%s == null) {\n", elem)
 			val := g.getPrimitiveDefaultValue(underlyingType)
 			contents += fmt.Sprintf(ind+tab+"%s = %s;\n", elem, val)
-			contents += fmt.Sprintf(ind+"}\n")
+			contents += fmt.Sprintf(ind + "}\n")
 		}
 
 		write := ind + "oprot.write"
@@ -2299,8 +2299,6 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import com.workiva.frugal.exception.FApplicationException;\n"
 	imports += "import com.workiva.frugal.exception.FException;\n"
 	imports += "import com.workiva.frugal.exception.FMessageSizeException;\n"
-	imports += "import com.workiva.frugal.exception.FRateLimitException;\n"
-	imports += "import com.workiva.frugal.exception.FTimeoutException;\n"
 	imports += "import com.workiva.frugal.exception.FTransportException;\n"
 	imports += "import com.workiva.frugal.middleware.InvocationHandler;\n"
 	imports += "import com.workiva.frugal.middleware.ServiceMiddleware;\n"
@@ -2315,7 +2313,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import org.apache.thrift.TException;\n"
 	imports += "import org.apache.thrift.protocol.TMessage;\n"
 	imports += "import org.apache.thrift.protocol.TMessageType;\n"
-	imports += "import org.apache.thrift.transport.TTransport;\n\n"
+	imports += "import org.apache.thrift.transport.TMemoryInputTransport;\n"
 
 	imports += "import javax.annotation.Generated;\n"
 	imports += "import java.util.Arrays;\n"
@@ -2831,123 +2829,77 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments, false), g.generateExceptions(method.Exceptions))
 	contents += tabtabtab + "TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());\n"
 	contents += tabtabtab + "FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);\n"
-	indent := tabtabtab
 	if !method.Oneway {
-		contents += tabtabtab + "BlockingQueue<Object> result = new ArrayBlockingQueue<>(1);\n"
-		contents += tabtabtab + fmt.Sprintf("transport.register(ctx, recv%sHandler(ctx, result));\n", strings.Title(method.Name))
-		contents += tabtabtab + "try {\n"
-		indent += tab
+		contents += tabtabtab + "transport.assignOpId(ctx);\n"
 	}
-	contents += indent + "oprot.writeRequestHeader(ctx);\n"
+	contents += tabtabtab + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
 		msgType = "ONEWAY"
 	}
-	contents += indent + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", methodLower, msgType)
-	contents += indent + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
+	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", methodLower, msgType)
+	contents += tabtabtab + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
 	for _, arg := range method.Arguments {
-		contents += indent + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
+		contents += tabtabtab + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
 	}
-	contents += indent + "args.write(oprot);\n"
-	contents += indent + "oprot.writeMessageEnd();\n"
-	contents += indent + "transport.send(memoryBuffer.getWriteBytes());\n"
-
+	contents += tabtabtab + "args.write(oprot);\n"
+	contents += tabtabtab + "oprot.writeMessageEnd();\n"
+	oneway := "false"
+	if method.Oneway {
+		oneway = "true"
+	}
+	if method.Oneway {
+		contents += tabtabtab + fmt.Sprintf("transport.request(ctx, %s, memoryBuffer.getWriteBytes());\n", oneway)
+	} else {
+		contents += tabtabtab + fmt.Sprintf("byte[] response = transport.request(ctx, %s, memoryBuffer.getWriteBytes());\n", oneway)
+	}
 	if method.Oneway {
 		contents += tabtab + "}\n"
 		return contents
 	}
 
 	contents += "\n"
-	contents += tabtabtabtab + "Object res = null;\n"
-	contents += tabtabtabtab + "try {\n"
-	contents += tabtabtabtabtab + "res = result.poll(ctx.getTimeout(), TimeUnit.MILLISECONDS);\n"
-	contents += tabtabtabtab + "} catch (InterruptedException e) {\n"
-	contents += tabtabtabtabtab + fmt.Sprintf(
-		"throw new TApplicationException(TApplicationException.INTERNAL_ERROR, \"%s interrupted: \" + e.getMessage());\n",
+	contents += tabtabtab + "FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));\n"
+	contents += tabtabtab + "iprot.readResponseHeader(ctx);\n"
+	contents += tabtabtab + "TMessage message = iprot.readMessageBegin();\n"
+	contents += tabtabtab + fmt.Sprintf("if (!message.name.equals(\"%s\")) {\n", methodLower)
+	contents += tabtabtabtab + fmt.Sprintf(
+		"throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, \"%s failed: wrong method name\");\n",
 		method.Name)
+	contents += tabtabtab + "}\n"
+	contents += tabtabtab + "if (message.type == TMessageType.EXCEPTION) {\n"
+	contents += tabtabtabtab + "TApplicationException e = TApplicationException.read(iprot);\n"
+	contents += tabtabtabtab + "iprot.readMessageEnd();\n"
+	contents += tabtabtabtab + "TException returnedException = e;\n"
+	contents += tabtabtabtab + "if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {\n"
+	contents += tabtabtabtabtab + "returnedException = FMessageSizeException.response(e.getMessage());\n"
 	contents += tabtabtabtab + "}\n"
-	contents += tabtabtabtab + "if (res == null) {\n"
-	contents += tabtabtabtabtab + fmt.Sprintf("throw new FTimeoutException(\"%s timed out\");\n", method.Name)
-	contents += tabtabtabtab + "}\n"
-	contents += tabtabtabtab + "if (res instanceof TException) {\n"
-	contents += tabtabtabtabtab + "throw (TException) res;\n"
-	contents += tabtabtabtab + "}\n"
-	contents += tabtabtabtab + fmt.Sprintf("%s_result r = (%s_result) res;\n", method.Name, method.Name)
+	contents += tabtabtabtab + "throw returnedException;\n"
+	contents += tabtabtab + "}\n"
+	contents += tabtabtab + "if (message.type != TMessageType.REPLY) {\n"
+	contents += tabtabtabtab + fmt.Sprintf(
+		"throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, \"%s failed: invalid message type\");\n",
+		method.Name)
+	contents += tabtabtab + "}\n"
+	contents += tabtabtab + fmt.Sprintf("%s_result res = new %s_result();\n", method.Name, method.Name)
+	contents += tabtabtab + "res.read(iprot);\n"
+	contents += tabtabtab + "iprot.readMessageEnd();\n"
 	if method.ReturnType != nil {
-		contents += tabtabtabtab + "if (r.isSetSuccess()) {\n"
-		contents += tabtabtabtabtab + "return r.success;\n"
-		contents += tabtabtabtab + "}\n"
+		contents += tabtabtab + "if (res.isSetSuccess()) {\n"
+		contents += tabtabtabtab + "return res.success;\n"
+		contents += tabtabtab + "}\n"
 	}
 	for _, exception := range method.Exceptions {
-		contents += tabtabtabtab + fmt.Sprintf("if (r.%s != null) {\n", exception.Name)
-		contents += tabtabtabtabtab + fmt.Sprintf("throw r.%s;\n", exception.Name)
-		contents += tabtabtabtab + "}\n"
+		contents += tabtabtab + fmt.Sprintf("if (res.%s != null) {\n", exception.Name)
+		contents += tabtabtabtab + fmt.Sprintf("throw res.%s;\n", exception.Name)
+		contents += tabtabtab + "}\n"
 	}
 	if method.ReturnType != nil {
-		contents += tabtabtabtab + fmt.Sprintf(
+		contents += tabtabtab + fmt.Sprintf(
 			"throw new TApplicationException(TApplicationException.MISSING_RESULT, \"%s failed: unknown result\");\n",
 			method.Name)
 	}
-	contents += tabtabtab + "} finally {\n"
-	contents += tabtabtabtab + "transport.unregister(ctx);\n"
-	contents += tabtabtab + "}\n"
-	contents += tabtab + "}\n\n"
-
-	contents += tabtab + fmt.Sprintf(
-		"private FAsyncCallback recv%sHandler(final FContext ctx, final BlockingQueue<Object> result) {\n",
-		strings.Title(method.Name))
-	contents += tabtabtab + "return new FAsyncCallback() {\n"
-	contents += tabtabtabtab + "public void onMessage(TTransport tr) throws TException {\n"
-	contents += tabtabtabtabtab + "FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(tr);\n"
-	contents += tabtabtabtabtab + "try {\n"
-	contents += tabtabtabtabtabtab + "iprot.readResponseHeader(ctx);\n"
-	contents += tabtabtabtabtabtab + "TMessage message = iprot.readMessageBegin();\n"
-	contents += tabtabtabtabtabtab + fmt.Sprintf("if (!message.name.equals(\"%s\")) {\n", methodLower)
-	contents += tabtabtabtabtabtabtab + fmt.Sprintf(
-		"throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, \"%s failed: wrong method name\");\n",
-		method.Name)
-	contents += tabtabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtabtab + "if (message.type == TMessageType.EXCEPTION) {\n"
-	contents += tabtabtabtabtabtabtab + "TApplicationException e = TApplicationException.read(iprot);\n"
-	contents += tabtabtabtabtabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtabtabtabtabtab + "TException returnedException = e;\n"
-	contents += tabtabtabtabtabtabtab + "if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {\n"
-	contents += tabtabtabtabtabtabtabtab + "returnedException = FMessageSizeException.response(e.getMessage());\n"
-	contents += tabtabtabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtabtabtab + "try {\n"
-	contents += tabtabtabtabtabtabtabtab + "result.put(returnedException);\n"
-	contents += tabtabtabtabtabtabtabtab + "return;\n"
-	contents += tabtabtabtabtabtabtab + "} catch (InterruptedException ie) {\n"
-	contents += tabtabtabtabtabtabtabtab + fmt.Sprintf(
-		"throw new TApplicationException(TApplicationException.INTERNAL_ERROR, \"%s interrupted: \" + ie.getMessage());\n",
-		method.Name)
-	contents += tabtabtabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtabtab + "if (message.type != TMessageType.REPLY) {\n"
-	contents += tabtabtabtabtabtabtab + fmt.Sprintf(
-		"throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, \"%s failed: invalid message type\");\n",
-		method.Name)
-	contents += tabtabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtabtab + fmt.Sprintf("%s_result res = new %s_result();\n", method.Name, method.Name)
-	contents += tabtabtabtabtabtab + "res.read(iprot);\n"
-	contents += tabtabtabtabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtabtabtabtab + "try {\n"
-	contents += tabtabtabtabtabtabtab + "result.put(res);\n"
-	contents += tabtabtabtabtabtab + "} catch (InterruptedException e) {\n"
-	contents += tabtabtabtabtabtabtab + fmt.Sprintf(
-		"throw new TApplicationException(TApplicationException.INTERNAL_ERROR, \"%s interrupted: \" + e.getMessage());\n",
-		method.Name)
-	contents += tabtabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtab + "} catch (TException e) {\n"
-	contents += tabtabtabtabtabtab + "try {\n"
-	contents += tabtabtabtabtabtabtab + "result.put(e);\n"
-	contents += tabtabtabtabtabtab + "} finally {\n"
-	contents += tabtabtabtabtabtabtab + "throw e;\n"
-	contents += tabtabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtab + "}\n"
-	contents += tabtabtabtab + "}\n"
-	contents += tabtabtab + "};\n"
-	contents += tabtab + "}\n\n"
+	contents += tabtab + "}\n"
 
 	return contents
 }

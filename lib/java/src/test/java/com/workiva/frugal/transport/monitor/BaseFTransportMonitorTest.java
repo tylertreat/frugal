@@ -1,5 +1,6 @@
 package com.workiva.frugal.transport.monitor;
 
+import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.transport.FTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Test;
@@ -81,11 +82,9 @@ public class BaseFTransportMonitorTest {
         FTransport transport = new MockFTransport();
         FTransportMonitor monitor = mock(FTransportMonitor.class);
         CountDownLatch latch = new CountDownLatch(1);
-        Mockito.doAnswer(new Answer<Void>() {
-            public Void answer(InvocationOnMock invocation) {
-                latch.countDown();
-                return null;
-            }
+        Mockito.doAnswer(invocation -> {
+            latch.countDown();
+            return null;
         }).when(monitor).onClosedCleanly();
         transport.setMonitor(monitor);
 
@@ -221,9 +220,11 @@ public class BaseFTransportMonitorTest {
         private int errorCount;
 
         public MockFTransport() {
+            super();
         }
 
         public MockFTransport(int openErrorCount) {
+            super();
             this.openErrorCount = openErrorCount;
         }
 
@@ -250,8 +251,8 @@ public class BaseFTransportMonitorTest {
         }
 
         @Override
-        public void send(byte[] payload) throws TTransportException {
-
+        public byte[] request(FContext context, boolean oneway, byte[] payload) throws TTransportException {
+            return null;
         }
 
     }

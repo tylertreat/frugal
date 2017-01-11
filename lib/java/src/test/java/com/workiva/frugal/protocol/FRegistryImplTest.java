@@ -1,7 +1,7 @@
 package com.workiva.frugal.protocol;
 
-import com.workiva.frugal.exception.FException;
 import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransportException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -17,9 +17,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
-import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -50,49 +50,48 @@ public class FRegistryImplTest {
         FContext context = new FContext();
 
         // when
-        registry.register(context, transport -> { });
+        registry.register(context, new ArrayBlockingQueue<>(1));
 
         // then
         assertEquals(1, registry.handlers.size());
     }
 
-    @Test(expected = FException.class)
-    public void testRegisterThrowsExceptionForMultipleOpIds() throws Exception {
+    @Test(expected = TTransportException.class)
+    public void testAssignOpIdThrowsExceptionForMultipleOpIds() throws Exception {
         // given
         FRegistryImpl registry = new FRegistryImpl();
         FContext context = new FContext();
-        FAsyncCallback callback = transport -> { };
 
         // when
-        registry.register(context, callback);
+        registry.assignOpId(context);
 
         // then (exception)
-        registry.register(context, callback);
+        registry.assignOpId(context);
     }
 
     @Test
-    public void testRegisterAssignsOpId() throws Exception {
+    public void testAssignOpId() throws Exception {
         // given
         FRegistryImpl registry = new FRegistryImpl();
         FContext context = new FContext();
 
         // when
-        registry.register(context, transport -> {});
+        registry.assignOpId(context);
 
         // then
         assertNotEquals(context.getOpId(), 0);
     }
 
     @Test
-    public void testRegisterAssignsIncreasingOpId() throws Exception {
+    public void testAssignsIncreasingOpId() throws Exception {
         // given
         FRegistryImpl registry = new FRegistryImpl();
 
         // when
         FContext context1 = new FContext();
-        registry.register(context1, transport -> {});
+        registry.assignOpId(context1);
         FContext context2 = new FContext();
-        registry.register(context2, transport -> {});
+        registry.assignOpId(context2);
 
         // then
         assertNotEquals(context1.getOpId(), context2.getOpId());
@@ -103,7 +102,9 @@ public class FRegistryImplTest {
         // given
         FRegistryImpl registry = new FRegistryImpl();
         FContext context = new FContext();
-        registry.register(context, transport -> {});
+        BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(1);
+        registry.assignOpId(context);
+        registry.register(context, queue);
 
         // when
         registry.unregister(context);
@@ -141,7 +142,7 @@ public class FRegistryImplTest {
     }
 
     @Test
-    public void testCloseInterruptsRunningThreads() throws Exception {
+    public void testClosePutsPoisonPillInRegisteredQueues() throws Exception {
         // given
         CountDownLatch readySignal = new CountDownLatch(1);
         CountDownLatch interruptSignal = new CountDownLatch(1);
@@ -149,16 +150,18 @@ public class FRegistryImplTest {
         FRegistryImpl registry = new FRegistryImpl();
         FContext context = new FContext();
         ThreadPoolExecutor executorService = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+        BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(1);
         executorService.execute(() -> {
-            try {
-                registry.register(context, transport -> { }); // no-op callback
-            } catch (TException e) {
-                fail();
-            }
+            registry.register(context, queue); // no-op callback
             readySignal.countDown();
 
-            // spin wait for interrupt signal
-            while (!Thread.currentThread().isInterrupted()) { }
+            // Wait for the queue to return the poison pill
+            try {
+                byte[] poisonPill = queue.take();
+                assertEquals(FRegistry.POISON_PILL, poisonPill);
+            } catch (InterruptedException e) {
+                fail();
+            }
 
             interruptSignal.countDown();
         });
@@ -221,7 +224,7 @@ public class FRegistryImplTest {
                 FContext context = new FContext();
 
                 try {
-                    registry.register(context, transport -> executeSum.getAndAdd(context.getOpId()));
+                    // registry.register(context, transport -> executeSum.getAndAdd(context.getOpId()));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

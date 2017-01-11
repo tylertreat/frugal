@@ -1,6 +1,7 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FMessageSizeException;
+import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FRegistry;
 import io.nats.client.AsyncSubscription;
 import io.nats.client.Connection;
@@ -12,13 +13,17 @@ import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.util.concurrent.BlockingQueue;
 
 import static com.workiva.frugal.transport.FNatsTransport.NATS_MAX_MESSAGE_SIZE;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -44,7 +49,6 @@ public class FNatsTransportTest {
     public void testOpen_natsDisconnected() throws TTransportException {
         assertFalse(transport.isOpen());
         when(conn.getState()).thenReturn(Constants.ConnState.CLOSED);
-
         transport.open();
     }
 
@@ -88,31 +92,43 @@ public class FNatsTransportTest {
     }
 
     @Test(expected = FMessageSizeException.class)
-    public void testSend_sizeException() throws TTransportException {
+    public void testRequest_requestException() throws TTransportException {
         when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
         AsyncSubscription sub = mock(AsyncSubscription.class);
         when(conn.subscribe(any(String.class), any(MessageHandler.class))).thenReturn(sub);
         transport.open();
 
-        transport.send(new byte[NATS_MAX_MESSAGE_SIZE + 1]);
+        transport.request(new FContext(), false, new byte[NATS_MAX_MESSAGE_SIZE + 1]);
     }
 
     @Test
-    public void testSend() throws TTransportException, IOException {
+    public void testRequest() throws TTransportException, IOException, InterruptedException {
         when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
         AsyncSubscription sub = mock(AsyncSubscription.class);
         when(conn.subscribe(any(String.class), any(MessageHandler.class))).thenReturn(sub);
+
+        FRegistry mockRegistry = mock(FRegistry.class);
+        transport.registry = mockRegistry;
         transport.open();
 
+        FContext context = new FContext();
         byte[] buff = "helloworld".getBytes();
-        transport.send(buff);
+        byte[] expectedResponse = "hi".getBytes();
+        Mockito.doAnswer(invocation -> {
+            Object[] arg = invocation.getArguments();
+            BlockingQueue<byte[]> queue = (BlockingQueue<byte[]>) arg[1];
+            queue.put(expectedResponse);
+            return null;
+        }).when(mockRegistry).register(eq(context), any());
+        byte[] actualResponse = transport.request(context, false, buff);
 
+        assertArrayEquals(expectedResponse, actualResponse);
         verify(conn).publish(subject, inbox, buff);
     }
 
     @Test(expected = TTransportException.class)
-    public void testSend_notOpen() throws TTransportException {
+    public void testRequest_notOpen() throws TTransportException {
         when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
-        transport.send("helloworld".getBytes());
+        transport.request(new FContext(), false, "helloworld".getBytes());
     }
 }

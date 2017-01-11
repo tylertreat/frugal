@@ -1,6 +1,7 @@
 package com.workiva.frugal.transport;
 
 
+import com.workiva.frugal.protocol.FContext;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -9,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 
 /**
  * An implementation of FTransport which uses a provided TTransport for read/write operations in a way that is
@@ -112,14 +114,16 @@ public class FAdapterTransport extends FTransport {
     }
 
     @Override
-    public synchronized void send(byte[] payload) throws TTransportException {
+    public synchronized byte[] request(FContext context, boolean oneway, byte[] payload) throws TTransportException {
         if (!isOpen()) {
             throw new TTransportException(TTransportException.NOT_OPEN);
         }
-        // We need to write to the wrapped transport, not the framed transport, since
-        // data given to send is already framed.
-        transport.write(payload);
-        transport.flush();
+        return request(context, oneway, () -> {
+            // We need to write to the wrapped transport, not the framed transport, since
+            // data given to request is already framed.
+            transport.write(payload);
+            transport.flush();
+        });
     }
 
     protected Runnable newTransportReader() {

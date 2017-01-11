@@ -1,11 +1,12 @@
 package com.workiva.frugal.protocol;
 
 import com.workiva.frugal.exception.FException;
-import com.workiva.frugal.util.Pair;
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TMemoryInputTransport;
+import org.apache.thrift.transport.TTransportException;
 
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -16,39 +17,36 @@ import java.util.concurrent.atomic.AtomicLong;
 public class FRegistryImpl implements FRegistry {
 
     private static final AtomicLong NEXT_OP_ID = new AtomicLong(0);
+    protected static final BlockingQueue NULL_QUEUE = new ArrayBlockingQueue(1);
 
-    protected Map<Long, Pair<FAsyncCallback, Thread>> handlers;
+    protected Map<Long, BlockingQueue<byte[]>> handlers;
 
     public FRegistryImpl() {
         handlers = new ConcurrentHashMap<>();
     }
 
-    /**
-     * Register a callback for the given FContext.
-     *
-     * @param context  the FContext to register.
-     * @param callback the callback to register.
-     */
-    public void register(FContext context, FAsyncCallback callback) throws TException {
+    @Override
+    public void assignOpId(FContext context) throws TTransportException {
         // An FContext can be reused for multiple requests. Because of this, every
         // time an FContext is registered, it must be assigned a new op id to
         // ensure we can properly correlate responses. We use a monotonically
-        // increasing atomic uint64 for this purpose. If the FContext already has
+        // increasing atomic long for this purpose. If the FContext already has
         // an op id, it has been used for a request. We check the handlers map to
         // ensure that request is not still in-flight.
         if (handlers.containsKey(context.getOpId())) {
-            throw new FException("context already registered");
+            throw new TTransportException("context already registered");
         }
-        long opId = NEXT_OP_ID.incrementAndGet();
-        context.setOpId(opId);
-        handlers.put(opId, Pair.of(callback, Thread.currentThread()));
+        context.setOpId(NEXT_OP_ID.incrementAndGet());
+        // Add a placeholder for this opid
+        handlers.put(context.getOpId(), NULL_QUEUE);
     }
 
-    /**
-     * Unregister the callback for the given FContext.
-     *
-     * @param context the FContext to unregister.
-     */
+    @Override
+    public void register(FContext context, BlockingQueue<byte[]> queue) {
+        handlers.put(context.getOpId(), queue);
+    }
+
+    @Override
     public void unregister(FContext context) {
         if (context == null) {
             return;
@@ -56,11 +54,7 @@ public class FRegistryImpl implements FRegistry {
         handlers.remove(context.getOpId());
     }
 
-    /**
-     * Dispatch a single Frugal message frame.
-     *
-     * @param frame an entire Frugal message frame.
-     */
+    @Override
     public void execute(byte[] frame) throws TException {
         Map<String, String> headers;
         headers = HeaderUtils.decodeFromFrame(frame);
@@ -72,18 +66,23 @@ public class FRegistryImpl implements FRegistry {
             throw new FException("invalid protocol frame: op id not a uint64", e);
         }
 
-        Pair<FAsyncCallback, Thread> callbackThreadPair = handlers.get(opId);
-        if (callbackThreadPair == null) {
+        BlockingQueue<byte[]> queue = handlers.get(opId);
+        if (queue == null) {
             return;
         }
-        callbackThreadPair.getLeft().onMessage(new TMemoryInputTransport(frame));
+
+        try {
+            queue.put(frame);
+        } catch (InterruptedException e) {
+            throw new TException(e);
+        }
     }
 
-    /**
-     * Interrupt any registered contexts.
-     */
+    @Override
     public void close() {
-        handlers.values().parallelStream().forEach(pair -> pair.getRight().interrupt());
+        handlers.values().parallelStream()
+                .filter(queue -> queue != NULL_QUEUE)
+                .forEach(queue -> queue.offer(POISON_PILL));
         handlers.clear();
     }
 }

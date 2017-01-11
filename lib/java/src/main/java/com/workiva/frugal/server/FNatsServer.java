@@ -318,7 +318,7 @@ public class FNatsServer implements FServer {
             try {
                 conn.publish(reply, output.getWriteBytes());
             } catch (IOException e) {
-                LOGGER.warn("failed to send response: " + e.getMessage());
+                LOGGER.warn("failed to request response: " + e.getMessage());
             }
         }
 

@@ -1,6 +1,7 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FMessageSizeException;
+import com.workiva.frugal.protocol.FContext;
 import io.nats.client.Connection;
 import io.nats.client.Constants;
 import io.nats.client.Message;
@@ -63,6 +64,7 @@ public class FNatsTransport extends FTransport {
         return new FNatsTransport(conn, subject, inbox);
     }
 
+
     /**
      * Query transport open state.
      *
@@ -107,26 +109,26 @@ public class FNatsTransport extends FTransport {
     }
 
     /**
-     * Sends framed request bytes over NATS.
+     * Sends framed request bytes over NATS and returns response.
      *
      * @throws TTransportException
      */
-    public void send(byte[] payload) throws TTransportException {
+    public byte[] request(FContext context, boolean oneway, byte[] payload) throws TTransportException {
         if (!isOpen()) {
-            throw getClosedConditionException(conn.getState(), "send:");
+            throw getClosedConditionException(conn.getState(), "request:");
         }
-
         if (payload.length > NATS_MAX_MESSAGE_SIZE) {
             throw FMessageSizeException.request(
                     String.format("Message exceeds %d bytes, was %d bytes",
                             NATS_MAX_MESSAGE_SIZE, payload.length));
         }
-
-        try {
-            conn.publish(subject, inbox, payload);
-        } catch (IOException e) {
-            throw new TTransportException("send: unable to publish data: " + e.getMessage());
-        }
+        return request(context, oneway, () -> {
+            try {
+                conn.publish(subject, inbox, payload);
+            } catch (IOException e) {
+                throw new TTransportException("request: unable to publish data: " + e.getMessage());
+            }
+        });
     }
 
     /**

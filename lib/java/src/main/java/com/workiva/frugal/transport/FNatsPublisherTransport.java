@@ -84,7 +84,7 @@ public class FNatsPublisherTransport implements FPublisherTransport {
     @Override
     public void publish(String topic, byte[] payload) throws TTransportException {
         if (!isOpen()) {
-            throw getClosedConditionException(conn.getState(), "send:");
+            throw getClosedConditionException(conn.getState(), "request:");
         }
 
         if ("".equals(topic)) {
