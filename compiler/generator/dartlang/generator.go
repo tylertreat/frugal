@@ -22,7 +22,7 @@ const (
 	defaultOutputDir      = "gen-dart"
 	serviceSuffix         = "_service"
 	scopeSuffix           = "_scope"
-	minimumDartVersion    = "1.12.0"
+	minimumDartVersion    = "1.13.0"
 	tab                   = "  "
 	tabtab                = tab + tab
 	tabtabtab             = tab + tab + tab
@@ -324,9 +324,6 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 		if _, err = file.WriteString("\n\n"); err != nil {
 			return file, err
 		}
-		if err = g.GenerateObjectPackage(file, toFileName(name)); err != nil {
-			return file, err
-		}
 		return file, nil
 
 	default:
@@ -358,9 +355,6 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 		return err
 	}
 
-	if _, err = file.WriteString("\n\n"); err != nil {
-		return err
-	}
 	if _, err = file.WriteString(g.GenerateThriftImports()); err != nil {
 		return err
 	}
@@ -571,9 +565,6 @@ func (g *Generator) GenerateStruct(s *parser.Struct) error {
 		return err
 	}
 
-	if _, err = file.WriteString("\n\n"); err != nil {
-		return err
-	}
 	if _, err = file.WriteString(g.GenerateThriftImports()); err != nil {
 		return err
 	}
@@ -1127,31 +1118,17 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 
 // GenerateServicePackage generates the package for the given service.
 func (g *Generator) GenerateServicePackage(file *os.File, s *parser.Service) error {
-	return g.generatePackage(file, s.Name, serviceSuffix)
+	return nil
 }
 
 // GenerateScopePackage generates the package for the given scope.
 func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
-	return g.generatePackage(file, s.Name, scopeSuffix)
+	return nil
 }
 
 // GenerateObjectPackage generates the package for the given name.
 func (g *Generator) GenerateObjectPackage(file *os.File, name string) error {
-	return g.generatePackage(file, name, "")
-}
-
-func (g *Generator) generatePackage(file *os.File, name, suffix string) error {
-	pkg := g.getLibraryName()
-
-	libraryPrefix := g.getLibraryPrefix()
-	libraryDeclaration := "library " + libraryPrefix + pkg
-	if libraryPrefix == "" {
-		libraryDeclaration += ".src"
-	}
-
-	_, err := file.WriteString(fmt.Sprintf("%s.%s%s%s;", libraryDeclaration,
-		generator.FilePrefix, strings.ToLower(name), suffix))
-	return err
+	return nil
 }
 
 // GenerateThriftImports generates necessary imports for Thrift.
@@ -1335,8 +1312,8 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	subscribers += tab + "final frugal.FScopeProvider provider;\n"
 	subscribers += tab + "final List<frugal.Middleware> _middleware;\n\n"
 
-	subscribers += tab + fmt.Sprintf("%sSubscriber(this.provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
-	subscribers += tabtab + "this._middleware = middeware ?? [];\n"
+	subscribers += tab + fmt.Sprintf("%sSubscriber(this.provider, [List<frugal.Middleware> middleware])\n", strings.Title(scope.Name))
+	subscribers += tabtabtab + ": this._middleware = middleware ?? [] {\n"
 	subscribers += tabtab + "this._middleware.addAll(provider.middleware);\n"
 	subscribers += "}\n\n"
 
