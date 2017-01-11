@@ -2,6 +2,7 @@ package frugal
 
 import (
 	"fmt"
+	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/nats-io/go-nats"
@@ -92,24 +93,50 @@ func (f *fNatsTransport) Close() error {
 	return nil
 }
 
-// Send transmits the given data. The data is expected to already be framed.
-func (f *fNatsTransport) Send(_ FContext, data []byte) error {
+// AssignOpID sets the op ID on an FContext.
+func (f *fBaseTransport) AssignOpID(ctx FContext) error {
+	return f.registry.AssignOpID(ctx)
+}
+
+// Request transmits the given data and waits for a response.
+// Implementations of send should be threadsafe and respect the timeout
+// present the on context. The data is expected to already be framed.
+func (f *fNatsTransport) Request(ctx FContext, oneway bool, data []byte) ([]byte, error) {
+	resultC := make(chan []byte, 1)
+
 	if !f.IsOpen() {
-		return f.getClosedConditionError("flush:")
+		return nil, f.getClosedConditionError("flush:")
 	}
 
 	if len(data) == 4 {
-		return nil
+		return nil, nil
+	}
+
+	if !oneway {
+		f.registry.Register(ctx, resultC)
+		defer f.registry.Unregister(ctx)
 	}
 
 	if len(data) > natsMaxMessageSize {
-		return thrift.NewTTransportException(
+		return nil, thrift.NewTTransportException(
 			TTRANSPORT_REQUEST_TOO_LARGE,
 			fmt.Sprintf("Message exceeds %d bytes, was %d bytes", natsMaxMessageSize, len(data)))
 	}
 
-	err := f.conn.PublishRequest(f.subject, f.inbox, data)
-	return thrift.NewTTransportExceptionFromError(err)
+	if err := f.conn.PublishRequest(f.subject, f.inbox, data); err != nil {
+		return nil, err
+	}
+
+	if oneway {
+		return nil, nil
+	}
+
+	select {
+	case result := <-resultC:
+		return result, nil
+	case <-time.After(ctx.Timeout()):
+		return nil, thrift.NewTTransportException(thrift.TIMED_OUT, "frugal: nats request timed out")
+	}
 }
 
 // GetRequestSizeLimit returns the maximum number of bytes that can be

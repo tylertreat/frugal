@@ -1,7 +1,6 @@
 package frugal
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -10,9 +9,6 @@ import (
 
 	"github.com/mattrobenolt/gocql/uuid"
 )
-
-// ErrTimeout is returned when a request timed out.
-var ErrTimeout = errors.New("frugal: request timed out")
 
 const (
 	// Header containing correlation id

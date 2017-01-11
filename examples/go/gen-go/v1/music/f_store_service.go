@@ -6,7 +6,6 @@ package music
 import (
 	"bytes"
 	"fmt"
-	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"
@@ -58,12 +57,9 @@ func (f *FStoreClient) BuyAlbum(ctx frugal.FContext, asin string, acct string) (
 }
 
 func (f *FStoreClient) buyAlbum(ctx frugal.FContext, asin string, acct string) (r *Album, err error) {
-	errorC := make(chan error, 1)
-	resultC := make(chan *Album, 1)
-	if err = f.transport.Register(ctx, f.recvBuyAlbumHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.transport.AssignOpID(ctx); err != nil {
 		return
 	}
-	defer f.transport.Unregister(ctx)
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -86,80 +82,55 @@ func (f *FStoreClient) buyAlbum(ctx frugal.FContext, asin string, acct string) (
 		return
 	}
 	data := buffer.Bytes()
-	if err = f.transport.Send(ctx, data); err != nil {
+	var resultData []byte
+	resultData, err = f.transport.Request(ctx, false, data)
+	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
+	iprot := f.protocolFactory.GetProtocol(tr)
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
-
-	select {
-	case err = <-errorC:
-	case r = <-resultC:
-	case <-time.After(ctx.Timeout()):
-		err = frugal.ErrTimeout
-	case <-f.transport.Closed():
-		err = frugal.ErrTransportClosed
+	method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
 	}
-	return
-}
-
-func (f *FStoreClient) recvBuyAlbumHandler(ctx frugal.FContext, resultC chan<- *Album, errorC chan<- error) frugal.FAsyncCallback {
-	return func(tr thrift.TTransport) error {
-		iprot := f.protocolFactory.GetProtocol(tr)
-		if err := iprot.ReadResponseHeader(ctx); err != nil {
-			errorC <- err
-			return err
-		}
-		method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if method != "buyAlbum" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "buyAlbum failed: wrong method name")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 thrift.TApplicationException
+		error1, err = error0.Read(iprot)
 		if err != nil {
-			errorC <- err
-			return err
-		}
-		if method != "buyAlbum" {
-			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "buyAlbum failed: wrong method name")
-			errorC <- err
-			return err
-		}
-		if mTypeId == thrift.EXCEPTION {
-			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-			var error1 thrift.TApplicationException
-			error1, err = error0.Read(iprot)
-			if err != nil {
-				errorC <- err
-				return err
-			}
-			if err = iprot.ReadMessageEnd(); err != nil {
-				errorC <- err
-				return err
-			}
-			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
-				errorC <- err
-				return nil
-			}
-			err = error1
-			errorC <- err
-			return nil
-		}
-		if mTypeId != thrift.REPLY {
-			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "buyAlbum failed: invalid message type")
-			errorC <- err
-			return err
-		}
-		result := StoreBuyAlbumResult{}
-		if err = result.Read(iprot); err != nil {
-			errorC <- err
-			return err
+			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
-			errorC <- err
-			return err
+			return
 		}
-		if result.Error != nil {
-			errorC <- result.Error
-			return nil
+		if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+			err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
+			return
 		}
-		resultC <- result.GetSuccess()
-		return nil
+		err = error1
+		return
 	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "buyAlbum failed: invalid message type")
+		return
+	}
+	result := StoreBuyAlbumResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	if result.Error != nil {
+		err = result.Error
+		return // TODO
+	}
+	r = result.GetSuccess()
+	return
 }
 
 func (f *FStoreClient) EnterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error) {
@@ -175,12 +146,9 @@ func (f *FStoreClient) EnterAlbumGiveaway(ctx frugal.FContext, email string, nam
 }
 
 func (f *FStoreClient) enterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error) {
-	errorC := make(chan error, 1)
-	resultC := make(chan bool, 1)
-	if err = f.transport.Register(ctx, f.recvEnterAlbumGiveawayHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.transport.AssignOpID(ctx); err != nil {
 		return
 	}
-	defer f.transport.Unregister(ctx)
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -203,76 +171,51 @@ func (f *FStoreClient) enterAlbumGiveaway(ctx frugal.FContext, email string, nam
 		return
 	}
 	data := buffer.Bytes()
-	if err = f.transport.Send(ctx, data); err != nil {
+	var resultData []byte
+	resultData, err = f.transport.Request(ctx, false, data)
+	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
+	iprot := f.protocolFactory.GetProtocol(tr)
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
-
-	select {
-	case err = <-errorC:
-	case r = <-resultC:
-	case <-time.After(ctx.Timeout()):
-		err = frugal.ErrTimeout
-	case <-f.transport.Closed():
-		err = frugal.ErrTransportClosed
+	method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
 	}
-	return
-}
-
-func (f *FStoreClient) recvEnterAlbumGiveawayHandler(ctx frugal.FContext, resultC chan<- bool, errorC chan<- error) frugal.FAsyncCallback {
-	return func(tr thrift.TTransport) error {
-		iprot := f.protocolFactory.GetProtocol(tr)
-		if err := iprot.ReadResponseHeader(ctx); err != nil {
-			errorC <- err
-			return err
-		}
-		method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if method != "enterAlbumGiveaway" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "enterAlbumGiveaway failed: wrong method name")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 thrift.TApplicationException
+		error1, err = error0.Read(iprot)
 		if err != nil {
-			errorC <- err
-			return err
-		}
-		if method != "enterAlbumGiveaway" {
-			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "enterAlbumGiveaway failed: wrong method name")
-			errorC <- err
-			return err
-		}
-		if mTypeId == thrift.EXCEPTION {
-			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-			var error1 thrift.TApplicationException
-			error1, err = error0.Read(iprot)
-			if err != nil {
-				errorC <- err
-				return err
-			}
-			if err = iprot.ReadMessageEnd(); err != nil {
-				errorC <- err
-				return err
-			}
-			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
-				errorC <- err
-				return nil
-			}
-			err = error1
-			errorC <- err
-			return nil
-		}
-		if mTypeId != thrift.REPLY {
-			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "enterAlbumGiveaway failed: invalid message type")
-			errorC <- err
-			return err
-		}
-		result := StoreEnterAlbumGiveawayResult{}
-		if err = result.Read(iprot); err != nil {
-			errorC <- err
-			return err
+			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
-			errorC <- err
-			return err
+			return
 		}
-		resultC <- result.GetSuccess()
-		return nil
+		if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+			err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
+			return
+		}
+		err = error1
+		return
 	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "enterAlbumGiveaway failed: invalid message type")
+		return
+	}
+	result := StoreEnterAlbumGiveawayResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	r = result.GetSuccess()
+	return
 }
 
 type FStoreProcessor struct {

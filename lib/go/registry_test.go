@@ -27,19 +27,16 @@ func TestClientRegistryMissingOpID(t *testing.T) {
 // a valid frugal frame.
 func TestClientRegistry(t *testing.T) {
 	assert := assert.New(t)
-	called := 0
-	cb := func(tr thrift.TTransport) error {
-		called++
-		return nil
-	}
+	resultC := make(chan []byte, 1)
 	registry := NewFRegistry()
 	ctx := NewFContext("")
-
-	// Register the context for the first time
-	assert.Nil(registry.Register(ctx, cb))
+	assert.Nil(registry.AssignOpID(ctx))
 	opid, err := getOpID(ctx)
 	assert.Nil(err)
 	assert.True(opid > 0)
+
+	// Register the context for the first time
+	assert.Nil(registry.Register(ctx, resultC))
 	// Encode a frame with this context
 	transport := &thrift.TMemoryBuffer{Buffer: new(bytes.Buffer)}
 	proto := &FProtocol{tProtocolFactory.GetProtocol(transport)}
@@ -47,10 +44,10 @@ func TestClientRegistry(t *testing.T) {
 	// Pass the frame to execute
 	frame := transport.Bytes()
 	assert.Nil(registry.Execute(frame))
-	assert.Equal(1, called)
+	assert.Equal(1, len(resultC))
 
-	// Reregister the same context
-	assert.Error(registry.Register(ctx, cb))
+	// Re-assign the same context
+	assert.Error(registry.AssignOpID(ctx))
 
 	// Unregister the context
 	registry.Unregister(ctx)
@@ -61,10 +58,11 @@ func TestClientRegistry(t *testing.T) {
 	// But make sure execute sill returns nil when executing a frame with the
 	// same opID (it will just drop the frame)
 	assert.Nil(registry.Execute(frame))
-	assert.Equal(1, called)
+	assert.Equal(1, len(resultC))
 
 	// Now, register the same context again and ensure the opID is increased.
-	assert.Nil(registry.Register(ctx, cb))
+	registry.AssignOpID(ctx)
+	assert.Nil(registry.Register(ctx, resultC))
 	newOpID, err := getOpID(ctx)
 	assert.Nil(err)
 	assert.True(newOpID > opid)

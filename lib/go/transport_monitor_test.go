@@ -310,10 +310,17 @@ func (m *mockFTransport) IsOpen() bool {
 	return args.Get(0).(bool)
 }
 
-func (m *mockFTransport) Send(_ FContext, data []byte) error {
+func (m *mockFTransport) AssignOpID(_ FContext) error {
 	m.Lock()
 	defer m.Unlock()
 	return m.Called().Error(0)
+}
+
+func (m *mockFTransport) Request(_ FContext, _ bool, data []byte) ([]byte, error) {
+	m.Lock()
+	defer m.Unlock()
+	args := m.Called()
+	return args.Get(0).([]byte), args.Error(1)
 }
 
 func (m *mockFTransport) GetRequestSizeLimit() uint {

@@ -64,11 +64,8 @@ type FSubscriberTransport interface {
 // FTransport also has an FRegistry, so it provides methods for registering
 // and unregistering an FAsyncCallback to an FContext.
 type FTransport interface {
-	// Register a callback for the given Context.
-	Register(FContext, FAsyncCallback) error
-
-	// Unregister a callback for the given Context.
-	Unregister(FContext)
+	// AssignOpID sets the op ID on an FContext.
+	AssignOpID(FContext) error
 
 	// SetMonitor starts a monitor that can watch the health of, and reopen,
 	// the transport.
@@ -87,9 +84,10 @@ type FTransport interface {
 	// Close closes the transport.
 	Close() error
 
-	// Send transmits the given data. Implementations of send should be
-	// threadsafe.
-	Send(FContext, []byte) error
+	// Request transmits the given data and waits for a response.
+	// Implementations of send should be threadsafe and respect the timeout
+	// present the on context.
+	Request(FContext, bool, []byte) ([]byte, error)
 
 	// GetRequestSizeLimit returns the maximum number of bytes that can be
 	// transmitted. Returns a non-positive number to indicate an unbounded
@@ -135,16 +133,6 @@ func (f *fBaseTransport) Close(cause error) {
 // Execute a frugal frame (NOTE: this frame must include the frame size).
 func (f *fBaseTransport) ExecuteFrame(frame []byte) error {
 	return f.registry.Execute(frame[4:])
-}
-
-// Register a callback for the given Context. Only called by generated code.
-func (f *fBaseTransport) Register(ctx FContext, callback FAsyncCallback) error {
-	return f.registry.Register(ctx, callback)
-}
-
-// Unregister a callback for the given Context. Only called by generated code.
-func (f *fBaseTransport) Unregister(ctx FContext) {
-	f.registry.Unregister(ctx)
 }
 
 // Closed channel is closed when the FTransport is closed.

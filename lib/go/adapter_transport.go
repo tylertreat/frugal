@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
+	"time"
 )
 
 type fAdapterTransportFactory struct{}
@@ -40,6 +41,7 @@ type fAdapterTransport struct {
 // the registry on received frames.
 func NewAdapterTransport(tr thrift.TTransport) FTransport {
 	return &fAdapterTransport{
+		registry:    NewFRegistry(),
 		transport:   tr,
 		closeSignal: make(chan struct{}, 1),
 	}
@@ -165,12 +167,39 @@ func (f *fAdapterTransport) close(cause error) error {
 	return nil
 }
 
-// Send transmits the given data.
-func (f *fAdapterTransport) Send(_ FContext, payload []byte) error {
-	if _, err := f.transport.Write(payload); err != nil {
-		return err
+// Request transmits the given data and waits for a response.
+// Implementations of send should be threadsafe and respect the timeout
+// present the on context.
+func (f *fAdapterTransport) Request(ctx FContext, oneway bool, payload []byte) ([]byte, error) {
+	resultC := make(chan []byte, 1)
+	errorC := make(chan error, 1)
+
+	if !oneway {
+		f.registry.Register(ctx, resultC)
+		defer f.registry.Unregister(ctx)
 	}
-	return f.transport.Flush()
+
+	go f.send(payload, resultC, errorC)
+
+	select{
+	case result := <-resultC:
+		return result, nil
+	case err := <-errorC:
+		return nil, err
+	case <-time.After(ctx.Timeout()):
+		return nil, thrift.NewTTransportException(thrift.TIMED_OUT, "frugal: request timed out")
+	}
+}
+
+func (f *fAdapterTransport) send(payload []byte, resultC chan []byte, errorC chan error) {
+	if _, err := f.transport.Write(payload); err != nil {
+		errorC <- err
+		return
+	}
+	if err := f.transport.Flush(); err != nil {
+		errorC <- err
+		return
+	}
 }
 
 // GetRequestSizeLimit returns the maximum number of bytes that can be
@@ -180,18 +209,9 @@ func (f *fAdapterTransport) GetRequestSizeLimit() uint {
 	return 0
 }
 
-// Register a callback for the given Context.
-func (f *fAdapterTransport) Register(ctx FContext, cb FAsyncCallback) error {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-	return f.registry.Register(ctx, cb)
-}
-
-// Unregister a callback for the given Context.
-func (f *fAdapterTransport) Unregister(ctx FContext) {
-	f.mu.RLock()
-	f.registry.Unregister(ctx)
-	f.mu.RUnlock()
+// AssignOpID sets the op ID on an FContext.
+func (f *fAdapterTransport) AssignOpID(ctx FContext) error {
+	return f.registry.AssignOpID(ctx)
 }
 
 // SetMonitor starts a monitor that can watch the health of, and reopen,

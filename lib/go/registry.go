@@ -1,7 +1,6 @@
 package frugal
 
 import (
-	"bytes"
 	"errors"
 	"strconv"
 	"sync"
@@ -36,26 +35,27 @@ type FAsyncCallback func(thrift.TTransport) error
 // passed to the FProcessor to be handled.
 type FRegistry interface {
 	// Register a callback for the given Context.
-	Register(ctx FContext, callback FAsyncCallback) error
+	Register(ctx FContext, resultC chan []byte) error
 	// Unregister a callback for the given Context.
 	Unregister(FContext)
 	// Execute dispatches a single Thrift message frame.
 	Execute([]byte) error
+	// AssignOpID sets the op ID on the given context.
+	AssignOpID(FContext) error
 }
 
 type fRegistry struct {
 	mu       sync.RWMutex
-	handlers map[uint64]FAsyncCallback
+	handlers map[uint64]chan []byte
 }
 
 // NewFRegistry creates a Registry intended for use by Frugal clients.
 // This is only to be called by generated code.
 func NewFRegistry() FRegistry {
-	return &fRegistry{handlers: make(map[uint64]FAsyncCallback)}
+	return &fRegistry{handlers: make(map[uint64]chan []byte)}
 }
 
-// Register a callback for the given Context.
-func (c *fRegistry) Register(ctx FContext, callback FAsyncCallback) error {
+func (c *fRegistry) AssignOpID(ctx FContext) error {
 	// An FContext can be reused for multiple requests. Because of this, every
 	// time an FContext is registered, it must be assigned a new op id to
 	// ensure we can properly correlate responses. We use a monotonically
@@ -72,9 +72,22 @@ func (c *fRegistry) Register(ctx FContext, callback FAsyncCallback) error {
 			return errors.New("frugal: context already registered")
 		}
 	}
+
 	opID = atomic.AddUint64(&nextOpID, 1)
 	setRequestOpID(ctx, opID)
-	c.handlers[opID] = callback
+	c.handlers[opID] = nil
+	return nil
+}
+
+// Register a callback for the given Context. Expects an opID to have already
+// been assigned.
+func (c *fRegistry) Register(ctx FContext, resultC chan []byte) error {
+	opID, err := getOpID(ctx)
+	if err != nil {
+		return err
+	}
+
+	c.handlers[opID] = resultC
 	return nil
 }
 
@@ -105,12 +118,14 @@ func (c *fRegistry) Execute(frame []byte) error {
 	}
 
 	c.mu.RLock()
-	handler, ok := c.handlers[opid]
+	resultC, ok := c.handlers[opid]
 	if !ok {
+		logger().Warn("frugal: unregistered context")
 		c.mu.RUnlock()
 		return nil
 	}
 	c.mu.RUnlock()
 
-	return handler(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(frame)})
+	resultC <- frame
+	return nil
 }
