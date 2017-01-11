@@ -82,7 +82,7 @@ type FTransport interface {
 	Close() error
 
 	// Request transmits the given data and waits for a response.
-	// Implementations of send should be threadsafe and respect the timeout
+	// Implementations of request should be threadsafe and respect the timeout
 	// present the on context.
 	Request(ctx FContext, oneway bool, payload []byte) ([]byte, error)
 
