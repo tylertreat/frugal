@@ -64,9 +64,9 @@ func (c *fRegistry) AssignOpID(ctx FContext) error {
 	// ensure that request is not still in-flight.
 	opID, err := getOpID(ctx)
 	// Context already has an opID
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if err == nil {
-		c.mu.Lock()
-		defer c.mu.Unlock()
 		_, ok := c.handlers[opID]
 		if ok {
 			return errors.New("frugal: context already registered")
