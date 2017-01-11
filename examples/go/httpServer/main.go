@@ -23,7 +23,7 @@ func main() {
 	processor := music.NewFStoreProcessor(handler)
 
 	// Start the server using the configured processor, and protocol
-	http.HandleFunc("/frugal", frugal.NewFrugalHandlerFunc(processor, fProtocolFactory))
+	http.HandleFunc("/frugal", CORSMiddleware(frugal.NewFrugalHandlerFunc(processor, fProtocolFactory)))
 	func() {
 		fmt.Println("Starting the http server...")
 		http.ListenAndServe(":9090", http.DefaultServeMux)
@@ -55,4 +55,31 @@ func (f *StoreHandler) BuyAlbum(ctx frugal.FContext, ASIN string, acct string) (
 // EnterAlbumGiveaway always returns true
 func (f *StoreHandler) EnterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error) {
 	return true, nil
+}
+
+func CORSMiddleware(wrapped http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !applyCORS(w, r) {
+			return
+		}
+
+		wrapped.ServeHTTP(w, r)
+	}
+}
+
+// applyCORS applies the access-control headers needed for cross-origin
+// resource sharing and returns true if the request should proceed.
+func applyCORS(w http.ResponseWriter, r *http.Request) bool {
+	if origin := r.Header.Get("Origin"); origin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header()["Access-Control-Allow-Headers"] = r.Header["Access-Control-Request-Headers"]
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+	}
+
+	if r.Method == "OPTIONS" {
+		return false
+	}
+
+	return true
 }
