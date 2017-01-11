@@ -103,11 +103,9 @@ func (f *FFooClient) ping(ctx frugal.FContext) (err error) {
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	data := buffer.Bytes()
 	var resultData []byte
-	resultData, err = f.transport.Request(ctx, false, data)
-	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
-	iprot := f.protocolFactory.GetProtocol(tr)
+	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
@@ -198,11 +196,9 @@ func (f *FFooClient) blah(ctx frugal.FContext, num int32, str string, event *Eve
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	data := buffer.Bytes()
 	var resultData []byte
-	resultData, err = f.transport.Request(ctx, false, data)
-	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
-	iprot := f.protocolFactory.GetProtocol(tr)
+	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
@@ -244,11 +240,11 @@ func (f *FFooClient) blah(ctx frugal.FContext, num int32, str string, event *Eve
 	}
 	if result.Awe != nil {
 		err = result.Awe
-		return // TODO
+		return
 	}
 	if result.API != nil {
 		err = result.API
-		return // TODO
+		return
 	}
 	r = result.GetSuccess()
 	return
@@ -282,9 +278,6 @@ func (f *FFooClient) OneWay(ctx frugal.FContext, id ID, req Request) (err error)
 }
 
 func (f *FFooClient) oneWay(ctx frugal.FContext, id ID, req Request) (err error) {
-	if err = f.transport.AssignOpID(ctx); err != nil {
-		return
-	}
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -306,8 +299,7 @@ func (f *FFooClient) oneWay(ctx frugal.FContext, id ID, req Request) (err error)
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	data := buffer.Bytes()
-	_, err = f.transport.Request(ctx, true, data)
+	_, err = f.transport.Request(ctx, true, buffer.Bytes())
 	return
 }
 
@@ -357,11 +349,9 @@ func (f *FFooClient) bin_method(ctx frugal.FContext, bin []byte, str string) (r 
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	data := buffer.Bytes()
 	var resultData []byte
-	resultData, err = f.transport.Request(ctx, false, data)
-	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
-	iprot := f.protocolFactory.GetProtocol(tr)
+	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
@@ -403,7 +393,7 @@ func (f *FFooClient) bin_method(ctx frugal.FContext, bin []byte, str string) (r 
 	}
 	if result.API != nil {
 		err = result.API
-		return // TODO
+		return
 	}
 	r = result.GetSuccess()
 	return
@@ -461,11 +451,9 @@ func (f *FFooClient) param_modifiers(ctx frugal.FContext, opt_num int32, default
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	data := buffer.Bytes()
 	var resultData []byte
-	resultData, err = f.transport.Request(ctx, false, data)
-	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
-	iprot := f.protocolFactory.GetProtocol(tr)
+	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
@@ -560,11 +548,9 @@ func (f *FFooClient) underlying_types_test(ctx frugal.FContext, list_type []ID, 
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	data := buffer.Bytes()
 	var resultData []byte
-	resultData, err = f.transport.Request(ctx, false, data)
-	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
-	iprot := f.protocolFactory.GetProtocol(tr)
+	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
@@ -656,11 +642,9 @@ func (f *FFooClient) getThing(ctx frugal.FContext) (r *validStructs.Thing, err e
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	data := buffer.Bytes()
 	var resultData []byte
-	resultData, err = f.transport.Request(ctx, false, data)
-	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
-	iprot := f.protocolFactory.GetProtocol(tr)
+	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
@@ -752,11 +736,9 @@ func (f *FFooClient) getMyInt(ctx frugal.FContext) (r ValidTypes.MyInt, err erro
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	data := buffer.Bytes()
 	var resultData []byte
-	resultData, err = f.transport.Request(ctx, false, data)
-	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
-	iprot := f.protocolFactory.GetProtocol(tr)
+	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
@@ -850,11 +832,9 @@ func (f *FFooClient) use_subdir_struct(ctx frugal.FContext, a *subdir_include.A)
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	data := buffer.Bytes()
 	var resultData []byte
-	resultData, err = f.transport.Request(ctx, false, data)
-	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
-	iprot := f.protocolFactory.GetProtocol(tr)
+	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}

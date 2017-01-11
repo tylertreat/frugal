@@ -74,11 +74,9 @@ func (f *FMyServiceClient) getItem(ctx frugal.FContext) (r *vendor_namespace.Ite
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	data := buffer.Bytes()
 	var resultData []byte
-	resultData, err = f.transport.Request(ctx, false, data)
-	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
-	iprot := f.protocolFactory.GetProtocol(tr)
+	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
@@ -120,7 +118,7 @@ func (f *FMyServiceClient) getItem(ctx frugal.FContext) (r *vendor_namespace.Ite
 	}
 	if result.D != nil {
 		err = result.D
-		return // TODO
+		return
 	}
 	r = result.GetSuccess()
 	return

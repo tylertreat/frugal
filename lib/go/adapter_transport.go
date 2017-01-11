@@ -169,7 +169,7 @@ func (f *fAdapterTransport) close(cause error) error {
 
 // Request transmits the given data and waits for a response.
 // Implementations of send should be threadsafe and respect the timeout
-// present the on context.
+// present on the context.
 func (f *fAdapterTransport) Request(ctx FContext, oneway bool, payload []byte) ([]byte, error) {
 	resultC := make(chan []byte, 1)
 	errorC := make(chan error, 1)

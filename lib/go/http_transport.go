@@ -289,7 +289,6 @@ func (h *fHTTPTransport) makeRequest(fCtx FContext, requestPayload []byte) ([]by
 	// Make request
 	response, err := h.client.Do(request)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 

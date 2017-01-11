@@ -1635,9 +1635,11 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx frugal.FContext%s) %s {\n",
 		servTitle, nameLower, g.generateInputArgs(method.Arguments), g.generateReturnArgs(method))
 
-	contents += "\tif err = f.transport.AssignOpID(ctx); err != nil {\n"
-	contents += "\t\treturn\n"
-	contents += "\t}\n"
+	if !method.Oneway {
+		contents += "\tif err = f.transport.AssignOpID(ctx); err != nil {\n"
+		contents += "\t\treturn\n"
+		contents += "\t}\n"
+	}
 	contents += "\tbuffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())\n"
 	contents += "\toprot := f.protocolFactory.GetProtocol(buffer)\n"
 	contents += "\tif err = oprot.WriteRequestHeader(ctx); err != nil {\n"
@@ -1664,20 +1666,17 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 
-	contents += "\tdata := buffer.Bytes()\n"
-
 	if method.Oneway {
-		contents += fmt.Sprintf("\t_, err = f.transport.Request(ctx, %v, data)\n", method.Oneway)
+		contents += fmt.Sprintf("\t_, err = f.transport.Request(ctx, %v, buffer.Bytes())\n", method.Oneway)
 		contents += "\treturn\n"
 		contents += "}\n\n"
 		return contents
 	} else {
 		contents += "\tvar resultData []byte\n"
-		contents += fmt.Sprintf("\tresultData, err = f.transport.Request(ctx, %v, data)\n", method.Oneway)
+		contents += fmt.Sprintf("\tresultData, err = f.transport.Request(ctx, %v, buffer.Bytes())\n", method.Oneway)
 	}
 
-	contents += "\ttr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}\n"
-	contents += "\tiprot := f.protocolFactory.GetProtocol(tr)\n"
+	contents += "\tiprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})\n"
 	contents += "\tif err = iprot.ReadResponseHeader(ctx); err != nil {\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
@@ -1723,7 +1722,7 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 		errTitle := snakeToCamel(err.Name)
 		contents += fmt.Sprintf("\tif result.%s != nil {\n", errTitle)
 		contents += fmt.Sprintf("\t\terr = result.%s\n", errTitle)
-		contents += "\t\treturn // TODO\n"
+		contents += "\t\treturn\n"
 		contents += "\t}\n"
 	}
 	if method.ReturnType != nil {
