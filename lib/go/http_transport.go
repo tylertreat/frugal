@@ -220,7 +220,8 @@ func (h *fHTTPTransport) Request(ctx FContext, _ bool, data []byte) ([]byte, err
 	response, err := h.makeRequest(ctx, data)
 	if err != nil {
 		if strings.HasSuffix(err.Error(), "net/http: request canceled") ||
-			strings.HasSuffix(err.Error(), "net/http: timeout awaiting response headers") {
+			strings.HasSuffix(err.Error(), "net/http: timeout awaiting response headers") ||
+			strings.HasSuffix(err.Error(), "net/http: request canceled while waiting for connection") {
 			return nil, thrift.NewTTransportException(thrift.TIMED_OUT, "frugal: http request timed out")
 		}
 		return nil, thrift.NewTTransportExceptionFromError(err)

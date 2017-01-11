@@ -6,7 +6,6 @@ package variety
 import (
 	"bytes"
 	"fmt"
-	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"
@@ -83,12 +82,9 @@ func (f *FFooClient) Ping(ctx frugal.FContext) (err error) {
 }
 
 func (f *FFooClient) ping(ctx frugal.FContext) (err error) {
-	errorC := make(chan error, 1)
-	resultC := make(chan struct{}, 1)
-	if err = f.transport.Register(ctx, f.recvPingHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.transport.AssignOpID(ctx); err != nil {
 		return
 	}
-	defer f.transport.Unregister(ctx)
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -108,76 +104,50 @@ func (f *FFooClient) ping(ctx frugal.FContext) (err error) {
 		return
 	}
 	data := buffer.Bytes()
-	if err = f.transport.Send(data); err != nil {
+	var resultData []byte
+	resultData, err = f.transport.Request(ctx, false, data)
+	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
+	iprot := f.protocolFactory.GetProtocol(tr)
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
-
-	select {
-	case err = <-errorC:
-	case <-resultC:
-	case <-time.After(ctx.Timeout()):
-		err = frugal.ErrTimeout
-	case <-f.transport.Closed():
-		err = frugal.ErrTransportClosed
+	method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
 	}
-	return
-}
-
-func (f *FFooClient) recvPingHandler(ctx frugal.FContext, resultC chan<- struct{}, errorC chan<- error) frugal.FAsyncCallback {
-	return func(tr thrift.TTransport) error {
-		iprot := f.protocolFactory.GetProtocol(tr)
-		if err := iprot.ReadResponseHeader(ctx); err != nil {
-			errorC <- err
-			return err
-		}
-		method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if method != "ping" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "ping failed: wrong method name")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 thrift.TApplicationException
+		error1, err = error0.Read(iprot)
 		if err != nil {
-			errorC <- err
-			return err
-		}
-		if method != "ping" {
-			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "ping failed: wrong method name")
-			errorC <- err
-			return err
-		}
-		if mTypeId == thrift.EXCEPTION {
-			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-			var error1 thrift.TApplicationException
-			error1, err = error0.Read(iprot)
-			if err != nil {
-				errorC <- err
-				return err
-			}
-			if err = iprot.ReadMessageEnd(); err != nil {
-				errorC <- err
-				return err
-			}
-			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
-				errorC <- err
-				return nil
-			}
-			err = error1
-			errorC <- err
-			return nil
-		}
-		if mTypeId != thrift.REPLY {
-			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "ping failed: invalid message type")
-			errorC <- err
-			return err
-		}
-		result := FooPingResult{}
-		if err = result.Read(iprot); err != nil {
-			errorC <- err
-			return err
+			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
-			errorC <- err
-			return err
+			return
 		}
-		resultC <- struct{}{}
-		return nil
+		if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+			err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
+			return
+		}
+		err = error1
+		return
 	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "ping failed: invalid message type")
+		return
+	}
+	result := FooPingResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	return
 }
 
 // Ping the server.
@@ -203,12 +173,9 @@ func (f *FFooClient) Blah(ctx frugal.FContext, num int32, str string, event *Eve
 }
 
 func (f *FFooClient) blah(ctx frugal.FContext, num int32, str string, event *Event) (r int64, err error) {
-	errorC := make(chan error, 1)
-	resultC := make(chan int64, 1)
-	if err = f.transport.Register(ctx, f.recvBlahHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.transport.AssignOpID(ctx); err != nil {
 		return
 	}
-	defer f.transport.Unregister(ctx)
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -232,84 +199,59 @@ func (f *FFooClient) blah(ctx frugal.FContext, num int32, str string, event *Eve
 		return
 	}
 	data := buffer.Bytes()
-	if err = f.transport.Send(data); err != nil {
+	var resultData []byte
+	resultData, err = f.transport.Request(ctx, false, data)
+	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
+	iprot := f.protocolFactory.GetProtocol(tr)
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
-
-	select {
-	case err = <-errorC:
-	case r = <-resultC:
-	case <-time.After(ctx.Timeout()):
-		err = frugal.ErrTimeout
-	case <-f.transport.Closed():
-		err = frugal.ErrTransportClosed
+	method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
 	}
-	return
-}
-
-func (f *FFooClient) recvBlahHandler(ctx frugal.FContext, resultC chan<- int64, errorC chan<- error) frugal.FAsyncCallback {
-	return func(tr thrift.TTransport) error {
-		iprot := f.protocolFactory.GetProtocol(tr)
-		if err := iprot.ReadResponseHeader(ctx); err != nil {
-			errorC <- err
-			return err
-		}
-		method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if method != "blah" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "blah failed: wrong method name")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 thrift.TApplicationException
+		error1, err = error0.Read(iprot)
 		if err != nil {
-			errorC <- err
-			return err
-		}
-		if method != "blah" {
-			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "blah failed: wrong method name")
-			errorC <- err
-			return err
-		}
-		if mTypeId == thrift.EXCEPTION {
-			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-			var error1 thrift.TApplicationException
-			error1, err = error0.Read(iprot)
-			if err != nil {
-				errorC <- err
-				return err
-			}
-			if err = iprot.ReadMessageEnd(); err != nil {
-				errorC <- err
-				return err
-			}
-			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
-				errorC <- err
-				return nil
-			}
-			err = error1
-			errorC <- err
-			return nil
-		}
-		if mTypeId != thrift.REPLY {
-			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "blah failed: invalid message type")
-			errorC <- err
-			return err
-		}
-		result := FooBlahResult{}
-		if err = result.Read(iprot); err != nil {
-			errorC <- err
-			return err
+			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
-			errorC <- err
-			return err
+			return
 		}
-		if result.Awe != nil {
-			errorC <- result.Awe
-			return nil
+		if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+			err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
+			return
 		}
-		if result.API != nil {
-			errorC <- result.API
-			return nil
-		}
-		resultC <- result.GetSuccess()
-		return nil
+		err = error1
+		return
 	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "blah failed: invalid message type")
+		return
+	}
+	result := FooBlahResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	if result.Awe != nil {
+		err = result.Awe
+		return // TODO
+	}
+	if result.API != nil {
+		err = result.API
+		return // TODO
+	}
+	r = result.GetSuccess()
+	return
 }
 
 // Blah the server.
@@ -340,6 +282,9 @@ func (f *FFooClient) OneWay(ctx frugal.FContext, id ID, req Request) (err error)
 }
 
 func (f *FFooClient) oneWay(ctx frugal.FContext, id ID, req Request) (err error) {
+	if err = f.transport.AssignOpID(ctx); err != nil {
+		return
+	}
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -362,10 +307,7 @@ func (f *FFooClient) oneWay(ctx frugal.FContext, id ID, req Request) (err error)
 		return
 	}
 	data := buffer.Bytes()
-	if err = f.transport.Send(data); err != nil {
-		return
-	}
-
+	_, err = f.transport.Request(ctx, true, data)
 	return
 }
 
@@ -391,12 +333,9 @@ func (f *FFooClient) BinMethod(ctx frugal.FContext, bin []byte, str string) (r [
 }
 
 func (f *FFooClient) bin_method(ctx frugal.FContext, bin []byte, str string) (r []byte, err error) {
-	errorC := make(chan error, 1)
-	resultC := make(chan []byte, 1)
-	if err = f.transport.Register(ctx, f.recvBinMethodHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.transport.AssignOpID(ctx); err != nil {
 		return
 	}
-	defer f.transport.Unregister(ctx)
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -419,80 +358,55 @@ func (f *FFooClient) bin_method(ctx frugal.FContext, bin []byte, str string) (r 
 		return
 	}
 	data := buffer.Bytes()
-	if err = f.transport.Send(data); err != nil {
+	var resultData []byte
+	resultData, err = f.transport.Request(ctx, false, data)
+	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
+	iprot := f.protocolFactory.GetProtocol(tr)
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
-
-	select {
-	case err = <-errorC:
-	case r = <-resultC:
-	case <-time.After(ctx.Timeout()):
-		err = frugal.ErrTimeout
-	case <-f.transport.Closed():
-		err = frugal.ErrTransportClosed
+	method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
 	}
-	return
-}
-
-func (f *FFooClient) recvBinMethodHandler(ctx frugal.FContext, resultC chan<- []byte, errorC chan<- error) frugal.FAsyncCallback {
-	return func(tr thrift.TTransport) error {
-		iprot := f.protocolFactory.GetProtocol(tr)
-		if err := iprot.ReadResponseHeader(ctx); err != nil {
-			errorC <- err
-			return err
-		}
-		method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if method != "bin_method" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "bin_method failed: wrong method name")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 thrift.TApplicationException
+		error1, err = error0.Read(iprot)
 		if err != nil {
-			errorC <- err
-			return err
-		}
-		if method != "bin_method" {
-			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "bin_method failed: wrong method name")
-			errorC <- err
-			return err
-		}
-		if mTypeId == thrift.EXCEPTION {
-			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-			var error1 thrift.TApplicationException
-			error1, err = error0.Read(iprot)
-			if err != nil {
-				errorC <- err
-				return err
-			}
-			if err = iprot.ReadMessageEnd(); err != nil {
-				errorC <- err
-				return err
-			}
-			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
-				errorC <- err
-				return nil
-			}
-			err = error1
-			errorC <- err
-			return nil
-		}
-		if mTypeId != thrift.REPLY {
-			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "bin_method failed: invalid message type")
-			errorC <- err
-			return err
-		}
-		result := FooBinMethodResult{}
-		if err = result.Read(iprot); err != nil {
-			errorC <- err
-			return err
+			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
-			errorC <- err
-			return err
+			return
 		}
-		if result.API != nil {
-			errorC <- result.API
-			return nil
+		if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+			err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
+			return
 		}
-		resultC <- result.GetSuccess()
-		return nil
+		err = error1
+		return
 	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "bin_method failed: invalid message type")
+		return
+	}
+	result := FooBinMethodResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	if result.API != nil {
+		err = result.API
+		return // TODO
+	}
+	r = result.GetSuccess()
+	return
 }
 
 func (f *FFooClient) BinMethodAsync(ctx frugal.FContext, bin []byte, str string) (r <-chan []byte, err <-chan error) {
@@ -522,12 +436,9 @@ func (f *FFooClient) ParamModifiers(ctx frugal.FContext, opt_num int32, default_
 }
 
 func (f *FFooClient) param_modifiers(ctx frugal.FContext, opt_num int32, default_num int32, req_num int32) (r int64, err error) {
-	errorC := make(chan error, 1)
-	resultC := make(chan int64, 1)
-	if err = f.transport.Register(ctx, f.recvParamModifiersHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.transport.AssignOpID(ctx); err != nil {
 		return
 	}
-	defer f.transport.Unregister(ctx)
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -551,76 +462,51 @@ func (f *FFooClient) param_modifiers(ctx frugal.FContext, opt_num int32, default
 		return
 	}
 	data := buffer.Bytes()
-	if err = f.transport.Send(data); err != nil {
+	var resultData []byte
+	resultData, err = f.transport.Request(ctx, false, data)
+	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
+	iprot := f.protocolFactory.GetProtocol(tr)
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
-
-	select {
-	case err = <-errorC:
-	case r = <-resultC:
-	case <-time.After(ctx.Timeout()):
-		err = frugal.ErrTimeout
-	case <-f.transport.Closed():
-		err = frugal.ErrTransportClosed
+	method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
 	}
-	return
-}
-
-func (f *FFooClient) recvParamModifiersHandler(ctx frugal.FContext, resultC chan<- int64, errorC chan<- error) frugal.FAsyncCallback {
-	return func(tr thrift.TTransport) error {
-		iprot := f.protocolFactory.GetProtocol(tr)
-		if err := iprot.ReadResponseHeader(ctx); err != nil {
-			errorC <- err
-			return err
-		}
-		method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if method != "param_modifiers" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "param_modifiers failed: wrong method name")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 thrift.TApplicationException
+		error1, err = error0.Read(iprot)
 		if err != nil {
-			errorC <- err
-			return err
-		}
-		if method != "param_modifiers" {
-			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "param_modifiers failed: wrong method name")
-			errorC <- err
-			return err
-		}
-		if mTypeId == thrift.EXCEPTION {
-			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-			var error1 thrift.TApplicationException
-			error1, err = error0.Read(iprot)
-			if err != nil {
-				errorC <- err
-				return err
-			}
-			if err = iprot.ReadMessageEnd(); err != nil {
-				errorC <- err
-				return err
-			}
-			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
-				errorC <- err
-				return nil
-			}
-			err = error1
-			errorC <- err
-			return nil
-		}
-		if mTypeId != thrift.REPLY {
-			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "param_modifiers failed: invalid message type")
-			errorC <- err
-			return err
-		}
-		result := FooParamModifiersResult{}
-		if err = result.Read(iprot); err != nil {
-			errorC <- err
-			return err
+			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
-			errorC <- err
-			return err
+			return
 		}
-		resultC <- result.GetSuccess()
-		return nil
+		if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+			err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
+			return
+		}
+		err = error1
+		return
 	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "param_modifiers failed: invalid message type")
+		return
+	}
+	result := FooParamModifiersResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	r = result.GetSuccess()
+	return
 }
 
 func (f *FFooClient) ParamModifiersAsync(ctx frugal.FContext, opt_num int32, default_num int32, req_num int32) (r <-chan int64, err <-chan error) {
@@ -650,12 +536,9 @@ func (f *FFooClient) UnderlyingTypesTest(ctx frugal.FContext, list_type []ID, se
 }
 
 func (f *FFooClient) underlying_types_test(ctx frugal.FContext, list_type []ID, set_type map[ID]bool) (r []ID, err error) {
-	errorC := make(chan error, 1)
-	resultC := make(chan []ID, 1)
-	if err = f.transport.Register(ctx, f.recvUnderlyingTypesTestHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.transport.AssignOpID(ctx); err != nil {
 		return
 	}
-	defer f.transport.Unregister(ctx)
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -678,76 +561,51 @@ func (f *FFooClient) underlying_types_test(ctx frugal.FContext, list_type []ID, 
 		return
 	}
 	data := buffer.Bytes()
-	if err = f.transport.Send(data); err != nil {
+	var resultData []byte
+	resultData, err = f.transport.Request(ctx, false, data)
+	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
+	iprot := f.protocolFactory.GetProtocol(tr)
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
-
-	select {
-	case err = <-errorC:
-	case r = <-resultC:
-	case <-time.After(ctx.Timeout()):
-		err = frugal.ErrTimeout
-	case <-f.transport.Closed():
-		err = frugal.ErrTransportClosed
+	method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
 	}
-	return
-}
-
-func (f *FFooClient) recvUnderlyingTypesTestHandler(ctx frugal.FContext, resultC chan<- []ID, errorC chan<- error) frugal.FAsyncCallback {
-	return func(tr thrift.TTransport) error {
-		iprot := f.protocolFactory.GetProtocol(tr)
-		if err := iprot.ReadResponseHeader(ctx); err != nil {
-			errorC <- err
-			return err
-		}
-		method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if method != "underlying_types_test" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "underlying_types_test failed: wrong method name")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 thrift.TApplicationException
+		error1, err = error0.Read(iprot)
 		if err != nil {
-			errorC <- err
-			return err
-		}
-		if method != "underlying_types_test" {
-			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "underlying_types_test failed: wrong method name")
-			errorC <- err
-			return err
-		}
-		if mTypeId == thrift.EXCEPTION {
-			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-			var error1 thrift.TApplicationException
-			error1, err = error0.Read(iprot)
-			if err != nil {
-				errorC <- err
-				return err
-			}
-			if err = iprot.ReadMessageEnd(); err != nil {
-				errorC <- err
-				return err
-			}
-			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
-				errorC <- err
-				return nil
-			}
-			err = error1
-			errorC <- err
-			return nil
-		}
-		if mTypeId != thrift.REPLY {
-			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "underlying_types_test failed: invalid message type")
-			errorC <- err
-			return err
-		}
-		result := FooUnderlyingTypesTestResult{}
-		if err = result.Read(iprot); err != nil {
-			errorC <- err
-			return err
+			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
-			errorC <- err
-			return err
+			return
 		}
-		resultC <- result.GetSuccess()
-		return nil
+		if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+			err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
+			return
+		}
+		err = error1
+		return
 	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "underlying_types_test failed: invalid message type")
+		return
+	}
+	result := FooUnderlyingTypesTestResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	r = result.GetSuccess()
+	return
 }
 
 func (f *FFooClient) UnderlyingTypesTestAsync(ctx frugal.FContext, list_type []ID, set_type map[ID]bool) (r <-chan []ID, err <-chan error) {
@@ -777,12 +635,9 @@ func (f *FFooClient) GetThing(ctx frugal.FContext) (r *validStructs.Thing, err e
 }
 
 func (f *FFooClient) getThing(ctx frugal.FContext) (r *validStructs.Thing, err error) {
-	errorC := make(chan error, 1)
-	resultC := make(chan *validStructs.Thing, 1)
-	if err = f.transport.Register(ctx, f.recvGetThingHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.transport.AssignOpID(ctx); err != nil {
 		return
 	}
-	defer f.transport.Unregister(ctx)
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -802,76 +657,51 @@ func (f *FFooClient) getThing(ctx frugal.FContext) (r *validStructs.Thing, err e
 		return
 	}
 	data := buffer.Bytes()
-	if err = f.transport.Send(data); err != nil {
+	var resultData []byte
+	resultData, err = f.transport.Request(ctx, false, data)
+	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
+	iprot := f.protocolFactory.GetProtocol(tr)
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
-
-	select {
-	case err = <-errorC:
-	case r = <-resultC:
-	case <-time.After(ctx.Timeout()):
-		err = frugal.ErrTimeout
-	case <-f.transport.Closed():
-		err = frugal.ErrTransportClosed
+	method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
 	}
-	return
-}
-
-func (f *FFooClient) recvGetThingHandler(ctx frugal.FContext, resultC chan<- *validStructs.Thing, errorC chan<- error) frugal.FAsyncCallback {
-	return func(tr thrift.TTransport) error {
-		iprot := f.protocolFactory.GetProtocol(tr)
-		if err := iprot.ReadResponseHeader(ctx); err != nil {
-			errorC <- err
-			return err
-		}
-		method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if method != "getThing" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "getThing failed: wrong method name")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 thrift.TApplicationException
+		error1, err = error0.Read(iprot)
 		if err != nil {
-			errorC <- err
-			return err
-		}
-		if method != "getThing" {
-			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "getThing failed: wrong method name")
-			errorC <- err
-			return err
-		}
-		if mTypeId == thrift.EXCEPTION {
-			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-			var error1 thrift.TApplicationException
-			error1, err = error0.Read(iprot)
-			if err != nil {
-				errorC <- err
-				return err
-			}
-			if err = iprot.ReadMessageEnd(); err != nil {
-				errorC <- err
-				return err
-			}
-			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
-				errorC <- err
-				return nil
-			}
-			err = error1
-			errorC <- err
-			return nil
-		}
-		if mTypeId != thrift.REPLY {
-			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getThing failed: invalid message type")
-			errorC <- err
-			return err
-		}
-		result := FooGetThingResult{}
-		if err = result.Read(iprot); err != nil {
-			errorC <- err
-			return err
+			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
-			errorC <- err
-			return err
+			return
 		}
-		resultC <- result.GetSuccess()
-		return nil
+		if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+			err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
+			return
+		}
+		err = error1
+		return
 	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getThing failed: invalid message type")
+		return
+	}
+	result := FooGetThingResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	r = result.GetSuccess()
+	return
 }
 
 func (f *FFooClient) GetThingAsync(ctx frugal.FContext) (r <-chan *validStructs.Thing, err <-chan error) {
@@ -901,12 +731,9 @@ func (f *FFooClient) GetMyInt(ctx frugal.FContext) (r ValidTypes.MyInt, err erro
 }
 
 func (f *FFooClient) getMyInt(ctx frugal.FContext) (r ValidTypes.MyInt, err error) {
-	errorC := make(chan error, 1)
-	resultC := make(chan ValidTypes.MyInt, 1)
-	if err = f.transport.Register(ctx, f.recvGetMyIntHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.transport.AssignOpID(ctx); err != nil {
 		return
 	}
-	defer f.transport.Unregister(ctx)
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -926,76 +753,51 @@ func (f *FFooClient) getMyInt(ctx frugal.FContext) (r ValidTypes.MyInt, err erro
 		return
 	}
 	data := buffer.Bytes()
-	if err = f.transport.Send(data); err != nil {
+	var resultData []byte
+	resultData, err = f.transport.Request(ctx, false, data)
+	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
+	iprot := f.protocolFactory.GetProtocol(tr)
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
-
-	select {
-	case err = <-errorC:
-	case r = <-resultC:
-	case <-time.After(ctx.Timeout()):
-		err = frugal.ErrTimeout
-	case <-f.transport.Closed():
-		err = frugal.ErrTransportClosed
+	method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
 	}
-	return
-}
-
-func (f *FFooClient) recvGetMyIntHandler(ctx frugal.FContext, resultC chan<- ValidTypes.MyInt, errorC chan<- error) frugal.FAsyncCallback {
-	return func(tr thrift.TTransport) error {
-		iprot := f.protocolFactory.GetProtocol(tr)
-		if err := iprot.ReadResponseHeader(ctx); err != nil {
-			errorC <- err
-			return err
-		}
-		method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if method != "getMyInt" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "getMyInt failed: wrong method name")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 thrift.TApplicationException
+		error1, err = error0.Read(iprot)
 		if err != nil {
-			errorC <- err
-			return err
-		}
-		if method != "getMyInt" {
-			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "getMyInt failed: wrong method name")
-			errorC <- err
-			return err
-		}
-		if mTypeId == thrift.EXCEPTION {
-			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-			var error1 thrift.TApplicationException
-			error1, err = error0.Read(iprot)
-			if err != nil {
-				errorC <- err
-				return err
-			}
-			if err = iprot.ReadMessageEnd(); err != nil {
-				errorC <- err
-				return err
-			}
-			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
-				errorC <- err
-				return nil
-			}
-			err = error1
-			errorC <- err
-			return nil
-		}
-		if mTypeId != thrift.REPLY {
-			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getMyInt failed: invalid message type")
-			errorC <- err
-			return err
-		}
-		result := FooGetMyIntResult{}
-		if err = result.Read(iprot); err != nil {
-			errorC <- err
-			return err
+			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
-			errorC <- err
-			return err
+			return
 		}
-		resultC <- result.GetSuccess()
-		return nil
+		if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+			err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
+			return
+		}
+		err = error1
+		return
 	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getMyInt failed: invalid message type")
+		return
+	}
+	result := FooGetMyIntResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	r = result.GetSuccess()
+	return
 }
 
 func (f *FFooClient) GetMyIntAsync(ctx frugal.FContext) (r <-chan ValidTypes.MyInt, err <-chan error) {
@@ -1025,12 +827,9 @@ func (f *FFooClient) UseSubdirStruct(ctx frugal.FContext, a *subdir_include.A) (
 }
 
 func (f *FFooClient) use_subdir_struct(ctx frugal.FContext, a *subdir_include.A) (r *subdir_include.A, err error) {
-	errorC := make(chan error, 1)
-	resultC := make(chan *subdir_include.A, 1)
-	if err = f.transport.Register(ctx, f.recvUseSubdirStructHandler(ctx, resultC, errorC)); err != nil {
+	if err = f.transport.AssignOpID(ctx); err != nil {
 		return
 	}
-	defer f.transport.Unregister(ctx)
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -1052,76 +851,51 @@ func (f *FFooClient) use_subdir_struct(ctx frugal.FContext, a *subdir_include.A)
 		return
 	}
 	data := buffer.Bytes()
-	if err = f.transport.Send(data); err != nil {
+	var resultData []byte
+	resultData, err = f.transport.Request(ctx, false, data)
+	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
+	iprot := f.protocolFactory.GetProtocol(tr)
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
-
-	select {
-	case err = <-errorC:
-	case r = <-resultC:
-	case <-time.After(ctx.Timeout()):
-		err = frugal.ErrTimeout
-	case <-f.transport.Closed():
-		err = frugal.ErrTransportClosed
+	method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
 	}
-	return
-}
-
-func (f *FFooClient) recvUseSubdirStructHandler(ctx frugal.FContext, resultC chan<- *subdir_include.A, errorC chan<- error) frugal.FAsyncCallback {
-	return func(tr thrift.TTransport) error {
-		iprot := f.protocolFactory.GetProtocol(tr)
-		if err := iprot.ReadResponseHeader(ctx); err != nil {
-			errorC <- err
-			return err
-		}
-		method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if method != "use_subdir_struct" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "use_subdir_struct failed: wrong method name")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error1 thrift.TApplicationException
+		error1, err = error0.Read(iprot)
 		if err != nil {
-			errorC <- err
-			return err
-		}
-		if method != "use_subdir_struct" {
-			err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "use_subdir_struct failed: wrong method name")
-			errorC <- err
-			return err
-		}
-		if mTypeId == thrift.EXCEPTION {
-			error0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-			var error1 thrift.TApplicationException
-			error1, err = error0.Read(iprot)
-			if err != nil {
-				errorC <- err
-				return err
-			}
-			if err = iprot.ReadMessageEnd(); err != nil {
-				errorC <- err
-				return err
-			}
-			if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
-				err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
-				errorC <- err
-				return nil
-			}
-			err = error1
-			errorC <- err
-			return nil
-		}
-		if mTypeId != thrift.REPLY {
-			err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "use_subdir_struct failed: invalid message type")
-			errorC <- err
-			return err
-		}
-		result := FooUseSubdirStructResult{}
-		if err = result.Read(iprot); err != nil {
-			errorC <- err
-			return err
+			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
-			errorC <- err
-			return err
+			return
 		}
-		resultC <- result.GetSuccess()
-		return nil
+		if error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {
+			err = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())
+			return
+		}
+		err = error1
+		return
 	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "use_subdir_struct failed: invalid message type")
+		return
+	}
+	result := FooUseSubdirStructResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	r = result.GetSuccess()
+	return
 }
 
 func (f *FFooClient) UseSubdirStructAsync(ctx frugal.FContext, a *subdir_include.A) (r <-chan *subdir_include.A, err <-chan error) {

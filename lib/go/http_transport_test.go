@@ -538,7 +538,7 @@ func TestHTTPTransportResponseTimeout(t *testing.T) {
 	assert := assert.New(t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(time.Second)
+		time.Sleep(100 * time.Millisecond)
 	}))
 	defer ts.Close()
 
@@ -546,7 +546,7 @@ func TestHTTPTransportResponseTimeout(t *testing.T) {
 	assert.Nil(transport.Open())
 
 	ctx := NewFContext("")
-	ctx.SetTimeout(time.Millisecond)
+	ctx.SetTimeout(20 * time.Millisecond)
 	_, actualErr := transport.Request(ctx, false, []byte{})
 	assert.Equal(actualErr.(thrift.TTransportException).TypeId(), thrift.TIMED_OUT)
 
