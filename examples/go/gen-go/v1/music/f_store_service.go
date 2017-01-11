@@ -57,9 +57,6 @@ func (f *FStoreClient) BuyAlbum(ctx frugal.FContext, asin string, acct string) (
 }
 
 func (f *FStoreClient) buyAlbum(ctx frugal.FContext, asin string, acct string) (r *Album, err error) {
-	if err = f.transport.AssignOpID(ctx); err != nil {
-		return
-	}
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -81,11 +78,12 @@ func (f *FStoreClient) buyAlbum(ctx frugal.FContext, asin string, acct string) (
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	data := buffer.Bytes()
 	var resultData []byte
-	resultData, err = f.transport.Request(ctx, false, data)
-	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
-	iprot := f.protocolFactory.GetProtocol(tr)
+	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	if err != nil {
+		return
+	}
+	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
@@ -127,7 +125,7 @@ func (f *FStoreClient) buyAlbum(ctx frugal.FContext, asin string, acct string) (
 	}
 	if result.Error != nil {
 		err = result.Error
-		return // TODO
+		return
 	}
 	r = result.GetSuccess()
 	return
@@ -146,9 +144,6 @@ func (f *FStoreClient) EnterAlbumGiveaway(ctx frugal.FContext, email string, nam
 }
 
 func (f *FStoreClient) enterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error) {
-	if err = f.transport.AssignOpID(ctx); err != nil {
-		return
-	}
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -170,11 +165,12 @@ func (f *FStoreClient) enterAlbumGiveaway(ctx frugal.FContext, email string, nam
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	data := buffer.Bytes()
 	var resultData []byte
-	resultData, err = f.transport.Request(ctx, false, data)
-	tr := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
-	iprot := f.protocolFactory.GetProtocol(tr)
+	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	if err != nil {
+		return
+	}
+	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}

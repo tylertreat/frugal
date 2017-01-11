@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mattrobenolt/gocql/uuid"
+	"sync/atomic"
 )
 
 const (
@@ -81,6 +82,8 @@ type FContext interface {
 	Timeout() time.Duration
 }
 
+var nextOpID uint64
+
 // FContextImpl is an implementation of FContext.
 type FContextImpl struct {
 	requestHeaders  map[string]string
@@ -104,6 +107,9 @@ func NewFContext(correlationID string) FContext {
 		},
 		responseHeaders: make(map[string]string),
 	}
+
+	opID := atomic.AddUint64(&nextOpID, 1)
+	setRequestOpID(ctx, opID)
 	return ctx
 }
 

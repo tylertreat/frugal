@@ -50,9 +50,6 @@ func (f *FBaseFooClient) BasePing(ctx frugal.FContext) (err error) {
 }
 
 func (f *FBaseFooClient) basePing(ctx frugal.FContext) (err error) {
-	if err = f.transport.AssignOpID(ctx); err != nil {
-		return
-	}
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -73,6 +70,9 @@ func (f *FBaseFooClient) basePing(ctx frugal.FContext) (err error) {
 	}
 	var resultData []byte
 	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	if err != nil {
+		return
+	}
 	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return

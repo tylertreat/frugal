@@ -11,7 +11,7 @@ import (
 // Ensures Execute returns an error if a bad frugal frame is passed.
 func TestClientRegistryBadFrame(t *testing.T) {
 	assert := assert.New(t)
-	registry := NewFRegistry()
+	registry := newFRegistry()
 	assert.Error(registry.Execute([]byte{0}))
 }
 
@@ -19,7 +19,7 @@ func TestClientRegistryBadFrame(t *testing.T) {
 // opID.
 func TestClientRegistryMissingOpID(t *testing.T) {
 	assert := assert.New(t)
-	registry := NewFRegistry()
+	registry := newFRegistry()
 	assert.Error(registry.Execute(basicFrame))
 }
 
@@ -28,9 +28,8 @@ func TestClientRegistryMissingOpID(t *testing.T) {
 func TestClientRegistry(t *testing.T) {
 	assert := assert.New(t)
 	resultC := make(chan []byte, 1)
-	registry := NewFRegistry()
+	registry := newFRegistry()
 	ctx := NewFContext("")
-	assert.Nil(registry.AssignOpID(ctx))
 	opid, err := getOpID(ctx)
 	assert.Nil(err)
 	assert.True(opid > 0)
@@ -47,13 +46,13 @@ func TestClientRegistry(t *testing.T) {
 	assert.Equal(1, len(resultC))
 
 	// Re-assign the same context
-	assert.Error(registry.AssignOpID(ctx))
+	assert.Error(registry.Register(ctx, resultC))
 
 	// Unregister the context
 	registry.Unregister(ctx)
 	opid, err = getOpID(ctx)
 	assert.Nil(err)
-	_, ok := registry.(*fRegistry).handlers[opid]
+	_, ok := registry.(*fRegistryImpl).channels[opid]
 	assert.False(ok)
 	// But make sure execute sill returns nil when executing a frame with the
 	// same opID (it will just drop the frame)
@@ -61,11 +60,9 @@ func TestClientRegistry(t *testing.T) {
 	assert.Equal(1, len(resultC))
 
 	// Now, register the same context again and ensure the opID is increased.
-	registry.AssignOpID(ctx)
 	assert.Nil(registry.Register(ctx, resultC))
-	newOpID, err := getOpID(ctx)
+	_, err = getOpID(ctx)
 	assert.Nil(err)
-	assert.True(newOpID > opid)
 }
 
 type mockProcessor struct {

@@ -1635,11 +1635,6 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx frugal.FContext%s) %s {\n",
 		servTitle, nameLower, g.generateInputArgs(method.Arguments), g.generateReturnArgs(method))
 
-	if !method.Oneway {
-		contents += "\tif err = f.transport.AssignOpID(ctx); err != nil {\n"
-		contents += "\t\treturn\n"
-		contents += "\t}\n"
-	}
 	contents += "\tbuffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())\n"
 	contents += "\toprot := f.protocolFactory.GetProtocol(buffer)\n"
 	contents += "\tif err = oprot.WriteRequestHeader(ctx); err != nil {\n"
@@ -1671,10 +1666,12 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 		contents += "\treturn\n"
 		contents += "}\n\n"
 		return contents
-	} else {
-		contents += "\tvar resultData []byte\n"
-		contents += fmt.Sprintf("\tresultData, err = f.transport.Request(ctx, %v, buffer.Bytes())\n", method.Oneway)
 	}
+	contents += "\tvar resultData []byte\n"
+	contents += fmt.Sprintf("\tresultData, err = f.transport.Request(ctx, %v, buffer.Bytes())\n", method.Oneway)
+	contents += "\tif err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
 
 	contents += "\tiprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})\n"
 	contents += "\tif err = iprot.ReadResponseHeader(ctx); err != nil {\n"

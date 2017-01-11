@@ -31,7 +31,7 @@ type fAdapterTransport struct {
 	closeSignal        chan struct{}
 	closeChan          chan error
 	monitorCloseSignal chan<- error
-	registry           FRegistry
+	registry           fRegistry
 }
 
 // NewAdapterTransport returns an FTransport which uses the given TTransport
@@ -41,7 +41,7 @@ type fAdapterTransport struct {
 // the registry on received frames.
 func NewAdapterTransport(tr thrift.TTransport) FTransport {
 	return &fAdapterTransport{
-		registry:    NewFRegistry(),
+		registry:    newFRegistry(),
 		transport:   tr,
 		closeSignal: make(chan struct{}, 1),
 	}
@@ -168,7 +168,7 @@ func (f *fAdapterTransport) close(cause error) error {
 }
 
 // Request transmits the given data and waits for a response.
-// Implementations of send should be threadsafe and respect the timeout
+// Implementations of request should be threadsafe and respect the timeout
 // present on the context.
 func (f *fAdapterTransport) Request(ctx FContext, oneway bool, payload []byte) ([]byte, error) {
 	resultC := make(chan []byte, 1)
@@ -207,11 +207,6 @@ func (f *fAdapterTransport) send(payload []byte, resultC chan []byte, errorC cha
 // allowable size.
 func (f *fAdapterTransport) GetRequestSizeLimit() uint {
 	return 0
-}
-
-// AssignOpID sets the op ID on an FContext.
-func (f *fAdapterTransport) AssignOpID(ctx FContext) error {
-	return f.registry.AssignOpID(ctx)
 }
 
 // SetMonitor starts a monitor that can watch the health of, and reopen,

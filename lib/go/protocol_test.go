@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -118,10 +119,12 @@ func TestWriteReadRequestHeader(t *testing.T) {
 	transport := &thrift.TMemoryBuffer{Buffer: &bytes.Buffer{}}
 	proto := &FProtocol{tProtocolFactory.GetProtocol(transport)}
 	ctx := NewFContext("123")
+	origOpID, err := getOpID(ctx)
+	assert.Nil(err)
 	ctx.AddRequestHeader("hello", "world")
 	ctx.AddRequestHeader("foo", "bar")
 	assert.Nil(proto.WriteRequestHeader(ctx))
-	ctx, err := proto.ReadRequestHeader()
+	ctx, err = proto.ReadRequestHeader()
 	assert.Nil(err)
 	header, ok := ctx.RequestHeader("hello")
 	assert.True(ok)
@@ -132,7 +135,7 @@ func TestWriteReadRequestHeader(t *testing.T) {
 	assert.Equal("123", ctx.CorrelationID())
 	opid, err := getOpID(ctx)
 	assert.Nil(err)
-	assert.Equal(uint64(0), opid)
+	assert.Equal(origOpID, opid)
 }
 
 // Ensures WriteResponseHeader properly encodes header bytes and
@@ -142,12 +145,16 @@ func TestWriteReadResponseHeader(t *testing.T) {
 	transport := &thrift.TMemoryBuffer{Buffer: &bytes.Buffer{}}
 	proto := &FProtocol{tProtocolFactory.GetProtocol(transport)}
 	ctx := NewFContext("123")
+	origOpID, err := getOpID(ctx)
+	assert.Nil(err)
 	ctx.AddResponseHeader("hello", "world")
 	ctx.AddResponseHeader("foo", "bar")
+	ctx.AddResponseHeader(opIDHeader, strconv.FormatUint(origOpID, 10))
 	assert.Nil(proto.WriteResponseHeader(ctx))
 	ctx = NewFContext("123")
-	err := proto.ReadResponseHeader(ctx)
+	err = proto.ReadResponseHeader(ctx)
 	assert.Nil(err)
+	fmt.Printf("%v\n", ctx.ResponseHeaders())
 	header, ok := ctx.ResponseHeader("hello")
 	assert.True(ok)
 	assert.Equal("world", header)
@@ -155,9 +162,9 @@ func TestWriteReadResponseHeader(t *testing.T) {
 	assert.True(ok)
 	assert.Equal("bar", header)
 	assert.Equal("123", ctx.CorrelationID())
-	opid, err := getOpID(ctx)
+	opid, ok := ctx.ResponseHeader(opIDHeader)
 	assert.Nil(err)
-	assert.Equal(uint64(0), opid)
+	assert.Equal(strconv.FormatUint(origOpID, 10), opid)
 }
 
 // Ensures readHeader returns an error if there are not enough frame bytes to

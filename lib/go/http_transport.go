@@ -193,13 +193,8 @@ func (h *fHTTPTransport) Close() error {
 	return nil
 }
 
-// AssignOpID sets the op ID on an FContext. This is a no-op for http.
-func (h *fHTTPTransport) AssignOpID(ctx FContext) error {
-	return nil
-}
-
 // Request transmits the given data and waits for a response.
-// Implementations of send should be threadsafe and respect the timeout
+// Implementations of request should be threadsafe and respect the timeout
 // present the on context. The data is expected to already be framed.
 func (h *fHTTPTransport) Request(ctx FContext, _ bool, data []byte) ([]byte, error) {
 	if !h.IsOpen() {

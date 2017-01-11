@@ -53,9 +53,6 @@ func (f *FMyServiceClient) GetItem(ctx frugal.FContext) (r *vendor_namespace.Ite
 }
 
 func (f *FMyServiceClient) getItem(ctx frugal.FContext) (r *vendor_namespace.Item, err error) {
-	if err = f.transport.AssignOpID(ctx); err != nil {
-		return
-	}
 	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
 	oprot := f.protocolFactory.GetProtocol(buffer)
 	if err = oprot.WriteRequestHeader(ctx); err != nil {
@@ -76,6 +73,9 @@ func (f *FMyServiceClient) getItem(ctx frugal.FContext) (r *vendor_namespace.Ite
 	}
 	var resultData []byte
 	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	if err != nil {
+		return
+	}
 	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return

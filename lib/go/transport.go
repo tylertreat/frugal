@@ -64,9 +64,6 @@ type FSubscriberTransport interface {
 // FTransport also has an FRegistry, so it provides methods for registering
 // and unregistering an FAsyncCallback to an FContext.
 type FTransport interface {
-	// AssignOpID sets the op ID on an FContext.
-	AssignOpID(FContext) error
-
 	// SetMonitor starts a monitor that can watch the health of, and reopen,
 	// the transport.
 	SetMonitor(FTransportMonitor)
@@ -103,7 +100,7 @@ type FTransportFactory interface {
 type fBaseTransport struct {
 	requestSizeLimit uint
 	writeBuffer      bytes.Buffer
-	registry         FRegistry
+	registry         fRegistry
 	closed           chan error
 }
 
@@ -111,7 +108,7 @@ type fBaseTransport struct {
 func newFBaseTransport(requestSizeLimit uint) *fBaseTransport {
 	return &fBaseTransport{
 		requestSizeLimit: requestSizeLimit,
-		registry:         NewFRegistry(),
+		registry:         newFRegistry(),
 	}
 }
 

@@ -93,13 +93,8 @@ func (f *fNatsTransport) Close() error {
 	return nil
 }
 
-// AssignOpID sets the op ID on an FContext.
-func (f *fBaseTransport) AssignOpID(ctx FContext) error {
-	return f.registry.AssignOpID(ctx)
-}
-
 // Request transmits the given data and waits for a response.
-// Implementations of send should be threadsafe and respect the timeout
+// Implementations of request should be threadsafe and respect the timeout
 // present the on context. The data is expected to already be framed.
 func (f *fNatsTransport) Request(ctx FContext, oneway bool, data []byte) ([]byte, error) {
 	resultC := make(chan []byte, 1)

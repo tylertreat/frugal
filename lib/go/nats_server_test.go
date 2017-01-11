@@ -31,7 +31,6 @@ func TestFStatelessNatsServer(t *testing.T) {
 
 	tr := NewFNatsTransport(conn, "foo", "bar").(*fNatsTransport)
 	ctx := NewFContext("")
-	tr.AssignOpID(ctx)
 	assert.Nil(t, tr.Open())
 
 	// Send a request.
