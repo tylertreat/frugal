@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/mattrobenolt/gocql/uuid"
-	"sync/atomic"
 )
 
 const (
