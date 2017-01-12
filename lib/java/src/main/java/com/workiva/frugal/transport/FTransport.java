@@ -20,8 +20,7 @@ import java.util.concurrent.TimeUnit;
  * layer for frugal clients. However, frugal is callback based and sends only framed data.
  * Therefore, instead of exposing <code>read</code>, <code>write</code>, and <code>flush</code>,
  * the transport has a simple <code>request</code> method that sends framed frugal messages and
- * returns the response. Before calling <code>request</code> with a given <code>FContext</code>,
- * <code>assignOpId</code> must be called with the context.
+ * returns the response.
  */
 public abstract class FTransport {
 
@@ -65,17 +64,6 @@ public abstract class FTransport {
         signalClose(cause);
     }
 
-
-    /**
-     * Assign an opid to the given <code>FContext</code>.
-     *
-     * @param context <code>FContext</code> to assign an opid.
-     * @throws TTransportException if the given context is already registered to a callback.
-     */
-    public void assignOpId(FContext context) throws TTransportException {
-        registry.assignOpId(context);
-    }
-
     /**
      * Send the given framed frugal payload over the transport and returns the response.
      * Implementations of <code>request</code> should be thread-safe.
@@ -106,22 +94,35 @@ public abstract class FTransport {
             registry.register(context, queue);
         }
 
-        requestFlusher.flush();
-
-        byte[] response;
         try {
-            response = queue.poll(context.getTimeout(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            throw new TTransportException(TTransportException.TIMED_OUT, "request: timed out");
+            requestFlusher.flush();
+
+            if (oneway) {
+                return null;
+            }
+
+            byte[] response;
+            try {
+                response = queue.poll(context.getTimeout(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                throw new TTransportException("request: interrupted");
+            }
+
+            if (response == null) {
+                throw new TTransportException(TTransportException.TIMED_OUT, "request: timed out");
+            }
+
+            if (response == FRegistry.POISON_PILL) {
+                throw new TTransportException(TTransportException.NOT_OPEN,
+                        "request: transport closed, request canceled");
+            }
+
+            return response;
         } finally {
-            registry.unregister(context);
+            if (!oneway) {
+                registry.unregister(context);
+            }
         }
-
-        if (response == FRegistry.POISON_PILL) {
-            throw new TTransportException(TTransportException.NOT_OPEN, "request: transport closed, request canceled");
-        }
-
-        return response;
     }
 
     /**

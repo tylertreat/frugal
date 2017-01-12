@@ -18,9 +18,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -53,48 +54,20 @@ public class FRegistryImplTest {
         registry.register(context, new ArrayBlockingQueue<>(1));
 
         // then
-        assertEquals(1, registry.handlers.size());
+        assertEquals(1, registry.queueMap.size());
     }
 
     @Test(expected = TTransportException.class)
-    public void testAssignOpIdThrowsExceptionForMultipleOpIds() throws Exception {
+    public void testRegisterThrowsExceptionForMultipleAssignmentsToTheSameOpId() throws Exception {
         // given
         FRegistryImpl registry = new FRegistryImpl();
         FContext context = new FContext();
 
         // when
-        registry.assignOpId(context);
+        registry.register(context, mock(BlockingQueue.class));
 
         // then (exception)
-        registry.assignOpId(context);
-    }
-
-    @Test
-    public void testAssignOpId() throws Exception {
-        // given
-        FRegistryImpl registry = new FRegistryImpl();
-        FContext context = new FContext();
-
-        // when
-        registry.assignOpId(context);
-
-        // then
-        assertNotEquals(context.getOpId(), 0);
-    }
-
-    @Test
-    public void testAssignsIncreasingOpId() throws Exception {
-        // given
-        FRegistryImpl registry = new FRegistryImpl();
-
-        // when
-        FContext context1 = new FContext();
-        registry.assignOpId(context1);
-        FContext context2 = new FContext();
-        registry.assignOpId(context2);
-
-        // then
-        assertNotEquals(context1.getOpId(), context2.getOpId());
+        registry.register(context, mock(BlockingQueue.class));
     }
 
     @Test
@@ -103,14 +76,13 @@ public class FRegistryImplTest {
         FRegistryImpl registry = new FRegistryImpl();
         FContext context = new FContext();
         BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(1);
-        registry.assignOpId(context);
         registry.register(context, queue);
 
         // when
         registry.unregister(context);
 
         // then
-        assertEquals(0, registry.handlers.size());
+        assertEquals(0, registry.queueMap.size());
     }
 
     @Test
@@ -129,7 +101,7 @@ public class FRegistryImplTest {
     public void testExecuteDropsUnregisteredOpId() throws TException, UnsupportedEncodingException {
         // given
         FRegistryImpl registry = new FRegistryImpl();
-        registry.handlers = spy(registry.handlers);
+        registry.queueMap = spy(registry.queueMap);
 
         FContext context = new FContext();
         byte[] frame = mockFrame(context);
@@ -138,7 +110,7 @@ public class FRegistryImplTest {
         registry.execute(frame);
 
         // then
-        verify(registry.handlers, times(1)).get(any());
+        verify(registry.queueMap, times(1)).get(any());
     }
 
     @Test
@@ -152,7 +124,11 @@ public class FRegistryImplTest {
         ThreadPoolExecutor executorService = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(1);
         executorService.execute(() -> {
-            registry.register(context, queue); // no-op callback
+            try {
+                registry.register(context, queue); // no-op callback
+            } catch (TTransportException e) {
+                fail();
+            }
             readySignal.countDown();
 
             // Wait for the queue to return the poison pill
@@ -173,7 +149,7 @@ public class FRegistryImplTest {
 
         // then (success when thread interrupted)
         interruptSignal.await(); // wait for thread interrupt
-        assertEquals(registry.handlers.size(), 0);
+        assertEquals(registry.queueMap.size(), 0);
     }
 
     /**
@@ -209,7 +185,13 @@ public class FRegistryImplTest {
 
                     IntStream
                             .range(0, nRegistrations)
-                            .forEach(i -> putToRegistry());
+                            .forEach(i -> {
+                                try {
+                                    putToRegistry();
+                                } catch (InterruptedException e) {
+                                    fail();
+                                }
+                            });
 
                     // Signal end of queue with poison pill
                     opIds.add(poisonPill);
@@ -220,11 +202,16 @@ public class FRegistryImplTest {
                 }
             }
 
-            private void putToRegistry() {
+            private void putToRegistry() throws InterruptedException {
                 FContext context = new FContext();
 
+                BlockingQueue<byte[]> mockQueue = mock(BlockingQueue.class);
+                doAnswer((invocationOnMock) -> {
+                    executeSum.getAndAdd(context.getOpId());
+                    return null;
+                }).when(mockQueue).put(any());
                 try {
-                    // registry.register(context, transport -> executeSum.getAndAdd(context.getOpId()));
+                    registry.register(context, mockQueue);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -277,7 +264,7 @@ public class FRegistryImplTest {
 
             assertEquals(registerSum.get(), unregisterSum.get());
             assertEquals(registerSum.get(), executeSum.get());
-            assertEquals(registry.handlers.size(), 0);
+            assertEquals(registry.queueMap.size(), 0);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

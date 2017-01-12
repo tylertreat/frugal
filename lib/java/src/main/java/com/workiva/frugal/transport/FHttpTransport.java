@@ -128,17 +128,6 @@ public class FHttpTransport extends FTransport {
     }
 
     /**
-     * This is a no-op for FHttpTransport as the opid is not needed.
-     *
-     * @param context <code>FContext</code> to assign an opid.
-     * @throws TTransportException
-     */
-    @Override
-    public void assignOpId(FContext context) throws TTransportException {
-        return;
-    }
-
-    /**
      * Sends the framed frugal payload over HTTP.
      *
      * @throws TTransportException if there was an error writing out data.
@@ -183,8 +172,10 @@ public class FHttpTransport extends FTransport {
             request.setHeader("x-frugal-payload-limit", Integer.toString(responseSizeLimit));
         }
         request.setEntity(requestEntity);
-        request.setConfig(RequestConfig.custom().setConnectTimeout((int) context.getTimeout()).build());
-        request.setConfig(RequestConfig.custom().setSocketTimeout((int) context.getTimeout()).build());
+        request.setConfig(RequestConfig.custom()
+                .setConnectTimeout((int) context.getTimeout())
+                .setSocketTimeout((int) context.getTimeout())
+                .build());
 
         // Make request
         CloseableHttpResponse response;
@@ -193,7 +184,6 @@ public class FHttpTransport extends FTransport {
         } catch (ConnectTimeoutException | SocketTimeoutException e) {
             throw new TTransportException(TTransportException.TIMED_OUT, "http request timed out");
         } catch (IOException e) {
-            System.out.println(e.getClass());
             throw new TTransportException("http request failed: " + e.getMessage());
         }
 

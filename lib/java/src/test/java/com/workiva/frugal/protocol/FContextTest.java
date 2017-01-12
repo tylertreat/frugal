@@ -18,6 +18,11 @@ import static org.junit.Assert.assertNull;
 public class FContextTest {
 
     @Test
+    public void testGenerateOpId() {
+        assertNotEquals(new FContext().getOpId(), new FContext().getOpId());
+    }
+
+    @Test
     public void testGenerateCorrelationId() {
         FContext ctx = new FContext();
         assertNotEquals("", ctx.getCorrelationId());

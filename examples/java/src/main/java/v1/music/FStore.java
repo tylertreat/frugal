@@ -104,9 +104,8 @@ public class FStore {
 		}
 
 		public Album buyAlbum(FContext ctx, String ASIN, String acct) throws TException, PurchasingError {
-			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			transport.assignOpId(ctx);
 			oprot.writeRequestHeader(ctx);
 			oprot.writeMessageBegin(new TMessage("buyAlbum", TMessageType.CALL, 0));
 			buyAlbum_args args = new buyAlbum_args();
@@ -114,9 +113,9 @@ public class FStore {
 			args.setAcct(acct);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("buyAlbum")) {
@@ -146,9 +145,8 @@ public class FStore {
 			throw new TApplicationException(TApplicationException.MISSING_RESULT, "buyAlbum failed: unknown result");
 		}
 		public boolean enterAlbumGiveaway(FContext ctx, String email, String name) throws TException {
-			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			transport.assignOpId(ctx);
 			oprot.writeRequestHeader(ctx);
 			oprot.writeMessageBegin(new TMessage("enterAlbumGiveaway", TMessageType.CALL, 0));
 			enterAlbumGiveaway_args args = new enterAlbumGiveaway_args();
@@ -156,9 +154,9 @@ public class FStore {
 			args.setName(name);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("enterAlbumGiveaway")) {

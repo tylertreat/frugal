@@ -33,14 +33,11 @@ public class HttpClient {
         FStore.Client storeClient = new FStore.Client(new FServiceProvider(transport, protocolFactory));
 
         // Request to buy an album
-        FContext context = new FContext("");
-        context.setTimeout(1000);
-        Album album = storeClient.buyAlbum(context, "ASIN-1290AIUBOA89", "ACCOUNT-12345");
+        Album album = storeClient.buyAlbum(new FContext("corr-id-1"), "ASIN-1290AIUBOA89", "ACCOUNT-12345");
         System.out.println("Bought the album: " + album);
 
         // Enter the contest
-        storeClient.enterAlbumGiveaway(context, "kevin@workiva.com", "Kevin");
-        System.out.println("Entered the givaway");
+        storeClient.enterAlbumGiveaway(new FContext("corr-id-2"), "kevin@workiva.com", "Kevin");
 
         // Close the transport
         transport.close();

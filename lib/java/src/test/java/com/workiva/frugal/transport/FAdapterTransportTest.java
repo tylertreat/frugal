@@ -9,7 +9,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -176,7 +175,7 @@ public class FAdapterTransportTest {
     @Test
     public void testRequest() throws TTransportException {
         byte[] expectedResponse = "hi".getBytes();
-        tr.registry = new MockRegistry(expectedResponse);
+        tr.registry = new FTransportTest.MockRegistry(expectedResponse);
         when(mockTr.isOpen()).thenReturn(true);
         Mockito.doNothing().when(mockTr).open();
         tr.open();
@@ -196,67 +195,5 @@ public class FAdapterTransportTest {
     @Test(expected = TTransportException.class)
     public void test_notOpen() throws TTransportException {
         tr.request(null, false, new byte[0]);
-    }
-
-
-    class MockRegistry implements FRegistry {
-
-        byte[] response;
-
-        MockRegistry(byte[] response) {
-            this.response = response;
-        }
-
-        /**
-         * @param context
-         * @throws TTransportException if the given context is already registered to a callback.
-         */
-        @Override
-        public void assignOpId(FContext context) throws TTransportException {
-
-        }
-
-        /**
-         * Register a queue for the given FContext.
-         *
-         * @param context the FContext to register.
-         * @param queue   the queue to place responses directed at this context.
-         */
-        @Override
-        public void register(FContext context, BlockingQueue<byte[]> queue) {
-            try {
-                queue.put(response);
-            } catch (Exception ignored) {
-            }
-        }
-
-        /**
-         * Unregister the callback for the given FContext.
-         *
-         * @param context the FContext to unregister.
-         */
-        @Override
-        public void unregister(FContext context) {
-
-        }
-
-        /**
-         * Dispatch a single Frugal message frame.
-         *
-         * @param frame an entire Frugal message frame.
-         * @throws TException if execution failed.
-         */
-        @Override
-        public void execute(byte[] frame) throws TException {
-
-        }
-
-        /**
-         * Interrupt any registered contexts.
-         */
-        @Override
-        public void close() {
-
-        }
     }
 }

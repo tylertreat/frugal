@@ -2827,11 +2827,8 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 	contents += tabtab + fmt.Sprintf("public %s %s(FContext ctx%s) %s {\n",
 		g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments, false), g.generateExceptions(method.Exceptions))
-	contents += tabtabtab + "TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());\n"
+	contents += tabtabtab + "TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());\n"
 	contents += tabtabtab + "FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);\n"
-	if !method.Oneway {
-		contents += tabtabtab + "transport.assignOpId(ctx);\n"
-	}
 	contents += tabtabtab + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
@@ -2844,14 +2841,10 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 	contents += tabtabtab + "args.write(oprot);\n"
 	contents += tabtabtab + "oprot.writeMessageEnd();\n"
-	oneway := "false"
 	if method.Oneway {
-		oneway = "true"
-	}
-	if method.Oneway {
-		contents += tabtabtab + fmt.Sprintf("transport.request(ctx, %s, memoryBuffer.getWriteBytes());\n", oneway)
+		contents += tabtabtab + fmt.Sprintf("this.transport.request(ctx, %v, memoryBuffer.getWriteBytes());\n", method.Oneway)
 	} else {
-		contents += tabtabtab + fmt.Sprintf("byte[] response = transport.request(ctx, %s, memoryBuffer.getWriteBytes());\n", oneway)
+		contents += tabtabtab + fmt.Sprintf("byte[] response = this.transport.request(ctx, %v, memoryBuffer.getWriteBytes());\n", method.Oneway)
 	}
 	if method.Oneway {
 		contents += tabtab + "}\n"
@@ -2859,7 +2852,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 
 	contents += "\n"
-	contents += tabtabtab + "FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));\n"
+	contents += tabtabtab + "FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));\n"
 	contents += tabtabtab + "iprot.readResponseHeader(ctx);\n"
 	contents += tabtabtab + "TMessage message = iprot.readMessageBegin();\n"
 	contents += tabtabtab + fmt.Sprintf("if (!message.name.equals(\"%s\")) {\n", methodLower)

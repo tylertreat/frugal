@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * FContext is the context for a Frugal message. Every RPC has an FContext, which
@@ -24,6 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * This object is not thread-safe.
  */
 public class FContext {
+
+    // Ensure every new FContext gets a unique opid
+    private static final AtomicLong NEXT_OP_ID = new AtomicLong(0);
 
     // Header containing correlation id
     protected static final String CID_HEADER = "_cid";
@@ -59,7 +63,7 @@ public class FContext {
      */
     public FContext(String correlationId) {
         requestHeaders.put(CID_HEADER, correlationId);
-        requestHeaders.put(OPID_HEADER, "0");
+        requestHeaders.put(OPID_HEADER, Long.toString(NEXT_OP_ID.incrementAndGet()));
         requestHeaders.put(TIMEOUT_HEADER, Long.toString(DEFAULT_TIMEOUT));
 
     }

@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -97,6 +98,13 @@ public class FHttpTransportTest {
     public void testSend_requestIOException() throws TTransportException, IOException {
         byte[] buff = "helloserver".getBytes();
         when(client.execute(any(HttpPost.class))).thenThrow(new IOException());
+        transport.request(context, false, buff);
+    }
+
+    @Test(expected = TTransportException.class)
+    public void testSend_requestTimeoutException() throws TTransportException, IOException {
+        byte[] buff = "helloserver".getBytes();
+        when(client.execute(any(HttpPost.class))).thenThrow(new SocketTimeoutException());
         transport.request(context, false, buff);
     }
 

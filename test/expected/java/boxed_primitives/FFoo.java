@@ -169,17 +169,16 @@ public class FFoo {
 		 * Ping the server.
 		 */
 		public void Ping(FContext ctx) throws TException {
-			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			transport.assignOpId(ctx);
 			oprot.writeRequestHeader(ctx);
 			oprot.writeMessageBegin(new TMessage("ping", TMessageType.CALL, 0));
 			Ping_args args = new Ping_args();
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("ping")) {
@@ -205,9 +204,8 @@ public class FFoo {
 		 * Blah the server.
 		 */
 		public Long blah(FContext ctx, Integer num, String Str, Event event) throws TException, AwesomeException, actual_base.java.api_exception {
-			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			transport.assignOpId(ctx);
 			oprot.writeRequestHeader(ctx);
 			oprot.writeMessageBegin(new TMessage("blah", TMessageType.CALL, 0));
 			blah_args args = new blah_args();
@@ -216,9 +214,9 @@ public class FFoo {
 			args.setEvent(event);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("blah")) {
@@ -254,7 +252,7 @@ public class FFoo {
 		 * oneway methods don't receive a response from the server.
 		 */
 		public void oneWay(FContext ctx, Long id, java.util.Map<Integer, String> req) throws TException {
-			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
 			oprot.writeRequestHeader(ctx);
 			oprot.writeMessageBegin(new TMessage("oneWay", TMessageType.ONEWAY, 0));
@@ -263,12 +261,11 @@ public class FFoo {
 			args.setReq(req);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			transport.request(ctx, true, memoryBuffer.getWriteBytes());
+			this.transport.request(ctx, true, memoryBuffer.getWriteBytes());
 		}
 		public java.nio.ByteBuffer bin_method(FContext ctx, java.nio.ByteBuffer bin, String Str) throws TException, actual_base.java.api_exception {
-			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			transport.assignOpId(ctx);
 			oprot.writeRequestHeader(ctx);
 			oprot.writeMessageBegin(new TMessage("bin_method", TMessageType.CALL, 0));
 			bin_method_args args = new bin_method_args();
@@ -276,9 +273,9 @@ public class FFoo {
 			args.setStr(Str);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("bin_method")) {
@@ -308,9 +305,8 @@ public class FFoo {
 			throw new TApplicationException(TApplicationException.MISSING_RESULT, "bin_method failed: unknown result");
 		}
 		public Long param_modifiers(FContext ctx, Integer opt_num, Integer default_num, Integer req_num) throws TException {
-			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			transport.assignOpId(ctx);
 			oprot.writeRequestHeader(ctx);
 			oprot.writeMessageBegin(new TMessage("param_modifiers", TMessageType.CALL, 0));
 			param_modifiers_args args = new param_modifiers_args();
@@ -319,9 +315,9 @@ public class FFoo {
 			args.setReq_num(req_num);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("param_modifiers")) {
@@ -348,9 +344,8 @@ public class FFoo {
 			throw new TApplicationException(TApplicationException.MISSING_RESULT, "param_modifiers failed: unknown result");
 		}
 		public java.util.List<Long> underlying_types_test(FContext ctx, java.util.List<Long> list_type, java.util.Set<Long> set_type) throws TException {
-			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			transport.assignOpId(ctx);
 			oprot.writeRequestHeader(ctx);
 			oprot.writeMessageBegin(new TMessage("underlying_types_test", TMessageType.CALL, 0));
 			underlying_types_test_args args = new underlying_types_test_args();
@@ -358,9 +353,9 @@ public class FFoo {
 			args.setSet_type(set_type);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("underlying_types_test")) {
@@ -387,17 +382,16 @@ public class FFoo {
 			throw new TApplicationException(TApplicationException.MISSING_RESULT, "underlying_types_test failed: unknown result");
 		}
 		public Thing getThing(FContext ctx) throws TException {
-			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			transport.assignOpId(ctx);
 			oprot.writeRequestHeader(ctx);
 			oprot.writeMessageBegin(new TMessage("getThing", TMessageType.CALL, 0));
 			getThing_args args = new getThing_args();
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("getThing")) {
@@ -424,17 +418,16 @@ public class FFoo {
 			throw new TApplicationException(TApplicationException.MISSING_RESULT, "getThing failed: unknown result");
 		}
 		public Integer getMyInt(FContext ctx) throws TException {
-			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			transport.assignOpId(ctx);
 			oprot.writeRequestHeader(ctx);
 			oprot.writeMessageBegin(new TMessage("getMyInt", TMessageType.CALL, 0));
 			getMyInt_args args = new getMyInt_args();
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("getMyInt")) {
@@ -461,18 +454,17 @@ public class FFoo {
 			throw new TApplicationException(TApplicationException.MISSING_RESULT, "getMyInt failed: unknown result");
 		}
 		public A use_subdir_struct(FContext ctx, A a) throws TException {
-			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			transport.assignOpId(ctx);
 			oprot.writeRequestHeader(ctx);
 			oprot.writeMessageBegin(new TMessage("use_subdir_struct", TMessageType.CALL, 0));
 			use_subdir_struct_args args = new use_subdir_struct_args();
 			args.setA(a);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("use_subdir_struct")) {

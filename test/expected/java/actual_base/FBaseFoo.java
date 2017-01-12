@@ -94,17 +94,16 @@ public class FBaseFoo {
 		}
 
 		public void basePing(FContext ctx) throws TException {
-			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getRequestSizeLimit());
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
 			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
-			transport.assignOpId(ctx);
 			oprot.writeRequestHeader(ctx);
 			oprot.writeMessageBegin(new TMessage("basePing", TMessageType.CALL, 0));
 			basePing_args args = new basePing_args();
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = InternalClient.this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("basePing")) {
