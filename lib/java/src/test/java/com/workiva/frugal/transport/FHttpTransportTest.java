@@ -2,7 +2,6 @@ package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.protocol.FContext;
-import com.workiva.frugal.protocol.FRegistry;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
@@ -26,11 +25,10 @@ import java.net.SocketTimeoutException;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -190,12 +188,8 @@ public class FHttpTransportTest {
         ArgumentCaptor<HttpPost> topicCaptor = ArgumentCaptor.forClass(HttpPost.class);
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
-        FRegistry mockRegistry = mock(FRegistry.class);
-        transport.registry = mockRegistry;
         byte[] buff = "helloserver".getBytes();
-        transport.request(context, true, buff);
-
-        verify(mockRegistry, never()).execute(any(byte[].class));
+        assertNull(transport.request(context, true, buff));
     }
 
     private HttpPost validRequest(byte[] payload, int responseSizeLimit) {

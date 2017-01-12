@@ -1,7 +1,6 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FMessageSizeException;
-import com.workiva.frugal.protocol.FContext;
 import io.nats.client.Connection;
 import io.nats.client.Constants;
 import io.nats.client.Message;
@@ -13,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * FNatsTransport is an extension of FTransport. This is a "stateless" transport
@@ -20,7 +20,7 @@ import java.io.IOException;
  * published to a subject and responses are received on another subject. This
  * assumes requests/responses fit within a single NATS message.
  */
-public class FNatsTransport extends FTransport {
+public class FNatsTransport extends FAsyncTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FNatsTransport.class);
 
@@ -34,7 +34,6 @@ public class FNatsTransport extends FTransport {
     private Subscription sub;
 
     private FNatsTransport(Connection conn, String subject, String inbox) {
-        super();
         this.requestSizeLimit = NATS_MAX_MESSAGE_SIZE;
         this.conn = conn;
         this.subject = subject;
@@ -109,26 +108,24 @@ public class FNatsTransport extends FTransport {
     }
 
     /**
-     * Sends framed request bytes over NATS and returns response.
-     *
+     * @param payload
      * @throws TTransportException
      */
-    public byte[] request(FContext context, boolean oneway, byte[] payload) throws TTransportException {
+    @Override
+    protected void flush(byte[] payload) throws TTransportException {
         if (!isOpen()) {
-            throw getClosedConditionException(conn.getState(), "request:");
+            throw getClosedConditionException(conn.getState(), "flush:");
         }
         if (payload.length > NATS_MAX_MESSAGE_SIZE) {
             throw FMessageSizeException.request(
                     String.format("Message exceeds %d bytes, was %d bytes",
                             NATS_MAX_MESSAGE_SIZE, payload.length));
         }
-        return request(context, oneway, () -> {
-            try {
-                conn.publish(subject, inbox, payload);
-            } catch (IOException e) {
-                throw new TTransportException("request: unable to publish data: " + e.getMessage());
-            }
-        });
+        try {
+            conn.publish(subject, inbox, payload);
+        } catch (IOException e) {
+            throw new TTransportException("request: unable to publish data: " + e.getMessage());
+        }
     }
 
     /**
@@ -137,9 +134,10 @@ public class FNatsTransport extends FTransport {
     protected class Handler implements MessageHandler {
         public void onMessage(Message message) {
             try {
-                executeFrame(message.getData());
+                byte[] frame = message.getData();
+                handleResponse(Arrays.copyOfRange(frame, 4, frame.length));
             } catch (TException e) {
-                LOGGER.warn("Could not execute frame", e);
+                LOGGER.warn("Could not handle frame", e);
             }
         }
 

@@ -1,7 +1,7 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.protocol.FContext;
-import com.workiva.frugal.protocol.FRegistry;
+import com.workiva.frugal.util.ProtocolUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -9,9 +9,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.io.UnsupportedEncodingException;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 
-import static org.junit.Assert.assertArrayEquals;
+import static com.workiva.frugal.transport.FAsyncTransportTest.mockFrame;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -75,8 +77,6 @@ public class FAdapterTransportTest {
     public void testOpenClose() throws TTransportException {
         FAdapterTransport.ExecutorFactory mockExecutorFactory = mock(FAdapterTransport.ExecutorFactory.class);
         tr.setExecutorFactory(mockExecutorFactory);
-        FRegistry mockRegistry = mock(FRegistry.class);
-        tr.registry = mockRegistry;
         ExecutorService mockExecutor = mock(ExecutorService.class);
         when(mockExecutorFactory.newExecutor()).thenReturn(mockExecutor);
         when(mockTr.isOpen()).thenReturn(true);
@@ -90,7 +90,6 @@ public class FAdapterTransportTest {
 
         tr.close();
 
-        verify(mockRegistry).close();
         verify(mockTr).close();
         verify(mockExecutor).shutdownNow();
 
@@ -98,13 +97,21 @@ public class FAdapterTransportTest {
     }
 
     /**
-     * Ensures TransportReader reads frames from the transport and executes them on the registry. When it encounters an
-     * EOF it closes the transport and returns.
+     * Ensures TransportReader reads frames from the transport and passes them to handleResponse. When it encounters
+     * an EOF it closes the transport and returns.
      */
     @Test
-    public void testTransportReader() throws TException {
-        FRegistry mockRegistry = mock(FRegistry.class);
-        tr.registry = mockRegistry;
+    public void testTransportReader() throws TException, InterruptedException, UnsupportedEncodingException {
+        FContext context1 = new FContext();
+        BlockingQueue<byte[]> mockQueue1 = mock(BlockingQueue.class);
+        byte[] mockFrame1 = mockFrame(context1);
+        FContext context2 = new FContext();
+        BlockingQueue<byte[]> mockQueue2 = mock(BlockingQueue.class);
+        byte[] mockFrame2 = mockFrame(context2);
+
+        tr.queueMap.put(context1.getOpId(), mockQueue1);
+        tr.queueMap.put(context2.getOpId(), mockQueue2);
+
         FAdapterTransport.ExecutorFactory mockExecutorFactory = mock(FAdapterTransport.ExecutorFactory.class);
         ExecutorService mockExecutor = mock(ExecutorService.class);
         when(mockExecutorFactory.newExecutor()).thenReturn(mockExecutor);
@@ -114,26 +121,22 @@ public class FAdapterTransportTest {
         when(mockTr.readAll(any(byte[].class), any(int.class), any(int.class)))
                 .then(invocationOnMock -> {
                     byte[] buff = (byte[]) invocationOnMock.getArguments()[0];
-                    buff[3] = 10;
+                    ProtocolUtils.writeInt(mockFrame1.length, buff, 0);
                     return 4;
                 }) // Read frame 1 size
                 .then(invocationOnMock -> {
                     byte[] buff = (byte[]) invocationOnMock.getArguments()[0];
-                    for (int i = 0; i < 10; i++) {
-                        buff[i] = 1;
-                    }
-                    return 10;
+                    System.arraycopy(mockFrame1, 0, buff, 0, mockFrame1.length);
+                    return mockFrame1.length;
                 }) // Read frame 1
                 .then(invocationOnMock -> {
                     byte[] buff = (byte[]) invocationOnMock.getArguments()[0];
-                    buff[3] = 5;
+                    ProtocolUtils.writeInt(mockFrame2.length, buff, 0);
                     return 4;
                 }) // Read frame 2 size
                 .then(invocationOnMock -> {
                     byte[] buff = (byte[]) invocationOnMock.getArguments()[0];
-                    for (int i = 0; i < 5; i++) {
-                        buff[i] = 2;
-                    }
+                    System.arraycopy(mockFrame2, 0, buff, 0, mockFrame1.length);
                     return 5;
                 }) // Read frame 2
                 .thenThrow(new TTransportException(TTransportException.END_OF_FILE));
@@ -142,8 +145,8 @@ public class FAdapterTransportTest {
         reader.run();
 
         assertFalse(tr.isOpen());
-        verify(mockRegistry).execute(new byte[]{1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
-        verify(mockRegistry).execute(new byte[]{2, 2, 2, 2, 2});
+        verify(mockQueue1).put(mockFrame1);
+        verify(mockQueue2).put(mockFrame2);
     }
 
     /**
@@ -152,8 +155,6 @@ public class FAdapterTransportTest {
      */
     @Test
     public void testTransportReader_error() throws TException {
-        FRegistry mockRegistry = mock(FRegistry.class);
-        tr.registry = mockRegistry;
         FAdapterTransport.ExecutorFactory mockExecutorFactory = mock(FAdapterTransport.ExecutorFactory.class);
         ExecutorService mockExecutor = mock(ExecutorService.class);
         when(mockExecutorFactory.newExecutor()).thenReturn(mockExecutor);
@@ -170,30 +171,26 @@ public class FAdapterTransportTest {
     }
 
     /**
-     * Ensures request calls through to write and flush the underlying transport.
+     * Ensures flush calls through to write and flush the underlying transport.
      */
     @Test
-    public void testRequest() throws TTransportException {
-        byte[] expectedResponse = "hi".getBytes();
-        tr.registry = new FTransportTest.MockRegistry(expectedResponse);
+    public void testFlush() throws TTransportException {
         when(mockTr.isOpen()).thenReturn(true);
         Mockito.doNothing().when(mockTr).open();
         tr.open();
 
-        FContext context = new FContext();
         byte[] buff = "helloworld".getBytes();
-        byte[] actualResponse = tr.request(context, false, buff);
-        assertArrayEquals(expectedResponse, actualResponse);
+        tr.flush(buff);
 
         verify(mockTr).write(buff);
         verify(mockTr).flush();
     }
 
     /**
-     * Ensures request throws TTransportException if the transport is not open.
+     * Ensures flush throws TTransportException if the transport is not open.
      */
     @Test(expected = TTransportException.class)
     public void test_notOpen() throws TTransportException {
-        tr.request(null, false, new byte[0]);
+        tr.flush(new byte[0]);
     }
 }

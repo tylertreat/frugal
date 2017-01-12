@@ -1,7 +1,5 @@
 package com.workiva.frugal.transport;
 
-
-import com.workiva.frugal.protocol.FContext;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -17,7 +15,7 @@ import java.util.concurrent.Executors;
  * compatible with Frugal. This allows TTransports which support blocking reads to work with Frugal by starting a
  * thread that reads from the underlying transport and calling the registry on received frames.
  */
-public class FAdapterTransport extends FTransport {
+public class FAdapterTransport extends FAsyncTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FAdapterTransport.class);
 
@@ -42,7 +40,6 @@ public class FAdapterTransport extends FTransport {
      * Creates a new FAdapterTransport which wraps the given TTransport.
      */
     public FAdapterTransport(TTransport tr) {
-        super();
         transport = tr;
         framedTransport = new TFramedTransport(tr);
         executorFactory = Executors::newSingleThreadExecutor;
@@ -82,6 +79,7 @@ public class FAdapterTransport extends FTransport {
         close(null);
     }
 
+    @Override
     protected synchronized void close(Exception cause) {
         if (isCleanClose(cause) && !isOpen()) {
             return;
@@ -114,16 +112,14 @@ public class FAdapterTransport extends FTransport {
     }
 
     @Override
-    public synchronized byte[] request(FContext context, boolean oneway, byte[] payload) throws TTransportException {
+    protected void flush(byte[] payload) throws TTransportException {
         if (!isOpen()) {
             throw new TTransportException(TTransportException.NOT_OPEN);
         }
-        return request(context, oneway, () -> {
-            // We need to write to the wrapped transport, not the framed transport, since
-            // data given to request is already framed.
-            transport.write(payload);
-            transport.flush();
-        });
+        // We need to write to the wrapped transport, not the framed transport, since
+        // data given to request is already framed.
+        transport.write(payload);
+        transport.flush();
     }
 
     protected Runnable newTransportReader() {
@@ -151,7 +147,7 @@ public class FAdapterTransport extends FTransport {
                 }
 
                 try {
-                    registry.execute(frame);
+                    handleResponse(frame);
                 } catch (TException e) {
                     LOGGER.error("closing transport due to unrecoverable error processing frame: " + e.getMessage());
                     close(e);

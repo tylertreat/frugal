@@ -2,7 +2,6 @@ package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.protocol.FContext;
-import com.workiva.frugal.protocol.FRegistry;
 import io.nats.client.AsyncSubscription;
 import io.nats.client.Connection;
 import io.nats.client.Constants;
@@ -13,17 +12,15 @@ import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 
+import static com.workiva.frugal.transport.FAsyncTransportTest.mockFrame;
 import static com.workiva.frugal.transport.FNatsTransport.NATS_MAX_MESSAGE_SIZE;
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -61,19 +58,22 @@ public class FNatsTransportTest {
         AsyncSubscription sub = mock(AsyncSubscription.class);
         when(conn.subscribe(inboxCaptor.capture(), handlerCaptor.capture())).thenReturn(sub);
 
-        FRegistry mockRegistry = mock(FRegistry.class);
-        transport.registry = mockRegistry;
         transport.open();
 
         verify(conn).subscribe(inboxCaptor.getValue(), handlerCaptor.getValue());
         assertEquals(inbox, inboxCaptor.getValue());
 
         MessageHandler handler = handlerCaptor.getValue();
-        byte[] framedPayload = new byte[]{0, 1, 2, 3, 4, 5, 6, 7};
-        byte[] payload = new byte[]{4, 5, 6, 7};
+        FContext context = new FContext();
+        BlockingQueue<byte[]> mockQueue = mock(BlockingQueue.class);
+        transport.queueMap.put(context.getOpId(), mockQueue);
+
+        byte[] mockFrame = mockFrame(context);
+        byte[] framedPayload = new byte[mockFrame.length + 4];
+        System.arraycopy(mockFrame, 0, framedPayload, 4, mockFrame.length);
+
         Message msg = new Message("foo", "bar", framedPayload);
         handler.onMessage(msg);
-        verify(mockRegistry).execute(payload);
 
         try {
             transport.open();
@@ -88,41 +88,27 @@ public class FNatsTransportTest {
 
         verify(sub).unsubscribe();
         verify(mockCallback).onClose(null);
-        verify(mockRegistry).close();
+        verify(mockQueue).put(mockFrame);
     }
 
     @Test(expected = FMessageSizeException.class)
-    public void testRequest_requestException() throws TTransportException {
+    public void testFlush_sizeException() throws TTransportException {
         when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
         AsyncSubscription sub = mock(AsyncSubscription.class);
         when(conn.subscribe(any(String.class), any(MessageHandler.class))).thenReturn(sub);
         transport.open();
-
-        transport.request(new FContext(), false, new byte[NATS_MAX_MESSAGE_SIZE + 1]);
+        transport.flush(new byte[NATS_MAX_MESSAGE_SIZE + 1]);
     }
 
     @Test
-    public void testRequest() throws TTransportException, IOException, InterruptedException {
+    public void testFlush() throws TTransportException, IOException, InterruptedException {
         when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
         AsyncSubscription sub = mock(AsyncSubscription.class);
         when(conn.subscribe(any(String.class), any(MessageHandler.class))).thenReturn(sub);
-
-        FRegistry mockRegistry = mock(FRegistry.class);
-        transport.registry = mockRegistry;
         transport.open();
 
-        FContext context = new FContext();
         byte[] buff = "helloworld".getBytes();
-        byte[] expectedResponse = "hi".getBytes();
-        Mockito.doAnswer(invocation -> {
-            Object[] arg = invocation.getArguments();
-            BlockingQueue<byte[]> queue = (BlockingQueue<byte[]>) arg[1];
-            queue.put(expectedResponse);
-            return null;
-        }).when(mockRegistry).register(eq(context), any());
-        byte[] actualResponse = transport.request(context, false, buff);
-
-        assertArrayEquals(expectedResponse, actualResponse);
+        transport.flush(buff);
         verify(conn).publish(subject, inbox, buff);
     }
 

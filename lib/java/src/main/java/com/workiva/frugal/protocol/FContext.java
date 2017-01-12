@@ -99,7 +99,7 @@ public class FContext {
      *
      * @return operation id
      */
-    protected long getOpId() {
+    public long getOpId() {
         String opIdStr = requestHeaders.get(OPID_HEADER);
         if (opIdStr == null) {
             return 0;
@@ -108,12 +108,11 @@ public class FContext {
     }
 
     /**
-     * Sets the operation id on the FContext. The operation id is used to map responses to requests. This is protected
-     * as operation ids are an internal implementation detail.
+     * Sets the operation id on the FContext. The operation id is used to map responses to requests.
      *
      * @param opId the operation id to set
      */
-    protected void setOpId(long opId) {
+    public void setOpId(long opId) {
         requestHeaders.put(OPID_HEADER, Long.toString(opId));
     }
 
