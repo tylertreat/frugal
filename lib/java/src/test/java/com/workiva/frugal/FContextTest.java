@@ -1,4 +1,4 @@
-package com.workiva.frugal.protocol;
+package com.workiva.frugal;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,7 +19,10 @@ public class FContextTest {
 
     @Test
     public void testGenerateOpId() {
-        assertNotEquals(new FContext().getOpId(), new FContext().getOpId());
+        assertNotEquals(
+                new FContext().getRequestHeader(FContext.OPID_HEADER),
+                new FContext().getRequestHeader(FContext.OPID_HEADER)
+        );
     }
 
     @Test

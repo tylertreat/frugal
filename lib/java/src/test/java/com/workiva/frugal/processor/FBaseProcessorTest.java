@@ -1,7 +1,7 @@
 package com.workiva.frugal.processor;
 
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.middleware.ServiceMiddleware;
-import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocol;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.protocol.TField;

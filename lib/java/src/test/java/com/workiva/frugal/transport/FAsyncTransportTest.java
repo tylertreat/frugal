@@ -1,6 +1,6 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.protocol.FContext;
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.protocol.HeaderUtils;
 import com.workiva.frugal.util.ProtocolUtils;
 import org.apache.thrift.TException;
@@ -76,7 +76,7 @@ public class FAsyncTransportTest {
             BlockingQueue<byte[]> queue = invocationOnMock.getArgument(1);
             queue.put(expectedResponse);
             return null;
-        }).when(mockMap).put(eq(context.getOpId()), any());
+        }).when(mockMap).put(eq(FAsyncTransport.getOpId(context)), any());
 
         byte[] request = "hello world".getBytes();
         assertArrayEquals(expectedResponse, transport.request(context, false, request));
@@ -123,7 +123,7 @@ public class FAsyncTransportTest {
             BlockingQueue<byte[]> queue = invocationOnMock.getArgument(1);
             queue.put(FAsyncTransport.POISON_PILL);
             return null;
-        }).when(mockMap).put(eq(context.getOpId()), any());
+        }).when(mockMap).put(eq(FAsyncTransport.getOpId(context)), any());
         transport.request(context, false, "hello world".getBytes());
     }
 
@@ -136,7 +136,7 @@ public class FAsyncTransportTest {
         FContext context = new FContext();
 
         // when
-        transport.queueMap.put(context.getOpId(), new ArrayBlockingQueue<>(1));
+        transport.queueMap.put(FAsyncTransport.getOpId(context), new ArrayBlockingQueue<>(1));
 
         // then (exception)
         transport.request(context, false, "crap".getBytes());
@@ -155,7 +155,7 @@ public class FAsyncTransportTest {
         executorService.execute(() -> {
             try {
                 byte[] request = new byte[4];
-                ProtocolUtils.writeInt((int) context.getOpId(), request, 0);
+                ProtocolUtils.writeInt((int) FAsyncTransport.getOpId(context), request, 0);
                 tr.request(context, false, request);
             } catch (TTransportException e) {
                 if (e.getType() != TTransportException.NOT_OPEN) {
@@ -230,13 +230,13 @@ public class FAsyncTransportTest {
                 FContext context = new FContext();
                 try {
                     byte[] request = new byte[4];
-                    ProtocolUtils.writeInt((int) context.getOpId(), request, 0);
+                    ProtocolUtils.writeInt((int) FAsyncTransport.getOpId(context), request, 0);
                     tr.request(context, false, request);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
 
-                requestedSum.getAndAdd(context.getOpId());
+                requestedSum.getAndAdd(FAsyncTransport.getOpId(context));
             }
         }
 
@@ -256,11 +256,11 @@ public class FAsyncTransportTest {
                         }
 
                         FContext context = new FContext();
-                        context.setOpId(opId);
+                        context.addRequestHeader(FAsyncTransport.OPID_HEADER, Long.toString(opId));
 
                         tr.handleResponse(mockFrame(context));
 
-                        handledSum.getAndAdd(context.getOpId());
+                        handledSum.getAndAdd(FAsyncTransport.getOpId(context));
                     }
 
                 } catch (Exception e) {

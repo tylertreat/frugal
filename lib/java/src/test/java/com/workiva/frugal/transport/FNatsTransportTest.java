@@ -1,7 +1,7 @@
 package com.workiva.frugal.transport;
 
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.exception.FMessageSizeException;
-import com.workiva.frugal.protocol.FContext;
 import io.nats.client.AsyncSubscription;
 import io.nats.client.Connection;
 import io.nats.client.Constants;
@@ -66,7 +66,7 @@ public class FNatsTransportTest {
         MessageHandler handler = handlerCaptor.getValue();
         FContext context = new FContext();
         BlockingQueue<byte[]> mockQueue = mock(BlockingQueue.class);
-        transport.queueMap.put(context.getOpId(), mockQueue);
+        transport.queueMap.put(FAsyncTransport.getOpId(context), mockQueue);
 
         byte[] mockFrame = mockFrame(context);
         byte[] framedPayload = new byte[mockFrame.length + 4];

@@ -1,6 +1,6 @@
 package com.workiva.frugal.transport.monitor;
 
-import com.workiva.frugal.protocol.FContext;
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.transport.FTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Test;

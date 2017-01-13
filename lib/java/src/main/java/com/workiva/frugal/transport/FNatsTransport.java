@@ -107,10 +107,6 @@ public class FNatsTransport extends FAsyncTransport {
         super.close();
     }
 
-    /**
-     * @param payload
-     * @throws TTransportException
-     */
     @Override
     protected void flush(byte[] payload) throws TTransportException {
         if (!isOpen()) {

@@ -1,8 +1,8 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.exception.FMessageSizeException;
 
-import com.workiva.frugal.protocol.FContext;
+import com.workiva.frugal.FContext;
+import com.workiva.frugal.exception.FMessageSizeException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;

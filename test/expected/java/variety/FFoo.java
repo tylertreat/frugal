@@ -34,6 +34,7 @@ import javax.annotation.Generated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.exception.FApplicationException;
 import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.exception.FMessageSizeException;

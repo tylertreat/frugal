@@ -1,6 +1,6 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.protocol.FContext;
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.util.ProtocolUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
@@ -109,8 +109,8 @@ public class FAdapterTransportTest {
         BlockingQueue<byte[]> mockQueue2 = mock(BlockingQueue.class);
         byte[] mockFrame2 = mockFrame(context2);
 
-        tr.queueMap.put(context1.getOpId(), mockQueue1);
-        tr.queueMap.put(context2.getOpId(), mockQueue2);
+        tr.queueMap.put(FAsyncTransport.getOpId(context1), mockQueue1);
+        tr.queueMap.put(FAsyncTransport.getOpId(context2), mockQueue2);
 
         FAdapterTransport.ExecutorFactory mockExecutorFactory = mock(FAdapterTransport.ExecutorFactory.class);
         ExecutorService mockExecutor = mock(ExecutorService.class);

@@ -2296,6 +2296,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 
 	imports += g.generateStructImports()
 
+	imports += "import com.workiva.frugal.FContext;\n"
 	imports += "import com.workiva.frugal.exception.FApplicationException;\n"
 	imports += "import com.workiva.frugal.exception.FException;\n"
 	imports += "import com.workiva.frugal.exception.FMessageSizeException;\n"
@@ -2324,7 +2325,8 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 }
 
 func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
-	imports := "import com.workiva.frugal.middleware.InvocationHandler;\n"
+	imports := "import com.workiva.frugal.FContext;\n"
+	imports += "import com.workiva.frugal.middleware.InvocationHandler;\n"
 	imports += "import com.workiva.frugal.middleware.ServiceMiddleware;\n"
 	imports += "import com.workiva.frugal.protocol.*;\n"
 	imports += "import com.workiva.frugal.provider.FScopeProvider;\n"

@@ -1,7 +1,7 @@
 package com.workiva.frugal.transport;
 
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.exception.FException;
-import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.HeaderUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
@@ -21,7 +21,9 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class FAsyncTransport extends FTransport {
 
+    protected static final String OPID_HEADER = "_opid";
     protected static final byte[] POISON_PILL = new byte[0];
+
     private final ReentrantLock lock = new ReentrantLock();
     protected Map<Long, BlockingQueue<byte[]>> queueMap = new ConcurrentHashMap<>();
 
@@ -65,11 +67,11 @@ public abstract class FAsyncTransport extends FTransport {
 
         BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(1);
         lock.lock();
-        if (queueMap.containsKey(context.getOpId())) {
+        if (queueMap.containsKey(getOpId(context))) {
             lock.unlock();
             throw new TTransportException("request already in flight for context");
         }
-        queueMap.put(context.getOpId(), queue);
+        queueMap.put(getOpId(context), queue);
         lock.unlock();
 
         try {
@@ -94,7 +96,7 @@ public abstract class FAsyncTransport extends FTransport {
             return response;
         } finally {
             lock.lock();
-            queueMap.remove(context.getOpId());
+            queueMap.remove(getOpId(context));
             lock.unlock();
         }
     }
@@ -139,5 +141,19 @@ public abstract class FAsyncTransport extends FTransport {
         } catch (InterruptedException e) {
             throw new TException(e);
         }
+    }
+
+    /**
+     * Returns the operation id for the FContext. This is a unique long per context. This is protected as operation
+     * ids are an internal implementation detail.
+     *
+     * @return operation id
+     */
+    protected static long getOpId(FContext context) {
+        String opIdStr = context.getRequestHeader(OPID_HEADER);
+        if (opIdStr == null) {
+            return 0;
+        }
+        return Long.valueOf(opIdStr);
     }
 }
