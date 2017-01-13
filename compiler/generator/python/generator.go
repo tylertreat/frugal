@@ -745,7 +745,6 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from thrift.Thrift import TMessageType\n\n"
 
 	imports += g.generateServiceExtendsImport(s)
-	println(g.generateServiceExtendsImport(s))
 	if imp, err := g.generateServiceIncludeImports(s); err != nil {
 		return err
 	} else {
