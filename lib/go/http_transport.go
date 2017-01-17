@@ -196,7 +196,7 @@ func (h *fHTTPTransport) Close() error {
 // Request transmits the given data and waits for a response.
 // Implementations of request should be threadsafe and respect the timeout
 // present the on context. The data is expected to already be framed.
-func (h *fHTTPTransport) Request(ctx FContext, _ bool, data []byte) ([]byte, error) {
+func (h *fHTTPTransport) Request(ctx FContext, _ bool, data []byte) (thrift.TTransport, error) {
 	if !h.IsOpen() {
 		return nil, h.getClosedConditionError("request:")
 	}
@@ -239,7 +239,7 @@ func (h *fHTTPTransport) Request(ctx FContext, _ bool, data []byte) ([]byte, err
 		return nil, nil
 	}
 
-	return response[4:], nil
+	return &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(response[4:])}, nil
 }
 
 // GetRequestSizeLimit returns the maximum number of bytes that can be

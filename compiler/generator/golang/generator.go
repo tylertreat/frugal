@@ -1667,13 +1667,13 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 		contents += "}\n\n"
 		return contents
 	}
-	contents += "\tvar resultData []byte\n"
-	contents += fmt.Sprintf("\tresultData, err = f.transport.Request(ctx, %v, buffer.Bytes())\n", method.Oneway)
+	contents += "\tvar resultTransport thrift.TTransport\n"
+	contents += fmt.Sprintf("\tresultTransport, err = f.transport.Request(ctx, %v, buffer.Bytes())\n", method.Oneway)
 	contents += "\tif err != nil {\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 
-	contents += "\tiprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})\n"
+	contents += "\tiprot := f.protocolFactory.GetProtocol(resultTransport)\n"
 	contents += "\tif err = iprot.ReadResponseHeader(ctx); err != nil {\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"

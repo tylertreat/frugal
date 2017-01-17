@@ -300,7 +300,7 @@ func TestHTTPTransportLifecycle(t *testing.T) {
 	// Flush
 	result, err := transport.Request(ctx, false, framedRequestBytes)
 	assert.Nil(err)
-	assert.Equal(responseBytes, result)
+	assert.Equal(responseBytes, result.(*thrift.TMemoryBuffer).Bytes())
 
 	// Close
 	assert.Nil(transport.Close())

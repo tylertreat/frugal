@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"git.apache.org/thrift.git/lib/go/thrift"
 )
 
 const testTimeout = 25 * time.Millisecond
@@ -316,11 +317,11 @@ func (m *mockFTransport) AssignOpID(_ FContext) error {
 	return m.Called().Error(0)
 }
 
-func (m *mockFTransport) Request(_ FContext, _ bool, data []byte) ([]byte, error) {
+func (m *mockFTransport) Request(_ FContext, _ bool, data []byte) (thrift.TTransport, error) {
 	m.Lock()
 	defer m.Unlock()
 	args := m.Called()
-	return args.Get(0).([]byte), args.Error(1)
+	return args.Get(0).(thrift.TTransport), args.Error(1)
 }
 
 func (m *mockFTransport) GetRequestSizeLimit() uint {

@@ -84,7 +84,7 @@ type FTransport interface {
 	// Request transmits the given data and waits for a response.
 	// Implementations of request should be threadsafe and respect the timeout
 	// present the on context.
-	Request(ctx FContext, oneway bool, payload []byte) ([]byte, error)
+	Request(ctx FContext, oneway bool, payload []byte) (thrift.TTransport, error)
 
 	// GetRequestSizeLimit returns the maximum number of bytes that can be
 	// transmitted. Returns a non-positive number to indicate an unbounded

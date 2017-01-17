@@ -6,6 +6,7 @@ import (
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/nats-io/go-nats"
+	"bytes"
 )
 
 const (
@@ -96,7 +97,7 @@ func (f *fNatsTransport) Close() error {
 // Request transmits the given data and waits for a response.
 // Implementations of request should be threadsafe and respect the timeout
 // present the on context. The data is expected to already be framed.
-func (f *fNatsTransport) Request(ctx FContext, oneway bool, data []byte) ([]byte, error) {
+func (f *fNatsTransport) Request(ctx FContext, oneway bool, data []byte) (thrift.TTransport, error) {
 	resultC := make(chan []byte, 1)
 
 	if !f.IsOpen() {
@@ -128,7 +129,7 @@ func (f *fNatsTransport) Request(ctx FContext, oneway bool, data []byte) ([]byte
 
 	select {
 	case result := <-resultC:
-		return result, nil
+		return &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(result)}, nil
 	case <-time.After(ctx.Timeout()):
 		return nil, thrift.NewTTransportException(thrift.TIMED_OUT, "frugal: nats request timed out")
 	}

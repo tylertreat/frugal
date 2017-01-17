@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 	"time"
-	"bytes"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/nats-io/go-nats"
@@ -38,10 +37,9 @@ func TestFStatelessNatsServer(t *testing.T) {
 	proto := protoFactory.GetProtocol(buffer)
 	proto.WriteRequestHeader(ctx)
 	proto.WriteBinary([]byte{1, 2, 3, 4, 5})
-	resultData, err := tr.Request(ctx, false, buffer.Bytes())
+	resultTrans, err := tr.Request(ctx, false, buffer.Bytes())
 	assert.Nil(t, err)
 
-	resultTrans := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)}
 	resultProto := protoFactory.GetProtocol(resultTrans)
 	ctx = NewFContext("")
 	err = resultProto.ReadResponseHeader(ctx)
