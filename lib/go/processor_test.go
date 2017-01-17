@@ -1,10 +1,13 @@
 package frugal
 
 import (
+	"bytes"
 	"errors"
+	"strings"
 	"testing"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/Sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,9 +54,18 @@ func TestFBaseProcessorHappyPath(t *testing.T) {
 	assert.True(t, processorFunction.called)
 }
 
-// Ensures FBaseProcessor invokes the correct FProcessorFunction and returns
-// an error on failure.
+// Ensures FBaseProcessor invokes the correct FProcessorFunction and logs
+// errors while returning nil.
 func TestFBaseProcessorError(t *testing.T) {
+	tmpLogger := logrus.New()
+	var logBuf bytes.Buffer
+	tmpLogger.Out = &logBuf
+	oldLogger := logger()
+	SetLogger(tmpLogger)
+	defer func() {
+		SetLogger(oldLogger)
+	}()
+
 	mockTransport := new(mockTTransport)
 	reads := make(chan []byte, 4)
 	reads <- pingFrame[0:1]  // version
@@ -67,8 +79,12 @@ func TestFBaseProcessorError(t *testing.T) {
 	processorFunction := &pingProcessor{t: t, expectedProto: proto, err: err}
 	processor.AddToProcessorMap("ping", processorFunction)
 
-	assert.Equal(t, err, processor.Process(proto, proto))
+	assert.NoError(t, processor.Process(proto, proto))
 	assert.True(t, processorFunction.called)
+	assert.True(t,
+		strings.HasSuffix(
+			string(logBuf.Bytes()),
+			"frugal: error occurred while processing request with correlation id 123: error \n"))
 }
 
 // Ensures FBaseProcessor returns a TTransportException if the transport read
@@ -86,9 +102,18 @@ func TestFBaseProcessorReadError(t *testing.T) {
 	assert.Equal(t, int(thrift.UNKNOWN_TRANSPORT_EXCEPTION), int(trErr.TypeId()))
 }
 
-// Ensures FBaseProcessor writes and returns an UNKNOWN_METHOD
-// TApplicationException if there is no registered FProcessorFunction.
+// Ensures FBaseProcessor writes an UNKNOWN_METHOD TApplicationException
+// response and returns nil if there is no registered FProcessorFunction.
 func TestFBaseProcessorNoProcessorFunction(t *testing.T) {
+	tmpLogger := logrus.New()
+	var logBuf bytes.Buffer
+	tmpLogger.Out = &logBuf
+	oldLogger := logger()
+	SetLogger(tmpLogger)
+	defer func() {
+		SetLogger(oldLogger)
+	}()
+
 	mockTransport := new(mockTTransport)
 	reads := make(chan []byte, 4)
 	reads <- pingFrame[0:1]  // version
@@ -112,11 +137,11 @@ func TestFBaseProcessorNoProcessorFunction(t *testing.T) {
 	proto := &FProtocol{thrift.NewTJSONProtocol(mockTransport)}
 	processor := NewFBaseProcessor()
 
-	err := processor.Process(proto, proto)
-	assert.Error(t, err)
-	appErr := err.(thrift.TApplicationException)
-	assert.Equal(t, int(thrift.UNKNOWN_METHOD), int(appErr.TypeId()))
-	assert.Equal(t, "Unknown function ping", appErr.Error())
+	assert.NoError(t, processor.Process(proto, proto))
+	assert.True(t,
+		strings.HasSuffix(
+			string(logBuf.Bytes()),
+			"frugal: client invoked unknown function ping on request with correlation id 123 \n"))
 	mockTransport.AssertExpectations(t)
 }
 

@@ -133,7 +133,7 @@ func TestFrugalHandlerFuncFrameSizeError(t *testing.T) {
 }
 
 // Ensures that processor errors are handled and routed back in the http
-// response
+// response as a 500 error.
 func TestFrugalHandlerFuncProcessorError(t *testing.T) {
 	assert := assert.New(t)
 	w := httptest.NewRecorder()
@@ -151,9 +151,9 @@ func TestFrugalHandlerFuncProcessorError(t *testing.T) {
 
 	handler(w, r)
 
-	assert.Equal(w.Code, http.StatusBadRequest)
+	assert.Equal(w.Code, http.StatusInternalServerError)
 	assert.Equal(
-		fmt.Sprintf("Frugal request failed %s\n", processorErr),
+		fmt.Sprintf("Error processing request: %s\n", processorErr),
 		string(w.Body.Bytes()),
 	)
 }

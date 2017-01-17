@@ -52,10 +52,8 @@ func (f *FBaseProcessor) Process(iprot, oprot *FProtocol) error {
 	if err != nil {
 		return err
 	}
-	processor, ok := f.processMap[name]
-	if ok {
-		err := processor.Process(ctx, iprot, oprot)
-		if err != nil {
+	if processor, ok := f.processMap[name]; ok {
+		if err := processor.Process(ctx, iprot, oprot); err != nil {
 			if _, ok := err.(thrift.TException); ok {
 				logger().Errorf(
 					"frugal: error occurred while processing request with correlation id %s: %s",
@@ -66,7 +64,8 @@ func (f *FBaseProcessor) Process(iprot, oprot *FProtocol) error {
 					ctx.CorrelationID(), err.Error())
 			}
 		}
-		return err
+		// Return nil because the server should still send a response to the client.
+		return nil
 	}
 	iprot.Skip(thrift.STRUCT)
 	iprot.ReadMessageEnd()
@@ -78,7 +77,9 @@ func (f *FBaseProcessor) Process(iprot, oprot *FProtocol) error {
 	oprot.WriteMessageEnd()
 	oprot.Flush()
 	f.writeMu.Unlock()
-	return ex
+	logger().Warnf("frugal: client invoked unknown function %s on request with correlation id %s",
+		name, ctx.CorrelationID())
+	return nil
 }
 
 // AddMiddleware adds the given ServiceMiddleware to the FProcessor. This
