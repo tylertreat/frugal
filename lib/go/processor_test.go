@@ -84,7 +84,7 @@ func TestFBaseProcessorError(t *testing.T) {
 	assert.True(t,
 		strings.HasSuffix(
 			string(logBuf.Bytes()),
-			"frugal: error occurred while processing request with correlation id 123: error \n"))
+			"frugal: error occurred while processing request with correlation id 123: error \n"), string(logBuf.Bytes()))
 }
 
 // Ensures FBaseProcessor returns a TTransportException if the transport read
