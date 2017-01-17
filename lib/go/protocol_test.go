@@ -154,7 +154,6 @@ func TestWriteReadResponseHeader(t *testing.T) {
 	ctx = NewFContext("123")
 	err = proto.ReadResponseHeader(ctx)
 	assert.Nil(err)
-	fmt.Printf("%v\n", ctx.ResponseHeaders())
 	header, ok := ctx.ResponseHeader("hello")
 	assert.True(ok)
 	assert.Equal("world", header)
