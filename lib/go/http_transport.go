@@ -51,10 +51,17 @@ func NewFrugalHandlerFunc(processor FProcessor, protocolFactory *FProtocolFactor
 			}
 		}
 
+		// Need 4 bytes for the frame size, at a minimum.
+		if r.ContentLength < 4 {
+			http.Error(w, fmt.Sprintf("Invalid request size %d", r.ContentLength), http.StatusBadRequest)
+			return
+		}
+
 		// Create a decoder based on the payload
 		decoder := base64.NewDecoder(base64.StdEncoding, r.Body)
 
 		// Read out the frame size
+		// TODO: should we do something with the frame size?
 		frameSize := make([]byte, 4)
 		if _, err := io.ReadFull(decoder, frameSize); err != nil {
 			http.Error(w,
