@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -310,10 +311,17 @@ func (m *mockFTransport) IsOpen() bool {
 	return args.Get(0).(bool)
 }
 
-func (m *mockFTransport) Send(data []byte) error {
+func (m *mockFTransport) AssignOpID(_ FContext) error {
 	m.Lock()
 	defer m.Unlock()
 	return m.Called().Error(0)
+}
+
+func (m *mockFTransport) Request(_ FContext, _ bool, data []byte) (thrift.TTransport, error) {
+	m.Lock()
+	defer m.Unlock()
+	args := m.Called()
+	return args.Get(0).(thrift.TTransport), args.Error(1)
 }
 
 func (m *mockFTransport) GetRequestSizeLimit() uint {
@@ -357,7 +365,7 @@ func (m *mockFTransport) Close() error {
 	return args.Error(0)
 }
 
-func (m *mockFTransport) SetRegistry(fr FRegistry) {
+func (m *mockFTransport) SetRegistry(fr fRegistry) {
 	m.Lock()
 	defer m.Unlock()
 	m.Called(fr)

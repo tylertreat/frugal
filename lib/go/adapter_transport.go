@@ -1,8 +1,10 @@
 package frugal
 
 import (
+	"bytes"
 	"io"
 	"sync"
+	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
@@ -30,7 +32,7 @@ type fAdapterTransport struct {
 	closeSignal        chan struct{}
 	closeChan          chan error
 	monitorCloseSignal chan<- error
-	registry           FRegistry
+	registry           fRegistry
 }
 
 // NewAdapterTransport returns an FTransport which uses the given TTransport
@@ -40,6 +42,7 @@ type fAdapterTransport struct {
 // the registry on received frames.
 func NewAdapterTransport(tr thrift.TTransport) FTransport {
 	return &fAdapterTransport{
+		registry:    newFRegistry(),
 		transport:   tr,
 		closeSignal: make(chan struct{}, 1),
 	}
@@ -165,12 +168,39 @@ func (f *fAdapterTransport) close(cause error) error {
 	return nil
 }
 
-// Send transmits the given data.
-func (f *fAdapterTransport) Send(payload []byte) error {
-	if _, err := f.transport.Write(payload); err != nil {
-		return err
+// Request transmits the given data and waits for a response.
+// Implementations of request should be threadsafe and respect the timeout
+// present on the context.
+func (f *fAdapterTransport) Request(ctx FContext, oneway bool, payload []byte) (thrift.TTransport, error) {
+	resultC := make(chan []byte, 1)
+	errorC := make(chan error, 1)
+
+	if !oneway {
+		f.registry.Register(ctx, resultC)
+		defer f.registry.Unregister(ctx)
 	}
-	return f.transport.Flush()
+
+	go f.send(payload, resultC, errorC)
+
+	select {
+	case result := <-resultC:
+		return &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(result)}, nil
+	case err := <-errorC:
+		return nil, err
+	case <-time.After(ctx.Timeout()):
+		return nil, thrift.NewTTransportException(thrift.TIMED_OUT, "frugal: request timed out")
+	}
+}
+
+func (f *fAdapterTransport) send(payload []byte, resultC chan []byte, errorC chan error) {
+	if _, err := f.transport.Write(payload); err != nil {
+		errorC <- err
+		return
+	}
+	if err := f.transport.Flush(); err != nil {
+		errorC <- err
+		return
+	}
 }
 
 // GetRequestSizeLimit returns the maximum number of bytes that can be
@@ -178,20 +208,6 @@ func (f *fAdapterTransport) Send(payload []byte) error {
 // allowable size.
 func (f *fAdapterTransport) GetRequestSizeLimit() uint {
 	return 0
-}
-
-// Register a callback for the given Context.
-func (f *fAdapterTransport) Register(ctx FContext, cb FAsyncCallback) error {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-	return f.registry.Register(ctx, cb)
-}
-
-// Unregister a callback for the given Context.
-func (f *fAdapterTransport) Unregister(ctx FContext) {
-	f.mu.RLock()
-	f.registry.Unregister(ctx)
-	f.mu.RUnlock()
 }
 
 // SetMonitor starts a monitor that can watch the health of, and reopen,

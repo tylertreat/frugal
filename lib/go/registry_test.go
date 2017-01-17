@@ -11,7 +11,7 @@ import (
 // Ensures Execute returns an error if a bad frugal frame is passed.
 func TestClientRegistryBadFrame(t *testing.T) {
 	assert := assert.New(t)
-	registry := NewFRegistry()
+	registry := newFRegistry()
 	assert.Error(registry.Execute([]byte{0}))
 }
 
@@ -19,7 +19,7 @@ func TestClientRegistryBadFrame(t *testing.T) {
 // opID.
 func TestClientRegistryMissingOpID(t *testing.T) {
 	assert := assert.New(t)
-	registry := NewFRegistry()
+	registry := newFRegistry()
 	assert.Error(registry.Execute(basicFrame))
 }
 
@@ -27,19 +27,15 @@ func TestClientRegistryMissingOpID(t *testing.T) {
 // a valid frugal frame.
 func TestClientRegistry(t *testing.T) {
 	assert := assert.New(t)
-	called := 0
-	cb := func(tr thrift.TTransport) error {
-		called++
-		return nil
-	}
-	registry := NewFRegistry()
+	resultC := make(chan []byte, 1)
+	registry := newFRegistry()
 	ctx := NewFContext("")
-
-	// Register the context for the first time
-	assert.Nil(registry.Register(ctx, cb))
 	opid, err := getOpID(ctx)
 	assert.Nil(err)
 	assert.True(opid > 0)
+
+	// Register the context for the first time
+	assert.Nil(registry.Register(ctx, resultC))
 	// Encode a frame with this context
 	transport := &thrift.TMemoryBuffer{Buffer: new(bytes.Buffer)}
 	proto := &FProtocol{tProtocolFactory.GetProtocol(transport)}
@@ -47,27 +43,26 @@ func TestClientRegistry(t *testing.T) {
 	// Pass the frame to execute
 	frame := transport.Bytes()
 	assert.Nil(registry.Execute(frame))
-	assert.Equal(1, called)
+	assert.Equal(1, len(resultC))
 
-	// Reregister the same context
-	assert.Error(registry.Register(ctx, cb))
+	// Re-assign the same context
+	assert.Error(registry.Register(ctx, resultC))
 
 	// Unregister the context
 	registry.Unregister(ctx)
 	opid, err = getOpID(ctx)
 	assert.Nil(err)
-	_, ok := registry.(*fRegistry).handlers[opid]
+	_, ok := registry.(*fRegistryImpl).channels[opid]
 	assert.False(ok)
 	// But make sure execute sill returns nil when executing a frame with the
 	// same opID (it will just drop the frame)
 	assert.Nil(registry.Execute(frame))
-	assert.Equal(1, called)
+	assert.Equal(1, len(resultC))
 
 	// Now, register the same context again and ensure the opID is increased.
-	assert.Nil(registry.Register(ctx, cb))
-	newOpID, err := getOpID(ctx)
+	assert.Nil(registry.Register(ctx, resultC))
+	_, err = getOpID(ctx)
 	assert.Nil(err)
-	assert.True(newOpID > opid)
 }
 
 type mockProcessor struct {

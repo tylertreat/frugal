@@ -7,10 +7,10 @@ import (
 // FSimpleServer is a simple FServer which starts a goroutine for each
 // connection.
 type FSimpleServer struct {
-	quit             chan struct{}
-	processor FProcessor
-	serverTransport  thrift.TServerTransport
-	protocolFactory  *FProtocolFactory
+	quit            chan struct{}
+	processor       FProcessor
+	serverTransport thrift.TServerTransport
+	protocolFactory *FProtocolFactory
 }
 
 // NewFSimpleServer creates a new FSimpleServer which is a simple FServer that

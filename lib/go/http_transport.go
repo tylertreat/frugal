@@ -2,6 +2,7 @@ package frugal
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
@@ -191,31 +193,38 @@ func (h *fHTTPTransport) Close() error {
 	return nil
 }
 
-// Send transmits the given data. The data is expected to already be framed.
-func (h *fHTTPTransport) Send(data []byte) error {
+// Request transmits the given data and waits for a response.
+// Implementations of request should be threadsafe and respect the timeout
+// present the on context. The data is expected to already be framed.
+func (h *fHTTPTransport) Request(ctx FContext, _ bool, data []byte) (thrift.TTransport, error) {
 	if !h.IsOpen() {
-		return h.getClosedConditionError("flush:")
+		return nil, h.getClosedConditionError("request:")
 	}
 
 	if len(data) == 4 {
-		return nil
+		return nil, nil
 	}
 
 	if h.requestSizeLimit > 0 && len(data) > int(h.requestSizeLimit) {
-		return thrift.NewTTransportException(
+		return nil, thrift.NewTTransportException(
 			TTRANSPORT_REQUEST_TOO_LARGE,
 			fmt.Sprintf("Message exceeds %d bytes, was %d bytes", h.requestSizeLimit, len(data)))
 	}
 
 	// Make the HTTP request
-	response, err := h.makeRequest(data)
+	response, err := h.makeRequest(ctx, data)
 	if err != nil {
-		return thrift.NewTTransportExceptionFromError(err)
+		if strings.HasSuffix(err.Error(), "net/http: request canceled") ||
+			strings.HasSuffix(err.Error(), "net/http: timeout awaiting response headers") ||
+			strings.HasSuffix(err.Error(), "net/http: request canceled while waiting for connection") {
+			return nil, thrift.NewTTransportException(thrift.TIMED_OUT, "frugal: http request timed out")
+		}
+		return nil, thrift.NewTTransportExceptionFromError(err)
 	}
 
 	// All responses should be framed with 4 bytes (uint32)
 	if len(response) < 4 {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
+		return nil, thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
 			errors.New("frugal: invalid frame size"))
 	}
 
@@ -223,14 +232,14 @@ func (h *fHTTPTransport) Send(data []byte) error {
 	// (i.e. frame size 0)
 	if len(response) == 4 {
 		if binary.BigEndian.Uint32(response) != 0 {
-			return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
+			return nil, thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
 				errors.New("frugal: missing data"))
 		}
 		// it's a one-way, drop it
-		return nil
+		return nil, nil
 	}
 
-	return thrift.NewTTransportExceptionFromError(h.fBaseTransport.ExecuteFrame(response))
+	return &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(response[4:])}, nil
 }
 
 // GetRequestSizeLimit returns the maximum number of bytes that can be
@@ -244,7 +253,7 @@ func (h *fHTTPTransport) GetRequestSizeLimit() uint {
 func (h *fHTTPTransport) SetMonitor(monitor FTransportMonitor) {
 }
 
-func (h *fHTTPTransport) makeRequest(requestPayload []byte) ([]byte, error) {
+func (h *fHTTPTransport) makeRequest(fCtx FContext, requestPayload []byte) ([]byte, error) {
 	// Encode request payload
 	encoded := new(bytes.Buffer)
 	encoder := newEncoder(encoded)
@@ -256,10 +265,13 @@ func (h *fHTTPTransport) makeRequest(requestPayload []byte) ([]byte, error) {
 	}
 
 	// Initialize request
+	ctx, cancel := context.WithTimeout(context.Background(), fCtx.Timeout())
+	defer cancel()
 	request, err := http.NewRequest("POST", h.url, encoded)
 	if err != nil {
 		return nil, err
 	}
+	request = request.WithContext(ctx)
 
 	// Add request headers
 	request.Header.Add(contentTypeHeader, frugalContentType)

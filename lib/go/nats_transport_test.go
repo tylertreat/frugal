@@ -16,7 +16,11 @@ type mockRegistry struct {
 	err    error
 }
 
-func (m *mockRegistry) Register(ctx FContext, callback FAsyncCallback) error {
+func (m *mockRegistry) AssignOpID(ctx FContext) error {
+	return nil
+}
+
+func (m *mockRegistry) Register(ctx FContext, resultC chan []byte) error {
 	return nil
 }
 
@@ -102,9 +106,8 @@ func TestNatsTransportWrite(t *testing.T) {
 	defer tr.Close()
 	assert.True(t, tr.IsOpen())
 
-	buff := make([]byte, 5)
-	buff = make([]byte, 1024*1024+1)
-	err := tr.Send(buff)
+	buff := make([]byte, 1024*1024+1)
+	_, err := tr.Request(NewFContext(""), false, buff)
 	assert.True(t, IsErrTooLarge(err))
 	assert.Equal(t, TTRANSPORT_REQUEST_TOO_LARGE, err.(thrift.TTransportException).TypeId())
 	assert.Equal(t, 0, tr.writeBuffer.Len())
@@ -123,7 +126,7 @@ func TestNatsTransportFlushNotOpen(t *testing.T) {
 
 	tr := NewFNatsTransport(conn, "foo", "bar")
 
-	err = tr.Send([]byte{})
+	_, err = tr.Request(nil, false, []byte{})
 	trErr := err.(thrift.TTransportException)
 	assert.Equal(t, thrift.NOT_OPEN, trErr.TypeId())
 }
@@ -142,7 +145,8 @@ func TestNatsTransportFlushNatsDisconnected(t *testing.T) {
 
 	conn.Close()
 
-	err := tr.Send([]byte{})
+	//err := tr.Send(nil, []byte{})
+	_, err := tr.Request(nil, false, []byte{})
 	trErr := err.(thrift.TTransportException)
 	assert.Equal(t, thrift.NOT_OPEN, trErr.TypeId())
 }
@@ -160,7 +164,8 @@ func TestNatsTransportFlushNoData(t *testing.T) {
 
 	sub, err := conn.SubscribeSync(tr.subject)
 	assert.Nil(t, err)
-	assert.Nil(t, tr.Send([]byte{0, 0, 0, 0}))
+	_, err = tr.Request(nil, false, []byte{0, 0, 0, 0})
+	assert.Nil(t, err)
 	conn.Flush()
 	_, err = sub.NextMsg(5 * time.Millisecond)
 	assert.Equal(t, nats.ErrTimeout, err)
@@ -180,7 +185,12 @@ func TestNatsTransportFlush(t *testing.T) {
 	frame := []byte("helloworld")
 	sub, err := conn.SubscribeSync(tr.subject)
 	assert.Nil(t, err)
-	assert.Nil(t, tr.Send(prependFrameSize(frame)))
+
+	ctx := NewFContext("")
+	ctx.SetTimeout(5 * time.Millisecond)
+	_, err = tr.Request(ctx, false, prependFrameSize(frame))
+	// expect a timeout error because nothing is answering
+	assert.Equal(t, thrift.TIMED_OUT, err.(thrift.TTransportException).TypeId())
 	conn.Flush()
 	msg, err := sub.NextMsg(5 * time.Millisecond)
 	assert.Nil(t, err)
