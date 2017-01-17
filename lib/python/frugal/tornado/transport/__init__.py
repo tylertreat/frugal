@@ -1,4 +1,5 @@
-from .tornado_transport import FTornadoTransport
+from .transport import FTransportBase
+from .async_transport import FAsyncTransport
 from .http_transport import FHttpTransport
 from .nats_scope_transport import (
     FNatsPublisherTransportFactory,
@@ -10,7 +11,8 @@ from .nats_transport import FNatsTransport
 
 
 __all__ = [
-    'FTornadoTransport',
+    'FTransportBase',
+    'FAsyncTransport',
     'FNatsTransport',
     'FHttpTransport',
     'FNatsPublisherTransportFactory',
