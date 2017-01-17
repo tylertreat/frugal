@@ -1,12 +1,12 @@
 package frugal
 
 import (
+	"bytes"
 	"io"
 	"sync"
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"bytes"
 )
 
 type fAdapterTransportFactory struct{}
@@ -182,7 +182,7 @@ func (f *fAdapterTransport) Request(ctx FContext, oneway bool, payload []byte) (
 
 	go f.send(payload, resultC, errorC)
 
-	select{
+	select {
 	case result := <-resultC:
 		return &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(result)}, nil
 	case err := <-errorC:

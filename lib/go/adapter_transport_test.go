@@ -13,7 +13,7 @@ import (
 type mockFRegistry struct {
 	mock.Mock
 	executeCalled chan struct{}
-	channels map[uint64]chan []byte
+	channels      map[uint64]chan []byte
 }
 
 func (m *mockFRegistry) AssignOpID(ctx FContext) error {
@@ -38,8 +38,6 @@ func (m *mockFRegistry) Execute(frame []byte) error {
 	case m.executeCalled <- struct{}{}:
 	default:
 	}
-
-
 
 	return m.Called(frame).Error(0)
 }

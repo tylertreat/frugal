@@ -1,12 +1,12 @@
 package frugal
 
 import (
+	"bytes"
 	"fmt"
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/nats-io/go-nats"
-	"bytes"
 )
 
 const (
