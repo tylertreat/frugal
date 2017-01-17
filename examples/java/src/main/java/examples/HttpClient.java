@@ -1,6 +1,6 @@
 package examples;
 
-import com.workiva.frugal.protocol.FContext;
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FServiceProvider;
 import com.workiva.frugal.transport.FHttpTransport;

@@ -7,6 +7,7 @@
 
 package variety.java;
 
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.*;

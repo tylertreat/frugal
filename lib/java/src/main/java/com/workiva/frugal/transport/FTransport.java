@@ -1,25 +1,19 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.protocol.FAsyncCallback;
-import com.workiva.frugal.protocol.FContext;
-import com.workiva.frugal.protocol.FRegistry;
-import com.workiva.frugal.protocol.FRegistryImpl;
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.transport.monitor.FTransportMonitor;
 import com.workiva.frugal.transport.monitor.MonitorRunner;
-import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
 
 /**
  * FTransport is comparable to Thrift's TTransport in that it represent the transport
  * layer for frugal clients. However, frugal is callback based and sends only framed data.
  * Therefore, instead of exposing <code>read</code>, <code>write</code>, and <code>flush</code>,
- * the transport has a simple <code>send</code> method that sends framed frugal messages.
- * To handle callback data, an FTransport also has an FRegistry, so it provides methods for
- * registering and unregistering an FAsyncCallback to an FContext.
+ * the transport has a simple <code>request</code> method that sends framed frugal messages and
+ * returns the response.
  */
 public abstract class FTransport {
 
@@ -29,7 +23,6 @@ public abstract class FTransport {
     private volatile FTransportClosedCallback monitor;
     private boolean isOpen;
 
-    protected FRegistry registry = new FRegistryImpl();
     protected int requestSizeLimit;
 
     public synchronized boolean isOpen() {
@@ -53,24 +46,27 @@ public abstract class FTransport {
     }
 
     /**
-     * Close registry and signal close.
+     * Signal close with the given cause.
      *
      * @param cause Exception if not a clean close (null otherwise)
      */
     protected synchronized void close(final Exception cause) {
-        registry.close();
         isOpen = false;
         signalClose(cause);
     }
 
     /**
-     * Send the given framed frugal payload over the transport. Implementations of <code>send</code>
-     * should be thread-safe.
+     * Send the given framed frugal payload over the transport and returns the response.
+     * Implementations of <code>request</code> should be thread-safe.
      *
+     * @param context FContext associated with the request (used for timeout and logging)
+     * @param oneway indicates to the transport that this is a one-way request. Transport implementations
+     *               should return <code>null</code> if <code>oneway</code> is <code>true</code>
      * @param payload framed frugal bytes
-     * @throws TTransportException
+     * @return the response in TTransport form
+     * @throws TTransportException if the request times out or encounters other problems
      */
-    public abstract void send(byte[] payload) throws TTransportException;
+    public abstract TTransport request(FContext context, boolean oneway, byte[] payload) throws TTransportException;
 
     /**
      * Get the maximum request size permitted by the transport. If <code>getRequestSizeLimit</code>
@@ -80,25 +76,6 @@ public abstract class FTransport {
      */
     public int getRequestSizeLimit() {
         return requestSizeLimit;
-    }
-
-    /**
-     * Register a callback for the given FContext.
-     *
-     * @param context  the FContext to register.
-     * @param callback the callback to register.
-     */
-    public synchronized void register(FContext context, FAsyncCallback callback) throws TException {
-        registry.register(context, callback);
-    }
-
-    /**
-     * Unregister the callback for the given FContext.
-     *
-     * @param context the FContext to unregister.
-     */
-    public synchronized void unregister(FContext context) throws TException {
-        registry.unregister(context);
     }
 
     /**
@@ -118,16 +95,6 @@ public abstract class FTransport {
     public synchronized void setMonitor(FTransportMonitor monitor) {
         LOGGER.info("FTransport Monitor: Beginning to monitor transport...");
         this.monitor = new MonitorRunner(monitor, this);
-    }
-
-    /**
-     * Execute a frugal frame (NOTE: this frame must include the frame size).
-     *
-     * @param frame frugal frame
-     * @throws TException
-     */
-    protected void executeFrame(byte[] frame) throws TException {
-        registry.execute(Arrays.copyOfRange(frame, 4, frame.length));
     }
 
     protected synchronized void signalClose(final Exception cause) {
