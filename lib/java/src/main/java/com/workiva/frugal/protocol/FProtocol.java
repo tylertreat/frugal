@@ -12,6 +12,8 @@ import org.apache.thrift.protocol.TStruct;
 
 import java.nio.ByteBuffer;
 
+import static com.workiva.frugal.FContext.OPID_HEADER;
+
 /**
  * FProtocol is Frugal's equivalent of Thrift's TProtocol. It defines the
  * serialization protocol used for messages, such as JSON, binary, etc. FProtocol
@@ -22,8 +24,6 @@ import java.nio.ByteBuffer;
  * details.
  */
 public class FProtocol extends TProtocol {
-
-    protected static final String OPID_HEADER = "_opid";
 
     private TProtocol wrapped;
 

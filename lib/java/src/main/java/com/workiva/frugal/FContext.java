@@ -26,19 +26,29 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class FContext {
 
-    // Ensure every new FContext gets a unique opid
+    /**
+     * To ensure every new FContext gets a unique opid, use an atomic, incrementing integer.
+     */
     private static final AtomicLong NEXT_OP_ID = new AtomicLong(0);
 
-    // Header containing correlation id
+    /**
+     * Header containing correlation id.
+     */
     protected static final String CID_HEADER = "_cid";
 
-    // Header containing op id (uint64 as string)
-    protected static final String OPID_HEADER = "_opid";
+    /**
+     * Header containing op id (uint64 as string).
+     */
+    public static final String OPID_HEADER = "_opid";
 
-    // Header containing request timeout (milliseconds as string)
+    /**
+     * Header containing request timeout (milliseconds as string).
+     */
     protected static final String TIMEOUT_HEADER = "_timeout";
 
-    // Default request timeout
+    /**
+     * Default request timeout.
+     */
     protected static final long DEFAULT_TIMEOUT = 5 * 1000;
 
     private Map<String, String> requestHeaders = new ConcurrentHashMap<>();

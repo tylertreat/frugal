@@ -52,7 +52,7 @@ import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TMessage;
 import org.apache.thrift.protocol.TMessageType;
-import org.apache.thrift.transport.TMemoryInputTransport;
+import org.apache.thrift.transport.TTransport;
 import javax.annotation.Generated;
 import java.util.Arrays;
 import java.util.concurrent.*;
@@ -260,9 +260,9 @@ public class FFoo {
 			Ping_args args = new Ping_args();
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("ping")) {
@@ -298,9 +298,9 @@ public class FFoo {
 			args.setEvent(event);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("blah")) {
@@ -357,9 +357,9 @@ public class FFoo {
 			args.setStr(Str);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("bin_method")) {
@@ -399,9 +399,9 @@ public class FFoo {
 			args.setReq_num(req_num);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("param_modifiers")) {
@@ -437,9 +437,9 @@ public class FFoo {
 			args.setSet_type(set_type);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("underlying_types_test")) {
@@ -473,9 +473,9 @@ public class FFoo {
 			getThing_args args = new getThing_args();
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("getThing")) {
@@ -509,9 +509,9 @@ public class FFoo {
 			getMyInt_args args = new getMyInt_args();
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("getMyInt")) {
@@ -546,9 +546,9 @@ public class FFoo {
 			args.setA(a);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("use_subdir_struct")) {

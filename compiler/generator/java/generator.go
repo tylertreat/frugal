@@ -2314,7 +2314,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "import org.apache.thrift.TException;\n"
 	imports += "import org.apache.thrift.protocol.TMessage;\n"
 	imports += "import org.apache.thrift.protocol.TMessageType;\n"
-	imports += "import org.apache.thrift.transport.TMemoryInputTransport;\n"
+	imports += "import org.apache.thrift.transport.TTransport;\n"
 
 	imports += "import javax.annotation.Generated;\n"
 	imports += "import java.util.Arrays;\n"
@@ -2846,7 +2846,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	if method.Oneway {
 		contents += tabtabtab + fmt.Sprintf("this.transport.request(ctx, %v, memoryBuffer.getWriteBytes());\n", method.Oneway)
 	} else {
-		contents += tabtabtab + fmt.Sprintf("byte[] response = this.transport.request(ctx, %v, memoryBuffer.getWriteBytes());\n", method.Oneway)
+		contents += tabtabtab + fmt.Sprintf("TTransport response = this.transport.request(ctx, %v, memoryBuffer.getWriteBytes());\n", method.Oneway)
 	}
 	if method.Oneway {
 		contents += tabtab + "}\n"
@@ -2854,7 +2854,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 
 	contents += "\n"
-	contents += tabtabtab + "FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));\n"
+	contents += tabtabtab + "FProtocol iprot = this.protocolFactory.getProtocol(response);\n"
 	contents += tabtabtab + "iprot.readResponseHeader(ctx);\n"
 	contents += tabtabtab + "TMessage message = iprot.readMessageBegin();\n"
 	contents += tabtabtab + fmt.Sprintf("if (!message.name.equals(\"%s\")) {\n", methodLower)

@@ -15,6 +15,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,9 +82,9 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         byte[] buff = "helloserver".getBytes();
-        byte[] actualResponse = transport.request(context, false, buff);
+        TTransport actualResponse = transport.request(context, false, buff);
 
-        assertArrayEquals(responsePayload, actualResponse);
+        assertArrayEquals(responsePayload, actualResponse.getBuffer());
 
         HttpPost actual = topicCaptor.getValue();
         HttpPost expected = validRequest(buff, responseSizeLimit);

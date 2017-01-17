@@ -79,7 +79,7 @@ public class FAsyncTransportTest {
         }).when(mockMap).put(eq(FAsyncTransport.getOpId(context)), any());
 
         byte[] request = "hello world".getBytes();
-        assertArrayEquals(expectedResponse, transport.request(context, false, request));
+        assertArrayEquals(expectedResponse, transport.request(context, false, request).getBuffer());
         assertArrayEquals(request, transport.payloads.get(0));
     }
 
@@ -256,7 +256,7 @@ public class FAsyncTransportTest {
                         }
 
                         FContext context = new FContext();
-                        context.addRequestHeader(FAsyncTransport.OPID_HEADER, Long.toString(opId));
+                        context.addRequestHeader(FContext.OPID_HEADER, Long.toString(opId));
 
                         tr.handleResponse(mockFrame(context));
 

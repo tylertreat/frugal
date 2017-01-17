@@ -2,6 +2,7 @@ package com.workiva.frugal.transport.monitor;
 
 import com.workiva.frugal.FContext;
 import com.workiva.frugal.transport.FTransport;
+import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -251,7 +252,7 @@ public class BaseFTransportMonitorTest {
         }
 
         @Override
-        public byte[] request(FContext context, boolean oneway, byte[] payload) throws TTransportException {
+        public TTransport request(FContext context, boolean oneway, byte[] payload) throws TTransportException {
             return null;
         }
 

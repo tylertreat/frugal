@@ -14,6 +14,8 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.apache.thrift.transport.TMemoryInputTransport;
+import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,7 +135,7 @@ public class FHttpTransport extends FTransport {
      * @throws TTransportException if there was an error writing out data.
      */
     @Override
-    public byte[] request(FContext context, boolean oneway, byte[] payload) throws TTransportException {
+    public TTransport request(FContext context, boolean oneway, byte[] payload) throws TTransportException {
         int requestSizeLimit = getRequestSizeLimit();
         if (requestSizeLimit > 0 && payload.length > requestSizeLimit) {
             throw FMessageSizeException.request(
@@ -156,7 +158,7 @@ public class FHttpTransport extends FTransport {
             }
             return null;
         }
-        return Arrays.copyOfRange(response, 4, response.length);
+        return new TMemoryInputTransport(Arrays.copyOfRange(response, 4, response.length));
     }
 
     private byte[] makeRequest(FContext context, byte[] requestPayload) throws TTransportException {
@@ -182,7 +184,7 @@ public class FHttpTransport extends FTransport {
         try {
             response = httpClient.execute(request);
         } catch (ConnectTimeoutException | SocketTimeoutException e) {
-            throw new TTransportException(TTransportException.TIMED_OUT, "http request timed out");
+            throw new TTransportException(TTransportException.TIMED_OUT, "http request timed out: " + e.getMessage());
         } catch (IOException e) {
             throw new TTransportException("http request failed: " + e.getMessage());
         }

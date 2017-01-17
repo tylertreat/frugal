@@ -52,7 +52,7 @@ import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TMessage;
 import org.apache.thrift.protocol.TMessageType;
-import org.apache.thrift.transport.TMemoryInputTransport;
+import org.apache.thrift.transport.TTransport;
 import javax.annotation.Generated;
 import java.util.Arrays;
 import java.util.concurrent.*;
@@ -102,9 +102,9 @@ public class FBaseFoo {
 			basePing_args args = new basePing_args();
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			byte[] response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
 
-			FProtocol iprot = this.protocolFactory.getProtocol(new TMemoryInputTransport(response));
+			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("basePing")) {

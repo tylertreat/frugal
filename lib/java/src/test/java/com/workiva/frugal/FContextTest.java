@@ -42,7 +42,7 @@ public class FContextTest {
     public void testRequestHeader() {
         FContext ctx = new FContext();
         assertEquals(ctx, ctx.addRequestHeader("foo", "bar"));
-        assertEquals(ctx, ctx.addRequestHeader("_cid", "123"));
+        assertEquals(ctx, ctx.addRequestHeader(FContext.CID_HEADER, "123"));
         assertEquals("bar", ctx.getRequestHeader("foo"));
         assertNull(ctx.getRequestHeader("blah"));
     }
@@ -53,7 +53,7 @@ public class FContextTest {
         Map<String, String> headers = new HashMap<>();
         headers.put("foo", "bar");
         headers.put("baz", "qux");
-        headers.put("_cid", "123");
+        headers.put(FContext.CID_HEADER, "123");
         assertEquals(ctx, ctx.addRequestHeaders(headers));
         assertEquals("bar", ctx.getRequestHeader("foo"));
         assertEquals("qux", ctx.getRequestHeader("baz"));
@@ -63,7 +63,7 @@ public class FContextTest {
     public void testResponseHeader() {
         FContext ctx = new FContext();
         assertEquals(ctx, ctx.addResponseHeader("foo", "bar"));
-        assertEquals(ctx, ctx.addResponseHeader("_opid", "1"));
+        assertEquals(ctx, ctx.addResponseHeader(FContext.OPID_HEADER, "1"));
         assertEquals("bar", ctx.getResponseHeader("foo"));
         assertNull(ctx.getResponseHeader("blah"));
     }
@@ -74,7 +74,7 @@ public class FContextTest {
         Map<String, String> headers = new HashMap<>();
         headers.put("foo", "bar");
         headers.put("baz", "qux");
-        headers.put("_opid", "1");
+        headers.put(FContext.OPID_HEADER, "1");
         assertEquals(ctx, ctx.addResponseHeaders(headers));
         assertEquals("bar", ctx.getResponseHeader("foo"));
         assertEquals("qux", ctx.getResponseHeader("baz"));
@@ -85,12 +85,12 @@ public class FContextTest {
         // Check default timeout (5 seconds).
         FContext ctx = new FContext();
         assertEquals(5000, ctx.getTimeout());
-        assertEquals("5000", ctx.getRequestHeader("_timeout"));
+        assertEquals("5000", ctx.getRequestHeader(FContext.TIMEOUT_HEADER));
 
         // Set timeout and check expected values.
         ctx.setTimeout(10000);
         assertEquals(10000, ctx.getTimeout());
-        assertEquals("10000", ctx.getRequestHeader("_timeout"));
+        assertEquals("10000", ctx.getRequestHeader(FContext.TIMEOUT_HEADER));
     }
 
 }

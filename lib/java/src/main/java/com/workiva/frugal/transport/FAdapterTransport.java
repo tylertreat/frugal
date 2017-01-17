@@ -13,7 +13,7 @@ import java.util.concurrent.Executors;
 /**
  * An implementation of FTransport which uses a provided TTransport for read/write operations in a way that is
  * compatible with Frugal. This allows TTransports which support blocking reads to work with Frugal by starting a
- * thread that reads from the underlying transport and calling the registry on received frames.
+ * thread that reads from the underlying transport and calling <code>handleResponse</code> on received frames.
  */
 public class FAdapterTransport extends FAsyncTransport {
 

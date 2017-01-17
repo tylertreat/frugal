@@ -3,6 +3,7 @@ package com.workiva.frugal.transport;
 import com.workiva.frugal.FContext;
 import com.workiva.frugal.transport.monitor.FTransportMonitor;
 import com.workiva.frugal.transport.monitor.MonitorRunner;
+import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,10 +63,10 @@ public abstract class FTransport {
      * @param oneway indicates to the transport that this is a one-way request. Transport implementations
      *               should return <code>null</code> if <code>oneway</code> is <code>true</code>
      * @param payload framed frugal bytes
-     * @return the response bytes
-     * @throws TTransportException
+     * @return the response in TTransport form
+     * @throws TTransportException if the request times out or encounters other problems
      */
-    public abstract byte[] request(FContext context, boolean oneway, byte[] payload) throws TTransportException;
+    public abstract TTransport request(FContext context, boolean oneway, byte[] payload) throws TTransportException;
 
     /**
      * Get the maximum request size permitted by the transport. If <code>getRequestSizeLimit</code>
