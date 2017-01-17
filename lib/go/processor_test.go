@@ -145,6 +145,94 @@ func TestFBaseProcessorNoProcessorFunction(t *testing.T) {
 	mockTransport.AssertExpectations(t)
 }
 
+// Ensures FBaseProcessor writes an UNKNOWN_METHOD TApplicationException if
+// there is no registered FProcessorFunction and returns an error if the write
+// fails.
+func TestFBaseProcessorNoProcessorFunctionWriteError(t *testing.T) {
+	tmpLogger := logrus.New()
+	var logBuf bytes.Buffer
+	tmpLogger.Out = &logBuf
+	oldLogger := logger()
+	SetLogger(tmpLogger)
+	defer func() {
+		SetLogger(oldLogger)
+	}()
+
+	mockTransport := new(mockTTransport)
+	reads := make(chan []byte, 4)
+	reads <- pingFrame[0:1]  // version
+	reads <- pingFrame[1:5]  // headers size
+	reads <- pingFrame[5:34] // FContext headers
+	reads <- pingFrame[34:]  // request body
+	mockTransport.reads = reads
+	// _opid0
+	responseCtx := []byte{0, 0, 0, 0, 14, 0, 0, 0, 5, 95, 111, 112, 105, 100, 0, 0, 0, 1, 48}
+	mockTransport.On("Write", responseCtx).Return(0, errors.New("error")).Once()
+	// [1,"ping",3,0,{"1":{"str":"Unknown function ping"},"2":{"i32":1}}]
+	responseBody := []byte{
+		91, 49, 44, 34, 112, 105, 110, 103, 34, 44, 51, 44, 48, 44, 123, 34,
+		49, 34, 58, 123, 34, 115, 116, 114, 34, 58, 34, 85, 110, 107, 110, 111,
+		119, 110, 32, 102, 117, 110, 99, 116, 105, 111, 110, 32, 112, 105, 110,
+		103, 34, 125, 44, 34, 50, 34, 58, 123, 34, 105, 51, 50, 34, 58, 49,
+		125, 125, 93,
+	}
+	mockTransport.On("Write", responseBody).Return(len(responseBody), nil).Once()
+	mockTransport.On("Flush").Return(nil)
+	proto := &FProtocol{thrift.NewTJSONProtocol(mockTransport)}
+	processor := NewFBaseProcessor()
+
+	assert.Error(t, processor.Process(proto, proto))
+	assert.True(t,
+		strings.HasSuffix(
+			string(logBuf.Bytes()),
+			"frugal: client invoked unknown function ping on request with correlation id 123 \n"))
+	mockTransport.AssertExpectations(t)
+}
+
+// Ensures FBaseProcessor writes an UNKNOWN_METHOD TApplicationException if
+// there is no registered FProcessorFunction and returns an error if the flush
+// fails.
+func TestFBaseProcessorNoProcessorFunctionFlushError(t *testing.T) {
+	tmpLogger := logrus.New()
+	var logBuf bytes.Buffer
+	tmpLogger.Out = &logBuf
+	oldLogger := logger()
+	SetLogger(tmpLogger)
+	defer func() {
+		SetLogger(oldLogger)
+	}()
+
+	mockTransport := new(mockTTransport)
+	reads := make(chan []byte, 4)
+	reads <- pingFrame[0:1]  // version
+	reads <- pingFrame[1:5]  // headers size
+	reads <- pingFrame[5:34] // FContext headers
+	reads <- pingFrame[34:]  // request body
+	mockTransport.reads = reads
+	// _opid0
+	responseCtx := []byte{0, 0, 0, 0, 14, 0, 0, 0, 5, 95, 111, 112, 105, 100, 0, 0, 0, 1, 48}
+	mockTransport.On("Write", responseCtx).Return(len(responseCtx), nil).Once()
+	// [1,"ping",3,0,{"1":{"str":"Unknown function ping"},"2":{"i32":1}}]
+	responseBody := []byte{
+		91, 49, 44, 34, 112, 105, 110, 103, 34, 44, 51, 44, 48, 44, 123, 34,
+		49, 34, 58, 123, 34, 115, 116, 114, 34, 58, 34, 85, 110, 107, 110, 111,
+		119, 110, 32, 102, 117, 110, 99, 116, 105, 111, 110, 32, 112, 105, 110,
+		103, 34, 125, 44, 34, 50, 34, 58, 123, 34, 105, 51, 50, 34, 58, 49,
+		125, 125, 93,
+	}
+	mockTransport.On("Write", responseBody).Return(len(responseBody), nil).Once()
+	mockTransport.On("Flush").Return(errors.New("error"))
+	proto := &FProtocol{thrift.NewTJSONProtocol(mockTransport)}
+	processor := NewFBaseProcessor()
+
+	assert.Error(t, processor.Process(proto, proto))
+	assert.True(t,
+		strings.HasSuffix(
+			string(logBuf.Bytes()),
+			"frugal: client invoked unknown function ping on request with correlation id 123 \n"))
+	mockTransport.AssertExpectations(t)
+}
+
 // Ensures FBaseProcessor correctly returns the annotations stored on the
 // processor.
 func TestFBaseProcessorAnnotations(t *testing.T) {

@@ -67,19 +67,34 @@ func (f *FBaseProcessor) Process(iprot, oprot *FProtocol) error {
 		// Return nil because the server should still send a response to the client.
 		return nil
 	}
-	iprot.Skip(thrift.STRUCT)
-	iprot.ReadMessageEnd()
-	ex := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
-	f.writeMu.Lock()
-	oprot.WriteResponseHeader(ctx)
-	oprot.WriteMessageBegin(name, thrift.EXCEPTION, 0)
-	ex.Write(oprot)
-	oprot.WriteMessageEnd()
-	oprot.Flush()
-	f.writeMu.Unlock()
+
 	logger().Warnf("frugal: client invoked unknown function %s on request with correlation id %s",
 		name, ctx.CorrelationID())
-	return nil
+	if e := iprot.Skip(thrift.STRUCT); e != nil {
+		err = e
+	}
+	if e := iprot.ReadMessageEnd(); e != nil {
+		err = e
+	}
+	ex := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
+	f.writeMu.Lock()
+	if e := oprot.WriteResponseHeader(ctx); e != nil {
+		err = e
+	}
+	if e := oprot.WriteMessageBegin(name, thrift.EXCEPTION, 0); e != nil {
+		err = e
+	}
+	if e := ex.Write(oprot); e != nil {
+		err = e
+	}
+	if e := oprot.WriteMessageEnd(); e != nil {
+		err = e
+	}
+	if e := oprot.Flush(); e != nil {
+		err = e
+	}
+	f.writeMu.Unlock()
+	return err
 }
 
 // AddMiddleware adds the given ServiceMiddleware to the FProcessor. This
