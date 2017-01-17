@@ -198,7 +198,7 @@ func (h *fHTTPTransport) Close() error {
 // present the on context. The data is expected to already be framed.
 func (h *fHTTPTransport) Request(ctx FContext, _ bool, data []byte) ([]byte, error) {
 	if !h.IsOpen() {
-		return nil, h.getClosedConditionError("flush:")
+		return nil, h.getClosedConditionError("request:")
 	}
 
 	if len(data) == 4 {

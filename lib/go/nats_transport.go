@@ -100,7 +100,7 @@ func (f *fNatsTransport) Request(ctx FContext, oneway bool, data []byte) ([]byte
 	resultC := make(chan []byte, 1)
 
 	if !f.IsOpen() {
-		return nil, f.getClosedConditionError("flush:")
+		return nil, f.getClosedConditionError("request:")
 	}
 
 	if len(data) == 4 {

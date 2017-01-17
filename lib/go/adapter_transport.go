@@ -3,9 +3,9 @@ package frugal
 import (
 	"io"
 	"sync"
+	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"time"
 )
 
 type fAdapterTransportFactory struct{}

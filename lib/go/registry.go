@@ -52,11 +52,9 @@ func newFRegistry() fRegistry {
 
 // Register a channel for the given Context.
 func (c *fRegistryImpl) Register(ctx FContext, resultC chan []byte) error {
-	// An FContext can be reused for multiple requests. Because of this, every
-	// time an FContext is registered, it must be assigned a new op id to
-	// ensure we can properly correlate responses. We use a monotonically
-	// increasing atomic uint64 for this purpose. We check the handlers map to
-	// ensure that request is not still in-flight.
+	// An FContext can be reused for multiple requests. Because of this,
+	// FContext's have a monotonically increasing atomic uint64. We check
+	// the channels map to ensure that request is not still in-flight.
 	opID, err := getOpID(ctx)
 
 	c.mu.Lock()
