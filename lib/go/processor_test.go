@@ -82,9 +82,9 @@ func TestFBaseProcessorError(t *testing.T) {
 	assert.NoError(t, processor.Process(proto, proto))
 	assert.True(t, processorFunction.called)
 	assert.True(t,
-		strings.HasSuffix(
+		strings.Contains(
 			string(logBuf.Bytes()),
-			"frugal: error occurred while processing request with correlation id 123: error \n"), string(logBuf.Bytes()))
+			"frugal: error occurred while processing request with correlation id 123: error"))
 }
 
 // Ensures FBaseProcessor returns a TTransportException if the transport read
@@ -139,9 +139,9 @@ func TestFBaseProcessorNoProcessorFunction(t *testing.T) {
 
 	assert.NoError(t, processor.Process(proto, proto))
 	assert.True(t,
-		strings.HasSuffix(
+		strings.Contains(
 			string(logBuf.Bytes()),
-			"frugal: client invoked unknown function ping on request with correlation id 123 \n"))
+			"frugal: client invoked unknown function ping on request with correlation id 123"))
 	mockTransport.AssertExpectations(t)
 }
 
@@ -183,9 +183,9 @@ func TestFBaseProcessorNoProcessorFunctionWriteError(t *testing.T) {
 
 	assert.Error(t, processor.Process(proto, proto))
 	assert.True(t,
-		strings.HasSuffix(
+		strings.Contains(
 			string(logBuf.Bytes()),
-			"frugal: client invoked unknown function ping on request with correlation id 123 \n"))
+			"frugal: client invoked unknown function ping on request with correlation id 123"))
 	mockTransport.AssertExpectations(t)
 }
 
@@ -227,9 +227,9 @@ func TestFBaseProcessorNoProcessorFunctionFlushError(t *testing.T) {
 
 	assert.Error(t, processor.Process(proto, proto))
 	assert.True(t,
-		strings.HasSuffix(
+		strings.Contains(
 			string(logBuf.Bytes()),
-			"frugal: client invoked unknown function ping on request with correlation id 123 \n"))
+			"frugal: client invoked unknown function ping on request with correlation id 123"))
 	mockTransport.AssertExpectations(t)
 }
 
