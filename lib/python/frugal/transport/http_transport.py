@@ -4,7 +4,8 @@ from io import BytesIO
 from struct import pack_into
 from struct import unpack
 
-from httplib2 import Http
+import requests
+from requests.exceptions import ReadTimeout
 from thrift.transport.TTransport import TTransportException
 
 from frugal.exceptions import FMessageSizeException
@@ -35,6 +36,15 @@ class TBaseHttpTransport(TSynchronousTransport):
         self._response_capacity = response_capacity
         self._custom_headers = headers
         self._get_headers = get_headers
+        self._timeout = None
+
+    def set_timeout(self, timeout):
+        """Set the request timeout.
+
+        Args:
+            timeout: request timeout in milliseconds.
+        """
+        self._timeout = timeout
 
     def isOpen(self):
         return True
@@ -96,7 +106,7 @@ class TBaseHttpTransport(TSynchronousTransport):
 
 
 class FHttpTransport(TBaseHttpTransport):
-    """Synchronous transport implemented with httplib2."""
+    """Synchronous transport implemented with Requests."""
 
     def __init__(self, url, request_capacity=0, response_capacity=0,
                  headers=None, get_headers=None):
@@ -112,7 +122,6 @@ class FHttpTransport(TBaseHttpTransport):
             get_headers: func which returns dynamic headers per request.
         """
 
-        self._http = Http()
         super(FHttpTransport, self).__init__(
             url, request_capacity=request_capacity,
             response_capacity=response_capacity, headers=headers,
@@ -124,15 +133,26 @@ class FHttpTransport(TBaseHttpTransport):
         if not body:
             return
 
-        resp, resp_body = self._http.request(self._url, method='POST',
-                                             body=body, headers=headers)
-        if resp.status >= 400:
+        timeout = None
+        if self._timeout:
+            # Requests uses timeout in seconds.
+            timeout = self._timeout / 1000
+            if timeout <= 0:
+                timeout = None
+
+        try:
+            resp = requests.post(self._url, data=body, headers=headers,
+                                 timeout=timeout)
+        except ReadTimeout:
+            raise TTransportException(TTransportException.TIMED_OUT,
+                                      'Request timed out')
+        if resp.status_code >= 400:
             raise TTransportException(
                 TTransportException.UNKNOWN,
-                'HTTP request failed, returned{0}: {1}'.format(resp.status,
-                                                               resp.reason))
+                'HTTP request failed, returned {0}: {1}'.format(
+                    resp.status_code, resp.reason))
 
-        resp_body = b64decode(resp_body)
+        resp_body = b64decode(resp.content)
         # All responses should be framed with 4 bytes (uint32).
         if len(resp_body) < 4:
             raise TTransportException(TTransportException.UNKNOWN,

@@ -10,19 +10,18 @@ from frugal.exceptions import FMessageSizeException
 from frugal.transport.http_transport import FHttpTransport
 
 
-@patch('frugal.transport.http_transport.Http')
+@patch('frugal.transport.http_transport.requests')
 class TestFHttpTransport(unittest.TestCase):
 
-    def test_request(self, mock_http):
+    def test_request(self, mock_requests):
         url = 'http://localhost:8080/frugal'
         headers = {'foo': 'bar'}
-        mock_http_client = mock_http.return_value
-        resp = Mock(status=200)
+        resp = Mock(status_code=200)
         response = b'response'
         buff = bytearray(4)
         pack_into('!I', buff, 0, len(response))
-        resp_body = b64encode(buff + response)
-        mock_http_client.request.return_value = (resp, resp_body)
+        resp.content = b64encode(buff + response)
+        mock_requests.post.return_value = resp
 
         def get_headers():
             return {'baz': 'qux'}
@@ -41,8 +40,8 @@ class TestFHttpTransport(unittest.TestCase):
         tr.write(data)
         tr.flush()
 
-        mock_http_client.request.assert_called_once_with(
-            url, method='POST', body=encoded_frame,
+        mock_requests.post.assert_called_once_with(
+            url, data=encoded_frame, timeout=None,
             headers={'foo': 'bar', 'baz': 'qux', 'Content-Length': '20',
                      'Content-Type': 'application/x-frugal',
                      'Content-Transfer-Encoding': 'base64',
@@ -55,20 +54,60 @@ class TestFHttpTransport(unittest.TestCase):
         tr.close()
         self.assertTrue(tr.isOpen())  # open/close are no-ops
 
-    def test_flush_no_body(self, mock_http):
+    def test_request_timeout(self, mock_requests):
         url = 'http://localhost:8080/frugal'
-        mock_http_client = mock_http.return_value
+        headers = {'foo': 'bar'}
+        resp = Mock(status_code=200)
+        response = b'response'
+        buff = bytearray(4)
+        pack_into('!I', buff, 0, len(response))
+        resp.content = b64encode(buff + response)
+        mock_requests.post.return_value = resp
+
+        def get_headers():
+            return {'baz': 'qux'}
+
+        tr = FHttpTransport(url, headers=headers, get_headers=get_headers,
+                            response_capacity=500)
+
+        tr.open()
+        self.assertTrue(tr.isOpen())
+
+        data = b'helloworld'
+        buff = bytearray(4)
+        pack_into('!I', buff, 0, len(data))
+        encoded_frame = b64encode(buff + data)
+
+        tr.set_timeout(5000)
+        tr.write(data)
+        tr.flush()
+
+        mock_requests.post.assert_called_once_with(
+            url, data=encoded_frame, timeout=5,
+            headers={'foo': 'bar', 'baz': 'qux', 'Content-Length': '20',
+                     'Content-Type': 'application/x-frugal',
+                     'Content-Transfer-Encoding': 'base64',
+                     'User-Agent': 'Python/FHttpTransport',
+                     'x-frugal-payload-limit': '500'})
+
+        resp = tr.read(len(response))
+        self.assertEqual(response, resp)
+
+        tr.close()
+        self.assertTrue(tr.isOpen())  # open/close are no-ops
+
+    def test_flush_no_body(self, mock_requests):
+        url = 'http://localhost:8080/frugal'
 
         tr = FHttpTransport(url)
         tr.flush()
 
-        self.assertFalse(mock_http_client.request.called)
+        self.assertFalse(mock_requests.post.called)
 
-    def test_flush_bad_response(self, mock_http):
+    def test_flush_bad_response(self, mock_requests):
         url = 'http://localhost:8080/frugal'
-        mock_http_client = mock_http.return_value
-        resp = Mock(status=500)
-        mock_http_client.request.return_value = (resp, None)
+        resp = Mock(status_code=500)
+        mock_requests.post.return_value = resp
 
         tr = FHttpTransport(url)
 
@@ -82,21 +121,20 @@ class TestFHttpTransport(unittest.TestCase):
         with self.assertRaises(TTransportException):
             tr.flush()
 
-        mock_http_client.request.assert_called_once_with(
-            url, method='POST', body=encoded_frame,
+        mock_requests.post.assert_called_once_with(
+            url, data=encoded_frame, timeout=None,
             headers={'Content-Length': '20',
                      'Content-Type': 'application/x-frugal',
                      'Content-Transfer-Encoding': 'base64',
                      'User-Agent': 'Python/FHttpTransport'})
 
-    def test_flush_bad_oneway_response(self, mock_http):
+    def test_flush_bad_oneway_response(self, mock_requests):
         url = 'http://localhost:8080/frugal'
-        mock_http_client = mock_http.return_value
-        resp = Mock(status=200)
+        resp = Mock(status_code=200)
         buff = bytearray(4)
         pack_into('!I', buff, 0, 10)
-        resp_body = b64encode(buff)
-        mock_http_client.request.return_value = (resp, resp_body)
+        resp.content = b64encode(buff)
+        mock_requests.post.return_value = resp
 
         tr = FHttpTransport(url)
 
@@ -110,21 +148,20 @@ class TestFHttpTransport(unittest.TestCase):
         with self.assertRaises(TTransportException):
             tr.flush()
 
-        mock_http_client.request.assert_called_once_with(
-            url, method='POST', body=encoded_frame,
+        mock_requests.post.assert_called_once_with(
+            url, data=encoded_frame, timeout=None,
             headers={'Content-Length': '20',
                      'Content-Type': 'application/x-frugal',
                      'Content-Transfer-Encoding': 'base64',
                      'User-Agent': 'Python/FHttpTransport'})
 
-    def test_flush_oneway(self, mock_http):
+    def test_flush_oneway(self, mock_requests):
         url = 'http://localhost:8080/frugal'
-        mock_http_client = mock_http.return_value
-        resp = Mock(status=200)
+        resp = Mock(status_code=200)
         buff = bytearray(4)
         pack_into('!I', buff, 0, 0)
-        resp_body = b64encode(buff)
-        mock_http_client.request.return_value = (resp, resp_body)
+        resp.content = b64encode(buff)
+        mock_requests.post.return_value = resp
 
         tr = FHttpTransport(url)
 
@@ -136,8 +173,8 @@ class TestFHttpTransport(unittest.TestCase):
         tr.write(data)
         tr.flush()
 
-        mock_http_client.request.assert_called_once_with(
-            url, method='POST', body=encoded_frame,
+        mock_requests.post.assert_called_once_with(
+            url, data=encoded_frame, timeout=None,
             headers={'Content-Length': '20',
                      'Content-Type': 'application/x-frugal',
                      'Content-Transfer-Encoding': 'base64',
@@ -146,14 +183,13 @@ class TestFHttpTransport(unittest.TestCase):
         resp = tr.read(10)
         self.assertEqual(b'', resp)
 
-    def test_write_limit_exceeded(self, mock_http):
+    def test_write_limit_exceeded(self, mock_requests):
         url = 'http://localhost:8080/frugal'
-        mock_http_client = mock_http.return_value
-        resp = Mock(status=200)
+        resp = Mock(status_code=200)
         buff = bytearray(4)
         pack_into('!I', buff, 0, 0)
-        resp_body = b64encode(buff)
-        mock_http_client.request.return_value = (resp, resp_body)
+        resp.content = b64encode(buff)
+        mock_requests.post.return_value = resp
 
         tr = FHttpTransport(url, request_capacity=5)
 
@@ -162,4 +198,4 @@ class TestFHttpTransport(unittest.TestCase):
         with self.assertRaises(FMessageSizeException):
             tr.write(data)
 
-        self.assertFalse(mock_http_client.request.called)
+        self.assertFalse(mock_requests.post.called)
