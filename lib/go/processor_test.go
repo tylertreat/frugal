@@ -168,16 +168,6 @@ func TestFBaseProcessorNoProcessorFunctionWriteError(t *testing.T) {
 	// _opid0
 	responseCtx := []byte{0, 0, 0, 0, 14, 0, 0, 0, 5, 95, 111, 112, 105, 100, 0, 0, 0, 1, 48}
 	mockTransport.On("Write", responseCtx).Return(0, errors.New("error")).Once()
-	// [1,"ping",3,0,{"1":{"str":"Unknown function ping"},"2":{"i32":1}}]
-	responseBody := []byte{
-		91, 49, 44, 34, 112, 105, 110, 103, 34, 44, 51, 44, 48, 44, 123, 34,
-		49, 34, 58, 123, 34, 115, 116, 114, 34, 58, 34, 85, 110, 107, 110, 111,
-		119, 110, 32, 102, 117, 110, 99, 116, 105, 111, 110, 32, 112, 105, 110,
-		103, 34, 125, 44, 34, 50, 34, 58, 123, 34, 105, 51, 50, 34, 58, 49,
-		125, 125, 93,
-	}
-	mockTransport.On("Write", responseBody).Return(len(responseBody), nil).Once()
-	mockTransport.On("Flush").Return(nil)
 	proto := &FProtocol{thrift.NewTJSONProtocol(mockTransport)}
 	processor := NewFBaseProcessor()
 
