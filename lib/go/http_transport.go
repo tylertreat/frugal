@@ -309,8 +309,9 @@ func (h *fHTTPTransport) makeRequest(fCtx FContext, requestPayload []byte) ([]by
 
 	// Check bad status code
 	if response.StatusCode >= 300 {
-		return nil, fmt.Errorf("response errored with code %d and message %s",
-			response.StatusCode, body)
+		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
+			fmt.Sprintf("response errored with code %d and message %s",
+				response.StatusCode, body))
 	}
 
 	// Decode and return response body
