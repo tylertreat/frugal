@@ -290,7 +290,7 @@ public class FNatsServer implements FServer {
         public void run() {
             long duration = System.currentTimeMillis() - timestamp;
             if (duration > highWatermark) {
-                LOGGER.warn("frame spent " + duration + "ms in the transport buffer, your consumer might be backed up");
+                LOGGER.warn("request spent " + duration + "ms in the transport buffer, your consumer might be backed up");
             }
             process();
         }
@@ -303,10 +303,8 @@ public class FNatsServer implements FServer {
             TMemoryOutputBuffer output = new TMemoryOutputBuffer(NATS_MAX_MESSAGE_SIZE);
             try {
                 processor.process(inputProtoFactory.getProtocol(input), outputProtoFactory.getProtocol(output));
-            } catch (TApplicationException e) {
-                LOGGER.error("user handler code returned unhandled error on request:" + e.getMessage());
             } catch (TException e) {
-                LOGGER.error("user handler code returned unhandled error on request:" + e.getMessage());
+                LOGGER.error("error processing request", e);
                 return;
             }
 
