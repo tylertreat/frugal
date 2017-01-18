@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -128,15 +129,17 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
         inputBuffer.readBytes(encodedBytes);
         byte[] inputBytes = Base64.decodeBase64(encodedBytes);
 
-        // Need 4 bytes for the frame size, at a minimum.
-        if (inputBytes.length < 4) {
+        ByteBuffer buff = ByteBuffer.wrap(inputBytes);
+
+        int sz;
+        try {
+            sz = buff.getInt();
+        } catch (BufferUnderflowException e) {
+            // Need 4 bytes for the frame size, at a minimum.
             throw new IOException("Invalid request size " + inputBytes.length);
         }
 
-        ByteBuffer buff = ByteBuffer.wrap(inputBytes);
-
         // Ensure expected frame size equals actual size.
-        int sz = buff.getInt();
         if (sz != buff.remaining()) {
             throw new IOException(
                     String.format("Mismatch between expected frame size (%d) and actual size (%d)",
