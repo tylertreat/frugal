@@ -756,11 +756,19 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 }
 
 func (g *Generator) generateServiceExtendsImport(s *parser.Service) string {
-	if s.Extends == "" || strings.Contains(s.Extends, ".") {
-		// Either no super service or it's already imported in an include
+	if s.Extends == "" {
+		// No super service
 		return ""
 	}
 
+	if strings.Contains(s.Extends, ".") {
+		// From an include
+		extendsSlice := strings.SplitN(s.Extends, ".", 2)
+		namespace := g.getPackageNamespace(extendsSlice[0])
+		return fmt.Sprintf("import %s.f_%s\n", namespace, extendsSlice[1])
+	}
+
+	// From the same file
 	return fmt.Sprintf("from . import f_%s\n", s.Extends)
 }
 
@@ -776,11 +784,6 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) (string, er
 		namespace := g.getPackageNamespace(filepath.Base(include.Name))
 		imports += fmt.Sprintf("import %s.ttypes\n", namespace)
 		imports += fmt.Sprintf("import %s.constants\n", namespace)
-		if s.Extends != "" {
-			extendsSlice := strings.Split(s.Extends, ".")
-			extendsService := extendsSlice[len(extendsSlice)-1]
-			imports += fmt.Sprintf("import %s.f_%s\n", namespace, extendsService)
-		}
 	}
 
 	// Import this service's modules.

@@ -21,18 +21,15 @@ from thrift.Thrift import TMessageType
 from tornado import gen
 from tornado.concurrent import Future
 
+import actual_base.python.f_BaseFoo
 import actual_base.python.ttypes
 import actual_base.python.constants
-import actual_base.python.f_BaseFoo
 import validStructs.ttypes
 import validStructs.constants
-import validStructs.f_BaseFoo
 import ValidTypes.ttypes
 import ValidTypes.constants
-import ValidTypes.f_BaseFoo
 import subdir_include.ttypes
 import subdir_include.constants
-import subdir_include.f_BaseFoo
 from .ttypes import *
 
 
