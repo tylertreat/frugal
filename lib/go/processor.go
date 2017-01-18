@@ -52,10 +52,8 @@ func (f *FBaseProcessor) Process(iprot, oprot *FProtocol) error {
 	if err != nil {
 		return err
 	}
-	processor, ok := f.processMap[name]
-	if ok {
-		err := processor.Process(ctx, iprot, oprot)
-		if err != nil {
+	if processor, ok := f.processMap[name]; ok {
+		if err := processor.Process(ctx, iprot, oprot); err != nil {
 			if _, ok := err.(thrift.TException); ok {
 				logger().Errorf(
 					"frugal: error occurred while processing request with correlation id %s: %s",
@@ -66,19 +64,37 @@ func (f *FBaseProcessor) Process(iprot, oprot *FProtocol) error {
 					ctx.CorrelationID(), err.Error())
 			}
 		}
+		// Return nil because the server should still send a response to the client.
+		return nil
+	}
+
+	logger().Warnf("frugal: client invoked unknown function %s on request with correlation id %s",
+		name, ctx.CorrelationID())
+	if err := iprot.Skip(thrift.STRUCT); err != nil {
 		return err
 	}
-	iprot.Skip(thrift.STRUCT)
-	iprot.ReadMessageEnd()
+	if err := iprot.ReadMessageEnd(); err != nil {
+		return err
+	}
 	ex := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
 	f.writeMu.Lock()
-	oprot.WriteResponseHeader(ctx)
-	oprot.WriteMessageBegin(name, thrift.EXCEPTION, 0)
-	ex.Write(oprot)
-	oprot.WriteMessageEnd()
-	oprot.Flush()
-	f.writeMu.Unlock()
-	return ex
+	defer f.writeMu.Unlock()
+	if err := oprot.WriteResponseHeader(ctx); err != nil {
+		return err
+	}
+	if err := oprot.WriteMessageBegin(name, thrift.EXCEPTION, 0); err != nil {
+		return err
+	}
+	if err := ex.Write(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteMessageEnd(); err != nil {
+		return err
+	}
+	if err := oprot.Flush(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // AddMiddleware adds the given ServiceMiddleware to the FProcessor. This

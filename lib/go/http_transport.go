@@ -51,10 +51,17 @@ func NewFrugalHandlerFunc(processor FProcessor, protocolFactory *FProtocolFactor
 			}
 		}
 
+		// Need 4 bytes for the frame size, at a minimum.
+		if r.ContentLength < 4 {
+			http.Error(w, fmt.Sprintf("Invalid request size %d", r.ContentLength), http.StatusBadRequest)
+			return
+		}
+
 		// Create a decoder based on the payload
 		decoder := base64.NewDecoder(base64.StdEncoding, r.Body)
 
 		// Read out the frame size
+		// TODO: should we do something with the frame size?
 		frameSize := make([]byte, 4)
 		if _, err := io.ReadFull(decoder, frameSize); err != nil {
 			http.Error(w,
@@ -70,18 +77,12 @@ func NewFrugalHandlerFunc(processor FProcessor, protocolFactory *FProtocolFactor
 		output := &thrift.TMemoryBuffer{Buffer: outBuf}
 		iprot := protocolFactory.GetProtocol(input)
 		oprot := protocolFactory.GetProtocol(output)
-		err := processor.Process(iprot, oprot)
-		if err != nil {
-			if _, ok := err.(thrift.TApplicationException); !ok {
-				http.Error(w,
-					fmt.Sprintf("Frugal request failed %s", err),
-					http.StatusBadRequest,
-				)
-				return
-			}
-
-			// reassign so later code doesn't get this error
-			err = nil
+		if err := processor.Process(iprot, oprot); err != nil {
+			http.Error(w,
+				fmt.Sprintf("Error processing request: %s", err),
+				http.StatusInternalServerError,
+			)
+			return
 		}
 
 		// If client requested a limit, check the buffer size
@@ -94,8 +95,11 @@ func NewFrugalHandlerFunc(processor FProcessor, protocolFactory *FProtocolFactor
 		}
 
 		// Encode response
-		encoded := new(bytes.Buffer)
-		encoder := newEncoder(encoded)
+		var (
+			encoded = new(bytes.Buffer)
+			encoder = newEncoder(encoded)
+			err     error
+		)
 		binary.BigEndian.PutUint32(frameSize, uint32(outBuf.Len()))
 		if _, e := encoder.Write(frameSize); e != nil {
 			err = e
@@ -305,8 +309,9 @@ func (h *fHTTPTransport) makeRequest(fCtx FContext, requestPayload []byte) ([]by
 
 	// Check bad status code
 	if response.StatusCode >= 300 {
-		return nil, fmt.Errorf("response errored with code %d and message %s",
-			response.StatusCode, body)
+		return nil, thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
+			fmt.Sprintf("response errored with code %d and message %s",
+				response.StatusCode, body))
 	}
 
 	// Decode and return response body

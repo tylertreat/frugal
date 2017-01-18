@@ -84,9 +84,28 @@ func TestFrugalHandlerFuncHeaderError(t *testing.T) {
 
 	assert.Equal(w.Code, http.StatusBadRequest)
 	assert.Equal(
-		[]byte(fmt.Sprintf("%s header not an integer\n", payloadLimitHeader)),
-		w.Body.Bytes(),
+		fmt.Sprintf("%s header not an integer\n", payloadLimitHeader),
+		string(w.Body.Bytes()),
 	)
+}
+
+// Ensures that a 400 error is returned if the request body has less than 4
+// bytes.
+func TestFrugalHandlerFuncBadFrameError(t *testing.T) {
+	assert := assert.New(t)
+	w := httptest.NewRecorder()
+
+	r, err := http.NewRequest("POST", "fooUrl", nil)
+	assert.Nil(err)
+
+	mockProcessor := &mockFProcessorForHTTP{}
+	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
+	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory)
+
+	handler(w, r)
+
+	assert.Equal(w.Code, http.StatusBadRequest)
+	assert.Equal("Invalid request size 0\n", string(w.Body.Bytes()))
 }
 
 // Ensures that if there is an error reading the frame size out of the request
@@ -108,13 +127,13 @@ func TestFrugalHandlerFuncFrameSizeError(t *testing.T) {
 
 	assert.Equal(w.Code, http.StatusBadRequest)
 	assert.Equal(
-		[]byte(fmt.Sprintf("Could not read the frugal frame bytes %s\n", io.ErrUnexpectedEOF)),
-		w.Body.Bytes(),
+		fmt.Sprintf("Could not read the frugal frame bytes %s\n", io.ErrUnexpectedEOF),
+		string(w.Body.Bytes()),
 	)
 }
 
 // Ensures that processor errors are handled and routed back in the http
-// response
+// response as a 500 error.
 func TestFrugalHandlerFuncProcessorError(t *testing.T) {
 	assert := assert.New(t)
 	w := httptest.NewRecorder()
@@ -132,10 +151,10 @@ func TestFrugalHandlerFuncProcessorError(t *testing.T) {
 
 	handler(w, r)
 
-	assert.Equal(w.Code, http.StatusBadRequest)
+	assert.Equal(w.Code, http.StatusInternalServerError)
 	assert.Equal(
-		[]byte(fmt.Sprintf("Frugal request failed %s\n", processorErr)),
-		w.Body.Bytes(),
+		fmt.Sprintf("Error processing request: %s\n", processorErr),
+		string(w.Body.Bytes()),
 	)
 }
 
@@ -161,8 +180,8 @@ func TestFrugalHandlerFuncTooLargeError(t *testing.T) {
 
 	assert.Equal(w.Code, http.StatusRequestEntityTooLarge)
 	assert.Equal(
-		[]byte("Response size (10) larger than requested size (5)\n"),
-		w.Body.Bytes(),
+		"Response size (10) larger than requested size (5)\n",
+		string(w.Body.Bytes()),
 	)
 }
 
@@ -193,8 +212,8 @@ func TestFrugalHandlerFuncBase64WriteError(t *testing.T) {
 
 	assert.Equal(w.Code, http.StatusInternalServerError)
 	assert.Equal(
-		[]byte(fmt.Sprintf("Problem encoding frugal bytes to base64 %s\n", writeErr)),
-		w.Body.Bytes(),
+		fmt.Sprintf("Problem encoding frugal bytes to base64 %s\n", writeErr),
+		string(w.Body.Bytes()),
 	)
 
 	newEncoder = oldNewEncoder
@@ -227,8 +246,8 @@ func TestFrugalHandlerFuncBase64CloseError(t *testing.T) {
 
 	assert.Equal(w.Code, http.StatusInternalServerError)
 	assert.Equal(
-		[]byte(fmt.Sprintf("Problem encoding frugal bytes to base64 %s\n", closeErr)),
-		w.Body.Bytes(),
+		fmt.Sprintf("Problem encoding frugal bytes to base64 %s\n", closeErr),
+		string(w.Body.Bytes()),
 	)
 
 	newEncoder = oldNewEncoder
@@ -256,8 +275,8 @@ func TestFrugalHandlerFunc(t *testing.T) {
 	assert.Equal(w.Header().Get(contentTypeHeader), frugalContentType)
 	assert.Equal(w.Header().Get(contentTransferEncodingHeader), base64Encoding)
 	assert.Equal(
-		[]byte(base64.StdEncoding.EncodeToString(append([]byte{0, 0, 0, 4}, response...))),
-		w.Body.Bytes(),
+		base64.StdEncoding.EncodeToString(append([]byte{0, 0, 0, 4}, response...)),
+		string(w.Body.Bytes()),
 	)
 
 }
