@@ -3,7 +3,7 @@ package com.workiva.frugal.processor;
 import com.workiva.frugal.FContext;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.FProtocol;
-import org.apache.thrift.TApplicationException;
+import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TField;
 import org.apache.thrift.protocol.TMessage;
 import org.apache.thrift.transport.TTransport;
@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,7 +64,24 @@ public class FBaseProcessorTest {
     }
 
     @Test
-    public void testProcessThrowsTApplicationException() throws Exception {
+    public void testProcessCatchTExceptionOnProcessorError() throws Exception {
+
+        procMap.put(oneWay, oneWayFunction);
+
+        FContext ctx = new FContext();
+        doThrow(new TException("error")).when(oneWayFunction).process(ctx, iprot, oprot);
+        TMessage thriftMessage = new TMessage(oneWay, (byte) 0x00, 1);
+
+        when(iprot.readRequestHeader()).thenReturn(ctx);
+        when(iprot.readMessageBegin()).thenReturn(thriftMessage);
+
+        processor.process(iprot, oprot);
+
+        verify(oneWayFunction).process(ctx, iprot, oprot);
+    }
+
+    @Test
+    public void testProcessCatchTApplicationExceptionOnUnknownMethod() throws Exception {
         TField tField = mock(TField.class);
         when(iprot.readFieldBegin()).thenReturn(tField);
 
@@ -77,15 +94,7 @@ public class FBaseProcessorTest {
         TTransport tTransport = mock(TTransport.class);
         when(oprot.getTransport()).thenReturn(tTransport);
 
-        try {
-            processor.process(iprot, oprot);
-        } catch (TApplicationException ex) {
-            assertEquals("Unknown function unknown", ex.getMessage());
-            verify(oprot).writeResponseHeader(ctx);
-            verify(oprot).writeMessageBegin(any(TMessage.class));
-            verify(oprot).writeMessageEnd();
-            verify(tTransport).flush();
-        }
+        processor.process(iprot, oprot);
     }
 
     @Test
