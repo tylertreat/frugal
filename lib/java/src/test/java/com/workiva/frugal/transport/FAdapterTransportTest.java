@@ -185,12 +185,4 @@ public class FAdapterTransportTest {
         verify(mockTr).write(buff);
         verify(mockTr).flush();
     }
-
-    /**
-     * Ensures flush throws TTransportException if the transport is not open.
-     */
-    @Test(expected = TTransportException.class)
-    public void test_notOpen() throws TTransportException {
-        tr.flush(new byte[0]);
-    }
 }

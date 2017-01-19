@@ -102,7 +102,7 @@ public class FBaseFoo {
 			basePing_args args = new basePing_args();
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, memoryBuffer.getWriteBytes());
 
 			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
