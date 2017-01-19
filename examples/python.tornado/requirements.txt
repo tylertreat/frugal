@@ -1,8 +1,4 @@
-backports.ssl-match-hostname==3.5.0.1
-certifi==2016.9.26
-frugal==2.0.0rc7
+frugal[tornado]==2.0.0rc7
 httplib2==0.9.2
-nats-client==0.3.0
-six==1.10.0
 tornado==4.2
 w-thrift==1.0.0.dev5

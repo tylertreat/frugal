@@ -24,23 +24,13 @@ func main() {
 	handler := &StoreHandler{}
 	processor := music.NewFStoreProcessor(handler)
 
-//	// Start the server using the configured processor, and protocol
-//<<<<<<< HEAD
-//	http.HandleFunc("/frugal", CORSMiddleware(frugal.NewFrugalHandlerFunc(processor, fProtocolFactory)))
-//	func() {
-//		fmt.Println("Starting the http server...")
-//		http.ListenAndServe(":9090", http.DefaultServeMux)
-//	}()
-//=======
-//	http.HandleFunc("/frugal", frugal.NewFrugalHandlerFunc(processor, fProtocolFactory))
-//	fmt.Println("Starting the http server...")
-//	log.Fatal(http.ListenAndServe(":9090", http.DefaultServeMux))
-//>>>>>>> 4355cbda26d40353a0937c399640e925555a0acf
-	httpHandler := frugal.NewFrugalHandlerFunc(processor, fProtocolFactory)
-	corsHandler := cors.Default().Handler(httpHandler)
-	http.HandleFunc("/frugal", corsHandler)
+	// Start the server using the configured processor, and protocol
+	mux := http.NewServeMux()
+	mux.HandleFunc("/frugal", frugal.NewFrugalHandlerFunc(processor, fProtocolFactory))
+	httpHandler := cors.Default().Handler(mux)
+
 	fmt.Println("Starting the http server...")
-	log.Fatal(http.ListenAndServe(":9090", http.DefaultServeMux))
+	log.Fatal(http.ListenAndServe(":9090", httpHandler))
 }
 
 // StoreHandler handles all incoming requests to the server.
@@ -69,30 +59,3 @@ func (f *StoreHandler) BuyAlbum(ctx frugal.FContext, ASIN string, acct string) (
 func (f *StoreHandler) EnterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error) {
 	return true, nil
 }
-
-//func CORSMiddleware(wrapped http.Handler) http.HandlerFunc {
-//	return func(w http.ResponseWriter, r *http.Request) {
-//		if !applyCORS(w, r) {
-//			return
-//		}
-//
-//		wrapped.ServeHTTP(w, r)
-//	}
-//}
-//
-//// applyCORS applies the access-control headers needed for cross-origin
-//// resource sharing and returns true if the request should proceed.
-//func applyCORS(w http.ResponseWriter, r *http.Request) bool {
-//	if origin := r.Header.Get("Origin"); origin != "" {
-//		w.Header().Set("Access-Control-Allow-Origin", origin)
-//		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-//		w.Header()["Access-Control-Allow-Headers"] = r.Header["Access-Control-Request-Headers"]
-//		w.Header().Set("Access-Control-Allow-Credentials", "true")
-//	}
-//
-//	if r.Method == "OPTIONS" {
-//		return false
-//	}
-//
-//	return true
-//}
