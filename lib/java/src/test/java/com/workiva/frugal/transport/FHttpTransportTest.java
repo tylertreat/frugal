@@ -58,10 +58,17 @@ public class FHttpTransportTest {
     }
 
     @Test(expected = FMessageSizeException.class)
-    public void testSend_sizeException() throws TTransportException {
+    public void testRequestSizeException() throws TTransportException {
         int requestSizeLimit = 1024 * 4;
         transport = new FHttpTransport.Builder(client, url).withRequestSizeLimit(requestSizeLimit).build();
         transport.request(context, new byte[requestSizeLimit + 1]);
+    }
+
+    @Test(expected = FMessageSizeException.class)
+    public void testOnewaySizeException() throws TTransportException {
+        int requestSizeLimit = 1024 * 4;
+        transport = new FHttpTransport.Builder(client, url).withRequestSizeLimit(requestSizeLimit).build();
+        transport.oneway(context, new byte[requestSizeLimit + 1]);
     }
 
     @Test
@@ -88,6 +95,31 @@ public class FHttpTransportTest {
 
         HttpPost actual = topicCaptor.getValue();
         HttpPost expected = validRequest(buff, responseSizeLimit);
+        assertEquals(EntityUtils.toString(expected.getEntity()), EntityUtils.toString(actual.getEntity()));
+        assertEquals(expected.getFirstHeader("content-type"), actual.getFirstHeader("content-type"));
+        assertEquals(expected.getURI(), actual.getURI());
+    }
+
+    @Test
+    public void testOneway() throws TException, IOException {
+        transport = new FHttpTransport.Builder(client, url).build();
+
+        StatusLine statusLine = new StatusLineImpl(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, null);
+        byte[] framedResponsePayload = new byte[]{0, 1, 2, 3, 4, 5, 6, 7};
+        String encoded = Base64.encodeBase64String(framedResponsePayload);
+        StringEntity responseEntity = new StringEntity(encoded, ContentType.create("application/x-frugal", "utf-8"));
+
+        CloseableHttpResponse response = new BasicClosableHttpResponse(statusLine);
+        response.setEntity(responseEntity);
+
+        ArgumentCaptor<HttpPost> topicCaptor = ArgumentCaptor.forClass(HttpPost.class);
+        when(client.execute(topicCaptor.capture())).thenReturn(response);
+
+        byte[] buff = "helloserver".getBytes();
+        transport.oneway(context, buff);
+
+        HttpPost actual = topicCaptor.getValue();
+        HttpPost expected = validRequest(buff, 0);
         assertEquals(EntityUtils.toString(expected.getEntity()), EntityUtils.toString(actual.getEntity()));
         assertEquals(expected.getFirstHeader("content-type"), actual.getFirstHeader("content-type"));
         assertEquals(expected.getURI(), actual.getURI());

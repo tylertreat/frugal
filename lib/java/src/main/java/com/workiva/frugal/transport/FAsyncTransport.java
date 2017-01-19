@@ -55,7 +55,9 @@ public abstract class FAsyncTransport extends FTransport {
      * @param payload framed frugal bytes
      * @throws TTransportException if the request times out or encounters other problems
      */
-    public void oneway(FContext context, byte[] payload) throws TTransportException{
+    public void oneway(FContext context, byte[] payload) throws TTransportException {
+        preflightRequestCheck(payload.length);
+
         flush(payload);
     }
 
@@ -68,6 +70,8 @@ public abstract class FAsyncTransport extends FTransport {
      * @throws TTransportException if the request times out or encounters other problems
      */
     public TTransport request(FContext context, byte[] payload) throws TTransportException {
+        preflightRequestCheck(payload.length);
+
         BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(1);
         synchronized (this) {
             if (queueMap.containsKey(getOpId(context))) {

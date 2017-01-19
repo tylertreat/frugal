@@ -136,7 +136,8 @@ public class FHttpTransport extends FTransport {
      */
     @Override
     public void oneway(FContext context, byte[] payload) throws TTransportException {
-        verifyRequestSize(payload.length);
+        preflightRequestCheck(payload.length);
+
         makeRequest(context, payload);
     }
 
@@ -147,7 +148,7 @@ public class FHttpTransport extends FTransport {
      */
     @Override
     public TTransport request(FContext context, byte[] payload) throws TTransportException {
-        verifyRequestSize(payload.length);
+        preflightRequestCheck(payload.length);
 
         byte[] response = makeRequest(context, payload);
 
@@ -165,15 +166,6 @@ public class FHttpTransport extends FTransport {
             return null;
         }
         return new TMemoryInputTransport(Arrays.copyOfRange(response, 4, response.length));
-    }
-
-    private void verifyRequestSize(int length) throws FMessageSizeException {
-        int requestSizeLimit = getRequestSizeLimit();
-        if (requestSizeLimit > 0 && length > requestSizeLimit) {
-            throw FMessageSizeException.request(
-                    String.format("Message exceeds %d bytes, was %d bytes",
-                            requestSizeLimit, length));
-        }
     }
 
     private byte[] makeRequest(FContext context, byte[] requestPayload) throws TTransportException {

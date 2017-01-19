@@ -1,6 +1,7 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.FContext;
+import com.workiva.frugal.exception.FMessageSizeException;
 import com.workiva.frugal.transport.monitor.FTransportMonitor;
 import com.workiva.frugal.transport.monitor.MonitorRunner;
 import org.apache.thrift.transport.TTransport;
@@ -111,6 +112,20 @@ public abstract class FTransport {
         }
         if (monitor != null) {
             new Thread(() -> monitor.onClose(cause), "transport-monitor").start();
+        }
+    }
+
+    // Make sure that the transport is in a state that we can send data.
+    protected void preflightRequestCheck(int length) throws TTransportException {
+        if (!isOpen()) {
+            throw new TTransportException(TTransportException.NOT_OPEN);
+        }
+
+        int requestSizeLimit = getRequestSizeLimit();
+        if (requestSizeLimit > 0 && length > requestSizeLimit) {
+            throw FMessageSizeException.request(
+                    String.format("Message exceeds %d bytes, was %d bytes",
+                            requestSizeLimit, length));
         }
     }
 }

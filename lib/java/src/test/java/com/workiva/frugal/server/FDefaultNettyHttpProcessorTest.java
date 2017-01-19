@@ -13,8 +13,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -27,7 +25,7 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -36,7 +34,6 @@ import static org.mockito.Mockito.spy;
 /**
  * Tests for {@link FDefaultNettyHttpProcessor}.
  */
-@RunWith(JUnit4.class)
 public class FDefaultNettyHttpProcessorTest {
 
     @Rule
