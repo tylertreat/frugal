@@ -14,9 +14,9 @@ class FWebapp2HttpHandlerTest(unittest.TestCase):
     def setUp(self):
         self.mock_processor = mock.Mock()
         prot_factory = FProtocolFactory(
-                TBinaryProtocol.TBinaryProtocolFactory())
+            TBinaryProtocol.TBinaryProtocolFactory())
         app = webapp2.WSGIApplication([('/frugal', new_webapp2_handler(
-                self.mock_processor, prot_factory))])
+            self.mock_processor, prot_factory))])
         self.test_app = webtest.TestApp(app)
 
         self.request_data = bytearray([2, 3, 4])
@@ -62,3 +62,11 @@ class FWebapp2HttpHandlerTest(unittest.TestCase):
                                       status='*')
 
         self.assertEqual(400, response.status_int)
+
+    def test_frame_size_mismatch(self):
+        request_frame = base64.b64encode(bytearray([0, 0, 0, 10, 1, 1, 2]))
+
+        response = self.test_app.post('/frugal', params=request_frame,
+                                      status='*')
+        self.assertEqual(400, response.status_int)
+
