@@ -120,7 +120,7 @@ public class TestServer {
                             conn,
                             processor,
                             fProtocolFactory,
-                            new String[]{Integer.toString(port)}).build();
+                            new String[]{"frugal.*.*." + Integer.toString(port)}).build();
                     break;
                 case "http":
                     break;
