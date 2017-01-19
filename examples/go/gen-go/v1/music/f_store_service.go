@@ -78,12 +78,12 @@ func (f *FStoreClient) buyAlbum(ctx frugal.FContext, asin string, acct string) (
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	var resultData []byte
-	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	var resultTransport thrift.TTransport
+	resultTransport, err = f.transport.Request(ctx, false, buffer.Bytes())
 	if err != nil {
 		return
 	}
-	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
+	iprot := f.protocolFactory.GetProtocol(resultTransport)
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}
@@ -165,12 +165,12 @@ func (f *FStoreClient) enterAlbumGiveaway(ctx frugal.FContext, email string, nam
 	if err = oprot.Flush(); err != nil {
 		return
 	}
-	var resultData []byte
-	resultData, err = f.transport.Request(ctx, false, buffer.Bytes())
+	var resultTransport thrift.TTransport
+	resultTransport, err = f.transport.Request(ctx, false, buffer.Bytes())
 	if err != nil {
 		return
 	}
-	iprot := f.protocolFactory.GetProtocol(&thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(resultData)})
+	iprot := f.protocolFactory.GetProtocol(resultTransport)
 	if err = iprot.ReadResponseHeader(ctx); err != nil {
 		return
 	}

@@ -51,7 +51,7 @@ class Client(Iface):
         and protocol factory.
 
         Args:
-            provider: FServiceProvider with FSynchronousTransport
+            provider: FServiceProvider with TSynchronousTransport
             middleware: ServiceMiddleware or list of ServiceMiddleware
         """
         middleware = middleware or []
