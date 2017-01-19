@@ -50,4 +50,19 @@ abstract class FTransport {
     _closeController.add(cause);
     await _monitor?.onClose(cause);
   }
+
+  /// Checks if a transport is open and the payload is within the request size
+  /// limit.
+  void _preflightRequestCheck(Uint8List payload) {
+    if (!isOpen) {
+      throw new TTransportError(
+          TTransportErrorType.NOT_OPEN, 'transport not open');
+    }
+
+    if (requestSizeLimit != null &&
+        requestSizeLimit > 0 &&
+        payload.length > requestSizeLimit) {
+      throw new FMessageSizeError.request();
+    }
+  }
 }

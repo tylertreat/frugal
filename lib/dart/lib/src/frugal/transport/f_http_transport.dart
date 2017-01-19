@@ -61,9 +61,7 @@ class FHttpTransport extends FTransport {
 
   @override
   Future<TTransport> request(FContext ctx, Uint8List payload) async {
-    if (requestSizeLimit > 0 && payload.length > requestSizeLimit) {
-      throw new FMessageSizeError.request();
-    }
+    _preflightRequestCheck(payload);
 
     // Encode request payload
     var requestBody = BASE64.encode(payload);

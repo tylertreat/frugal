@@ -14,20 +14,9 @@ abstract class FAsyncTransport extends FTransport {
   /// Flush the payload to the server. Implementations must be threadsafe.
   Future<Null> flush(Uint8List payload);
 
-  void _assertSendable(Uint8List payload) {
-    if (!isOpen) {
-      throw new TTransportError(
-          TTransportErrorType.NOT_OPEN, 'transport not open');
-    }
-
-    if (requestSizeLimit != null && payload.length > requestSizeLimit) {
-      throw new FMessageSizeError.request();
-    }
-  }
-
   @override
   Future<Null> oneway(FContext ctx, Uint8List payload) async {
-    _assertSendable(payload);
+    _preflightRequestCheck(payload);
     await flush(payload).timeout(ctx.timeout, onTimeout: () {
       throw new TTransportError(TTransportErrorType.TIMED_OUT,
           'request timed out after ${ctx.timeout}');
@@ -36,7 +25,7 @@ abstract class FAsyncTransport extends FTransport {
 
   @override
   Future<TTransport> request(FContext ctx, Uint8List payload) async {
-    _assertSendable(payload);
+    _preflightRequestCheck(payload);
 
     Completer<Uint8List> resultCompleter = new Completer();
 
