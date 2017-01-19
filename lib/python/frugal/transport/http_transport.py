@@ -100,17 +100,17 @@ class TBaseHttpTransport(TSynchronousTransport):
                 headers[name] = value
 
         if 'User-Agent' not in headers:
-            headers['User-Agent'] = 'Python/FHttpTransport'
+            headers['User-Agent'] = 'Python/TBaseHttpTransport'
 
         return headers, body
 
 
-class FHttpTransport(TBaseHttpTransport):
+class THttpTransport(TBaseHttpTransport):
     """Synchronous transport implemented with Requests."""
 
     def __init__(self, url, request_capacity=0, response_capacity=0,
                  headers=None, get_headers=None):
-        """Initialize a new FHttpTransport.
+        """Initialize a new THttpTransport.
 
         Args:
             url: url of the Frugal server.
@@ -122,7 +122,7 @@ class FHttpTransport(TBaseHttpTransport):
             get_headers: func which returns dynamic headers per request.
         """
 
-        super(FHttpTransport, self).__init__(
+        super(THttpTransport, self).__init__(
             url, request_capacity=request_capacity,
             response_capacity=response_capacity, headers=headers,
             get_headers=get_headers)

@@ -7,11 +7,11 @@ from mock import patch
 from thrift.transport.TTransport import TTransportException
 
 from frugal.exceptions import FMessageSizeException
-from frugal.transport.http_transport import FHttpTransport
+from frugal.transport.http_transport import THttpTransport
 
 
 @patch('frugal.transport.http_transport.requests')
-class TestFHttpTransport(unittest.TestCase):
+class TestTHttpTransport(unittest.TestCase):
 
     def test_request(self, mock_requests):
         url = 'http://localhost:8080/frugal'
@@ -26,7 +26,7 @@ class TestFHttpTransport(unittest.TestCase):
         def get_headers():
             return {'baz': 'qux'}
 
-        tr = FHttpTransport(url, headers=headers, get_headers=get_headers,
+        tr = THttpTransport(url, headers=headers, get_headers=get_headers,
                             response_capacity=500)
 
         tr.open()
@@ -45,7 +45,7 @@ class TestFHttpTransport(unittest.TestCase):
             headers={'foo': 'bar', 'baz': 'qux', 'Content-Length': '20',
                      'Content-Type': 'application/x-frugal',
                      'Content-Transfer-Encoding': 'base64',
-                     'User-Agent': 'Python/FHttpTransport',
+                     'User-Agent': 'Python/TBaseHttpTransport',
                      'x-frugal-payload-limit': '500'})
 
         resp = tr.read(len(response))
@@ -67,7 +67,7 @@ class TestFHttpTransport(unittest.TestCase):
         def get_headers():
             return {'baz': 'qux'}
 
-        tr = FHttpTransport(url, headers=headers, get_headers=get_headers,
+        tr = THttpTransport(url, headers=headers, get_headers=get_headers,
                             response_capacity=500)
 
         tr.open()
@@ -87,7 +87,7 @@ class TestFHttpTransport(unittest.TestCase):
             headers={'foo': 'bar', 'baz': 'qux', 'Content-Length': '20',
                      'Content-Type': 'application/x-frugal',
                      'Content-Transfer-Encoding': 'base64',
-                     'User-Agent': 'Python/FHttpTransport',
+                     'User-Agent': 'Python/TBaseHttpTransport',
                      'x-frugal-payload-limit': '500'})
 
         resp = tr.read(len(response))
@@ -99,7 +99,7 @@ class TestFHttpTransport(unittest.TestCase):
     def test_flush_no_body(self, mock_requests):
         url = 'http://localhost:8080/frugal'
 
-        tr = FHttpTransport(url)
+        tr = THttpTransport(url)
         tr.flush()
 
         self.assertFalse(mock_requests.post.called)
@@ -109,7 +109,7 @@ class TestFHttpTransport(unittest.TestCase):
         resp = Mock(status_code=500)
         mock_requests.post.return_value = resp
 
-        tr = FHttpTransport(url)
+        tr = THttpTransport(url)
 
         data = b'helloworld'
         buff = bytearray(4)
@@ -126,7 +126,7 @@ class TestFHttpTransport(unittest.TestCase):
             headers={'Content-Length': '20',
                      'Content-Type': 'application/x-frugal',
                      'Content-Transfer-Encoding': 'base64',
-                     'User-Agent': 'Python/FHttpTransport'})
+                     'User-Agent': 'Python/TBaseHttpTransport'})
 
     def test_flush_bad_oneway_response(self, mock_requests):
         url = 'http://localhost:8080/frugal'
@@ -136,7 +136,7 @@ class TestFHttpTransport(unittest.TestCase):
         resp.content = b64encode(buff)
         mock_requests.post.return_value = resp
 
-        tr = FHttpTransport(url)
+        tr = THttpTransport(url)
 
         data = b'helloworld'
         buff = bytearray(4)
@@ -153,7 +153,7 @@ class TestFHttpTransport(unittest.TestCase):
             headers={'Content-Length': '20',
                      'Content-Type': 'application/x-frugal',
                      'Content-Transfer-Encoding': 'base64',
-                     'User-Agent': 'Python/FHttpTransport'})
+                     'User-Agent': 'Python/TBaseHttpTransport'})
 
     def test_flush_oneway(self, mock_requests):
         url = 'http://localhost:8080/frugal'
@@ -163,7 +163,7 @@ class TestFHttpTransport(unittest.TestCase):
         resp.content = b64encode(buff)
         mock_requests.post.return_value = resp
 
-        tr = FHttpTransport(url)
+        tr = THttpTransport(url)
 
         data = b'helloworld'
         buff = bytearray(4)
@@ -178,7 +178,7 @@ class TestFHttpTransport(unittest.TestCase):
             headers={'Content-Length': '20',
                      'Content-Type': 'application/x-frugal',
                      'Content-Transfer-Encoding': 'base64',
-                     'User-Agent': 'Python/FHttpTransport'})
+                     'User-Agent': 'Python/TBaseHttpTransport'})
 
         resp = tr.read(10)
         self.assertEqual(b'', resp)
@@ -191,7 +191,7 @@ class TestFHttpTransport(unittest.TestCase):
         resp.content = b64encode(buff)
         mock_requests.post.return_value = resp
 
-        tr = FHttpTransport(url, request_capacity=5)
+        tr = THttpTransport(url, request_capacity=5)
 
         data = b'helloworld'
 

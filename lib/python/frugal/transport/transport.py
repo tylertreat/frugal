@@ -64,7 +64,7 @@ class FTransport(object):
 
 
 class TSynchronousTransport(TTransportBase, object):
-    """FSynchronousTransport is a Thrift TTransport for services which makes
+    """TSynchronousTransport is a Thrift TTransport for services which make
     synchronous requests.
     """
 
