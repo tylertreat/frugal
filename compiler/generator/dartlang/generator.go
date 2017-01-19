@@ -1500,14 +1500,14 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 	contents += indent + "args.write(oprot);\n"
 	contents += indent + "oprot.writeMessageEnd();\n"
-	contents += fmt.Sprintf(indent + "var response = await _transport.request(ctx, %v, memoryBuffer.writeBytes);\n", method.Oneway)
 
-	// Nothing more to do for oneway
 	if method.Oneway {
+		contents += indent + "await _transport.oneway(ctx, memoryBuffer.writeBytes);\n"
 		contents += tab + "}\n\n"
 		return contents
 	}
 
+	contents += indent + "var response = await _transport.request(ctx, memoryBuffer.writeBytes);\n"
 	contents += "\n"
 
 	contents += tabtab + "var iprot = _protocolFactory.getProtocol(response);\n"

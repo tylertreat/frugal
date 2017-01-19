@@ -44,7 +44,7 @@ class FBaseFooClient implements FBaseFoo {
     basePing_args args = new basePing_args();
     args.write(oprot);
     oprot.writeMessageEnd();
-    var response = await _transport.request(ctx, false, memoryBuffer.writeBytes);
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
     var iprot = _protocolFactory.getProtocol(response);
     iprot.readResponseHeader(ctx);

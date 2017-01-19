@@ -81,7 +81,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     Ping_args args = new Ping_args();
     args.write(oprot);
     oprot.writeMessageEnd();
-    var response = await _transport.request(ctx, false, memoryBuffer.writeBytes);
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
     var iprot = _protocolFactory.getProtocol(response);
     iprot.readResponseHeader(ctx);
@@ -115,7 +115,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     args.event = event;
     args.write(oprot);
     oprot.writeMessageEnd();
-    var response = await _transport.request(ctx, false, memoryBuffer.writeBytes);
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
     var iprot = _protocolFactory.getProtocol(response);
     iprot.readResponseHeader(ctx);
@@ -161,7 +161,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     args.req = req;
     args.write(oprot);
     oprot.writeMessageEnd();
-    var response = await _transport.request(ctx, true, memoryBuffer.writeBytes);
+    await _transport.oneway(ctx, memoryBuffer.writeBytes);
   }
 
   Future<Uint8List> bin_method(frugal.FContext ctx, Uint8List bin, String str) {
@@ -178,7 +178,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     args.str = str;
     args.write(oprot);
     oprot.writeMessageEnd();
-    var response = await _transport.request(ctx, false, memoryBuffer.writeBytes);
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
     var iprot = _protocolFactory.getProtocol(response);
     iprot.readResponseHeader(ctx);
@@ -221,7 +221,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     args.req_num = req_num;
     args.write(oprot);
     oprot.writeMessageEnd();
-    var response = await _transport.request(ctx, false, memoryBuffer.writeBytes);
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
     var iprot = _protocolFactory.getProtocol(response);
     iprot.readResponseHeader(ctx);
@@ -260,7 +260,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     args.set_type = set_type;
     args.write(oprot);
     oprot.writeMessageEnd();
-    var response = await _transport.request(ctx, false, memoryBuffer.writeBytes);
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
     var iprot = _protocolFactory.getProtocol(response);
     iprot.readResponseHeader(ctx);
@@ -297,7 +297,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     getThing_args args = new getThing_args();
     args.write(oprot);
     oprot.writeMessageEnd();
-    var response = await _transport.request(ctx, false, memoryBuffer.writeBytes);
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
     var iprot = _protocolFactory.getProtocol(response);
     iprot.readResponseHeader(ctx);
@@ -334,7 +334,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     getMyInt_args args = new getMyInt_args();
     args.write(oprot);
     oprot.writeMessageEnd();
-    var response = await _transport.request(ctx, false, memoryBuffer.writeBytes);
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
     var iprot = _protocolFactory.getProtocol(response);
     iprot.readResponseHeader(ctx);
@@ -372,7 +372,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     args.a = a;
     args.write(oprot);
     oprot.writeMessageEnd();
-    var response = await _transport.request(ctx, false, memoryBuffer.writeBytes);
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
     var iprot = _protocolFactory.getProtocol(response);
     iprot.readResponseHeader(ctx);

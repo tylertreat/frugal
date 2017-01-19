@@ -38,6 +38,19 @@ void main() {
       transport = new FAdapterTransport(socketTransport);
     });
 
+    test('oneway happy path', () async {
+      when(socket.isClosed).thenReturn(true);
+      when(socket.open()).thenReturn(new Future.value());
+      await transport.open();
+      verify(socket.open()).called(1);
+
+      FContext reqCtx = new FContext();
+      var frame = mockFrame(reqCtx, "request");
+
+      await transport.oneway(reqCtx, frame);
+      verify(socket.send(frame)).called(1);
+    });
+
     test('requests happy path', () async {
       when(socket.isClosed).thenReturn(true);
       when(socket.open()).thenReturn(new Future.value());
@@ -53,10 +66,18 @@ void main() {
         messageStream.add(respFrame);
       });
 
-      var response =
-          await transport.request(reqCtx, false, frame) as TMemoryTransport;
+      var response = await transport.request(reqCtx, frame) as TMemoryTransport;
       expect(response.buffer, respFrame.sublist(4));
       verify(socket.send(frame)).called(1);
+    });
+
+    test('request transport not open', () async {
+      try {
+        await transport.request(null, null);
+        fail('Should have thrown an exception');
+      } on TTransportError catch (e) {
+        expect(e.type, TTransportErrorType.NOT_OPEN);
+      }
     });
 
     test('requests time out without a response', () async {
@@ -70,7 +91,7 @@ void main() {
       var frame = mockFrame(ctx, 'request');
 
       try {
-        await transport.request(ctx, false, frame);
+        await transport.request(ctx, frame);
         fail('Should have thrown an exception');
       } on TTransportError catch (e) {
         expect(e.type, TTransportErrorType.TIMED_OUT);
@@ -87,7 +108,7 @@ void main() {
 
       FContext ctx = new FContext();
       var frame = mockFrame(ctx, 'request');
-      Future<TTransport> requestFuture = transport.request(ctx, false, frame);
+      Future<TTransport> requestFuture = transport.request(ctx, frame);
       await transport.close();
 
       try {

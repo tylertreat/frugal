@@ -14,9 +14,7 @@ abstract class FAsyncTransport extends FTransport {
   /// Flush the payload to the server. Implementations must be threadsafe.
   Future<Null> flush(Uint8List payload);
 
-  @override
-  Future<TTransport> request(
-      FContext ctx, bool oneway, Uint8List payload) async {
+  void _assertSendable(Uint8List payload) {
     if (!isOpen) {
       throw new TTransportError(
           TTransportErrorType.NOT_OPEN, 'transport not open');
@@ -25,11 +23,20 @@ abstract class FAsyncTransport extends FTransport {
     if (requestSizeLimit != null && payload.length > requestSizeLimit) {
       throw new FMessageSizeError.request();
     }
+  }
 
-    if (oneway) {
-      await flush(payload);
-      return null;
-    }
+  @override
+  Future<Null> oneway(FContext ctx, Uint8List payload) async {
+    _assertSendable(payload);
+    await flush(payload).timeout(ctx.timeout, onTimeout: () {
+      throw new TTransportError(TTransportErrorType.TIMED_OUT,
+          'request timed out after ${ctx.timeout}');
+    });
+  }
+
+  @override
+  Future<TTransport> request(FContext ctx, Uint8List payload) async {
+    _assertSendable(payload);
 
     Completer<Uint8List> resultCompleter = new Completer();
 
@@ -44,9 +51,10 @@ abstract class FAsyncTransport extends FTransport {
     });
 
     try {
-      // Bail early if the transport is closed
       Future<Uint8List> resultFuture =
           _request(payload, resultCompleter).timeout(ctx.timeout);
+
+      // Bail early if the transport is closed
       Uint8List response =
           await Future.any([resultFuture, closedCompleter.future]);
       return new TMemoryTransport.fromUint8List(response);

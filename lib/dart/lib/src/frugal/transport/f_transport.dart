@@ -40,7 +40,11 @@ abstract class FTransport {
   /// Send the given framed frugal payload over the transport and return a
   /// future containing the response. Throws [TTransportError] if problems
   /// are encountered with the request.
-  Future<TTransport> request(FContext ctx, bool oneway, Uint8List payload);
+  Future<TTransport> request(FContext ctx, Uint8List payload);
+
+  /// Send the given framed frugal payload over the transport and don't
+  /// expect a response.
+  Future<Null> oneway(FContext ctx, Uint8List payload);
 
   Future _signalClose(cause) async {
     _closeController.add(cause);

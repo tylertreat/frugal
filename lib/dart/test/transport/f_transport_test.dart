@@ -64,7 +64,10 @@ class _FTransportImpl extends FTransport {
       : super(requestSizeLimit: requestSizeLimit);
 
   @override
-  Future<TTransport> request(FContext ctx, bool oneway, Uint8List payload) =>
+  Future<Null> oneway(FContext ctx, Uint8List payload) => new Future.value();
+
+  @override
+  Future<TTransport> request(FContext ctx, Uint8List payload) =>
       new Future.value();
 
   @override

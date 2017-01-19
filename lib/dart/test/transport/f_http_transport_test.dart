@@ -61,8 +61,8 @@ void main() {
         }
       });
 
-      var response = await transport.request(
-          new FContext(), false, transportRequest) as TMemoryTransport;
+      var response = await transport.request(new FContext(), transportRequest)
+          as TMemoryTransport;
       expect(response.buffer, transportResponse);
     });
 
@@ -76,7 +76,7 @@ void main() {
 
       try {
         FContext ctx = new FContext()..timeout = new Duration(milliseconds: 20);
-        await transport.request(ctx, false, transportRequest);
+        await transport.request(ctx, transportRequest);
         fail('should have thrown an exception');
       } on TTransportError catch (e) {
         expect(e.type, TTransportErrorType.TIMED_OUT);
@@ -101,8 +101,8 @@ void main() {
         }
       });
 
-      var first = transport.request(new FContext(), false, transportRequest);
-      var second = transport.request(new FContext(), false, transportRequest);
+      var first = transport.request(new FContext(), transportRequest);
+      var second = transport.request(new FContext(), transportRequest);
 
       var firstResponse = (await first) as TMemoryTransport;
       var secondResponse = (await second) as TMemoryTransport;
@@ -116,8 +116,7 @@ void main() {
       Response response =
           new MockResponse.ok(body: BASE64.encode(responseBytes));
       MockTransports.http.expect('POST', transport.uri, respondWith: response);
-      var result =
-          await transport.request(new FContext(), false, transportRequest);
+      var result = await transport.request(new FContext(), transportRequest);
       expect(result, null);
     });
 
@@ -127,21 +126,21 @@ void main() {
       Response response =
           new MockResponse.ok(body: BASE64.encode(responseBytes));
       MockTransports.http.expect('POST', transport.uri, respondWith: response);
-      expect(transport.request(new FContext(), false, transportRequest),
+      expect(transport.request(new FContext(), transportRequest),
           throwsA(new isInstanceOf<TTransportError>()));
     });
 
     test('Test transport receives non-base64 payload', () async {
       Response response = new MockResponse.ok(body: '`');
       MockTransports.http.expect('POST', transport.uri, respondWith: response);
-      expect(transport.request(new FContext(), false, transportRequest),
+      expect(transport.request(new FContext(), transportRequest),
           throwsA(new isInstanceOf<TProtocolError>()));
     });
 
     test('Test transport receives unframed frugal payload', () async {
       Response response = new MockResponse.ok();
       MockTransports.http.expect('POST', transport.uri, respondWith: response);
-      expect(transport.request(new FContext(), false, transportRequest),
+      expect(transport.request(new FContext(), transportRequest),
           throwsA(new isInstanceOf<TProtocolError>()));
     });
   });
@@ -158,8 +157,8 @@ void main() {
 
     test('Test transport receives error', () {
       expect(
-          transport.request(new FContext(), false,
-              utf8Codec.encode('my really long request')),
+          transport.request(
+              new FContext(), utf8Codec.encode('my really long request')),
           throwsA(new isInstanceOf<FMessageSizeError>()));
     });
   });
@@ -175,9 +174,7 @@ void main() {
     test('Test transport receives error on 401 response', () async {
       Response response = new MockResponse.unauthorized();
       MockTransports.http.expect('POST', transport.uri, respondWith: response);
-      expect(
-          transport.request(
-              new FContext(), false, utf8Codec.encode('my request')),
+      expect(transport.request(new FContext(), utf8Codec.encode('my request')),
           throwsA(new isInstanceOf<TTransportError>()));
     });
 
@@ -186,27 +183,21 @@ void main() {
       Response response =
           new MockResponse(FHttpTransport.REQUEST_ENTITY_TOO_LARGE);
       MockTransports.http.expect('POST', transport.uri, respondWith: response);
-      expect(
-          transport.request(
-              new FContext(), false, utf8Codec.encode('my request')),
+      expect(transport.request(new FContext(), utf8Codec.encode('my request')),
           throwsA(new isInstanceOf<FMessageSizeError>()));
     });
 
     test('Test transport receives error on 404 response', () async {
       Response response = new MockResponse.badRequest();
       MockTransports.http.expect('POST', transport.uri, respondWith: response);
-      expect(
-          transport.request(
-              new FContext(), false, utf8Codec.encode('my request')),
+      expect(transport.request(new FContext(), utf8Codec.encode('my request')),
           throwsA(new isInstanceOf<TTransportError>()));
     });
 
     test('Test transport receives error on no response', () async {
       Response response = new MockResponse.badRequest();
       MockTransports.http.expect('POST', transport.uri, respondWith: response);
-      expect(
-          transport.request(
-              new FContext(), false, utf8Codec.encode('my request')),
+      expect(transport.request(new FContext(), utf8Codec.encode('my request')),
           throwsA(new isInstanceOf<TTransportError>()));
     });
   });

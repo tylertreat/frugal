@@ -55,8 +55,12 @@ class FHttpTransport extends FTransport {
   Future close([Error error]) => new Future.value();
 
   @override
-  Future<TTransport> request(
-      FContext ctx, bool oneway, Uint8List payload) async {
+  Future<Null> oneway(FContext ctx, Uint8List payload) async {
+    await request(ctx, payload);
+  }
+
+  @override
+  Future<TTransport> request(FContext ctx, Uint8List payload) async {
     if (requestSizeLimit > 0 && payload.length > requestSizeLimit) {
       throw new FMessageSizeError.request();
     }
