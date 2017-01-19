@@ -22,8 +22,8 @@ final Duration _defaultTimeout = new Duration(seconds: 5);
 /// generated for each [FContext] if one is not provided.
 ///
 /// [FContext] also plays a key role in Frugal's multiplexing support. A unique,
-/// per-request operation ID is set on every [FContext] before a request is
-/// made. This operation ID is sent in the request and included in the response,
+/// per-request operation ID is set on every [FContext] upon instantiation.
+/// This operation ID is sent in the request and included in the response,
 /// which is then used to correlate a response to a request. The operation ID
 /// is an internal implementation detail and is not exposed to the user.
 ///
@@ -31,6 +31,8 @@ final Duration _defaultTimeout = new Duration(seconds: 5);
 /// request. It can be reused once the request has completed, though they
 /// should generally not be reused.
 class FContext {
+  static int _globalOpId = 0;
+
   Map<String, String> _requestHeaders;
   Map<String, String> _responseHeaders;
 
@@ -39,9 +41,10 @@ class FContext {
     if (correlationId == "") {
       correlationId = _generateCorrelationId();
     }
+    _globalOpId++;
     _requestHeaders = {
       _cidHeader: correlationId,
-      _opidHeader: "0",
+      _opidHeader: _globalOpId.toString(),
       _timeoutHeader: _defaultTimeout.inMilliseconds.toString(),
     };
     _responseHeaders = {};
