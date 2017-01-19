@@ -1634,20 +1634,7 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	contents := ""
 	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx frugal.FContext%s) %s {\n",
 		servTitle, nameLower, g.generateInputArgs(method.Arguments), g.generateReturnArgs(method))
-	var returnType string
-	if !method.Oneway {
-		contents += "\terrorC := make(chan error, 1)\n"
-		if method.ReturnType == nil {
-			returnType = "struct{}"
-		} else {
-			returnType = g.getGoTypeFromThriftType(method.ReturnType)
-		}
-		contents += fmt.Sprintf("\tresultC := make(chan %s, 1)\n", returnType)
-		contents += fmt.Sprintf("\tif err = f.transport.Register(ctx, f.recv%sHandler(ctx, resultC, errorC)); err != nil {\n", nameTitle)
-		contents += "\t\treturn\n"
-		contents += "\t}\n"
-		contents += "\tdefer f.transport.Unregister(ctx)\n"
-	}
+
 	contents += "\tbuffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())\n"
 	contents += "\toprot := f.protocolFactory.GetProtocol(buffer)\n"
 	contents += "\tif err = oprot.WriteRequestHeader(ctx); err != nil {\n"
@@ -1674,103 +1661,71 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 
-	contents += "\tdata := buffer.Bytes()\n"
-
-	contents += "\tif err = f.transport.Send(data); err != nil {\n"
-	contents += "\t\treturn\n"
-	contents += "\t}\n\n"
-
 	if method.Oneway {
+		contents += fmt.Sprintf("\t_, err = f.transport.Request(ctx, %v, buffer.Bytes())\n", method.Oneway)
 		contents += "\treturn\n"
 		contents += "}\n\n"
 		return contents
 	}
-
-	contents += "\tselect {\n"
-	contents += "\tcase err = <-errorC:\n"
-	if method.ReturnType == nil {
-		contents += "\tcase <-resultC:\n"
-	} else {
-		contents += "\tcase r = <-resultC:\n"
-	}
-	contents += "\tcase <-time.After(ctx.Timeout()):\n"
-	contents += "\t\terr = frugal.ErrTimeout\n"
-	contents += "\tcase <-f.transport.Closed():\n"
-	contents += "\t\terr = frugal.ErrTransportClosed\n"
+	contents += "\tvar resultTransport thrift.TTransport\n"
+	contents += fmt.Sprintf("\tresultTransport, err = f.transport.Request(ctx, %v, buffer.Bytes())\n", method.Oneway)
+	contents += "\tif err != nil {\n"
+	contents += "\t\treturn\n"
 	contents += "\t}\n"
-	contents += "\treturn\n"
-	contents += "}\n\n"
 
+	contents += "\tiprot := f.protocolFactory.GetProtocol(resultTransport)\n"
+	contents += "\tif err = iprot.ReadResponseHeader(ctx); err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tmethod, mTypeId, _, err := iprot.ReadMessageBegin()\n"
+	contents += "\tif err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += fmt.Sprintf("\tif method != \"%s\" {\n", nameLower)
 	contents += fmt.Sprintf(
-		"func (f *F%sClient) recv%sHandler(ctx frugal.FContext, resultC chan<- %s, errorC chan<- error) frugal.FAsyncCallback {\n",
-		servTitle, nameTitle, returnType)
-	contents += "\treturn func(tr thrift.TTransport) error {\n"
-	contents += "\t\tiprot := f.protocolFactory.GetProtocol(tr)\n"
-	contents += "\t\tif err := iprot.ReadResponseHeader(ctx); err != nil {\n"
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn err\n"
-	contents += "\t\t}\n"
-	contents += "\t\tmethod, mTypeId, _, err := iprot.ReadMessageBegin()\n"
+		"\t\terr = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, \"%s failed: wrong method name\")\n", nameLower)
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tif mTypeId == thrift.EXCEPTION {\n"
+	contents += "\t\terror0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, \"Unknown Exception\")\n"
+	contents += "\t\tvar error1 thrift.TApplicationException\n"
+	contents += "\t\terror1, err = error0.Read(iprot)\n"
 	contents += "\t\tif err != nil {\n"
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn err\n"
-	contents += "\t\t}\n"
-	contents += fmt.Sprintf("\t\tif method != \"%s\" {\n", nameLower)
-	contents += fmt.Sprintf(
-		"\t\t\terr = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, \"%s failed: wrong method name\")\n", nameLower)
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn err\n"
-	contents += "\t\t}\n"
-	contents += "\t\tif mTypeId == thrift.EXCEPTION {\n"
-	contents += "\t\t\terror0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, \"Unknown Exception\")\n"
-	contents += "\t\t\tvar error1 thrift.TApplicationException\n"
-	contents += "\t\t\terror1, err = error0.Read(iprot)\n"
-	contents += "\t\t\tif err != nil {\n"
-	contents += "\t\t\t\terrorC <- err\n"
-	contents += "\t\t\t\treturn err\n"
-	contents += "\t\t\t}\n"
-	contents += "\t\t\tif err = iprot.ReadMessageEnd(); err != nil {\n"
-	contents += "\t\t\t\terrorC <- err\n"
-	contents += "\t\t\t\treturn err\n"
-	contents += "\t\t\t}\n"
-	contents += "\t\t\tif error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {\n"
-	contents += "\t\t\t\terr = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())\n"
-	contents += "\t\t\t\terrorC <- err\n"
-	contents += "\t\t\t\treturn nil\n"
-	contents += "\t\t\t}\n"
-	contents += "\t\t\terr = error1\n"
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn nil\n"
-	contents += "\t\t}\n"
-	contents += "\t\tif mTypeId != thrift.REPLY {\n"
-	contents += fmt.Sprintf(
-		"\t\t\terr = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, \"%s failed: invalid message type\")\n", nameLower)
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn err\n"
-	contents += "\t\t}\n"
-	contents += fmt.Sprintf("\t\tresult := %s%sResult{}\n", servTitle, nameTitle)
-	contents += "\t\tif err = result.Read(iprot); err != nil {\n"
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn err\n"
+	contents += "\t\t\t\treturn\n"
 	contents += "\t\t}\n"
 	contents += "\t\tif err = iprot.ReadMessageEnd(); err != nil {\n"
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn err\n"
+	contents += "\t\t\treturn\n"
 	contents += "\t\t}\n"
+	contents += "\t\tif error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {\n"
+	contents += "\t\t\terr = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())\n"
+	contents += "\t\t\t\treturn\n"
+	contents += "\t\t}\n"
+	contents += "\t\terr = error1\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tif mTypeId != thrift.REPLY {\n"
+	contents += fmt.Sprintf(
+		"\t\terr = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, \"%s failed: invalid message type\")\n", nameLower)
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += fmt.Sprintf("\tresult := %s%sResult{}\n", servTitle, nameTitle)
+	contents += "\tif err = result.Read(iprot); err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tif err = iprot.ReadMessageEnd(); err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
 	for _, err := range method.Exceptions {
 		errTitle := snakeToCamel(err.Name)
-		contents += fmt.Sprintf("\t\tif result.%s != nil {\n", errTitle)
-		contents += fmt.Sprintf("\t\t\terrorC <- result.%s\n", errTitle)
-		contents += "\t\t\treturn nil\n"
-		contents += "\t\t}\n"
+		contents += fmt.Sprintf("\tif result.%s != nil {\n", errTitle)
+		contents += fmt.Sprintf("\t\terr = result.%s\n", errTitle)
+		contents += "\t\treturn\n"
+		contents += "\t}\n"
 	}
-	if method.ReturnType == nil {
-		contents += "\t\tresultC <- struct{}{}\n"
-	} else {
-		contents += "\t\tresultC <- result.GetSuccess()\n"
+	if method.ReturnType != nil {
+		contents += "\tr = result.GetSuccess()\n"
 	}
-	contents += "\t\treturn nil\n"
-	contents += "\t}\n"
+	contents += "\treturn\n"
 	contents += "}\n\n"
 
 	return contents

@@ -1,9 +1,10 @@
-package com.workiva.frugal.protocol;
+package com.workiva.frugal;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * FContext is the context for a Frugal message. Every RPC has an FContext, which
@@ -25,16 +26,29 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FContext {
 
-    // Header containing correlation id
+    /**
+     * To ensure every new FContext gets a unique opid, use an atomic, incrementing integer.
+     */
+    private static final AtomicLong NEXT_OP_ID = new AtomicLong(0);
+
+    /**
+     * Header containing correlation id.
+     */
     protected static final String CID_HEADER = "_cid";
 
-    // Header containing op id (uint64 as string)
-    protected static final String OPID_HEADER = "_opid";
+    /**
+     * Header containing op id (uint64 as string).
+     */
+    public static final String OPID_HEADER = "_opid";
 
-    // Header containing request timeout (milliseconds as string)
+    /**
+     * Header containing request timeout (milliseconds as string).
+     */
     protected static final String TIMEOUT_HEADER = "_timeout";
 
-    // Default request timeout
+    /**
+     * Default request timeout.
+     */
     protected static final long DEFAULT_TIMEOUT = 5 * 1000;
 
     private Map<String, String> requestHeaders = new ConcurrentHashMap<>();
@@ -59,7 +73,7 @@ public class FContext {
      */
     public FContext(String correlationId) {
         requestHeaders.put(CID_HEADER, correlationId);
-        requestHeaders.put(OPID_HEADER, "0");
+        requestHeaders.put(OPID_HEADER, Long.toString(NEXT_OP_ID.incrementAndGet()));
         requestHeaders.put(TIMEOUT_HEADER, Long.toString(DEFAULT_TIMEOUT));
 
     }
@@ -70,7 +84,7 @@ public class FContext {
      * @param headers request headers
      * @return FContext
      */
-    protected static FContext withRequestHeaders(Map<String, String> headers) {
+    public static FContext withRequestHeaders(Map<String, String> headers) {
         headers.computeIfAbsent(CID_HEADER, k -> generateCorrelationId());
         headers.computeIfAbsent(TIMEOUT_HEADER, k -> Long.toString(DEFAULT_TIMEOUT));
         return new FContext(headers, new HashMap<>());
@@ -90,40 +104,17 @@ public class FContext {
     }
 
     /**
-     * Returns the operation id for the FContext. This is a unique long per operation. This is protected as operation
-     * ids are an internal implementation detail.
-     *
-     * @return operation id
-     */
-    protected long getOpId() {
-        String opIdStr = requestHeaders.get(OPID_HEADER);
-        if (opIdStr == null) {
-            return 0;
-        }
-        return Long.valueOf(opIdStr);
-    }
-
-    /**
-     * Sets the operation id on the FContext. The operation id is used to map responses to requests. This is protected
-     * as operation ids are an internal implementation detail.
-     *
-     * @param opId the operation id to set
-     */
-    protected void setOpId(long opId) {
-        requestHeaders.put(OPID_HEADER, Long.toString(opId));
-    }
-
-    /**
      * Adds a request header to the FContext for the given name. A header is a key-value pair. If a header with the name
-     * is already present on the FContext, it will be replaced. The _opid and _cid headers are reserved. Returns the
-     * same FContext to allow for call chaining.
+     * is already present on the FContext, it will be replaced. The _opid header is reserved and setting it could
+     * interfere with asynchronous transports that rely upon it. Calls to set the _cid header will be ignored.
+     * Returns the same FContext to allow for call chaining.
      *
      * @param name  header name
      * @param value header value
      * @return FContext
      */
     public FContext addRequestHeader(String name, String value) {
-        if (OPID_HEADER.equals(name) || CID_HEADER.equals(name)) {
+        if (CID_HEADER.equals(name)) {
             return this;
         }
         requestHeaders.put(name, value);
@@ -132,8 +123,9 @@ public class FContext {
 
     /**
      * Adds request headers to the FContext for the given headers map. A header is a key-value pair.
-     * If a header with the name is already present on the FContext, it will be replaced. The _opid
-     * and _cid headers are reserved. Returns the same FContext to allow for call chaining.
+     * If a header with the name is already present on the FContext, it will be replaced.
+     * The _opid header is reserved and setting it could interfere with asynchronous transports that rely upon it.
+     * Calls to set the _cid header will be ignored. Returns the same FContext to allow for call chaining.
      *
      * @param headers headers to add to request headers
      * @return FContext
@@ -148,16 +140,14 @@ public class FContext {
     /**
      * Adds a response header to the FContext for the given name. A header is a key-value pair.
      * If a header with the name is already present on the FContext, it will be replaced.
-     * The _opid header is reserved. Returns the same FContext to allow for call chaining.
+     * The _opid header is reserved and setting it could interfere with asynchronous transports that rely upon it.
+     * Returns the same FContext to allow for call chaining.
      *
      * @param name  header name
      * @param value header value
      * @return FContext
      */
     public FContext addResponseHeader(String name, String value) {
-        if (OPID_HEADER.equals(name)) {
-            return this;
-        }
         responseHeaders.put(name, value);
         return this;
     }
@@ -175,16 +165,6 @@ public class FContext {
             addResponseHeader(pair.getKey(), pair.getValue());
         }
         return this;
-    }
-
-    /**
-     * Adds response headers to the FContext for the given headers map. A header is a key-value pair.
-     * If a header with the name is already present on the FContext, it will be replaced.
-     *
-     * @param headers headers to add to request headers
-     */
-    protected void forceAddResponseHeaders(Map<String, String> headers) {
-        responseHeaders.putAll(headers);
     }
 
     /**
@@ -241,9 +221,5 @@ public class FContext {
      */
     public void setTimeout(long timeout) {
         requestHeaders.put(TIMEOUT_HEADER, Long.toString(timeout));
-    }
-
-    protected void setResponseOpId(String opId) {
-        responseHeaders.put(OPID_HEADER, opId);
     }
 }

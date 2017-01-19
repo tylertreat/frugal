@@ -1,5 +1,6 @@
 package com.workiva.frugal.protocol;
 
+import com.workiva.frugal.FContext;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TField;
 import org.apache.thrift.protocol.TList;
@@ -10,6 +11,8 @@ import org.apache.thrift.protocol.TSet;
 import org.apache.thrift.protocol.TStruct;
 
 import java.nio.ByteBuffer;
+
+import static com.workiva.frugal.FContext.OPID_HEADER;
 
 /**
  * FProtocol is Frugal's equivalent of Thrift's TProtocol. It defines the
@@ -48,7 +51,7 @@ public class FProtocol extends TProtocol {
     public FContext readRequestHeader() throws TException {
         FContext ctx = FContext.withRequestHeaders(HeaderUtils.read(wrapped.getTransport()));
         // Put op id in response headers
-        ctx.setResponseOpId(Long.toString(ctx.getOpId()));
+        ctx.addResponseHeader(OPID_HEADER, ctx.getRequestHeader(OPID_HEADER));
         return ctx;
     }
 
@@ -69,7 +72,7 @@ public class FProtocol extends TProtocol {
      * @throws TException an error occurred while reading the headers
      */
     public void readResponseHeader(FContext context) throws TException {
-        context.forceAddResponseHeaders(HeaderUtils.read(wrapped.getTransport()));
+        context.addResponseHeaders(HeaderUtils.read(wrapped.getTransport()));
     }
 
     @Override

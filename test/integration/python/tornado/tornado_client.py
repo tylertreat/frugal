@@ -54,7 +54,7 @@ def main():
     transport = None
 
     if args.transport_type == "stateless":
-        transport = FNatsTransport(nats_client, str(args.port))
+        transport = FNatsTransport(nats_client, "frugal.foo.bar.{}".format(args.port))
     elif args.transport_type == "http":
         transport = FHttpTransport("http://localhost:" + str(args.port))
     else:

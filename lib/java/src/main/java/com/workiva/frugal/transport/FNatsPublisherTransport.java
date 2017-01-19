@@ -84,7 +84,7 @@ public class FNatsPublisherTransport implements FPublisherTransport {
     @Override
     public void publish(String topic, byte[] payload) throws TTransportException {
         if (!isOpen()) {
-            throw getClosedConditionException(conn.getState(), "send:");
+            throw getClosedConditionException(conn.getState(), "publish:");
         }
 
         if ("".equals(topic)) {
@@ -100,7 +100,7 @@ public class FNatsPublisherTransport implements FPublisherTransport {
         try {
             conn.publish(getFormattedSubject(topic), payload);
         } catch (IOException e) {
-            throw new TTransportException("flush: unable to publish data: " + e.getMessage());
+            throw new TTransportException("publish: unable to publish data: " + e.getMessage());
         }
     }
 

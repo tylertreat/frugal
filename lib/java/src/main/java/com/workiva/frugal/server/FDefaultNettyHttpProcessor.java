@@ -19,6 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap;
@@ -127,11 +129,26 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
         inputBuffer.readBytes(encodedBytes);
         byte[] inputBytes = Base64.decodeBase64(encodedBytes);
 
-        if (inputBytes.length <= 4) {
-            throw new IOException("Invalid request frame");
+        ByteBuffer buff = ByteBuffer.wrap(inputBytes);
+
+        int sz;
+        try {
+            sz = buff.getInt();
+        } catch (BufferUnderflowException e) {
+            // Need 4 bytes for the frame size, at a minimum.
+            throw new IOException("Invalid request size " + inputBytes.length);
+        }
+
+        // Ensure expected frame size equals actual size.
+        if (sz != buff.remaining()) {
+            throw new IOException(
+                    String.format("Mismatch between expected frame size (%d) and actual size (%d)",
+                            sz, inputBytes.length - 4)
+            );
         }
 
         // Process a frame, exclude frame length (first 4 bytes)
+        // TODO: use TByteBuffer that wraps buff once Thrift 0.10.0 is released to avoid this copy.
         byte[] inputFrame = Arrays.copyOfRange(inputBytes, 4, inputBytes.length);
         TTransport inTransport = new TMemoryInputTransport(inputFrame);
         TMemoryOutputBuffer outTransport = new TMemoryOutputBuffer();

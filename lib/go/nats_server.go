@@ -157,10 +157,10 @@ func (f *fNatsServer) worker() {
 		case frame := <-f.workC:
 			dur := time.Since(frame.timestamp)
 			if dur > f.highWatermark {
-				logger().Warnf("frugal: frame spent %+v in the transport buffer, your consumer might be backed up", dur)
+				logger().Warnf("frugal: request spent %+v in the transport buffer, your consumer might be backed up", dur)
 			}
 			if err := f.processFrame(frame.frameBytes, frame.reply); err != nil {
-				logger().Errorf("frugal: error processing frame: %s", err.Error())
+				logger().Errorf("frugal: error processing request: %s", err.Error())
 			}
 		}
 	}
@@ -175,11 +175,8 @@ func (f *fNatsServer) processFrame(frame []byte, reply string) error {
 	output := NewTMemoryOutputBuffer(natsMaxMessageSize)
 	iprot := f.protoFactory.GetProtocol(input)
 	oprot := f.protoFactory.GetProtocol(output)
-	err := f.processor.Process(iprot, oprot)
-	if err != nil {
-		if _, ok := err.(thrift.TApplicationException); !ok {
-			return err
-		}
+	if err := f.processor.Process(iprot, oprot); err != nil {
+		return err
 	}
 
 	if !output.HasWriteData() {

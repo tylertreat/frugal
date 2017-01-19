@@ -1,5 +1,6 @@
 package com.workiva.frugal.protocol;
 
+import com.workiva.frugal.FContext;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TTransport;
 import org.junit.Before;
