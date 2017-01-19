@@ -56,17 +56,25 @@ public abstract class FTransport {
     }
 
     /**
+     * Send the given framed frugal payload over the transport.
+     * Implementations of <code>oneway</code> should be thread-safe.
+     *
+     * @param context FContext associated with the request (used for timeout and logging)
+     * @param payload framed frugal bytes
+     * @throws TTransportException if the request times out or encounters other problems
+     */
+    public abstract void oneway(FContext context, byte[] payload) throws TTransportException;
+
+    /**
      * Send the given framed frugal payload over the transport and returns the response.
      * Implementations of <code>request</code> should be thread-safe.
      *
      * @param context FContext associated with the request (used for timeout and logging)
-     * @param oneway indicates to the transport that this is a one-way request. Transport implementations
-     *               should return <code>null</code> if <code>oneway</code> is <code>true</code>
      * @param payload framed frugal bytes
      * @return the response in TTransport form
      * @throws TTransportException if the request times out or encounters other problems
      */
-    public abstract TTransport request(FContext context, boolean oneway, byte[] payload) throws TTransportException;
+    public abstract TTransport request(FContext context, byte[] payload) throws TTransportException;
 
     /**
      * Get the maximum request size permitted by the transport. If <code>getRequestSizeLimit</code>
@@ -81,7 +89,7 @@ public abstract class FTransport {
     /**
      * Set the closed callback for the FTransport.
      *
-     * @param closedCallback
+     * @param closedCallback callback to be invoked when the transport is closed.
      */
     public synchronized void setClosedCallback(FTransportClosedCallback closedCallback) {
         this.closedCallback = closedCallback;

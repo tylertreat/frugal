@@ -7,8 +7,6 @@ import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.mockito.invocation.InvocationOnMock;
 
 import java.io.UnsupportedEncodingException;
@@ -26,7 +24,6 @@ import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -39,7 +36,6 @@ import static org.mockito.Mockito.verify;
 /**
  * Tests for {@link FTransport}.
  */
-@RunWith(JUnit4.class)
 public class FAsyncTransportTest {
 
     private FAsyncTransportPayloadCapture transport;
@@ -79,7 +75,7 @@ public class FAsyncTransportTest {
         }).when(mockMap).put(eq(FAsyncTransport.getOpId(context)), any());
 
         byte[] request = "hello world".getBytes();
-        assertArrayEquals(expectedResponse, transport.request(context, false, request).getBuffer());
+        assertArrayEquals(expectedResponse, transport.request(context, request).getBuffer());
         assertArrayEquals(request, transport.payloads.get(0));
     }
 
@@ -93,7 +89,7 @@ public class FAsyncTransportTest {
 
         FContext context = new FContext();
         byte[] request = "hello world".getBytes();
-        assertNull(transport.request(context, true, request));
+        transport.oneway(context, request);
 
         assertArrayEquals(request, transport.payloads.get(0));
 
@@ -107,7 +103,7 @@ public class FAsyncTransportTest {
     public void testRequestTimeout() throws TTransportException {
         FContext context = new FContext();
         context.setTimeout(10);
-        transport.request(context, false, "hello world".getBytes());
+        transport.request(context, "hello world".getBytes());
     }
 
     /**
@@ -124,7 +120,7 @@ public class FAsyncTransportTest {
             queue.put(FAsyncTransport.POISON_PILL);
             return null;
         }).when(mockMap).put(eq(FAsyncTransport.getOpId(context)), any());
-        transport.request(context, false, "hello world".getBytes());
+        transport.request(context, "hello world".getBytes());
     }
 
     /**
@@ -139,7 +135,7 @@ public class FAsyncTransportTest {
         transport.queueMap.put(FAsyncTransport.getOpId(context), new ArrayBlockingQueue<>(1));
 
         // then (exception)
-        transport.request(context, false, "crap".getBytes());
+        transport.request(context, "crap".getBytes());
     }
 
     @Test
@@ -156,7 +152,7 @@ public class FAsyncTransportTest {
             try {
                 byte[] request = new byte[4];
                 ProtocolUtils.writeInt((int) FAsyncTransport.getOpId(context), request, 0);
-                tr.request(context, false, request);
+                tr.request(context, request);
             } catch (TTransportException e) {
                 if (e.getType() != TTransportException.NOT_OPEN) {
                     fail();
@@ -231,7 +227,7 @@ public class FAsyncTransportTest {
                 try {
                     byte[] request = new byte[4];
                     ProtocolUtils.writeInt((int) FAsyncTransport.getOpId(context), request, 0);
-                    tr.request(context, false, request);
+                    tr.request(context, request);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

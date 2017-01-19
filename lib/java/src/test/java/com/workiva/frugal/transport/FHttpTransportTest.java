@@ -61,7 +61,7 @@ public class FHttpTransportTest {
     public void testSend_sizeException() throws TTransportException {
         int requestSizeLimit = 1024 * 4;
         transport = new FHttpTransport.Builder(client, url).withRequestSizeLimit(requestSizeLimit).build();
-        transport.request(context, false, new byte[requestSizeLimit + 1]);
+        transport.request(context, new byte[requestSizeLimit + 1]);
     }
 
     @Test
@@ -82,7 +82,7 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         byte[] buff = "helloserver".getBytes();
-        TTransport actualResponse = transport.request(context, false, buff);
+        TTransport actualResponse = transport.request(context, buff);
 
         assertArrayEquals(responsePayload, actualResponse.getBuffer());
 
@@ -97,14 +97,14 @@ public class FHttpTransportTest {
     public void testSend_requestIOException() throws TTransportException, IOException {
         byte[] buff = "helloserver".getBytes();
         when(client.execute(any(HttpPost.class))).thenThrow(new IOException());
-        transport.request(context, false, buff);
+        transport.request(context, buff);
     }
 
     @Test(expected = TTransportException.class)
     public void testSend_requestTimeoutException() throws TTransportException, IOException {
         byte[] buff = "helloserver".getBytes();
         when(client.execute(any(HttpPost.class))).thenThrow(new SocketTimeoutException());
-        transport.request(context, false, buff);
+        transport.request(context, buff);
     }
 
     @Test(expected = FMessageSizeException.class)
@@ -119,7 +119,7 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         byte[] buff = "helloserver".getBytes();
-        transport.request(context, false, buff);
+        transport.request(context, buff);
     }
 
     @Test(expected = TTransportException.class)
@@ -133,7 +133,7 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         byte[] buff = "helloserver".getBytes();
-        transport.request(context, false, buff);
+        transport.request(context, buff);
     }
 
     @Test(expected = TTransportException.class)
@@ -152,7 +152,7 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         byte[] buff = "helloserver".getBytes();
-        transport.request(context, false, buff);
+        transport.request(context, buff);
     }
 
     @Test(expected = TTransportException.class)
@@ -171,7 +171,7 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         byte[] buff = "helloserver".getBytes();
-        transport.request(context, false, buff);
+        transport.request(context, buff);
     }
 
     @Test
@@ -190,7 +190,7 @@ public class FHttpTransportTest {
         when(client.execute(topicCaptor.capture())).thenReturn(response);
 
         byte[] buff = "helloserver".getBytes();
-        assertNull(transport.request(context, true, buff));
+        assertNull(transport.request(context, buff));
     }
 
     private HttpPost validRequest(byte[] payload, int responseSizeLimit) {

@@ -49,21 +49,25 @@ public abstract class FAsyncTransport extends FTransport {
     }
 
     /**
+     * Send the given framed frugal payload over the transport.
+     *
+     * @param context FContext associated with the request (used for timeout and logging)
+     * @param payload framed frugal bytes
+     * @throws TTransportException if the request times out or encounters other problems
+     */
+    public void oneway(FContext context, byte[] payload) throws TTransportException{
+        flush(payload);
+    }
+
+    /**
      * Send the given framed frugal payload over the transport and returns the response.
      *
      * @param context FContext associated with the request (used for timeout and logging)
-     * @param oneway indicates to the transport that this is a one-way request. Will return <code>null</code>
-     *               if <code>oneway</code> is <code>true</code>
      * @param payload framed frugal bytes
      * @return the response in TTransport form
      * @throws TTransportException if the request times out or encounters other problems
      */
-    public TTransport request(FContext context, boolean oneway, byte[] payload) throws TTransportException {
-        if (oneway) {
-            flush(payload);
-            return null;
-        }
-
+    public TTransport request(FContext context, byte[] payload) throws TTransportException {
         BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(1);
         synchronized (this) {
             if (queueMap.containsKey(getOpId(context))) {
