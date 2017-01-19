@@ -119,8 +119,7 @@ class FBaseProcessor(FProcessor):
             oport: ouput FProtocol
 
         Raises:
-            TApplicationException: if the processor does not know how to handle
-                                   this type of function.
+            TException: if processing fails.
         """
         context = iprot.read_request_headers()
         name, _, _ = iprot.readMessageBegin()
@@ -130,19 +129,18 @@ class FBaseProcessor(FProcessor):
         # If the function was in our dict, call process on it.
         if processor_function:
             try:
-                return await processor_function.process(context, iprot, oprot)
+                await processor_function.process(context, iprot, oprot)
             except TException:
+                # Don't raise an exception because the server should still send
+                # a response to the client.
                 logging.exception(
                     'frugal: exception occurred while processing request with '
                     'correlation id {}'.format(context.correlation_id))
-                raise
-            except Exception as e:
-                logger.exception(
-                    'frugal: user handler code raised unhandled ' +
-                    'exception on request with correlation id {}'.format(
-                        context.correlation_id))
-                raise
+            return
 
+        logging.warn('frugal: client invoked unknown method {0} on request ' +
+                     'with correlation id {1}'.format(
+                         name, context.correlation_id))
         iprot.skip(TType.STRUCT)
         iprot.readMessageEnd()
 
@@ -155,9 +153,6 @@ class FBaseProcessor(FProcessor):
             ex.write(oprot)
             oprot.writeMessageEnd()
             oprot.trans.flush()
-
-        logger.exception(ex)
-        raise ex
 
     def add_middleware(self, middleware):
         """Add the given middleware to the FProcessor.

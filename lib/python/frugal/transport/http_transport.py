@@ -129,8 +129,8 @@ class FHttpTransport(TBaseHttpTransport):
         if resp.status >= 400:
             raise TTransportException(
                 TTransportException.UNKNOWN,
-                'HTTP request failed, returned{0}: {1}'.format(resp.status,
-                                                               resp.reason))
+                'HTTP request failed, returned {0}: {1}'.format(resp.status,
+                                                                resp.reason))
 
         resp_body = b64decode(resp_body)
         # All responses should be framed with 4 bytes (uint32).
