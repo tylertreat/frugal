@@ -9,7 +9,7 @@ from tornado.httpclient import AsyncHTTPClient
 from tornado.httpclient import HTTPError
 from tornado.httpclient import HTTPRequest
 
-from frugal.tornado.transport import FTransportBase
+from frugal.tornado.transport.transport import FTransportBase
 
 logger = logging.getLogger(__name__)
 

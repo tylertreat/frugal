@@ -7,7 +7,7 @@ from tornado import locks
 
 from frugal.context import _OPID_HEADER
 from frugal.exceptions import FException
-from frugal.tornado.transport import FTransportBase
+from frugal.tornado.transport.transport import FTransportBase
 from frugal.util.headers import _Headers
 
 
