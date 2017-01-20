@@ -3,12 +3,12 @@ from tornado.testing import gen_test, AsyncTestCase
 from frugal.tornado.transport import FTransportBase
 
 
-class TestFTornadoTranpsort(AsyncTestCase):
+class TestFTornadoTransport(AsyncTestCase):
 
     def setUp(self):
         self.transport = FTransportBase()
 
-        super(TestFTornadoTranpsort, self).setUp()
+        super(TestFTornadoTransport, self).setUp()
 
     def test_is_open_raises_not_implemented_error(self):
         with self.assertRaises(NotImplementedError) as cm:
