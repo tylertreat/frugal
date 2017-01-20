@@ -1,6 +1,5 @@
 package com.workiva.frugal.transport;
 
-
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -10,12 +9,13 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+
 /**
  * An implementation of FTransport which uses a provided TTransport for read/write operations in a way that is
  * compatible with Frugal. This allows TTransports which support blocking reads to work with Frugal by starting a
- * thread that reads from the underlying transport and calling the registry on received frames.
+ * thread that reads from the underlying transport and calling <code>handleResponse</code> on received frames.
  */
-public class FAdapterTransport extends FTransport {
+public class FAdapterTransport extends FAsyncTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FAdapterTransport.class);
 
@@ -40,7 +40,6 @@ public class FAdapterTransport extends FTransport {
      * Creates a new FAdapterTransport which wraps the given TTransport.
      */
     public FAdapterTransport(TTransport tr) {
-        super();
         transport = tr;
         framedTransport = new TFramedTransport(tr);
         executorFactory = Executors::newSingleThreadExecutor;
@@ -80,6 +79,7 @@ public class FAdapterTransport extends FTransport {
         close(null);
     }
 
+    @Override
     protected synchronized void close(Exception cause) {
         if (isCleanClose(cause) && !isOpen()) {
             return;
@@ -112,12 +112,10 @@ public class FAdapterTransport extends FTransport {
     }
 
     @Override
-    public synchronized void send(byte[] payload) throws TTransportException {
-        if (!isOpen()) {
-            throw new TTransportException(TTransportException.NOT_OPEN);
-        }
+    protected void flush(byte[] payload) throws TTransportException {
+
         // We need to write to the wrapped transport, not the framed transport, since
-        // data given to send is already framed.
+        // data given to request is already framed.
         transport.write(payload);
         transport.flush();
     }
@@ -147,7 +145,7 @@ public class FAdapterTransport extends FTransport {
                 }
 
                 try {
-                    registry.execute(frame);
+                    handleResponse(frame);
                 } catch (TException e) {
                     LOGGER.error("closing transport due to unrecoverable error processing frame: " + e.getMessage());
                     close(e);

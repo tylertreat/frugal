@@ -1,6 +1,6 @@
 package com.workiva.frugal.processor;
 
-import com.workiva.frugal.protocol.FContext;
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.protocol.FProtocol;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
@@ -37,20 +37,19 @@ public abstract class FBaseProcessor implements FProcessor {
             try {
                 processor.process(ctx, iprot, oprot);
             } catch (TException e) {
+                // Don't raise an exception because the server should still send a response to the client.
                 LOGGER.error("Exception occurred while processing request with correlation id "
                         + ctx.getCorrelationId(), e);
-                throw e;
-            } catch (Exception e) {
-                LOGGER.error("User handler code threw unhandled exception on request with correlation id "
-                        + ctx.getCorrelationId(), e);
-                throw e;
             }
             return;
         }
+
+        LOGGER.warn(String.format("Client invoked unknown method %s on request with correlation id %s",
+                message.name, ctx.getCorrelationId()));
         TProtocolUtil.skip(iprot, TType.STRUCT);
         iprot.readMessageEnd();
-        TApplicationException e =
-                new TApplicationException(TApplicationException.UNKNOWN_METHOD, "Unknown function " + message.name);
+        TApplicationException e = new TApplicationException(
+                TApplicationException.UNKNOWN_METHOD, "Unknown function " + message.name);
         synchronized (WRITE_LOCK) {
             oprot.writeResponseHeader(ctx);
             oprot.writeMessageBegin(new TMessage(message.name, TMessageType.EXCEPTION, 0));
@@ -58,7 +57,6 @@ public abstract class FBaseProcessor implements FProcessor {
             oprot.writeMessageEnd();
             oprot.getTransport().flush();
         }
-        throw e;
     }
 
     /**

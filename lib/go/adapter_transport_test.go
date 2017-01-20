@@ -13,10 +13,20 @@ import (
 type mockFRegistry struct {
 	mock.Mock
 	executeCalled chan struct{}
+	channels      map[uint64]chan []byte
 }
 
-func (m *mockFRegistry) Register(ctx FContext, cb FAsyncCallback) error {
-	return m.Called(ctx, cb).Error(0)
+func (m *mockFRegistry) AssignOpID(ctx FContext) error {
+	return m.Called(ctx).Error(0)
+}
+
+func (m *mockFRegistry) Register(ctx FContext, resultC chan []byte) error {
+	opID, err := getOpID(ctx)
+	if err == nil {
+		m.channels[opID] = resultC
+	}
+
+	return m.Called(ctx, resultC).Error(0)
 }
 
 func (m *mockFRegistry) Unregister(ctx FContext) {
@@ -28,6 +38,7 @@ func (m *mockFRegistry) Execute(frame []byte) error {
 	case m.executeCalled <- struct{}{}:
 	default:
 	}
+
 	return m.Called(frame).Error(0)
 }
 
@@ -211,33 +222,4 @@ func TestAdapterTransportSetMonitor(t *testing.T) {
 	mockTr.AssertExpectations(t)
 	mockMonitor.AssertExpectations(t)
 	mockMonitor2.AssertExpectations(t)
-}
-
-// Ensures Register calls through to the registry to register a callback.
-func TestAdapterTransportRegister(t *testing.T) {
-	tr := NewAdapterTransport(nil).(*fAdapterTransport)
-	mockRegistry := new(mockFRegistry)
-	tr.registry = mockRegistry
-	ctx := NewFContext("")
-	cb := func(thrift.TTransport) error {
-		return nil
-	}
-	mockRegistry.On("Register", ctx, mock.AnythingOfType("FAsyncCallback")).Return(nil)
-
-	assert.Nil(t, tr.Register(ctx, cb))
-
-	mockRegistry.AssertExpectations(t)
-}
-
-// Ensures Unregister calls through to the registry to unregister a callback.
-func TestAdapterTransportUnregister(t *testing.T) {
-	tr := NewAdapterTransport(nil).(*fAdapterTransport)
-	mockRegistry := new(mockFRegistry)
-	tr.registry = mockRegistry
-	ctx := NewFContext("")
-	mockRegistry.On("Unregister", ctx).Return(nil)
-
-	tr.Unregister(ctx)
-
-	mockRegistry.AssertExpectations(t)
 }

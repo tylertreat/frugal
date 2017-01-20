@@ -6,8 +6,6 @@ import io.nats.client.Constants;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -17,7 +15,6 @@ import static com.workiva.frugal.transport.FNatsTransport.NATS_MAX_MESSAGE_SIZE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,7 +22,6 @@ import static org.mockito.Mockito.when;
 /**
  * Tests for {@link FNatsPublisherTransport}.
  */
-@RunWith(JUnit4.class)
 public class FNatsPublisherTransportTest {
 
     private FNatsPublisherTransport transport;
@@ -57,6 +53,7 @@ public class FNatsPublisherTransportTest {
     public void testNotConnected() throws TTransportException {
         when(conn.getState()).thenReturn(Constants.ConnState.DISCONNECTED);
         assertFalse(transport.isOpen());
+
         // Verify that open throws a TTransportException
         transport.open();
     }
@@ -70,7 +67,9 @@ public class FNatsPublisherTransportTest {
     public void testPublish() throws Exception {
         when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
         byte[] payload = new byte[]{1, 2, 3, 4};
+
         transport.publish(topic, payload);
+
         verify(conn).publish(formattedSubject, payload);
     }
 
@@ -78,6 +77,7 @@ public class FNatsPublisherTransportTest {
     public void testPublishNotConnected() throws TTransportException {
         when(conn.getState()).thenReturn(Constants.ConnState.DISCONNECTED);
         byte[] payload = new byte[]{1, 2, 3, 4};
+
         transport.publish(topic, payload);
     }
 
@@ -86,6 +86,7 @@ public class FNatsPublisherTransportTest {
         when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
         String topic = "";
         byte[] payload = new byte[]{1, 2, 3, 4};
+
         transport.publish(topic, payload);
     }
 
@@ -93,6 +94,7 @@ public class FNatsPublisherTransportTest {
     public void testPublishPayloadTooLarge() throws TTransportException {
         when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
         byte[] payload = new byte[NATS_MAX_MESSAGE_SIZE + 1];
+
         transport.publish(topic, payload);
     }
 
@@ -100,8 +102,10 @@ public class FNatsPublisherTransportTest {
     public void testPublishConnectionPublishException() throws Exception {
         when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
         byte[] payload = new byte[]{1, 2, 3, 4};
-        Mockito.doThrow(new IOException()).when(conn).publish(any(), any());
+        Mockito.doThrow(new IOException()).when(conn).publish(formattedSubject, payload);
+
         transport.publish(topic, payload);
+
         verify(conn).publish(formattedSubject, payload);
     }
 

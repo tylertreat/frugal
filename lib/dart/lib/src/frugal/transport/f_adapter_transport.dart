@@ -3,16 +3,15 @@ part of frugal.src.frugal;
 /// Wraps a [TSocketTransport] to produce an [FTransport] which uses the given
 /// socket for send/callback operations in a way that is compatible with Frugal.
 /// Messages received on the [TSocket] (i.e. Frugal frames) are routed to the
-/// [FRegistry]'s execute method.
-class FAdapterTransport extends FTransport {
-  final Logger _log = new Logger('FAdapterTransport');
+/// [FAsyncTransport]'s handleResponse method.
+class FAdapterTransport extends FAsyncTransport {
+  final Logger _adapterTransportLog = new Logger('FAdapterTransport');
   _TFramedTransport _framedTransport;
 
-  /// Create an [FAdapterTransport] with the given [TSocketTransport] and
-  /// optional [FRegistry].
-  FAdapterTransport(TSocketTransport transport, {FRegistry registry})
+  /// Create an [FAdapterTransport] with the given [TSocketTransport].
+  FAdapterTransport(TSocketTransport transport)
       : _framedTransport = new _TFramedTransport(transport.socket),
-        super(registry: registry) {
+        super() {
     // If there is an error on the socket, close the transport pessimistically.
     // This error is already logged upstream in TSocketTransport.
     transport.socket.onError.listen((e) => close(e));
@@ -31,11 +30,12 @@ class FAdapterTransport extends FTransport {
     await _framedTransport.open();
     _framedTransport.onFrame.listen((_FrameWrapper frame) {
       try {
-        _registry.execute(frame.frameBytes);
+        handleResponse(frame.frameBytes);
       } catch (e) {
         // Fatal error. Close the transport.
-        _log.severe("FAsyncCallback had a fatal error ${e.toString()}." +
-            "Closing transport.");
+        _adapterTransportLog.severe(
+            "FAsyncCallback had a fatal error ${e.toString()}." +
+                "Closing transport.");
         close(e);
       }
     });
@@ -48,12 +48,8 @@ class FAdapterTransport extends FTransport {
   }
 
   @override
-  Future send(Uint8List payload) async {
-    if (!isOpen) {
-      throw new TTransportError(TTransportErrorType.NOT_OPEN);
-    }
-    // We need to write to the wrapped TSocket, not the framed transport, since
-    // data given to send is already framed.
+  Future<Null> flush(Uint8List payload) {
     _framedTransport.socket.send(payload);
+    return new Future.value();
   }
 }

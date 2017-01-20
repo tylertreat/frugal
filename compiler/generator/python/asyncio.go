@@ -3,7 +3,6 @@ package python
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/Workiva/frugal/compiler/globals"
@@ -32,27 +31,14 @@ func (a *AsyncIOGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 
-	// Import include modules.
-	includes, err := s.ReferencedIncludes()
-	if err != nil {
-		return err
-	}
-	for _, include := range includes {
-		namespace := a.getPackageNamespace(filepath.Base(include.Name))
-		imports += fmt.Sprintf("import %s.ttypes\n", namespace)
-		imports += fmt.Sprintf("import %s.constants\n", namespace)
-		if s.Extends != "" {
-			extendsSlice := strings.Split(s.Extends, ".")
-			extendsService := extendsSlice[len(extendsSlice)-1]
-			imports += fmt.Sprintf("import %s.f_%s\n", namespace, extendsService)
-		}
-	}
 	imports += a.generateServiceExtendsImport(s)
+	if imp, err := a.generateServiceIncludeImports(s); err != nil {
+		return err
+	} else {
+		imports += imp
+	}
 
-	// Import this service's modules.
-	imports += "from .ttypes import *\n"
-
-	_, err = file.WriteString(imports)
+	_, err := file.WriteString(imports)
 	return err
 }
 

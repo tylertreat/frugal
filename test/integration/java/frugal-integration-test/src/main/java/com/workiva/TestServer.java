@@ -19,10 +19,10 @@
 
 package com.workiva;
 
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.processor.FProcessor;
-import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
 import com.workiva.frugal.server.FDefaultNettyHttpProcessor;
@@ -120,7 +120,7 @@ public class TestServer {
                             conn,
                             processor,
                             fProtocolFactory,
-                            new String[]{Integer.toString(port)}).build();
+                            new String[]{"frugal.*.*." + Integer.toString(port)}).build();
                     break;
                 case "http":
                     break;

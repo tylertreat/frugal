@@ -19,9 +19,9 @@
 
 package com.workiva;
 
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
-import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
 import com.workiva.frugal.provider.FServiceProvider;
@@ -114,7 +114,7 @@ public class TestClient {
                     fTransport.open();
                     break;
                 case "stateless":
-                    fTransport = FNatsTransport.of(conn, Integer.toString(port));
+                    fTransport = FNatsTransport.of(conn, "frugal.foo.bar." + Integer.toString(port));
                     break;
             }
         } catch (Exception x) {

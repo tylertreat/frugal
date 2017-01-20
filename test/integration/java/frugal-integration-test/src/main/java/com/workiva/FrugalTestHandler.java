@@ -1,6 +1,6 @@
 package com.workiva;
 
-import com.workiva.frugal.protocol.FContext;
+import com.workiva.frugal.FContext;
 import frugal.test.*;
 import org.apache.thrift.TException;
 import frugal.test.Numberz;

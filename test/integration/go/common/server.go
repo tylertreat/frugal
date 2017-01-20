@@ -91,7 +91,7 @@ func StartServer(
 			conn,
 			processor,
 			frugal.NewFProtocolFactory(protocolFactory),
-			[]string{fmt.Sprintf("%d", port)})
+			[]string{fmt.Sprintf("frugal.*.*.%d", port)})
 		server = builder.Build()
 		// Start http server
 		// Healthcheck used in the cross language runner to check for server availability

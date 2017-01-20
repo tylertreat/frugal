@@ -13,10 +13,9 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
@@ -26,7 +25,7 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -35,7 +34,6 @@ import static org.mockito.Mockito.spy;
 /**
  * Tests for {@link FDefaultNettyHttpProcessor}.
  */
-@RunWith(JUnit4.class)
 public class FDefaultNettyHttpProcessorTest {
 
     @Rule
@@ -89,7 +87,12 @@ public class FDefaultNettyHttpProcessorTest {
 
     @Test
     public final void testProcessValidFrame() throws TException, IOException {
-        ByteBuf inputBytes = Unpooled.copiedBuffer(Base64.encodeBase64("request_body".getBytes()));
+        byte[] requestBody = "request_body".getBytes();
+        byte[] bytes = ByteBuffer.allocate(4 + requestBody.length)
+                .putInt(requestBody.length)
+                .put(requestBody)
+                .array();
+        ByteBuf inputBytes = Unpooled.copiedBuffer(Base64.encodeBase64(bytes));
 
         ByteBuf outputBytes = httpProcessor.processFrame(inputBytes);
 
@@ -101,7 +104,17 @@ public class FDefaultNettyHttpProcessorTest {
         ByteBuf inputBytes = Unpooled.copiedBuffer(Base64.encodeBase64("r".getBytes()));
 
         thrown.expect(IOException.class);
-        thrown.expectMessage("Invalid request frame");
+        thrown.expectMessage("Invalid request size 1");
+        httpProcessor.processFrame(inputBytes);
+    }
+
+    @Test
+    public final void testProcessFrameThrowsOnSizeMismatch() throws TException, IOException {
+        ByteBuf inputBytes = Unpooled.copiedBuffer(Base64.encodeBase64("request_body".getBytes()));
+        doReturn(inputBytes).when(mockRequest).content();
+
+        thrown.expect(IOException.class);
+        thrown.expectMessage("Mismatch between expected frame size (1919250805) and actual size (8)");
         httpProcessor.processFrame(inputBytes);
     }
 
@@ -116,7 +129,12 @@ public class FDefaultNettyHttpProcessorTest {
 
     @Test
     public final void test413OverResponseLimit() throws IOException, TException {
-        ByteBuf inputBytes = Unpooled.copiedBuffer(Base64.encodeBase64("request_body".getBytes()));
+        byte[] requestBody = "request_body".getBytes();
+        byte[] bytes = ByteBuffer.allocate(4 + requestBody.length)
+                .putInt(requestBody.length)
+                .put(requestBody)
+                .array();
+        ByteBuf inputBytes = Unpooled.copiedBuffer(Base64.encodeBase64(bytes));
         doReturn(inputBytes).when(mockRequest).content();
         doReturn("1").when(mockRequestHeaders).get("x-frugal-payload-limit");
 
@@ -131,7 +149,12 @@ public class FDefaultNettyHttpProcessorTest {
 
     @Test
     public final void test500OnProcessorException() throws IOException, TException {
-        ByteBuf inputBytes = Unpooled.copiedBuffer(Base64.encodeBase64("request_body".getBytes()));
+        byte[] requestBody = "request_body".getBytes();
+        byte[] bytes = ByteBuffer.allocate(4 + requestBody.length)
+                .putInt(requestBody.length)
+                .put(requestBody)
+                .array();
+        ByteBuf inputBytes = Unpooled.copiedBuffer(Base64.encodeBase64(bytes));
         doReturn(inputBytes).when(mockRequest).content();
 
         FDefaultNettyHttpProcessor spyProcessor = spy(httpProcessor);
@@ -143,7 +166,12 @@ public class FDefaultNettyHttpProcessorTest {
 
     @Test
     public final void test200Ok() throws IOException, TException {
-        ByteBuf inputBytes = Unpooled.copiedBuffer(Base64.encodeBase64("request_body".getBytes()));
+        byte[] requestBody = "request_body".getBytes();
+        byte[] bytes = ByteBuffer.allocate(4 + requestBody.length)
+                .putInt(requestBody.length)
+                .put(requestBody)
+                .array();
+        ByteBuf inputBytes = Unpooled.copiedBuffer(Base64.encodeBase64(bytes));
         doReturn(inputBytes).when(mockRequest).content();
 
         FDefaultNettyHttpProcessor spyProcessor = spy(httpProcessor);

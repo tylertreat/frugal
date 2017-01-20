@@ -15,9 +15,9 @@ from frugal.processor import FProcessorFunction
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 
+import generic_package_prefix.actual_base.python.f_BaseFoo
 import generic_package_prefix.actual_base.python.ttypes
 import generic_package_prefix.actual_base.python.constants
-import generic_package_prefix.actual_base.python.f_BaseFoo
 from .ttypes import *
 
 

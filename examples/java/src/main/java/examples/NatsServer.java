@@ -3,8 +3,6 @@ package examples;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.server.FNatsServer;
 import com.workiva.frugal.server.FServer;
-import com.workiva.frugal.transport.FNatsTransport;
-import com.workiva.frugal.transport.FTransport;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
 import v1.music.FStore;

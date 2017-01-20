@@ -25,7 +25,7 @@ func main() {
 	}
 
 	// Create a client used to send messages with our desired protocol
-	storeClient := music.NewFStoreClient(httpTransport, fProtocolFactory, newLoggingMiddleware())
+	storeClient := music.NewFStoreClient(frugal.NewFServiceProvider(httpTransport, fProtocolFactory, newLoggingMiddleware()))
 
 	// Request to buy an album
 	album, err := storeClient.BuyAlbum(frugal.NewFContext("corr-id-1"), "ASIN-1290AIUBOA89", "ACCOUNT-12345")

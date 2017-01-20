@@ -84,9 +84,28 @@ func TestFrugalHandlerFuncHeaderError(t *testing.T) {
 
 	assert.Equal(w.Code, http.StatusBadRequest)
 	assert.Equal(
-		[]byte(fmt.Sprintf("%s header not an integer\n", payloadLimitHeader)),
-		w.Body.Bytes(),
+		fmt.Sprintf("%s header not an integer\n", payloadLimitHeader),
+		string(w.Body.Bytes()),
 	)
+}
+
+// Ensures that a 400 error is returned if the request body has less than 4
+// bytes.
+func TestFrugalHandlerFuncBadFrameError(t *testing.T) {
+	assert := assert.New(t)
+	w := httptest.NewRecorder()
+
+	r, err := http.NewRequest("POST", "fooUrl", nil)
+	assert.Nil(err)
+
+	mockProcessor := &mockFProcessorForHTTP{}
+	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
+	handler := NewFrugalHandlerFunc(mockProcessor, protocolFactory)
+
+	handler(w, r)
+
+	assert.Equal(w.Code, http.StatusBadRequest)
+	assert.Equal("Invalid request size 0\n", string(w.Body.Bytes()))
 }
 
 // Ensures that if there is an error reading the frame size out of the request
@@ -108,13 +127,13 @@ func TestFrugalHandlerFuncFrameSizeError(t *testing.T) {
 
 	assert.Equal(w.Code, http.StatusBadRequest)
 	assert.Equal(
-		[]byte(fmt.Sprintf("Could not read the frugal frame bytes %s\n", io.ErrUnexpectedEOF)),
-		w.Body.Bytes(),
+		fmt.Sprintf("Could not read the frugal frame bytes %s\n", io.ErrUnexpectedEOF),
+		string(w.Body.Bytes()),
 	)
 }
 
 // Ensures that processor errors are handled and routed back in the http
-// response
+// response as a 500 error.
 func TestFrugalHandlerFuncProcessorError(t *testing.T) {
 	assert := assert.New(t)
 	w := httptest.NewRecorder()
@@ -132,10 +151,10 @@ func TestFrugalHandlerFuncProcessorError(t *testing.T) {
 
 	handler(w, r)
 
-	assert.Equal(w.Code, http.StatusBadRequest)
+	assert.Equal(w.Code, http.StatusInternalServerError)
 	assert.Equal(
-		[]byte(fmt.Sprintf("Frugal request failed %s\n", processorErr)),
-		w.Body.Bytes(),
+		fmt.Sprintf("Error processing request: %s\n", processorErr),
+		string(w.Body.Bytes()),
 	)
 }
 
@@ -161,8 +180,8 @@ func TestFrugalHandlerFuncTooLargeError(t *testing.T) {
 
 	assert.Equal(w.Code, http.StatusRequestEntityTooLarge)
 	assert.Equal(
-		[]byte("Response size (10) larger than requested size (5)\n"),
-		w.Body.Bytes(),
+		"Response size (10) larger than requested size (5)\n",
+		string(w.Body.Bytes()),
 	)
 }
 
@@ -193,8 +212,8 @@ func TestFrugalHandlerFuncBase64WriteError(t *testing.T) {
 
 	assert.Equal(w.Code, http.StatusInternalServerError)
 	assert.Equal(
-		[]byte(fmt.Sprintf("Problem encoding frugal bytes to base64 %s\n", writeErr)),
-		w.Body.Bytes(),
+		fmt.Sprintf("Problem encoding frugal bytes to base64 %s\n", writeErr),
+		string(w.Body.Bytes()),
 	)
 
 	newEncoder = oldNewEncoder
@@ -227,8 +246,8 @@ func TestFrugalHandlerFuncBase64CloseError(t *testing.T) {
 
 	assert.Equal(w.Code, http.StatusInternalServerError)
 	assert.Equal(
-		[]byte(fmt.Sprintf("Problem encoding frugal bytes to base64 %s\n", closeErr)),
-		w.Body.Bytes(),
+		fmt.Sprintf("Problem encoding frugal bytes to base64 %s\n", closeErr),
+		string(w.Body.Bytes()),
 	)
 
 	newEncoder = oldNewEncoder
@@ -256,8 +275,8 @@ func TestFrugalHandlerFunc(t *testing.T) {
 	assert.Equal(w.Header().Get(contentTypeHeader), frugalContentType)
 	assert.Equal(w.Header().Get(contentTransferEncodingHeader), base64Encoding)
 	assert.Equal(
-		[]byte(base64.StdEncoding.EncodeToString(append([]byte{0, 0, 0, 4}, response...))),
-		w.Body.Bytes(),
+		base64.StdEncoding.EncodeToString(append([]byte{0, 0, 0, 4}, response...)),
+		string(w.Body.Bytes()),
 	)
 
 }
@@ -286,28 +305,21 @@ func TestHTTPTransportLifecycle(t *testing.T) {
 
 	// Instantiate http transport
 	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).Build().(*fHTTPTransport)
-	frameC := make(chan []byte, 1)
-	flushErr := fmt.Errorf("foo")
-	registry := &mockRegistry{
-		frameC: frameC,
-		err:    flushErr,
-	}
-	transport.registry = registry
 
 	// Open
 	assert.Nil(transport.Open())
 
+	// Create a context to use
+	ctx := NewFContext("")
+
 	// Flush before actually writing - make sure everything is fine
-	assert.Nil(transport.Send([]byte{0, 0, 0, 0}))
+	_, err := transport.Request(ctx, false, []byte{0, 0, 0, 0})
+	assert.Nil(err)
 
 	// Flush
-	assert.Equal(thrift.NewTTransportExceptionFromError(flushErr), transport.Send(framedRequestBytes))
-	select {
-	case actual := <-frameC:
-		assert.Equal(responseBytes, actual)
-	case <-time.After(time.Second):
-		assert.True(false)
-	}
+	result, err := transport.Request(ctx, false, framedRequestBytes)
+	assert.Nil(err)
+	assert.Equal(responseBytes, result.(*thrift.TMemoryBuffer).Bytes())
 
 	// Close
 	assert.Nil(transport.Close())
@@ -340,8 +352,12 @@ func TestHTTPTransportOneway(t *testing.T) {
 	// Open
 	assert.Nil(transport.Open())
 
+	// Create a context to use
+	ctx := NewFContext("")
+
 	// Flush
-	assert.Nil(transport.Send(requestBytes))
+	_, err := transport.Request(ctx, true, requestBytes)
+	assert.Nil(err)
 
 	// Make sure nothing is executed on the registry
 	select {
@@ -371,12 +387,15 @@ func TestHTTPTransportBadRequest(t *testing.T) {
 	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).Build()
 	assert.Nil(transport.Open())
 
+	// Create a context to use
+	ctx := NewFContext("")
+
 	// Flush
 	expectedErr := thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
 		"response errored with code 400 and message bad request bro")
-	actuaErr := transport.Send(requestBytes)
-	assert.Equal(actuaErr.(thrift.TTransportException).TypeId(), expectedErr.TypeId())
-	assert.Equal(actuaErr.(thrift.TTransportException).Error(), expectedErr.Error())
+	_, actualErr := transport.Request(ctx, false, requestBytes)
+	assert.Equal(actualErr.(thrift.TTransportException).TypeId(), expectedErr.TypeId())
+	assert.Equal(actualErr.(thrift.TTransportException).Error(), expectedErr.Error())
 
 	// Close
 	assert.Nil(transport.Close())
@@ -398,11 +417,14 @@ func TestHTTPTransportBadResponseData(t *testing.T) {
 	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).Build()
 	assert.Nil(transport.Open())
 
+	// Create a context to use
+	ctx := NewFContext("")
+
 	// Flush
 	expectedErr := thrift.NewTTransportExceptionFromError(errors.New("illegal base64 data at input byte 0"))
-	actuaErr := transport.Send(requestBytes)
-	assert.Equal(actuaErr.(thrift.TTransportException).TypeId(), expectedErr.TypeId())
-	assert.Equal(actuaErr.(thrift.TTransportException).Error(), expectedErr.Error())
+	_, actualErr := transport.Request(ctx, false, requestBytes)
+	assert.Equal(actualErr.(thrift.TTransportException).TypeId(), expectedErr.TypeId())
+	assert.Equal(actualErr.(thrift.TTransportException).Error(), expectedErr.Error())
 
 	// Close
 	assert.Nil(transport.Close())
@@ -425,8 +447,11 @@ func TestHTTPTransportRequestTooLarge(t *testing.T) {
 	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).WithRequestSizeLimit(10).Build()
 	assert.Nil(transport.Open())
 
+	// Create a context to use
+	ctx := NewFContext("")
+
 	// Write request
-	err := transport.Send(requestBytes)
+	_, err := transport.Request(ctx, false, requestBytes)
 
 	assert.Equal(err.(thrift.TTransportException).TypeId(), TTRANSPORT_REQUEST_TOO_LARGE)
 
@@ -452,9 +477,12 @@ func TestHTTPTransportResponseTooLarge(t *testing.T) {
 	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).WithResponseSizeLimit(10).Build()
 	assert.Nil(transport.Open())
 
+	// Create a context to use
+	ctx := NewFContext("")
+
 	// Flush
-	actuaErr := transport.Send(requestBytes)
-	assert.Equal(actuaErr.(thrift.TTransportException).TypeId(), TTRANSPORT_RESPONSE_TOO_LARGE)
+	_, actualErr := transport.Request(ctx, false, requestBytes)
+	assert.Equal(actualErr.(thrift.TTransportException).TypeId(), TTRANSPORT_RESPONSE_TOO_LARGE)
 
 	// Close
 	assert.Nil(transport.Close())
@@ -478,12 +506,15 @@ func TestHTTPTransportResponseNotEnoughData(t *testing.T) {
 	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).Build()
 	assert.Nil(transport.Open())
 
+	// Create a context to use
+	ctx := NewFContext("")
+
 	// Flush
 	expectedErr := thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
 		errors.New("frugal: invalid frame size"))
-	actuaErr := transport.Send(requestBytes)
-	assert.Equal(actuaErr.(thrift.TProtocolException).TypeId(), expectedErr.TypeId())
-	assert.Equal(actuaErr.(thrift.TProtocolException).Error(), expectedErr.Error())
+	_, actualErr := transport.Request(ctx, false, requestBytes)
+	assert.Equal(actualErr.(thrift.TProtocolException).TypeId(), expectedErr.TypeId())
+	assert.Equal(actualErr.(thrift.TProtocolException).Error(), expectedErr.Error())
 
 	// Close
 	assert.Nil(transport.Close())
@@ -507,14 +538,37 @@ func TestHTTPTransportResponseMissingFrameData(t *testing.T) {
 	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).Build()
 	assert.Nil(transport.Open())
 
+	// Create a context to use
+	ctx := NewFContext("")
+
 	// Flush
 	expectedErr := thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
 		errors.New("frugal: missing data"))
-	actuaErr := transport.Send(requestBytes)
-	assert.Equal(actuaErr.(thrift.TProtocolException).TypeId(), expectedErr.TypeId())
-	assert.Equal(actuaErr.(thrift.TProtocolException).Error(), expectedErr.Error())
+	_, actualErr := transport.Request(ctx, false, requestBytes)
+	assert.Equal(actualErr.(thrift.TProtocolException).TypeId(), expectedErr.TypeId())
+	assert.Equal(actualErr.(thrift.TProtocolException).Error(), expectedErr.Error())
 
 	// Close
+	assert.Nil(transport.Close())
+}
+
+// Ensures a timeout error is returned when the server doesn't respond
+func TestHTTPTransportResponseTimeout(t *testing.T) {
+	assert := assert.New(t)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(100 * time.Millisecond)
+	}))
+	defer ts.Close()
+
+	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).Build()
+	assert.Nil(transport.Open())
+
+	ctx := NewFContext("")
+	ctx.SetTimeout(20 * time.Millisecond)
+	_, actualErr := transport.Request(ctx, false, []byte{})
+	assert.Equal(actualErr.(thrift.TTransportException).TypeId(), thrift.TIMED_OUT)
+
 	assert.Nil(transport.Close())
 }
 
@@ -529,12 +583,15 @@ func TestHTTPTransportBadURL(t *testing.T) {
 	transport := NewFHTTPTransportBuilder(&http.Client{}, "nobody/home").Build()
 	assert.Nil(transport.Open())
 
+	// Create a context to use
+	ctx := NewFContext("")
+
 	// Flush
 	expectedErr := thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
 		"Post nobody/home: unsupported protocol scheme \"\"")
-	actuaErr := transport.Send(requestBytes)
-	assert.Equal(actuaErr.(thrift.TTransportException).TypeId(), expectedErr.TypeId())
-	assert.Equal(actuaErr.(thrift.TTransportException).Error(), expectedErr.Error())
+	_, actualErr := transport.Request(ctx, false, requestBytes)
+	assert.Equal(actualErr.(thrift.TTransportException).TypeId(), expectedErr.TypeId())
+	assert.Equal(actualErr.(thrift.TTransportException).Error(), expectedErr.Error())
 
 	// Close
 	assert.Nil(transport.Close())

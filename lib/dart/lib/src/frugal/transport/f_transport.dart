@@ -9,7 +9,6 @@ part of frugal.src.frugal;
 abstract class FTransport {
   MonitorRunner _monitor;
   StreamController _closeController = new StreamController.broadcast();
-  FRegistry _registry;
 
   /// Limits the size of requests to the server.
   /// No limit will be enforced if set to a non-positive value (i.e. <1).
@@ -17,8 +16,7 @@ abstract class FTransport {
 
   /// Create an [FTransport] with the optional [FRegistry] and
   /// [requestSizeLimit].
-  FTransport({FRegistry registry, this.requestSizeLimit})
-      : _registry = registry ?? new FRegistryImpl();
+  FTransport({this.requestSizeLimit});
 
   /// Listen to close events on the transport.
   Stream<Object> get onClose => _closeController.stream;
@@ -39,27 +37,32 @@ abstract class FTransport {
   /// Closes the transport.
   Future close([Error error]) => _signalClose(error);
 
-  /// Send the given framed frugal payload over the transport.
-  /// Throws [TTransportError] if the payload could not be sent.
-  Future send(Uint8List payload);
+  /// Send the given framed frugal payload over the transport and return a
+  /// future containing the response. Throws [TTransportError] if problems
+  /// are encountered with the request.
+  Future<TTransport> request(FContext ctx, Uint8List payload);
 
-  /// Register an [FAsyncCallback] to the given [FContext].
-  void register(FContext ctx, FAsyncCallback callback) {
-    _registry.register(ctx, callback);
-  }
-
-  /// Unregister any associated [FAsyncCallback] from the given [FContext].
-  void unregister(FContext ctx) {
-    _registry.unregister(ctx);
-  }
-
-  /// Execute a frugal frame (NOTE: this frame must include the frame size).
-  void executeFrame(Uint8List frame) {
-    _registry.execute(frame.sublist(4));
-  }
+  /// Send the given framed frugal payload over the transport and don't
+  /// expect a response.
+  Future<Null> oneway(FContext ctx, Uint8List payload);
 
   Future _signalClose(cause) async {
     _closeController.add(cause);
     await _monitor?.onClose(cause);
+  }
+
+  /// Checks if a transport is open and the payload is within the request size
+  /// limit.
+  void _preflightRequestCheck(Uint8List payload) {
+    if (!isOpen) {
+      throw new TTransportError(
+          TTransportErrorType.NOT_OPEN, 'transport not open');
+    }
+
+    if (requestSizeLimit != null &&
+        requestSizeLimit > 0 &&
+        payload.length > requestSizeLimit) {
+      throw new FMessageSizeError.request();
+    }
   }
 }

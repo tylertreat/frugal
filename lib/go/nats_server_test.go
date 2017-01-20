@@ -29,17 +29,24 @@ func TestFStatelessNatsServer(t *testing.T) {
 	defer server.Stop()
 
 	tr := NewFNatsTransport(conn, "foo", "bar").(*fNatsTransport)
-	r := &mockFRegistry{}
-	r.On("Execute", []byte{0, 0, 0, 3, 102, 111, 111}).Return(nil)
-	tr.registry = r
-
+	ctx := NewFContext("")
 	assert.Nil(t, tr.Open())
 
 	// Send a request.
-	message := []byte{0, 0, 0, 5, 1, 2, 3, 4, 5}
-	assert.Nil(t, tr.Send(message))
-	time.Sleep(50 * time.Millisecond)
-	r.AssertExpectations(t)
+	buffer := NewTMemoryOutputBuffer(0)
+	proto := protoFactory.GetProtocol(buffer)
+	proto.WriteRequestHeader(ctx)
+	proto.WriteBinary([]byte{1, 2, 3, 4, 5})
+	resultTrans, err := tr.Request(ctx, false, buffer.Bytes())
+	assert.Nil(t, err)
+
+	resultProto := protoFactory.GetProtocol(resultTrans)
+	ctx = NewFContext("")
+	err = resultProto.ReadResponseHeader(ctx)
+	assert.Nil(t, err)
+	resultBytes, err := resultProto.ReadBinary()
+	assert.Nil(t, err)
+	assert.Equal(t, "foo", string(resultBytes))
 }
 
 type processor struct {
@@ -47,7 +54,16 @@ type processor struct {
 }
 
 func (p *processor) Process(in, out *FProtocol) error {
-	assert.Equal(p.t, []byte{1, 2, 3, 4, 5}, in.Transport().(*thrift.TMemoryBuffer).Bytes())
+	ctx, err := in.ReadRequestHeader()
+	if err != nil {
+		return err
+	}
+	bytes, err := in.ReadBinary()
+	if err != nil {
+		return err
+	}
+	assert.Equal(p.t, []byte{1, 2, 3, 4, 5}, bytes)
+	out.WriteResponseHeader(ctx)
 	out.WriteString("foo")
 	return nil
 }
