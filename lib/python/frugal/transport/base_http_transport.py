@@ -63,7 +63,11 @@ class TBaseHttpTransport(TSynchronousTransport):
         self._wbuff.write(buf)
 
     def _get_headers_and_body(self):
-        """Return the request headers and body."""
+        """Return the request headers and body.
+
+        Returns:
+            headers dict and base64-encoded body string.
+        """
 
         data = self._wbuff.getvalue()
         self._wbuff = BytesIO()
