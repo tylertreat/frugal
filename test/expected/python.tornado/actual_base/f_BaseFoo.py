@@ -88,7 +88,6 @@ class Client(Iface):
         result = basePing_result()
         result.read(iprot)
         iprot.readMessageEnd()
-        raise gen.Return(None)
 
 class Processor(FBaseProcessor):
 

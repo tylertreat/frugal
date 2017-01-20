@@ -126,7 +126,6 @@ func (t *TornadoGenerator) generateClientMethod(method *parser.Method) string {
 		contents += tabtabtab + fmt.Sprintf("raise result.%s\n", err.Name)
 	}
 	if method.ReturnType == nil {
-		contents += tabtab + "raise gen.Return(None)\n"
 		return contents
 	}
 	contents += tabtab + "if result.success is not None:\n"

@@ -183,7 +183,6 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         result = Ping_result()
         result.read(iprot)
         iprot.readMessageEnd()
-        raise gen.Return(None)
     def blah(self, ctx, num, Str, event):
         """
         Blah the server.
