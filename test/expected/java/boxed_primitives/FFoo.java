@@ -177,7 +177,7 @@ public class FFoo {
 			Ping_args args = new Ping_args();
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, memoryBuffer.getWriteBytes());
 
 			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
@@ -215,7 +215,7 @@ public class FFoo {
 			args.setEvent(event);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, memoryBuffer.getWriteBytes());
 
 			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
@@ -262,7 +262,7 @@ public class FFoo {
 			args.setReq(req);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			this.transport.request(ctx, true, memoryBuffer.getWriteBytes());
+			this.transport.oneway(ctx, memoryBuffer.getWriteBytes());
 		}
 		public java.nio.ByteBuffer bin_method(FContext ctx, java.nio.ByteBuffer bin, String Str) throws TException, actual_base.java.api_exception {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
@@ -274,7 +274,7 @@ public class FFoo {
 			args.setStr(Str);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, memoryBuffer.getWriteBytes());
 
 			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
@@ -316,7 +316,7 @@ public class FFoo {
 			args.setReq_num(req_num);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, memoryBuffer.getWriteBytes());
 
 			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
@@ -354,7 +354,7 @@ public class FFoo {
 			args.setSet_type(set_type);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, memoryBuffer.getWriteBytes());
 
 			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
@@ -390,7 +390,7 @@ public class FFoo {
 			getThing_args args = new getThing_args();
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, memoryBuffer.getWriteBytes());
 
 			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
@@ -426,7 +426,7 @@ public class FFoo {
 			getMyInt_args args = new getMyInt_args();
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, memoryBuffer.getWriteBytes());
 
 			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);
@@ -463,7 +463,7 @@ public class FFoo {
 			args.setA(a);
 			args.write(oprot);
 			oprot.writeMessageEnd();
-			TTransport response = this.transport.request(ctx, false, memoryBuffer.getWriteBytes());
+			TTransport response = this.transport.request(ctx, memoryBuffer.getWriteBytes());
 
 			FProtocol iprot = this.protocolFactory.getProtocol(response);
 			iprot.readResponseHeader(ctx);

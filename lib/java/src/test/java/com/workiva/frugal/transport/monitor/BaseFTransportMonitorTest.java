@@ -251,8 +251,12 @@ public class BaseFTransportMonitorTest {
             signalClose(cause);
         }
 
+        public void oneway(FContext context, byte[] payload) throws TTransportException {
+
+        }
+
         @Override
-        public TTransport request(FContext context, boolean oneway, byte[] payload) throws TTransportException {
+        public TTransport request(FContext context, byte[] payload) throws TTransportException {
             return null;
         }
 

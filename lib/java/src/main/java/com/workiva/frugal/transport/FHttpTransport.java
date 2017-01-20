@@ -135,13 +135,20 @@ public class FHttpTransport extends FTransport {
      * @throws TTransportException if there was an error writing out data.
      */
     @Override
-    public TTransport request(FContext context, boolean oneway, byte[] payload) throws TTransportException {
-        int requestSizeLimit = getRequestSizeLimit();
-        if (requestSizeLimit > 0 && payload.length > requestSizeLimit) {
-            throw FMessageSizeException.request(
-                    String.format("Message exceeds %d bytes, was %d bytes",
-                            requestSizeLimit, payload.length));
-        }
+    public void oneway(FContext context, byte[] payload) throws TTransportException {
+        preflightRequestCheck(payload.length);
+
+        makeRequest(context, payload);
+    }
+
+    /**
+     * Sends the framed frugal payload over HTTP.
+     *
+     * @throws TTransportException if there was an error writing out data.
+     */
+    @Override
+    public TTransport request(FContext context, byte[] payload) throws TTransportException {
+        preflightRequestCheck(payload.length);
 
         byte[] response = makeRequest(context, payload);
 

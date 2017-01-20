@@ -1465,7 +1465,6 @@ func (g *Generator) generateClient(service *parser.Service) string {
 }
 
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
-	nameTitle := strings.Title(method.Name)
 	nameLower := parser.LowercaseFirstLetter(method.Name)
 
 	contents := ""
@@ -1483,22 +1482,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += fmt.Sprintf(tab+"Future%s _%s(frugal.FContext ctx%s) async {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
 
-	// No need to register for oneway
 	indent := tabtab
-	if !method.Oneway {
-		contents += tabtab + "var controller = new StreamController();\n"
-		contents += tabtab + "var closeSubscription = _transport.onClose.listen((_) {\n"
-		contents += tabtabtab + "controller.addError(new thrift.TTransportError(\n"
-		contents += tabtabtabtab + "thrift.TTransportErrorType.NOT_OPEN,\n"
-		contents += tabtabtabtab + "\"Transport closed before request completed.\"));\n"
-		contents += tabtabtab + "});\n"
-		contents += fmt.Sprintf(tabtab+"_transport.register(ctx, _recv%sHandler(ctx, controller));\n", nameTitle)
-	}
-
-	if !method.Oneway {
-		contents += tabtab + "try {\n"
-		indent = tabtabtab
-	}
 
 	contents += indent + "var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);\n"
 	contents += indent + "var oprot = _protocolFactory.getProtocol(memoryBuffer);\n"
@@ -1516,72 +1500,45 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 	contents += indent + "args.write(oprot);\n"
 	contents += indent + "oprot.writeMessageEnd();\n"
-	contents += indent + "await _transport.send(memoryBuffer.writeBytes);\n"
 
-	// Nothing more to do for oneway
 	if method.Oneway {
+		contents += indent + "await _transport.oneway(ctx, memoryBuffer.writeBytes);\n"
 		contents += tab + "}\n\n"
 		return contents
 	}
 
+	contents += indent + "var response = await _transport.request(ctx, memoryBuffer.writeBytes);\n"
 	contents += "\n"
 
-	contents += tabtabtab + "return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {\n"
-	contents += fmt.Sprintf(tabtabtabtab+"throw new frugal.FTimeoutError.withMessage(\"%s.%s timed out after ${ctx.timeout}\");\n",
-		service.Name, method.Name)
-	contents += tabtabtab + "});\n"
-	contents += tabtab + "} finally {\n"
-	contents += tabtabtab + "closeSubscription.cancel();\n"
-	contents += tabtabtab + "_transport.unregister(ctx);\n"
-	contents += tabtab + "}\n"
-	contents += tab + "}\n\n"
-	if method.Oneway {
-		return contents
-	}
+	contents += tabtab + "var iprot = _protocolFactory.getProtocol(response);\n"
+	contents += tabtab + "iprot.readResponseHeader(ctx);\n"
+	contents += tabtab + "thrift.TMessage msg = iprot.readMessageBegin();\n"
+	contents += tabtab + "if (msg.type == thrift.TMessageType.EXCEPTION) {\n"
+	contents += tabtabtab + "thrift.TApplicationError error = thrift.TApplicationError.read(iprot);\n"
+	contents += tabtabtab + "iprot.readMessageEnd();\n"
+	contents += tabtabtab + "if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {\n"
+	contents += tabtabtabtab + "throw new frugal.FMessageSizeError.response(message: error.message);\n"
+	contents += tabtabtab + "}\n"
+	contents += tabtabtab + "throw error;\n"
+	contents += tabtab + "}\n\n"
 
-	// Generate the callback
-	contents += fmt.Sprintf(tab+"frugal.FAsyncCallback _recv%sHandler(frugal.FContext ctx, StreamController controller) {\n", nameTitle)
-	contents += fmt.Sprintf(tabtab+"%sCallback(thrift.TTransport transport) {\n", nameLower)
-	contents += tabtabtab + "try {\n"
-	contents += tabtabtabtab + "var iprot = _protocolFactory.getProtocol(transport);\n"
-	contents += tabtabtabtab + "iprot.readResponseHeader(ctx);\n"
-	contents += tabtabtabtab + "thrift.TMessage msg = iprot.readMessageBegin();\n"
-	contents += tabtabtabtab + "if (msg.type == thrift.TMessageType.EXCEPTION) {\n"
-	contents += tabtabtabtabtab + "thrift.TApplicationError error = thrift.TApplicationError.read(iprot);\n"
-	contents += tabtabtabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtabtabtab + "if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {\n"
-	contents += tabtabtabtabtabtab + "controller.addError(new frugal.FMessageSizeError.response(message: error.message));\n"
-	contents += tabtabtabtabtabtab + "return;\n"
-	contents += tabtabtabtabtab + "}\n"
-	contents += tabtabtabtabtab + "controller.addError(error);\n"
-	contents += tabtabtabtabtab + "return;\n"
-	contents += tabtabtabtab + "}\n\n"
-
-	contents += fmt.Sprintf(tabtabtabtab+"%s_result result = new %s_result();\n", method.Name, method.Name)
-	contents += tabtabtabtab + "result.read(iprot);\n"
-	contents += tabtabtabtab + "iprot.readMessageEnd();\n"
+	contents += fmt.Sprintf(tabtab+"%s_result result = new %s_result();\n", method.Name, method.Name)
+	contents += tabtab + "result.read(iprot);\n"
+	contents += tabtab + "iprot.readMessageEnd();\n"
 	if method.ReturnType == nil {
 		contents += g.generateErrors(method)
-		contents += tabtabtabtab + "controller.add(null);\n"
 	} else {
-		contents += tabtabtabtab + "if (result.isSetSuccess()) {\n"
-		contents += tabtabtabtabtab + "controller.add(result.success);\n"
-		contents += tabtabtabtabtab + "return;\n"
-		contents += tabtabtabtab + "}\n\n"
+		contents += tabtab + "if (result.isSetSuccess()) {\n"
+		contents += tabtabtab + "return result.success;\n"
+		contents += tabtab + "}\n\n"
 		contents += g.generateErrors(method)
-		contents += tabtabtabtab + "throw new thrift.TApplicationError(\n"
-		contents += fmt.Sprintf(tabtabtabtabtab+"thrift.TApplicationErrorType.MISSING_RESULT, "+
+		contents += tabtab + "throw new thrift.TApplicationError(\n"
+		contents += fmt.Sprintf(tabtabtab+"thrift.TApplicationErrorType.MISSING_RESULT, "+
 			"\"%s failed: unknown result\"\n",
 			nameLower)
-		contents += tabtabtabtab + ");\n"
+		contents += tabtab + ");\n"
 	}
-	contents += tabtabtab + "} catch(e) {\n"
-	contents += tabtabtabtab + "controller.addError(e);\n"
-	contents += tabtabtabtab + "rethrow;\n"
-	contents += tabtabtab + "}\n"
-	contents += tabtab + "}\n"
-	contents += fmt.Sprintf(tabtab+"return %sCallback;\n", nameLower)
-	contents += tab + "}\n\n"
+	contents += tab + "}\n"
 
 	return contents
 }
@@ -1612,10 +1569,9 @@ func (g *Generator) generateInputArgsWithoutTypes(args []*parser.Field) string {
 func (g *Generator) generateErrors(method *parser.Method) string {
 	contents := ""
 	for _, exp := range method.Exceptions {
-		contents += fmt.Sprintf(tabtabtabtab+"if (result.%s != null) {\n", parser.LowercaseFirstLetter(exp.Name))
-		contents += fmt.Sprintf(tabtabtabtabtab+"controller.addError(result.%s);\n", parser.LowercaseFirstLetter(exp.Name))
-		contents += tabtabtabtabtab + "return;\n"
-		contents += tabtabtabtab + "}\n"
+		contents += fmt.Sprintf(tabtab+"if (result.%s != null) {\n", parser.LowercaseFirstLetter(exp.Name))
+		contents += fmt.Sprintf(tabtabtab+"throw result.%s;\n", parser.LowercaseFirstLetter(exp.Name))
+		contents += tabtab + "}\n"
 	}
 	return contents
 }

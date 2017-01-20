@@ -37,61 +37,31 @@ class FBaseFooClient implements FBaseFoo {
   }
 
   Future _basePing(frugal.FContext ctx) async {
-    var controller = new StreamController();
-    var closeSubscription = _transport.onClose.listen((_) {
-      controller.addError(new thrift.TTransportError(
-        thrift.TTransportErrorType.NOT_OPEN,
-        "Transport closed before request completed."));
-      });
-    _transport.register(ctx, _recvBasePingHandler(ctx, controller));
-    try {
-      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryBuffer);
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("basePing", thrift.TMessageType.CALL, 0));
-      basePing_args args = new basePing_args();
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await _transport.send(memoryBuffer.writeBytes);
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+    var oprot = _protocolFactory.getProtocol(memoryBuffer);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(new thrift.TMessage("basePing", thrift.TMessageType.CALL, 0));
+    basePing_args args = new basePing_args();
+    args.write(oprot);
+    oprot.writeMessageEnd();
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
-      return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
-        throw new frugal.FTimeoutError.withMessage("BaseFoo.basePing timed out after ${ctx.timeout}");
-      });
-    } finally {
-      closeSubscription.cancel();
-      _transport.unregister(ctx);
-    }
-  }
-
-  frugal.FAsyncCallback _recvBasePingHandler(frugal.FContext ctx, StreamController controller) {
-    basePingCallback(thrift.TTransport transport) {
-      try {
-        var iprot = _protocolFactory.getProtocol(transport);
-        iprot.readResponseHeader(ctx);
-        thrift.TMessage msg = iprot.readMessageBegin();
-        if (msg.type == thrift.TMessageType.EXCEPTION) {
-          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
-          iprot.readMessageEnd();
-          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
-            return;
-          }
-          controller.addError(error);
-          return;
-        }
-
-        basePing_result result = new basePing_result();
-        result.read(iprot);
-        iprot.readMessageEnd();
-        controller.add(null);
-      } catch(e) {
-        controller.addError(e);
-        rethrow;
+    var iprot = _protocolFactory.getProtocol(response);
+    iprot.readResponseHeader(ctx);
+    thrift.TMessage msg = iprot.readMessageBegin();
+    if (msg.type == thrift.TMessageType.EXCEPTION) {
+      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+      iprot.readMessageEnd();
+      if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+        throw new frugal.FMessageSizeError.response(message: error.message);
       }
+      throw error;
     }
-    return basePingCallback;
-  }
 
+    basePing_result result = new basePing_result();
+    result.read(iprot);
+    iprot.readMessageEnd();
+  }
 }
 
 class basePing_args implements thrift.TBase {

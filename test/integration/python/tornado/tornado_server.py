@@ -71,7 +71,7 @@ def main():
     port = args.port
 
     handler = FrugalTestHandler()
-    subject = args.port
+    subject = "frugal.*.*.{}".format(args.port)
     processor = Processor(handler)
 
     if args.transport_type == "stateless":

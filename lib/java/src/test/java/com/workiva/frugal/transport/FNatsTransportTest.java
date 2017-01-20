@@ -115,6 +115,6 @@ public class FNatsTransportTest {
     @Test(expected = TTransportException.class)
     public void testRequest_notOpen() throws TTransportException {
         when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
-        transport.request(new FContext(), false, "helloworld".getBytes());
+        transport.request(new FContext(), "helloworld".getBytes());
     }
 }

@@ -5,10 +5,9 @@ import com.workiva.frugal.protocol.HeaderUtils;
 import com.workiva.frugal.util.ProtocolUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.mockito.invocation.InvocationOnMock;
 
 import java.io.UnsupportedEncodingException;
@@ -26,7 +25,6 @@ import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -39,7 +37,6 @@ import static org.mockito.Mockito.verify;
 /**
  * Tests for {@link FTransport}.
  */
-@RunWith(JUnit4.class)
 public class FAsyncTransportTest {
 
     private FAsyncTransportPayloadCapture transport;
@@ -62,6 +59,11 @@ public class FAsyncTransportTest {
         transport = new FAsyncTransportPayloadCapture();
     }
 
+    @After
+    public void tearDown() throws Exception {
+        transport.close();
+    }
+
     /**
      * Ensures request registers context, calls RequestFlusher, returns response, and finally unregisters context.
      */
@@ -69,6 +71,7 @@ public class FAsyncTransportTest {
     public void testRequest() throws TException, UnsupportedEncodingException {
         Map<Long, BlockingQueue<byte[]>> mockMap = mock(Map.class);
         transport.queueMap = mockMap;
+        transport.open();
 
         FContext context = new FContext();
         byte[] expectedResponse = FAsyncTransportTest.mockFrame(context);
@@ -79,7 +82,7 @@ public class FAsyncTransportTest {
         }).when(mockMap).put(eq(FAsyncTransport.getOpId(context)), any());
 
         byte[] request = "hello world".getBytes();
-        assertArrayEquals(expectedResponse, transport.request(context, false, request).getBuffer());
+        assertArrayEquals(expectedResponse, transport.request(context, request).getBuffer());
         assertArrayEquals(request, transport.payloads.get(0));
     }
 
@@ -87,14 +90,15 @@ public class FAsyncTransportTest {
      * Ensures oneway request calls RequestFlusher and returns null.
      */
     @Test
-    public void testRequestOneway() throws TTransportException {
+    public void testOneway() throws TTransportException {
         Map<Long, BlockingQueue<byte[]>> mockMap = mock(Map.class);
         transport.queueMap = mockMap;
 
         FContext context = new FContext();
         byte[] request = "hello world".getBytes();
-        assertNull(transport.request(context, true, request));
-
+        transport.open();
+        transport.oneway(context, request);
+        transport.close();
         assertArrayEquals(request, transport.payloads.get(0));
 
         verify(mockMap, times(0)).put(any(), any());
@@ -107,7 +111,8 @@ public class FAsyncTransportTest {
     public void testRequestTimeout() throws TTransportException {
         FContext context = new FContext();
         context.setTimeout(10);
-        transport.request(context, false, "hello world".getBytes());
+        transport.open();
+        transport.request(context, "hello world".getBytes());
     }
 
     /**
@@ -117,6 +122,7 @@ public class FAsyncTransportTest {
     public void testRequestPoisonPill() throws TTransportException {
         Map<Long, BlockingQueue<byte[]>> mockMap = mock(Map.class);
         transport.queueMap = mockMap;
+        transport.open();
 
         FContext context = new FContext();
         doAnswer((InvocationOnMock invocationOnMock) -> {
@@ -124,7 +130,7 @@ public class FAsyncTransportTest {
             queue.put(FAsyncTransport.POISON_PILL);
             return null;
         }).when(mockMap).put(eq(FAsyncTransport.getOpId(context)), any());
-        transport.request(context, false, "hello world".getBytes());
+        transport.request(context, "hello world".getBytes());
     }
 
     /**
@@ -137,9 +143,10 @@ public class FAsyncTransportTest {
 
         // when
         transport.queueMap.put(FAsyncTransport.getOpId(context), new ArrayBlockingQueue<>(1));
+        transport.open();
 
         // then (exception)
-        transport.request(context, false, "crap".getBytes());
+        transport.request(context, "crap".getBytes());
     }
 
     @Test
@@ -150,13 +157,14 @@ public class FAsyncTransportTest {
         FContext context = new FContext();
         final BlockingQueue<Long> opIds = new ArrayBlockingQueue<>(1);
         FAsyncTransportOpIdQueue tr = new FAsyncTransportOpIdQueue(opIds);
+        tr.open();
 
         ThreadPoolExecutor executorService = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         executorService.execute(() -> {
             try {
                 byte[] request = new byte[4];
                 ProtocolUtils.writeInt((int) FAsyncTransport.getOpId(context), request, 0);
-                tr.request(context, false, request);
+                tr.request(context, request);
             } catch (TTransportException e) {
                 if (e.getType() != TTransportException.NOT_OPEN) {
                     fail();
@@ -200,6 +208,7 @@ public class FAsyncTransportTest {
         final BlockingQueue<Long> opIds = new ArrayBlockingQueue<>(nRequests); // Store all operations requested
 
         FAsyncTransportOpIdQueue tr = new FAsyncTransportOpIdQueue(opIds);
+        tr.open();
 
         class Producer implements Runnable {
             @Override
@@ -231,7 +240,7 @@ public class FAsyncTransportTest {
                 try {
                     byte[] request = new byte[4];
                     ProtocolUtils.writeInt((int) FAsyncTransport.getOpId(context), request, 0);
-                    tr.request(context, false, request);
+                    tr.request(context, request);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -280,7 +289,8 @@ public class FAsyncTransportTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
+        // close the transport
+        tr.close();
     }
 
     /**

@@ -23,7 +23,7 @@ class FHttpTransport extends FTransport {
   Map<String, String> _headers;
 
   /// Create an [FHttpTransport] instance with the given w_transport [Client],
-  /// uri, and optional size restrictions, headers, and [FRegistry].
+  /// uri, and optional size restrictions, and headers.
   ///
   /// If specifying headers, note that the
   ///   * content-type
@@ -34,9 +34,8 @@ class FHttpTransport extends FTransport {
   FHttpTransport(this.client, this.uri,
       {int requestSizeLimit: 0,
       this.responseSizeLimit: 0,
-      Map<String, String> additionalHeaders,
-      FRegistry registry})
-      : super(registry: registry, requestSizeLimit: requestSizeLimit) {
+      Map<String, String> additionalHeaders})
+      : super(requestSizeLimit: requestSizeLimit) {
     _headers = additionalHeaders ?? {};
     _headers['content-type'] = 'application/x-frugal';
     _headers['content-transfer-encoding'] = 'base64';
@@ -56,10 +55,13 @@ class FHttpTransport extends FTransport {
   Future close([Error error]) => new Future.value();
 
   @override
-  Future send(Uint8List payload) async {
-    if (requestSizeLimit > 0 && payload.length > requestSizeLimit) {
-      throw new FMessageSizeError.request();
-    }
+  Future<Null> oneway(FContext ctx, Uint8List payload) async {
+    await request(ctx, payload);
+  }
+
+  @override
+  Future<TTransport> request(FContext ctx, Uint8List payload) async {
+    _preflightRequestCheck(payload);
 
     // Encode request payload
     var requestBody = BASE64.encode(payload);
@@ -73,7 +75,7 @@ class FHttpTransport extends FTransport {
     // Attempt the request
     wt.Response response;
     try {
-      response = await request.post();
+      response = await request.post().timeout(ctx.timeout);
     } on StateError catch (ex) {
       throw new TTransportError(
           TTransportErrorType.UNKNOWN, 'Malformed request ${ex.toString()}');
@@ -89,6 +91,9 @@ class FHttpTransport extends FTransport {
         throw new FMessageSizeError.response();
       }
       throw new TTransportError(TTransportErrorType.UNKNOWN, ex.message);
+    } on TimeoutException catch (_) {
+      throw new TTransportError(TTransportErrorType.TIMED_OUT,
+          "http request timed out after ${ctx.timeout}");
     }
 
     // Attempt to decode the response payload
@@ -113,9 +118,9 @@ class FHttpTransport extends FTransport {
         throw new TTransportError(
             TTransportErrorType.UNKNOWN, "invalid frame size");
       }
-      return;
+      return null;
     }
 
-    executeFrame(data);
+    return new TMemoryTransport.fromUint8List(data.sublist(4));
   }
 }

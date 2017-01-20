@@ -5,7 +5,15 @@ import 'package:frugal/frugal.dart';
 import 'package:test/test.dart';
 import 'package:thrift/thrift.dart';
 import 'package:mockito/mockito.dart';
-import 'f_transport_test.dart' show MockFRegistry, MockTransportMonitor;
+import 'f_transport_test.dart' show MockTransportMonitor;
+
+Uint8List mockFrame(FContext ctx, String message) {
+  TMemoryOutputBuffer trans = new TMemoryOutputBuffer();
+  FProtocol prot = new FProtocol(new TBinaryProtocol(trans));
+  prot.writeRequestHeader(ctx);
+  prot.writeString(message);
+  return trans.writeBytes;
+}
 
 void main() {
   group('FAdapterTransport', () {
@@ -14,8 +22,7 @@ void main() {
     StreamController<Uint8List> messageStream;
     MockSocket socket;
     MockSocketTransport socketTransport;
-    FTransport transport;
-    MockFRegistry registry;
+    FAdapterTransport transport;
 
     setUp(() {
       stateStream = new StreamController.broadcast();
@@ -28,44 +35,88 @@ void main() {
       when(socket.onMessage).thenReturn(messageStream.stream);
       socketTransport = new MockSocketTransport();
       when(socketTransport.socket).thenReturn(socket);
-      registry = new MockFRegistry();
-      transport = new FAdapterTransport(socketTransport, registry: registry);
+      transport = new FAdapterTransport(socketTransport);
     });
 
-    test('test opening transport opens and listens to the socket', () async {
-      // Open the transport
+    test('oneway happy path', () async {
       when(socket.isClosed).thenReturn(true);
       when(socket.open()).thenReturn(new Future.value());
       await transport.open();
       verify(socket.open()).called(1);
 
-      // Initialize the registry
-      registry.initCompleter();
+      FContext reqCtx = new FContext();
+      var frame = mockFrame(reqCtx, "request");
 
-      // Add a message to the socket
-      messageStream.add(new Uint8List.fromList([0, 0, 0, 4, 1, 2, 3, 4]));
-      await registry.executeCompleter.future.timeout(new Duration(seconds: 1));
-      expect(registry.data[0], equals(new Uint8List.fromList([1, 2, 3, 4])));
+      await transport.oneway(reqCtx, frame);
+      verify(socket.send(frame)).called(1);
     });
 
-    test('test transport sends properly', () async {
-      // flush transport before opening
-      var framedBuffer = new Uint8List.fromList([0, 0, 0, 4, 1, 2, 3, 4]);
-      expect(transport.send(framedBuffer),
-          throwsA(new isInstanceOf<TTransportError>()));
-
-      // Open the transport
+    test('requests happy path', () async {
       when(socket.isClosed).thenReturn(true);
       when(socket.open()).thenReturn(new Future.value());
       await transport.open();
       verify(socket.open()).called(1);
 
-      // Initialize the registry
-      registry.initCompleter();
+      FContext reqCtx = new FContext();
+      var frame = mockFrame(reqCtx, "request");
 
-      // Write to/flush transport
-      await transport.send(framedBuffer);
-      verify(socket.send(framedBuffer)).called(1);
+      var respFrame = mockFrame(reqCtx, "response");
+
+      when(socket.send(frame)).thenAnswer((_) {
+        messageStream.add(respFrame);
+      });
+
+      var response = await transport.request(reqCtx, frame) as TMemoryTransport;
+      expect(response.buffer, respFrame.sublist(4));
+      verify(socket.send(frame)).called(1);
+    });
+
+    test('request transport not open', () async {
+      try {
+        await transport.request(null, null);
+        fail('Should have thrown an exception');
+      } on TTransportError catch (e) {
+        expect(e.type, TTransportErrorType.NOT_OPEN);
+      }
+    });
+
+    test('requests time out without a response', () async {
+      when(socket.isClosed).thenReturn(true);
+      when(socket.open()).thenReturn(new Future.value());
+      await transport.open();
+      verify(socket.open()).called(1);
+
+      FContext ctx = new FContext();
+      ctx.timeout = new Duration(milliseconds: 50);
+      var frame = mockFrame(ctx, 'request');
+
+      try {
+        await transport.request(ctx, frame);
+        fail('Should have thrown an exception');
+      } on TTransportError catch (e) {
+        expect(e.type, TTransportErrorType.TIMED_OUT);
+      }
+
+      verify(socket.send(frame)).called(1);
+    });
+
+    test('request is cancelled if the transport is closed', () async {
+      when(socket.isClosed).thenReturn(true);
+      when(socket.open()).thenReturn(new Future.value());
+      await transport.open();
+      verify(socket.open()).called(1);
+
+      FContext ctx = new FContext();
+      var frame = mockFrame(ctx, 'request');
+      Future<TTransport> requestFuture = transport.request(ctx, frame);
+      await transport.close();
+
+      try {
+        await requestFuture;
+        fail('Should have thrown an exception');
+      } on TTransportError catch (e) {
+        expect(e.type, TTransportErrorType.NOT_OPEN);
+      }
     });
 
     test('test socket error triggers transport close', () async {
@@ -103,34 +154,6 @@ void main() {
       });
       await monitorCompleter.future.timeout(timeout);
       expect(transport.isOpen, equals(true));
-    });
-
-    test('test registry error triggers transport close', () async {
-      // Open the transport
-      when(socket.isClosed).thenReturn(true);
-      when(socket.open()).thenReturn(new Future.value());
-      await transport.open();
-      expect(transport.isOpen, equals(true));
-
-      // Kill the transport with the registry failing
-      registry.initCompleter();
-      var err = new FError();
-      registry.executeError = err;
-      var closeCompleter = new Completer();
-      transport.onClose.listen((e) {
-        closeCompleter.complete(e);
-      });
-
-      // Make sure socket gets closed
-      when(socket.open()).thenReturn(new Future.value());
-      messageStream.add(new Uint8List.fromList([0, 0, 0, 4, 1, 2, 3, 4]));
-      var timeout = new Duration(seconds: 1);
-      await registry.executeCompleter.future.timeout(timeout);
-      expect(registry.data[0], equals(new Uint8List.fromList([1, 2, 3, 4])));
-
-      // Make sure the transport was closed with the correct error
-      expect(await closeCompleter.future.timeout(timeout), equals(err));
-      expect(transport.isOpen, equals(false));
     });
   });
 }

@@ -11,10 +11,7 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -26,7 +23,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,7 +32,6 @@ import static org.mockito.Mockito.when;
 /**
  * Tests for {@link FSubscriberTransport}.
  */
-@RunWith(JUnit4.class)
 public class FNatsSubscriberTransportTest {
 
     private FNatsSubscriberTransport transport;
@@ -68,7 +65,7 @@ public class FNatsSubscriberTransportTest {
         ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<MessageHandler> handlerCaptor = ArgumentCaptor.forClass(MessageHandler.class);
 
-        when(conn.subscribe(topicCaptor.capture(), (String) Matchers.isNull(), handlerCaptor.capture()))
+        when(conn.subscribe(topicCaptor.capture(), isNull(), handlerCaptor.capture()))
                 .thenReturn(mockSub);
 
         Handler handler = new Handler();

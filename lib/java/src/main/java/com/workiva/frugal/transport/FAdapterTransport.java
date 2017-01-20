@@ -113,9 +113,7 @@ public class FAdapterTransport extends FAsyncTransport {
 
     @Override
     protected void flush(byte[] payload) throws TTransportException {
-        if (!isOpen()) {
-            throw new TTransportException(TTransportException.NOT_OPEN);
-        }
+
         // We need to write to the wrapped transport, not the framed transport, since
         // data given to request is already framed.
         transport.write(payload);
