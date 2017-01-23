@@ -69,7 +69,7 @@ func (f *FBaseFooClient) basePing(ctx frugal.FContext) (err error) {
 		return
 	}
 	var resultTransport thrift.TTransport
-	resultTransport, err = f.transport.Request(ctx, false, buffer.Bytes())
+	resultTransport, err = f.transport.Request(ctx, buffer.Bytes())
 	if err != nil {
 		return
 	}
