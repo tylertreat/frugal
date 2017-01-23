@@ -72,7 +72,7 @@ func (f *FMyServiceClient) getItem(ctx frugal.FContext) (r *vendor_namespace.Ite
 		return
 	}
 	var resultTransport thrift.TTransport
-	resultTransport, err = f.transport.Request(ctx, false, buffer.Bytes())
+	resultTransport, err = f.transport.Request(ctx, buffer.Bytes())
 	if err != nil {
 		return
 	}
