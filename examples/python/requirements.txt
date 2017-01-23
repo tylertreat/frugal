@@ -1,1 +1,1 @@
-frugal==2.0.0rc7
+frugal==2.0.0rc8
