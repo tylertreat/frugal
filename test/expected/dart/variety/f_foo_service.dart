@@ -74,140 +74,78 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   }
 
   Future _ping(frugal.FContext ctx) async {
-    var controller = new StreamController();
-    var closeSubscription = _transport.onClose.listen((_) {
-      controller.addError(new thrift.TTransportError(
-        thrift.TTransportErrorType.NOT_OPEN,
-        "Transport closed before request completed."));
-      });
-    _transport.register(ctx, _recvPingHandler(ctx, controller));
-    try {
-      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryBuffer);
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
-      Ping_args args = new Ping_args();
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await _transport.send(memoryBuffer.writeBytes);
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+    var oprot = _protocolFactory.getProtocol(memoryBuffer);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(new thrift.TMessage("ping", thrift.TMessageType.CALL, 0));
+    Ping_args args = new Ping_args();
+    args.write(oprot);
+    oprot.writeMessageEnd();
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
-      return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
-        throw new frugal.FTimeoutError.withMessage("Foo.Ping timed out after ${ctx.timeout}");
-      });
-    } finally {
-      closeSubscription.cancel();
-      _transport.unregister(ctx);
-    }
-  }
-
-  frugal.FAsyncCallback _recvPingHandler(frugal.FContext ctx, StreamController controller) {
-    pingCallback(thrift.TTransport transport) {
-      try {
-        var iprot = _protocolFactory.getProtocol(transport);
-        iprot.readResponseHeader(ctx);
-        thrift.TMessage msg = iprot.readMessageBegin();
-        if (msg.type == thrift.TMessageType.EXCEPTION) {
-          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
-          iprot.readMessageEnd();
-          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
-            return;
-          }
-          controller.addError(error);
-          return;
-        }
-
-        Ping_result result = new Ping_result();
-        result.read(iprot);
-        iprot.readMessageEnd();
-        controller.add(null);
-      } catch(e) {
-        controller.addError(e);
-        rethrow;
+    var iprot = _protocolFactory.getProtocol(response);
+    iprot.readResponseHeader(ctx);
+    thrift.TMessage msg = iprot.readMessageBegin();
+    if (msg.type == thrift.TMessageType.EXCEPTION) {
+      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+      iprot.readMessageEnd();
+      if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+        throw new frugal.FMessageSizeError.response(message: error.message);
       }
+      throw error;
     }
-    return pingCallback;
-  }
 
+    Ping_result result = new Ping_result();
+    result.read(iprot);
+    iprot.readMessageEnd();
+  }
   /// Blah the server.
   Future<int> blah(frugal.FContext ctx, int num, String str, t_variety.Event event) {
     return this._methods['blah']([ctx, num, str, event]) as Future<int>;
   }
 
   Future<int> _blah(frugal.FContext ctx, int num, String str, t_variety.Event event) async {
-    var controller = new StreamController();
-    var closeSubscription = _transport.onClose.listen((_) {
-      controller.addError(new thrift.TTransportError(
-        thrift.TTransportErrorType.NOT_OPEN,
-        "Transport closed before request completed."));
-      });
-    _transport.register(ctx, _recvBlahHandler(ctx, controller));
-    try {
-      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryBuffer);
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("blah", thrift.TMessageType.CALL, 0));
-      blah_args args = new blah_args();
-      args.num = num;
-      args.str = str;
-      args.event = event;
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await _transport.send(memoryBuffer.writeBytes);
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+    var oprot = _protocolFactory.getProtocol(memoryBuffer);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(new thrift.TMessage("blah", thrift.TMessageType.CALL, 0));
+    blah_args args = new blah_args();
+    args.num = num;
+    args.str = str;
+    args.event = event;
+    args.write(oprot);
+    oprot.writeMessageEnd();
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
-      return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
-        throw new frugal.FTimeoutError.withMessage("Foo.blah timed out after ${ctx.timeout}");
-      });
-    } finally {
-      closeSubscription.cancel();
-      _transport.unregister(ctx);
-    }
-  }
-
-  frugal.FAsyncCallback _recvBlahHandler(frugal.FContext ctx, StreamController controller) {
-    blahCallback(thrift.TTransport transport) {
-      try {
-        var iprot = _protocolFactory.getProtocol(transport);
-        iprot.readResponseHeader(ctx);
-        thrift.TMessage msg = iprot.readMessageBegin();
-        if (msg.type == thrift.TMessageType.EXCEPTION) {
-          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
-          iprot.readMessageEnd();
-          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
-            return;
-          }
-          controller.addError(error);
-          return;
-        }
-
-        blah_result result = new blah_result();
-        result.read(iprot);
-        iprot.readMessageEnd();
-        if (result.isSetSuccess()) {
-          controller.add(result.success);
-          return;
-        }
-
-        if (result.awe != null) {
-          controller.addError(result.awe);
-          return;
-        }
-        if (result.api != null) {
-          controller.addError(result.api);
-          return;
-        }
-        throw new thrift.TApplicationError(
-          thrift.TApplicationErrorType.MISSING_RESULT, "blah failed: unknown result"
-        );
-      } catch(e) {
-        controller.addError(e);
-        rethrow;
+    var iprot = _protocolFactory.getProtocol(response);
+    iprot.readResponseHeader(ctx);
+    thrift.TMessage msg = iprot.readMessageBegin();
+    if (msg.type == thrift.TMessageType.EXCEPTION) {
+      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+      iprot.readMessageEnd();
+      if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+        throw new frugal.FMessageSizeError.response(message: error.message);
       }
+      throw error;
     }
-    return blahCallback;
-  }
 
+    blah_result result = new blah_result();
+    result.read(iprot);
+    iprot.readMessageEnd();
+    if (result.isSetSuccess()) {
+      return result.success;
+    }
+
+    if (result.awe != null) {
+      throw result.awe;
+    }
+    if (result.api != null) {
+      throw result.api;
+    }
+    throw new thrift.TApplicationError(
+      thrift.TApplicationErrorType.MISSING_RESULT, "blah failed: unknown result"
+    );
+  }
   /// oneway methods don't receive a response from the server.
   Future oneWay(frugal.FContext ctx, int id, Map<int, String> req) {
     return this._methods['oneWay']([ctx, id, req]) as Future;
@@ -223,7 +161,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     args.req = req;
     args.write(oprot);
     oprot.writeMessageEnd();
-    await _transport.send(memoryBuffer.writeBytes);
+    await _transport.oneway(ctx, memoryBuffer.writeBytes);
   }
 
   Future<Uint8List> bin_method(frugal.FContext ctx, Uint8List bin, String str) {
@@ -231,415 +169,234 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   }
 
   Future<Uint8List> _bin_method(frugal.FContext ctx, Uint8List bin, String str) async {
-    var controller = new StreamController();
-    var closeSubscription = _transport.onClose.listen((_) {
-      controller.addError(new thrift.TTransportError(
-        thrift.TTransportErrorType.NOT_OPEN,
-        "Transport closed before request completed."));
-      });
-    _transport.register(ctx, _recvBin_methodHandler(ctx, controller));
-    try {
-      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryBuffer);
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("bin_method", thrift.TMessageType.CALL, 0));
-      bin_method_args args = new bin_method_args();
-      args.bin = bin;
-      args.str = str;
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await _transport.send(memoryBuffer.writeBytes);
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+    var oprot = _protocolFactory.getProtocol(memoryBuffer);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(new thrift.TMessage("bin_method", thrift.TMessageType.CALL, 0));
+    bin_method_args args = new bin_method_args();
+    args.bin = bin;
+    args.str = str;
+    args.write(oprot);
+    oprot.writeMessageEnd();
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
-      return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
-        throw new frugal.FTimeoutError.withMessage("Foo.bin_method timed out after ${ctx.timeout}");
-      });
-    } finally {
-      closeSubscription.cancel();
-      _transport.unregister(ctx);
-    }
-  }
-
-  frugal.FAsyncCallback _recvBin_methodHandler(frugal.FContext ctx, StreamController controller) {
-    bin_methodCallback(thrift.TTransport transport) {
-      try {
-        var iprot = _protocolFactory.getProtocol(transport);
-        iprot.readResponseHeader(ctx);
-        thrift.TMessage msg = iprot.readMessageBegin();
-        if (msg.type == thrift.TMessageType.EXCEPTION) {
-          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
-          iprot.readMessageEnd();
-          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
-            return;
-          }
-          controller.addError(error);
-          return;
-        }
-
-        bin_method_result result = new bin_method_result();
-        result.read(iprot);
-        iprot.readMessageEnd();
-        if (result.isSetSuccess()) {
-          controller.add(result.success);
-          return;
-        }
-
-        if (result.api != null) {
-          controller.addError(result.api);
-          return;
-        }
-        throw new thrift.TApplicationError(
-          thrift.TApplicationErrorType.MISSING_RESULT, "bin_method failed: unknown result"
-        );
-      } catch(e) {
-        controller.addError(e);
-        rethrow;
+    var iprot = _protocolFactory.getProtocol(response);
+    iprot.readResponseHeader(ctx);
+    thrift.TMessage msg = iprot.readMessageBegin();
+    if (msg.type == thrift.TMessageType.EXCEPTION) {
+      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+      iprot.readMessageEnd();
+      if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+        throw new frugal.FMessageSizeError.response(message: error.message);
       }
+      throw error;
     }
-    return bin_methodCallback;
-  }
 
+    bin_method_result result = new bin_method_result();
+    result.read(iprot);
+    iprot.readMessageEnd();
+    if (result.isSetSuccess()) {
+      return result.success;
+    }
+
+    if (result.api != null) {
+      throw result.api;
+    }
+    throw new thrift.TApplicationError(
+      thrift.TApplicationErrorType.MISSING_RESULT, "bin_method failed: unknown result"
+    );
+  }
   Future<int> param_modifiers(frugal.FContext ctx, int opt_num, int default_num, int req_num) {
     return this._methods['param_modifiers']([ctx, opt_num, default_num, req_num]) as Future<int>;
   }
 
   Future<int> _param_modifiers(frugal.FContext ctx, int opt_num, int default_num, int req_num) async {
-    var controller = new StreamController();
-    var closeSubscription = _transport.onClose.listen((_) {
-      controller.addError(new thrift.TTransportError(
-        thrift.TTransportErrorType.NOT_OPEN,
-        "Transport closed before request completed."));
-      });
-    _transport.register(ctx, _recvParam_modifiersHandler(ctx, controller));
-    try {
-      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryBuffer);
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("param_modifiers", thrift.TMessageType.CALL, 0));
-      param_modifiers_args args = new param_modifiers_args();
-      args.opt_num = opt_num;
-      args.default_num = default_num;
-      args.req_num = req_num;
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await _transport.send(memoryBuffer.writeBytes);
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+    var oprot = _protocolFactory.getProtocol(memoryBuffer);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(new thrift.TMessage("param_modifiers", thrift.TMessageType.CALL, 0));
+    param_modifiers_args args = new param_modifiers_args();
+    args.opt_num = opt_num;
+    args.default_num = default_num;
+    args.req_num = req_num;
+    args.write(oprot);
+    oprot.writeMessageEnd();
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
-      return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
-        throw new frugal.FTimeoutError.withMessage("Foo.param_modifiers timed out after ${ctx.timeout}");
-      });
-    } finally {
-      closeSubscription.cancel();
-      _transport.unregister(ctx);
-    }
-  }
-
-  frugal.FAsyncCallback _recvParam_modifiersHandler(frugal.FContext ctx, StreamController controller) {
-    param_modifiersCallback(thrift.TTransport transport) {
-      try {
-        var iprot = _protocolFactory.getProtocol(transport);
-        iprot.readResponseHeader(ctx);
-        thrift.TMessage msg = iprot.readMessageBegin();
-        if (msg.type == thrift.TMessageType.EXCEPTION) {
-          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
-          iprot.readMessageEnd();
-          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
-            return;
-          }
-          controller.addError(error);
-          return;
-        }
-
-        param_modifiers_result result = new param_modifiers_result();
-        result.read(iprot);
-        iprot.readMessageEnd();
-        if (result.isSetSuccess()) {
-          controller.add(result.success);
-          return;
-        }
-
-        throw new thrift.TApplicationError(
-          thrift.TApplicationErrorType.MISSING_RESULT, "param_modifiers failed: unknown result"
-        );
-      } catch(e) {
-        controller.addError(e);
-        rethrow;
+    var iprot = _protocolFactory.getProtocol(response);
+    iprot.readResponseHeader(ctx);
+    thrift.TMessage msg = iprot.readMessageBegin();
+    if (msg.type == thrift.TMessageType.EXCEPTION) {
+      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+      iprot.readMessageEnd();
+      if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+        throw new frugal.FMessageSizeError.response(message: error.message);
       }
+      throw error;
     }
-    return param_modifiersCallback;
-  }
 
+    param_modifiers_result result = new param_modifiers_result();
+    result.read(iprot);
+    iprot.readMessageEnd();
+    if (result.isSetSuccess()) {
+      return result.success;
+    }
+
+    throw new thrift.TApplicationError(
+      thrift.TApplicationErrorType.MISSING_RESULT, "param_modifiers failed: unknown result"
+    );
+  }
   Future<List<int>> underlying_types_test(frugal.FContext ctx, List<int> list_type, Set<int> set_type) {
     return this._methods['underlying_types_test']([ctx, list_type, set_type]) as Future<List<int>>;
   }
 
   Future<List<int>> _underlying_types_test(frugal.FContext ctx, List<int> list_type, Set<int> set_type) async {
-    var controller = new StreamController();
-    var closeSubscription = _transport.onClose.listen((_) {
-      controller.addError(new thrift.TTransportError(
-        thrift.TTransportErrorType.NOT_OPEN,
-        "Transport closed before request completed."));
-      });
-    _transport.register(ctx, _recvUnderlying_types_testHandler(ctx, controller));
-    try {
-      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryBuffer);
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("underlying_types_test", thrift.TMessageType.CALL, 0));
-      underlying_types_test_args args = new underlying_types_test_args();
-      args.list_type = list_type;
-      args.set_type = set_type;
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await _transport.send(memoryBuffer.writeBytes);
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+    var oprot = _protocolFactory.getProtocol(memoryBuffer);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(new thrift.TMessage("underlying_types_test", thrift.TMessageType.CALL, 0));
+    underlying_types_test_args args = new underlying_types_test_args();
+    args.list_type = list_type;
+    args.set_type = set_type;
+    args.write(oprot);
+    oprot.writeMessageEnd();
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
-      return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
-        throw new frugal.FTimeoutError.withMessage("Foo.underlying_types_test timed out after ${ctx.timeout}");
-      });
-    } finally {
-      closeSubscription.cancel();
-      _transport.unregister(ctx);
-    }
-  }
-
-  frugal.FAsyncCallback _recvUnderlying_types_testHandler(frugal.FContext ctx, StreamController controller) {
-    underlying_types_testCallback(thrift.TTransport transport) {
-      try {
-        var iprot = _protocolFactory.getProtocol(transport);
-        iprot.readResponseHeader(ctx);
-        thrift.TMessage msg = iprot.readMessageBegin();
-        if (msg.type == thrift.TMessageType.EXCEPTION) {
-          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
-          iprot.readMessageEnd();
-          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
-            return;
-          }
-          controller.addError(error);
-          return;
-        }
-
-        underlying_types_test_result result = new underlying_types_test_result();
-        result.read(iprot);
-        iprot.readMessageEnd();
-        if (result.isSetSuccess()) {
-          controller.add(result.success);
-          return;
-        }
-
-        throw new thrift.TApplicationError(
-          thrift.TApplicationErrorType.MISSING_RESULT, "underlying_types_test failed: unknown result"
-        );
-      } catch(e) {
-        controller.addError(e);
-        rethrow;
+    var iprot = _protocolFactory.getProtocol(response);
+    iprot.readResponseHeader(ctx);
+    thrift.TMessage msg = iprot.readMessageBegin();
+    if (msg.type == thrift.TMessageType.EXCEPTION) {
+      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+      iprot.readMessageEnd();
+      if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+        throw new frugal.FMessageSizeError.response(message: error.message);
       }
+      throw error;
     }
-    return underlying_types_testCallback;
-  }
 
+    underlying_types_test_result result = new underlying_types_test_result();
+    result.read(iprot);
+    iprot.readMessageEnd();
+    if (result.isSetSuccess()) {
+      return result.success;
+    }
+
+    throw new thrift.TApplicationError(
+      thrift.TApplicationErrorType.MISSING_RESULT, "underlying_types_test failed: unknown result"
+    );
+  }
   Future<t_validStructs.Thing> getThing(frugal.FContext ctx) {
     return this._methods['getThing']([ctx]) as Future<t_validStructs.Thing>;
   }
 
   Future<t_validStructs.Thing> _getThing(frugal.FContext ctx) async {
-    var controller = new StreamController();
-    var closeSubscription = _transport.onClose.listen((_) {
-      controller.addError(new thrift.TTransportError(
-        thrift.TTransportErrorType.NOT_OPEN,
-        "Transport closed before request completed."));
-      });
-    _transport.register(ctx, _recvGetThingHandler(ctx, controller));
-    try {
-      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryBuffer);
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("getThing", thrift.TMessageType.CALL, 0));
-      getThing_args args = new getThing_args();
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await _transport.send(memoryBuffer.writeBytes);
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+    var oprot = _protocolFactory.getProtocol(memoryBuffer);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(new thrift.TMessage("getThing", thrift.TMessageType.CALL, 0));
+    getThing_args args = new getThing_args();
+    args.write(oprot);
+    oprot.writeMessageEnd();
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
-      return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
-        throw new frugal.FTimeoutError.withMessage("Foo.getThing timed out after ${ctx.timeout}");
-      });
-    } finally {
-      closeSubscription.cancel();
-      _transport.unregister(ctx);
-    }
-  }
-
-  frugal.FAsyncCallback _recvGetThingHandler(frugal.FContext ctx, StreamController controller) {
-    getThingCallback(thrift.TTransport transport) {
-      try {
-        var iprot = _protocolFactory.getProtocol(transport);
-        iprot.readResponseHeader(ctx);
-        thrift.TMessage msg = iprot.readMessageBegin();
-        if (msg.type == thrift.TMessageType.EXCEPTION) {
-          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
-          iprot.readMessageEnd();
-          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
-            return;
-          }
-          controller.addError(error);
-          return;
-        }
-
-        getThing_result result = new getThing_result();
-        result.read(iprot);
-        iprot.readMessageEnd();
-        if (result.isSetSuccess()) {
-          controller.add(result.success);
-          return;
-        }
-
-        throw new thrift.TApplicationError(
-          thrift.TApplicationErrorType.MISSING_RESULT, "getThing failed: unknown result"
-        );
-      } catch(e) {
-        controller.addError(e);
-        rethrow;
+    var iprot = _protocolFactory.getProtocol(response);
+    iprot.readResponseHeader(ctx);
+    thrift.TMessage msg = iprot.readMessageBegin();
+    if (msg.type == thrift.TMessageType.EXCEPTION) {
+      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+      iprot.readMessageEnd();
+      if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+        throw new frugal.FMessageSizeError.response(message: error.message);
       }
+      throw error;
     }
-    return getThingCallback;
-  }
 
+    getThing_result result = new getThing_result();
+    result.read(iprot);
+    iprot.readMessageEnd();
+    if (result.isSetSuccess()) {
+      return result.success;
+    }
+
+    throw new thrift.TApplicationError(
+      thrift.TApplicationErrorType.MISSING_RESULT, "getThing failed: unknown result"
+    );
+  }
   Future<int> getMyInt(frugal.FContext ctx) {
     return this._methods['getMyInt']([ctx]) as Future<int>;
   }
 
   Future<int> _getMyInt(frugal.FContext ctx) async {
-    var controller = new StreamController();
-    var closeSubscription = _transport.onClose.listen((_) {
-      controller.addError(new thrift.TTransportError(
-        thrift.TTransportErrorType.NOT_OPEN,
-        "Transport closed before request completed."));
-      });
-    _transport.register(ctx, _recvGetMyIntHandler(ctx, controller));
-    try {
-      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryBuffer);
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("getMyInt", thrift.TMessageType.CALL, 0));
-      getMyInt_args args = new getMyInt_args();
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await _transport.send(memoryBuffer.writeBytes);
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+    var oprot = _protocolFactory.getProtocol(memoryBuffer);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(new thrift.TMessage("getMyInt", thrift.TMessageType.CALL, 0));
+    getMyInt_args args = new getMyInt_args();
+    args.write(oprot);
+    oprot.writeMessageEnd();
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
-      return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
-        throw new frugal.FTimeoutError.withMessage("Foo.getMyInt timed out after ${ctx.timeout}");
-      });
-    } finally {
-      closeSubscription.cancel();
-      _transport.unregister(ctx);
-    }
-  }
-
-  frugal.FAsyncCallback _recvGetMyIntHandler(frugal.FContext ctx, StreamController controller) {
-    getMyIntCallback(thrift.TTransport transport) {
-      try {
-        var iprot = _protocolFactory.getProtocol(transport);
-        iprot.readResponseHeader(ctx);
-        thrift.TMessage msg = iprot.readMessageBegin();
-        if (msg.type == thrift.TMessageType.EXCEPTION) {
-          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
-          iprot.readMessageEnd();
-          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
-            return;
-          }
-          controller.addError(error);
-          return;
-        }
-
-        getMyInt_result result = new getMyInt_result();
-        result.read(iprot);
-        iprot.readMessageEnd();
-        if (result.isSetSuccess()) {
-          controller.add(result.success);
-          return;
-        }
-
-        throw new thrift.TApplicationError(
-          thrift.TApplicationErrorType.MISSING_RESULT, "getMyInt failed: unknown result"
-        );
-      } catch(e) {
-        controller.addError(e);
-        rethrow;
+    var iprot = _protocolFactory.getProtocol(response);
+    iprot.readResponseHeader(ctx);
+    thrift.TMessage msg = iprot.readMessageBegin();
+    if (msg.type == thrift.TMessageType.EXCEPTION) {
+      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+      iprot.readMessageEnd();
+      if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+        throw new frugal.FMessageSizeError.response(message: error.message);
       }
+      throw error;
     }
-    return getMyIntCallback;
-  }
 
+    getMyInt_result result = new getMyInt_result();
+    result.read(iprot);
+    iprot.readMessageEnd();
+    if (result.isSetSuccess()) {
+      return result.success;
+    }
+
+    throw new thrift.TApplicationError(
+      thrift.TApplicationErrorType.MISSING_RESULT, "getMyInt failed: unknown result"
+    );
+  }
   Future<t_subdir_include_ns.A> use_subdir_struct(frugal.FContext ctx, t_subdir_include_ns.A a) {
     return this._methods['use_subdir_struct']([ctx, a]) as Future<t_subdir_include_ns.A>;
   }
 
   Future<t_subdir_include_ns.A> _use_subdir_struct(frugal.FContext ctx, t_subdir_include_ns.A a) async {
-    var controller = new StreamController();
-    var closeSubscription = _transport.onClose.listen((_) {
-      controller.addError(new thrift.TTransportError(
-        thrift.TTransportErrorType.NOT_OPEN,
-        "Transport closed before request completed."));
-      });
-    _transport.register(ctx, _recvUse_subdir_structHandler(ctx, controller));
-    try {
-      var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
-      var oprot = _protocolFactory.getProtocol(memoryBuffer);
-      oprot.writeRequestHeader(ctx);
-      oprot.writeMessageBegin(new thrift.TMessage("use_subdir_struct", thrift.TMessageType.CALL, 0));
-      use_subdir_struct_args args = new use_subdir_struct_args();
-      args.a = a;
-      args.write(oprot);
-      oprot.writeMessageEnd();
-      await _transport.send(memoryBuffer.writeBytes);
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+    var oprot = _protocolFactory.getProtocol(memoryBuffer);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(new thrift.TMessage("use_subdir_struct", thrift.TMessageType.CALL, 0));
+    use_subdir_struct_args args = new use_subdir_struct_args();
+    args.a = a;
+    args.write(oprot);
+    oprot.writeMessageEnd();
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
 
-      return await controller.stream.first.timeout(ctx.timeout, onTimeout: () {
-        throw new frugal.FTimeoutError.withMessage("Foo.use_subdir_struct timed out after ${ctx.timeout}");
-      });
-    } finally {
-      closeSubscription.cancel();
-      _transport.unregister(ctx);
-    }
-  }
-
-  frugal.FAsyncCallback _recvUse_subdir_structHandler(frugal.FContext ctx, StreamController controller) {
-    use_subdir_structCallback(thrift.TTransport transport) {
-      try {
-        var iprot = _protocolFactory.getProtocol(transport);
-        iprot.readResponseHeader(ctx);
-        thrift.TMessage msg = iprot.readMessageBegin();
-        if (msg.type == thrift.TMessageType.EXCEPTION) {
-          thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
-          iprot.readMessageEnd();
-          if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-            controller.addError(new frugal.FMessageSizeError.response(message: error.message));
-            return;
-          }
-          controller.addError(error);
-          return;
-        }
-
-        use_subdir_struct_result result = new use_subdir_struct_result();
-        result.read(iprot);
-        iprot.readMessageEnd();
-        if (result.isSetSuccess()) {
-          controller.add(result.success);
-          return;
-        }
-
-        throw new thrift.TApplicationError(
-          thrift.TApplicationErrorType.MISSING_RESULT, "use_subdir_struct failed: unknown result"
-        );
-      } catch(e) {
-        controller.addError(e);
-        rethrow;
+    var iprot = _protocolFactory.getProtocol(response);
+    iprot.readResponseHeader(ctx);
+    thrift.TMessage msg = iprot.readMessageBegin();
+    if (msg.type == thrift.TMessageType.EXCEPTION) {
+      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+      iprot.readMessageEnd();
+      if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
+        throw new frugal.FMessageSizeError.response(message: error.message);
       }
+      throw error;
     }
-    return use_subdir_structCallback;
-  }
 
+    use_subdir_struct_result result = new use_subdir_struct_result();
+    result.read(iprot);
+    iprot.readMessageEnd();
+    if (result.isSetSuccess()) {
+      return result.success;
+    }
+
+    throw new thrift.TApplicationError(
+      thrift.TApplicationErrorType.MISSING_RESULT, "use_subdir_struct failed: unknown result"
+    );
+  }
 }
 
 class Ping_args implements thrift.TBase {

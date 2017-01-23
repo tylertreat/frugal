@@ -221,13 +221,7 @@ type FStoreProcessor struct {
 func NewFStoreProcessor(handler FStore, middleware ...frugal.ServiceMiddleware) *FStoreProcessor {
 	p := &FStoreProcessor{frugal.NewFBaseProcessor()}
 	p.AddToProcessorMap("buyAlbum", &storeFBuyAlbum{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.BuyAlbum, "BuyAlbum", middleware))})
-	p.AddToAnnotationsMap("buyAlbum", map[string]string{
-		"auth": "false",
-	})
 	p.AddToProcessorMap("enterAlbumGiveaway", &storeFEnterAlbumGiveaway{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.EnterAlbumGiveaway, "EnterAlbumGiveaway", middleware))})
-	p.AddToAnnotationsMap("enterAlbumGiveaway", map[string]string{
-		"foo": "bar",
-	})
 	return p
 }
 

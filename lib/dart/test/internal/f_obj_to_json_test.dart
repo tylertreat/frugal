@@ -11,8 +11,10 @@ void main() {
     });
 
     test('Serializes an FContext', () {
-      String json = fObjToJson(new FContext(correlationId: "cid"));
-      expect(json, '{"_cid":"cid","_opid":"0","_timeout":"5000"}');
+      FContext ctx = new FContext(correlationId: "cid");
+      String json = fObjToJson(ctx);
+      var opId = ctx.requestHeader("_opid");
+      expect(json, '{"_cid":"cid","_opid":"$opId","_timeout":"5000"}');
     });
 
     test('Serializes a normal object', () {

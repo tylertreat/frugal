@@ -10,7 +10,9 @@ class FByteBuffer {
   FByteBuffer(int capacity) : this._buff = new Uint8List(capacity);
 
   /// Creates an [FByteBuffer] from the given buffer.
-  FByteBuffer.fromUint8List(Uint8List buff) : this._buff = buff;
+  FByteBuffer.fromUint8List(Uint8List buff)
+      : this._buff = buff,
+        _writeIndex = buff.lengthInBytes;
 
   /// Number of write bytes remaining in the buffer.
   int get writeRemaining => _buff.length - _writeIndex;

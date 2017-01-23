@@ -7,7 +7,6 @@ import uuid
 from nats.aio.client import Client as NatsClient
 from thrift.protocol import TBinaryProtocol
 from thrift.transport.TTransport import TTransportException
-import uuid
 from frugal.context import FContext
 from frugal.protocol import FProtocolFactory
 from frugal.provider import FServiceProvider
@@ -60,7 +59,7 @@ async def main():
                                         str(uuid.uuid4()),
                                         "ACT-12345")
 
-    root.info("Bought an album %s\n", album)
+    root.info("Bought an album %s\n", album.tracks[0].title)
 
     await store_client.enterAlbumGiveaway(FContext(),
                                           "kevin@workiva.com",

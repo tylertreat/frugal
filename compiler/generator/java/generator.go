@@ -2844,9 +2844,9 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtab + "args.write(oprot);\n"
 	contents += tabtabtab + "oprot.writeMessageEnd();\n"
 	if method.Oneway {
-		contents += tabtabtab + fmt.Sprintf("this.transport.request(ctx, %v, memoryBuffer.getWriteBytes());\n", method.Oneway)
+		contents += tabtabtab + "this.transport.oneway(ctx, memoryBuffer.getWriteBytes());\n"
 	} else {
-		contents += tabtabtab + fmt.Sprintf("TTransport response = this.transport.request(ctx, %v, memoryBuffer.getWriteBytes());\n", method.Oneway)
+		contents += tabtabtab + "TTransport response = this.transport.request(ctx, memoryBuffer.getWriteBytes());\n"
 	}
 	if method.Oneway {
 		contents += tabtab + "}\n"

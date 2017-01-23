@@ -6,35 +6,19 @@ import 'package:test/test.dart';
 import 'package:thrift/thrift.dart';
 import 'package:mockito/mockito.dart';
 
+/**
+ * Returns a mock message frame.
+ */
+
 void main() {
   group('FTransport', () {
     int requestSizeLimit = 5;
-    MockFRegistry registry;
     _FTransportImpl transport;
     FContext context;
 
     setUp(() {
-      registry = new MockFRegistry();
-      transport = new _FTransportImpl(requestSizeLimit, registry);
+      transport = new _FTransportImpl(requestSizeLimit);
       context = new FContext();
-    });
-
-    test('test register/unregister call through to registry', () async {
-      expect(registry.context, isNull);
-      expect(registry.callback, isNull);
-      transport.register(context, _callback);
-      expect(registry.context, equals(context));
-      expect(registry.callback, equals(_callback));
-      transport.unregister(context);
-      expect(registry.context, isNull);
-      expect(registry.callback, isNull);
-    });
-
-    test('test executeFrame calls through to registry execute', () async {
-      var response = new Uint8List.fromList([1, 2, 3, 4, 5]);
-      var responseFramed = new Uint8List.fromList([0, 0, 0, 5, 1, 2, 3, 4, 5]);
-      transport.executeFrame(responseFramed);
-      expect(registry.data[0], equals(response));
     });
 
     test(
@@ -76,11 +60,15 @@ class _FTransportImpl extends FTransport {
   List<Error> errors = [];
   int openCalls = 0;
 
-  _FTransportImpl(int requestSizeLimit, FRegistry registry)
-      : super(requestSizeLimit: requestSizeLimit, registry: registry);
+  _FTransportImpl(int requestSizeLimit)
+      : super(requestSizeLimit: requestSizeLimit);
 
   @override
-  Future send(Uint8List payload) => new Future.value();
+  Future<Null> oneway(FContext ctx, Uint8List payload) => new Future.value();
+
+  @override
+  Future<TTransport> request(FContext ctx, Uint8List payload) =>
+      new Future.value();
 
   @override
   Future open() async {
@@ -95,59 +83,6 @@ class _FTransportImpl extends FTransport {
 
   @override
   bool get isOpen => false;
-}
-
-/// Mock registry for testing.
-class MockFRegistry extends FRegistry {
-  /// Data excuted by the registry.
-  List<Uint8List> data;
-
-  /// Context registered to the registry.
-  FContext context;
-
-  /// Callback registered to the registry.
-  FAsyncCallback callback;
-
-  /// Execute completer.
-  Completer executeCompleter;
-
-  /// Error to be thrown on execute.
-  Error executeError;
-
-  /// Create a new mock.
-  MockFRegistry() {
-    data = new List();
-  }
-
-  /// Initialize the execute completer.
-  void initCompleter() {
-    executeCompleter = new Completer();
-  }
-
-  @override
-  void register(FContext ctx, FAsyncCallback callback) {
-    this.context = ctx;
-    this.callback = callback;
-  }
-
-  @override
-  void unregister(FContext ctx) {
-    if (this.context == ctx) {
-      this.context = null;
-      this.callback = null;
-    }
-  }
-
-  @override
-  void execute(Uint8List data) {
-    this.data.add(data);
-    if (executeCompleter != null && !executeCompleter.isCompleted) {
-      executeCompleter.complete();
-    }
-    if (executeError != null) {
-      throw executeError;
-    }
-  }
 }
 
 /// Mock transport monitor.
