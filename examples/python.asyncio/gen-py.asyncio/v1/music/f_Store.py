@@ -207,9 +207,7 @@ class Processor(FBaseProcessor):
 
         super(Processor, self).__init__()
         self.add_to_processor_map('buyAlbum', _buyAlbum(Method(handler.buyAlbum, middleware), self.get_write_lock()))
-        self.add_to_annotations_map('buyAlbum', {'auth': 'false'})
         self.add_to_processor_map('enterAlbumGiveaway', _enterAlbumGiveaway(Method(handler.enterAlbumGiveaway, middleware), self.get_write_lock()))
-        self.add_to_annotations_map('enterAlbumGiveaway', {'foo': 'bar'})
 
 
 class _buyAlbum(FProcessorFunction):

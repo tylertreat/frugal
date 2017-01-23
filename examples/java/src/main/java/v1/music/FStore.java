@@ -202,12 +202,6 @@ public class FStore {
 
 		protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {
 			java.util.Map<String, java.util.Map<String, String>> annotationsMap = new java.util.HashMap<>();
-			java.util.Map<String, String> buyAlbumMap = new java.util.HashMap<>();
-			buyAlbumMap.put("auth", "false");
-			annotationsMap.put("buyAlbum", buyAlbumMap);
-			java.util.Map<String, String> enterAlbumGiveawayMap = new java.util.HashMap<>();
-			enterAlbumGiveawayMap.put("foo", "bar");
-			annotationsMap.put("enterAlbumGiveaway", enterAlbumGiveawayMap);
 			return annotationsMap;
 		}
 
