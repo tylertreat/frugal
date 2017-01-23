@@ -40,7 +40,7 @@ class THttpTransport(TBaseHttpTransport):
         timeout = None
         if self._timeout:
             # Requests uses timeout in seconds.
-            timeout = self._timeout / 1000
+            timeout = self._timeout / 1000.0
             if timeout <= 0:
                 timeout = None
 
