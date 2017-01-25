@@ -143,7 +143,7 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 		return fmt.Sprintf("%s%s = %s;\n", contents, fieldName, val)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		var s *parser.Struct
-		for _, potential := range g.Frugal.Thrift.Structs {
+		for _, potential := range g.Frugal.Structs {
 			if underlyingType.Name == potential.Name {
 				s = potential
 				break
@@ -241,7 +241,7 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 }
 
 func (g *Generator) generateEnumConstValue(frugal *parser.Frugal, pieces []string, t *parser.Type) (string, bool) {
-	for _, enum := range frugal.Thrift.Enums {
+	for _, enum := range frugal.Enums {
 		if pieces[0] == enum.Name {
 			for _, value := range enum.Values {
 				if pieces[1] == value.Name {
@@ -261,7 +261,7 @@ func (g *Generator) generateEnumConstFromValue(t *parser.Type, value int) string
 		frugal = g.Frugal.ParsedIncludes[t.IncludeName()]
 	}
 
-	for _, enum := range frugal.Thrift.Enums {
+	for _, enum := range frugal.Enums {
 		if enum.Name == t.ParamName() {
 			// found the enum
 			for _, enumValue := range enum.Values {
@@ -2179,7 +2179,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, succi
 }
 
 func (g *Generator) GetOutputDir(dir string) string {
-	if namespace := g.Frugal.Thrift.Namespace(lang); namespace != nil {
+	if namespace := g.Frugal.Namespace(lang); namespace != nil {
 		path := generator.GetPackageComponents(namespace.Value)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	}
@@ -2234,7 +2234,7 @@ func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
 }
 
 func (g *Generator) generatePackage(file *os.File) error {
-	namespace := g.Frugal.Thrift.Namespace(lang)
+	namespace := g.Frugal.Namespace(lang)
 	if namespace == nil {
 		return nil
 	}

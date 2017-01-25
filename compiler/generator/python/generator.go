@@ -103,7 +103,7 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
 	contents += "from .ttypes import *\n\n"
 
-	for _, include := range g.Frugal.Thrift.Includes {
+	for _, include := range g.Frugal.Includes {
 		namespace := filepath.Base(include.Name)
 		if ns := g.Frugal.NamespaceForInclude(namespace, lang); ns != nil {
 			namespace = ns.Value
@@ -195,7 +195,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 		return parser.NonIdentifier, fmt.Sprintf("%d", value)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		var s *parser.Struct
-		for _, potential := range g.Frugal.Thrift.Structs {
+		for _, potential := range g.Frugal.Structs {
 			if underlyingType.Name == potential.Name {
 				s = potential
 				break
@@ -645,7 +645,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 
 // GetOutputDir returns the output directory for generated files.
 func (g *Generator) GetOutputDir(dir string) string {
-	if namespace := g.Frugal.Thrift.Namespace(lang); namespace != nil {
+	if namespace := g.Frugal.Namespace(lang); namespace != nil {
 		path := generator.GetPackageComponents(namespace.Value)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
@@ -717,7 +717,7 @@ func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
 func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) error {
 	contents := ""
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
-	for _, include := range g.Frugal.Thrift.Includes {
+	for _, include := range g.Frugal.Includes {
 		includeName := g.getPackageNamespace(filepath.Base(include.Name))
 		contents += fmt.Sprintf("import %s.ttypes\n", includeName)
 		contents += fmt.Sprintf("import %s.constants\n", includeName)
