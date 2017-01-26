@@ -35,8 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.workiva.frugal.FContext;
-import com.workiva.frugal.exception.FApplicationExceptionType;
-import com.workiva.frugal.exception.FTransportExceptionType;
+import com.workiva.frugal.exception.FrugalTApplicationExceptionType;
+import com.workiva.frugal.exception.FrugalTTransportExceptionType;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.processor.FBaseProcessor;
@@ -182,19 +182,19 @@ public class FFoo {
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("ping")) {
-				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "Ping failed: wrong method name");
+				throw new TApplicationException(FrugalTApplicationExceptionType.WRONG_METHOD_NAME, "Ping failed: wrong method name");
 			}
 			if (message.type == TMessageType.EXCEPTION) {
 				TApplicationException e = TApplicationException.read(iprot);
 				iprot.readMessageEnd();
 				TException returnedException = e;
-				if (e.getType() == FApplicationExceptionType.RESPONSE_TOO_LARGE) {
-					returnedException = new TTransportException(FTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
+				if (e.getType() == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE) {
+					returnedException = new TTransportException(FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
 				}
 				throw returnedException;
 			}
 			if (message.type != TMessageType.REPLY) {
-				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "Ping failed: invalid message type");
+				throw new TApplicationException(FrugalTApplicationExceptionType.INVALID_MESSAGE_TYPE, "Ping failed: invalid message type");
 			}
 			Ping_result res = new Ping_result();
 			res.read(iprot);
@@ -220,19 +220,19 @@ public class FFoo {
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("blah")) {
-				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "blah failed: wrong method name");
+				throw new TApplicationException(FrugalTApplicationExceptionType.WRONG_METHOD_NAME, "blah failed: wrong method name");
 			}
 			if (message.type == TMessageType.EXCEPTION) {
 				TApplicationException e = TApplicationException.read(iprot);
 				iprot.readMessageEnd();
 				TException returnedException = e;
-				if (e.getType() == FApplicationExceptionType.RESPONSE_TOO_LARGE) {
-					returnedException = new TTransportException(FTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
+				if (e.getType() == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE) {
+					returnedException = new TTransportException(FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
 				}
 				throw returnedException;
 			}
 			if (message.type != TMessageType.REPLY) {
-				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "blah failed: invalid message type");
+				throw new TApplicationException(FrugalTApplicationExceptionType.INVALID_MESSAGE_TYPE, "blah failed: invalid message type");
 			}
 			blah_result res = new blah_result();
 			res.read(iprot);
@@ -246,7 +246,7 @@ public class FFoo {
 			if (res.api != null) {
 				throw res.api;
 			}
-			throw new TApplicationException(TApplicationException.MISSING_RESULT, "blah failed: unknown result");
+			throw new TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "blah failed: unknown result");
 		}
 		/**
 		 * oneway methods don't receive a response from the server.
@@ -279,19 +279,19 @@ public class FFoo {
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("bin_method")) {
-				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "bin_method failed: wrong method name");
+				throw new TApplicationException(FrugalTApplicationExceptionType.WRONG_METHOD_NAME, "bin_method failed: wrong method name");
 			}
 			if (message.type == TMessageType.EXCEPTION) {
 				TApplicationException e = TApplicationException.read(iprot);
 				iprot.readMessageEnd();
 				TException returnedException = e;
-				if (e.getType() == FApplicationExceptionType.RESPONSE_TOO_LARGE) {
-					returnedException = new TTransportException(FTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
+				if (e.getType() == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE) {
+					returnedException = new TTransportException(FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
 				}
 				throw returnedException;
 			}
 			if (message.type != TMessageType.REPLY) {
-				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "bin_method failed: invalid message type");
+				throw new TApplicationException(FrugalTApplicationExceptionType.INVALID_MESSAGE_TYPE, "bin_method failed: invalid message type");
 			}
 			bin_method_result res = new bin_method_result();
 			res.read(iprot);
@@ -302,7 +302,7 @@ public class FFoo {
 			if (res.api != null) {
 				throw res.api;
 			}
-			throw new TApplicationException(TApplicationException.MISSING_RESULT, "bin_method failed: unknown result");
+			throw new TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "bin_method failed: unknown result");
 		}
 		public long param_modifiers(FContext ctx, int opt_num, int default_num, int req_num) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
@@ -321,19 +321,19 @@ public class FFoo {
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("param_modifiers")) {
-				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "param_modifiers failed: wrong method name");
+				throw new TApplicationException(FrugalTApplicationExceptionType.WRONG_METHOD_NAME, "param_modifiers failed: wrong method name");
 			}
 			if (message.type == TMessageType.EXCEPTION) {
 				TApplicationException e = TApplicationException.read(iprot);
 				iprot.readMessageEnd();
 				TException returnedException = e;
-				if (e.getType() == FApplicationExceptionType.RESPONSE_TOO_LARGE) {
-					returnedException = new TTransportException(FTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
+				if (e.getType() == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE) {
+					returnedException = new TTransportException(FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
 				}
 				throw returnedException;
 			}
 			if (message.type != TMessageType.REPLY) {
-				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "param_modifiers failed: invalid message type");
+				throw new TApplicationException(FrugalTApplicationExceptionType.INVALID_MESSAGE_TYPE, "param_modifiers failed: invalid message type");
 			}
 			param_modifiers_result res = new param_modifiers_result();
 			res.read(iprot);
@@ -341,7 +341,7 @@ public class FFoo {
 			if (res.isSetSuccess()) {
 				return res.success;
 			}
-			throw new TApplicationException(TApplicationException.MISSING_RESULT, "param_modifiers failed: unknown result");
+			throw new TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "param_modifiers failed: unknown result");
 		}
 		public java.util.List<Long> underlying_types_test(FContext ctx, java.util.List<Long> list_type, java.util.Set<Long> set_type) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
@@ -359,19 +359,19 @@ public class FFoo {
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("underlying_types_test")) {
-				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "underlying_types_test failed: wrong method name");
+				throw new TApplicationException(FrugalTApplicationExceptionType.WRONG_METHOD_NAME, "underlying_types_test failed: wrong method name");
 			}
 			if (message.type == TMessageType.EXCEPTION) {
 				TApplicationException e = TApplicationException.read(iprot);
 				iprot.readMessageEnd();
 				TException returnedException = e;
-				if (e.getType() == FApplicationExceptionType.RESPONSE_TOO_LARGE) {
-					returnedException = new TTransportException(FTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
+				if (e.getType() == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE) {
+					returnedException = new TTransportException(FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
 				}
 				throw returnedException;
 			}
 			if (message.type != TMessageType.REPLY) {
-				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "underlying_types_test failed: invalid message type");
+				throw new TApplicationException(FrugalTApplicationExceptionType.INVALID_MESSAGE_TYPE, "underlying_types_test failed: invalid message type");
 			}
 			underlying_types_test_result res = new underlying_types_test_result();
 			res.read(iprot);
@@ -379,7 +379,7 @@ public class FFoo {
 			if (res.isSetSuccess()) {
 				return res.success;
 			}
-			throw new TApplicationException(TApplicationException.MISSING_RESULT, "underlying_types_test failed: unknown result");
+			throw new TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "underlying_types_test failed: unknown result");
 		}
 		public Thing getThing(FContext ctx) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
@@ -395,19 +395,19 @@ public class FFoo {
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("getThing")) {
-				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "getThing failed: wrong method name");
+				throw new TApplicationException(FrugalTApplicationExceptionType.WRONG_METHOD_NAME, "getThing failed: wrong method name");
 			}
 			if (message.type == TMessageType.EXCEPTION) {
 				TApplicationException e = TApplicationException.read(iprot);
 				iprot.readMessageEnd();
 				TException returnedException = e;
-				if (e.getType() == FApplicationExceptionType.RESPONSE_TOO_LARGE) {
-					returnedException = new TTransportException(FTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
+				if (e.getType() == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE) {
+					returnedException = new TTransportException(FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
 				}
 				throw returnedException;
 			}
 			if (message.type != TMessageType.REPLY) {
-				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "getThing failed: invalid message type");
+				throw new TApplicationException(FrugalTApplicationExceptionType.INVALID_MESSAGE_TYPE, "getThing failed: invalid message type");
 			}
 			getThing_result res = new getThing_result();
 			res.read(iprot);
@@ -415,7 +415,7 @@ public class FFoo {
 			if (res.isSetSuccess()) {
 				return res.success;
 			}
-			throw new TApplicationException(TApplicationException.MISSING_RESULT, "getThing failed: unknown result");
+			throw new TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "getThing failed: unknown result");
 		}
 		public int getMyInt(FContext ctx) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
@@ -431,19 +431,19 @@ public class FFoo {
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("getMyInt")) {
-				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "getMyInt failed: wrong method name");
+				throw new TApplicationException(FrugalTApplicationExceptionType.WRONG_METHOD_NAME, "getMyInt failed: wrong method name");
 			}
 			if (message.type == TMessageType.EXCEPTION) {
 				TApplicationException e = TApplicationException.read(iprot);
 				iprot.readMessageEnd();
 				TException returnedException = e;
-				if (e.getType() == FApplicationExceptionType.RESPONSE_TOO_LARGE) {
-					returnedException = new TTransportException(FTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
+				if (e.getType() == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE) {
+					returnedException = new TTransportException(FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
 				}
 				throw returnedException;
 			}
 			if (message.type != TMessageType.REPLY) {
-				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "getMyInt failed: invalid message type");
+				throw new TApplicationException(FrugalTApplicationExceptionType.INVALID_MESSAGE_TYPE, "getMyInt failed: invalid message type");
 			}
 			getMyInt_result res = new getMyInt_result();
 			res.read(iprot);
@@ -451,7 +451,7 @@ public class FFoo {
 			if (res.isSetSuccess()) {
 				return res.success;
 			}
-			throw new TApplicationException(TApplicationException.MISSING_RESULT, "getMyInt failed: unknown result");
+			throw new TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "getMyInt failed: unknown result");
 		}
 		public A use_subdir_struct(FContext ctx, A a) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
@@ -468,19 +468,19 @@ public class FFoo {
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("use_subdir_struct")) {
-				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "use_subdir_struct failed: wrong method name");
+				throw new TApplicationException(FrugalTApplicationExceptionType.WRONG_METHOD_NAME, "use_subdir_struct failed: wrong method name");
 			}
 			if (message.type == TMessageType.EXCEPTION) {
 				TApplicationException e = TApplicationException.read(iprot);
 				iprot.readMessageEnd();
 				TException returnedException = e;
-				if (e.getType() == FApplicationExceptionType.RESPONSE_TOO_LARGE) {
-					returnedException = new TTransportException(FTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
+				if (e.getType() == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE) {
+					returnedException = new TTransportException(FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
 				}
 				throw returnedException;
 			}
 			if (message.type != TMessageType.REPLY) {
-				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "use_subdir_struct failed: invalid message type");
+				throw new TApplicationException(FrugalTApplicationExceptionType.INVALID_MESSAGE_TYPE, "use_subdir_struct failed: invalid message type");
 			}
 			use_subdir_struct_result res = new use_subdir_struct_result();
 			res.read(iprot);
@@ -488,7 +488,7 @@ public class FFoo {
 			if (res.isSetSuccess()) {
 				return res.success;
 			}
-			throw new TApplicationException(TApplicationException.MISSING_RESULT, "use_subdir_struct failed: unknown result");
+			throw new TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "use_subdir_struct failed: unknown result");
 		}
 	}
 
@@ -535,7 +535,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "Ping", e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.PROTOCOL_ERROR, "Ping", e.getMessage());
 					}
 					throw e;
 				}
@@ -551,7 +551,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "ping", "Internal error processing Ping: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.INTERNAL_ERROR, "ping", "Internal error processing Ping: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -563,8 +563,8 @@ public class FFoo {
 						oprot.writeMessageEnd();
 						oprot.getTransport().flush();
 					} catch (TTransportException e) {
-						if (e.getType() == FTransportExceptionType.RESPONSE_TOO_LARGE) {
-							writeApplicationException(ctx, oprot, FApplicationExceptionType.RESPONSE_TOO_LARGE, "ping", "response too large: " + e.getMessage());
+						if (e.getType() == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE) {
+							writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, "ping", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -582,7 +582,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "blah", e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.PROTOCOL_ERROR, "blah", e.getMessage());
 					}
 					throw e;
 				}
@@ -603,7 +603,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "blah", "Internal error processing blah: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.INTERNAL_ERROR, "blah", "Internal error processing blah: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -615,8 +615,8 @@ public class FFoo {
 						oprot.writeMessageEnd();
 						oprot.getTransport().flush();
 					} catch (TTransportException e) {
-						if (e.getType() == FTransportExceptionType.RESPONSE_TOO_LARGE) {
-							writeApplicationException(ctx, oprot, FApplicationExceptionType.RESPONSE_TOO_LARGE, "blah", "response too large: " + e.getMessage());
+						if (e.getType() == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE) {
+							writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, "blah", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -650,7 +650,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "bin_method", e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.PROTOCOL_ERROR, "bin_method", e.getMessage());
 					}
 					throw e;
 				}
@@ -669,7 +669,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "bin_method", "Internal error processing bin_method: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.INTERNAL_ERROR, "bin_method", "Internal error processing bin_method: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -681,8 +681,8 @@ public class FFoo {
 						oprot.writeMessageEnd();
 						oprot.getTransport().flush();
 					} catch (TTransportException e) {
-						if (e.getType() == FTransportExceptionType.RESPONSE_TOO_LARGE) {
-							writeApplicationException(ctx, oprot, FApplicationExceptionType.RESPONSE_TOO_LARGE, "bin_method", "response too large: " + e.getMessage());
+						if (e.getType() == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE) {
+							writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, "bin_method", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -700,7 +700,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "param_modifiers", e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.PROTOCOL_ERROR, "param_modifiers", e.getMessage());
 					}
 					throw e;
 				}
@@ -717,7 +717,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "param_modifiers", "Internal error processing param_modifiers: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.INTERNAL_ERROR, "param_modifiers", "Internal error processing param_modifiers: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -729,8 +729,8 @@ public class FFoo {
 						oprot.writeMessageEnd();
 						oprot.getTransport().flush();
 					} catch (TTransportException e) {
-						if (e.getType() == FTransportExceptionType.RESPONSE_TOO_LARGE) {
-							writeApplicationException(ctx, oprot, FApplicationExceptionType.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: " + e.getMessage());
+						if (e.getType() == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE) {
+							writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, "param_modifiers", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -748,7 +748,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "underlying_types_test", e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.PROTOCOL_ERROR, "underlying_types_test", e.getMessage());
 					}
 					throw e;
 				}
@@ -765,7 +765,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "underlying_types_test", "Internal error processing underlying_types_test: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.INTERNAL_ERROR, "underlying_types_test", "Internal error processing underlying_types_test: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -777,8 +777,8 @@ public class FFoo {
 						oprot.writeMessageEnd();
 						oprot.getTransport().flush();
 					} catch (TTransportException e) {
-						if (e.getType() == FTransportExceptionType.RESPONSE_TOO_LARGE) {
-							writeApplicationException(ctx, oprot, FApplicationExceptionType.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: " + e.getMessage());
+						if (e.getType() == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE) {
+							writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, "underlying_types_test", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -796,7 +796,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "getThing", e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.PROTOCOL_ERROR, "getThing", e.getMessage());
 					}
 					throw e;
 				}
@@ -813,7 +813,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "getThing", "Internal error processing getThing: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.INTERNAL_ERROR, "getThing", "Internal error processing getThing: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -825,8 +825,8 @@ public class FFoo {
 						oprot.writeMessageEnd();
 						oprot.getTransport().flush();
 					} catch (TTransportException e) {
-						if (e.getType() == FTransportExceptionType.RESPONSE_TOO_LARGE) {
-							writeApplicationException(ctx, oprot, FApplicationExceptionType.RESPONSE_TOO_LARGE, "getThing", "response too large: " + e.getMessage());
+						if (e.getType() == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE) {
+							writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, "getThing", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -844,7 +844,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "getMyInt", e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.PROTOCOL_ERROR, "getMyInt", e.getMessage());
 					}
 					throw e;
 				}
@@ -861,7 +861,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "getMyInt", "Internal error processing getMyInt: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.INTERNAL_ERROR, "getMyInt", "Internal error processing getMyInt: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -873,8 +873,8 @@ public class FFoo {
 						oprot.writeMessageEnd();
 						oprot.getTransport().flush();
 					} catch (TTransportException e) {
-						if (e.getType() == FTransportExceptionType.RESPONSE_TOO_LARGE) {
-							writeApplicationException(ctx, oprot, FApplicationExceptionType.RESPONSE_TOO_LARGE, "getMyInt", "response too large: " + e.getMessage());
+						if (e.getType() == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE) {
+							writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, "getMyInt", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -892,7 +892,7 @@ public class FFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "use_subdir_struct", e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.PROTOCOL_ERROR, "use_subdir_struct", e.getMessage());
 					}
 					throw e;
 				}
@@ -909,7 +909,7 @@ public class FFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "use_subdir_struct", "Internal error processing use_subdir_struct: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.INTERNAL_ERROR, "use_subdir_struct", "Internal error processing use_subdir_struct: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -921,8 +921,8 @@ public class FFoo {
 						oprot.writeMessageEnd();
 						oprot.getTransport().flush();
 					} catch (TTransportException e) {
-						if (e.getType() == FTransportExceptionType.RESPONSE_TOO_LARGE) {
-							writeApplicationException(ctx, oprot, FApplicationExceptionType.RESPONSE_TOO_LARGE, "use_subdir_struct", "response too large: " + e.getMessage());
+						if (e.getType() == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE) {
+							writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, "use_subdir_struct", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}

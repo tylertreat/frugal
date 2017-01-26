@@ -1,6 +1,7 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.FContext;
+import com.workiva.frugal.exception.FrugalTTransportExceptionType;
 import io.nats.client.AsyncSubscription;
 import io.nats.client.Connection;
 import io.nats.client.Constants;
@@ -77,7 +78,7 @@ public class FNatsTransportTest {
             transport.open();
             fail("Expected TTransportException");
         } catch (TTransportException e) {
-            assertEquals(TTransportException.ALREADY_OPEN, e.getType());
+            assertEquals(FrugalTTransportExceptionType.ALREADY_OPEN, e.getType());
         }
 
         FTransportClosedCallback mockCallback = mock(FTransportClosedCallback.class);

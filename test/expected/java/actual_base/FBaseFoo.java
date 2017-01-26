@@ -35,8 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.workiva.frugal.FContext;
-import com.workiva.frugal.exception.FApplicationExceptionType;
-import com.workiva.frugal.exception.FTransportExceptionType;
+import com.workiva.frugal.exception.FrugalTApplicationExceptionType;
+import com.workiva.frugal.exception.FrugalTTransportExceptionType;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.processor.FBaseProcessor;
@@ -107,19 +107,19 @@ public class FBaseFoo {
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("basePing")) {
-				throw new TApplicationException(TApplicationException.WRONG_METHOD_NAME, "basePing failed: wrong method name");
+				throw new TApplicationException(FrugalTApplicationExceptionType.WRONG_METHOD_NAME, "basePing failed: wrong method name");
 			}
 			if (message.type == TMessageType.EXCEPTION) {
 				TApplicationException e = TApplicationException.read(iprot);
 				iprot.readMessageEnd();
 				TException returnedException = e;
-				if (e.getType() == FApplicationExceptionType.RESPONSE_TOO_LARGE) {
-					returnedException = new TTransportException(FTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
+				if (e.getType() == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE) {
+					returnedException = new TTransportException(FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
 				}
 				throw returnedException;
 			}
 			if (message.type != TMessageType.REPLY) {
-				throw new TApplicationException(TApplicationException.INVALID_MESSAGE_TYPE, "basePing failed: invalid message type");
+				throw new TApplicationException(FrugalTApplicationExceptionType.INVALID_MESSAGE_TYPE, "basePing failed: invalid message type");
 			}
 			basePing_result res = new basePing_result();
 			res.read(iprot);
@@ -160,7 +160,7 @@ public class FBaseFoo {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.PROTOCOL_ERROR, "basePing", e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.PROTOCOL_ERROR, "basePing", e.getMessage());
 					}
 					throw e;
 				}
@@ -176,7 +176,7 @@ public class FBaseFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationException.INTERNAL_ERROR, "basePing", "Internal error processing basePing: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.INTERNAL_ERROR, "basePing", "Internal error processing basePing: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -188,8 +188,8 @@ public class FBaseFoo {
 						oprot.writeMessageEnd();
 						oprot.getTransport().flush();
 					} catch (TTransportException e) {
-						if (e.getType() == FTransportExceptionType.RESPONSE_TOO_LARGE) {
-							writeApplicationException(ctx, oprot, FApplicationExceptionType.RESPONSE_TOO_LARGE, "basePing", "response too large: " + e.getMessage());
+						if (e.getType() == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE) {
+							writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, "basePing", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
