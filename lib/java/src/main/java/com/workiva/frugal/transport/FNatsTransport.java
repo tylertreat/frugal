@@ -1,6 +1,5 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.exception.FMessageSizeException;
 import io.nats.client.Connection;
 import io.nats.client.Constants;
 import io.nats.client.Message;
@@ -111,11 +110,6 @@ public class FNatsTransport extends FAsyncTransport {
     protected void flush(byte[] payload) throws TTransportException {
         if (!isOpen()) {
             throw getClosedConditionException(conn.getState(), "flush:");
-        }
-        if (payload.length > NATS_MAX_MESSAGE_SIZE) {
-            throw FMessageSizeException.request(
-                    String.format("Message exceeds %d bytes, was %d bytes",
-                            NATS_MAX_MESSAGE_SIZE, payload.length));
         }
         try {
             conn.publish(subject, inbox, payload);

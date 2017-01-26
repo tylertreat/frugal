@@ -1,7 +1,6 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.FContext;
-import com.workiva.frugal.exception.FException;
 import com.workiva.frugal.protocol.HeaderUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
@@ -130,7 +129,7 @@ public abstract class FAsyncTransport extends FTransport {
         try {
             opId = Long.parseLong(headers.get(FContext.OPID_HEADER));
         } catch (NumberFormatException e) {
-            throw new FException("invalid protocol frame: op id not a uint64", e);
+            throw new TException("invalid protocol frame: op id not a uint64", e);
         }
 
         BlockingQueue<byte[]> queue;
