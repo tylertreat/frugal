@@ -1,7 +1,7 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.FContext;
-import com.workiva.frugal.exception.FTransportException;
+import com.workiva.frugal.exception.FTransportExceptionType;
 import com.workiva.frugal.transport.monitor.FTransportMonitor;
 import com.workiva.frugal.transport.monitor.MonitorRunner;
 import org.apache.thrift.transport.TTransport;
@@ -123,7 +123,7 @@ public abstract class FTransport {
 
         int requestSizeLimit = getRequestSizeLimit();
         if (requestSizeLimit > 0 && length > requestSizeLimit) {
-            throw new TTransportException(FTransportException.REQUEST_TOO_LARGE,
+            throw new TTransportException(FTransportExceptionType.REQUEST_TOO_LARGE,
                     String.format("Message exceeds %d bytes, was %d bytes",
                             requestSizeLimit, length));
         }

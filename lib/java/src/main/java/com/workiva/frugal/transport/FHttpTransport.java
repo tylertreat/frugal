@@ -2,7 +2,7 @@ package com.workiva.frugal.transport;
 
 
 import com.workiva.frugal.FContext;
-import com.workiva.frugal.exception.FTransportException;
+import com.workiva.frugal.exception.FTransportExceptionType;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
@@ -201,7 +201,7 @@ public class FHttpTransport extends FTransport {
             int status = response.getStatusLine().getStatusCode();
             if (status == HttpStatus.SC_REQUEST_TOO_LONG) {
                 throw new TTransportException(
-                        FTransportException.RESPONSE_TOO_LARGE, "response was too large for the transport");
+                        FTransportExceptionType.RESPONSE_TOO_LARGE, "response was too large for the transport");
             }
 
             // Decode body

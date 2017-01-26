@@ -1,11 +1,9 @@
 package com.workiva.frugal.exception;
 
-import org.apache.thrift.TApplicationException;
-
 /**
- * Contains TApplicationException constants.
+ * Contains TApplicationException types used in frugal instantiated TApplicationExceptions.
  */
-public class FApplicationException extends TApplicationException {
+public class FApplicationExceptionType {
 
     /**
      * TApplicationException code which indicates the response was too large for the transport.

@@ -2297,8 +2297,8 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += g.generateStructImports()
 
 	imports += "import com.workiva.frugal.FContext;\n"
-	imports += "import com.workiva.frugal.exception.FApplicationException;\n"
-	imports += "import com.workiva.frugal.exception.FTransportException;\n"
+	imports += "import com.workiva.frugal.exception.FApplicationExceptionType;\n"
+	imports += "import com.workiva.frugal.exception.FTransportExceptionType;\n"
 	imports += "import com.workiva.frugal.middleware.InvocationHandler;\n"
 	imports += "import com.workiva.frugal.middleware.ServiceMiddleware;\n"
 	imports += "import com.workiva.frugal.processor.FBaseProcessor;\n"
@@ -2865,8 +2865,8 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtabtab + "TApplicationException e = TApplicationException.read(iprot);\n"
 	contents += tabtabtabtab + "iprot.readMessageEnd();\n"
 	contents += tabtabtabtab + "TException returnedException = e;\n"
-	contents += tabtabtabtab + "if (e.getType() == FApplicationException.RESPONSE_TOO_LARGE) {\n"
-	contents += tabtabtabtabtab + "returnedException = new TTransportException(FTransportException.RESPONSE_TOO_LARGE, e.getMessage());\n"
+	contents += tabtabtabtab + "if (e.getType() == FApplicationExceptionType.RESPONSE_TOO_LARGE) {\n"
+	contents += tabtabtabtabtab + "returnedException = new TTransportException(FTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());\n"
 	contents += tabtabtabtab + "}\n"
 	contents += tabtabtabtab + "throw returnedException;\n"
 	contents += tabtabtab + "}\n"
@@ -3020,14 +3020,11 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtabtabtab + "result.write(oprot);\n"
 		contents += tabtabtabtabtabtab + "oprot.writeMessageEnd();\n"
 		contents += tabtabtabtabtabtab + "oprot.getTransport().flush();\n"
-		contents += tabtabtabtabtab + "} catch (TException e) {\n"
-		contents += tabtabtabtabtabtab + "if (e instanceof TTransportException) {\n"
-		contents += tabtabtabtabtabtabtab + "TTransportException trException = (TTransportException) e;\n"
-		contents += tabtabtabtabtabtabtab + "if (trException.getType() == FTransportException.RESPONSE_TOO_LARGE) {\n"
-		contents += tabtabtabtabtabtabtabtab + fmt.Sprintf(
-			"writeApplicationException(ctx, oprot, FApplicationException.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \" + e.getMessage());\n",
+		contents += tabtabtabtabtab + "} catch (TTransportException e) {\n"
+		contents += tabtabtabtabtabtab + "if (e.getType() == FTransportExceptionType.RESPONSE_TOO_LARGE) {\n"
+		contents += tabtabtabtabtabtabtab + fmt.Sprintf(
+			"writeApplicationException(ctx, oprot, FApplicationExceptionType.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \" + e.getMessage());\n",
 			methodLower)
-		contents += tabtabtabtabtabtabtab + "}\n"
 		contents += tabtabtabtabtabtab + "} else {\n"
 		contents += tabtabtabtabtabtabtab + "throw e;\n"
 		contents += tabtabtabtabtabtab + "}\n"

@@ -1,11 +1,9 @@
 package com.workiva.frugal.exception;
 
-import org.apache.thrift.transport.TTransportException;
-
 /**
- * Contains TTransportException constants.
+ * Contains TTransportException types used in frugal instantiated TTransportExceptions.
  */
-public class FTransportException extends TTransportException {
+public class FTransportExceptionType {
 
     /**
      * TTransportException code which indicates the request was too large for the transport.

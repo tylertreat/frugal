@@ -1,6 +1,6 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.exception.FTransportException;
+import com.workiva.frugal.exception.FTransportExceptionType;
 import io.nats.client.Connection;
 import io.nats.client.Constants;
 import org.apache.thrift.transport.TTransportException;
@@ -92,7 +92,7 @@ public class FNatsPublisherTransport implements FPublisherTransport {
         }
 
         if (payload.length > NATS_MAX_MESSAGE_SIZE) {
-            throw new TTransportException(FTransportException.REQUEST_TOO_LARGE,
+            throw new TTransportException(FTransportExceptionType.REQUEST_TOO_LARGE,
                     String.format("Message exceeds %d bytes, was %d bytes",
                             NATS_MAX_MESSAGE_SIZE, payload.length));
         }
