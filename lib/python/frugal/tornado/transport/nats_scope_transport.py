@@ -8,7 +8,7 @@ from frugal.transport import FPublisherTransportFactory
 from frugal.transport import FPublisherTransport
 from frugal.transport import FSubscriberTransportFactory
 from frugal.transport import FSubscriberTransport
-from frugal.exceptions import FMessageSizeException
+from frugal.exceptions import FrugalTTransportExceptionType
 
 _FRAME_BUFFER_SIZE = 5
 _FRUGAL_PREFIX = "frugal."
@@ -52,7 +52,9 @@ class FNatsPublisherTransport(FPublisherTransport):
             raise TTransportException(TTransportException.NOT_OPEN, msg)
         if self._check_publish_size(data):
             msg = 'Message exceeds NATS max message size'
-            raise FMessageSizeException.request(msg)
+            raise TTransportException(
+                type=FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+                message=msg)
         yield self._nats_client.publish('frugal.{0}'.format(topic), data)
 
 

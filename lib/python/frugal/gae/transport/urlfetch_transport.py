@@ -4,7 +4,7 @@ from struct import unpack
 
 from thrift.transport.TTransport import TTransportException
 
-from frugal.exceptions import FTimeoutException
+from frugal.exceptions import FrugalTTransportExceptionType
 from frugal.transport.base_http_transport import TBaseHttpTransport
 
 
@@ -77,5 +77,5 @@ def _urlfetch(url, body, validate_certificate, timeout, headers):
             deadline=timeout
         )
     except DeadlineExceededError:
-        raise FTimeoutException()
+        raise TTransportException(type=FrugalTTransportExceptionType.TIMED_OUT)
 

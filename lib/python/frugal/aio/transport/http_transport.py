@@ -9,7 +9,7 @@ from thrift.transport.TTransport import TTransportException
 
 from frugal.aio.transport import FTransportBase
 from frugal.context import FContext
-from frugal.exceptions import FMessageSizeException
+from frugal.exceptions import FrugalTTransportExceptionType
 
 
 class FHttpTransport(FTransportBase):
@@ -69,8 +69,10 @@ class FHttpTransport(FTransportBase):
 
         status, text = await self._make_request(context, encoded)
         if status == 413:
-            raise FMessageSizeException.response(
-                'response was too large for the transport')
+            raise TTransportException(
+                type=FrugalTTransportExceptionType.RESPONSE_TOO_LARGE,
+                message='response was too large for the transport'
+            )
 
         if status >= 300:
             raise TTransportException(

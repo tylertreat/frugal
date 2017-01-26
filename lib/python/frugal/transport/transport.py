@@ -1,7 +1,7 @@
 from thrift.transport.TTransport import TTransportBase
 from thrift.transport.TTransport import TTransportException
 
-from frugal.exceptions import FMessageSizeException
+from frugal.exceptions import FrugalTTransportExceptionType
 
 
 class FTransport(object):
@@ -86,8 +86,9 @@ class FTransport(object):
                                       'Transport is not open')
 
         if len(payload) > self.get_request_size_limit() > 0:
-            raise FMessageSizeException.request(
-                'Message exceeds {0} bytes, was {1} bytes'.format(
+            raise TTransportException(
+                type=FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+                message='Message exceeds {0} bytes, was {1} bytes'.format(
                     self.get_request_size_limit(), len(payload)))
 
 

@@ -5,7 +5,7 @@ from tornado import concurrent
 from tornado.testing import gen_test, AsyncTestCase
 from thrift.transport.TTransport import TTransportException
 
-from frugal.exceptions import FMessageSizeException
+from frugal.exceptions import FrugalTTransportExceptionType
 from frugal.tornado.transport import FNatsPublisherTransport
 from frugal.tornado.transport import FNatsSubscriberTransport
 
@@ -65,11 +65,13 @@ class TestFNatsScopeTransport(AsyncTestCase):
         self.publisher_transport._is_open = True
 
         buff = bytearray(1024 * 2048)
-        with self.assertRaises(FMessageSizeException) as cm:
+        with self.assertRaises(TTransportException) as cm:
             yield self.publisher_transport.publish('foo', buff)
 
-        self.assertEquals("Message exceeds NATS max message size",
-                          cm.exception.message)
+        self.assertEqual(FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+                         cm.exception.type)
+        self.assertEqual("Message exceeds NATS max message size",
+                         cm.exception.message)
 
     @gen_test
     def test_publish_throws_if_transport_not_open(self):

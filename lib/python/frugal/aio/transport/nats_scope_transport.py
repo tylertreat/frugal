@@ -5,7 +5,7 @@ from thrift.transport.TTransport import TTransportException
 from thrift.transport.TTransport import TMemoryBuffer
 
 from frugal import _NATS_MAX_MESSAGE_SIZE
-from frugal.exceptions import FMessageSizeException
+from frugal.exceptions import FrugalTTransportExceptionType
 from frugal.transport import FPublisherTransport
 from frugal.transport import FSubscriberTransport
 from frugal.transport import FPublisherTransportFactory
@@ -48,7 +48,10 @@ class FNatsPublisherTransport(FPublisherTransport):
             raise TTransportException(TTransportException.NOT_OPEN,
                                       'Transport is not connected')
         if self._check_publish_size(data):
-            raise FMessageSizeException('Message exceeds max message size')
+            raise TTransportException(
+                type=FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+                message='Message exceeds max message size'
+            )
         await self._nats_client.publish('frugal.{0}'.format(topic), data)
 
 

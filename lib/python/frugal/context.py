@@ -1,7 +1,6 @@
 import uuid
 from copy import copy
 from frugal import _IS_PY2
-from frugal.exceptions import FContextHeaderException
 
 # Header containing correlation id.
 _CID_HEADER = "_cid"
@@ -109,8 +108,7 @@ class FContext(object):
             TypeError: if user passes non-string for key or value.
         """
         if key in (_OPID_HEADER, _CID_HEADER):
-            raise FContextHeaderException(
-                "Not allowed to overwrite internal _cid or _opid.")
+            return self
 
         self._set_request_header(key, value)
         return self

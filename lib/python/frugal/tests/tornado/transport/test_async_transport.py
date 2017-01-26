@@ -1,3 +1,4 @@
+from thrift.protocol.TProtocol import TProtocolException
 from thrift.transport.TTransport import TTransportException
 from tornado import gen
 from tornado.concurrent import Future
@@ -6,9 +7,7 @@ from tornado.testing import gen_test
 
 from frugal.context import FContext
 from frugal.exceptions import FException
-from frugal.exceptions import FMessageSizeException
-from frugal.exceptions import FProtocolException
-from frugal.exceptions import FTransportException
+from frugal.exceptions import FrugalTTransportExceptionType
 from frugal.tests import utils
 from frugal.tornado.transport import FAsyncTransport
 
@@ -70,9 +69,9 @@ class TestFAsyncTransport(AsyncTestCase):
         ctx.timeout = 10
         frame = utils.mock_frame(ctx)
         transport = FAsyncTransportImpl(request_size_limit=1)
-        with self.assertRaises(FMessageSizeException) as cm:
+        with self.assertRaises(TTransportException) as cm:
             yield transport.oneway(ctx, frame)
-        self.assertEqual(FTransportException.REQUEST_TOO_LARGE,
+        self.assertEqual(FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
                          cm.exception.type)
         self.assertIsNone(transport._payload)
 
@@ -116,9 +115,9 @@ class TestFAsyncTransport(AsyncTestCase):
         ctx.timeout = 10
         frame = utils.mock_frame(ctx)
         transport = FAsyncTransportImpl(request_size_limit=1)
-        with self.assertRaises(FMessageSizeException) as cm:
+        with self.assertRaises(TTransportException) as cm:
             yield transport.request(ctx, frame)
-        self.assertEqual(FTransportException.REQUEST_TOO_LARGE,
+        self.assertEqual(FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
                          cm.exception.type)
         self.assertEqual(0, len(transport._futures))
         self.assertIsNone(transport._payload)
@@ -192,7 +191,7 @@ class TestFAsyncTransport(AsyncTestCase):
     def test_handle_response_bad_frame(self):
         transport = FAsyncTransport()
 
-        with self.assertRaises(FProtocolException) as cm:
+        with self.assertRaises(TProtocolException) as cm:
             yield transport.handle_response(b"foo")
 
         self.assertEquals("Invalid frame size: 3", str(cm.exception))
