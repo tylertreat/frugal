@@ -52,8 +52,8 @@ class FBaseFooClient implements FBaseFoo {
     if (msg.type == thrift.TMessageType.EXCEPTION) {
       thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
       iprot.readMessageEnd();
-      if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-        throw new thrift.TTransportError(frugal.FTransportError.RESPONSE_TOO_LARGE, error.message);
+      if (error.type == frugal.FrugalTApplicationErrorType.RESPONSE_TOO_LARGE) {
+        throw new thrift.TTransportError(frugal.FrugalTTransportErrorType.RESPONSE_TOO_LARGE, error.message);
       }
       throw error;
     }

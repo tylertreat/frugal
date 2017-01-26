@@ -79,7 +79,7 @@ void main() {
         await transport.request(ctx, transportRequest);
         fail('should have thrown an exception');
       } on TTransportError catch (e) {
-        expect(e.type, TTransportErrorType.TIMED_OUT);
+        expect(e.type, FrugalTTransportErrorType.TIMED_OUT);
       }
     });
 

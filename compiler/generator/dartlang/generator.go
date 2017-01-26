@@ -1353,7 +1353,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += tabtabtabtab + "thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);\n"
 		subscribers += tabtabtabtab + "iprot.readMessageEnd();\n"
 		subscribers += tabtabtabtab + "throw new thrift.TApplicationError(\n"
-		subscribers += tabtabtabtab + "thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);\n"
+		subscribers += tabtabtabtab + "frugal.FrugalTApplicationErrorType.UNKNOWN_METHOD, tMsg.name);\n"
 		subscribers += tabtabtab + "}\n"
 		subscribers += fmt.Sprintf(tabtabtab+"var req = new %s();\n", g.qualifiedTypeName(op.Type))
 		subscribers += tabtabtab + "req.read(iprot);\n"
@@ -1516,8 +1516,8 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtab + "if (msg.type == thrift.TMessageType.EXCEPTION) {\n"
 	contents += tabtabtab + "thrift.TApplicationError error = thrift.TApplicationError.read(iprot);\n"
 	contents += tabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtab + "if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {\n"
-	contents += tabtabtabtab + "throw new thrift.TTransportError(frugal.FTransportError.RESPONSE_TOO_LARGE, error.message);\n"
+	contents += tabtabtab + "if (error.type == frugal.FrugalTApplicationErrorType.RESPONSE_TOO_LARGE) {\n"
+	contents += tabtabtabtab + "throw new thrift.TTransportError(frugal.FrugalTTransportErrorType.RESPONSE_TOO_LARGE, error.message);\n"
 	contents += tabtabtab + "}\n"
 	contents += tabtabtab + "throw error;\n"
 	contents += tabtab + "}\n\n"
@@ -1533,7 +1533,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += tabtab + "}\n\n"
 		contents += g.generateErrors(method)
 		contents += tabtab + "throw new thrift.TApplicationError(\n"
-		contents += fmt.Sprintf(tabtabtab+"thrift.TApplicationErrorType.MISSING_RESULT, "+
+		contents += fmt.Sprintf(tabtabtab+"frugal.FrugalTApplicationErrorType.MISSING_RESULT, "+
 			"\"%s failed: unknown result\"\n",
 			nameLower)
 		contents += tabtab + ");\n"

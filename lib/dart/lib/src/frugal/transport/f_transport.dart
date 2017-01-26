@@ -54,13 +54,13 @@ abstract class FTransport {
   void _preflightRequestCheck(Uint8List payload) {
     if (!isOpen) {
       throw new TTransportError(
-          TTransportErrorType.NOT_OPEN, 'transport not open');
+          FrugalTTransportErrorType.NOT_OPEN, 'transport not open');
     }
 
     if (requestSizeLimit != null &&
         requestSizeLimit > 0 &&
         payload.length > requestSizeLimit) {
-      throw new TTransportError(FTransportError.REQUEST_TOO_LARGE);
+      throw new TTransportError(FrugalTTransportErrorType.REQUEST_TOO_LARGE);
     }
   }
 }

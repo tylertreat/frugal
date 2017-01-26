@@ -88,7 +88,7 @@ class AlbumWinnersSubscriber {
         thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
         iprot.readMessageEnd();
         throw new thrift.TApplicationError(
-        thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+        frugal.FrugalTApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
       }
       var req = new t_v1_music.Album();
       req.read(iprot);

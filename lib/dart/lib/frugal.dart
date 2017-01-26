@@ -4,7 +4,6 @@ export 'src/frugal.dart'
     show
         BaseFTransportMonitor,
         FAdapterTransport,
-        FApplicationError,
         FAsyncCallback,
         FAdapterTransport,
         FAsyncTransport,
@@ -21,8 +20,9 @@ export 'src/frugal.dart'
         FSubscriberTransportFactory,
         FSubscription,
         FTransport,
-        FTransportError,
         FTransportMonitor,
+        FrugalTApplicationErrorType,
+        FrugalTTransportErrorType,
         InvocationHandler,
         Middleware,
         TMemoryOutputBuffer,

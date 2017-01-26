@@ -33,7 +33,7 @@ class TMemoryOutputBuffer extends TTransport {
     // Leave room for the frame size
     if (_limit > 0 && _writeBuffer.length + length + 4 > _limit) {
       _writeBuffer.clear();
-      throw new TTransportError(FTransportError.REQUEST_TOO_LARGE);
+      throw new TTransportError(FrugalTTransportErrorType.REQUEST_TOO_LARGE);
     }
     _writeBuffer.addAll(buffer.sublist(offset, offset + length));
   }
