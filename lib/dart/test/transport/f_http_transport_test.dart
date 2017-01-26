@@ -159,7 +159,7 @@ void main() {
       expect(
           transport.request(
               new FContext(), utf8Codec.encode('my really long request')),
-          throwsA(new isInstanceOf<FMessageSizeError>()));
+          throwsA(new isInstanceOf<TTransportError>()));
     });
   });
 
@@ -184,7 +184,7 @@ void main() {
           new MockResponse(FHttpTransport.REQUEST_ENTITY_TOO_LARGE);
       MockTransports.http.expect('POST', transport.uri, respondWith: response);
       expect(transport.request(new FContext(), utf8Codec.encode('my request')),
-          throwsA(new isInstanceOf<FMessageSizeError>()));
+          throwsA(new isInstanceOf<TTransportError>()));
     });
 
     test('Test transport receives error on 404 response', () async {

@@ -88,7 +88,7 @@ class FHttpTransport extends FTransport {
             'Frugal http request failed - unauthorized ${ex.message}');
       }
       if (ex.response.status == REQUEST_ENTITY_TOO_LARGE) {
-        throw new FMessageSizeError.response();
+        throw new TTransportError(FTransportError.RESPONSE_TOO_LARGE);
       }
       throw new TTransportError(TTransportErrorType.UNKNOWN, ex.message);
     } on TimeoutException catch (_) {

@@ -62,7 +62,7 @@ class FStoreClient implements FStore {
       thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
       iprot.readMessageEnd();
       if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-        throw new frugal.FMessageSizeError.response(message: error.message);
+        throw new thrift.TTransportError(frugal.FTransportError.RESPONSE_TOO_LARGE, error.message);
       }
       throw error;
     }
@@ -104,7 +104,7 @@ class FStoreClient implements FStore {
       thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
       iprot.readMessageEnd();
       if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-        throw new frugal.FMessageSizeError.response(message: error.message);
+        throw new thrift.TTransportError(frugal.FTransportError.RESPONSE_TOO_LARGE, error.message);
       }
       throw error;
     }
