@@ -1,7 +1,6 @@
 package frugal
 
 import (
-	"errors"
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
 
@@ -21,14 +20,6 @@ const (
 	// TAPPLICATION_RESPONSE_TOO_LARGE is a TApplicationException error type
 	// indicating the response exceeded the size limit.
 	TAPPLICATION_RESPONSE_TOO_LARGE = 100
-)
-
-var (
-	// ErrTransportClosed is returned by service calls when the transport is
-	// unexpectedly closed, perhaps as a result of the transport entering an
-	// invalid state. If this is returned, the transport should be
-	// reinitialized.
-	ErrTransportClosed = errors.New("frugal: transport was unexpectedly closed")
 )
 
 // IsErrTooLarge indicates if the given error is a TTransportException
