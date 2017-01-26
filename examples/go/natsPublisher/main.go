@@ -41,7 +41,7 @@ func main() {
 	album := &music.Album{
 		ASIN:     "c54d385a-5024-4f3f-86ef-6314546a7e7f",
 		Duration: 1200,
-		Tracks: []*music.Track{&music.Track{
+		Tracks: []*music.Track{{
 			Title:     "Comme des enfants",
 			Artist:    "Coeur de pirate",
 			Publisher: "Grosse Boîte",
@@ -51,6 +51,9 @@ func main() {
 		}},
 	}
 	if err := publisher.PublishWinner(ctx, album); err != nil {
+		panic(err)
+	}
+	if err := publisher.PublishContestStart(ctx, []*music.Album{album, album}); err != nil {
 		panic(err)
 	}
 

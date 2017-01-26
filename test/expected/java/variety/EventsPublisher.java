@@ -22,8 +22,18 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.thrift.protocol.*;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.EnumMap;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.EnumSet;
+import java.util.Collections;
+import java.util.BitSet;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.logging.Logger;
 import javax.annotation.Generated;
 
@@ -47,6 +57,12 @@ public class EventsPublisher {
 		 * This is a docstring.
 		 */
 		public void publishEventCreated(FContext ctx, String user, Event req) throws TException;
+
+		public void publishSomeInt(FContext ctx, String user, long req) throws TException;
+
+		public void publishSomeStr(FContext ctx, String user, String req) throws TException;
+
+		public void publishSomeList(FContext ctx, String user, java.util.List<java.util.Map<Long, Event>> req) throws TException;
 
 	}
 
@@ -84,6 +100,18 @@ public class EventsPublisher {
 			proxy.publishEventCreated(ctx, user, req);
 		}
 
+		public void publishSomeInt(FContext ctx, String user, long req) throws TException {
+			proxy.publishSomeInt(ctx, user, req);
+		}
+
+		public void publishSomeStr(FContext ctx, String user, String req) throws TException {
+			proxy.publishSomeStr(ctx, user, req);
+		}
+
+		public void publishSomeList(FContext ctx, String user, java.util.List<java.util.Map<Long, Event>> req) throws TException {
+			proxy.publishSomeList(ctx, user, req);
+		}
+
 		protected static class InternalEventsPublisher implements Iface {
 
 			private FScopeProvider provider;
@@ -116,11 +144,65 @@ public class EventsPublisher {
 				String prefix = String.format("foo.%s.", user);
 				String topic = String.format("%sEvents%s%s", prefix, DELIMITER, op);
 				TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getPublishSizeLimit());
-				FProtocol protocol = protocolFactory.getProtocol(memoryBuffer);
-				protocol.writeRequestHeader(ctx);
-				protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
-				req.write(protocol);
-				protocol.writeMessageEnd();
+				FProtocol oprot = protocolFactory.getProtocol(memoryBuffer);
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
+				req.write(oprot);
+				oprot.writeMessageEnd();
+				transport.publish(topic, memoryBuffer.getWriteBytes());
+			}
+
+
+			public void publishSomeInt(FContext ctx, String user, long req) throws TException {
+				String op = "SomeInt";
+				String prefix = String.format("foo.%s.", user);
+				String topic = String.format("%sEvents%s%s", prefix, DELIMITER, op);
+				TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getPublishSizeLimit());
+				FProtocol oprot = protocolFactory.getProtocol(memoryBuffer);
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
+				long elem272 = req;
+				oprot.writeI64(elem272);
+				oprot.writeMessageEnd();
+				transport.publish(topic, memoryBuffer.getWriteBytes());
+			}
+
+
+			public void publishSomeStr(FContext ctx, String user, String req) throws TException {
+				String op = "SomeStr";
+				String prefix = String.format("foo.%s.", user);
+				String topic = String.format("%sEvents%s%s", prefix, DELIMITER, op);
+				TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getPublishSizeLimit());
+				FProtocol oprot = protocolFactory.getProtocol(memoryBuffer);
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
+				String elem273 = req;
+				oprot.writeString(elem273);
+				oprot.writeMessageEnd();
+				transport.publish(topic, memoryBuffer.getWriteBytes());
+			}
+
+
+			public void publishSomeList(FContext ctx, String user, java.util.List<java.util.Map<Long, Event>> req) throws TException {
+				String op = "SomeList";
+				String prefix = String.format("foo.%s.", user);
+				String topic = String.format("%sEvents%s%s", prefix, DELIMITER, op);
+				TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getPublishSizeLimit());
+				FProtocol oprot = protocolFactory.getProtocol(memoryBuffer);
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
+				oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.MAP, req.size()));
+				for (java.util.Map<Long, Event> elem274 : req) {
+					oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I64, org.apache.thrift.protocol.TType.STRUCT, elem274.size()));
+					for (Map.Entry<Long, Event> elem275 : elem274.entrySet()) {
+						long elem276 = elem275.getKey();
+						oprot.writeI64(elem276);
+						elem275.getValue().write(oprot);
+					}
+					oprot.writeMapEnd();
+				}
+				oprot.writeListEnd();
+				oprot.writeMessageEnd();
 				transport.publish(topic, memoryBuffer.getWriteBytes());
 			}
 		}

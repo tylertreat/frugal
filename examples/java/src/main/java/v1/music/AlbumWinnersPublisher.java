@@ -22,8 +22,18 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.thrift.protocol.*;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.EnumMap;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.EnumSet;
+import java.util.Collections;
+import java.util.BitSet;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.logging.Logger;
 import javax.annotation.Generated;
 
@@ -42,6 +52,10 @@ public class AlbumWinnersPublisher {
 		public void open() throws TException;
 
 		public void close() throws TException;
+
+		public void publishContestStart(FContext ctx, java.util.List<Album> req) throws TException;
+
+		public void publishTimeLeft(FContext ctx, double req) throws TException;
 
 		public void publishWinner(FContext ctx, Album req) throws TException;
 
@@ -74,6 +88,14 @@ public class AlbumWinnersPublisher {
 			target.close();
 		}
 
+		public void publishContestStart(FContext ctx, java.util.List<Album> req) throws TException {
+			proxy.publishContestStart(ctx, req);
+		}
+
+		public void publishTimeLeft(FContext ctx, double req) throws TException {
+			proxy.publishTimeLeft(ctx, req);
+		}
+
 		public void publishWinner(FContext ctx, Album req) throws TException {
 			proxy.publishWinner(ctx, req);
 		}
@@ -102,16 +124,49 @@ public class AlbumWinnersPublisher {
 				transport.close();
 			}
 
+			public void publishContestStart(FContext ctx, java.util.List<Album> req) throws TException {
+				String op = "ContestStart";
+				String prefix = "v1.music.";
+				String topic = String.format("%sAlbumWinners%s%s", prefix, DELIMITER, op);
+				TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getPublishSizeLimit());
+				FProtocol oprot = protocolFactory.getProtocol(memoryBuffer);
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
+				oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, req.size()));
+				for (Album elem40 : req) {
+					elem40.write(oprot);
+				}
+				oprot.writeListEnd();
+				oprot.writeMessageEnd();
+				transport.publish(topic, memoryBuffer.getWriteBytes());
+			}
+
+
+			public void publishTimeLeft(FContext ctx, double req) throws TException {
+				String op = "TimeLeft";
+				String prefix = "v1.music.";
+				String topic = String.format("%sAlbumWinners%s%s", prefix, DELIMITER, op);
+				TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getPublishSizeLimit());
+				FProtocol oprot = protocolFactory.getProtocol(memoryBuffer);
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
+				double elem41 = req;
+				oprot.writeDouble(elem41);
+				oprot.writeMessageEnd();
+				transport.publish(topic, memoryBuffer.getWriteBytes());
+			}
+
+
 			public void publishWinner(FContext ctx, Album req) throws TException {
 				String op = "Winner";
 				String prefix = "v1.music.";
 				String topic = String.format("%sAlbumWinners%s%s", prefix, DELIMITER, op);
 				TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getPublishSizeLimit());
-				FProtocol protocol = protocolFactory.getProtocol(memoryBuffer);
-				protocol.writeRequestHeader(ctx);
-				protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
-				req.write(protocol);
-				protocol.writeMessageEnd();
+				FProtocol oprot = protocolFactory.getProtocol(memoryBuffer);
+				oprot.writeRequestHeader(ctx);
+				oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
+				req.write(oprot);
+				oprot.writeMessageEnd();
 				transport.publish(topic, memoryBuffer.getWriteBytes());
 			}
 		}

@@ -37,6 +37,8 @@ class AlbumWinnersPublisher(object):
         middleware += provider.get_middleware()
         self._transport, self._protocol_factory = provider.new_publisher()
         self._methods = {
+            'publish_ContestStart': Method(self._publish_ContestStart, middleware),
+            'publish_TimeLeft': Method(self._publish_TimeLeft, middleware),
             'publish_Winner': Method(self._publish_Winner, middleware),
         }
 
@@ -45,6 +47,51 @@ class AlbumWinnersPublisher(object):
 
     def close(self):
         self._transport.close()
+
+    def publish_ContestStart(self, ctx, req):
+        """
+        Args:
+            ctx: FContext
+            req: list
+        """
+        self._methods['publish_ContestStart']([ctx, req])
+
+    def _publish_ContestStart(self, ctx, req):
+        op = 'ContestStart'
+        prefix = 'v1.music.'
+        topic = '{}AlbumWinners{}{}'.format(prefix, self._DELIMITER, op)
+        buffer = TMemoryOutputBuffer(self._transport.get_publish_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
+        oprot.write_request_headers(ctx)
+        oprot.writeMessageBegin(op, TMessageType.CALL, 0)
+        oprot.writeListBegin(TType.STRUCT, len(req))
+        for elem3 in req:
+            elem3.write(oprot)
+        oprot.writeListEnd()
+        oprot.writeMessageEnd()
+        self._transport.publish(topic, buffer.getvalue())
+
+
+    def publish_TimeLeft(self, ctx, req):
+        """
+        Args:
+            ctx: FContext
+            req: Minutes
+        """
+        self._methods['publish_TimeLeft']([ctx, req])
+
+    def _publish_TimeLeft(self, ctx, req):
+        op = 'TimeLeft'
+        prefix = 'v1.music.'
+        topic = '{}AlbumWinners{}{}'.format(prefix, self._DELIMITER, op)
+        buffer = TMemoryOutputBuffer(self._transport.get_publish_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
+        oprot.write_request_headers(ctx)
+        oprot.writeMessageBegin(op, TMessageType.CALL, 0)
+        oprot.writeDouble(req)
+        oprot.writeMessageEnd()
+        self._transport.publish(topic, buffer.getvalue())
+
 
     def publish_Winner(self, ctx, req):
         """

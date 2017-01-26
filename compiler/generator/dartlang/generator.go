@@ -778,7 +778,7 @@ func (g *Generator) generateRead(s *parser.Struct) string {
 		contents += fmt.Sprintf(tabtabtabtab+"case %s:\n", strings.ToUpper(field.Name))
 		t := g.getEnumFromThriftType(g.Frugal.UnderlyingType(field.Type))
 		contents += fmt.Sprintf(tabtabtabtabtab+"if(field.type == %s) {\n", t)
-		contents += g.generateReadFieldRec(field, true, "")
+		contents += g.generateReadFieldRec(field, true, tabtabtabtabtabtab)
 		contents += tabtabtabtabtab + "} else {\n"
 		contents += tabtabtabtabtabtab + "thrift.TProtocolUtil.skip(iprot, field.type);\n"
 		contents += tabtabtabtabtab + "}\n"
@@ -843,24 +843,24 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 			panic("unknown thrift type: " + underlyingType.Name)
 		}
 
-		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = iprot.read%s();\n", prefix, fName, thriftType)
+		contents += fmt.Sprintf(ind+"%s%s = iprot.read%s();\n", prefix, fName, thriftType)
 		if primitive && first {
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"this.__isset_%s = true;\n", fName)
+			contents += fmt.Sprintf(ind+"this.__isset_%s = true;\n", fName)
 		}
 	} else if g.Frugal.IsEnum(underlyingType) {
 		if g.useEnums() {
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = %s.deserialize%s(iprot.readI32());\n",
+			contents += fmt.Sprintf(ind+"%s%s = %s.deserialize%s(iprot.readI32());\n",
 				prefix, fName, g.includeQualifier(underlyingType), underlyingType.Name)
 		} else {
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = iprot.readI32();\n", prefix, fName)
+			contents += fmt.Sprintf(ind+"%s%s = iprot.readI32();\n", prefix, fName)
 		}
 
 		if first {
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"this.__isset_%s = true;\n", fName)
+			contents += fmt.Sprintf(ind+"this.__isset_%s = true;\n", fName)
 		}
 	} else if g.Frugal.IsStruct(underlyingType) {
-		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = new %s();\n", prefix, fName, dartType)
-		contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s.read(iprot);\n", fName)
+		contents += fmt.Sprintf(ind+"%s%s = new %s();\n", prefix, fName, dartType)
+		contents += fmt.Sprintf(ind+"%s.read(iprot);\n", fName)
 	} else if underlyingType.IsContainer() {
 		containerElem := g.GetElem()
 		valElem := g.GetElem()
@@ -871,34 +871,34 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 
 		switch underlyingType.Name {
 		case "list":
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"thrift.TList %s = iprot.readListBegin();\n", containerElem)
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = new %s();\n", prefix, fName, dartType)
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"for(int %s = 0; %s < %s.length; ++%s) {\n", counterElem, counterElem, containerElem, counterElem)
+			contents += fmt.Sprintf(ind+"thrift.TList %s = iprot.readListBegin();\n", containerElem)
+			contents += fmt.Sprintf(ind+"%s%s = new %s();\n", prefix, fName, dartType)
+			contents += fmt.Sprintf(ind+"for(int %s = 0; %s < %s.length; ++%s) {\n", counterElem, counterElem, containerElem, counterElem)
 			contents += valContents
-			contents += fmt.Sprintf(tabtabtabtabtabtabtab+ind+"%s.add(%s);\n", fName, valElem)
-			contents += tabtabtabtabtabtab + ind + "}\n"
-			contents += tabtabtabtabtabtab + ind + "iprot.readListEnd();\n"
+			contents += fmt.Sprintf(tab+ind+"%s.add(%s);\n", fName, valElem)
+			contents += ind + "}\n"
+			contents += ind + "iprot.readListEnd();\n"
 		case "set":
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"thrift.TSet %s = iprot.readSetBegin();\n", containerElem)
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = new %s();\n", prefix, fName, dartType)
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"for(int %s = 0; %s < %s.length; ++%s) {\n",
+			contents += fmt.Sprintf(ind+"thrift.TSet %s = iprot.readSetBegin();\n", containerElem)
+			contents += fmt.Sprintf(ind+"%s%s = new %s();\n", prefix, fName, dartType)
+			contents += fmt.Sprintf(ind+"for(int %s = 0; %s < %s.length; ++%s) {\n",
 				counterElem, counterElem, containerElem, counterElem)
 			contents += valContents
-			contents += fmt.Sprintf(tabtabtabtabtabtabtab+ind+"%s.add(%s);\n", fName, valElem)
-			contents += tabtabtabtabtabtab + ind + "}\n"
-			contents += tabtabtabtabtabtab + ind + "iprot.readSetEnd();\n"
+			contents += fmt.Sprintf(tab+ind+"%s.add(%s);\n", fName, valElem)
+			contents += ind + "}\n"
+			contents += ind + "iprot.readSetEnd();\n"
 		case "map":
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"thrift.TMap %s = iprot.readMapBegin();\n", containerElem)
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"%s%s = new %s();\n", prefix, fName, dartType)
-			contents += fmt.Sprintf(tabtabtabtabtabtab+ind+"for(int %s = 0; %s < %s.length; ++%s) {\n",
+			contents += fmt.Sprintf(ind+"thrift.TMap %s = iprot.readMapBegin();\n", containerElem)
+			contents += fmt.Sprintf(ind+"%s%s = new %s();\n", prefix, fName, dartType)
+			contents += fmt.Sprintf(ind+"for(int %s = 0; %s < %s.length; ++%s) {\n",
 				counterElem, counterElem, containerElem, counterElem)
 			keyElem := g.GetElem()
 			keyField := parser.FieldFromType(underlyingType.KeyType, keyElem)
 			contents += g.generateReadFieldRec(keyField, false, ind+tab)
 			contents += valContents
-			contents += fmt.Sprintf(tabtabtabtabtabtabtab+ind+"%s[%s] = %s;\n", fName, keyElem, valElem)
-			contents += tabtabtabtabtabtab + ind + "}\n"
-			contents += tabtabtabtabtabtab + ind + "iprot.readMapEnd();\n"
+			contents += fmt.Sprintf(tab+ind+"%s[%s] = %s;\n", fName, keyElem, valElem)
+			contents += ind + "}\n"
+			contents += ind + "iprot.readMapEnd();\n"
 		default:
 			panic("unrecognized thrift type: " + underlyingType.Name)
 		}
@@ -1258,11 +1258,11 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		if op.Comment != nil {
 			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
-		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) {\n", op.Name, args, g.qualifiedTypeName(op.Type))
+		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) {\n", op.Name, args, g.getDartTypeFromThriftType(op.Type))
 		publishers += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx, %sreq]);\n", op.Name, argsWithoutTypes)
 		publishers += tab + "}\n\n"
 
-		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.qualifiedTypeName(op.Type))
+		publishers += fmt.Sprintf(tab+"Future _publish%s(frugal.FContext ctx, %s%s req) async {\n", op.Name, args, g.getDartTypeFromThriftType(op.Type))
 
 		publishers += tabtab + fmt.Sprintf("var op = \"%s\";\n", op.Name)
 		publishers += tabtab + fmt.Sprintf("var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
@@ -1272,7 +1272,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += tabtab + "var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);\n"
 		publishers += tabtab + "oprot.writeRequestHeader(ctx);\n"
 		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
-		publishers += tabtab + "req.write(oprot);\n"
+		publishers += g.generateWriteFieldRec(parser.FieldFromType(op.Type, "req"), false, "")
 		publishers += tabtab + "oprot.writeMessageEnd();\n"
 		publishers += tabtab + "await transport.publish(topic, memoryBuffer.writeBytes);\n"
 		publishers += tab + "}\n"
@@ -1331,7 +1331,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 			subscribers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
 		subscribers += fmt.Sprintf(tab+"Future<frugal.FSubscription> subscribe%s(%sdynamic on%s(frugal.FContext ctx, %s req)) async {\n",
-			op.Name, args, op.Type.ParamName(), g.qualifiedTypeName(op.Type))
+			op.Name, args, op.Type.ParamName(), g.getDartTypeFromThriftType(op.Type))
 		subscribers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		subscribers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		subscribers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
@@ -1342,7 +1342,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += tab + "}\n\n"
 
 		subscribers += fmt.Sprintf(tab+"frugal.FAsyncCallback _recv%s(String op, frugal.FProtocolFactory protocolFactory, dynamic on%s(frugal.FContext ctx, %s req)) {\n",
-			op.Name, op.Type.ParamName(), g.qualifiedTypeName(op.Type))
+			op.Name, op.Type.ParamName(), g.getDartTypeFromThriftType(op.Type))
 		subscribers += fmt.Sprintf(tabtab+"frugal.FMethod method = new frugal.FMethod(on%s, '%s', 'subscribe%s', this._middleware);\n",
 			op.Type.ParamName(), strings.Title(scope.Name), op.Type.ParamName())
 		subscribers += fmt.Sprintf(tabtab+"callback%s(thrift.TTransport transport) {\n", op.Name)
@@ -1355,8 +1355,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += tabtabtabtab + "throw new thrift.TApplicationError(\n"
 		subscribers += tabtabtabtab + "thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);\n"
 		subscribers += tabtabtab + "}\n"
-		subscribers += fmt.Sprintf(tabtabtab+"var req = new %s();\n", g.qualifiedTypeName(op.Type))
-		subscribers += tabtabtab + "req.read(iprot);\n"
+		subscribers += g.generateReadFieldRec(parser.FieldFromType(op.Type, "req"), false, tabtabtab)
 		subscribers += tabtabtab + "iprot.readMessageEnd();\n"
 		subscribers += tabtabtab + "method([ctx, req]);\n"
 		subscribers += tabtab + "}\n"

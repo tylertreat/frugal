@@ -17,6 +17,8 @@ import v1.music.PerfRightsOrg;
 import v1.music.Track;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
@@ -56,6 +58,10 @@ public class NatsPublisher {
                         169,
                         PerfRightsOrg.ASCAP));
         publisher.publishWinner(new FContext(), album);
+        List<Album> albums = new ArrayList<>();
+        albums.add(album);
+        albums.add(album);
+        publisher.publishContestStart(new FContext(), albums);
 
         System.out.println("Published event");
 

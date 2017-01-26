@@ -171,4 +171,7 @@ service Foo extends base.BaseFoo {
 scope Events prefix foo.{user} {
     /**@ This is a docstring. */
     EventCreated: Event // Inline comments are also supported
+    SomeInt: i64
+    SomeStr: string
+    SomeList: list<map<id, Event>>
 }

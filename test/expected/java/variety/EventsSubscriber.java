@@ -22,8 +22,18 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.thrift.protocol.*;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.EnumMap;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.EnumSet;
+import java.util.Collections;
+import java.util.BitSet;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.logging.Logger;
 import javax.annotation.Generated;
 
@@ -44,10 +54,28 @@ public class EventsSubscriber {
 		 */
 		public FSubscription subscribeEventCreated(String user, final EventCreatedHandler handler) throws TException;
 
+		public FSubscription subscribeSomeInt(String user, final SomeIntHandler handler) throws TException;
+
+		public FSubscription subscribeSomeStr(String user, final SomeStrHandler handler) throws TException;
+
+		public FSubscription subscribeSomeList(String user, final SomeListHandler handler) throws TException;
+
 	}
 
 	public interface EventCreatedHandler {
 		void onEventCreated(FContext ctx, Event req);
+	}
+
+	public interface SomeIntHandler {
+		void onSomeInt(FContext ctx, long req);
+	}
+
+	public interface SomeStrHandler {
+		void onSomeStr(FContext ctx, String req);
+	}
+
+	public interface SomeListHandler {
+		void onSomeList(FContext ctx, java.util.List<java.util.Map<Long, Event>> req);
 	}
 
 	/**
@@ -98,6 +126,113 @@ public class EventsSubscriber {
 					received.read(iprot);
 					iprot.readMessageEnd();
 					handler.onEventCreated(ctx, received);
+				}
+			};
+		}
+
+
+
+		public FSubscription subscribeSomeInt(String user, final SomeIntHandler handler) throws TException {
+			final String op = "SomeInt";
+			String prefix = String.format("foo.%s.", user);
+			final String topic = String.format("%sEvents%s%s", prefix, DELIMITER, op);
+			final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();
+			final FSubscriberTransport transport = subscriber.getTransport();
+			final SomeIntHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, SomeIntHandler.class, middleware);
+			transport.subscribe(topic, recvSomeInt(op, subscriber.getProtocolFactory(), proxiedHandler));
+			return FSubscription.of(topic, transport);
+		}
+
+		private FAsyncCallback recvSomeInt(String op, FProtocolFactory pf, SomeIntHandler handler) {
+			return new FAsyncCallback() {
+				public void onMessage(TTransport tr) throws TException {
+					FProtocol iprot = pf.getProtocol(tr);
+					FContext ctx = iprot.readRequestHeader();
+					TMessage msg = iprot.readMessageBegin();
+					if (!msg.name.equals(op)) {
+						TProtocolUtil.skip(iprot, TType.STRUCT);
+						iprot.readMessageEnd();
+						throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
+					}
+					long received = iprot.readI64();
+					iprot.readMessageEnd();
+					handler.onSomeInt(ctx, received);
+				}
+			};
+		}
+
+
+
+		public FSubscription subscribeSomeStr(String user, final SomeStrHandler handler) throws TException {
+			final String op = "SomeStr";
+			String prefix = String.format("foo.%s.", user);
+			final String topic = String.format("%sEvents%s%s", prefix, DELIMITER, op);
+			final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();
+			final FSubscriberTransport transport = subscriber.getTransport();
+			final SomeStrHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, SomeStrHandler.class, middleware);
+			transport.subscribe(topic, recvSomeStr(op, subscriber.getProtocolFactory(), proxiedHandler));
+			return FSubscription.of(topic, transport);
+		}
+
+		private FAsyncCallback recvSomeStr(String op, FProtocolFactory pf, SomeStrHandler handler) {
+			return new FAsyncCallback() {
+				public void onMessage(TTransport tr) throws TException {
+					FProtocol iprot = pf.getProtocol(tr);
+					FContext ctx = iprot.readRequestHeader();
+					TMessage msg = iprot.readMessageBegin();
+					if (!msg.name.equals(op)) {
+						TProtocolUtil.skip(iprot, TType.STRUCT);
+						iprot.readMessageEnd();
+						throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
+					}
+					String received = iprot.readString();
+					iprot.readMessageEnd();
+					handler.onSomeStr(ctx, received);
+				}
+			};
+		}
+
+
+
+		public FSubscription subscribeSomeList(String user, final SomeListHandler handler) throws TException {
+			final String op = "SomeList";
+			String prefix = String.format("foo.%s.", user);
+			final String topic = String.format("%sEvents%s%s", prefix, DELIMITER, op);
+			final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();
+			final FSubscriberTransport transport = subscriber.getTransport();
+			final SomeListHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, SomeListHandler.class, middleware);
+			transport.subscribe(topic, recvSomeList(op, subscriber.getProtocolFactory(), proxiedHandler));
+			return FSubscription.of(topic, transport);
+		}
+
+		private FAsyncCallback recvSomeList(String op, FProtocolFactory pf, SomeListHandler handler) {
+			return new FAsyncCallback() {
+				public void onMessage(TTransport tr) throws TException {
+					FProtocol iprot = pf.getProtocol(tr);
+					FContext ctx = iprot.readRequestHeader();
+					TMessage msg = iprot.readMessageBegin();
+					if (!msg.name.equals(op)) {
+						TProtocolUtil.skip(iprot, TType.STRUCT);
+						iprot.readMessageEnd();
+						throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
+					}
+					org.apache.thrift.protocol.TList elem277 = iprot.readListBegin();
+					java.util.List<java.util.Map<Long, Event>> received = new ArrayList<java.util.Map<Long, Event>>(elem277.size);
+					for (int elem278 = 0; elem278 < elem277.size; ++elem278) {
+						org.apache.thrift.protocol.TMap elem280 = iprot.readMapBegin();
+						java.util.Map<Long, Event> elem279 = new HashMap<Long,Event>(2*elem280.size);
+						for (int elem281 = 0; elem281 < elem280.size; ++elem281) {
+							long elem283 = iprot.readI64();
+							Event elem282 = new Event();
+							elem282.read(iprot);
+							elem279.put(elem283, elem282);
+						}
+						iprot.readMapEnd();
+						received.add(elem279);
+					}
+					iprot.readListEnd();
+					iprot.readMessageEnd();
+					handler.onSomeList(ctx, received);
 				}
 			};
 		}

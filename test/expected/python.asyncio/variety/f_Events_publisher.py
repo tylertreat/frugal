@@ -47,6 +47,9 @@ class EventsPublisher(object):
         self._transport, self._protocol_factory = provider.new_publisher()
         self._methods = {
             'publish_EventCreated': Method(self._publish_EventCreated, middleware),
+            'publish_SomeInt': Method(self._publish_SomeInt, middleware),
+            'publish_SomeStr': Method(self._publish_SomeStr, middleware),
+            'publish_SomeList': Method(self._publish_SomeList, middleware),
         }
 
     async def open(self):
@@ -75,6 +78,79 @@ class EventsPublisher(object):
         oprot.write_request_headers(ctx)
         oprot.writeMessageBegin(op, TMessageType.CALL, 0)
         req.write(oprot)
+        oprot.writeMessageEnd()
+        await self._transport.publish(topic, buffer.getvalue())
+
+
+    async def publish_SomeInt(self, ctx, user, req):
+        """
+        Args:
+            ctx: FContext
+            user: string
+            req: i64
+        """
+        await self._methods['publish_SomeInt']([ctx, user, req])
+
+    async def _publish_SomeInt(self, ctx, user, req):
+        op = 'SomeInt'
+        prefix = 'foo.{}.'.format(user)
+        topic = '{}Events{}{}'.format(prefix, self._DELIMITER, op)
+        buffer = TMemoryOutputBuffer(self._transport.get_publish_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
+        oprot.write_request_headers(ctx)
+        oprot.writeMessageBegin(op, TMessageType.CALL, 0)
+        oprot.writeI64(req)
+        oprot.writeMessageEnd()
+        await self._transport.publish(topic, buffer.getvalue())
+
+
+    async def publish_SomeStr(self, ctx, user, req):
+        """
+        Args:
+            ctx: FContext
+            user: string
+            req: string
+        """
+        await self._methods['publish_SomeStr']([ctx, user, req])
+
+    async def _publish_SomeStr(self, ctx, user, req):
+        op = 'SomeStr'
+        prefix = 'foo.{}.'.format(user)
+        topic = '{}Events{}{}'.format(prefix, self._DELIMITER, op)
+        buffer = TMemoryOutputBuffer(self._transport.get_publish_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
+        oprot.write_request_headers(ctx)
+        oprot.writeMessageBegin(op, TMessageType.CALL, 0)
+        oprot.writeString(req)
+        oprot.writeMessageEnd()
+        await self._transport.publish(topic, buffer.getvalue())
+
+
+    async def publish_SomeList(self, ctx, user, req):
+        """
+        Args:
+            ctx: FContext
+            user: string
+            req: list
+        """
+        await self._methods['publish_SomeList']([ctx, user, req])
+
+    async def _publish_SomeList(self, ctx, user, req):
+        op = 'SomeList'
+        prefix = 'foo.{}.'.format(user)
+        topic = '{}Events{}{}'.format(prefix, self._DELIMITER, op)
+        buffer = TMemoryOutputBuffer(self._transport.get_publish_size_limit())
+        oprot = self._protocol_factory.get_protocol(buffer)
+        oprot.write_request_headers(ctx)
+        oprot.writeMessageBegin(op, TMessageType.CALL, 0)
+        oprot.writeListBegin(TType.MAP, len(req))
+        for elem56 in req:
+            oprot.writeMapBegin(TType.I64, TType.STRUCT, len(elem56))
+            for elem58, elem57 in elem56.items():
+                oprot.writeI64(elem58)
+                elem57.write(oprot)
+            oprot.writeMapEnd()
+        oprot.writeListEnd()
         oprot.writeMessageEnd()
         await self._transport.publish(topic, buffer.getvalue())
 

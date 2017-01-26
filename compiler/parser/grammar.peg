@@ -510,10 +510,10 @@ PrefixToken <- ('{' PrefixWord '}') / PrefixWord
 
 PrefixWord <- [^\r\n\t\f .{}]+
 
-Operation <- docstr:(DocString __)? name:Identifier _ ':' __ typ:Identifier _ annotations:TypeAnnotations? ListSeparator? {
+Operation <- docstr:(DocString __)? name:Identifier _ ':' __ typ:FieldType _ annotations:TypeAnnotations? ListSeparator? {
     o := &Operation{
         Name:        string(name.(Identifier)),
-        Type:        &Type{Name: string(typ.(Identifier))},
+        Type:        typ.(*Type),
         Annotations: toAnnotations(annotations),
     }
     if docstr != nil {

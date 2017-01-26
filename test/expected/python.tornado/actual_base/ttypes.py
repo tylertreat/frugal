@@ -111,11 +111,11 @@ class nested_thing(object):
             if fid == 1:
                 if ftype == TType.LIST:
                     self.things = []
-                    (_, elem56) = iprot.readListBegin()
-                    for _ in range(elem56):
-                        elem57 = thing()
-                        elem57.read(iprot)
-                        self.things.append(elem57)
+                    (_, elem64) = iprot.readListBegin()
+                    for _ in range(elem64):
+                        elem65 = thing()
+                        elem65.read(iprot)
+                        self.things.append(elem65)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -129,8 +129,8 @@ class nested_thing(object):
         if self.things is not None:
             oprot.writeFieldBegin('things', TType.LIST, 1)
             oprot.writeListBegin(TType.STRUCT, len(self.things))
-            for elem58 in self.things:
-                elem58.write(oprot)
+            for elem66 in self.things:
+                elem66.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()

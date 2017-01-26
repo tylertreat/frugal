@@ -936,7 +936,7 @@ func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operat
 	method += tabtab + "oprot = self._protocol_factory.get_protocol(buffer)\n"
 	method += tabtab + "oprot.write_request_headers(ctx)\n"
 	method += tabtab + "oprot.writeMessageBegin(op, TMessageType.CALL, 0)\n"
-	method += tabtab + "req.write(oprot)\n"
+	method += g.generateWriteFieldRec(parser.FieldFromType(op.Type, "req"), false, tabtab)
 	method += tabtab + "oprot.writeMessageEnd()\n"
 
 	method += tabtab

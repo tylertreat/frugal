@@ -73,12 +73,12 @@ class nested_thing implements thrift.TBase {
       switch(field.id) {
         case THINGS:
           if(field.type == thrift.TType.LIST) {
-            thrift.TList elem68 = iprot.readListBegin();
+            thrift.TList elem77 = iprot.readListBegin();
             things = new List<t_actual_base_dart.thing>();
-            for(int elem70 = 0; elem70 < elem68.length; ++elem70) {
-              t_actual_base_dart.thing elem69 = new t_actual_base_dart.thing();
-              elem69.read(iprot);
-              things.add(elem69);
+            for(int elem79 = 0; elem79 < elem77.length; ++elem79) {
+              t_actual_base_dart.thing elem78 = new t_actual_base_dart.thing();
+              elem78.read(iprot);
+              things.add(elem78);
             }
             iprot.readListEnd();
           } else {
@@ -104,8 +104,8 @@ class nested_thing implements thrift.TBase {
     if(this.things != null) {
       oprot.writeFieldBegin(_THINGS_FIELD_DESC);
       oprot.writeListBegin(new thrift.TList(thrift.TType.STRUCT, things.length));
-      for(var elem71 in things) {
-        elem71.write(oprot);
+      for(var elem80 in things) {
+        elem80.write(oprot);
       }
       oprot.writeListEnd();
       oprot.writeFieldEnd();

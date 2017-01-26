@@ -2340,8 +2340,18 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports += "import org.apache.thrift.transport.TTransportException;\n"
 	imports += "import org.apache.thrift.protocol.*;\n\n"
 
-	imports += "import java.util.Arrays;\n"
 	imports += "import java.util.List;\n"
+	imports += "import java.util.ArrayList;\n"
+	imports += "import java.util.Map;\n"
+	imports += "import java.util.HashMap;\n"
+	imports += "import java.util.EnumMap;\n"
+	imports += "import java.util.Set;\n"
+	imports += "import java.util.HashSet;\n"
+	imports += "import java.util.EnumSet;\n"
+	imports += "import java.util.Collections;\n"
+	imports += "import java.util.BitSet;\n"
+	imports += "import java.nio.ByteBuffer;\n"
+	imports += "import java.util.Arrays;\n"
 	imports += "import java.util.logging.Logger;\n"
 	imports += "import javax.annotation.Generated;\n"
 
@@ -2388,7 +2398,7 @@ func (g *Generator) generatePublisherIface(scope *parser.Scope) string {
 		if op.Comment != nil {
 			contents += g.GenerateBlockComment(op.Comment, tabtab)
 		}
-		contents += fmt.Sprintf(tabtab+"public void publish%s(FContext ctx, %s%s req) throws TException;\n\n", op.Name, args, g.qualifiedTypeName(op.Type))
+		contents += fmt.Sprintf(tabtab+"public void publish%s(FContext ctx, %s%s req) throws TException;\n\n", op.Name, args, g.getJavaTypeFromThriftType(op.Type))
 	}
 
 	contents += tab + "}\n\n"
@@ -2430,7 +2440,7 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 		if op.Comment != nil {
 			publisher += g.GenerateBlockComment(op.Comment, tabtab)
 		}
-		publisher += fmt.Sprintf(tabtab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.qualifiedTypeName(op.Type))
+		publisher += fmt.Sprintf(tabtab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.getJavaTypeFromThriftType(op.Type))
 		publisher += fmt.Sprintf(tabtabtab+"proxy.publish%s(%s);\n", op.Name, g.generateScopeArgs(scope))
 		publisher += tabtab + "}\n\n"
 	}
@@ -2466,16 +2476,16 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 		if op.Comment != nil {
 			publisher += g.GenerateBlockComment(op.Comment, tabtabtab)
 		}
-		publisher += fmt.Sprintf(tabtabtab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.qualifiedTypeName(op.Type))
+		publisher += fmt.Sprintf(tabtabtab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.getJavaTypeFromThriftType(op.Type))
 		publisher += tabtabtabtab + fmt.Sprintf("String op = \"%s\";\n", op.Name)
 		publisher += tabtabtabtab + fmt.Sprintf("String prefix = %s;\n", generatePrefixStringTemplate(scope))
 		publisher += tabtabtabtab + "String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, DELIMITER, op);\n"
 		publisher += tabtabtabtab + "TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getPublishSizeLimit());\n"
-		publisher += tabtabtabtab + "FProtocol protocol = protocolFactory.getProtocol(memoryBuffer);\n"
-		publisher += tabtabtabtab + "protocol.writeRequestHeader(ctx);\n"
-		publisher += tabtabtabtab + "protocol.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));\n"
-		publisher += tabtabtabtab + "req.write(protocol);\n"
-		publisher += tabtabtabtab + "protocol.writeMessageEnd();\n"
+		publisher += tabtabtabtab + "FProtocol oprot = protocolFactory.getProtocol(memoryBuffer);\n"
+		publisher += tabtabtabtab + "oprot.writeRequestHeader(ctx);\n"
+		publisher += tabtabtabtab + "oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));\n"
+		publisher += g.generateWriteFieldRec(parser.FieldFromType(op.Type, "req"), false, false, tabtabtabtab)
+		publisher += tabtabtabtab + "oprot.writeMessageEnd();\n"
 		publisher += tabtabtabtab + "transport.publish(topic, memoryBuffer.getWriteBytes());\n"
 		publisher += tabtabtab + "}\n"
 	}
@@ -2550,7 +2560,7 @@ func (g *Generator) generateHandlerIfaces(scope *parser.Scope) string {
 
 	for _, op := range scope.Operations {
 		contents += fmt.Sprintf(tab+"public interface %sHandler {\n", op.Name)
-		contents += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s req);\n", op.Name, g.qualifiedTypeName(op.Type))
+		contents += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s req);\n", op.Name, g.getJavaTypeFromThriftType(op.Type))
 		contents += tab + "}\n\n"
 	}
 
@@ -2612,8 +2622,7 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 		subscriber += tabtabtabtabtabtab + "iprot.readMessageEnd();\n"
 		subscriber += tabtabtabtabtabtab + "throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);\n"
 		subscriber += tabtabtabtabtab + "}\n"
-		subscriber += tabtabtabtabtab + fmt.Sprintf("%s received = new %s();\n", g.qualifiedTypeName(op.Type), g.qualifiedTypeName(op.Type))
-		subscriber += tabtabtabtabtab + "received.read(iprot);\n"
+		subscriber += g.generateReadFieldRec(parser.FieldFromType(op.Type, "received"), false, false, false, tabtabtabtabtab)
 		subscriber += tabtabtabtabtab + "iprot.readMessageEnd();\n"
 		subscriber += tabtabtabtabtab + fmt.Sprintf("handler.on%s(ctx, received);\n", op.Name)
 		subscriber += tabtabtabtab + "}\n"

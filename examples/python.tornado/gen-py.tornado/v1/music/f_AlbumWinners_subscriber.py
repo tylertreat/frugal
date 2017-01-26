@@ -48,6 +48,84 @@ class AlbumWinnersSubscriber(object):
         self._provider = provider
 
     @gen.coroutine
+    def subscribe_ContestStart(self, ContestStart_handler):
+        """
+            ContestStart_handler: function which takes FContext and list<Album>
+        """
+
+        op = 'ContestStart'
+        prefix = 'v1.music.'
+        topic = '{}AlbumWinners{}{}'.format(prefix, self._DELIMITER, op)
+
+        transport, protocol_factory = self._provider.new_subscriber()
+        yield transport.subscribe(topic, self._recv_ContestStart(protocol_factory, op, ContestStart_handler))
+
+    def _recv_ContestStart(self, protocol_factory, op, handler):
+        method = Method(handler, self._middleware)
+
+        def callback(transport):
+            iprot = protocol_factory.get_protocol(transport)
+            ctx = iprot.read_request_headers()
+            mname, _, _ = iprot.readMessageBegin()
+            if mname != op:
+                iprot.skip(TType.STRUCT)
+                iprot.readMessageEnd()
+                raise TApplicationException(TApplicationException.UNKNOWN_METHOD)
+            req = []
+            (_, elem4) = iprot.readListBegin()
+            for _ in range(elem4):
+                elem5 = Album()
+                elem5.read(iprot)
+                req.append(elem5)
+            iprot.readListEnd()
+            iprot.readMessageEnd()
+            try:
+                method([ctx, req])
+            except:
+                traceback.print_exc()
+                sys.exit(1)
+
+        return callback
+
+
+
+    @gen.coroutine
+    def subscribe_TimeLeft(self, TimeLeft_handler):
+        """
+            TimeLeft_handler: function which takes FContext and Minutes
+        """
+
+        op = 'TimeLeft'
+        prefix = 'v1.music.'
+        topic = '{}AlbumWinners{}{}'.format(prefix, self._DELIMITER, op)
+
+        transport, protocol_factory = self._provider.new_subscriber()
+        yield transport.subscribe(topic, self._recv_TimeLeft(protocol_factory, op, TimeLeft_handler))
+
+    def _recv_TimeLeft(self, protocol_factory, op, handler):
+        method = Method(handler, self._middleware)
+
+        def callback(transport):
+            iprot = protocol_factory.get_protocol(transport)
+            ctx = iprot.read_request_headers()
+            mname, _, _ = iprot.readMessageBegin()
+            if mname != op:
+                iprot.skip(TType.STRUCT)
+                iprot.readMessageEnd()
+                raise TApplicationException(TApplicationException.UNKNOWN_METHOD)
+            req = iprot.readDouble()
+            iprot.readMessageEnd()
+            try:
+                method([ctx, req])
+            except:
+                traceback.print_exc()
+                sys.exit(1)
+
+        return callback
+
+
+
+    @gen.coroutine
     def subscribe_Winner(self, Winner_handler):
         """
             Winner_handler: function which takes FContext and Album

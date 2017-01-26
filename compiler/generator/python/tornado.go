@@ -282,8 +282,7 @@ func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	method += tabtabtabtab + "iprot.skip(TType.STRUCT)\n"
 	method += tabtabtabtab + "iprot.readMessageEnd()\n"
 	method += tabtabtabtab + "raise TApplicationException(TApplicationException.UNKNOWN_METHOD)\n"
-	method += tabtabtab + fmt.Sprintf("req = %s()\n", op.Type.Name)
-	method += tabtabtab + "req.read(iprot)\n"
+	method += t.generateReadFieldRec(parser.FieldFromType(op.Type, "req"), false, tabtabtab)
 	method += tabtabtab + "iprot.readMessageEnd()\n"
 	method += tabtabtab + "try:\n"
 	method += tabtabtabtab + "method([ctx, req])\n"
