@@ -13,6 +13,7 @@ from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from thrift.Thrift import TType
 from tornado import gen
+from frugal.exceptions import FrugalTApplicationExceptionType
 from frugal.middleware import Method
 from frugal.subscription import FSubscription
 from frugal.transport import TMemoryOutputBuffer
@@ -74,7 +75,7 @@ class EventsSubscriber(object):
             if mname != op:
                 iprot.skip(TType.STRUCT)
                 iprot.readMessageEnd()
-                raise TApplicationException(TApplicationException.UNKNOWN_METHOD)
+                raise TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD)
             req = Event()
             req.read(iprot)
             iprot.readMessageEnd()
@@ -113,7 +114,7 @@ class EventsSubscriber(object):
             if mname != op:
                 iprot.skip(TType.STRUCT)
                 iprot.readMessageEnd()
-                raise TApplicationException(TApplicationException.UNKNOWN_METHOD)
+                raise TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD)
             req = iprot.readI64()
             iprot.readMessageEnd()
             try:
@@ -151,7 +152,7 @@ class EventsSubscriber(object):
             if mname != op:
                 iprot.skip(TType.STRUCT)
                 iprot.readMessageEnd()
-                raise TApplicationException(TApplicationException.UNKNOWN_METHOD)
+                raise TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD)
             req = iprot.readString()
             iprot.readMessageEnd()
             try:
@@ -189,7 +190,7 @@ class EventsSubscriber(object):
             if mname != op:
                 iprot.skip(TType.STRUCT)
                 iprot.readMessageEnd()
-                raise TApplicationException(TApplicationException.UNKNOWN_METHOD)
+                raise TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD)
             req = []
             (_, elem59) = iprot.readListBegin()
             for _ in range(elem59):
