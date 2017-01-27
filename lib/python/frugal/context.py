@@ -94,7 +94,8 @@ class FContext(object):
 
     def set_request_header(self, key, value):
         """Set a string key value pair in the request headers dictionary.
-        Return the same FContext to allow for call chaining.
+        Return the same FContext to allow for call chaining. Changing the
+        op ID or correlation ID is disallowed.
 
         Args:
             key: string key to set in request headers
@@ -104,7 +105,6 @@ class FContext(object):
             FContext
 
         Throws:
-            FContextHeaderException: if user tries to set _cid or _opid.
             TypeError: if user passes non-string for key or value.
         """
         if key in (_OPID_HEADER, _CID_HEADER):
@@ -127,7 +127,8 @@ class FContext(object):
 
     def set_response_header(self, key, value):
         """Set a string key value pair in the response headers dictionary.
-        Return the same FContext to allow for call chaining.
+        Return the same FContext to allow for call chaining. Changing the
+        op ID or correlation ID is disallowed.
 
         Args:
             key: string key to set in response headers
@@ -137,12 +138,10 @@ class FContext(object):
             FContext
 
         Raises:
-            FContextHeaderException: if user tries to set _cid or _opid.
             TypeError: if user passes non-string for key or value.
         """
         if key in (_OPID_HEADER, _CID_HEADER):
-            raise FContextHeaderException(
-                "Not allowed to overwrite internal _cid or _opid")
+            return self
 
         self._set_response_header(key, value)
         return self
