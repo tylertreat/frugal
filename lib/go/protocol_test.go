@@ -85,7 +85,7 @@ func TestWriteHeaderErroredWrite(t *testing.T) {
 	writeErr := errors.New("write failed")
 	mft.On("Write", basicFrame).Return(0, writeErr)
 	proto := &FProtocol{tProtocolFactory.GetProtocol(mft)}
-	expectedErr := thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION,
+	expectedErr := thrift.NewTTransportException(TRANSPORT_EXCEPTION_UNKNOWN,
 		fmt.Sprintf("frugal: error writing protocol headers in writeHeader: %s", writeErr))
 	assert.Equal(expectedErr, proto.writeHeader(basicHeaders))
 	mft.AssertExpectations(t)
