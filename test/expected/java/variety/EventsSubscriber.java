@@ -8,6 +8,7 @@
 package variety.java;
 
 import com.workiva.frugal.FContext;
+import com.workiva.frugal.exception.FrugalTApplicationExceptionType;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.*;
@@ -92,7 +93,7 @@ public class EventsSubscriber {
 					if (!msg.name.equals(op)) {
 						TProtocolUtil.skip(iprot, TType.STRUCT);
 						iprot.readMessageEnd();
-						throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
+						throw new TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD);
 					}
 					Event received = new Event();
 					received.read(iprot);
