@@ -73,7 +73,7 @@ func (g *Generator) TeardownGenerator() error {
 
 // GetOutputDir returns the output directory for generated files.
 func (g *Generator) GetOutputDir(dir string) string {
-	if namespace := g.Frugal.Thrift.Namespace(lang); namespace != nil {
+	if namespace := g.Frugal.Namespace(lang); namespace != nil {
 		path := generator.GetPackageComponents(namespace.Value)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
@@ -144,7 +144,7 @@ func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
 
 func (g *Generator) generatePackage(file *os.File) error {
 	pkg := ""
-	namespace := g.Frugal.Thrift.Namespace(lang)
+	namespace := g.Frugal.Namespace(lang)
 	if namespace != nil {
 		components := generator.GetPackageComponents(namespace.Value)
 		pkg = components[len(components)-1]
@@ -257,7 +257,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 		return fmt.Sprintf("%d", value)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		var s *parser.Struct
-		for _, potential := range g.Frugal.Thrift.Structs {
+		for _, potential := range g.Frugal.Structs {
 			if underlyingType.Name == potential.Name {
 				s = potential
 				break
@@ -975,7 +975,7 @@ func (g *Generator) GenerateTypesImports(file *os.File) error {
 	contents += "\t\"bytes\"\n"
 	contents += "\t\"fmt\"\n"
 	// Enums need these for some reason
-	if len(g.Frugal.Thrift.Enums) > 0 {
+	if len(g.Frugal.Enums) > 0 {
 		contents += "\t\"database/sql/driver\"\n"
 		contents += "\t\"errors\"\n"
 	}
@@ -987,7 +987,7 @@ func (g *Generator) GenerateTypesImports(file *os.File) error {
 
 	protections := ""
 	pkgPrefix := g.Options[packagePrefixOption]
-	for _, include := range g.Frugal.Thrift.Includes {
+	for _, include := range g.Frugal.Includes {
 		if imp, err := g.generateIncludeImport(include, pkgPrefix); err != nil {
 			return err
 		} else {
@@ -1022,7 +1022,7 @@ func (g *Generator) GenerateServiceResultArgsImports(file *os.File) error {
 
 	protections := ""
 	pkgPrefix := g.Options[packagePrefixOption]
-	for _, include := range g.Frugal.Thrift.Includes {
+	for _, include := range g.Frugal.Includes {
 		if imp, err := g.generateIncludeImport(include, pkgPrefix); err != nil {
 			return err
 		} else {
