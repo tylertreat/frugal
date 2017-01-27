@@ -1064,7 +1064,7 @@ func (g *Generator) generateClientRecvMethod(method *parser.Method) string {
 	contents += tabtab + "if result.success is not None:\n"
 	contents += tabtabtab + "return result.success\n"
 	contents += tabtab + fmt.Sprintf(
-		"x = TApplicationException(TApplicationException.MISSING_RESULT, \"%s failed: unknown result\")\n", method.Name)
+		"x = TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, \"%s failed: unknown result\")\n", method.Name)
 	contents += tabtab + "raise x\n\n"
 
 	return contents
@@ -1239,7 +1239,7 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationException.UNKNOWN, message=e.message)\n", methodLower)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)\n", methodLower)
 	}
 	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {

@@ -93,20 +93,23 @@ class FHttpTransport(FTransportBase):
             # Tornado HttpClient uses 599 as the HTTP code to indicate a
             # request timeout
             if e.code == 599:
-                raise TTransportException(type=TTransportException.TIMED_OUT,
-                                          message='request timed out')
+                raise TTransportException(
+                    type=FrugalTTransportExceptionType.TIMED_OUT,
+                    message='request timed out')
 
             message = 'response errored with code {0} and body {1}'.format(
                 e.code, e.message
             )
-            raise TTransportException(type=TTransportException.UNKNOWN,
-                                      message=message)
+            raise TTransportException(
+                type=FrugalTTransportExceptionType.UNKNOWN,
+                message=message)
 
         decoded = base64.b64decode(response.body)
 
         if len(decoded) < 4:
-            raise TTransportException(type=TTransportException.UNKNOWN,
-                                      message='invalid frame size')
+            raise TTransportException(
+                type=FrugalTTransportExceptionType.UNKNOWN,
+                message='invalid frame size')
 
         if len(decoded) == 4:
             # One-way method, drop response

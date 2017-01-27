@@ -43,7 +43,8 @@ class TestFNatsScopeTransport(AsyncTestCase):
         with self.assertRaises(TTransportException) as cm:
             yield self.publisher_transport.open()
 
-        self.assertEquals(TTransportException.NOT_OPEN, cm.exception.type)
+        self.assertEquals(
+            FrugalTTransportExceptionType.NOT_OPEN, cm.exception.type)
         self.assertEquals("Nats not connected!", cm.exception.message)
 
     @gen_test
@@ -80,7 +81,8 @@ class TestFNatsScopeTransport(AsyncTestCase):
         with self.assertRaises(TTransportException) as cm:
             yield self.publisher_transport.publish('foo', [])
 
-        self.assertEquals(TTransportException.NOT_OPEN, cm.exception.type)
+        self.assertEquals(
+            FrugalTTransportExceptionType.NOT_OPEN, cm.exception.type)
         self.assertEquals("Nats not connected!", cm.exception.message)
 
     @gen_test

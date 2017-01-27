@@ -143,5 +143,6 @@ class TestFHttpTransport(AsyncTestCase):
         with self.assertRaises(TTransportException) as cm:
             yield self.transport.request(
                 FContext(), bytearray([0, 0, 0, 1, 0]))
-        self.assertEqual(TTransportException.TIMED_OUT, cm.exception.type)
+        self.assertEqual(
+            FrugalTTransportExceptionType.TIMED_OUT, cm.exception.type)
         self.assertEqual("request timed out", cm.exception.message)

@@ -1,14 +1,5 @@
-from thrift.protocol.TProtocol import TProtocolException
-from thrift.transport.TTransport import TTransportException
 from thrift.Thrift import TApplicationException
-from thrift.Thrift import TException
-
-
-class FException(TException):
-    """Basic Frugal exception."""
-
-    def __init__(self, message=None):
-        super(FException, self).__init__(message)
+from thrift.transport.TTransport import TTransportException
 
 
 class FrugalTTransportExceptionType(object):
@@ -18,8 +9,6 @@ class FrugalTTransportExceptionType(object):
     ALREADY_OPEN = TTransportException.ALREADY_OPEN
     TIMED_OUT = TTransportException.TIMED_OUT
     END_OF_FILE = TTransportException.END_OF_FILE
-    NEGATIVE_SIZE = TTransportException.NEGATIVE_SIZE
-    SIZE_LIMIT = TTransportException.SIZE_LIMIT
 
     REQUEST_TOO_LARGE = 100
     RESPONSE_TOO_LARGE = 101

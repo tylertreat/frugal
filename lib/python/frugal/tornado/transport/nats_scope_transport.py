@@ -32,8 +32,9 @@ class FNatsPublisherTransport(FPublisherTransport):
     @gen.coroutine
     def open(self):
         if not self._nats_client.is_connected:
-            msg = "Nats not connected!"
-            raise TTransportException(TTransportException.NOT_OPEN, msg)
+            raise TTransportException(
+                type=FrugalTTransportExceptionType.NOT_OPEN,
+                message="Nats not connected!")
 
     @gen.coroutine
     def close(self):
@@ -48,8 +49,9 @@ class FNatsPublisherTransport(FPublisherTransport):
     @gen.coroutine
     def publish(self, topic, data):
         if not self.is_open():
-            msg = 'Nats not connected!'
-            raise TTransportException(TTransportException.NOT_OPEN, msg)
+            raise TTransportException(
+                type=FrugalTTransportExceptionType.NOT_OPEN,
+                message='Nats not connected!')
         if self._check_publish_size(data):
             msg = 'Message exceeds NATS max message size'
             raise TTransportException(
@@ -77,12 +79,14 @@ class FNatsSubscriberTransport(FSubscriberTransport):
     @gen.coroutine
     def subscribe(self, topic, callback):
         if not self._nats_client.is_connected:
-            msg = "Nats not connected!"
-            raise TTransportException(TTransportException.NOT_OPEN, msg)
+            raise TTransportException(
+                type=FrugalTTransportExceptionType.NOT_OPEN,
+                message="Nats not connected!")
 
         if self.is_subscribed():
-            msg = "Already subscribed to nats topic!"
-            raise TTransportException(TTransportException.ALREADY_OPEN, msg)
+            raise TTransportException(
+                type=FrugalTTransportExceptionType.ALREADY_OPEN,
+                message="Already subscribed to nats topic!")
 
         self._sub_id = yield self._nats_client.subscribe_async(
             'frugal.{0}'.format(topic),

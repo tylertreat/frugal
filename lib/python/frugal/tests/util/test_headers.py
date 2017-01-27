@@ -4,8 +4,9 @@ import unittest
 from io import BytesIO
 from struct import unpack_from
 
+from thrift.protocol.TProtocol import TProtocolException
+
 from frugal.context import FContext
-from frugal.exceptions import TProtocolException
 from frugal.util.headers import _Headers
 
 

@@ -92,7 +92,7 @@ class Client(generic_package_prefix.actual_base.python.f_BaseFoo.Client, Iface):
         self._iprot.readMessageEnd()
         if result.success is not None:
             return result.success
-        x = TApplicationException(TApplicationException.MISSING_RESULT, "get_thing failed: unknown result")
+        x = TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "get_thing failed: unknown result")
         raise x
 
 class Processor(generic_package_prefix.actual_base.python.f_BaseFoo.Processor):
@@ -129,7 +129,7 @@ class _get_thing(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "get_thing", ex_code=TApplicationException.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "get_thing", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:

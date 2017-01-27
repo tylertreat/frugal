@@ -50,6 +50,7 @@ func (a *AsyncIOGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "from thrift.Thrift import TType\n"
+	imports += "from frugal.exceptions import FrugalTApplicationExceptionType\n"
 	imports += "from frugal.middleware import Method\n"
 	imports += "from frugal.subscription import FSubscription\n"
 	imports += "from frugal.transport import TMemoryOutputBuffer\n\n"
@@ -163,7 +164,7 @@ func (a *AsyncIOGenerator) generateClientMethod(method *parser.Method) string {
 		contents += tabtab + "if result.success is not None:\n"
 		contents += tabtabtab + "return result.success\n"
 		contents += tabtab + fmt.Sprintf(
-			"raise TApplicationException(TApplicationException.MISSING_RESULT, \"%s failed: unknown result\")\n\n", method.Name)
+			"raise TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, \"%s failed: unknown result\")\n\n", method.Name)
 	}
 	return contents
 }
@@ -256,7 +257,7 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "async with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationException.UNKNOWN, message=e.args[0])\n", methodLower)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.args[0])\n", methodLower)
 	}
 	contents += tabtabtab + "raise e from None\n"
 	if !method.Oneway {
@@ -356,7 +357,7 @@ func (a *AsyncIOGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	method += tabtabtab + "if mname != op:\n"
 	method += tabtabtabtab + "iprot.skip(TType.STRUCT)\n"
 	method += tabtabtabtab + "iprot.readMessageEnd()\n"
-	method += tabtabtabtab + "raise TApplicationException(TApplicationException.UNKNOWN_METHOD)\n"
+	method += tabtabtabtab + "raise TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD)\n"
 	method += tabtabtab + fmt.Sprintf("req = %s()\n", op.Type.Name)
 	method += tabtabtab + "req.read(iprot)\n"
 	method += tabtabtab + "iprot.readMessageEnd()\n"

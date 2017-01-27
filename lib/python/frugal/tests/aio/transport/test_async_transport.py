@@ -7,7 +7,6 @@ from thrift.transport.TTransport import TTransportException
 
 from frugal.aio.transport import FAsyncTransport
 from frugal.context import FContext
-from frugal.exceptions import FException
 from frugal.exceptions import FrugalTTransportExceptionType
 from frugal.tests import utils
 from frugal.tests.aio import utils as aio_utils
@@ -54,7 +53,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         transport = FAsyncTransportImpl(is_open=False)
         with self.assertRaises(TTransportException) as cm:
             await transport.oneway(ctx, frame)
-        self.assertEqual(TTransportException.NOT_OPEN, cm.exception.type)
+        self.assertEqual(FrugalTTransportExceptionType.NOT_OPEN, cm.exception.type)
         self.assertIsNone(transport._payload)
 
     @aio_utils.async_runner
@@ -77,7 +76,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         transport = FAsyncTransportImpl(flush_wait=1)
         with self.assertRaises(TTransportException) as cm:
             await transport.oneway(ctx, frame)
-        self.assertEqual(TTransportException.TIMED_OUT, cm.exception.type)
+        self.assertEqual(FrugalTTransportExceptionType.TIMED_OUT, cm.exception.type)
         self.assertEqual(frame, transport._payload)
 
     @aio_utils.async_runner
@@ -98,7 +97,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         transport = FAsyncTransportImpl(is_open=False)
         with self.assertRaises(TTransportException) as cm:
             await transport.request(ctx, frame)
-        self.assertEqual(TTransportException.NOT_OPEN, cm.exception.type)
+        self.assertEqual(FrugalTTransportExceptionType.NOT_OPEN, cm.exception.type)
         self.assertEqual(0, len(transport._futures))
         self.assertIsNone(transport._payload)
 
@@ -120,7 +119,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         ctx = FContext("fooid")
         frame = utils.mock_frame(ctx)
         e = TTransportException(
-            type=TTransportException.END_OF_FILE,
+            type=FrugalTTransportExceptionType.END_OF_FILE,
             message="oh no!"
         )
         transport = FAsyncTransportImpl(e=e)
@@ -138,7 +137,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         transport = FAsyncTransportImpl(flush_wait=1)
         with self.assertRaises(TTransportException) as cm:
             await transport.request(ctx, frame)
-        self.assertEqual(TTransportException.TIMED_OUT, cm.exception.type)
+        self.assertEqual(FrugalTTransportExceptionType.TIMED_OUT, cm.exception.type)
         self.assertEqual(0, len(transport._futures))
         self.assertEqual(frame, transport._payload)
 
@@ -149,7 +148,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         transport = FAsyncTransportImpl()
         with self.assertRaises(TTransportException) as cm:
             await transport.request(ctx, frame)
-        self.assertEqual(TTransportException.TIMED_OUT, cm.exception.type)
+        self.assertEqual(FrugalTTransportExceptionType.TIMED_OUT, cm.exception.type)
         self.assertEqual(0, len(transport._futures))
         self.assertEqual(frame, transport._payload)
 
@@ -163,7 +162,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
                 transport.request(ctx, frame),
                 transport.request(ctx, frame)
             )
-        self.assertEqual(TTransportException.UNKNOWN, cm.exception.type)
+        self.assertEqual(FrugalTTransportExceptionType.UNKNOWN, cm.exception.type)
         self.assertEqual("request already in flight for context",
                          cm.exception.message)
         # We still have one request pending
@@ -193,7 +192,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         frame = bytearray(b'\x00\x00\x00\x00\x00\x80\x01\x00\x02\x00\x00\x00'
                           b'\x08basePing\x00\x00\x00\x00\x00')
 
-        with self.assertRaises(FException) as cm:
+        with self.assertRaises(TProtocolException) as cm:
             await transport.handle_response(frame)
 
         self.assertEquals("Frame missing op_id", str(cm.exception))

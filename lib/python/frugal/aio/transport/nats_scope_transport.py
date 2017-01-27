@@ -31,7 +31,7 @@ class FNatsPublisherTransport(FPublisherTransport):
 
     async def open(self):
         if not self._nats_client.is_connected:
-            raise TTransportException(TTransportException.NOT_OPEN,
+            raise TTransportException(FrugalTTransportExceptionType.NOT_OPEN,
                                       'Nats is not connected')
 
     async def close(self):
@@ -45,7 +45,7 @@ class FNatsPublisherTransport(FPublisherTransport):
 
     async def publish(self, topic: str, data):
         if not self.is_open():
-            raise TTransportException(TTransportException.NOT_OPEN,
+            raise TTransportException(FrugalTTransportExceptionType.NOT_OPEN,
                                       'Transport is not connected')
         if self._check_publish_size(data):
             raise TTransportException(
@@ -77,10 +77,10 @@ class FNatsSubscriberTransport(FSubscriberTransport):
 
     async def subscribe(self, topic: str, callback):
         if not self._nats_client.is_connected:
-            raise TTransportException(TTransportException.NOT_OPEN,
+            raise TTransportException(FrugalTTransportExceptionType.NOT_OPEN,
                                       'Nats is not connected')
         if self.is_subscribed():
-            raise TTransportException(TTransportException.ALREADY_OPEN,
+            raise TTransportException(FrugalTTransportExceptionType.ALREADY_OPEN,
                                       'Already subscribed to nats topic')
 
         async def nats_callback(message):

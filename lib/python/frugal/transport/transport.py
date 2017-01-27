@@ -77,13 +77,14 @@ class FTransport(object):
 
     def _preflight_request_check(self, payload):
         """
-        Helper function that throws TTransportException.NOT_OPEN if the
+        Helper function that throws FrugalTTransportExceptionType.NOT_OPEN if the
         transport is not open or throws FMessageSizeException if the payload is
         too large. Should only be called by extending classes.
         """
         if not self.is_open():
-            raise TTransportException(TTransportException.NOT_OPEN,
-                                      'Transport is not open')
+            raise TTransportException(
+                type=FrugalTTransportExceptionType.NOT_OPEN,
+                message='Transport is not open')
 
         if len(payload) > self.get_request_size_limit() > 0:
             raise TTransportException(

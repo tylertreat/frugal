@@ -223,7 +223,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             raise result.api
         if result.success is not None:
             return result.success
-        raise TApplicationException(TApplicationException.MISSING_RESULT, "blah failed: unknown result")
+        raise TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "blah failed: unknown result")
 
     async def oneWay(self, ctx, id, req):
         """
@@ -286,7 +286,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             raise result.api
         if result.success is not None:
             return result.success
-        raise TApplicationException(TApplicationException.MISSING_RESULT, "bin_method failed: unknown result")
+        raise TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "bin_method failed: unknown result")
 
     async def param_modifiers(self, ctx, opt_num, default_num, req_num):
         """
@@ -326,7 +326,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         iprot.readMessageEnd()
         if result.success is not None:
             return result.success
-        raise TApplicationException(TApplicationException.MISSING_RESULT, "param_modifiers failed: unknown result")
+        raise TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "param_modifiers failed: unknown result")
 
     async def underlying_types_test(self, ctx, list_type, set_type):
         """
@@ -364,7 +364,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         iprot.readMessageEnd()
         if result.success is not None:
             return result.success
-        raise TApplicationException(TApplicationException.MISSING_RESULT, "underlying_types_test failed: unknown result")
+        raise TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "underlying_types_test failed: unknown result")
 
     async def getThing(self, ctx):
         """
@@ -398,7 +398,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         iprot.readMessageEnd()
         if result.success is not None:
             return result.success
-        raise TApplicationException(TApplicationException.MISSING_RESULT, "getThing failed: unknown result")
+        raise TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "getThing failed: unknown result")
 
     async def getMyInt(self, ctx):
         """
@@ -432,7 +432,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         iprot.readMessageEnd()
         if result.success is not None:
             return result.success
-        raise TApplicationException(TApplicationException.MISSING_RESULT, "getMyInt failed: unknown result")
+        raise TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "getMyInt failed: unknown result")
 
     async def use_subdir_struct(self, ctx, a):
         """
@@ -468,7 +468,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
         iprot.readMessageEnd()
         if result.success is not None:
             return result.success
-        raise TApplicationException(TApplicationException.MISSING_RESULT, "use_subdir_struct failed: unknown result")
+        raise TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "use_subdir_struct failed: unknown result")
 
 
 class Processor(actual_base.python.f_BaseFoo.Processor):
@@ -515,7 +515,7 @@ class _Ping(FProcessorFunction):
                 return
         except Exception as e:
             async with self._lock:
-                e = _write_application_exception(ctx, oprot, "ping", ex_code=TApplicationException.UNKNOWN, message=e.args[0])
+                e = _write_application_exception(ctx, oprot, "ping", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.args[0])
             raise e from None
         async with self._lock:
             try:
@@ -556,7 +556,7 @@ class _blah(FProcessorFunction):
             result.api = api
         except Exception as e:
             async with self._lock:
-                e = _write_application_exception(ctx, oprot, "blah", ex_code=TApplicationException.UNKNOWN, message=e.args[0])
+                e = _write_application_exception(ctx, oprot, "blah", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.args[0])
             raise e from None
         async with self._lock:
             try:
@@ -616,7 +616,7 @@ class _bin_method(FProcessorFunction):
             result.api = api
         except Exception as e:
             async with self._lock:
-                e = _write_application_exception(ctx, oprot, "bin_method", ex_code=TApplicationException.UNKNOWN, message=e.args[0])
+                e = _write_application_exception(ctx, oprot, "bin_method", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.args[0])
             raise e from None
         async with self._lock:
             try:
@@ -653,7 +653,7 @@ class _param_modifiers(FProcessorFunction):
                 return
         except Exception as e:
             async with self._lock:
-                e = _write_application_exception(ctx, oprot, "param_modifiers", ex_code=TApplicationException.UNKNOWN, message=e.args[0])
+                e = _write_application_exception(ctx, oprot, "param_modifiers", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.args[0])
             raise e from None
         async with self._lock:
             try:
@@ -690,7 +690,7 @@ class _underlying_types_test(FProcessorFunction):
                 return
         except Exception as e:
             async with self._lock:
-                e = _write_application_exception(ctx, oprot, "underlying_types_test", ex_code=TApplicationException.UNKNOWN, message=e.args[0])
+                e = _write_application_exception(ctx, oprot, "underlying_types_test", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.args[0])
             raise e from None
         async with self._lock:
             try:
@@ -727,7 +727,7 @@ class _getThing(FProcessorFunction):
                 return
         except Exception as e:
             async with self._lock:
-                e = _write_application_exception(ctx, oprot, "getThing", ex_code=TApplicationException.UNKNOWN, message=e.args[0])
+                e = _write_application_exception(ctx, oprot, "getThing", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.args[0])
             raise e from None
         async with self._lock:
             try:
@@ -764,7 +764,7 @@ class _getMyInt(FProcessorFunction):
                 return
         except Exception as e:
             async with self._lock:
-                e = _write_application_exception(ctx, oprot, "getMyInt", ex_code=TApplicationException.UNKNOWN, message=e.args[0])
+                e = _write_application_exception(ctx, oprot, "getMyInt", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.args[0])
             raise e from None
         async with self._lock:
             try:
@@ -801,7 +801,7 @@ class _use_subdir_struct(FProcessorFunction):
                 return
         except Exception as e:
             async with self._lock:
-                e = _write_application_exception(ctx, oprot, "use_subdir_struct", ex_code=TApplicationException.UNKNOWN, message=e.args[0])
+                e = _write_application_exception(ctx, oprot, "use_subdir_struct", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.args[0])
             raise e from None
         async with self._lock:
             try:
