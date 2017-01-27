@@ -1413,7 +1413,7 @@ func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Oper
 	subscriber += "\t\tif name != op {\n"
 	subscriber += "\t\t\tiprot.Skip(thrift.STRUCT)\n"
 	subscriber += "\t\t\tiprot.ReadMessageEnd()\n"
-	subscriber += "\t\t\treturn thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function\"+name)\n"
+	subscriber += "\t\t\treturn thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN_METHOD, \"Unknown function\"+name)\n"
 	subscriber += "\t\t}\n"
 	subscriber += fmt.Sprintf("\t\treq := &%s{}\n", g.qualifiedTypeName(op.Type))
 	subscriber += "\t\tif err := req.Read(iprot); err != nil {\n"
@@ -1683,11 +1683,11 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	contents += "\t}\n"
 	contents += fmt.Sprintf("\tif method != \"%s\" {\n", nameLower)
 	contents += fmt.Sprintf(
-		"\t\terr = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, \"%s failed: wrong method name\")\n", nameLower)
+		"\t\terr = thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_WRONG_METHOD_NAME, \"%s failed: wrong method name\")\n", nameLower)
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += "\tif mTypeId == thrift.EXCEPTION {\n"
-	contents += "\t\terror0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, \"Unknown Exception\")\n"
+	contents += "\t\terror0 := thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN, \"Unknown Exception\")\n"
 	contents += "\t\tvar error1 thrift.TApplicationException\n"
 	contents += "\t\terror1, err = error0.Read(iprot)\n"
 	contents += "\t\tif err != nil {\n"
@@ -1696,8 +1696,8 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	contents += "\t\tif err = iprot.ReadMessageEnd(); err != nil {\n"
 	contents += "\t\t\treturn\n"
 	contents += "\t\t}\n"
-	contents += "\t\tif error1.TypeId() == frugal.TAPPLICATION_RESPONSE_TOO_LARGE {\n"
-	contents += "\t\t\terr = thrift.NewTTransportException(frugal.TTRANSPORT_RESPONSE_TOO_LARGE, error1.Error())\n"
+	contents += "\t\tif error1.TypeId() == frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE {\n"
+	contents += "\t\t\terr = thrift.NewTTransportException(frugal.TRANSPORT_EXCEPTION_RESPONSE_TOO_LARGE, error1.Error())\n"
 	contents += "\t\t\t\treturn\n"
 	contents += "\t\t}\n"
 	contents += "\t\terr = error1\n"
@@ -1705,7 +1705,7 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	contents += "\t}\n"
 	contents += "\tif mTypeId != thrift.REPLY {\n"
 	contents += fmt.Sprintf(
-		"\t\terr = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, \"%s failed: invalid message type\")\n", nameLower)
+		"\t\terr = thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_INVALID_MESSAGE_TYPE, \"%s failed: invalid message type\")\n", nameLower)
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += fmt.Sprintf("\tresult := %s%sResult{}\n", servTitle, nameTitle)
@@ -1804,7 +1804,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "\t\tiprot.ReadMessageEnd()\n"
 	if !method.Oneway {
 		contents += "\t\tp.GetWriteMutex().Lock()\n"
-		contents += fmt.Sprintf("\t\terr = %sWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, \"%s\", err.Error())\n", servLower, nameLower)
+		contents += fmt.Sprintf("\t\terr = %sWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_PROTOCOL_ERROR, \"%s\", err.Error())\n", servLower, nameLower)
 		contents += "\t\tp.GetWriteMutex().Unlock()\n"
 	}
 	contents += "\t\treturn err\n"
@@ -1939,7 +1939,7 @@ func (g *Generator) generateErrTooLarge(service *parser.Service, method *parser.
 	nameLower := parser.LowercaseFirstLetter(method.Name)
 	contents := "\t\tif frugal.IsErrTooLarge(err2) {\n"
 	contents += fmt.Sprintf(
-		"\t\t\t%sWriteApplicationError(ctx, oprot, frugal.TAPPLICATION_RESPONSE_TOO_LARGE, \"%s\", err2.Error())\n",
+		"\t\t\t%sWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, \"%s\", err2.Error())\n",
 		servLower, nameLower)
 	contents += "\t\t\treturn nil\n"
 	contents += "\t\t}\n"
@@ -1955,7 +1955,7 @@ func (g *Generator) generateMethodException(prefix string, service *parser.Servi
 		contents += prefix + "p.GetWriteMutex().Lock()\n"
 		msg := fmt.Sprintf("\"Internal error processing %s: \"+err2.Error()", nameLower)
 		contents += fmt.Sprintf(
-			prefix+"err2 := %sWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, \"%s\", %s)\n", servLower, nameLower, msg)
+			prefix+"err2 := %sWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_INTERNAL_ERROR, \"%s\", %s)\n", servLower, nameLower, msg)
 		contents += prefix + "p.GetWriteMutex().Unlock()\n"
 	}
 	contents += prefix + "return err2\n"
