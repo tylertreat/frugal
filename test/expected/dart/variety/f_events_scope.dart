@@ -189,7 +189,7 @@ class EventsSubscriber {
         thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
         iprot.readMessageEnd();
         throw new thrift.TApplicationError(
-        thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+        frugal.FrugalTApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
       }
       int req = iprot.readI64();
       iprot.readMessageEnd();
@@ -218,7 +218,7 @@ class EventsSubscriber {
         thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
         iprot.readMessageEnd();
         throw new thrift.TApplicationError(
-        thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+        frugal.FrugalTApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
       }
       String req = iprot.readString();
       iprot.readMessageEnd();
@@ -247,7 +247,7 @@ class EventsSubscriber {
         thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
         iprot.readMessageEnd();
         throw new thrift.TApplicationError(
-        thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+        frugal.FrugalTApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
       }
       thrift.TList elem70 = iprot.readListBegin();
       List<Map<int, t_variety.Event>> req = new List<Map<int, t_variety.Event>>();

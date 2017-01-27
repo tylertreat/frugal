@@ -153,7 +153,7 @@ public class EventsSubscriber {
 					if (!msg.name.equals(op)) {
 						TProtocolUtil.skip(iprot, TType.STRUCT);
 						iprot.readMessageEnd();
-						throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
+						throw new TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD);
 					}
 					long received = iprot.readI64();
 					iprot.readMessageEnd();
@@ -184,7 +184,7 @@ public class EventsSubscriber {
 					if (!msg.name.equals(op)) {
 						TProtocolUtil.skip(iprot, TType.STRUCT);
 						iprot.readMessageEnd();
-						throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
+						throw new TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD);
 					}
 					String received = iprot.readString();
 					iprot.readMessageEnd();
@@ -215,7 +215,7 @@ public class EventsSubscriber {
 					if (!msg.name.equals(op)) {
 						TProtocolUtil.skip(iprot, TType.STRUCT);
 						iprot.readMessageEnd();
-						throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
+						throw new TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD);
 					}
 					org.apache.thrift.protocol.TList elem277 = iprot.readListBegin();
 					java.util.List<java.util.Map<Long, Event>> received = new ArrayList<java.util.Map<Long, Event>>(elem277.size);

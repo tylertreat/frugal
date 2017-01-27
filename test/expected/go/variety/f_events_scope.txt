@@ -298,7 +298,7 @@ func (l *eventsSubscriber) recvSomeInt(op string, pf *frugal.FProtocolFactory, h
 		if name != op {
 			iprot.Skip(thrift.STRUCT)
 			iprot.ReadMessageEnd()
-			return thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function"+name)
+			return thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN_METHOD, "Unknown function"+name)
 		}
 		var req int64
 		if v, err := iprot.ReadI64(); err != nil {
@@ -344,7 +344,7 @@ func (l *eventsSubscriber) recvSomeStr(op string, pf *frugal.FProtocolFactory, h
 		if name != op {
 			iprot.Skip(thrift.STRUCT)
 			iprot.ReadMessageEnd()
-			return thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function"+name)
+			return thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN_METHOD, "Unknown function"+name)
 		}
 		var req string
 		if v, err := iprot.ReadString(); err != nil {
@@ -390,7 +390,7 @@ func (l *eventsSubscriber) recvSomeList(op string, pf *frugal.FProtocolFactory, 
 		if name != op {
 			iprot.Skip(thrift.STRUCT)
 			iprot.ReadMessageEnd()
-			return thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function"+name)
+			return thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN_METHOD, "Unknown function"+name)
 		}
 		_, size, err := iprot.ReadListBegin()
 		if err != nil {
