@@ -61,8 +61,8 @@ class FStoreClient implements FStore {
     if (msg.type == thrift.TMessageType.EXCEPTION) {
       thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
       iprot.readMessageEnd();
-      if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-        throw new frugal.FMessageSizeError.response(message: error.message);
+      if (error.type == frugal.FrugalTApplicationErrorType.RESPONSE_TOO_LARGE) {
+        throw new thrift.TTransportError(frugal.FrugalTTransportErrorType.RESPONSE_TOO_LARGE, error.message);
       }
       throw error;
     }
@@ -78,7 +78,7 @@ class FStoreClient implements FStore {
       throw result.error;
     }
     throw new thrift.TApplicationError(
-      thrift.TApplicationErrorType.MISSING_RESULT, "buyAlbum failed: unknown result"
+      frugal.FrugalTApplicationErrorType.MISSING_RESULT, "buyAlbum failed: unknown result"
     );
   }
   Future<bool> enterAlbumGiveaway(frugal.FContext ctx, String email, String name) {
@@ -103,8 +103,8 @@ class FStoreClient implements FStore {
     if (msg.type == thrift.TMessageType.EXCEPTION) {
       thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
       iprot.readMessageEnd();
-      if (error.type == frugal.FApplicationError.RESPONSE_TOO_LARGE) {
-        throw new frugal.FMessageSizeError.response(message: error.message);
+      if (error.type == frugal.FrugalTApplicationErrorType.RESPONSE_TOO_LARGE) {
+        throw new thrift.TTransportError(frugal.FrugalTTransportErrorType.RESPONSE_TOO_LARGE, error.message);
       }
       throw error;
     }
@@ -117,7 +117,7 @@ class FStoreClient implements FStore {
     }
 
     throw new thrift.TApplicationError(
-      thrift.TApplicationErrorType.MISSING_RESULT, "enterAlbumGiveaway failed: unknown result"
+      frugal.FrugalTApplicationErrorType.MISSING_RESULT, "enterAlbumGiveaway failed: unknown result"
     );
   }
 }

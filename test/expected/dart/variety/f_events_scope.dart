@@ -159,7 +159,7 @@ class EventsSubscriber {
         thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
         iprot.readMessageEnd();
         throw new thrift.TApplicationError(
-        thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+        frugal.FrugalTApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
       }
       t_variety.Event req = new t_variety.Event();
       req.read(iprot);

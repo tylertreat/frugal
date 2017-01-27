@@ -8,6 +8,7 @@
 package v1.music;
 
 import com.workiva.frugal.FContext;
+import com.workiva.frugal.exception.FrugalTApplicationExceptionType;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.*;
@@ -177,7 +178,7 @@ public class AlbumWinnersSubscriber {
 					if (!msg.name.equals(op)) {
 						TProtocolUtil.skip(iprot, TType.STRUCT);
 						iprot.readMessageEnd();
-						throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
+						throw new TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD);
 					}
 					Album received = new Album();
 					received.read(iprot);

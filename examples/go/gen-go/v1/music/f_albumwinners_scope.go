@@ -308,7 +308,7 @@ func (l *albumWinnersSubscriber) recvWinner(op string, pf *frugal.FProtocolFacto
 		if name != op {
 			iprot.Skip(thrift.STRUCT)
 			iprot.ReadMessageEnd()
-			return thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function"+name)
+			return thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN_METHOD, "Unknown function"+name)
 		}
 		req := NewAlbum()
 		if err := req.Read(iprot); err != nil {
