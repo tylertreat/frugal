@@ -10,7 +10,7 @@ from tornado.testing import AsyncTestCase
 from tornado.testing import gen_test
 
 from frugal.context import FContext
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.tornado.transport.http_transport import FHttpTransport
 
 
@@ -94,7 +94,7 @@ class TestFHttpTransport(AsyncTestCase):
         self.transport._http = self.http_mock
         with self.assertRaises(TTransportException) as cm:
             yield self.transport.request(FContext(), bytearray([0] * 101))
-        self.assertEqual(FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+        self.assertEqual(TTransportExceptionType.REQUEST_TOO_LARGE,
                          cm.exception.type)
 
     @gen_test
@@ -144,5 +144,5 @@ class TestFHttpTransport(AsyncTestCase):
             yield self.transport.request(
                 FContext(), bytearray([0, 0, 0, 1, 0]))
         self.assertEqual(
-            FrugalTTransportExceptionType.TIMED_OUT, cm.exception.type)
+            TTransportExceptionType.TIMED_OUT, cm.exception.type)
         self.assertEqual("request timed out", cm.exception.message)

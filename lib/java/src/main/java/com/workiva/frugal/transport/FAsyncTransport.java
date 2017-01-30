@@ -1,7 +1,7 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.FContext;
-import com.workiva.frugal.exception.FrugalTTransportExceptionType;
+import com.workiva.frugal.exception.TTransportExceptionType;
 import com.workiva.frugal.protocol.HeaderUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TProtocolException;
@@ -92,11 +92,11 @@ public abstract class FAsyncTransport extends FTransport {
             }
 
             if (response == null) {
-                throw new TTransportException(FrugalTTransportExceptionType.TIMED_OUT, "request: timed out");
+                throw new TTransportException(TTransportExceptionType.TIMED_OUT, "request: timed out");
             }
 
             if (response == POISON_PILL) {
-                throw new TTransportException(FrugalTTransportExceptionType.NOT_OPEN,
+                throw new TTransportException(TTransportExceptionType.NOT_OPEN,
                         "request: transport closed, request canceled");
             }
 

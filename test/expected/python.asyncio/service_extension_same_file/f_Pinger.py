@@ -12,8 +12,8 @@ import inspect
 
 from frugal.aio.processor import FBaseProcessor
 from frugal.aio.processor import FProcessorFunction
-from frugal.exceptions import FrugalTApplicationExceptionType
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TApplicationExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.middleware import Method
 from frugal.transport import TMemoryOutputBuffer
 from thrift.Thrift import TApplicationException
@@ -76,8 +76,8 @@ class Client(f_BasePinger.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
+                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
             raise x
         result = ping_result()
         result.read(iprot)
@@ -119,7 +119,7 @@ class _ping(FProcessorFunction):
                 return
         except Exception as e:
             async with self._lock:
-                e = _write_application_exception(ctx, oprot, "ping", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.args[0])
+                e = _write_application_exception(ctx, oprot, "ping", ex_code=TApplicationExceptionType.UNKNOWN, message=e.args[0])
             raise e from None
         async with self._lock:
             try:
@@ -129,8 +129,8 @@ class _ping(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE:
-                    raise _write_application_exception(ctx, oprot, "ping", ex_code=FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.message)
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "ping", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.message)
                 else:
                     raise e
 

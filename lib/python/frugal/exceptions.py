@@ -2,7 +2,7 @@ from thrift.Thrift import TApplicationException
 from thrift.transport.TTransport import TTransportException
 
 
-class FrugalTTransportExceptionType(object):
+class TTransportExceptionType(object):
     """Exception types for TTransportExceptions"""
     UNKNOWN = TTransportException.UNKNOWN
     NOT_OPEN = TTransportException.NOT_OPEN
@@ -14,7 +14,7 @@ class FrugalTTransportExceptionType(object):
     RESPONSE_TOO_LARGE = 101
 
 
-class FrugalTApplicationExceptionType(object):
+class TApplicationExceptionType(object):
     """Exception types for TApplicationExceptions"""
     UNKNOWN = TApplicationException.UNKNOWN
     UNKNOWN_METHOD = TApplicationException.UNKNOWN_METHOD

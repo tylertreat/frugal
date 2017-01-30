@@ -2,7 +2,7 @@ import struct
 
 from thrift.transport.TTransport import TTransportException
 
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from thrift.transport.TTransport import TMemoryBuffer
 
 
@@ -29,7 +29,7 @@ class TMemoryOutputBuffer(TMemoryBuffer, object):
         if len(self) + len(buf) > self._limit > 0:
             self._buffer = TMemoryBuffer()
             raise TTransportException(
-                type=FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+                type=TTransportExceptionType.REQUEST_TOO_LARGE,
                 message="Buffer size reached {}".format(self._limit))
         self._buffer.write(buf)
 

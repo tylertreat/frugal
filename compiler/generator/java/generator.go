@@ -2297,8 +2297,8 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += g.generateStructImports()
 
 	imports += "import com.workiva.frugal.FContext;\n"
-	imports += "import com.workiva.frugal.exception.FrugalTApplicationExceptionType;\n"
-	imports += "import com.workiva.frugal.exception.FrugalTTransportExceptionType;\n"
+	imports += "import com.workiva.frugal.exception.TApplicationExceptionType;\n"
+	imports += "import com.workiva.frugal.exception.TTransportExceptionType;\n"
 	imports += "import com.workiva.frugal.middleware.InvocationHandler;\n"
 	imports += "import com.workiva.frugal.middleware.ServiceMiddleware;\n"
 	imports += "import com.workiva.frugal.processor.FBaseProcessor;\n"
@@ -2325,7 +2325,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 
 func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "import com.workiva.frugal.FContext;\n"
-	imports += "import com.workiva.frugal.exception.FrugalTApplicationExceptionType;\n"
+	imports += "import com.workiva.frugal.exception.TApplicationExceptionType;\n"
 	imports += "import com.workiva.frugal.middleware.InvocationHandler;\n"
 	imports += "import com.workiva.frugal.middleware.ServiceMiddleware;\n"
 	imports += "import com.workiva.frugal.protocol.*;\n"
@@ -2620,7 +2620,7 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 		subscriber += tabtabtabtabtab + "if (!msg.name.equals(op)) {\n"
 		subscriber += tabtabtabtabtabtab + "TProtocolUtil.skip(iprot, TType.STRUCT);\n"
 		subscriber += tabtabtabtabtabtab + "iprot.readMessageEnd();\n"
-		subscriber += tabtabtabtabtabtab + "throw new TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD);\n"
+		subscriber += tabtabtabtabtabtab + "throw new TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD);\n"
 		subscriber += tabtabtabtabtab + "}\n"
 		subscriber += g.generateReadFieldRec(parser.FieldFromType(op.Type, "received"), false, false, false, tabtabtabtabtab)
 		subscriber += tabtabtabtabtab + "iprot.readMessageEnd();\n"
@@ -2868,21 +2868,21 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtabtab + "TMessage message = iprot.readMessageBegin();\n"
 	contents += tabtabtab + fmt.Sprintf("if (!message.name.equals(\"%s\")) {\n", methodLower)
 	contents += tabtabtabtab + fmt.Sprintf(
-		"throw new TApplicationException(FrugalTApplicationExceptionType.WRONG_METHOD_NAME, \"%s failed: wrong method name\");\n",
+		"throw new TApplicationException(TApplicationExceptionType.WRONG_METHOD_NAME, \"%s failed: wrong method name\");\n",
 		method.Name)
 	contents += tabtabtab + "}\n"
 	contents += tabtabtab + "if (message.type == TMessageType.EXCEPTION) {\n"
 	contents += tabtabtabtab + "TApplicationException e = TApplicationException.read(iprot);\n"
 	contents += tabtabtabtab + "iprot.readMessageEnd();\n"
 	contents += tabtabtabtab + "TException returnedException = e;\n"
-	contents += tabtabtabtab + "if (e.getType() == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE) {\n"
-	contents += tabtabtabtabtab + "returnedException = new TTransportException(FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());\n"
+	contents += tabtabtabtab + "if (e.getType() == TApplicationExceptionType.RESPONSE_TOO_LARGE) {\n"
+	contents += tabtabtabtabtab + "returnedException = new TTransportException(TTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());\n"
 	contents += tabtabtabtab + "}\n"
 	contents += tabtabtabtab + "throw returnedException;\n"
 	contents += tabtabtab + "}\n"
 	contents += tabtabtab + "if (message.type != TMessageType.REPLY) {\n"
 	contents += tabtabtabtab + fmt.Sprintf(
-		"throw new TApplicationException(FrugalTApplicationExceptionType.INVALID_MESSAGE_TYPE, \"%s failed: invalid message type\");\n",
+		"throw new TApplicationException(TApplicationExceptionType.INVALID_MESSAGE_TYPE, \"%s failed: invalid message type\");\n",
 		method.Name)
 	contents += tabtabtab + "}\n"
 	contents += tabtabtab + fmt.Sprintf("%s_result res = new %s_result();\n", method.Name, method.Name)
@@ -2900,7 +2900,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	}
 	if method.ReturnType != nil {
 		contents += tabtabtab + fmt.Sprintf(
-			"throw new TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, \"%s failed: unknown result\");\n",
+			"throw new TApplicationException(TApplicationExceptionType.MISSING_RESULT, \"%s failed: unknown result\");\n",
 			method.Name)
 	}
 	contents += tabtab + "}\n"
@@ -2983,7 +2983,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtabtab + "iprot.readMessageEnd();\n"
 		if !method.Oneway {
 			contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"
-			contents += tabtabtabtabtabtab + fmt.Sprintf("e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.PROTOCOL_ERROR, \"%s\", e.getMessage());\n", method.Name)
+			contents += tabtabtabtabtabtab + fmt.Sprintf("e = writeApplicationException(ctx, oprot, TApplicationExceptionType.PROTOCOL_ERROR, \"%s\", e.getMessage());\n", method.Name)
 			contents += tabtabtabtabtab + "}\n"
 		}
 		contents += tabtabtabtabtab + "throw e;\n"
@@ -3018,7 +3018,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtab + "} catch (TException e) {\n"
 		contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"
 		contents += tabtabtabtabtabtab + fmt.Sprintf(
-			"e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.INTERNAL_ERROR, \"%s\", \"Internal error processing %s: \" + e.getMessage());\n",
+			"e = writeApplicationException(ctx, oprot, TApplicationExceptionType.INTERNAL_ERROR, \"%s\", \"Internal error processing %s: \" + e.getMessage());\n",
 			methodLower, method.Name)
 		contents += tabtabtabtabtab + "}\n"
 		contents += tabtabtabtabtab + "throw e;\n"
@@ -3031,9 +3031,9 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtabtabtab + "oprot.writeMessageEnd();\n"
 		contents += tabtabtabtabtabtab + "oprot.getTransport().flush();\n"
 		contents += tabtabtabtabtab + "} catch (TTransportException e) {\n"
-		contents += tabtabtabtabtabtab + "if (e.getType() == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE) {\n"
+		contents += tabtabtabtabtabtab + "if (e.getType() == TTransportExceptionType.RESPONSE_TOO_LARGE) {\n"
 		contents += tabtabtabtabtabtabtab + fmt.Sprintf(
-			"writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \" + e.getMessage());\n",
+			"writeApplicationException(ctx, oprot, TApplicationExceptionType.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \" + e.getMessage());\n",
 			methodLower)
 		contents += tabtabtabtabtabtab + "} else {\n"
 		contents += tabtabtabtabtabtabtab + "throw e;\n"

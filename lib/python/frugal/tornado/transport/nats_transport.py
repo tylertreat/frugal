@@ -3,7 +3,7 @@ from thrift.transport.TTransport import TTransportException
 from tornado import gen
 
 from frugal import _NATS_MAX_MESSAGE_SIZE
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.tornado.transport import FAsyncTransport
 
 _NOT_OPEN = 'NATS not connected.'
@@ -40,11 +40,11 @@ class FNatsTransport(FAsyncTransport):
         """Subscribes to the configured inbox subject"""
         if not self._nats_client.is_connected:
             raise TTransportException(
-                type=FrugalTTransportExceptionType.NOT_OPEN,
+                type=TTransportExceptionType.NOT_OPEN,
                 message=_NOT_OPEN)
 
         elif self.is_open():
-            already_open = FrugalTTransportExceptionType.ALREADY_OPEN
+            already_open = TTransportExceptionType.ALREADY_OPEN
             raise TTransportException(already_open, _ALREAD_OPEN)
 
         cb = self._on_message_callback

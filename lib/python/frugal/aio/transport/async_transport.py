@@ -7,7 +7,7 @@ from thrift.transport.TTransport import TTransportException
 
 from frugal.aio.transport import FTransportBase
 from frugal.context import _OPID_HEADER
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.context import FContext
 from frugal.util.headers import _Headers
 
@@ -31,7 +31,7 @@ class FAsyncTransport(FTransportBase):
                 await self.flush(payload)
         except asyncio.TimeoutError:
             raise TTransportException(
-                type=FrugalTTransportExceptionType.TIMED_OUT,
+                type=TTransportExceptionType.TIMED_OUT,
                 message='request timed out'
             ) from None
 
@@ -42,7 +42,7 @@ class FAsyncTransport(FTransportBase):
         async with self._futures_lock:
             if op_id in self._futures:
                 raise TTransportException(
-                    type=FrugalTTransportExceptionType.UNKNOWN,
+                    type=TTransportExceptionType.UNKNOWN,
                     message="request already in flight for context"
                 )
             self._futures[op_id] = future
@@ -53,7 +53,7 @@ class FAsyncTransport(FTransportBase):
                 return TMemoryBuffer(await future)
         except asyncio.TimeoutError:
             raise TTransportException(
-                type=FrugalTTransportExceptionType.TIMED_OUT,
+                type=TTransportExceptionType.TIMED_OUT,
                 message='request timed out'
             ) from None
         finally:
