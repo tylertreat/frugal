@@ -6,7 +6,7 @@ from tornado.testing import gen_test, AsyncTestCase
 from thrift.transport.TTransport import TTransportException
 
 from frugal import _NATS_MAX_MESSAGE_SIZE
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.tornado.transport import FNatsTransport
 
 
@@ -54,7 +54,7 @@ class TestFNatsTransport(AsyncTestCase):
             yield self.transport.open()
 
         self.assertEqual(
-            FrugalTTransportExceptionType.NOT_OPEN, cm.exception.type)
+            TTransportExceptionType.NOT_OPEN, cm.exception.type)
         self.assertEqual("NATS not connected.", cm.exception.message)
 
     @gen_test
@@ -66,7 +66,7 @@ class TestFNatsTransport(AsyncTestCase):
             yield self.transport.open()
 
         self.assertEqual(
-            FrugalTTransportExceptionType.ALREADY_OPEN, cm.exception.type)
+            TTransportExceptionType.ALREADY_OPEN, cm.exception.type)
         self.assertEqual("NATS transport already open.", cm.exception.message)
 
     @gen_test

@@ -8,7 +8,7 @@ from thrift.Thrift import TType
 from tornado import gen
 from tornado.locks import Lock
 
-from frugal.exceptions import FrugalTApplicationExceptionType
+from frugal.exceptions import TApplicationExceptionType
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +150,7 @@ class FBaseProcessor(FProcessor):
         iprot.readMessageEnd()
 
         ex = TApplicationException(
-            type=FrugalTApplicationExceptionType.UNKNOWN_METHOD,
+            type=TApplicationExceptionType.UNKNOWN_METHOD,
             message="Unknown function: {0}".format(name))
 
         with (yield self._write_lock.acquire()):

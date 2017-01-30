@@ -9,8 +9,8 @@
 from threading import Lock
 
 from frugal.middleware import Method
-from frugal.exceptions import FrugalTApplicationExceptionType
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TApplicationExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
 from thrift.Thrift import TApplicationException
@@ -83,7 +83,7 @@ class Client(Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
+                raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = basePing_result()
         result.read(self._iprot)
@@ -124,7 +124,7 @@ class _basePing(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "basePing", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "basePing", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -134,8 +134,8 @@ class _basePing(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE:
-                    raise _write_application_exception(ctx, oprot, "basePing", ex_code=FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "basePing", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
                 else:
                     raise e
 

@@ -5,7 +5,7 @@ from thrift.transport.TTransport import TTransportException
 from thrift.transport.TTransport import TMemoryBuffer
 
 from frugal import _NATS_MAX_MESSAGE_SIZE
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.transport import FPublisherTransport
 from frugal.transport import FSubscriberTransport
 from frugal.transport import FPublisherTransportFactory
@@ -31,7 +31,7 @@ class FNatsPublisherTransport(FPublisherTransport):
 
     async def open(self):
         if not self._nats_client.is_connected:
-            raise TTransportException(FrugalTTransportExceptionType.NOT_OPEN,
+            raise TTransportException(TTransportExceptionType.NOT_OPEN,
                                       'Nats is not connected')
 
     async def close(self):
@@ -45,11 +45,11 @@ class FNatsPublisherTransport(FPublisherTransport):
 
     async def publish(self, topic: str, data):
         if not self.is_open():
-            raise TTransportException(FrugalTTransportExceptionType.NOT_OPEN,
+            raise TTransportException(TTransportExceptionType.NOT_OPEN,
                                       'Transport is not connected')
         if self._check_publish_size(data):
             raise TTransportException(
-                type=FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+                type=TTransportExceptionType.REQUEST_TOO_LARGE,
                 message='Message exceeds max message size'
             )
         await self._nats_client.publish('frugal.{0}'.format(topic), data)
@@ -77,10 +77,10 @@ class FNatsSubscriberTransport(FSubscriberTransport):
 
     async def subscribe(self, topic: str, callback):
         if not self._nats_client.is_connected:
-            raise TTransportException(FrugalTTransportExceptionType.NOT_OPEN,
+            raise TTransportException(TTransportExceptionType.NOT_OPEN,
                                       'Nats is not connected')
         if self.is_subscribed():
-            raise TTransportException(FrugalTTransportExceptionType.ALREADY_OPEN,
+            raise TTransportException(TTransportExceptionType.ALREADY_OPEN,
                                       'Already subscribed to nats topic')
 
         async def nats_callback(message):

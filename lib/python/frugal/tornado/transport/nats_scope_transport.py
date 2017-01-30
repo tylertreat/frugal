@@ -8,7 +8,7 @@ from frugal.transport import FPublisherTransportFactory
 from frugal.transport import FPublisherTransport
 from frugal.transport import FSubscriberTransportFactory
 from frugal.transport import FSubscriberTransport
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 
 _FRAME_BUFFER_SIZE = 5
 _FRUGAL_PREFIX = "frugal."
@@ -33,7 +33,7 @@ class FNatsPublisherTransport(FPublisherTransport):
     def open(self):
         if not self._nats_client.is_connected:
             raise TTransportException(
-                type=FrugalTTransportExceptionType.NOT_OPEN,
+                type=TTransportExceptionType.NOT_OPEN,
                 message="Nats not connected!")
 
     @gen.coroutine
@@ -50,12 +50,12 @@ class FNatsPublisherTransport(FPublisherTransport):
     def publish(self, topic, data):
         if not self.is_open():
             raise TTransportException(
-                type=FrugalTTransportExceptionType.NOT_OPEN,
+                type=TTransportExceptionType.NOT_OPEN,
                 message='Nats not connected!')
         if self._check_publish_size(data):
             msg = 'Message exceeds NATS max message size'
             raise TTransportException(
-                type=FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+                type=TTransportExceptionType.REQUEST_TOO_LARGE,
                 message=msg)
         yield self._nats_client.publish('frugal.{0}'.format(topic), data)
 
@@ -80,12 +80,12 @@ class FNatsSubscriberTransport(FSubscriberTransport):
     def subscribe(self, topic, callback):
         if not self._nats_client.is_connected:
             raise TTransportException(
-                type=FrugalTTransportExceptionType.NOT_OPEN,
+                type=TTransportExceptionType.NOT_OPEN,
                 message="Nats not connected!")
 
         if self.is_subscribed():
             raise TTransportException(
-                type=FrugalTTransportExceptionType.ALREADY_OPEN,
+                type=TTransportExceptionType.ALREADY_OPEN,
                 message="Already subscribed to nats topic!")
 
         self._sub_id = yield self._nats_client.subscribe_async(

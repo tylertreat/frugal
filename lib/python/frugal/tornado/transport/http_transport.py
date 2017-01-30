@@ -9,7 +9,7 @@ from tornado.httpclient import AsyncHTTPClient
 from tornado.httpclient import HTTPError
 from tornado.httpclient import HTTPRequest
 
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.tornado.transport.transport import FTransportBase
 
 logger = logging.getLogger(__name__)
@@ -87,28 +87,28 @@ class FHttpTransport(FTransportBase):
         except HTTPError as e:
             if e.code == httplib.REQUEST_ENTITY_TOO_LARGE:
                 raise TTransportException(
-                    type=FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+                    type=TTransportExceptionType.REQUEST_TOO_LARGE,
                     message='response was too large')
 
             # Tornado HttpClient uses 599 as the HTTP code to indicate a
             # request timeout
             if e.code == 599:
                 raise TTransportException(
-                    type=FrugalTTransportExceptionType.TIMED_OUT,
+                    type=TTransportExceptionType.TIMED_OUT,
                     message='request timed out')
 
             message = 'response errored with code {0} and body {1}'.format(
                 e.code, e.message
             )
             raise TTransportException(
-                type=FrugalTTransportExceptionType.UNKNOWN,
+                type=TTransportExceptionType.UNKNOWN,
                 message=message)
 
         decoded = base64.b64decode(response.body)
 
         if len(decoded) < 4:
             raise TTransportException(
-                type=FrugalTTransportExceptionType.UNKNOWN,
+                type=TTransportExceptionType.UNKNOWN,
                 message='invalid frame size')
 
         if len(decoded) == 4:
