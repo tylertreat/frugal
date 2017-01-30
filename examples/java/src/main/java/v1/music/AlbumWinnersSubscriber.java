@@ -109,7 +109,7 @@ public class AlbumWinnersSubscriber {
 					if (!msg.name.equals(op)) {
 						TProtocolUtil.skip(iprot, TType.STRUCT);
 						iprot.readMessageEnd();
-						throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
+						throw new TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD);
 					}
 					org.apache.thrift.protocol.TList elem42 = iprot.readListBegin();
 					java.util.List<Album> received = new ArrayList<Album>(elem42.size);
@@ -147,7 +147,7 @@ public class AlbumWinnersSubscriber {
 					if (!msg.name.equals(op)) {
 						TProtocolUtil.skip(iprot, TType.STRUCT);
 						iprot.readMessageEnd();
-						throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
+						throw new TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD);
 					}
 					double received = iprot.readDouble();
 					iprot.readMessageEnd();

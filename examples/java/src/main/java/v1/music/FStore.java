@@ -396,17 +396,6 @@ public static class buyAlbum_args implements org.apache.thrift.TBase<buyAlbum_ar
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.ASIN, new org.apache.thrift.meta_data.FieldMetaData("ASIN", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.ACCT, new org.apache.thrift.meta_data.FieldMetaData("acct", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(buyAlbum_args.class, metaDataMap);
-	}
-
 	public buyAlbum_args() {
 	}
 
@@ -867,17 +856,6 @@ public static class buyAlbum_result implements org.apache.thrift.TBase<buyAlbum_
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Album.class)));
-		tmpMap.put(_Fields.ERROR, new org.apache.thrift.meta_data.FieldMetaData("error", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, PurchasingError.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(buyAlbum_result.class, metaDataMap);
-	}
-
 	public buyAlbum_result() {
 	}
 
@@ -1344,17 +1322,6 @@ public static class enterAlbumGiveaway_args implements org.apache.thrift.TBase<e
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.EMAIL, new org.apache.thrift.meta_data.FieldMetaData("email", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.NAME, new org.apache.thrift.meta_data.FieldMetaData("name", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(enterAlbumGiveaway_args.class, metaDataMap);
-	}
-
 	public enterAlbumGiveaway_args() {
 	}
 
@@ -1812,15 +1779,6 @@ public static class enterAlbumGiveaway_result implements org.apache.thrift.TBase
 	// isset id assignments
 	private static final int __SUCCESS_ISSET_ID = 0;
 	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.BOOL)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(enterAlbumGiveaway_result.class, metaDataMap);
-	}
-
 	public enterAlbumGiveaway_result() {
 	}
 

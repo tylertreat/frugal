@@ -71,7 +71,7 @@ class AlbumWinnersSubscriber(object):
             if mname != op:
                 iprot.skip(TType.STRUCT)
                 iprot.readMessageEnd()
-                raise TApplicationException(TApplicationException.UNKNOWN_METHOD)
+                raise TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD)
             req = []
             (_, elem4) = iprot.readListBegin()
             for _ in range(elem4):
@@ -113,7 +113,7 @@ class AlbumWinnersSubscriber(object):
             if mname != op:
                 iprot.skip(TType.STRUCT)
                 iprot.readMessageEnd()
-                raise TApplicationException(TApplicationException.UNKNOWN_METHOD)
+                raise TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD)
             req = iprot.readDouble()
             iprot.readMessageEnd()
             try:

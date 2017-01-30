@@ -1093,13 +1093,6 @@ public static class Ping_args implements org.apache.thrift.TBase<Ping_args, Ping
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Ping_args.class, metaDataMap);
-	}
-
 	public Ping_args() {
 	}
 
@@ -1342,13 +1335,6 @@ public static class Ping_result implements org.apache.thrift.TBase<Ping_result, 
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Ping_result.class, metaDataMap);
-	}
-
 	public Ping_result() {
 	}
 
@@ -1608,19 +1594,6 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 	// isset id assignments
 	private static final int __NUM_ISSET_ID = 0;
 	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.NUM, new org.apache.thrift.meta_data.FieldMetaData("num", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-		tmpMap.put(_Fields.STR, new org.apache.thrift.meta_data.FieldMetaData("Str", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.EVENT, new org.apache.thrift.meta_data.FieldMetaData("event", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Event.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(blah_args.class, metaDataMap);
-	}
-
 	public blah_args() {
 	}
 
@@ -2187,19 +2160,6 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 	// isset id assignments
 	private static final int __SUCCESS_ISSET_ID = 0;
 	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
-		tmpMap.put(_Fields.AWE, new org.apache.thrift.meta_data.FieldMetaData("awe", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, AwesomeException.class)));
-		tmpMap.put(_Fields.API, new org.apache.thrift.meta_data.FieldMetaData("api", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, actual_base.java.api_exception.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(blah_result.class, metaDataMap);
-	}
-
 	public blah_result() {
 	}
 
@@ -2766,17 +2726,6 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 	// isset id assignments
 	private static final int __ID_ISSET_ID = 0;
 	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.ID, new org.apache.thrift.meta_data.FieldMetaData("id", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id")));
-		tmpMap.put(_Fields.REQ, new org.apache.thrift.meta_data.FieldMetaData("req", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.MAP, "request")));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(oneWay_args.class, metaDataMap);
-	}
-
 	public oneWay_args() {
 	}
 
@@ -3267,17 +3216,6 @@ public static class bin_method_args implements org.apache.thrift.TBase<bin_metho
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.BIN, new org.apache.thrift.meta_data.FieldMetaData("bin", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING, true)));
-		tmpMap.put(_Fields.STR, new org.apache.thrift.meta_data.FieldMetaData("Str", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(bin_method_args.class, metaDataMap);
-	}
-
 	public bin_method_args() {
 	}
 
@@ -3748,17 +3686,6 @@ public static class bin_method_result implements org.apache.thrift.TBase<bin_met
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING, true)));
-		tmpMap.put(_Fields.API, new org.apache.thrift.meta_data.FieldMetaData("api", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, actual_base.java.api_exception.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(bin_method_result.class, metaDataMap);
-	}
-
 	public bin_method_result() {
 	}
 
@@ -4241,19 +4168,6 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 	private static final int __DEFAULT_NUM_ISSET_ID = 1;
 	private static final int __REQ_NUM_ISSET_ID = 2;
 	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.OPT_NUM, new org.apache.thrift.meta_data.FieldMetaData("opt_num", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-		tmpMap.put(_Fields.DEFAULT_NUM, new org.apache.thrift.meta_data.FieldMetaData("default_num", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-		tmpMap.put(_Fields.REQ_NUM, new org.apache.thrift.meta_data.FieldMetaData("req_num", org.apache.thrift.TFieldRequirementType.REQUIRED,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(param_modifiers_args.class, metaDataMap);
-	}
-
 	public param_modifiers_args() {
 	}
 
@@ -4789,15 +4703,6 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 	// isset id assignments
 	private static final int __SUCCESS_ISSET_ID = 0;
 	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(param_modifiers_result.class, metaDataMap);
-	}
-
 	public param_modifiers_result() {
 	}
 
@@ -5154,19 +5059,6 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.LIST_TYPE, new org.apache.thrift.meta_data.FieldMetaData("list_type", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id"))));
-		tmpMap.put(_Fields.SET_TYPE, new org.apache.thrift.meta_data.FieldMetaData("set_type", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.SetMetaData(org.apache.thrift.protocol.TType.SET,
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id"))));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(underlying_types_test_args.class, metaDataMap);
-	}
-
 	public underlying_types_test_args() {
 	}
 
@@ -5696,16 +5588,6 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id"))));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(underlying_types_test_result.class, metaDataMap);
-	}
-
 	public underlying_types_test_result() {
 	}
 
@@ -6092,13 +5974,6 @@ public static class getThing_args implements org.apache.thrift.TBase<getThing_ar
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getThing_args.class, metaDataMap);
-	}
-
 	public getThing_args() {
 	}
 
@@ -6346,15 +6221,6 @@ public static class getThing_result implements org.apache.thrift.TBase<getThing_
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Thing.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getThing_result.class, metaDataMap);
-	}
-
 	public getThing_result() {
 	}
 
@@ -6707,13 +6573,6 @@ public static class getMyInt_args implements org.apache.thrift.TBase<getMyInt_ar
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getMyInt_args.class, metaDataMap);
-	}
-
 	public getMyInt_args() {
 	}
 
@@ -6963,15 +6822,6 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 	// isset id assignments
 	private static final int __SUCCESS_ISSET_ID = 0;
 	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32, "ValidTypes.MyInt")));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getMyInt_result.class, metaDataMap);
-	}
-
 	public getMyInt_result() {
 	}
 
@@ -7323,15 +7173,6 @@ public static class use_subdir_struct_args implements org.apache.thrift.TBase<us
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.A, new org.apache.thrift.meta_data.FieldMetaData("a", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, A.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(use_subdir_struct_args.class, metaDataMap);
-	}
-
 	public use_subdir_struct_args() {
 	}
 
@@ -7689,15 +7530,6 @@ public static class use_subdir_struct_result implements org.apache.thrift.TBase<
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, A.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(use_subdir_struct_result.class, metaDataMap);
-	}
-
 	public use_subdir_struct_result() {
 	}
 

@@ -154,41 +154,6 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 	private static final int __ID_ISSET_ID = 0;
 	private static final int __ABOOLFIELD_ISSET_ID = 1;
 	private byte __isset_bitfield = 0;
-	private static final _Fields optionals[] = {_Fields.ID};
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.ID, new org.apache.thrift.meta_data.FieldMetaData("ID", org.apache.thrift.TFieldRequirementType.OPTIONAL,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id")));
-		tmpMap.put(_Fields.EV, new org.apache.thrift.meta_data.FieldMetaData("Ev", org.apache.thrift.TFieldRequirementType.REQUIRED,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Event.class)));
-		tmpMap.put(_Fields.EVENTS, new org.apache.thrift.meta_data.FieldMetaData("Events", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Event.class))));
-		tmpMap.put(_Fields.EVENTS2, new org.apache.thrift.meta_data.FieldMetaData("Events2", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.SetMetaData(org.apache.thrift.protocol.TType.SET,
-						new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Event.class))));
-		tmpMap.put(_Fields.EVENT_MAP, new org.apache.thrift.meta_data.FieldMetaData("EventMap", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP,
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id"),
-						new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Event.class))));
-		tmpMap.put(_Fields.NUMS, new org.apache.thrift.meta_data.FieldMetaData("Nums", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-								new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32, "int")))));
-		tmpMap.put(_Fields.ENUMS, new org.apache.thrift.meta_data.FieldMetaData("Enums", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, ItsAnEnum.class))));
-		tmpMap.put(_Fields.A_BOOL_FIELD, new org.apache.thrift.meta_data.FieldMetaData("aBoolField", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.BOOL)));
-		tmpMap.put(_Fields.A_UNION, new org.apache.thrift.meta_data.FieldMetaData("a_union", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, TestingUnions.class)));
-		tmpMap.put(_Fields.TYPEDEF_OF_TYPEDEF, new org.apache.thrift.meta_data.FieldMetaData("typedefOfTypedef", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING, "t2_string")));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(EventWrapper.class, metaDataMap);
-	}
-
 	public EventWrapper() {
 	}
 

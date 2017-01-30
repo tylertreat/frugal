@@ -101,13 +101,6 @@ public class api_exception extends TException implements org.apache.thrift.TBase
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(api_exception.class, metaDataMap);
-	}
-
 	public api_exception() {
 	}
 

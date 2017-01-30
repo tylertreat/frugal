@@ -475,7 +475,6 @@ func (g *Generator) generateUnion(union *parser.Struct, isArg, isResult bool) st
 
 	contents += g.generateDescriptors(union)
 	contents += g.generateFieldsEnum(union)
-	contents += g.generateMetaDataMap(union)
 	contents += g.generateUnionConstructors(union)
 	contents += g.generateUnionFieldConstructors(union)
 	contents += g.generateUnionCheckType(union)
@@ -830,9 +829,6 @@ func (g *Generator) generateStruct(s *parser.Struct, isArg, isResult bool) strin
 
 	contents += g.generateIsSetVars(s)
 
-	contents += g.generateOptionals(s)
-	contents += g.generateMetaDataMap(s)
-
 	contents += g.generateDefaultConstructor(s)
 	contents += g.generateFullConstructor(s)
 	contents += g.generateCopyConstructor(s)
@@ -1011,43 +1007,6 @@ func (g *Generator) generateIsSetVars(s *parser.Struct) string {
 	case IsSetBitSet:
 		contents += fmt.Sprintf(tab+"private BitSet __isset_bit_vector = new BitSet(%d);\n", primitiveCount)
 	}
-	return contents
-}
-
-func (g *Generator) generateOptionals(s *parser.Struct) string {
-	// TODO 2.0 These don't appear to be used by anything
-	contents := ""
-
-	optionals := ""
-	sep := ""
-	for _, field := range s.Fields {
-		if field.Modifier != parser.Optional {
-			continue
-		}
-		optionals += fmt.Sprintf(sep+"_Fields.%s", toConstantName(field.Name))
-		sep = ","
-	}
-
-	if len(optionals) > 0 {
-		contents += fmt.Sprintf(tab+"private static final _Fields optionals[] = {%s};\n", optionals)
-	}
-
-	return contents
-}
-
-func (g *Generator) generateMetaDataMap(s *parser.Struct) string {
-	contents := ""
-	contents += tab + "public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;\n"
-	contents += tab + "static {\n"
-	contents += tabtab + "Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);\n"
-	for _, field := range s.Fields {
-		contents += fmt.Sprintf(tabtab+"tmpMap.put(_Fields.%s, new org.apache.thrift.meta_data.FieldMetaData(\"%s\", org.apache.thrift.TFieldRequirementType.%s,\n",
-			toConstantName(field.Name), field.Name, field.Modifier.String())
-		contents += fmt.Sprintf("%s));\n", g.generateMetaDataMapEntry(field.Type, tabtabtabtab))
-	}
-	contents += tabtab + "metaDataMap = Collections.unmodifiableMap(tmpMap);\n"
-	contents += fmt.Sprintf(tabtab+"org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(%s.class, metaDataMap);\n", s.Name)
-	contents += tab + "}\n\n"
 	return contents
 }
 
@@ -1898,50 +1857,6 @@ func (g *Generator) generateCopyConstructorField(field *parser.Field, otherField
 		}
 
 		return contents
-	}
-	panic("unrecognized type: " + underlyingType.Name)
-}
-
-func (g *Generator) generateMetaDataMapEntry(t *parser.Type, ind string) string {
-	underlyingType := g.Frugal.UnderlyingType(t)
-	ttype := g.getTType(underlyingType)
-	isThriftPrimitive := underlyingType.IsPrimitive()
-
-	// This indicates a typedef. For some reason java doesn't recurse on
-	// typedef'd types for meta data map entries
-	if t != underlyingType {
-		secondArg := ""
-		if underlyingType.Name == "binary" {
-			secondArg = ", true"
-		} else {
-			secondArg = fmt.Sprintf(", \"%s\"", t.Name)
-		}
-		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.FieldValueMetaData(%s%s)", ttype, secondArg)
-	}
-
-	if isThriftPrimitive {
-		boolArg := ""
-		if underlyingType.Name == "binary" {
-			boolArg = ", true"
-		}
-		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.FieldValueMetaData(%s%s)", ttype, boolArg)
-	} else if g.Frugal.IsStruct(underlyingType) {
-		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, %s.class)", g.qualifiedTypeName(underlyingType))
-	} else if g.Frugal.IsEnum(underlyingType) {
-		return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, %s.class)", g.qualifiedTypeName(underlyingType))
-	} else if underlyingType.IsContainer() {
-		switch underlyingType.Name {
-		case "list":
-			valEntry := g.generateMetaDataMapEntry(underlyingType.ValueType, ind+tabtab)
-			return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,\n%s)", valEntry)
-		case "set":
-			valEntry := g.generateMetaDataMapEntry(underlyingType.ValueType, ind+tabtab)
-			return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.SetMetaData(org.apache.thrift.protocol.TType.SET,\n%s)", valEntry)
-		case "map":
-			keyEntry := g.generateMetaDataMapEntry(underlyingType.KeyType, ind+tabtab)
-			valEntry := g.generateMetaDataMapEntry(underlyingType.ValueType, ind+tabtab)
-			return fmt.Sprintf(ind+"new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP,\n%s,\n%s)", keyEntry, valEntry)
-		}
 	}
 	panic("unrecognized type: " + underlyingType.Name)
 }

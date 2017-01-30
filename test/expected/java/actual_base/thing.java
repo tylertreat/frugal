@@ -113,17 +113,6 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 	// isset id assignments
 	private static final int __AN_ID_ISSET_ID = 0;
 	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.AN_ID, new org.apache.thrift.meta_data.FieldMetaData("an_id", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-		tmpMap.put(_Fields.A_STRING, new org.apache.thrift.meta_data.FieldMetaData("a_string", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(thing.class, metaDataMap);
-	}
-
 	public thing() {
 	}
 

@@ -195,56 +195,6 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 	private static final int __ID_ISSET_ID = 1;
 	private static final int __ID3_ISSET_ID = 2;
 	private byte __isset_bitfield = 0;
-	private static final _Fields optionals[] = {_Fields.I_D2,_Fields.THING2,_Fields.BIN_FIELD2,_Fields.BIN_FIELD4,_Fields.LIST2,_Fields.LIST3,_Fields.A_MAP};
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.I_D2, new org.apache.thrift.meta_data.FieldMetaData("ID2", org.apache.thrift.TFieldRequirementType.OPTIONAL,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id")));
-		tmpMap.put(_Fields.EV1, new org.apache.thrift.meta_data.FieldMetaData("ev1", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Event.class)));
-		tmpMap.put(_Fields.EV2, new org.apache.thrift.meta_data.FieldMetaData("ev2", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Event.class)));
-		tmpMap.put(_Fields.ID, new org.apache.thrift.meta_data.FieldMetaData("ID", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id")));
-		tmpMap.put(_Fields.THING, new org.apache.thrift.meta_data.FieldMetaData("thing", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.THING2, new org.apache.thrift.meta_data.FieldMetaData("thing2", org.apache.thrift.TFieldRequirementType.OPTIONAL,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.LISTFIELD, new org.apache.thrift.meta_data.FieldMetaData("listfield", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32, "int"))));
-		tmpMap.put(_Fields.I_D3, new org.apache.thrift.meta_data.FieldMetaData("ID3", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id")));
-		tmpMap.put(_Fields.BIN_FIELD, new org.apache.thrift.meta_data.FieldMetaData("bin_field", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING, true)));
-		tmpMap.put(_Fields.BIN_FIELD2, new org.apache.thrift.meta_data.FieldMetaData("bin_field2", org.apache.thrift.TFieldRequirementType.OPTIONAL,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING, true)));
-		tmpMap.put(_Fields.BIN_FIELD3, new org.apache.thrift.meta_data.FieldMetaData("bin_field3", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING, true)));
-		tmpMap.put(_Fields.BIN_FIELD4, new org.apache.thrift.meta_data.FieldMetaData("bin_field4", org.apache.thrift.TFieldRequirementType.OPTIONAL,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING, true)));
-		tmpMap.put(_Fields.LIST2, new org.apache.thrift.meta_data.FieldMetaData("list2", org.apache.thrift.TFieldRequirementType.OPTIONAL,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32, "int"))));
-		tmpMap.put(_Fields.LIST3, new org.apache.thrift.meta_data.FieldMetaData("list3", org.apache.thrift.TFieldRequirementType.OPTIONAL,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32, "int"))));
-		tmpMap.put(_Fields.LIST4, new org.apache.thrift.meta_data.FieldMetaData("list4", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32, "int"))));
-		tmpMap.put(_Fields.A_MAP, new org.apache.thrift.meta_data.FieldMetaData("a_map", org.apache.thrift.TFieldRequirementType.OPTIONAL,
-				new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP,
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING),
-						new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING))));
-		tmpMap.put(_Fields.STATUS, new org.apache.thrift.meta_data.FieldMetaData("status", org.apache.thrift.TFieldRequirementType.REQUIRED,
-				new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, HealthCondition.class)));
-		tmpMap.put(_Fields.BASE_STATUS, new org.apache.thrift.meta_data.FieldMetaData("base_status", org.apache.thrift.TFieldRequirementType.REQUIRED,
-				new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, actual_base.java.base_health_condition.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(TestingDefaults.class, metaDataMap);
-	}
-
 	public TestingDefaults() {
 		this.ID2 = varietyConstants.DEFAULT_ID;
 
