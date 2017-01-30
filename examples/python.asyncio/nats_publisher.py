@@ -64,6 +64,7 @@ async def main():
                           duration=169,
                           pro=PerfRightsOrg.ASCAP)]
     await publisher.publish_Winner(FContext(), album)
+    await publisher.publish_ContestStart(FContext(), [album, album])
 
     # Close publisher and nats client
     await publisher.close()

@@ -38,28 +38,28 @@ func NewMyScopePublisher(provider *frugal.FScopeProvider, middleware ...frugal.S
 	return publisher
 }
 
-func (l *myScopePublisher) Open() error {
-	return l.transport.Open()
+func (p *myScopePublisher) Open() error {
+	return p.transport.Open()
 }
 
-func (l *myScopePublisher) Close() error {
-	return l.transport.Close()
+func (p *myScopePublisher) Close() error {
+	return p.transport.Close()
 }
 
-func (l *myScopePublisher) PublishnewItem(ctx frugal.FContext, req *vendor_namespace.Item) error {
-	ret := l.methods["publishnewItem"].Invoke([]interface{}{ctx, req})
+func (p *myScopePublisher) PublishnewItem(ctx frugal.FContext, req *vendor_namespace.Item) error {
+	ret := p.methods["publishnewItem"].Invoke([]interface{}{ctx, req})
 	if ret[0] != nil {
 		return ret[0].(error)
 	}
 	return nil
 }
 
-func (l *myScopePublisher) publishnewItem(ctx frugal.FContext, req *vendor_namespace.Item) error {
+func (p *myScopePublisher) publishnewItem(ctx frugal.FContext, req *vendor_namespace.Item) error {
 	op := "newItem"
 	prefix := ""
 	topic := fmt.Sprintf("%sMyScope%s%s", prefix, delimiter, op)
-	buffer := frugal.NewTMemoryOutputBuffer(l.transport.GetPublishSizeLimit())
-	oprot := l.protocolFactory.GetProtocol(buffer)
+	buffer := frugal.NewTMemoryOutputBuffer(p.transport.GetPublishSizeLimit())
+	oprot := p.protocolFactory.GetProtocol(buffer)
 	if err := oprot.WriteRequestHeader(ctx); err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (l *myScopePublisher) publishnewItem(ctx frugal.FContext, req *vendor_names
 		return err
 	}
 	if err := req.Write(oprot); err != nil {
-		return err
+		return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", req), err)
 	}
 	if err := oprot.WriteMessageEnd(); err != nil {
 		return err
@@ -75,7 +75,7 @@ func (l *myScopePublisher) publishnewItem(ctx frugal.FContext, req *vendor_names
 	if err := oprot.Flush(); err != nil {
 		return err
 	}
-	return l.transport.Publish(topic, buffer.Bytes())
+	return p.transport.Publish(topic, buffer.Bytes())
 }
 
 type MyScopeSubscriber interface {
@@ -125,9 +125,9 @@ func (l *myScopeSubscriber) recvnewItem(op string, pf *frugal.FProtocolFactory, 
 			iprot.ReadMessageEnd()
 			return thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN_METHOD, "Unknown function"+name)
 		}
-		req := &vendor_namespace.Item{}
+		req := vendor_namespace.NewItem()
 		if err := req.Read(iprot); err != nil {
-			return err
+			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", req), err)
 		}
 		iprot.ReadMessageEnd()
 

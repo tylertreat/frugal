@@ -64,7 +64,8 @@ def main():
                           composer="Béatrice Martin",
                           duration=169,
                           pro=PerfRightsOrg.ASCAP)]
-    publisher.publish_Winner(FContext(), album)
+    yield publisher.publish_Winner(FContext(), album)
+    yield publisher.publish_ContestStart(FContext(), [album, album])
 
     yield publisher.close()
     yield nats_client.close()

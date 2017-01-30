@@ -49,7 +49,11 @@ async def main():
     def event_handler(ctx, req):
         root.info("You won! {}".format(req.ASIN))
 
+    def start_contest_handler(ctx, albums):
+        root.info("Contest started, available albums: {}".format(albums))
+
     await subscriber.subscribe_Winner(event_handler)
+    await subscriber.subscribe_ContestStart(start_contest_handler)
 
     root.info("Subscriber starting...")
 

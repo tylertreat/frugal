@@ -51,7 +51,11 @@ def main():
     def event_handler(ctx, req):
         root.info("You won! {}".format(req))
 
+    def start_contest_handler(ctx, albums):
+        root.info("Contest started, available albums: {}".format(albums))
+
     yield subscriber.subscribe_Winner(event_handler)
+    yield subscriber.subscribe_ContestStart(start_contest_handler)
 
     root.info("Subscriber starting...")
 

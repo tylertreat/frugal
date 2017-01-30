@@ -13,6 +13,7 @@ import org.apache.thrift.protocol.TBinaryProtocol;
 import v1.music.AlbumWinnersSubscriber;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -37,6 +38,7 @@ public class NatsSubscriber {
         // Subscribe to winner announcements
         AlbumWinnersSubscriber.Iface subscriber = new AlbumWinnersSubscriber.Client(provider);
         subscriber.subscribeWinner((ctx, album) -> System.out.println("You won! " + album));
+        subscriber.subscribeContestStart((ctx, albums) -> System.out.println("Contest started, available albums: " + albums));
         System.out.println("Subscriber started...");
     }
 }

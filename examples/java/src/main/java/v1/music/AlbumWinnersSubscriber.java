@@ -23,8 +23,18 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.thrift.protocol.*;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.EnumMap;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.EnumSet;
+import java.util.Collections;
+import java.util.BitSet;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.logging.Logger;
 import javax.annotation.Generated;
 
@@ -40,8 +50,20 @@ public class AlbumWinnersSubscriber {
 	 * Scopes must have a prefix.
 	 */
 	public interface Iface {
+		public FSubscription subscribeContestStart(final ContestStartHandler handler) throws TException;
+
+		public FSubscription subscribeTimeLeft(final TimeLeftHandler handler) throws TException;
+
 		public FSubscription subscribeWinner(final WinnerHandler handler) throws TException;
 
+	}
+
+	public interface ContestStartHandler {
+		void onContestStart(FContext ctx, java.util.List<Album> req);
+	}
+
+	public interface TimeLeftHandler {
+		void onTimeLeft(FContext ctx, double req);
 	}
 
 	public interface WinnerHandler {
@@ -66,6 +88,75 @@ public class AlbumWinnersSubscriber {
 			combined.addAll(provider.getMiddleware());
 			this.middleware = combined.toArray(new ServiceMiddleware[0]);
 		}
+
+		public FSubscription subscribeContestStart(final ContestStartHandler handler) throws TException {
+			final String op = "ContestStart";
+			String prefix = "v1.music.";
+			final String topic = String.format("%sAlbumWinners%s%s", prefix, DELIMITER, op);
+			final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();
+			final FSubscriberTransport transport = subscriber.getTransport();
+			final ContestStartHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, ContestStartHandler.class, middleware);
+			transport.subscribe(topic, recvContestStart(op, subscriber.getProtocolFactory(), proxiedHandler));
+			return FSubscription.of(topic, transport);
+		}
+
+		private FAsyncCallback recvContestStart(String op, FProtocolFactory pf, ContestStartHandler handler) {
+			return new FAsyncCallback() {
+				public void onMessage(TTransport tr) throws TException {
+					FProtocol iprot = pf.getProtocol(tr);
+					FContext ctx = iprot.readRequestHeader();
+					TMessage msg = iprot.readMessageBegin();
+					if (!msg.name.equals(op)) {
+						TProtocolUtil.skip(iprot, TType.STRUCT);
+						iprot.readMessageEnd();
+						throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
+					}
+					org.apache.thrift.protocol.TList elem42 = iprot.readListBegin();
+					java.util.List<Album> received = new ArrayList<Album>(elem42.size);
+					for (int elem43 = 0; elem43 < elem42.size; ++elem43) {
+						Album elem44 = new Album();
+						elem44.read(iprot);
+						received.add(elem44);
+					}
+					iprot.readListEnd();
+					iprot.readMessageEnd();
+					handler.onContestStart(ctx, received);
+				}
+			};
+		}
+
+
+
+		public FSubscription subscribeTimeLeft(final TimeLeftHandler handler) throws TException {
+			final String op = "TimeLeft";
+			String prefix = "v1.music.";
+			final String topic = String.format("%sAlbumWinners%s%s", prefix, DELIMITER, op);
+			final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();
+			final FSubscriberTransport transport = subscriber.getTransport();
+			final TimeLeftHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, TimeLeftHandler.class, middleware);
+			transport.subscribe(topic, recvTimeLeft(op, subscriber.getProtocolFactory(), proxiedHandler));
+			return FSubscription.of(topic, transport);
+		}
+
+		private FAsyncCallback recvTimeLeft(String op, FProtocolFactory pf, TimeLeftHandler handler) {
+			return new FAsyncCallback() {
+				public void onMessage(TTransport tr) throws TException {
+					FProtocol iprot = pf.getProtocol(tr);
+					FContext ctx = iprot.readRequestHeader();
+					TMessage msg = iprot.readMessageBegin();
+					if (!msg.name.equals(op)) {
+						TProtocolUtil.skip(iprot, TType.STRUCT);
+						iprot.readMessageEnd();
+						throw new TApplicationException(TApplicationException.UNKNOWN_METHOD);
+					}
+					double received = iprot.readDouble();
+					iprot.readMessageEnd();
+					handler.onTimeLeft(ctx, received);
+				}
+			};
+		}
+
+
 
 		public FSubscription subscribeWinner(final WinnerHandler handler) throws TException {
 			final String op = "Winner";
