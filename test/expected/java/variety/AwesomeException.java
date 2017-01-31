@@ -125,17 +125,6 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 	// isset id assignments
 	private static final int __ID_ISSET_ID = 0;
 	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.ID, new org.apache.thrift.meta_data.FieldMetaData("ID", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64, "id")));
-		tmpMap.put(_Fields.REASON, new org.apache.thrift.meta_data.FieldMetaData("Reason", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(AwesomeException.class, metaDataMap);
-	}
-
 	public AwesomeException() {
 	}
 

@@ -122,20 +122,6 @@ public class Album implements org.apache.thrift.TBase<Album, Album._Fields>, jav
 	// isset id assignments
 	private static final int __DURATION_ISSET_ID = 0;
 	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.TRACKS, new org.apache.thrift.meta_data.FieldMetaData("tracks", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST,
-						new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Track.class))));
-		tmpMap.put(_Fields.DURATION, new org.apache.thrift.meta_data.FieldMetaData("duration", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE, "Minutes")));
-		tmpMap.put(_Fields.ASIN, new org.apache.thrift.meta_data.FieldMetaData("ASIN", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Album.class, metaDataMap);
-	}
-
 	public Album() {
 	}
 

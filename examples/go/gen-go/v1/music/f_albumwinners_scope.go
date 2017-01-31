@@ -206,7 +206,7 @@ func (l *albumWinnersSubscriber) recvContestStart(op string, pf *frugal.FProtoco
 		if name != op {
 			iprot.Skip(thrift.STRUCT)
 			iprot.ReadMessageEnd()
-			return thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function"+name)
+			return thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN_METHOD, "Unknown function"+name)
 		}
 		_, size, err := iprot.ReadListBegin()
 		if err != nil {
@@ -261,7 +261,7 @@ func (l *albumWinnersSubscriber) recvTimeLeft(op string, pf *frugal.FProtocolFac
 		if name != op {
 			iprot.Skip(thrift.STRUCT)
 			iprot.ReadMessageEnd()
-			return thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function"+name)
+			return thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN_METHOD, "Unknown function"+name)
 		}
 		var req Minutes
 		if v, err := iprot.ReadDouble(); err != nil {

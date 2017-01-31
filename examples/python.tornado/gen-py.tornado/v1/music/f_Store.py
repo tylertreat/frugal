@@ -9,8 +9,8 @@
 from datetime import timedelta
 from threading import Lock
 
-from frugal.exceptions import FrugalTApplicationExceptionType
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TApplicationExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.middleware import Method
 from frugal.tornado.processor import FBaseProcessor
 from frugal.tornado.processor import FProcessorFunction
@@ -101,8 +101,8 @@ class Client(Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
+                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
             raise x
         result = buyAlbum_result()
         result.read(iprot)
@@ -111,7 +111,7 @@ class Client(Iface):
             raise result.error
         if result.success is not None:
             raise gen.Return(result.success)
-        raise TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "buyAlbum failed: unknown result")
+        raise TApplicationException(TApplicationExceptionType.MISSING_RESULT, "buyAlbum failed: unknown result")
     def enterAlbumGiveaway(self, ctx, email, name):
         """
         Args:
@@ -141,15 +141,15 @@ class Client(Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
+                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
             raise x
         result = enterAlbumGiveaway_result()
         result.read(iprot)
         iprot.readMessageEnd()
         if result.success is not None:
             raise gen.Return(result.success)
-        raise TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "enterAlbumGiveaway failed: unknown result")
+        raise TApplicationException(TApplicationExceptionType.MISSING_RESULT, "enterAlbumGiveaway failed: unknown result")
 
 class Processor(FBaseProcessor):
 
@@ -189,7 +189,7 @@ class _buyAlbum(FProcessorFunction):
                 return
         except Exception as e:
             with (yield self._lock.acquire()):
-                e = _write_application_exception(ctx, oprot, "buyAlbum", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "buyAlbum", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
             raise e
         with (yield self._lock.acquire()):
             try:
@@ -199,8 +199,8 @@ class _buyAlbum(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE:
-                    raise _write_application_exception(ctx, oprot, "buyAlbum", ex_code=FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.message)
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "buyAlbum", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.message)
                 else:
                     raise e
 
@@ -224,7 +224,7 @@ class _enterAlbumGiveaway(FProcessorFunction):
                 return
         except Exception as e:
             with (yield self._lock.acquire()):
-                e = _write_application_exception(ctx, oprot, "enterAlbumGiveaway", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "enterAlbumGiveaway", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
             raise e
         with (yield self._lock.acquire()):
             try:
@@ -234,8 +234,8 @@ class _enterAlbumGiveaway(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE:
-                    raise _write_application_exception(ctx, oprot, "enterAlbumGiveaway", ex_code=FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.message)
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "enterAlbumGiveaway", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.message)
                 else:
                     raise e
 

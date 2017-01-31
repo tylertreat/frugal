@@ -277,13 +277,6 @@ public static class basePing_args implements org.apache.thrift.TBase<basePing_ar
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(basePing_args.class, metaDataMap);
-	}
-
 	public basePing_args() {
 	}
 
@@ -526,13 +519,6 @@ public static class basePing_result implements org.apache.thrift.TBase<basePing_
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(basePing_result.class, metaDataMap);
-	}
-
 	public basePing_result() {
 	}
 

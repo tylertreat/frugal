@@ -132,7 +132,7 @@ class AlbumWinnersSubscriber {
         thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
         iprot.readMessageEnd();
         throw new thrift.TApplicationError(
-        thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+        frugal.FrugalTApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
       }
       thrift.TList elem5 = iprot.readListBegin();
       List<t_v1_music.Album> req = new List<t_v1_music.Album>();
@@ -168,7 +168,7 @@ class AlbumWinnersSubscriber {
         thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
         iprot.readMessageEnd();
         throw new thrift.TApplicationError(
-        thrift.TApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+        frugal.FrugalTApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
       }
       double req = iprot.readDouble();
       iprot.readMessageEnd();

@@ -35,8 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.workiva.frugal.FContext;
-import com.workiva.frugal.exception.FrugalTApplicationExceptionType;
-import com.workiva.frugal.exception.FrugalTTransportExceptionType;
+import com.workiva.frugal.exception.TApplicationExceptionType;
+import com.workiva.frugal.exception.TTransportExceptionType;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.processor.FBaseProcessor;
@@ -119,19 +119,19 @@ public class FStore {
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("buyAlbum")) {
-				throw new TApplicationException(FrugalTApplicationExceptionType.WRONG_METHOD_NAME, "buyAlbum failed: wrong method name");
+				throw new TApplicationException(TApplicationExceptionType.WRONG_METHOD_NAME, "buyAlbum failed: wrong method name");
 			}
 			if (message.type == TMessageType.EXCEPTION) {
 				TApplicationException e = TApplicationException.read(iprot);
 				iprot.readMessageEnd();
 				TException returnedException = e;
-				if (e.getType() == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE) {
-					returnedException = new TTransportException(FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
+				if (e.getType() == TApplicationExceptionType.RESPONSE_TOO_LARGE) {
+					returnedException = new TTransportException(TTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
 				}
 				throw returnedException;
 			}
 			if (message.type != TMessageType.REPLY) {
-				throw new TApplicationException(FrugalTApplicationExceptionType.INVALID_MESSAGE_TYPE, "buyAlbum failed: invalid message type");
+				throw new TApplicationException(TApplicationExceptionType.INVALID_MESSAGE_TYPE, "buyAlbum failed: invalid message type");
 			}
 			buyAlbum_result res = new buyAlbum_result();
 			res.read(iprot);
@@ -142,7 +142,7 @@ public class FStore {
 			if (res.error != null) {
 				throw res.error;
 			}
-			throw new TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "buyAlbum failed: unknown result");
+			throw new TApplicationException(TApplicationExceptionType.MISSING_RESULT, "buyAlbum failed: unknown result");
 		}
 		public boolean enterAlbumGiveaway(FContext ctx, String email, String name) throws TException {
 			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
@@ -160,19 +160,19 @@ public class FStore {
 			iprot.readResponseHeader(ctx);
 			TMessage message = iprot.readMessageBegin();
 			if (!message.name.equals("enterAlbumGiveaway")) {
-				throw new TApplicationException(FrugalTApplicationExceptionType.WRONG_METHOD_NAME, "enterAlbumGiveaway failed: wrong method name");
+				throw new TApplicationException(TApplicationExceptionType.WRONG_METHOD_NAME, "enterAlbumGiveaway failed: wrong method name");
 			}
 			if (message.type == TMessageType.EXCEPTION) {
 				TApplicationException e = TApplicationException.read(iprot);
 				iprot.readMessageEnd();
 				TException returnedException = e;
-				if (e.getType() == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE) {
-					returnedException = new TTransportException(FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
+				if (e.getType() == TApplicationExceptionType.RESPONSE_TOO_LARGE) {
+					returnedException = new TTransportException(TTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
 				}
 				throw returnedException;
 			}
 			if (message.type != TMessageType.REPLY) {
-				throw new TApplicationException(FrugalTApplicationExceptionType.INVALID_MESSAGE_TYPE, "enterAlbumGiveaway failed: invalid message type");
+				throw new TApplicationException(TApplicationExceptionType.INVALID_MESSAGE_TYPE, "enterAlbumGiveaway failed: invalid message type");
 			}
 			enterAlbumGiveaway_result res = new enterAlbumGiveaway_result();
 			res.read(iprot);
@@ -180,7 +180,7 @@ public class FStore {
 			if (res.isSetSuccess()) {
 				return res.success;
 			}
-			throw new TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "enterAlbumGiveaway failed: unknown result");
+			throw new TApplicationException(TApplicationExceptionType.MISSING_RESULT, "enterAlbumGiveaway failed: unknown result");
 		}
 	}
 
@@ -218,7 +218,7 @@ public class FStore {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.PROTOCOL_ERROR, "buyAlbum", e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationExceptionType.PROTOCOL_ERROR, "buyAlbum", e.getMessage());
 					}
 					throw e;
 				}
@@ -237,7 +237,7 @@ public class FStore {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.INTERNAL_ERROR, "buyAlbum", "Internal error processing buyAlbum: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationExceptionType.INTERNAL_ERROR, "buyAlbum", "Internal error processing buyAlbum: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -249,8 +249,8 @@ public class FStore {
 						oprot.writeMessageEnd();
 						oprot.getTransport().flush();
 					} catch (TTransportException e) {
-						if (e.getType() == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE) {
-							writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: " + e.getMessage());
+						if (e.getType() == TTransportExceptionType.RESPONSE_TOO_LARGE) {
+							writeApplicationException(ctx, oprot, TApplicationExceptionType.RESPONSE_TOO_LARGE, "buyAlbum", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -268,7 +268,7 @@ public class FStore {
 				} catch (TException e) {
 					iprot.readMessageEnd();
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.PROTOCOL_ERROR, "enterAlbumGiveaway", e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationExceptionType.PROTOCOL_ERROR, "enterAlbumGiveaway", e.getMessage());
 					}
 					throw e;
 				}
@@ -285,7 +285,7 @@ public class FStore {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.INTERNAL_ERROR, "enterAlbumGiveaway", "Internal error processing enterAlbumGiveaway: " + e.getMessage());
+						e = writeApplicationException(ctx, oprot, TApplicationExceptionType.INTERNAL_ERROR, "enterAlbumGiveaway", "Internal error processing enterAlbumGiveaway: " + e.getMessage());
 					}
 					throw e;
 				}
@@ -297,8 +297,8 @@ public class FStore {
 						oprot.writeMessageEnd();
 						oprot.getTransport().flush();
 					} catch (TTransportException e) {
-						if (e.getType() == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE) {
-							writeApplicationException(ctx, oprot, FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: " + e.getMessage());
+						if (e.getType() == TTransportExceptionType.RESPONSE_TOO_LARGE) {
+							writeApplicationException(ctx, oprot, TApplicationExceptionType.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -396,17 +396,6 @@ public static class buyAlbum_args implements org.apache.thrift.TBase<buyAlbum_ar
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.ASIN, new org.apache.thrift.meta_data.FieldMetaData("ASIN", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.ACCT, new org.apache.thrift.meta_data.FieldMetaData("acct", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(buyAlbum_args.class, metaDataMap);
-	}
-
 	public buyAlbum_args() {
 	}
 
@@ -867,17 +856,6 @@ public static class buyAlbum_result implements org.apache.thrift.TBase<buyAlbum_
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Album.class)));
-		tmpMap.put(_Fields.ERROR, new org.apache.thrift.meta_data.FieldMetaData("error", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, PurchasingError.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(buyAlbum_result.class, metaDataMap);
-	}
-
 	public buyAlbum_result() {
 	}
 
@@ -1344,17 +1322,6 @@ public static class enterAlbumGiveaway_args implements org.apache.thrift.TBase<e
 	}
 
 	// isset id assignments
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.EMAIL, new org.apache.thrift.meta_data.FieldMetaData("email", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.NAME, new org.apache.thrift.meta_data.FieldMetaData("name", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(enterAlbumGiveaway_args.class, metaDataMap);
-	}
-
 	public enterAlbumGiveaway_args() {
 	}
 
@@ -1812,15 +1779,6 @@ public static class enterAlbumGiveaway_result implements org.apache.thrift.TBase
 	// isset id assignments
 	private static final int __SUCCESS_ISSET_ID = 0;
 	private byte __isset_bitfield = 0;
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-		tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT,
-				new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.BOOL)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(enterAlbumGiveaway_result.class, metaDataMap);
-	}
-
 	public enterAlbumGiveaway_result() {
 	}
 
