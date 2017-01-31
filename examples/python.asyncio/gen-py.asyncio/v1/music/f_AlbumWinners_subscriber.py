@@ -13,7 +13,7 @@ import traceback
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from thrift.Thrift import TType
-from frugal.exceptions import FrugalTApplicationExceptionType
+from frugal.exceptions import TApplicationExceptionType
 from frugal.middleware import Method
 from frugal.subscription import FSubscription
 from frugal.transport import TMemoryOutputBuffer
@@ -70,7 +70,7 @@ class AlbumWinnersSubscriber(object):
             if mname != op:
                 iprot.skip(TType.STRUCT)
                 iprot.readMessageEnd()
-                raise TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD)
+                raise TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD)
             req = []
             (_, elem4) = iprot.readListBegin()
             for _ in range(elem4):
@@ -113,7 +113,7 @@ class AlbumWinnersSubscriber(object):
             if mname != op:
                 iprot.skip(TType.STRUCT)
                 iprot.readMessageEnd()
-                raise TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD)
+                raise TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD)
             req = iprot.readDouble()
             iprot.readMessageEnd()
             try:
@@ -150,7 +150,7 @@ class AlbumWinnersSubscriber(object):
             if mname != op:
                 iprot.skip(TType.STRUCT)
                 iprot.readMessageEnd()
-                raise TApplicationException(FrugalTApplicationExceptionType.UNKNOWN_METHOD)
+                raise TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD)
             req = Album()
             req.read(iprot)
             iprot.readMessageEnd()

@@ -13,7 +13,7 @@ from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from thrift.Thrift import TType
 from tornado import gen
-from frugal.exceptions import FrugalTApplicationExceptionType
+from frugal.exceptions import TApplicationExceptionType
 from frugal.middleware import Method
 from frugal.subscription import FSubscription
 from frugal.transport import TMemoryOutputBuffer
