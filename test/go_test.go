@@ -51,11 +51,10 @@ func TestValidGoFrugalCompiler(t *testing.T) {
 // IDL has a vendored include.
 func TestValidGoVendor(t *testing.T) {
 	options := compiler.Options{
-		File:      includeVendor,
-		Gen:       "go:package_prefix=github.com/Workiva/frugal/test/out/",
-		Out:       outputDir,
-		Delim:     delim,
-		UseVendor: true,
+		File:  includeVendor,
+		Gen:   "go:package_prefix=github.com/Workiva/frugal/test/out/,use_vendor",
+		Out:   outputDir,
+		Delim: delim,
 	}
 	if err := compiler.Compile(options); err != nil {
 		t.Fatal("Unexpected error", err)
@@ -73,11 +72,10 @@ func TestValidGoVendor(t *testing.T) {
 // include does not specify a path.
 func TestValidGoVendorPathNotSpecified(t *testing.T) {
 	options := compiler.Options{
-		File:      includeVendorNoPath,
-		Gen:       "go:package_prefix=github.com/Workiva/frugal/test/out/",
-		Out:       outputDir,
-		Delim:     delim,
-		UseVendor: true,
+		File:  includeVendorNoPath,
+		Gen:   "go:package_prefix=github.com/Workiva/frugal/test/out/,use_vendor",
+		Out:   outputDir,
+		Delim: delim,
 	}
 	if err := compiler.Compile(options); err == nil {
 		t.Fatal("Expected error")
@@ -88,11 +86,10 @@ func TestValidGoVendorPathNotSpecified(t *testing.T) {
 // vendored namespace.
 func TestValidGoVendorNamespaceTargetGenerate(t *testing.T) {
 	options := compiler.Options{
-		File:      vendorNamespace,
-		Gen:       "go:package_prefix=github.com/Workiva/frugal/test/out/",
-		Out:       outputDir,
-		Delim:     delim,
-		UseVendor: true,
+		File:  vendorNamespace,
+		Gen:   "go:package_prefix=github.com/Workiva/frugal/test/out/,use_vendor",
+		Out:   outputDir,
+		Delim: delim,
 	}
 	if err := compiler.Compile(options); err != nil {
 		t.Fatal("Unexpected error", err)
