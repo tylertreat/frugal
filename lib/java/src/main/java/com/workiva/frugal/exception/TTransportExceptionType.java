@@ -5,7 +5,7 @@ import org.apache.thrift.transport.TTransportException;
 /**
  * Contains TTransportException types used in frugal instantiated TTransportExceptions.
  */
-public class FrugalTTransportExceptionType {
+public class TTransportExceptionType {
 
     // Thrift-inherited types.
 

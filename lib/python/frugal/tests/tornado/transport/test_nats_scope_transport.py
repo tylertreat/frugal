@@ -5,7 +5,7 @@ from tornado import concurrent
 from tornado.testing import gen_test, AsyncTestCase
 from thrift.transport.TTransport import TTransportException
 
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.tornado.transport import FNatsPublisherTransport
 from frugal.tornado.transport import FNatsSubscriberTransport
 
@@ -44,7 +44,7 @@ class TestFNatsScopeTransport(AsyncTestCase):
             yield self.publisher_transport.open()
 
         self.assertEquals(
-            FrugalTTransportExceptionType.NOT_OPEN, cm.exception.type)
+            TTransportExceptionType.NOT_OPEN, cm.exception.type)
         self.assertEquals("Nats not connected!", cm.exception.message)
 
     @gen_test
@@ -69,7 +69,7 @@ class TestFNatsScopeTransport(AsyncTestCase):
         with self.assertRaises(TTransportException) as cm:
             yield self.publisher_transport.publish('foo', buff)
 
-        self.assertEqual(FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+        self.assertEqual(TTransportExceptionType.REQUEST_TOO_LARGE,
                          cm.exception.type)
         self.assertEqual("Message exceeds NATS max message size",
                          cm.exception.message)
@@ -82,7 +82,7 @@ class TestFNatsScopeTransport(AsyncTestCase):
             yield self.publisher_transport.publish('foo', [])
 
         self.assertEquals(
-            FrugalTTransportExceptionType.NOT_OPEN, cm.exception.type)
+            TTransportExceptionType.NOT_OPEN, cm.exception.type)
         self.assertEquals("Nats not connected!", cm.exception.message)
 
     @gen_test

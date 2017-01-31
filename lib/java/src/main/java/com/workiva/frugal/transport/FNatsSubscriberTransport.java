@@ -1,6 +1,6 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.exception.FrugalTTransportExceptionType;
+import com.workiva.frugal.exception.TTransportExceptionType;
 import com.workiva.frugal.protocol.FAsyncCallback;
 import io.nats.client.Connection;
 import io.nats.client.Constants;
@@ -91,7 +91,7 @@ public class FNatsSubscriberTransport implements FSubscriberTransport {
     @Override
     public void subscribe(String topic, FAsyncCallback callback) throws TException {
         if (conn.getState() != Constants.ConnState.CONNECTED) {
-            throw new TTransportException(FrugalTTransportExceptionType.NOT_OPEN,
+            throw new TTransportException(TTransportExceptionType.NOT_OPEN,
                     "NATS not connected, has status " + conn.getState());
         }
 

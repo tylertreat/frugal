@@ -4,7 +4,7 @@ from struct import pack_into
 
 from thrift.transport.TTransport import TTransportException
 
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.transport import TSynchronousTransport
 
 
@@ -59,7 +59,7 @@ class TBaseHttpTransport(TSynchronousTransport):
         if size + 4 > self._request_capacity > 0:
             self._wbuff = BytesIO()
             raise TTransportException(
-                type=FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+                type=TTransportExceptionType.REQUEST_TOO_LARGE,
                 message='Message exceeds {0} bytes, was {1} bytes'.format(
                     self._request_capacity, size + 4))
 

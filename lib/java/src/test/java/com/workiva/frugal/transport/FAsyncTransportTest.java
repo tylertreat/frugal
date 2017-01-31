@@ -1,7 +1,7 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.FContext;
-import com.workiva.frugal.exception.FrugalTTransportExceptionType;
+import com.workiva.frugal.exception.TTransportExceptionType;
 import com.workiva.frugal.protocol.HeaderUtils;
 import com.workiva.frugal.util.ProtocolUtils;
 import org.apache.thrift.TException;
@@ -168,7 +168,7 @@ public class FAsyncTransportTest {
                 ProtocolUtils.writeInt((int) FAsyncTransport.getOpId(context), request, 0);
                 tr.request(context, request);
             } catch (TTransportException e) {
-                if (e.getType() != FrugalTTransportExceptionType.NOT_OPEN) {
+                if (e.getType() != TTransportExceptionType.NOT_OPEN) {
                     fail();
                 }
             }

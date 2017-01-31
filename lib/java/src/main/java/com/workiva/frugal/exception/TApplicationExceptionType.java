@@ -5,7 +5,7 @@ import org.apache.thrift.TApplicationException;
 /**
  * Contains TApplicationException types used in frugal instantiated TApplicationExceptions.
  */
-public class FrugalTApplicationExceptionType {
+public class TApplicationExceptionType {
 
     // Thrift-inherited types.
 

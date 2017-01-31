@@ -1,6 +1,6 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.exception.FrugalTTransportExceptionType;
+import com.workiva.frugal.exception.TTransportExceptionType;
 import io.nats.client.Connection;
 import io.nats.client.Constants;
 import io.nats.client.Message;
@@ -85,7 +85,7 @@ public class FNatsTransport extends FAsyncTransport {
             throw getClosedConditionException(conn.getState(), "open:");
         }
         if (sub != null) {
-            throw new TTransportException(FrugalTTransportExceptionType.ALREADY_OPEN, "NATS transport already open");
+            throw new TTransportException(TTransportExceptionType.ALREADY_OPEN, "NATS transport already open");
         }
         sub = conn.subscribe(inbox, new Handler());
     }
@@ -143,10 +143,10 @@ public class FNatsTransport extends FAsyncTransport {
      */
     protected static TTransportException getClosedConditionException(Constants.ConnState connState, String prefix) {
         if (connState != Constants.ConnState.CONNECTED) {
-            return new TTransportException(FrugalTTransportExceptionType.NOT_OPEN,
+            return new TTransportException(TTransportExceptionType.NOT_OPEN,
                     String.format("%s NATS client not connected (has status %s)", prefix, connState.name()));
         }
-        return new TTransportException(FrugalTTransportExceptionType.NOT_OPEN,
+        return new TTransportException(TTransportExceptionType.NOT_OPEN,
                 String.format("%s NATS Transport not open", prefix));
     }
 }

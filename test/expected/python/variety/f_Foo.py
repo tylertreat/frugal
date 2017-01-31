@@ -9,8 +9,8 @@
 from threading import Lock
 
 from frugal.middleware import Method
-from frugal.exceptions import FrugalTApplicationExceptionType
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TApplicationExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
 from thrift.Thrift import TApplicationException
@@ -177,7 +177,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
+                raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = Ping_result()
         result.read(self._iprot)
@@ -222,7 +222,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
+                raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = blah_result()
         result.read(self._iprot)
@@ -233,7 +233,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             raise result.api
         if result.success is not None:
             return result.success
-        x = TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "blah failed: unknown result")
+        x = TApplicationException(TApplicationExceptionType.MISSING_RESULT, "blah failed: unknown result")
         raise x
 
     def oneWay(self, ctx, id, req):
@@ -271,7 +271,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
+                raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = oneWay_result()
         result.read(self._iprot)
@@ -312,7 +312,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
+                raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = bin_method_result()
         result.read(self._iprot)
@@ -321,7 +321,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             raise result.api
         if result.success is not None:
             return result.success
-        x = TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "bin_method failed: unknown result")
+        x = TApplicationException(TApplicationExceptionType.MISSING_RESULT, "bin_method failed: unknown result")
         raise x
 
     def param_modifiers(self, ctx, opt_num, default_num, req_num):
@@ -360,14 +360,14 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
+                raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = param_modifiers_result()
         result.read(self._iprot)
         self._iprot.readMessageEnd()
         if result.success is not None:
             return result.success
-        x = TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "param_modifiers failed: unknown result")
+        x = TApplicationException(TApplicationExceptionType.MISSING_RESULT, "param_modifiers failed: unknown result")
         raise x
 
     def underlying_types_test(self, ctx, list_type, set_type):
@@ -404,14 +404,14 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
+                raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = underlying_types_test_result()
         result.read(self._iprot)
         self._iprot.readMessageEnd()
         if result.success is not None:
             return result.success
-        x = TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "underlying_types_test failed: unknown result")
+        x = TApplicationException(TApplicationExceptionType.MISSING_RESULT, "underlying_types_test failed: unknown result")
         raise x
 
     def getThing(self, ctx):
@@ -444,14 +444,14 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
+                raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = getThing_result()
         result.read(self._iprot)
         self._iprot.readMessageEnd()
         if result.success is not None:
             return result.success
-        x = TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "getThing failed: unknown result")
+        x = TApplicationException(TApplicationExceptionType.MISSING_RESULT, "getThing failed: unknown result")
         raise x
 
     def getMyInt(self, ctx):
@@ -484,14 +484,14 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
+                raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = getMyInt_result()
         result.read(self._iprot)
         self._iprot.readMessageEnd()
         if result.success is not None:
             return result.success
-        x = TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "getMyInt failed: unknown result")
+        x = TApplicationException(TApplicationExceptionType.MISSING_RESULT, "getMyInt failed: unknown result")
         raise x
 
     def use_subdir_struct(self, ctx, a):
@@ -526,14 +526,14 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x.read(self._iprot)
             self._iprot.readMessageEnd()
             if x.type == FApplicationException.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
+                raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = use_subdir_struct_result()
         result.read(self._iprot)
         self._iprot.readMessageEnd()
         if result.success is not None:
             return result.success
-        x = TApplicationException(FrugalTApplicationExceptionType.MISSING_RESULT, "use_subdir_struct failed: unknown result")
+        x = TApplicationException(TApplicationExceptionType.MISSING_RESULT, "use_subdir_struct failed: unknown result")
         raise x
 
 class Processor(actual_base.python.f_BaseFoo.Processor):
@@ -578,7 +578,7 @@ class _Ping(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "ping", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "ping", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -588,8 +588,8 @@ class _Ping(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE:
-                    raise _write_application_exception(ctx, oprot, "ping", ex_code=FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "ping", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
                 else:
                     raise e
 
@@ -616,7 +616,7 @@ class _blah(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "blah", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "blah", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -626,8 +626,8 @@ class _blah(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE:
-                    raise _write_application_exception(ctx, oprot, "blah", ex_code=FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "blah", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
                 else:
                     raise e
 
@@ -671,7 +671,7 @@ class _bin_method(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "bin_method", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "bin_method", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -681,8 +681,8 @@ class _bin_method(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE:
-                    raise _write_application_exception(ctx, oprot, "bin_method", ex_code=FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "bin_method", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
                 else:
                     raise e
 
@@ -705,7 +705,7 @@ class _param_modifiers(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "param_modifiers", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "param_modifiers", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -715,8 +715,8 @@ class _param_modifiers(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE:
-                    raise _write_application_exception(ctx, oprot, "param_modifiers", ex_code=FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "param_modifiers", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
                 else:
                     raise e
 
@@ -739,7 +739,7 @@ class _underlying_types_test(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "underlying_types_test", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "underlying_types_test", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -749,8 +749,8 @@ class _underlying_types_test(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE:
-                    raise _write_application_exception(ctx, oprot, "underlying_types_test", ex_code=FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "underlying_types_test", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
                 else:
                     raise e
 
@@ -773,7 +773,7 @@ class _getThing(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "getThing", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "getThing", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -783,8 +783,8 @@ class _getThing(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE:
-                    raise _write_application_exception(ctx, oprot, "getThing", ex_code=FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "getThing", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
                 else:
                     raise e
 
@@ -807,7 +807,7 @@ class _getMyInt(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "getMyInt", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "getMyInt", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -817,8 +817,8 @@ class _getMyInt(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE:
-                    raise _write_application_exception(ctx, oprot, "getMyInt", ex_code=FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "getMyInt", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
                 else:
                     raise e
 
@@ -841,7 +841,7 @@ class _use_subdir_struct(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "use_subdir_struct", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "use_subdir_struct", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
             raise e
         with self._lock:
             try:
@@ -851,8 +851,8 @@ class _use_subdir_struct(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE:
-                    raise _write_application_exception(ctx, oprot, "use_subdir_struct", ex_code=FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "use_subdir_struct", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
                 else:
                     raise e
 

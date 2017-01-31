@@ -5,7 +5,7 @@ import mock
 from thrift.transport.TTransport import TTransportException
 
 from frugal.aio.transport import FHttpTransport
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.context import FContext
 from frugal.tests.aio import utils
 
@@ -82,7 +82,7 @@ class TestFHttpTransport(utils.AsyncIOTestCase):
     async def test_request_too_much_data(self):
         with self.assertRaises(TTransportException) as cm:
             await self.transport.request(FContext(), b'0' * 101)
-        self.assertEqual(FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+        self.assertEqual(TTransportExceptionType.REQUEST_TOO_LARGE,
                          cm.exception.type)
 
     @utils.async_runner
@@ -124,7 +124,7 @@ class TestFHttpTransport(utils.AsyncIOTestCase):
             await self.transport.request(
                 FContext(), bytearray([0, 0, 0, 3, 1, 2, 3]))
 
-        self.assertEqual(FrugalTTransportExceptionType.RESPONSE_TOO_LARGE,
+        self.assertEqual(TTransportExceptionType.RESPONSE_TOO_LARGE,
                          e.exception.type)
         self.assertEqual(str(e.exception),
                          'response was too large for the transport')

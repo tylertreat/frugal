@@ -9,7 +9,7 @@ from thrift.transport.TTransport import TTransportException
 
 from frugal.aio.transport import FTransportBase
 from frugal.context import FContext
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 
 
 class FHttpTransport(FTransportBase):
@@ -70,13 +70,13 @@ class FHttpTransport(FTransportBase):
         status, text = await self._make_request(context, encoded)
         if status == 413:
             raise TTransportException(
-                type=FrugalTTransportExceptionType.RESPONSE_TOO_LARGE,
+                type=TTransportExceptionType.RESPONSE_TOO_LARGE,
                 message='response was too large for the transport'
             )
 
         if status >= 300:
             raise TTransportException(
-                type=FrugalTTransportExceptionType.UNKNOWN,
+                type=TTransportExceptionType.UNKNOWN,
                 message='request errored with code {0} and message {1}'.format(
                     status, str(text)
                 )
@@ -84,12 +84,12 @@ class FHttpTransport(FTransportBase):
 
         decoded = base64.b64decode(text)
         if len(decoded) < 4:
-            raise TTransportException(type=FrugalTTransportExceptionType.UNKNOWN,
+            raise TTransportException(type=TTransportExceptionType.UNKNOWN,
                                       message='invalid frame size')
 
         if len(decoded) == 4:
             if any(decoded):
-                raise TTransportException(type=FrugalTTransportExceptionType.UNKNOWN,
+                raise TTransportException(type=TTransportExceptionType.UNKNOWN,
                                           message='missing data')
             # One-way method, drop response
             return
@@ -116,7 +116,7 @@ class FHttpTransport(FTransportBase):
                         return response.status, await response.content.read()
             except asyncio.TimeoutError:
                 raise TTransportException(
-                    type=FrugalTTransportExceptionType.TIMED_OUT,
+                    type=TTransportExceptionType.TIMED_OUT,
                     message='request timed out'
                 )
 

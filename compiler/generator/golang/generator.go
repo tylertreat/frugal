@@ -22,6 +22,10 @@ const (
 	serviceSuffix       = "_service"
 	scopeSuffix         = "_scope"
 	packagePrefixOption = "package_prefix"
+	thriftImportOption  = "thrift_import"
+	frugalImportOption  = "frugal_import"
+	asyncOption         = "async"
+	useVendorOption     = "use_vendor"
 )
 
 // Generator implements the LanguageGenerator interface for Go.
@@ -979,8 +983,8 @@ func (g *Generator) GenerateTypesImports(file *os.File) error {
 		contents += "\t\"database/sql/driver\"\n"
 		contents += "\t\"errors\"\n"
 	}
-	if g.Options["thrift_import"] != "" {
-		contents += "\t\"" + g.Options["thrift_import"] + "\"\n"
+	if g.Options[thriftImportOption] != "" {
+		contents += "\t\"" + g.Options[thriftImportOption] + "\"\n"
 	} else {
 		contents += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
 	}
@@ -1014,8 +1018,8 @@ func (g *Generator) GenerateServiceResultArgsImports(file *os.File) error {
 	contents += "import (\n"
 	contents += "\t\"bytes\"\n"
 	contents += "\t\"fmt\"\n"
-	if g.Options["thrift_import"] != "" {
-		contents += "\t\"" + g.Options["thrift_import"] + "\"\n"
+	if g.Options[thriftImportOption] != "" {
+		contents += "\t\"" + g.Options[thriftImportOption] + "\"\n"
 	} else {
 		contents += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
 	}
@@ -1052,13 +1056,13 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 		// Only non-oneway methods require the time package.
 		imports += "\t\"time\"\n\n"
 	}
-	if g.Options["thrift_import"] != "" {
-		imports += "\t\"" + g.Options["thrift_import"] + "\"\n"
+	if g.Options[thriftImportOption] != "" {
+		imports += "\t\"" + g.Options[thriftImportOption] + "\"\n"
 	} else {
 		imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
 	}
-	if g.Options["frugal_import"] != "" {
-		imports += "\t\"" + g.Options["frugal_import"] + "\"\n"
+	if g.Options[frugalImportOption] != "" {
+		imports += "\t\"" + g.Options[frugalImportOption] + "\"\n"
 	} else {
 		imports += "\t\"github.com/Workiva/frugal/lib/go\"\n"
 	}
@@ -1092,13 +1096,13 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "import (\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"
-	if g.Options["thrift_import"] != "" {
-		imports += "\t\"" + g.Options["thrift_import"] + "\"\n"
+	if g.Options[thriftImportOption] != "" {
+		imports += "\t\"" + g.Options[thriftImportOption] + "\"\n"
 	} else {
 		imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
 	}
-	if g.Options["frugal_import"] != "" {
-		imports += "\t\"" + g.Options["frugal_import"] + "\"\n"
+	if g.Options[frugalImportOption] != "" {
+		imports += "\t\"" + g.Options[frugalImportOption] + "\"\n"
 	} else {
 		imports += "\t\"github.com/Workiva/frugal/lib/go\"\n"
 	}
@@ -1128,7 +1132,7 @@ func (g *Generator) generateIncludeImport(include *parser.Include, pkgPrefix str
 	namespace := g.Frugal.NamespaceForInclude(includeName, lang)
 
 	_, vendored := include.Annotations.Vendor()
-	vendored = vendored && globals.UseVendor
+	vendored = vendored && g.useVendor()
 	vendorPath := ""
 
 	if namespace != nil {
@@ -2149,7 +2153,12 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 }
 
 func (g *Generator) generateAsync() bool {
-	_, ok := g.Options["async"]
+	_, ok := g.Options[asyncOption]
+	return ok
+}
+
+func (g *Generator) useVendor() bool {
+	_, ok := g.Options[useVendorOption]
 	return ok
 }
 

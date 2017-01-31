@@ -5,7 +5,7 @@ from thrift.transport.TTransport import TTransportException
 
 from frugal.aio.transport import FNatsPublisherTransport
 from frugal.aio.transport import FNatsSubscriberTransport
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.tests.aio import utils
 
 
@@ -24,7 +24,7 @@ class TestFNatsScopeTransport(utils.AsyncIOTestCase):
         self.mock_nats_client.is_connected = False
         with self.assertRaises(TTransportException) as cm:
             await self.pub_trans.open()
-        self.assertEqual(FrugalTTransportExceptionType.NOT_OPEN, cm.exception.type)
+        self.assertEqual(TTransportExceptionType.NOT_OPEN, cm.exception.type)
 
     @utils.async_runner
     async def test_publisher_close_not_open(self):
@@ -79,7 +79,7 @@ class TestFNatsScopeTransport(utils.AsyncIOTestCase):
         self.mock_nats_client.is_connected = False
         with self.assertRaises(TTransportException) as cm:
             await self.sub_trans.subscribe('foo', None)
-        self.assertEqual(FrugalTTransportExceptionType.NOT_OPEN, cm.exception.type)
+        self.assertEqual(TTransportExceptionType.NOT_OPEN, cm.exception.type)
 
     @utils.async_runner
     async def test_subscribe_open_already(self):
@@ -87,7 +87,7 @@ class TestFNatsScopeTransport(utils.AsyncIOTestCase):
         self.sub_trans._is_subscribed = True
         with self.assertRaises(TTransportException) as cm:
             await self.sub_trans.subscribe('foo', None)
-        self.assertEqual(FrugalTTransportExceptionType.ALREADY_OPEN, cm.exception.type)
+        self.assertEqual(TTransportExceptionType.ALREADY_OPEN, cm.exception.type)
 
     @utils.async_runner
     async def test_unsubscribe(self):

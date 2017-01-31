@@ -7,7 +7,7 @@ from thrift.Thrift import TException
 from thrift.Thrift import TMessageType
 from thrift.Thrift import TType
 
-from frugal.exceptions import FrugalTApplicationExceptionType
+from frugal.exceptions import TApplicationExceptionType
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +147,7 @@ class FBaseProcessor(FProcessor):
         iprot.readMessageEnd()
 
         ex = TApplicationException(
-            type=FrugalTApplicationExceptionType.UNKNOWN_METHOD,
+            type=TApplicationExceptionType.UNKNOWN_METHOD,
             message="Unknown function: {0}".format(name))
 
         async with self._write_lock:

@@ -9,8 +9,8 @@
 from datetime import timedelta
 from threading import Lock
 
-from frugal.exceptions import FrugalTApplicationExceptionType
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TApplicationExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.middleware import Method
 from frugal.tornado.processor import FBaseProcessor
 from frugal.tornado.processor import FProcessorFunction
@@ -81,8 +81,8 @@ class Client(Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=FrugalTTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
+                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
             raise x
         result = basePing_result()
         result.read(iprot)
@@ -123,7 +123,7 @@ class _basePing(FProcessorFunction):
                 return
         except Exception as e:
             with (yield self._lock.acquire()):
-                e = _write_application_exception(ctx, oprot, "basePing", ex_code=FrugalTApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "basePing", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
             raise e
         with (yield self._lock.acquire()):
             try:
@@ -133,8 +133,8 @@ class _basePing(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == FrugalTTransportExceptionType.RESPONSE_TOO_LARGE:
-                    raise _write_application_exception(ctx, oprot, "basePing", ex_code=FrugalTApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.message)
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "basePing", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.message)
                 else:
                     raise e
 

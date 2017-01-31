@@ -4,7 +4,7 @@ from struct import unpack
 
 from thrift.transport.TTransport import TTransportException
 
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.transport.base_http_transport import TBaseHttpTransport
 
 
@@ -44,21 +44,21 @@ class TUrlfetchTransport(TBaseHttpTransport):
 
         if resp.status_code >= 400:
             raise TTransportException(
-                FrugalTTransportExceptionType.UNKNOWN,
+                TTransportExceptionType.UNKNOWN,
                 'urlfetch request failed, returned {0}'.format(
                     resp.status_code))
 
         resp_body = b64decode(resp.content)
         # All responses should be framed with 4 bytes (uint32).
         if len(resp_body) < 4:
-            raise TTransportException(FrugalTTransportExceptionType.UNKNOWN,
+            raise TTransportException(TTransportExceptionType.UNKNOWN,
                                       'invalid frame size')
 
         # If there are only 4 bytes, this needs to be a one-way (i.e. frame
         # size 0)
         if len(resp_body) == 4:
             if unpack('!I', resp_body)[0] != 0:
-                raise TTransportException(FrugalTTransportExceptionType.UNKNOWN,
+                raise TTransportException(TTransportExceptionType.UNKNOWN,
                                           'invalid frame')
 
             # It's a oneway, drop it.
@@ -77,5 +77,5 @@ def _urlfetch(url, body, validate_certificate, timeout, headers):
             deadline=timeout
         )
     except DeadlineExceededError:
-        raise TTransportException(type=FrugalTTransportExceptionType.TIMED_OUT)
+        raise TTransportException(type=TTransportExceptionType.TIMED_OUT)
 

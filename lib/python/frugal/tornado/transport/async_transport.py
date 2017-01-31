@@ -7,7 +7,7 @@ from tornado import gen
 from tornado import locks
 
 from frugal.context import _OPID_HEADER
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.tornado.transport.transport import FTransportBase
 from frugal.util.headers import _Headers
 
@@ -34,7 +34,7 @@ class FAsyncTransport(FTransportBase):
             )
         except gen.TimeoutError:
             raise TTransportException(
-                type=FrugalTTransportExceptionType.TIMED_OUT,
+                type=TTransportExceptionType.TIMED_OUT,
                 message='oneway timed out'
             )
 
@@ -46,7 +46,7 @@ class FAsyncTransport(FTransportBase):
         with (yield self._futures_lock.acquire()):
             if op_id in self._futures:
                 raise TTransportException(
-                    type=FrugalTTransportExceptionType.UNKNOWN,
+                    type=TTransportExceptionType.UNKNOWN,
                     message="request already in flight for context"
                 )
             self._futures[op_id] = future
@@ -65,7 +65,7 @@ class FAsyncTransport(FTransportBase):
             raise gen.Return(TMemoryBuffer(data))
         except gen.TimeoutError:
             raise TTransportException(
-                type=FrugalTTransportExceptionType.TIMED_OUT,
+                type=TTransportExceptionType.TIMED_OUT,
                 message='request timed out'
             )
         finally:

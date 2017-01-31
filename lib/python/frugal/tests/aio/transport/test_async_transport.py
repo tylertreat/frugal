@@ -7,7 +7,7 @@ from thrift.transport.TTransport import TTransportException
 
 from frugal.aio.transport import FAsyncTransport
 from frugal.context import FContext
-from frugal.exceptions import FrugalTTransportExceptionType
+from frugal.exceptions import TTransportExceptionType
 from frugal.tests import utils
 from frugal.tests.aio import utils as aio_utils
 
@@ -53,7 +53,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         transport = FAsyncTransportImpl(is_open=False)
         with self.assertRaises(TTransportException) as cm:
             await transport.oneway(ctx, frame)
-        self.assertEqual(FrugalTTransportExceptionType.NOT_OPEN, cm.exception.type)
+        self.assertEqual(TTransportExceptionType.NOT_OPEN, cm.exception.type)
         self.assertIsNone(transport._payload)
 
     @aio_utils.async_runner
@@ -64,7 +64,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         transport = FAsyncTransportImpl(request_size_limit=1)
         with self.assertRaises(TTransportException) as cm:
             await transport.oneway(ctx, frame)
-        self.assertEqual(FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+        self.assertEqual(TTransportExceptionType.REQUEST_TOO_LARGE,
                          cm.exception.type)
         self.assertIsNone(transport._payload)
 
@@ -76,7 +76,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         transport = FAsyncTransportImpl(flush_wait=1)
         with self.assertRaises(TTransportException) as cm:
             await transport.oneway(ctx, frame)
-        self.assertEqual(FrugalTTransportExceptionType.TIMED_OUT, cm.exception.type)
+        self.assertEqual(TTransportExceptionType.TIMED_OUT, cm.exception.type)
         self.assertEqual(frame, transport._payload)
 
     @aio_utils.async_runner
@@ -97,7 +97,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         transport = FAsyncTransportImpl(is_open=False)
         with self.assertRaises(TTransportException) as cm:
             await transport.request(ctx, frame)
-        self.assertEqual(FrugalTTransportExceptionType.NOT_OPEN, cm.exception.type)
+        self.assertEqual(TTransportExceptionType.NOT_OPEN, cm.exception.type)
         self.assertEqual(0, len(transport._futures))
         self.assertIsNone(transport._payload)
 
@@ -109,7 +109,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         transport = FAsyncTransportImpl(request_size_limit=1)
         with self.assertRaises(TTransportException) as cm:
             await transport.request(ctx, frame)
-        self.assertEqual(FrugalTTransportExceptionType.REQUEST_TOO_LARGE,
+        self.assertEqual(TTransportExceptionType.REQUEST_TOO_LARGE,
                          cm.exception.type)
         self.assertEqual(0, len(transport._futures))
         self.assertIsNone(transport._payload)
@@ -119,7 +119,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         ctx = FContext("fooid")
         frame = utils.mock_frame(ctx)
         e = TTransportException(
-            type=FrugalTTransportExceptionType.END_OF_FILE,
+            type=TTransportExceptionType.END_OF_FILE,
             message="oh no!"
         )
         transport = FAsyncTransportImpl(e=e)
@@ -137,7 +137,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         transport = FAsyncTransportImpl(flush_wait=1)
         with self.assertRaises(TTransportException) as cm:
             await transport.request(ctx, frame)
-        self.assertEqual(FrugalTTransportExceptionType.TIMED_OUT, cm.exception.type)
+        self.assertEqual(TTransportExceptionType.TIMED_OUT, cm.exception.type)
         self.assertEqual(0, len(transport._futures))
         self.assertEqual(frame, transport._payload)
 
@@ -148,7 +148,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
         transport = FAsyncTransportImpl()
         with self.assertRaises(TTransportException) as cm:
             await transport.request(ctx, frame)
-        self.assertEqual(FrugalTTransportExceptionType.TIMED_OUT, cm.exception.type)
+        self.assertEqual(TTransportExceptionType.TIMED_OUT, cm.exception.type)
         self.assertEqual(0, len(transport._futures))
         self.assertEqual(frame, transport._payload)
 
@@ -162,7 +162,7 @@ class TestFAsyncTransport(aio_utils.AsyncIOTestCase):
                 transport.request(ctx, frame),
                 transport.request(ctx, frame)
             )
-        self.assertEqual(FrugalTTransportExceptionType.UNKNOWN, cm.exception.type)
+        self.assertEqual(TTransportExceptionType.UNKNOWN, cm.exception.type)
         self.assertEqual("request already in flight for context",
                          cm.exception.message)
         # We still have one request pending
