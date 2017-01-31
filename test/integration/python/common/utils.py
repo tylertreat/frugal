@@ -8,6 +8,9 @@ from thrift.protocol.TCompactProtocol import TCompactProtocolFactory
 
 from frugal.protocol import FProtocolFactory
 
+PREAMBLE_HEADER = "preamble"
+RAMBLE_HEADER = "ramble"
+
 
 def get_nats_options():
     return {

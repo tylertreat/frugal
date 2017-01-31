@@ -22,6 +22,10 @@ const (
 	serviceSuffix       = "_service"
 	scopeSuffix         = "_scope"
 	packagePrefixOption = "package_prefix"
+	thriftImportOption  = "thrift_import"
+	frugalImportOption  = "frugal_import"
+	asyncOption         = "async"
+	useVendorOption     = "use_vendor"
 )
 
 // Generator implements the LanguageGenerator interface for Go.
@@ -73,7 +77,7 @@ func (g *Generator) TeardownGenerator() error {
 
 // GetOutputDir returns the output directory for generated files.
 func (g *Generator) GetOutputDir(dir string) string {
-	if namespace := g.Frugal.Thrift.Namespace(lang); namespace != nil {
+	if namespace := g.Frugal.Namespace(lang); namespace != nil {
 		path := generator.GetPackageComponents(namespace.Value)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
@@ -144,7 +148,7 @@ func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
 
 func (g *Generator) generatePackage(file *os.File) error {
 	pkg := ""
-	namespace := g.Frugal.Thrift.Namespace(lang)
+	namespace := g.Frugal.Namespace(lang)
 	if namespace != nil {
 		components := generator.GetPackageComponents(namespace.Value)
 		pkg = components[len(components)-1]
@@ -188,67 +192,34 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 // generateConstantValue recursively generates the string representation of
 // a, possibly complex, constant value.
 func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) string {
-	underlyingType := g.Frugal.UnderlyingType(t)
-
 	// If the value being referenced is of type Identifier, it's referencing
-	// another constant. Need to recurse to get that value.
+	// another constant.
 	identifier, ok := value.(parser.Identifier)
 	if ok {
-		name := string(identifier)
-
-		// split based on '.', if present, it should be from an include
-		pieces := strings.Split(name, ".")
-		if len(pieces) == 1 {
-			// From this file
-			for _, constant := range g.Frugal.Thrift.Constants {
-				if name == constant.Name {
-					return g.generateConstantValue(t, constant.Value)
-				}
+		idCtx := g.Frugal.ContextFromIdentifier(identifier)
+		switch idCtx.Type {
+		case parser.LocalConstant:
+			return title(idCtx.Constant.Name)
+		case parser.LocalEnum:
+			return fmt.Sprintf("%s_%s", title(idCtx.Enum.Name), idCtx.EnumValue.Name)
+		case parser.IncludeConstant:
+			include := idCtx.Include.Name
+			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+				include = namespace.Value
 			}
-		} else if len(pieces) == 2 {
-			// Either from an include, or part of an enum
-			for _, enum := range g.Frugal.Thrift.Enums {
-				if pieces[0] == enum.Name {
-					for _, value := range enum.Values {
-						if pieces[1] == value.Name {
-							return fmt.Sprintf("%d", value.Value)
-						}
-					}
-					panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))
-				}
+			return fmt.Sprintf("%s.%s", includeNameToReference(include), title(idCtx.Constant.Name))
+		case parser.IncludeEnum:
+			include := idCtx.Include.Name
+			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+				include = namespace.Value
 			}
-
-			// If not part of an enum, it's from an include
-			include, ok := g.Frugal.ParsedIncludes[pieces[0]]
-			if !ok {
-				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
-			}
-			for _, constant := range include.Thrift.Constants {
-				if pieces[1] == constant.Name {
-					return g.generateConstantValue(t, constant.Value)
-				}
-			}
-		} else if len(pieces) == 3 {
-			// enum from an include
-			include, ok := g.Frugal.ParsedIncludes[pieces[0]]
-			if !ok {
-				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
-			}
-			for _, enum := range include.Thrift.Enums {
-				if pieces[1] == enum.Name {
-					for _, value := range enum.Values {
-						if pieces[2] == value.Name {
-							return fmt.Sprintf("%d", value.Value)
-						}
-					}
-					panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))
-				}
-			}
+			return fmt.Sprintf("%s.%s_%s", includeNameToReference(include), title(idCtx.Enum.Name), idCtx.EnumValue.Name)
+		default:
+			panic(fmt.Sprintf("The Identifier %s has unexpected type %d", identifier, idCtx.Type))
 		}
-
-		panic("referenced constant doesn't exist: " + name)
 	}
 
+	underlyingType := g.Frugal.UnderlyingType(t)
 	if underlyingType.IsPrimitive() || underlyingType.IsContainer() {
 		switch underlyingType.Name {
 		case "bool", "i8", "byte", "i16", "i32", "i64", "double":
@@ -290,7 +261,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 		return fmt.Sprintf("%d", value)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		var s *parser.Struct
-		for _, potential := range g.Frugal.Thrift.Structs {
+		for _, potential := range g.Frugal.Structs {
 			if underlyingType.Name == potential.Name {
 				s = potential
 				break
@@ -424,44 +395,14 @@ func (g *Generator) GenerateException(exception *parser.Struct) error {
 	return err
 }
 
-// GenerateServiceArgsResults generates the args and results objects for the
+// generateServiceArgsResults generates the args and results objects for the
 // given service.
-func (g *Generator) GenerateServiceArgsResults(serviceName string, outputDir string, structs []*parser.Struct) error {
-	file, err := g.GenerateFile(serviceName, outputDir, generator.ServiceArgsResultsFile)
-	defer file.Close()
-	if err != nil {
-		return err
-	}
-	if err = g.GenerateDocStringComment(file); err != nil {
-		return err
-	}
-	if err = g.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-	if err = g.generatePackage(file); err != nil {
-		return err
-	}
-	if err = g.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-	if err = g.GenerateServiceResultArgsImports(file); err != nil {
-		return err
-	}
-	if err = g.GenerateNewline(file, 2); err != nil {
-		return err
-	}
-
+func (g *Generator) generateServiceArgsResults(service *parser.Service) string {
 	contents := ""
-	for _, s := range structs {
-		structContents := g.generateStruct(s, serviceName)
-		contents += structContents
+	for _, s := range g.GetServiceMethodTypes(service) {
+		contents += g.generateStruct(s, service.Name)
 	}
-
-	_, err = file.WriteString(contents)
-	if err != nil {
-		return err
-	}
-	return g.PostProcess(file)
+	return contents
 }
 
 func (g *Generator) generateStruct(s *parser.Struct, serviceName string) string {
@@ -848,10 +789,8 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool) string
 				contents += fmt.Sprintf("\t%s%s %s &temp\n", prefix, fName, eq)
 			}
 			contents += "\tfor i := 0; i < size; i++ {\n"
-			// TODO 2.0 don't use the underlying type for the value type of the list
-			underlyingValueType := g.Frugal.UnderlyingType(underlyingType.ValueType)
-			valElem := getElem()
-			valField := parser.FieldFromType(underlyingValueType, valElem)
+			valElem := g.GetElem()
+			valField := parser.FieldFromType(underlyingType.ValueType, valElem)
 			valContents := g.generateReadFieldRec(valField, false)
 			contents += valContents
 			contents += fmt.Sprintf("\t\t%s%s%s = append(%s%s%s, %s)\n", maybePointer, prefix, fName, maybePointer, prefix, fName, valElem)
@@ -871,10 +810,8 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool) string
 				contents += fmt.Sprintf("\t%s%s %s &temp\n", prefix, fName, eq)
 			}
 			contents += "\tfor i := 0; i < size; i++ {\n"
-			// TODO 2.0 don't use the underlying type for the value type of the set
-			underlyingValueType := g.Frugal.UnderlyingType(underlyingType.ValueType)
-			valElem := getElem()
-			valField := parser.FieldFromType(underlyingValueType, valElem)
+			valElem := g.GetElem()
+			valField := parser.FieldFromType(underlyingType.ValueType, valElem)
 			valContents := g.generateReadFieldRec(valField, false)
 			contents += valContents
 			contents += fmt.Sprintf("\t\t(%s%s%s)[%s] = true\n", maybePointer, prefix, fName, valElem)
@@ -894,11 +831,11 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool) string
 				contents += fmt.Sprintf("\t%s%s %s &temp\n", prefix, fName, eq)
 			}
 			contents += "\tfor i := 0; i < size; i++ {\n"
-			keyElem := getElem()
+			keyElem := g.GetElem()
 			keyField := parser.FieldFromType(underlyingType.KeyType, keyElem)
 			contents += g.generateReadFieldRec(keyField, false)
 			// TODO 2.0 use the valContents for all the collections
-			valElem := getElem()
+			valElem := g.GetElem()
 			valField := parser.FieldFromType(underlyingType.ValueType, valElem)
 			valContents := g.generateReadFieldRec(valField, false)
 			contents += valContents
@@ -1042,19 +979,19 @@ func (g *Generator) GenerateTypesImports(file *os.File) error {
 	contents += "\t\"bytes\"\n"
 	contents += "\t\"fmt\"\n"
 	// Enums need these for some reason
-	if len(g.Frugal.Thrift.Enums) > 0 {
+	if len(g.Frugal.Enums) > 0 {
 		contents += "\t\"database/sql/driver\"\n"
 		contents += "\t\"errors\"\n"
 	}
-	if g.Options["thrift_import"] != "" {
-		contents += "\t\"" + g.Options["thrift_import"] + "\"\n"
+	if g.Options[thriftImportOption] != "" {
+		contents += "\t\"" + g.Options[thriftImportOption] + "\"\n"
 	} else {
 		contents += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
 	}
 
 	protections := ""
 	pkgPrefix := g.Options[packagePrefixOption]
-	for _, include := range g.Frugal.Thrift.Includes {
+	for _, include := range g.Frugal.Includes {
 		if imp, err := g.generateIncludeImport(include, pkgPrefix); err != nil {
 			return err
 		} else {
@@ -1081,15 +1018,15 @@ func (g *Generator) GenerateServiceResultArgsImports(file *os.File) error {
 	contents += "import (\n"
 	contents += "\t\"bytes\"\n"
 	contents += "\t\"fmt\"\n"
-	if g.Options["thrift_import"] != "" {
-		contents += "\t\"" + g.Options["thrift_import"] + "\"\n"
+	if g.Options[thriftImportOption] != "" {
+		contents += "\t\"" + g.Options[thriftImportOption] + "\"\n"
 	} else {
 		contents += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
 	}
 
 	protections := ""
 	pkgPrefix := g.Options[packagePrefixOption]
-	for _, include := range g.Frugal.Thrift.Includes {
+	for _, include := range g.Frugal.Includes {
 		if imp, err := g.generateIncludeImport(include, pkgPrefix); err != nil {
 			return err
 		} else {
@@ -1119,13 +1056,13 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 		// Only non-oneway methods require the time package.
 		imports += "\t\"time\"\n\n"
 	}
-	if g.Options["thrift_import"] != "" {
-		imports += "\t\"" + g.Options["thrift_import"] + "\"\n"
+	if g.Options[thriftImportOption] != "" {
+		imports += "\t\"" + g.Options[thriftImportOption] + "\"\n"
 	} else {
 		imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
 	}
-	if g.Options["frugal_import"] != "" {
-		imports += "\t\"" + g.Options["frugal_import"] + "\"\n"
+	if g.Options[frugalImportOption] != "" {
+		imports += "\t\"" + g.Options[frugalImportOption] + "\"\n"
 	} else {
 		imports += "\t\"github.com/Workiva/frugal/lib/go\"\n"
 	}
@@ -1159,13 +1096,13 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "import (\n"
 	imports += "\t\"fmt\"\n"
 	imports += "\t\"log\"\n\n"
-	if g.Options["thrift_import"] != "" {
-		imports += "\t\"" + g.Options["thrift_import"] + "\"\n"
+	if g.Options[thriftImportOption] != "" {
+		imports += "\t\"" + g.Options[thriftImportOption] + "\"\n"
 	} else {
 		imports += "\t\"git.apache.org/thrift.git/lib/go/thrift\"\n"
 	}
-	if g.Options["frugal_import"] != "" {
-		imports += "\t\"" + g.Options["frugal_import"] + "\"\n"
+	if g.Options[frugalImportOption] != "" {
+		imports += "\t\"" + g.Options[frugalImportOption] + "\"\n"
 	} else {
 		imports += "\t\"github.com/Workiva/frugal/lib/go\"\n"
 	}
@@ -1195,7 +1132,7 @@ func (g *Generator) generateIncludeImport(include *parser.Include, pkgPrefix str
 	namespace := g.Frugal.NamespaceForInclude(includeName, lang)
 
 	_, vendored := include.Annotations.Vendor()
-	vendored = vendored && globals.UseVendor
+	vendored = vendored && g.useVendor()
 	vendorPath := ""
 
 	if namespace != nil {
@@ -1245,7 +1182,7 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 // GeneratePublisher generates the publisher for the given scope.
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
 	var (
-		scopeLower = generator.LowercaseFirstLetter(scope.Name)
+		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeCamel = snakeToCamel(scope.Name)
 		publisher  = ""
 	)
@@ -1267,25 +1204,26 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += "\tOpen() error\n"
 	publisher += "\tClose() error\n"
 	for _, op := range scope.Operations {
-		publisher += fmt.Sprintf("\tPublish%s(ctx *frugal.FContext, %sreq *%s) error\n", op.Name, args, g.qualifiedTypeName(op.Type))
+		publisher += fmt.Sprintf("\tPublish%s(ctx frugal.FContext, %sreq %s) error\n", op.Name, args, g.getGoTypeFromThriftType(op.Type))
 	}
 	publisher += "}\n\n"
 
 	publisher += fmt.Sprintf("type %sPublisher struct {\n", scopeLower)
-	publisher += "\ttransport frugal.FScopeTransport\n"
-	publisher += "\tprotocol  *frugal.FProtocol\n"
+	publisher += "\ttransport frugal.FPublisherTransport\n"
+	publisher += "\tprotocolFactory *frugal.FProtocolFactory\n"
 	publisher += "\tmethods   map[string]*frugal.Method\n"
 	publisher += "}\n\n"
 
 	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) %sPublisher {\n",
 		scopeCamel, scopeCamel)
-	publisher += "\ttransport, protocol := provider.New()\n"
+	publisher += "\ttransport, protocolFactory := provider.NewPublisher()\n"
 	publisher += "\tmethods := make(map[string]*frugal.Method)\n"
 	publisher += fmt.Sprintf("\tpublisher := &%sPublisher{\n", scopeLower)
 	publisher += "\t\ttransport: transport,\n"
-	publisher += "\t\tprotocol:  protocol,\n"
+	publisher += "\t\tprotocolFactory:  protocolFactory,\n"
 	publisher += "\t\tmethods:   methods,\n"
 	publisher += "\t}\n"
+	publisher += "\tmiddleware = append(middleware, provider.GetMiddleware()...)\n"
 	for _, op := range scope.Operations {
 		publisher += fmt.Sprintf("\tmethods[\"publish%s\"] = frugal.NewMethod(publisher, publisher.publish%s, \"publish%s\", middleware)\n",
 			op.Name, op.Name, op.Name)
@@ -1293,12 +1231,12 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += "\treturn publisher\n"
 	publisher += "}\n\n"
 
-	publisher += fmt.Sprintf("func (l *%sPublisher) Open() error {\n", scopeLower)
-	publisher += "\treturn l.transport.Open()\n"
+	publisher += fmt.Sprintf("func (p *%sPublisher) Open() error {\n", scopeLower)
+	publisher += "\treturn p.transport.Open()\n"
 	publisher += "}\n\n"
 
-	publisher += fmt.Sprintf("func (l *%sPublisher) Close() error {\n", scopeLower)
-	publisher += "\treturn l.transport.Close()\n"
+	publisher += fmt.Sprintf("func (p *%sPublisher) Close() error {\n", scopeLower)
+	publisher += "\treturn p.transport.Close()\n"
 	publisher += "}\n\n"
 
 	prefix := ""
@@ -1314,16 +1252,16 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operation, args string) string {
 	var (
-		scopeLower = generator.LowercaseFirstLetter(scope.Name)
+		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		publisher  = ""
 	)
 
 	if op.Comment != nil {
 		publisher += g.GenerateInlineComment(op.Comment, "")
 	}
-	publisher += fmt.Sprintf("func (l *%sPublisher) Publish%s(ctx *frugal.FContext, %sreq *%s) error {\n",
-		scopeLower, op.Name, args, g.qualifiedTypeName(op.Type))
-	publisher += fmt.Sprintf("\tret := l.methods[\"publish%s\"].Invoke(%s)\n", op.Name, g.generateScopeArgs(scope))
+	publisher += fmt.Sprintf("func (p *%sPublisher) Publish%s(ctx frugal.FContext, %sreq %s) error {\n",
+		scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
+	publisher += fmt.Sprintf("\tret := p.methods[\"publish%s\"].Invoke(%s)\n", op.Name, g.generateScopeArgs(scope))
 	publisher += "\tif ret[0] != nil {\n"
 	publisher += "\t\treturn ret[0].(error)\n"
 	publisher += "\t}\n"
@@ -1337,35 +1275,33 @@ func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operat
 
 func (g *Generator) generateInternalPublishMethod(scope *parser.Scope, op *parser.Operation, args string) string {
 	var (
-		scopeLower = generator.LowercaseFirstLetter(scope.Name)
+		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeTitle = strings.Title(scope.Name)
 		publisher  = ""
 	)
 
-	publisher += fmt.Sprintf("func (l *%sPublisher) publish%s(ctx *frugal.FContext, %sreq *%s) error {\n",
-		scopeLower, op.Name, args, g.qualifiedTypeName(op.Type))
+	publisher += fmt.Sprintf("func (p *%sPublisher) publish%s(ctx frugal.FContext, %sreq %s) error {\n",
+		scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
 	publisher += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 	publisher += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 	publisher += "\ttopic := fmt.Sprintf(\"%s" + scopeTitle + "%s%s\", prefix, delimiter, op)\n"
-	publisher += "\tif err := l.transport.LockTopic(topic); err != nil {\n"
-	publisher += "\t\treturn err\n"
-	publisher += "\t}\n"
-	publisher += "\tdefer l.transport.UnlockTopic()\n"
-	publisher += "\toprot := l.protocol\n"
+	publisher += "\tbuffer := frugal.NewTMemoryOutputBuffer(p.transport.GetPublishSizeLimit())\n"
+	publisher += "\toprot := p.protocolFactory.GetProtocol(buffer)\n"
 	publisher += "\tif err := oprot.WriteRequestHeader(ctx); err != nil {\n"
 	publisher += "\t\treturn err\n"
 	publisher += "\t}\n"
 	publisher += "\tif err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {\n"
 	publisher += "\t\treturn err\n"
 	publisher += "\t}\n"
-	publisher += "\tif err := req.Write(oprot); err != nil {\n"
-	publisher += "\t\treturn err\n"
-	publisher += "\t}\n"
+	publisher += g.generateWriteFieldRec(parser.FieldFromType(op.Type, ""), "req")
 	publisher += "\tif err := oprot.WriteMessageEnd(); err != nil {\n"
 	publisher += "\t\treturn err\n"
 	publisher += "\t}\n"
-	publisher += "\treturn oprot.Flush()\n"
-	publisher += "}"
+	publisher += "\tif err := oprot.Flush(); err != nil {\n"
+	publisher += "\t\treturn err\n"
+	publisher += "\t}\n"
+	publisher += "\treturn p.transport.Publish(topic, buffer.Bytes())\n"
+	publisher += "}\n"
 	return publisher
 }
 
@@ -1391,7 +1327,7 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 // GenerateSubscriber generates the subscriber for the given scope.
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	var (
-		scopeLower = generator.LowercaseFirstLetter(scope.Name)
+		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeCamel = snakeToCamel(scope.Name)
 		subscriber = ""
 	)
@@ -1412,8 +1348,8 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 	subscriber += fmt.Sprintf("type %sSubscriber interface {\n", scopeCamel)
 	for _, op := range scope.Operations {
-		subscriber += fmt.Sprintf("\tSubscribe%s(%shandler func(*frugal.FContext, *%s)) (*frugal.FSubscription, error)\n",
-			op.Name, args, g.qualifiedTypeName(op.Type))
+		subscriber += fmt.Sprintf("\tSubscribe%s(%shandler func(frugal.FContext, %s)) (*frugal.FSubscription, error)\n",
+			op.Name, args, g.getGoTypeFromThriftType(op.Type))
 	}
 	subscriber += "}\n\n"
 
@@ -1424,6 +1360,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 	subscriber += fmt.Sprintf("func New%sSubscriber(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) %sSubscriber {\n",
 		scopeCamel, scopeCamel)
+	subscriber += "\tmiddleware = append(middleware, provider.GetMiddleware()...)\n"
 	subscriber += fmt.Sprintf("\treturn &%sSubscriber{provider: provider, middleware: middleware}\n", scopeLower)
 	subscriber += "}\n\n"
 
@@ -1440,65 +1377,53 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Operation, args string) string {
 	var (
-		scopeLower = generator.LowercaseFirstLetter(scope.Name)
+		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeTitle = strings.Title(scope.Name)
 		subscriber = ""
 	)
 	if op.Comment != nil {
 		subscriber += g.GenerateInlineComment(op.Comment, "")
 	}
-	subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(*frugal.FContext, *%s)) (*frugal.FSubscription, error) {\n",
-		scopeLower, op.Name, args, g.qualifiedTypeName(op.Type))
+	subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(frugal.FContext, %s)) (*frugal.FSubscription, error) {\n",
+		scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
 	subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 	subscriber += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 	subscriber += "\ttopic := fmt.Sprintf(\"%s" + scopeTitle + "%s%s\", prefix, delimiter, op)\n"
-	subscriber += "\ttransport, protocol := l.provider.New()\n"
-	subscriber += "\tif err := transport.Subscribe(topic); err != nil {\n"
+	subscriber += "\ttransport, protocolFactory := l.provider.NewSubscriber()\n"
+	subscriber += fmt.Sprintf("\tcb := l.recv%s(op, protocolFactory, handler)\n", op.Name)
+	subscriber += "\tif err := transport.Subscribe(topic, cb); err != nil {\n"
 	subscriber += "\t\treturn nil, err\n"
 	subscriber += "\t}\n\n"
 
-	subscriber += fmt.Sprintf("\tmethod := frugal.NewMethod(l, handler, \"Subscribe%s\", l.middleware)\n", op.Name)
 	subscriber += "\tsub := frugal.NewFSubscription(topic, transport)\n"
-	subscriber += "\tgo func() {\n"
-	subscriber += "\t\tfor {\n"
-	subscriber += fmt.Sprintf("\t\t\tctx, received, err := l.recv%s(op, protocol)\n", op.Name)
-	subscriber += "\t\t\tif err != nil {\n"
-	subscriber += "\t\t\t\tif e, ok := err.(thrift.TTransportException); ok && e.TypeId() == thrift.END_OF_FILE {\n"
-	subscriber += "\t\t\t\t\treturn\n"
-	subscriber += "\t\t\t\t}\n"
-	subscriber += "\t\t\t\tlog.Printf(\"frugal: error receiving %s, discarding frame: %s\\n\", topic, err.Error())\n"
-	subscriber += "\t\t\t\ttransport.DiscardFrame()\n"
-	subscriber += "\t\t\t\tcontinue\n"
-	subscriber += "\t\t\t}\n"
-	subscriber += "\t\t\tmethod.Invoke([]interface{}{ctx, received})\n"
-	subscriber += "\t\t}\n"
-	subscriber += "\t}()\n\n"
 	subscriber += "\treturn sub, nil\n"
 	subscriber += "}\n\n"
 
-	subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, iprot *frugal.FProtocol) (*frugal.FContext, *%s, error) {\n",
-		scopeLower, op.Name, g.qualifiedTypeName(op.Type))
-	subscriber += "\tctx, err := iprot.ReadRequestHeader()\n"
-	subscriber += "\tif err != nil {\n"
-	subscriber += "\t\treturn nil, nil, err\n"
+	subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, %s)) frugal.FAsyncCallback {\n",
+		scopeLower, op.Name, g.getGoTypeFromThriftType(op.Type))
+	subscriber += fmt.Sprintf("\tmethod := frugal.NewMethod(l, handler, \"Subscribe%s\", l.middleware)\n", op.Name)
+	subscriber += "\treturn func(transport thrift.TTransport) error {\n"
+	subscriber += "\t\tiprot := pf.GetProtocol(transport)\n"
+	subscriber += "\t\tctx, err := iprot.ReadRequestHeader()\n"
+	subscriber += "\t\tif err != nil {\n"
+	subscriber += "\t\t\treturn err\n"
+	subscriber += "\t\t}\n\n"
+	subscriber += "\t\tname, _, _, err := iprot.ReadMessageBegin()\n"
+	subscriber += "\t\tif err != nil {\n"
+	subscriber += "\t\t\treturn err\n"
+	subscriber += "\t\t}\n\n"
+	subscriber += "\t\tif name != op {\n"
+	subscriber += "\t\t\tiprot.Skip(thrift.STRUCT)\n"
+	subscriber += "\t\t\tiprot.ReadMessageEnd()\n"
+	subscriber += "\t\t\treturn thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN_METHOD, \"Unknown function\"+name)\n"
+	subscriber += "\t\t}\n"
+	subscriber += g.generateReadFieldRec(parser.FieldFromType(op.Type, "req"), false)
+	subscriber += "\t\tiprot.ReadMessageEnd()\n\n"
+	subscriber += "\t\tmethod.Invoke([]interface{}{ctx, req})\n"
+	subscriber += "\t\treturn nil\n"
 	subscriber += "\t}\n"
-	subscriber += "\tname, _, _, err := iprot.ReadMessageBegin()\n"
-	subscriber += "\tif err != nil {\n"
-	subscriber += "\t\treturn nil, nil, err\n"
-	subscriber += "\t}\n"
-	subscriber += "\tif name != op {\n"
-	subscriber += "\t\tiprot.Skip(thrift.STRUCT)\n"
-	subscriber += "\t\tiprot.ReadMessageEnd()\n"
-	subscriber += "\t\tx9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \"+name)\n"
-	subscriber += "\t\treturn nil, nil, x9\n"
-	subscriber += "\t}\n"
-	subscriber += fmt.Sprintf("\treq := &%s{}\n", g.qualifiedTypeName(op.Type))
-	subscriber += "\tif err := req.Read(iprot); err != nil {\n"
-	subscriber += "\t\treturn nil, nil, err\n"
-	subscriber += "\t}\n\n"
-	subscriber += "\tiprot.ReadMessageEnd()\n"
-	subscriber += "\treturn ctx, req, nil\n"
 	subscriber += "}"
+
 	return subscriber
 }
 
@@ -1508,6 +1433,7 @@ func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 	contents += g.generateServiceInterface(s)
 	contents += g.generateClient(s)
 	contents += g.generateServer(s)
+	contents += g.generateServiceArgsResults(s)
 
 	_, err := file.WriteString(contents)
 	return err
@@ -1527,7 +1453,7 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, "\t")
 		}
-		contents += fmt.Sprintf("\t%s(ctx *frugal.FContext%s) %s\n",
+		contents += fmt.Sprintf("\t%s(ctx frugal.FContext%s) %s\n",
 			snakeToCamel(method.Name), g.generateInterfaceArgs(method.Arguments),
 			g.generateReturnArgs(method))
 	}
@@ -1589,41 +1515,29 @@ func (g *Generator) generateClient(service *parser.Service) string {
 	}
 	contents += "\ttransport       frugal.FTransport\n"
 	contents += "\tprotocolFactory *frugal.FProtocolFactory\n"
-	contents += "\toprot           *frugal.FProtocol\n"
-	if service.Extends == "" {
-		contents += "\tmu              sync.Mutex\n"
-	}
 	contents += "\tmethods         map[string]*frugal.Method\n"
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf(
-		"func NewF%sClient(t frugal.FTransport, p *frugal.FProtocolFactory, middleware ...frugal.ServiceMiddleware) *F%sClient {\n",
+		"func NewF%sClient(provider *frugal.FServiceProvider, middleware ...frugal.ServiceMiddleware) *F%sClient {\n",
 		servTitle, servTitle)
-	contents += "\tt.SetRegistry(frugal.NewFClientRegistry())\n"
 	contents += "\tmethods := make(map[string]*frugal.Method)\n"
 	contents += fmt.Sprintf("\tclient := &F%sClient{\n", servTitle)
 	if service.Extends != "" {
-		contents += fmt.Sprintf("\t\tF%sClient: %sNewF%sClient(t, p, middleware...),\n",
+		contents += fmt.Sprintf("\t\tF%sClient: %sNewF%sClient(provider, middleware...),\n",
 			service.ExtendsService(), g.getServiceExtendsNamespace(service), service.ExtendsService())
 	}
-	contents += "\t\ttransport:       t,\n"
-	contents += "\t\tprotocolFactory: p,\n"
-	contents += "\t\toprot:           p.GetProtocol(t),\n"
+	contents += "\t\ttransport:       provider.GetTransport(),\n"
+	contents += "\t\tprotocolFactory: provider.GetProtocolFactory(),\n"
 	contents += "\t\tmethods:         methods,\n"
 	contents += "\t}\n"
+	contents += "\tmiddleware = append(middleware, provider.GetMiddleware()...)\n"
 	for _, method := range service.Methods {
-		name := generator.LowercaseFirstLetter(method.Name)
+		name := parser.LowercaseFirstLetter(method.Name)
 		contents += fmt.Sprintf("\tmethods[\"%s\"] = frugal.NewMethod(client, client.%s, \"%s\", middleware)\n", name, name, name)
 	}
 	contents += "\treturn client\n"
 	contents += "}\n\n"
-
-	if service.Extends == "" {
-		contents += fmt.Sprintf("// Do Not Use. To be called only by generated code.\n")
-		contents += fmt.Sprintf("func (f *F%sClient) GetWriteMutex() *sync.Mutex {\n", servTitle)
-		contents += "\treturn &f.mu\n"
-		contents += "}\n\n"
-	}
 
 	for _, method := range service.Methods {
 		contents += g.generateClientMethod(service, method)
@@ -1644,7 +1558,7 @@ func (g *Generator) generateAsyncClientMethod(service *parser.Service, method *p
 	if method.Comment != nil {
 		contents += g.GenerateInlineComment(method.Comment, "")
 	}
-	contents += fmt.Sprintf("func (f *F%sClient) %sAsync(ctx *frugal.FContext%s) %s {\n",
+	contents += fmt.Sprintf("func (f *F%sClient) %sAsync(ctx frugal.FContext%s) %s {\n",
 		servTitle, nameTitle, g.generateInputArgs(method.Arguments), g.generateAsyncReturnArgs(method))
 	contents += "\terrC := make(chan error, 1)\n"
 	if method.ReturnType != nil {
@@ -1675,14 +1589,14 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	var (
 		servTitle = snakeToCamel(service.Name)
 		nameTitle = snakeToCamel(method.Name)
-		nameLower = generator.LowercaseFirstLetter(method.Name)
+		nameLower = parser.LowercaseFirstLetter(method.Name)
 	)
 
 	contents := ""
 	if method.Comment != nil {
 		contents += g.GenerateInlineComment(method.Comment, "")
 	}
-	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx *frugal.FContext%s) %s {\n",
+	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx frugal.FContext%s) %s {\n",
 		servTitle, nameTitle, g.generateInputArgs(method.Arguments), g.generateReturnArgs(method))
 	contents += fmt.Sprintf("\tret := f.methods[\"%s\"].Invoke(%s)\n", nameLower, g.generateClientArgs(method))
 	numReturn := "2"
@@ -1713,29 +1627,16 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 	var (
 		servTitle = snakeToCamel(service.Name)
 		nameTitle = snakeToCamel(method.Name)
-		nameLower = generator.LowercaseFirstLetter(method.Name)
+		nameLower = parser.LowercaseFirstLetter(method.Name)
 	)
 
 	contents := ""
-	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx *frugal.FContext%s) %s {\n",
+	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx frugal.FContext%s) %s {\n",
 		servTitle, nameLower, g.generateInputArgs(method.Arguments), g.generateReturnArgs(method))
-	var returnType string
-	if !method.Oneway {
-		contents += "\terrorC := make(chan error, 1)\n"
-		if method.ReturnType == nil {
-			returnType = "struct{}"
-		} else {
-			returnType = g.getGoTypeFromThriftType(method.ReturnType)
-		}
-		contents += fmt.Sprintf("\tresultC := make(chan %s, 1)\n", returnType)
-		contents += fmt.Sprintf("\tif err = f.transport.Register(ctx, f.recv%sHandler(ctx, resultC, errorC)); err != nil {\n", nameTitle)
-		contents += "\t\treturn\n"
-		contents += "\t}\n"
-		contents += "\tdefer f.transport.Unregister(ctx)\n"
-	}
-	contents += "\tf.GetWriteMutex().Lock()\n"
-	contents += fmt.Sprintf("\tif err = f.oprot.WriteRequestHeader(ctx); err != nil {\n")
-	contents += "\t\tf.GetWriteMutex().Unlock()\n"
+
+	contents += "\tbuffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())\n"
+	contents += "\toprot := f.protocolFactory.GetProtocol(buffer)\n"
+	contents += "\tif err = oprot.WriteRequestHeader(ctx); err != nil {\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	msgType := "CALL"
@@ -1743,123 +1644,87 @@ func (g *Generator) generateInternalClientMethod(service *parser.Service, method
 		msgType = "ONEWAY"
 	}
 	contents += fmt.Sprintf(
-		"\tif err = f.oprot.WriteMessageBegin(\"%s\", thrift.%s, 0); err != nil {\n", nameLower, msgType)
-	contents += "\t\tf.GetWriteMutex().Unlock()\n"
+		"\tif err = oprot.WriteMessageBegin(\"%s\", thrift.%s, 0); err != nil {\n", nameLower, msgType)
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
 	contents += fmt.Sprintf("\targs := %s%sArgs{\n", servTitle, nameTitle)
 	contents += g.generateStructArgs(method.Arguments)
 	contents += "\t}\n"
-	contents += "\tif err = args.Write(f.oprot); err != nil {\n"
-	contents += "\t\tf.GetWriteMutex().Unlock()\n"
+	contents += "\tif err = args.Write(oprot); err != nil {\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
-	contents += "\tif err = f.oprot.WriteMessageEnd(); err != nil {\n"
-	contents += "\t\tf.GetWriteMutex().Unlock()\n"
+	contents += "\tif err = oprot.WriteMessageEnd(); err != nil {\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
-	contents += "\tif err = f.oprot.Flush(); err != nil {\n"
-	contents += "\t\tf.GetWriteMutex().Unlock()\n"
+	contents += "\tif err = oprot.Flush(); err != nil {\n"
 	contents += "\t\treturn\n"
 	contents += "\t}\n"
-	contents += "\tf.GetWriteMutex().Unlock()\n\n"
 
 	if method.Oneway {
+		contents += "\terr = f.transport.Oneway(ctx, buffer.Bytes())\n"
 		contents += "\treturn\n"
 		contents += "}\n\n"
 		return contents
 	}
-
-	contents += "\tselect {\n"
-	contents += "\tcase err = <-errorC:\n"
-	if method.ReturnType == nil {
-		contents += "\tcase <-resultC:\n"
-	} else {
-		contents += "\tcase r = <-resultC:\n"
-	}
-	contents += "\tcase <-time.After(ctx.Timeout()):\n"
-	contents += "\t\terr = frugal.ErrTimeout\n"
-	contents += "\tcase <-f.transport.Closed():\n"
-	contents += "\t\terr = frugal.ErrTransportClosed\n"
+	contents += "\tvar resultTransport thrift.TTransport\n"
+	contents += "\tresultTransport, err = f.transport.Request(ctx, buffer.Bytes())\n"
+	contents += "\tif err != nil {\n"
+	contents += "\t\treturn\n"
 	contents += "\t}\n"
-	contents += "\treturn\n"
-	contents += "}\n\n"
 
+	contents += "\tiprot := f.protocolFactory.GetProtocol(resultTransport)\n"
+	contents += "\tif err = iprot.ReadResponseHeader(ctx); err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tmethod, mTypeId, _, err := iprot.ReadMessageBegin()\n"
+	contents += "\tif err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += fmt.Sprintf("\tif method != \"%s\" {\n", nameLower)
 	contents += fmt.Sprintf(
-		"func (f *F%sClient) recv%sHandler(ctx *frugal.FContext, resultC chan<- %s, errorC chan<- error) frugal.FAsyncCallback {\n",
-		servTitle, nameTitle, returnType)
-	contents += "\treturn func(tr thrift.TTransport) error {\n"
-	contents += "\t\tiprot := f.protocolFactory.GetProtocol(tr)\n"
-	contents += "\t\tif err := iprot.ReadResponseHeader(ctx); err != nil {\n"
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn err\n"
-	contents += "\t\t}\n"
-	contents += "\t\tmethod, mTypeId, _, err := iprot.ReadMessageBegin()\n"
+		"\t\terr = thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_WRONG_METHOD_NAME, \"%s failed: wrong method name\")\n", nameLower)
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tif mTypeId == thrift.EXCEPTION {\n"
+	contents += "\t\terror0 := thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN, \"Unknown Exception\")\n"
+	contents += "\t\tvar error1 thrift.TApplicationException\n"
+	contents += "\t\terror1, err = error0.Read(iprot)\n"
 	contents += "\t\tif err != nil {\n"
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn err\n"
-	contents += "\t\t}\n"
-	contents += fmt.Sprintf("\t\tif method != \"%s\" {\n", nameLower)
-	contents += fmt.Sprintf(
-		"\t\t\terr = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, \"%s failed: wrong method name\")\n", nameLower)
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn err\n"
-	contents += "\t\t}\n"
-	contents += "\t\tif mTypeId == thrift.EXCEPTION {\n"
-	contents += "\t\t\terror0 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, \"Unknown Exception\")\n"
-	contents += "\t\t\tvar error1 thrift.TApplicationException\n"
-	contents += "\t\t\terror1, err = error0.Read(iprot)\n"
-	contents += "\t\t\tif err != nil {\n"
-	contents += "\t\t\t\terrorC <- err\n"
-	contents += "\t\t\t\treturn err\n"
-	contents += "\t\t\t}\n"
-	contents += "\t\t\tif err = iprot.ReadMessageEnd(); err != nil {\n"
-	contents += "\t\t\t\terrorC <- err\n"
-	contents += "\t\t\t\treturn err\n"
-	contents += "\t\t\t}\n"
-	contents += "\t\t\tif error1.TypeId() == frugal.RESPONSE_TOO_LARGE {\n"
-	contents += "\t\t\t\terr = thrift.NewTTransportException(frugal.RESPONSE_TOO_LARGE, \"response too large for transport\")\n"
-	contents += "\t\t\t\terrorC <- err\n"
-	contents += "\t\t\t\treturn nil\n"
-	contents += "\t\t\t}\n"
-	contents += "\t\t\tif error1.TypeId() == frugal.RATE_LIMIT_EXCEEDED {\n"
-	contents += "\t\t\t\terr = frugal.ErrRateLimitExceeded\n"
-	contents += "\t\t\t\terrorC <- err\n"
-	contents += "\t\t\t\treturn nil\n"
-	contents += "\t\t\t}\n"
-	contents += "\t\t\terr = error1\n"
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn err\n"
-	contents += "\t\t}\n"
-	contents += "\t\tif mTypeId != thrift.REPLY {\n"
-	contents += fmt.Sprintf(
-		"\t\t\terr = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, \"%s failed: invalid message type\")\n", nameLower)
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn err\n"
-	contents += "\t\t}\n"
-	contents += fmt.Sprintf("\t\tresult := %s%sResult{}\n", servTitle, nameTitle)
-	contents += "\t\tif err = result.Read(iprot); err != nil {\n"
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn err\n"
+	contents += "\t\t\t\treturn\n"
 	contents += "\t\t}\n"
 	contents += "\t\tif err = iprot.ReadMessageEnd(); err != nil {\n"
-	contents += "\t\t\terrorC <- err\n"
-	contents += "\t\t\treturn err\n"
+	contents += "\t\t\treturn\n"
 	contents += "\t\t}\n"
+	contents += "\t\tif error1.TypeId() == frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE {\n"
+	contents += "\t\t\terr = thrift.NewTTransportException(frugal.TRANSPORT_EXCEPTION_RESPONSE_TOO_LARGE, error1.Error())\n"
+	contents += "\t\t\t\treturn\n"
+	contents += "\t\t}\n"
+	contents += "\t\terr = error1\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tif mTypeId != thrift.REPLY {\n"
+	contents += fmt.Sprintf(
+		"\t\terr = thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_INVALID_MESSAGE_TYPE, \"%s failed: invalid message type\")\n", nameLower)
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += fmt.Sprintf("\tresult := %s%sResult{}\n", servTitle, nameTitle)
+	contents += "\tif err = result.Read(iprot); err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
+	contents += "\tif err = iprot.ReadMessageEnd(); err != nil {\n"
+	contents += "\t\treturn\n"
+	contents += "\t}\n"
 	for _, err := range method.Exceptions {
 		errTitle := snakeToCamel(err.Name)
-		contents += fmt.Sprintf("\t\tif result.%s != nil {\n", errTitle)
-		contents += fmt.Sprintf("\t\t\terrorC <- result.%s\n", errTitle)
-		contents += "\t\t\treturn nil\n"
-		contents += "\t\t}\n"
+		contents += fmt.Sprintf("\tif result.%s != nil {\n", errTitle)
+		contents += fmt.Sprintf("\t\terr = result.%s\n", errTitle)
+		contents += "\t\treturn\n"
+		contents += "\t}\n"
 	}
-	if method.ReturnType == nil {
-		contents += "\t\tresultC <- struct{}{}\n"
-	} else {
-		contents += "\t\tresultC <- result.GetSuccess()\n"
+	if method.ReturnType != nil {
+		contents += "\tr = result.GetSuccess()\n"
 	}
-	contents += "\t\treturn nil\n"
-	contents += "\t}\n"
+	contents += "\treturn\n"
 	contents += "}\n\n"
 
 	return contents
@@ -1900,9 +1765,17 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 		contents += fmt.Sprintf("\tp := &F%sProcessor{frugal.NewFBaseProcessor()}\n", servTitle)
 	}
 	for _, method := range service.Methods {
+		methodLower := parser.LowercaseFirstLetter(method.Name)
 		contents += fmt.Sprintf(
 			"\tp.AddToProcessorMap(\"%s\", &%sF%s{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.%s, \"%s\", middleware))})\n",
-			generator.LowercaseFirstLetter(method.Name), servLower, snakeToCamel(method.Name), snakeToCamel(method.Name), snakeToCamel(method.Name))
+			methodLower, servLower, snakeToCamel(method.Name), snakeToCamel(method.Name), snakeToCamel(method.Name))
+		if len(method.Annotations) > 0 {
+			contents += fmt.Sprintf("\tp.AddToAnnotationsMap(\"%s\", map[string]string{\n", methodLower)
+			for _, annotation := range method.Annotations {
+				contents += fmt.Sprintf("\t\t\"%s\": \"%s\",\n", annotation.Name, annotation.Value)
+			}
+			contents += "\t})\n"
+		}
 	}
 
 	contents += "\treturn p\n"
@@ -1916,21 +1789,21 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 		servTitle = snakeToCamel(service.Name)
 		servLower = strings.ToLower(service.Name)
 		nameTitle = snakeToCamel(method.Name)
-		nameLower = generator.LowercaseFirstLetter(method.Name)
+		nameLower = parser.LowercaseFirstLetter(method.Name)
 	)
 
 	contents := fmt.Sprintf("type %sF%s struct {\n", servLower, nameTitle)
 	contents += "\t*frugal.FBaseProcessorFunction\n"
 	contents += "}\n\n"
 
-	contents += fmt.Sprintf("func (p *%sF%s) Process(ctx *frugal.FContext, iprot, oprot *frugal.FProtocol) error {\n", servLower, nameTitle)
+	contents += fmt.Sprintf("func (p *%sF%s) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {\n", servLower, nameTitle)
 	contents += fmt.Sprintf("\targs := %s%sArgs{}\n", servTitle, nameTitle)
 	contents += "\tvar err error\n"
 	contents += "\tif err = args.Read(iprot); err != nil {\n"
 	contents += "\t\tiprot.ReadMessageEnd()\n"
 	if !method.Oneway {
 		contents += "\t\tp.GetWriteMutex().Lock()\n"
-		contents += fmt.Sprintf("\t\t%sWriteApplicationError(ctx, oprot, thrift.PROTOCOL_ERROR, \"%s\", err.Error())\n", servLower, nameLower)
+		contents += fmt.Sprintf("\t\terr = %sWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_PROTOCOL_ERROR, \"%s\", err.Error())\n", servLower, nameLower)
 		contents += "\t\tp.GetWriteMutex().Unlock()\n"
 	}
 	contents += "\t\treturn err\n"
@@ -1961,11 +1834,13 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 		contents += "\t}\n"
 	}
 	contents += "\tif err2 != nil {\n"
-	contents += "\t\tif err2 == frugal.ErrRateLimitExceeded {\n"
+	contents += "\t\tif err3, ok := err2.(thrift.TApplicationException); ok {\n"
 	contents += "\t\t\tp.GetWriteMutex().Lock()\n"
-	contents += fmt.Sprintf(
-		"\t\t\t%sWriteApplicationError(ctx, oprot, frugal.RATE_LIMIT_EXCEEDED, \"%s\", \"Rate limit exceeded\")\n",
-		servLower, nameLower)
+	contents += "\t\t\toprot.WriteResponseHeader(ctx)\n"
+	contents += fmt.Sprintf("\t\t\toprot.WriteMessageBegin(\"%s\", thrift.EXCEPTION, 0)\n", nameLower)
+	contents += "\t\t\terr3.Write(oprot)\n"
+	contents += "\t\t\toprot.WriteMessageEnd()\n"
+	contents += "\t\t\toprot.Flush()\n"
 	contents += "\t\t\tp.GetWriteMutex().Unlock()\n"
 	contents += "\t\t\treturn nil\n"
 	contents += "\t\t}\n"
@@ -2060,10 +1935,10 @@ func (g *Generator) generateCallArgs(method *parser.Method) string {
 
 func (g *Generator) generateErrTooLarge(service *parser.Service, method *parser.Method) string {
 	servLower := strings.ToLower(service.Name)
-	nameLower := generator.LowercaseFirstLetter(method.Name)
+	nameLower := parser.LowercaseFirstLetter(method.Name)
 	contents := "\t\tif frugal.IsErrTooLarge(err2) {\n"
 	contents += fmt.Sprintf(
-		"\t\t\t%sWriteApplicationError(ctx, oprot, frugal.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \"+err2.Error())\n",
+		"\t\t\t%sWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, \"%s\", err2.Error())\n",
 		servLower, nameLower)
 	contents += "\t\t\treturn nil\n"
 	contents += "\t\t}\n"
@@ -2074,12 +1949,12 @@ func (g *Generator) generateErrTooLarge(service *parser.Service, method *parser.
 func (g *Generator) generateMethodException(prefix string, service *parser.Service, method *parser.Method) string {
 	contents := ""
 	servLower := strings.ToLower(service.Name)
-	nameLower := generator.LowercaseFirstLetter(method.Name)
+	nameLower := parser.LowercaseFirstLetter(method.Name)
 	if !method.Oneway {
 		contents += prefix + "p.GetWriteMutex().Lock()\n"
 		msg := fmt.Sprintf("\"Internal error processing %s: \"+err2.Error()", nameLower)
 		contents += fmt.Sprintf(
-			prefix+"%sWriteApplicationError(ctx, oprot, thrift.INTERNAL_ERROR, \"%s\", %s)\n", servLower, nameLower, msg)
+			prefix+"err2 := %sWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_INTERNAL_ERROR, \"%s\", %s)\n", servLower, nameLower, msg)
 		contents += prefix + "p.GetWriteMutex().Unlock()\n"
 	}
 	contents += prefix + "return err2\n"
@@ -2088,14 +1963,15 @@ func (g *Generator) generateMethodException(prefix string, service *parser.Servi
 
 func (g *Generator) generateWriteApplicationError(service *parser.Service) string {
 	servLower := strings.ToLower(service.Name)
-	contents := fmt.Sprintf("func %sWriteApplicationError(ctx *frugal.FContext, oprot *frugal.FProtocol, "+
-		"type_ int32, method, message string) {\n", servLower)
+	contents := fmt.Sprintf("func %sWriteApplicationError(ctx frugal.FContext, oprot *frugal.FProtocol, "+
+		"type_ int32, method, message string) error {\n", servLower)
 	contents += "\tx := thrift.NewTApplicationException(type_, message)\n"
 	contents += "\toprot.WriteResponseHeader(ctx)\n"
 	contents += "\toprot.WriteMessageBegin(method, thrift.EXCEPTION, 0)\n"
 	contents += "\tx.Write(oprot)\n"
 	contents += "\toprot.WriteMessageEnd()\n"
 	contents += "\toprot.Flush()\n"
+	contents += "\treturn x\n"
 	contents += "}\n\n"
 	return contents
 }
@@ -2159,15 +2035,11 @@ func (g *Generator) getGoTypeFromThriftTypePtr(t *parser.Type, pointer bool) str
 	case "binary":
 		return maybePointer + "[]byte"
 	case "list":
-		// TODO 2.0: don't use the underlying type
-		typ := g.Frugal.UnderlyingType(t.ValueType)
 		return fmt.Sprintf("%s[]%s", maybePointer,
-			g.getGoTypeFromThriftTypePtr(typ, false))
+			g.getGoTypeFromThriftTypePtr(t.ValueType, false))
 	case "set":
-		// TODO 2.0: dont' use the underlying type
-		typ := g.Frugal.UnderlyingType(t.ValueType)
 		return fmt.Sprintf("%smap[%s]bool", maybePointer,
-			g.getGoTypeFromThriftTypePtr(typ, false))
+			g.getGoTypeFromThriftTypePtr(t.ValueType, false))
 	case "map":
 		return fmt.Sprintf("%smap[%s]%s", maybePointer,
 			g.getGoTypeFromThriftTypePtr(t.KeyType, false),
@@ -2268,8 +2140,7 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 		if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
 			name = namespace.Value
 		}
-		name = includeNameToReference(name)
-		param = fmt.Sprintf("%s.%s", name, param)
+		param = fmt.Sprintf("%s.%s", includeNameToReference(name), param)
 	}
 
 	// The Thrift generator uses a convention of appending a suffix of '_'
@@ -2282,7 +2153,12 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 }
 
 func (g *Generator) generateAsync() bool {
-	_, ok := g.Options["async"]
+	_, ok := g.Options[asyncOption]
+	return ok
+}
+
+func (g *Generator) useVendor() bool {
+	_, ok := g.Options[useVendorOption]
 	return ok
 }
 
@@ -2366,15 +2242,6 @@ func startsWithInitialism(s string) string {
 		}
 	}
 	return initialism
-}
-
-var elemNum int
-
-// getElem returns a unique identifier name
-func getElem() string {
-	s := fmt.Sprintf("elem%d", elemNum)
-	elemNum++
-	return s
 }
 
 // commonInitialisms, taken from

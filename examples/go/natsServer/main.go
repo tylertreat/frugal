@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/nats-io/nats"
+	"github.com/nats-io/go-nats"
 
 	"github.com/Workiva/frugal/examples/go/gen-go/v1/music"
 	"github.com/Workiva/frugal/lib/go"
@@ -29,7 +29,7 @@ func main() {
 	processor := music.NewFStoreProcessor(handler)
 
 	// Start the server using the configured processor, and protocol
-	server := frugal.NewFNatsServerBuilder(conn, processor, fProtocolFactory, "music-service").Build()
+	server := frugal.NewFNatsServerBuilder(conn, processor, fProtocolFactory, []string{"music-service"}).Build()
 	fmt.Println("Starting the nats server... on ", "music-service")
 	server.Serve()
 }
@@ -39,7 +39,7 @@ func main() {
 type StoreHandler struct{}
 
 // BuyAlbum always buys the same album
-func (f *StoreHandler) BuyAlbum(ctx *frugal.FContext, ASIN string, acct string) (r *music.Album, err error) {
+func (f *StoreHandler) BuyAlbum(ctx frugal.FContext, ASIN string, acct string) (r *music.Album, err error) {
 	album := &music.Album{
 		ASIN:     "c54d385a-5024-4f3f-86ef-6314546a7e7f",
 		Duration: 1200,
@@ -57,6 +57,6 @@ func (f *StoreHandler) BuyAlbum(ctx *frugal.FContext, ASIN string, acct string) 
 }
 
 // EnterAlbumGiveaway always returns true
-func (f *StoreHandler) EnterAlbumGiveaway(ctx *frugal.FContext, email string, name string) (r bool, err error) {
+func (f *StoreHandler) EnterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error) {
 	return true, nil
 }

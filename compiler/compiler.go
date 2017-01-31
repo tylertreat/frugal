@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/Workiva/frugal/compiler/generator"
@@ -19,15 +18,13 @@ import (
 
 // Options contains compiler options for code generation.
 type Options struct {
-	File               string // Frugal file to generate
-	Gen                string // Language to generate
-	Out                string // Output location for generated code
-	Delim              string // Token delimiter for scope topics
-	RetainIntermediate bool   // Do not clean up generated intermediate IDL
-	DryRun             bool   // Do not generate code
-	Recurse            bool   // Generate includes
-	Verbose            bool   // Verbose mode
-	UseVendor          bool   // Do not generate code for vendored includes
+	File    string // Frugal file to generate
+	Gen     string // Language to generate
+	Out     string // Output location for generated code
+	Delim   string // Token delimiter for scope topics
+	DryRun  bool   // Do not generate code
+	Recurse bool   // Generate includes
+	Verbose bool   // Verbose mode
 }
 
 // Compile parses the Frugal IDL and generates code for it, returning an error
@@ -41,174 +38,96 @@ func Compile(options Options) error {
 	globals.DryRun = options.DryRun
 	globals.Recurse = options.Recurse
 	globals.Verbose = options.Verbose
-	globals.UseVendor = options.UseVendor
 	globals.FileDir = filepath.Dir(options.File)
-
-	defer func() {
-		if !options.RetainIntermediate {
-			// Clean up intermediate IDL.
-			for _, file := range globals.IntermediateIDL {
-				// Only try to remove if file still exists.
-				if _, err := os.Stat(file); err == nil {
-					logv(fmt.Sprintf("Removing intermediate Thrift file %s", file))
-					if err := os.Remove(file); err != nil {
-						fmt.Printf("Failed to remove intermediate IDL %s\n", file)
-					}
-				}
-			}
-		}
-	}()
 
 	absFile, err := filepath.Abs(options.File)
 	if err != nil {
 		return err
 	}
 
-	_, err = compile(absFile, strings.HasSuffix(absFile, ".thrift"), true)
-	return err
+	frugal, err := parseFrugal(absFile)
+	if err != nil {
+		return err
+	}
+
+	return generateFrugal(frugal)
 }
 
-// warnGenWithoutFrugal prints a warning if generating code with thrift
-// when a gen_with_frugal option exists
-// TODO: Remove this once gen_with frugal is no longer experimental
-// and is the default.
-func warnGenWithoutFrugal(genWithFrugal bool) {
-	if globals.GenWithFrugalWarn {
-		return
-	}
-	if genWithFrugal {
-		globals.PrintWarning(
-			"Generating Thrift code with Frugal. If you encounter problems, file a " +
-				"GitHub issue and generate your\ncode with \"gen_with_frugal=false\" to " +
-				"use the Thrift compiler instead.")
-	} else {
-		globals.PrintWarning(
-			"Consider using the \"gen_with_frugal\" language option " +
-				"to have Frugal generate code in place of Thrift.\nThis is an " +
-				"experimental feature. Please file a GitHub issue if you encounter " +
-				"problems.")
-	}
-	globals.GenWithFrugalWarn = true
-}
-
-// compile parses the Frugal or Thrift IDL and generates code for it, returning
-// an error if something failed.
-func compile(file string, isThrift, generate bool) (*parser.Frugal, error) {
-	var (
-		gen       = globals.Gen
-		out       = globals.Out
-		dryRun    = globals.DryRun
-		useVendor = globals.UseVendor
-		dir       = filepath.Dir(file)
-	)
-
-	if frugal, ok := globals.CompiledFiles[file]; ok {
-		// This file has already been compiled, skip it.
-		return frugal, nil
-	}
-
-	// Ensure Frugal file exists.
+// parseFrugal parses a frugal file.
+func parseFrugal(file string) (*parser.Frugal, error) {
 	if !exists(file) {
 		return nil, fmt.Errorf("Frugal file not found: %s\n", file)
 	}
+	logv(fmt.Sprintf("Parsing %s", file))
+	return parser.ParseFrugal(file)
+}
 
-	// Process options for specific generators.
+// generateFrugal generates code for a frugal struct.
+func generateFrugal(f *parser.Frugal) error {
+	var gen = globals.Gen
+
 	lang, options, err := cleanGenParam(gen)
 	if err != nil {
-		return nil, err
-	}
-
-	// TODO: Address as needed when more languages support vendoring.
-	if useVendor && lang != "go" {
-		return nil, fmt.Errorf("-use-vendor not supported by %s", lang)
-	}
-
-	// Gen with Frugal by default.
-	genWithFrugal := true
-	if genWithFrugalStr, ok := options["gen_with_frugal"]; ok {
-		if gen, err := strconv.ParseBool(genWithFrugalStr); err != nil {
-			return nil, fmt.Errorf("Invalid value '%s' for gen_with_frugal", genWithFrugalStr)
-		} else {
-			genWithFrugal = gen
-		}
+		return err
 	}
 
 	// Resolve Frugal generator.
-	g, err := getProgramGenerator(lang, options, genWithFrugal)
+	g, err := getProgramGenerator(lang, options)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// Parse the Frugal file.
-	logv(fmt.Sprintf("Parsing %s", file))
-	frugal, err := parser.ParseFrugal(file)
-	if err != nil {
-		return nil, err
+	// The parsed frugal contains everything needed to generate
+	if err := generateFrugalRec(f, g, true, lang); err != nil {
+		return err
 	}
-	globals.CompiledFiles[file] = frugal
 
+	return nil
+}
+
+// generateFrugalRec generates code for a frugal struct, recursively generating
+// code for includes
+func generateFrugalRec(f *parser.Frugal, g generator.ProgramGenerator, generate bool, lang string) error {
+	if _, ok := globals.CompiledFiles[f.File]; ok {
+		// Already generated this file
+		return nil
+	}
+	globals.CompiledFiles[f.File] = f
+
+	out := globals.Out
 	if out == "" {
 		out = g.DefaultOutputDir()
 	}
-	fullOut := g.GetOutputDir(out, frugal)
+	fullOut := g.GetOutputDir(out, f)
 	if err := os.MkdirAll(out, 0777); err != nil {
-		return nil, err
+		return err
 	}
 
-	if genWithFrugal {
-		// If not using frugal, add parsed includes here
-		// preserve what thrift does to keep ordering in the file
-		for _, include := range frugal.Thrift.Includes {
-			if _, ok := include.Annotations.Vendor(); ok && useVendor {
-				// Don't generate the include if -use-vendor and the include is
-				// vendored.
-				continue
-			}
-			if _, err := generateInclude(frugal, include); err != nil {
-				return nil, err
-			}
+	logv(fmt.Sprintf("Generating \"%s\" Frugal code for %s", lang, f.File))
+	if globals.DryRun || !generate {
+		return nil
+	}
+
+	if err := g.Generate(f, fullOut); err != nil {
+		return err
+	}
+
+	for _, inclFrugal := range f.ParsedIncludes {
+		if err := generateFrugalRec(inclFrugal, g, globals.Recurse, lang); err != nil {
+			return err
 		}
 	}
 
-	if !genWithFrugal && !isThrift {
-		// Generate intermediate Thrift IDL for Frugal. If this is already a
-		// .thrift file, do not generate an intermediate IDL.
-		logv(fmt.Sprintf("Generating intermediate Thrift file %s",
-			filepath.Join(dir, fmt.Sprintf("%s.thrift", frugal.Name))))
-		idlFile, err := generateThriftIDL(dir, frugal)
-		if err != nil {
-			return nil, err
-		}
-		file = idlFile
-	}
-
-	if dryRun || !generate {
-		return frugal, nil
-	}
-
-	if !genWithFrugal {
-		// Generate Thrift code.
-		logv(fmt.Sprintf("Generating \"%s\" Thrift code for %s", lang, file))
-		if err := generateThrift(frugal, dir, file, out, removeGenWithFrugalOption(gen)); err != nil {
-			return nil, err
-		}
-	}
-
-	// Generate Frugal code.
-	logv(fmt.Sprintf("Generating \"%s\" Frugal code for %s", lang, frugal.File))
-	return frugal, g.Generate(frugal, fullOut, genWithFrugal)
+	return nil
 }
 
 // getProgramGenerator resolves the ProgramGenerator for the given language. It
 // returns an error if the language is not supported.
-func getProgramGenerator(lang string, options map[string]string, genWithFrugal bool) (generator.ProgramGenerator, error) {
+func getProgramGenerator(lang string, options map[string]string) (generator.ProgramGenerator, error) {
 	var g generator.ProgramGenerator
 	switch lang {
 	case "dart":
-		// TODO: Remove this once gen_with_frugal is no longer experimental
-		// and is the default
-		warnGenWithoutFrugal(genWithFrugal)
-		g = generator.NewProgramGenerator(dartlang.NewGenerator(options, genWithFrugal), false)
+		g = generator.NewProgramGenerator(dartlang.NewGenerator(options), false)
 	case "go":
 		// Make sure the package prefix ends with a "/"
 		if package_prefix, ok := options["package_prefix"]; ok {
@@ -217,19 +136,10 @@ func getProgramGenerator(lang string, options map[string]string, genWithFrugal b
 			}
 		}
 
-		// TODO: Remove this once gen_with frugal is no longer experimental
-		// and is the default.
-		warnGenWithoutFrugal(genWithFrugal)
 		g = generator.NewProgramGenerator(golang.NewGenerator(options), false)
 	case "java":
-		// TODO: Remove this once gen_with frugal is no longer experimental
-		// and is the default.
-		warnGenWithoutFrugal(genWithFrugal)
 		g = generator.NewProgramGenerator(java.NewGenerator(options), true)
 	case "py":
-		// TODO: Remove this once gen_with frugal is no longer experimental
-		// and is the default.
-		warnGenWithoutFrugal(genWithFrugal)
 		g = generator.NewProgramGenerator(python.NewGenerator(options), true)
 	case "html":
 		g = html.NewGenerator(options)
@@ -273,33 +183,6 @@ func cleanGenParam(gen string) (lang string, options map[string]string, err erro
 		}
 	}
 	return
-}
-
-// removeGenWithFrugalOption removes the gen_with_frugal language option from
-// the gen string, if present, so that it doesn't cause issues with the Thrift
-// compiler when set to false.
-// TODO: Remove this once the Thrift compiler is no longer used.
-func removeGenWithFrugalOption(gen string) string {
-	if !strings.Contains(gen, ":") {
-		return gen
-	}
-	s := strings.Split(gen, ":")
-	lang := s[0]
-	optionsStr := s[1]
-	options := strings.Split(optionsStr, ",")
-	cleaned := ""
-	prefix := ""
-	for _, option := range options {
-		if !strings.HasPrefix(option, "gen_with_frugal") {
-			cleaned += prefix + option
-			prefix = ","
-		}
-	}
-
-	if cleaned == "" {
-		return lang
-	}
-	return fmt.Sprintf("%s:%s", lang, cleaned)
 }
 
 // logv prints the message if in verbose mode.

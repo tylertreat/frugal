@@ -207,7 +207,7 @@ code { line-height: 20px; }
 						<a href="#svc_Foo">Foo</a><br />
 						<ul>
 						
-							<li><a href="#fn_Foo_ping">ping</a></li>
+							<li><a href="#fn_Foo_Ping">Ping</a></li>
 						
 							<li><a href="#fn_Foo_blah">blah</a></li>
 						
@@ -218,6 +218,10 @@ code { line-height: 20px; }
 							<li><a href="#fn_Foo_param_modifiers">param_modifiers</a></li>
 						
 							<li><a href="#fn_Foo_underlying_types_test">underlying_types_test</a></li>
+						
+							<li><a href="#fn_Foo_getThing">getThing</a></li>
+						
+							<li><a href="#fn_Foo_getMyInt">getMyInt</a></li>
 						
 							<li><a href="#fn_Foo_use_subdir_struct">use_subdir_struct</a></li>
 						
@@ -230,6 +234,12 @@ code { line-height: 20px; }
 						<ul>
 						
 							<li><a href="#fn_Events_EventCreated">EventCreated</a></li>
+						
+							<li><a href="#fn_Events_SomeInt">SomeInt</a></li>
+						
+							<li><a href="#fn_Events_SomeStr">SomeStr</a></li>
+						
+							<li><a href="#fn_Events_SomeList">SomeList</a></li>
 						
 						</ul>
 					
@@ -1101,8 +1111,8 @@ code { line-height: 20px; }
 			
 			
 			<div class="definition">
-				<h4 id="fn_Foo_ping">Function: Foo.ping</h4>
-				<pre><code>void ping()</code></pre>
+				<h4 id="fn_Foo_Ping">Function: Foo.Ping</h4>
+				<pre><code>void Ping()</code></pre>
 				
 				<blockquote>
 					
@@ -1155,6 +1165,18 @@ code { line-height: 20px; }
 			</div>
 			
 			<div class="definition">
+				<h4 id="fn_Foo_getThing">Function: Foo.getThing</h4>
+				<pre><code><a href="validStructs.html#struct_Thing">validStructs.Thing</a> getThing()</code></pre>
+				
+			</div>
+			
+			<div class="definition">
+				<h4 id="fn_Foo_getMyInt">Function: Foo.getMyInt</h4>
+				<pre><code><a href="ValidTypes.html#typedef_MyInt">ValidTypes.MyInt</a> getMyInt()</code></pre>
+				
+			</div>
+			
+			<div class="definition">
 				<h4 id="fn_Foo_use_subdir_struct">Function: Foo.use_subdir_struct</h4>
 				<pre><code><a href="subdir_include.html#struct_A">subdir_include.A</a> use_subdir_struct(<a href="subdir_include.html#struct_A">subdir_include.A</a> a)</code></pre>
 				
@@ -1193,6 +1215,24 @@ code { line-height: 20px; }
 					This is a docstring.<br />
 					
 				</blockquote>
+				
+			</div>
+			
+			<div class="definition">
+				<h4 id="fn_Events_SomeInt">Operation: Events.SomeInt</h4>
+				<pre><code>[publish|subscribe]SomeInt: i64</code></pre>
+				
+			</div>
+			
+			<div class="definition">
+				<h4 id="fn_Events_SomeStr">Operation: Events.SomeStr</h4>
+				<pre><code>[publish|subscribe]SomeStr: string</code></pre>
+				
+			</div>
+			
+			<div class="definition">
+				<h4 id="fn_Events_SomeList">Operation: Events.SomeList</h4>
+				<pre><code>[publish|subscribe]SomeList: list&lt;map&lt;<a href="#typedef_id">id</a>, <a href="#struct_Event">Event</a>&gt;&gt;</code></pre>
 				
 			</div>
 			

@@ -10,6 +10,7 @@ from frugal.protocol import FProtocolFactory
 from frugal.aio.server.http_handler import new_http_handler
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py.asyncio"))
+from http_client import logging_middleware
 from v1.music.f_Store import Processor as FStoreProcessor  # noqa
 from v1.music.f_Store import Iface  # noqa
 from v1.music.ttypes import Album, Track  # noqa
@@ -58,7 +59,11 @@ if __name__ == '__main__':
     # Results from the handler are returned back to the client.
     processor = FStoreProcessor(StoreHandler())
 
+    # Optionally add middleware to the processor before starting the server.
+    # add_middleware can take a list or single middleware.
+    processor.add_middleware(logging_middleware)
+
     store_handler = new_http_handler(processor, prot_factory)
     app = web.Application()
     app.router.add_route("*", "/frugal", store_handler)
-    web.run_app(app)
+    web.run_app(app, port=9090)

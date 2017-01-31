@@ -1,5 +1,3 @@
-
-
 class FSubscription(object):
     """FSubscription to a pub/sub topic.  This is used only by generated code
     and should not be called directly."""
@@ -21,5 +19,3 @@ class FSubscription(object):
     def unsubscribe(self):
         """Unsubscribe from the topic."""
         self._transport.close()
-
-

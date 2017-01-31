@@ -3,7 +3,6 @@ package python
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
@@ -20,11 +19,12 @@ func (t *TornadoGenerator) GenerateServiceImports(file *os.File, s *parser.Servi
 	imports := "from datetime import timedelta\n"
 	imports += "from threading import Lock\n\n"
 
-	imports += "from frugal.exceptions import FRateLimitException\n"
+	imports += "from frugal.exceptions import TApplicationExceptionType\n"
+	imports += "from frugal.exceptions import TTransportExceptionType\n"
 	imports += "from frugal.middleware import Method\n"
-	imports += "from frugal.processor import FBaseProcessor\n"
-	imports += "from frugal.processor import FProcessorFunction\n"
-	imports += "from frugal.registry import FClientRegistry\n"
+	imports += "from frugal.tornado.processor import FBaseProcessor\n"
+	imports += "from frugal.tornado.processor import FProcessorFunction\n"
+	imports += "from frugal.transport import TMemoryOutputBuffer\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "from tornado import gen\n"
@@ -51,8 +51,10 @@ func (t *TornadoGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "from thrift.Thrift import TType\n"
 	imports += "from tornado import gen\n"
+	imports += "from frugal.exceptions import TApplicationExceptionType\n"
 	imports += "from frugal.middleware import Method\n"
-	imports += "from frugal.subscription import FSubscription\n\n"
+	imports += "from frugal.subscription import FSubscription\n"
+	imports += "from frugal.transport import TMemoryOutputBuffer\n\n"
 
 	imports += "from .ttypes import *\n"
 	_, err := file.WriteString(imports)
@@ -61,13 +63,11 @@ func (t *TornadoGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 
 // GenerateService generates the given service.
 func (t *TornadoGenerator) GenerateService(file *os.File, s *parser.Service) error {
-	if err := t.exposeServiceModule(filepath.Dir(file.Name()), s); err != nil {
-		return err
-	}
 	contents := ""
 	contents += t.generateServiceInterface(s)
 	contents += t.generateClient(s)
 	contents += t.generateServer(s)
+	contents += t.generateServiceArgsResults(s)
 
 	_, err := file.WriteString(contents)
 	return err
@@ -92,82 +92,46 @@ func (t *TornadoGenerator) generateClientMethod(method *parser.Method) string {
 	contents += tab + "@gen.coroutine\n"
 	contents += tab + fmt.Sprintf("def _%s(self, ctx%s):\n", method.Name, t.generateClientArgs(method.Arguments))
 
+	contents += tabtab + "buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())\n"
+	contents += tabtab + "oprot = self._protocol_factory.get_protocol(buffer)\n"
+	contents += tabtab + "oprot.write_request_headers(ctx)\n"
+	contents += tabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", parser.LowercaseFirstLetter(method.Name))
+	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
+	for _, arg := range method.Arguments {
+		contents += tabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
+	}
+	contents += tabtab + "args.write(oprot)\n"
+	contents += tabtab + "oprot.writeMessageEnd()\n"
 	if method.Oneway {
-		contents += tabtab + fmt.Sprintf("yield self._send_%s(ctx%s)\n\n", method.Name, t.generateClientArgs(method.Arguments))
-		contents += t.generateClientSendMethod(method)
+		contents += tabtab + "yield self._transport.oneway(ctx, buffer.getvalue())\n\n"
 		return contents
 	}
 
-	contents += tabtab + "delta = timedelta(milliseconds=ctx.get_timeout())\n"
-	contents += tabtab + "callback_future = Future()\n"
-	contents += tabtab + "timeout_future = gen.with_timeout(delta, callback_future)\n"
-	contents += tabtab + fmt.Sprintf("self._transport.register(ctx, self._recv_%s(ctx, callback_future))\n", method.Name)
-	contents += tabtab + "try:\n"
-	contents += tabtabtab + fmt.Sprintf("yield self._send_%s(ctx%s)\n", method.Name, t.generateClientArgs(method.Arguments))
-	contents += tabtabtab + "result = yield timeout_future\n"
-	contents += tabtab + "finally:\n"
-	contents += tabtabtab + "self._transport.unregister(ctx)\n"
-	contents += tabtab + "raise gen.Return(result)\n\n"
-	contents += t.generateClientSendMethod(method)
-	contents += t.generateClientRecvMethod(method)
-
-	return contents
-}
-
-func (t *TornadoGenerator) generateClientSendMethod(method *parser.Method) string {
-	contents := ""
-	contents += tab + "@gen.coroutine\n"
-	contents += tab + fmt.Sprintf("def _send_%s(self, ctx%s):\n", method.Name, t.generateClientArgs(method.Arguments))
-	contents += tabtab + "oprot = self._oprot\n"
-	contents += tabtab + "with self._write_lock:\n"
-	contents += tabtabtab + "oprot.write_request_headers(ctx)\n"
-	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
-	contents += tabtabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
-	for _, arg := range method.Arguments {
-		contents += tabtabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
-	}
-	contents += tabtabtab + "args.write(oprot)\n"
-	contents += tabtabtab + "oprot.writeMessageEnd()\n"
-	contents += tabtabtab + "yield oprot.get_transport().flush()\n\n"
-
-	return contents
-}
-
-func (t *TornadoGenerator) generateClientRecvMethod(method *parser.Method) string {
-	contents := tab + fmt.Sprintf("def _recv_%s(self, ctx, future):\n", method.Name)
-	contents += tabtab + fmt.Sprintf("def %s_callback(transport):\n", method.Name)
-	contents += tabtabtab + "iprot = self._protocol_factory.get_protocol(transport)\n"
-	contents += tabtabtab + "iprot.read_response_headers(ctx)\n"
-	contents += tabtabtab + "_, mtype, _ = iprot.readMessageBegin()\n"
-	contents += tabtabtab + "if mtype == TMessageType.EXCEPTION:\n"
-	contents += tabtabtabtab + "x = TApplicationException()\n"
-	contents += tabtabtabtab + "x.read(iprot)\n"
-	contents += tabtabtabtab + "iprot.readMessageEnd()\n"
-	contents += tabtabtabtab + "if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:\n"
-	contents += tabtabtabtabtab + "future.set_exception(FRateLimitException(x.message))\n"
-	contents += tabtabtabtabtab + "return\n"
-	contents += tabtabtabtab + "future.set_exception(x)\n"
-	contents += tabtabtabtab + "raise x\n"
-	contents += tabtabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
-	contents += tabtabtab + "result.read(iprot)\n"
+	contents += tabtab + "response_transport = yield self._transport.request(ctx, buffer.getvalue())\n\n"
+	contents += tabtab + "iprot = self._protocol_factory.get_protocol(response_transport)\n"
+	contents += tabtab + "iprot.read_response_headers(ctx)\n"
+	contents += tabtab + "_, mtype, _ = iprot.readMessageBegin()\n"
+	contents += tabtab + "if mtype == TMessageType.EXCEPTION:\n"
+	contents += tabtabtab + "x = TApplicationException()\n"
+	contents += tabtabtab + "x.read(iprot)\n"
 	contents += tabtabtab + "iprot.readMessageEnd()\n"
+	contents += tabtabtab + "if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:\n"
+	contents += tabtabtabtab + "raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)\n"
+	contents += tabtabtab + "raise x\n"
+	contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
+	contents += tabtab + "result.read(iprot)\n"
+	contents += tabtab + "iprot.readMessageEnd()\n"
 	for _, err := range method.Exceptions {
-		contents += tabtabtab + fmt.Sprintf("if result.%s is not None:\n", err.Name)
-		contents += tabtabtabtab + fmt.Sprintf("future.set_exception(result.%s)\n", err.Name)
-		contents += tabtabtabtab + "return\n"
+		contents += tabtab + fmt.Sprintf("if result.%s is not None:\n", err.Name)
+		contents += tabtabtab + fmt.Sprintf("raise result.%s\n", err.Name)
 	}
 	if method.ReturnType == nil {
-		contents += tabtabtab + "future.set_result(None)\n"
-	} else {
-		contents += tabtabtab + "if result.success is not None:\n"
-		contents += tabtabtabtab + "future.set_result(result.success)\n"
-		contents += tabtabtabtab + "return\n"
-		contents += tabtabtab + fmt.Sprintf(
-			"x = TApplicationException(TApplicationException.MISSING_RESULT, \"%s failed: unknown result\")\n", method.Name)
-		contents += tabtabtab + "future.set_exception(x)\n"
-		contents += tabtabtab + "raise x\n"
+		return contents
 	}
-	contents += tabtab + fmt.Sprintf("return %s_callback\n\n", method.Name)
+	contents += tabtab + "if result.success is not None:\n"
+	contents += tabtabtab + "raise gen.Return(result.success)\n"
+	contents += tabtab + fmt.Sprintf(
+		"raise TApplicationException(TApplicationExceptionType.MISSING_RESULT, \"%s failed: unknown result\")\n", method.Name)
 
 	return contents
 }
@@ -184,11 +148,12 @@ func (t *TornadoGenerator) generateServer(service *parser.Service) string {
 }
 
 func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) string {
+	methodLower := parser.LowercaseFirstLetter(method.Name)
 	contents := ""
 	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
-	contents += tabtab + "self._handler = handler\n"
-	contents += tabtab + "self._lock = lock\n\n"
+	contents += tabtab + fmt.Sprintf("super(_%s, self).__init__(handler, lock)\n", method.Name)
+	contents += "\n"
 
 	contents += tab + "@gen.coroutine\n"
 	contents += tab + "def process(self, ctx, iprot, oprot):\n"
@@ -210,25 +175,32 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", t.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
-	contents += tabtab + "except FRateLimitException as ex:\n"
-	contents += tabtabtab + "with self._lock:\n"
+	contents += tabtab + "except TApplicationException as ex:\n"
+	contents += tabtabtab + "with (yield self._lock.acquire()):\n"
 	contents += tabtabtabtab +
-		fmt.Sprintf("_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
-			method.Name)
+		fmt.Sprintf("_write_application_exception(ctx, oprot, \"%s\", exception=ex)\n",
+			methodLower)
 	contents += tabtabtabtab + "return\n"
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
-		contents += tabtabtab + "with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("_write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", method.Name)
+		contents += tabtabtab + "with (yield self._lock.acquire()):\n"
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)\n", methodLower)
 	}
-	contents += tabtabtab + "raise\n"
+	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {
-		contents += tabtab + "with self._lock:\n"
-		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
-		contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", method.Name)
-		contents += tabtabtab + "result.write(oprot)\n"
-		contents += tabtabtab + "oprot.writeMessageEnd()\n"
-		contents += tabtabtab + "oprot.get_transport().flush()\n"
+		contents += tabtab + "with (yield self._lock.acquire()):\n"
+		contents += tabtabtab + "try:\n"
+		contents += tabtabtabtab + "oprot.write_response_headers(ctx)\n"
+		contents += tabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", methodLower)
+		contents += tabtabtabtab + "result.write(oprot)\n"
+		contents += tabtabtabtab + "oprot.writeMessageEnd()\n"
+		contents += tabtabtabtab + "oprot.get_transport().flush()\n"
+		contents += tabtabtab + "except TTransportException as e:\n"
+		contents += tabtabtabtab + "if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:\n"
+		contents += tabtabtabtabtab + fmt.Sprintf(
+			"raise _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.message)\n", methodLower)
+		contents += tabtabtabtab + "else:\n"
+		contents += tabtabtabtabtab + "raise e\n"
 	}
 	contents += "\n\n"
 
@@ -254,10 +226,12 @@ func (t *TornadoGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope
 		tab + "middleware: ServiceMiddleware or list of ServiceMiddleware",
 	}, tabtab)
 	subscriber += "\n"
+	subscriber += tabtab + "middleware = middleware or []\n"
 	subscriber += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	subscriber += tabtabtab + "middleware = [middleware]\n"
+	subscriber += tabtab + "middleware += provider.get_middleware()\n"
 	subscriber += tabtab + "self._middleware = middleware\n"
-	subscriber += tabtab + "self._transport, self._protocol_factory = provider.new()\n\n"
+	subscriber += tabtab + "self._provider = provider\n\n"
 
 	for _, op := range scope.Operations {
 		subscriber += t.generateSubscribeMethod(scope, op)
@@ -295,8 +269,9 @@ func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	method += tabtab + fmt.Sprintf("prefix = %s\n", generatePrefixStringTemplate(scope))
 	method += tabtab + fmt.Sprintf("topic = '{}%s{}{}'.format(prefix, self._DELIMITER, op)\n\n", scope.Name)
 
+	method += tabtab + "transport, protocol_factory = self._provider.new_subscriber()\n"
 	method += tabtab + fmt.Sprintf(
-		"yield self._transport.subscribe(topic, self._recv_%s(self._protocol_factory, op, %s_handler))\n\n",
+		"yield transport.subscribe(topic, self._recv_%s(protocol_factory, op, %s_handler))\n\n",
 		op.Name, op.Name)
 
 	method += tab + fmt.Sprintf("def _recv_%s(self, protocol_factory, op, handler):\n", op.Name)
@@ -309,9 +284,8 @@ func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	method += tabtabtab + "if mname != op:\n"
 	method += tabtabtabtab + "iprot.skip(TType.STRUCT)\n"
 	method += tabtabtabtab + "iprot.readMessageEnd()\n"
-	method += tabtabtabtab + "raise TApplicationException(TApplicationException.UNKNOWN_METHOD)\n"
-	method += tabtabtab + fmt.Sprintf("req = %s()\n", op.Type.Name)
-	method += tabtabtab + "req.read(iprot)\n"
+	method += tabtabtabtab + "raise TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD)\n"
+	method += t.generateReadFieldRec(parser.FieldFromType(op.Type, "req"), false, tabtabtab)
 	method += tabtabtab + "iprot.readMessageEnd()\n"
 	method += tabtabtab + "try:\n"
 	method += tabtabtabtab + "method([ctx, req])\n"

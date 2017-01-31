@@ -8,14 +8,14 @@ import (
 )
 
 var (
-	packageLogger logrus.Logger = *logrus.StandardLogger()
+	packageLogger = logrus.StandardLogger()
 	loggerMu      sync.RWMutex
 )
 
 // SetLogger sets the Logger used by Frugal.
 func SetLogger(logger *logrus.Logger) {
 	loggerMu.Lock()
-	packageLogger = *logger
+	packageLogger = logger
 	loggerMu.Unlock()
 }
 
@@ -23,7 +23,7 @@ func SetLogger(logger *logrus.Logger) {
 // SetLogger instead.
 func logger() *logrus.Logger {
 	loggerMu.RLock()
-	logger := &packageLogger
+	logger := packageLogger
 	loggerMu.RUnlock()
 	return logger
 }

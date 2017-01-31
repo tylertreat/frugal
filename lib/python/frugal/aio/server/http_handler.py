@@ -1,11 +1,12 @@
 import base64
-import struct
 
 from aiohttp import web
+from thrift.Thrift import TApplicationException
 from thrift.transport.TTransport import TMemoryBuffer
 
 from frugal.aio.processor import FProcessor
 from frugal.protocol import FProtocolFactory
+from frugal.transport import TMemoryOutputBuffer
 
 
 def new_http_handler(processor: FProcessor, protocol_factory: FProtocolFactory):
@@ -32,21 +33,23 @@ def new_http_handler(processor: FProcessor, protocol_factory: FProtocolFactory):
         # decode payload and process
         payload = base64.b64decode(await request.content.read())
         iprot = protocol_factory.get_protocol(TMemoryBuffer(payload[4:]))
-        out_transport = TMemoryBuffer()
-        oprot = protocol_factory.get_protocol(out_transport)
+        # TODO could be better with this limit
+        otrans = TMemoryOutputBuffer(0)
+        oprot = protocol_factory.get_protocol(otrans)
         try:
             await processor.process(iprot, oprot)
-        except:
-            # TODO make this less broad in the future
+        except TApplicationException:
+            # Continue so the exception is sent to the client
+            pass
+        except Exception:
             return web.Response(status=400)
 
         # write back response
-        output_data = out_transport.getvalue()
+        output_data = otrans.getvalue()
         if len(output_data) > response_limit > 0:
             return web.Response(status=413)
 
-        output_data_len = struct.pack('!I', len(output_data))
-        output_payload = base64.b64encode(output_data_len + output_data)
+        output_payload = base64.b64encode(output_data)
 
         return web.Response(body=output_payload, headers=headers)
 

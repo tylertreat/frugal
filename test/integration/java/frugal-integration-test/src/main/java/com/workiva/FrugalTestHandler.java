@@ -1,6 +1,6 @@
-package main.java.com.workiva;
+package com.workiva;
 
-import com.workiva.frugal.protocol.FContext;
+import com.workiva.frugal.FContext;
 import frugal.test.*;
 import org.apache.thrift.TException;
 import frugal.test.Numberz;
@@ -113,6 +113,11 @@ public class FrugalTestHandler implements FFrugalTest.Iface {
             rMapMap.put(-4, mp1);
             rMapMap.put(4, mp2);
             return rMapMap;
+        }
+
+        @Override
+        public boolean TestUppercaseMethod(FContext ctx, boolean thing) throws TException {
+            return thing;
         }
 
         @Override

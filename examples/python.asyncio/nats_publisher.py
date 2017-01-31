@@ -13,7 +13,7 @@ from nats.aio.client import Client as NatsClient
 from frugal.protocol import FProtocolFactory
 from frugal.provider import FScopeProvider
 from frugal.context import FContext
-from frugal.aio.transport import FNatsScopeTransportFactory
+from frugal.aio.transport import FNatsPublisherTransportFactory
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py.asyncio"))
 from v1.music.f_AlbumWinners_publisher import AlbumWinnersPublisher  # noqa
@@ -46,8 +46,8 @@ async def main():
     await nats_client.connect(**options)
 
     # Create a pub sub scope using the configured transport and protocol
-    scope_transport_factory = FNatsScopeTransportFactory(nats_client)
-    provider = FScopeProvider(scope_transport_factory, prot_factory)
+    transport_factory = FNatsPublisherTransportFactory(nats_client)
+    provider = FScopeProvider(transport_factory, None, prot_factory)
 
     # Create a publisher
     publisher = AlbumWinnersPublisher(provider)
@@ -64,8 +64,11 @@ async def main():
                           duration=169,
                           pro=PerfRightsOrg.ASCAP)]
     await publisher.publish_Winner(FContext(), album)
+    await publisher.publish_ContestStart(FContext(), [album, album])
 
+    # Close publisher and nats client
     await publisher.close()
+    await nats_client.close()
 
 
 if __name__ == '__main__':

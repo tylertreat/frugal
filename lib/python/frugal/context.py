@@ -1,7 +1,6 @@
 import uuid
 from copy import copy
 from frugal import _IS_PY2
-from frugal.exceptions import FContextHeaderException
 
 # Header containing correlation id.
 _CID_HEADER = "_cid"
@@ -13,7 +12,9 @@ _OPID_HEADER = "_opid"
 _TIMEOUT_HEADER = "_timeout"
 
 _DEFAULT_TIMEOUT = 5 * 1000
-_DEFAULT_OP_ID = 0
+
+# Global incrementing op id.
+_OP_ID = 0
 
 
 class FContext(object):
@@ -34,7 +35,7 @@ class FContext(object):
 
     An FContext should belong to a single request for the lifetime of that
     request. It can be reused once the request has completed, though they
-    should generally not be reused.
+    should generally not be reused. This class is _not_ thread-safe.
     """
 
     def __init__(self, correlation_id=None, timeout=_DEFAULT_TIMEOUT):
@@ -51,10 +52,15 @@ class FContext(object):
             correlation_id = self._generate_cid()
 
         self._request_headers[_CID_HEADER] = correlation_id
-        self._request_headers[_OPID_HEADER] = str(_DEFAULT_OP_ID)
         self._request_headers[_TIMEOUT_HEADER] = str(timeout)
 
-    def get_correlation_id(self):
+        # Take the current op id and increment the counter
+        global _OP_ID
+        self._request_headers[_OPID_HEADER] = str(_OP_ID)
+        _OP_ID += 1
+
+    @property
+    def correlation_id(self):
         """Return the correlation id for the FContext.
            This is used for distributed tracing purposes.
         """
@@ -88,7 +94,8 @@ class FContext(object):
 
     def set_request_header(self, key, value):
         """Set a string key value pair in the request headers dictionary.
-        Return the same FContext to allow for call chaining.
+        Return the same FContext to allow for call chaining. Changing the
+        op ID or correlation ID is disallowed.
 
         Args:
             key: string key to set in request headers
@@ -98,12 +105,10 @@ class FContext(object):
             FContext
 
         Throws:
-            FContextHeaderException: if user tries to set _cid or _opid.
             TypeError: if user passes non-string for key or value.
         """
         if key in (_OPID_HEADER, _CID_HEADER):
-            raise FContextHeaderException(
-                "Not allowed to overwrite internal _cid or _opid.")
+            return self
 
         self._set_request_header(key, value)
         return self
@@ -122,7 +127,8 @@ class FContext(object):
 
     def set_response_header(self, key, value):
         """Set a string key value pair in the response headers dictionary.
-        Return the same FContext to allow for call chaining.
+        Return the same FContext to allow for call chaining. Changing the
+        op ID or correlation ID is disallowed.
 
         Args:
             key: string key to set in response headers
@@ -132,12 +138,10 @@ class FContext(object):
             FContext
 
         Raises:
-            FContextHeaderException: if user tries to set _cid or _opid.
             TypeError: if user passes non-string for key or value.
         """
         if key in (_OPID_HEADER, _CID_HEADER):
-            raise FContextHeaderException(
-                "Not allowed to overwrite internal _cid or _opid")
+            return self
 
         self._set_response_header(key, value)
         return self
@@ -152,6 +156,15 @@ class FContext(object):
         return int(self._request_headers.get(_TIMEOUT_HEADER))
 
     def set_timeout(self, timeout):
+        self._request_headers[_TIMEOUT_HEADER] = str(timeout)
+
+    @property
+    def timeout(self):
+        return int(self._request_headers.get(_TIMEOUT_HEADER))
+
+    @timeout.setter
+    def timeout(self, timeout):
+        # TODO: check the type of timeout
         self._request_headers[_TIMEOUT_HEADER] = str(timeout)
         return self
 

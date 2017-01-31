@@ -11,6 +11,10 @@ const (
 	delim                   = "."
 	validFile               = "idl/valid.frugal"
 	invalidFile             = "idl/invalid.frugal"
+	duplicateServices       = "idl/duplicate_services.frugal"
+	duplicateScopes         = "idl/duplicate_scopes.frugal"
+	duplicateMethods        = "idl/duplicate_methods.frugal"
+	duplicateOperations     = "idl/duplicate_operations.frugal"
 	duplicateMethodArgIds   = "idl/duplicate_arg_ids.frugal"
 	duplicateStructFieldIds = "idl/duplicate_field_ids.frugal"
 	frugalGenFile           = "idl/variety.frugal"
@@ -18,10 +22,6 @@ const (
 	includeVendor           = "idl/include_vendor.frugal"
 	includeVendorNoPath     = "idl/include_vendor_no_path.frugal"
 	vendorNamespace         = "idl/vendor_namespace.frugal"
-)
-
-var (
-	languages = []string{"go", "dart", "java"}
 )
 
 func compareFiles(t *testing.T, expectedPath, generatedPath string) {
@@ -51,6 +51,6 @@ func compareFiles(t *testing.T, expectedPath, generatedPath string) {
 	}
 
 	if generatedScanner.Scan() {
-		t.Fatal("Generated has more lines than expected")
+		t.Fatalf("Generated has more lines than expected: exp %s gen %s", expectedPath, generatedPath)
 	}
 }

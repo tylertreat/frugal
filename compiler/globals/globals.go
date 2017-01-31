@@ -8,24 +8,19 @@ import (
 )
 
 // Version of the Frugal compiler.
-const Version = "1.24.2"
+const Version = "2.0.0"
 
 // Global variables.
 var (
-	TopicDelimiter  = "."
-	Gen             string
-	Out             string
-	FileDir         string
-	DryRun          bool
-	Recurse         bool
-	Verbose         bool
-	UseVendor       bool
-	Now             = time.Now()
-	IntermediateIDL = []string{}
-	CompiledFiles   = make(map[string]*parser.Frugal)
-
-	// TODO: Remove once gen_with_frugal is the default.
-	GenWithFrugalWarn bool
+	TopicDelimiter = "."
+	Gen            string
+	Out            string
+	FileDir        string
+	DryRun         bool
+	Recurse        bool
+	Verbose        bool
+	Now            = time.Now()
+	CompiledFiles  = make(map[string]*parser.Frugal)
 )
 
 // Reset global variables to initial state.
@@ -37,11 +32,8 @@ func Reset() {
 	DryRun = false
 	Recurse = false
 	Verbose = false
-	UseVendor = false
 	Now = time.Now()
-	IntermediateIDL = []string{}
 	CompiledFiles = make(map[string]*parser.Frugal)
-	GenWithFrugalWarn = false
 }
 
 // PrintWarning prints the given message to stdout in yellow font.

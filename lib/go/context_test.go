@@ -1,6 +1,7 @@
 package frugal
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -28,13 +29,25 @@ func TestNewCorrelationID(t *testing.T) {
 }
 
 // Ensures the "_opid" request header for an FContext is returned for calls to
-// opID.
+// getOpID.
 func TestOpID(t *testing.T) {
+	assert := assert.New(t)
 	corid := "fooid"
 	opid := "12345"
 	ctx := NewFContext(corid)
-	ctx.requestHeaders[opIDHeader] = opid
-	assert.Equal(t, uint64(12345), ctx.opID())
+	ctx.AddRequestHeader(opIDHeader, opid)
+	actOpID, err := getOpID(ctx)
+	assert.Nil(err)
+	assert.Equal(uint64(12345), actOpID)
+
+	delete(ctx.(*FContextImpl).requestHeaders, opIDHeader)
+	_, err = getOpID(ctx)
+	assert.Equal(fmt.Errorf("FContext does not have the required %s request header", opIDHeader), err)
+
+	opIDStr := "-123"
+	ctx.(*FContextImpl).requestHeaders[opIDHeader] = opIDStr
+	_, err = getOpID(ctx)
+	assert.Equal(fmt.Errorf("FContext has an opid that is not a non-negative integer: %s", opIDStr), err)
 }
 
 // Ensures the "_timeout" request header is correctly set and calls to Timeout
@@ -59,13 +72,20 @@ func TestRequestHeader(t *testing.T) {
 	corid := "fooid"
 	ctx := NewFContext(corid)
 	assert.Equal(t, ctx, ctx.AddRequestHeader("foo", "bar"))
-	assert.Equal(t, ctx, ctx.AddRequestHeader("_cid", "123"))
 	val, ok := ctx.RequestHeader("foo")
 	assert.True(t, ok)
 	assert.Equal(t, "bar", val)
 	assert.Equal(t, "bar", ctx.RequestHeaders()["foo"])
 	assert.Equal(t, corid, ctx.RequestHeaders()[cidHeader])
 	assert.NotEqual(t, "", ctx.RequestHeaders()[opIDHeader])
+
+	assert.Equal(t, ctx, ctx.AddRequestHeader(cidHeader, "baz"))
+	assert.Equal(t, ctx, ctx.AddRequestHeader(opIDHeader, "123"))
+
+	assert.Equal(t, "baz", ctx.CorrelationID())
+	actOpID, err := getOpID(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, uint64(123), actOpID)
 }
 
 // Ensures AddResponseHeader properly adds the key-value pair to the context
@@ -74,11 +94,13 @@ func TestResponseHeader(t *testing.T) {
 	corid := "fooid"
 	ctx := NewFContext(corid)
 	assert.Equal(t, ctx, ctx.AddResponseHeader("foo", "bar"))
-	assert.Equal(t, ctx, ctx.AddResponseHeader("_opid", "1"))
 	val, ok := ctx.ResponseHeader("foo")
 	assert.True(t, ok)
 	assert.Equal(t, "bar", val)
 	assert.Equal(t, "bar", ctx.ResponseHeaders()["foo"])
 	assert.Equal(t, "", ctx.ResponseHeaders()[cidHeader])
 	assert.Equal(t, "", ctx.ResponseHeaders()[opIDHeader])
+
+	assert.Equal(t, ctx, ctx.AddResponseHeader(opIDHeader, "1"))
+	assert.Equal(t, "1", ctx.ResponseHeaders()[opIDHeader])
 }

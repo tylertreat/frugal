@@ -3,14 +3,14 @@ import struct
 from typing import List
 
 from nats.aio.client import Client
-from thrift.Thrift import TException
+from thrift.Thrift import TApplicationException
 from thrift.transport.TTransport import TMemoryBuffer
 
 from frugal import _NATS_MAX_MESSAGE_SIZE
 from frugal.aio.processor import FProcessor
 from frugal.protocol import FProtocolFactory
 from frugal.server import FServer
-from frugal.transport import FBoundedMemoryBuffer
+from frugal.transport import TMemoryOutputBuffer
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +20,13 @@ class FNatsServer(FServer):
     def __init__(
             self,
             nats_client: Client,
-            subject: List[str],
+            subjects: List[str],
             processor: FProcessor,
             protocol_factory: FProtocolFactory,
             queue=''
     ):
         self._nats_client = nats_client
-        self._subjects = [subject] if isinstance(subject, str) else subject
+        self._subjects = [subjects] if isinstance(subjects, str) else subjects
         self._processor = processor
         self._protocol_factory = protocol_factory
         self._queue = queue
@@ -63,18 +63,18 @@ class FNatsServer(FServer):
         iprot = self._protocol_factory.get_protocol(
             TMemoryBuffer(message.data[4:])
         )
-        out_transport = FBoundedMemoryBuffer(_NATS_MAX_MESSAGE_SIZE - 4)
-        oprot = self._protocol_factory.get_protocol(out_transport)
+        otrans = TMemoryOutputBuffer(_NATS_MAX_MESSAGE_SIZE)
+        oprot = self._protocol_factory.get_protocol(otrans)
 
         try:
             await self._processor.process(iprot, oprot)
-        except TException as e:
-            logger.exception(e)
+        except TApplicationException:
+            # Continue so the exception is sent to the client
+            pass
+        except Exception:
             return
 
-        if len(out_transport) == 0:
+        if len(otrans) == 4:
             return
 
-        data = out_transport.getvalue()
-        data_length = struct.pack('!I', len(data))
-        await self._nats_client.publish(message.reply, data_length + data)
+        await self._nats_client.publish(message.reply, otrans.getvalue())

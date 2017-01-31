@@ -1,55 +1,40 @@
 package frugal
 
 import (
-	"sync"
-	"time"
-
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
 
 // FSimpleServer is a simple FServer which starts a goroutine for each
 // connection.
 type FSimpleServer struct {
-	quit             chan struct{}
-	processorFactory FProcessorFactory
-	serverTransport  thrift.TServerTransport
-	transportFactory FTransportFactory
-	protocolFactory  *FProtocolFactory
-	highWatermark    time.Duration
-	waterMu          sync.RWMutex
+	quit            chan struct{}
+	processor       FProcessor
+	serverTransport thrift.TServerTransport
+	protocolFactory *FProtocolFactory
 }
 
-// NewFSimpleServerFactory5 creates a new FSimpleServer which is a simple
-// FServer that starts a goroutine for each connection.
-//
-// TODO 2.0.0: Rename this to NewFSimpleServerFactory4 in a major release.
-func NewFSimpleServerFactory5(
-	processorFactory FProcessorFactory,
+// NewFSimpleServer creates a new FSimpleServer which is a simple FServer that
+// starts a goroutine for each connection.
+func NewFSimpleServer(
+	processor FProcessor,
 	serverTransport thrift.TServerTransport,
-	transportFactory FTransportFactory,
 	protocolFactory *FProtocolFactory) *FSimpleServer {
 
 	return &FSimpleServer{
-		processorFactory: processorFactory,
-		serverTransport:  serverTransport,
-		transportFactory: transportFactory,
-		protocolFactory:  protocolFactory,
-		quit:             make(chan struct{}, 1),
-		highWatermark:    defaultWatermark,
+		processor:       processor,
+		serverTransport: serverTransport,
+		protocolFactory: protocolFactory,
+		quit:            make(chan struct{}, 1),
 	}
 }
 
 // Listen should not be called directly.
-//
-// TODO 2.0.0: Unexport this in a major release.
-func (p *FSimpleServer) Listen() error {
+func (p *FSimpleServer) listen() error {
 	return p.serverTransport.Listen()
 }
 
 // AcceptLoop should not be called directly.
-//
-// TODO 2.0.0: Unexport this in a major release.
-func (p *FSimpleServer) AcceptLoop() error {
+func (p *FSimpleServer) acceptLoop() error {
 	for {
 		client, err := p.serverTransport.Accept()
 		if err != nil {
@@ -72,10 +57,10 @@ func (p *FSimpleServer) AcceptLoop() error {
 
 // Serve starts the server.
 func (p *FSimpleServer) Serve() error {
-	if err := p.Listen(); err != nil {
+	if err := p.listen(); err != nil {
 		return err
 	}
-	p.AcceptLoop()
+	p.acceptLoop()
 	return nil
 }
 
@@ -86,27 +71,24 @@ func (p *FSimpleServer) Stop() error {
 	return nil
 }
 
-// SetHighWatermark sets the maximum amount of time a frame is allowed to await
-// processing before triggering server overload logic. For now, this just
-// consists of logging a warning. If not set, default is 5 seconds.
-func (p *FSimpleServer) SetHighWatermark(watermark time.Duration) {
-	p.waterMu.Lock()
-	p.highWatermark = watermark
-	p.waterMu.Unlock()
-}
-
 func (p *FSimpleServer) accept(client thrift.TTransport) error {
-	processor := p.processorFactory.GetProcessor(client)
-	transport := p.transportFactory.GetTransport(client)
-	protocol := p.protocolFactory.GetProtocol(transport)
-	transport.SetRegistry(NewServerRegistry(processor, p.protocolFactory, protocol))
-	p.waterMu.RLock()
-	transport.SetHighWatermark(p.highWatermark)
-	p.waterMu.RUnlock()
-	if err := transport.Open(); err != nil {
-		return err
-	}
+	framed := NewTFramedTransport(client)
+	iprot := p.protocolFactory.GetProtocol(framed)
+	oprot := p.protocolFactory.GetProtocol(framed)
+	processor := p.processor
 
 	logger().Debug("frugal: client connection accepted")
-	return nil
+
+	for {
+		err := processor.Process(iprot, oprot)
+		if err, ok := err.(thrift.TTransportException); ok && err.TypeId() == TRANSPORT_EXCEPTION_END_OF_FILE {
+			return nil
+		} else if err != nil {
+			logger().Printf("error processing request: %s", err)
+			return err
+		}
+		if err, ok := err.(thrift.TApplicationException); ok && err.TypeId() == APPLICATION_EXCEPTION_UNKNOWN_METHOD {
+			continue
+		}
+	}
 }

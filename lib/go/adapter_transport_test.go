@@ -13,13 +13,23 @@ import (
 type mockFRegistry struct {
 	mock.Mock
 	executeCalled chan struct{}
+	channels      map[uint64]chan []byte
 }
 
-func (m *mockFRegistry) Register(ctx *FContext, cb FAsyncCallback) error {
-	return m.Called(ctx, cb).Error(0)
+func (m *mockFRegistry) AssignOpID(ctx FContext) error {
+	return m.Called(ctx).Error(0)
 }
 
-func (m *mockFRegistry) Unregister(ctx *FContext) {
+func (m *mockFRegistry) Register(ctx FContext, resultC chan []byte) error {
+	opID, err := getOpID(ctx)
+	if err == nil {
+		m.channels[opID] = resultC
+	}
+
+	return m.Called(ctx, resultC).Error(0)
+}
+
+func (m *mockFRegistry) Unregister(ctx FContext) {
 	m.Called(ctx)
 }
 
@@ -28,6 +38,7 @@ func (m *mockFRegistry) Execute(frame []byte) error {
 	case m.executeCalled <- struct{}{}:
 	default:
 	}
+
 	return m.Called(frame).Error(0)
 }
 
@@ -55,7 +66,7 @@ func TestAdapterTransportAlreadyOpen(t *testing.T) {
 	assert.Error(err)
 	trErr, ok := err.(thrift.TTransportException)
 	assert.True(ok)
-	assert.Equal(thrift.ALREADY_OPEN, trErr.TypeId())
+	assert.Equal(TRANSPORT_EXCEPTION_ALREADY_OPEN, trErr.TypeId())
 	mockTr.AssertExpectations(t)
 }
 
@@ -66,12 +77,12 @@ func TestAdapterTransportOpenReadClose(t *testing.T) {
 	mockTr.reads = make(chan []byte, 1)
 	mockTr.reads <- frame
 	close(mockTr.reads)
-	tr := NewAdapterTransport(mockTr)
+	tr := NewAdapterTransport(mockTr).(*fAdapterTransport)
 	mockRegistry := new(mockFRegistry)
 	executeCalled := make(chan struct{}, 1)
 	mockRegistry.executeCalled = executeCalled
 	mockRegistry.On("Execute", frame[4:]).Return(nil)
-	tr.SetRegistry(mockRegistry)
+	tr.registry = mockRegistry
 	mockTr.On("Open").Return(nil)
 	mockTr.On("Close").Return(nil)
 	assert.Nil(tr.Open())
@@ -133,8 +144,8 @@ func TestAdapterTransportExecuteError(t *testing.T) {
 	mockRegistry.executeCalled = executeCalled
 	err := errors.New("error")
 	mockRegistry.On("Execute", frame[4:]).Return(err)
-	tr := NewAdapterTransport(mockTr)
-	tr.SetRegistry(mockRegistry)
+	tr := NewAdapterTransport(mockTr).(*fAdapterTransport)
+	tr.registry = mockRegistry
 	assert.Nil(tr.Open())
 
 	select {
@@ -162,7 +173,7 @@ func TestAdapterTransportCloseNotOpen(t *testing.T) {
 	assert.Error(err)
 	trErr, ok := err.(thrift.TTransportException)
 	assert.True(ok)
-	assert.Equal(thrift.NOT_OPEN, trErr.TypeId())
+	assert.Equal(TRANSPORT_EXCEPTION_NOT_OPEN, trErr.TypeId())
 }
 
 // Ensures Close returns an error if the underlying transport fails to close and
@@ -211,58 +222,4 @@ func TestAdapterTransportSetMonitor(t *testing.T) {
 	mockTr.AssertExpectations(t)
 	mockMonitor.AssertExpectations(t)
 	mockMonitor2.AssertExpectations(t)
-}
-
-// Ensures SetRegistry panics when the registry is nil.
-func TestAdapterTransportSetRegistryNilPanic(t *testing.T) {
-	tr := NewAdapterTransport(nil)
-	defer func() {
-		assert.NotNil(t, recover())
-	}()
-	tr.SetRegistry(nil)
-}
-
-// Ensures SetRegistry does nothing if the registry is already set.
-func TestAdapterTransportSetRegistryAlreadySet(t *testing.T) {
-	registry := NewFClientRegistry()
-	tr := NewAdapterTransport(nil)
-	tr.SetRegistry(registry)
-	assert.Equal(t, registry, tr.(*fAdapterTransport).registry)
-	tr.SetRegistry(NewServerRegistry(nil, nil, nil))
-}
-
-// Ensures a direct Read returns an error.
-func TestAdapterTransportDirectReadError(t *testing.T) {
-	tr := NewAdapterTransport(nil)
-	_, err := tr.Read(make([]byte, 5))
-	assert.Error(t, err)
-}
-
-// Ensures Register calls through to the registry to register a callback.
-func TestAdapterTransportRegister(t *testing.T) {
-	tr := NewAdapterTransport(nil)
-	mockRegistry := new(mockFRegistry)
-	tr.SetRegistry(mockRegistry)
-	ctx := NewFContext("")
-	cb := func(thrift.TTransport) error {
-		return nil
-	}
-	mockRegistry.On("Register", ctx, mock.AnythingOfType("FAsyncCallback")).Return(nil)
-
-	assert.Nil(t, tr.Register(ctx, cb))
-
-	mockRegistry.AssertExpectations(t)
-}
-
-// Ensures Unregister calls through to the registry to unregister a callback.
-func TestAdapterTransportUnregister(t *testing.T) {
-	tr := NewAdapterTransport(nil)
-	mockRegistry := new(mockFRegistry)
-	tr.SetRegistry(mockRegistry)
-	ctx := NewFContext("")
-	mockRegistry.On("Unregister", ctx).Return(nil)
-
-	tr.Unregister(ctx)
-
-	mockRegistry.AssertExpectations(t)
 }

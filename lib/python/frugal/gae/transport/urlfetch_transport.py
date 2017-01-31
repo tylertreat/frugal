@@ -4,10 +4,11 @@ from struct import unpack
 
 from thrift.transport.TTransport import TTransportException
 
-from frugal.transport.http_transport import FBaseHttpTransport
+from frugal.exceptions import TTransportExceptionType
+from frugal.transport.base_http_transport import TBaseHttpTransport
 
 
-class FUrlfetchTransport(FBaseHttpTransport):
+class TUrlfetchTransport(TBaseHttpTransport):
     """Synchronous transport implemented with urlfetch."""
 
     def __init__(self, url, headers=None, get_headers=None):
@@ -20,7 +21,7 @@ class FUrlfetchTransport(FBaseHttpTransport):
         """
 
         self._timeout = None
-        super(FUrlfetchTransport, self).__init__(url, headers=headers,
+        super(TUrlfetchTransport, self).__init__(url, headers=headers,
                                                  get_headers=get_headers)
 
     def set_timeout(self, timeout):
@@ -43,21 +44,21 @@ class FUrlfetchTransport(FBaseHttpTransport):
 
         if resp.status_code >= 400:
             raise TTransportException(
-                TTransportException.UNKNOWN,
+                TTransportExceptionType.UNKNOWN,
                 'urlfetch request failed, returned {0}'.format(
                     resp.status_code))
 
         resp_body = b64decode(resp.content)
         # All responses should be framed with 4 bytes (uint32).
         if len(resp_body) < 4:
-            raise TTransportException(TTransportException.UNKNOWN,
+            raise TTransportException(TTransportExceptionType.UNKNOWN,
                                       'invalid frame size')
 
         # If there are only 4 bytes, this needs to be a one-way (i.e. frame
         # size 0)
         if len(resp_body) == 4:
             if unpack('!I', resp_body)[0] != 0:
-                raise TTransportException(TTransportException.UNKNOWN,
+                raise TTransportException(TTransportExceptionType.UNKNOWN,
                                           'invalid frame')
 
             # It's a oneway, drop it.
@@ -68,9 +69,13 @@ class FUrlfetchTransport(FBaseHttpTransport):
 
 def _urlfetch(url, body, validate_certificate, timeout, headers):
     from google.appengine.api import urlfetch
-    return urlfetch.fetch(
-        url, method=urlfetch.POST, payload=body, headers=headers,
-        validate_certificate=url.startswith('https://'),
-        deadline=timeout
-    )
+    from google.appengine.api.urlfetch_errors import DeadlineExceededError
+    try:
+        return urlfetch.fetch(
+            url, method=urlfetch.POST, payload=body, headers=headers,
+            validate_certificate=url.startswith('https://'),
+            deadline=timeout
+        )
+    except DeadlineExceededError:
+        raise TTransportException(type=TTransportExceptionType.TIMED_OUT)
 

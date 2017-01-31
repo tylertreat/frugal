@@ -11,7 +11,7 @@ from tornado import gen, ioloop
 from nats.io.client import Client as NATS
 
 from frugal.protocol import FProtocolFactory
-from frugal.tornado.server import FStatelessNatsTornadoServer
+from frugal.tornado.server import FNatsServer
 
 sys.path.append('gen-py.tornado')
 
@@ -84,11 +84,9 @@ def main():
     processor = FStoreProcessor(StoreHandler())
 
     # Create a new music store server using the processor,
-    # The sever will listen on the music-service NATS topic
-    server = FStatelessNatsTornadoServer(nats_client,
-                                         "music-service",
-                                         processor,
-                                         prot_factory)
+    # The server will listen on the music-service NATS topic
+    server = FNatsServer(nats_client, "music-service",
+                                processor, prot_factory)
 
     root.info("Starting server...")
 

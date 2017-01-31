@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/nats-io/nats"
+	"github.com/nats-io/go-nats"
 
 	"github.com/Workiva/frugal/examples/go/gen-go/v1/music"
 	"github.com/Workiva/frugal/lib/go"
@@ -32,9 +32,13 @@ func main() {
 		panic(err)
 	}
 
+	// Create a ServiceProvider to wrap the transport and protocol factory.
+	// This can be used to create multiple clients.
+	provider := frugal.NewFServiceProvider(natsT, fProtocolFactory)
+
 	// Create a client using NATS to send messages with our desired
 	// protocol
-	storeClient := music.NewFStoreClient(natsT, fProtocolFactory, newLoggingMiddleware())
+	storeClient := music.NewFStoreClient(provider, newLoggingMiddleware())
 
 	// Request to buy an album
 	album, err := storeClient.BuyAlbum(frugal.NewFContext("corr-id-1"), "ASIN-1290AIUBOA89", "ACCOUNT-12345")

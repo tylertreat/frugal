@@ -1,6 +1,7 @@
 package com.workiva.frugal.processor;
 
-import com.workiva.frugal.protocol.FContext;
+import com.workiva.frugal.FContext;
+import com.workiva.frugal.exception.TApplicationExceptionType;
 import com.workiva.frugal.protocol.FProtocol;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
@@ -11,41 +12,45 @@ import org.apache.thrift.protocol.TType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Base message processor.
+ * Abstract base FProcessor implementation. This should only be used by generated code.
  */
-public class FBaseProcessor implements FProcessor {
+public abstract class FBaseProcessor implements FProcessor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FBaseProcessor.class);
     protected static final Object WRITE_LOCK = new Object();
 
-    private final Map<String, FProcessorFunction> processMap;
-
-    protected FBaseProcessor(Map<String, FProcessorFunction> processorFunctionMap) {
-        this.processMap = processorFunctionMap;
-    }
+    private Map<String, FProcessorFunction> processMap;
+    private Map<String, Map<String, String>> annotationsMap;
 
     @Override
     public void process(FProtocol iprot, FProtocol oprot) throws TException {
+        if (processMap == null) {
+            processMap = getProcessMap();
+        }
         FContext ctx = iprot.readRequestHeader();
         TMessage message = iprot.readMessageBegin();
-        FProcessorFunction processor = this.processMap.get(message.name);
+        FProcessorFunction processor = processMap.get(message.name);
         if (processor != null) {
             try {
                 processor.process(ctx, iprot, oprot);
-            } catch (Exception e) {
-                LOGGER.error("User handler code threw unhandled exception on request with correlation id "
+            } catch (TException e) {
+                // Don't raise an exception because the server should still send a response to the client.
+                LOGGER.error("Exception occurred while processing request with correlation id "
                         + ctx.getCorrelationId(), e);
-                throw e;
             }
             return;
         }
+
+        LOGGER.warn(String.format("Client invoked unknown method %s on request with correlation id %s",
+                message.name, ctx.getCorrelationId()));
         TProtocolUtil.skip(iprot, TType.STRUCT);
         iprot.readMessageEnd();
-        TApplicationException e =
-                new TApplicationException(TApplicationException.UNKNOWN_METHOD, "Unknown function " + message.name);
+        TApplicationException e = new TApplicationException(
+                TApplicationExceptionType.UNKNOWN_METHOD, "Unknown function " + message.name);
         synchronized (WRITE_LOCK) {
             oprot.writeResponseHeader(ctx);
             oprot.writeMessageBegin(new TMessage(message.name, TMessageType.EXCEPTION, 0));
@@ -53,6 +58,27 @@ public class FBaseProcessor implements FProcessor {
             oprot.writeMessageEnd();
             oprot.getTransport().flush();
         }
-        throw e;
+    }
+
+    /**
+     * Returns the map of method names to FProcessorFunctions.
+     *
+     * @return FProcessorFunction map
+     */
+    protected abstract Map<String, FProcessorFunction> getProcessMap();
+
+    /**
+     * Returns the map of method names to annotations.
+     *
+     * @return annotations map
+     */
+    protected abstract Map<String, Map<String, String>> getAnnotationsMap();
+
+    @Override
+    public Map<String, Map<String, String>> getAnnotations() {
+        if (annotationsMap == null) {
+            annotationsMap = getAnnotationsMap();
+        }
+        return new HashMap<>(annotationsMap);
     }
 }

@@ -62,8 +62,8 @@ class _FHttpRequestHandler:
 
         Args:
             processor: The processor to use to handle requests.
-            protocol_factory: A protocol factory to serialize/deserialize frugal
-                              requests.
+            protocol_factory: A protocol factory to serialize/deserialize
+                              frugal requests.
         """
         self._processor = processor
         self._protocol_factory = protocol_factory
@@ -83,10 +83,18 @@ class _FHttpRequestHandler:
         """
         response_limit = int(request.headers.get('x-frugal-payload-limit', 0))
         payload = base64.b64decode(request.body)
-        if len(payload) <= 4:
-            logger.exception('invalid request frame length {}'.format(
-                len(payload)))
+
+        # Need 4 bytes for the frame size, at a minimum.
+        if len(payload) < 4:
+            logger.exception('invalid request size {}'.format(len(payload)))
             raise _FHttpException(400)
+
+        # Ensure expected frame size equals actual size.
+        sz = struct.unpack('!I', payload[:4])[0]
+        if sz != len(payload) - 4:
+            raise _FHttpException(
+                400, message='Mismatch between expected frame ' +
+                'size ({}) and actual size ({})'.format(sz, len(payload) - 4))
 
         itrans = TMemoryBuffer(payload[4:])
         otrans = TMemoryBuffer()
@@ -121,18 +129,14 @@ class _FHttpRequestHandler:
 
     def _handle_processor_exception(self, e):
         """
-        Handles an unexepcted exception from a processor.
-        TODO this isn't right, but it replicates what other implementations do.
-        We should check the exception type and return a potentially different
-        error code.
+        Handles an unexpected exception from a processor.
 
         Args:
             e: The exception.
         Returns:
             A _FHttpResponse.
         """
-        logger.exception(e)
-        return _FHttpResponse(status_code=400)
+        return _FHttpResponse(status_code=500, body=e.message)
 
     def handle_http_request(self, request):
         """

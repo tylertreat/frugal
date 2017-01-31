@@ -1,6 +1,6 @@
 package com.workiva.frugal.transport;
 
-
+import com.workiva.frugal.exception.TTransportExceptionType;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -10,15 +10,17 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+
 /**
  * An implementation of FTransport which uses a provided TTransport for read/write operations in a way that is
  * compatible with Frugal. This allows TTransports which support blocking reads to work with Frugal by starting a
- * thread that reads from the underlying transport and calling the registry on received frames.
+ * thread that reads from the underlying transport and calling <code>handleResponse</code> on received frames.
  */
-public class FAdapterTransport extends FTransport {
+public class FAdapterTransport extends FAsyncTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FAdapterTransport.class);
 
+    private final TTransport transport;
     private final TFramedTransport framedTransport;
     private ExecutorFactory executorFactory;
     private ExecutorService readExecutor;
@@ -39,7 +41,7 @@ public class FAdapterTransport extends FTransport {
      * Creates a new FAdapterTransport which wraps the given TTransport.
      */
     public FAdapterTransport(TTransport tr) {
-        super();
+        transport = tr;
         framedTransport = new TFramedTransport(tr);
         executorFactory = Executors::newSingleThreadExecutor;
     }
@@ -52,14 +54,14 @@ public class FAdapterTransport extends FTransport {
     @Override
     public synchronized void open() throws TTransportException {
         if (isOpen()) {
-            throw new TTransportException(TTransportException.ALREADY_OPEN, "Transport already open");
+            throw new TTransportException(TTransportExceptionType.ALREADY_OPEN, "Transport already open");
         }
 
         try {
             framedTransport.open();
         } catch (TTransportException e) {
             // It's OK if the underlying transport is already open.
-            if (e.getType() != TTransportException.ALREADY_OPEN) {
+            if (e.getType() != TTransportExceptionType.ALREADY_OPEN) {
                 throw e;
             }
         }
@@ -78,6 +80,7 @@ public class FAdapterTransport extends FTransport {
         close(null);
     }
 
+    @Override
     protected synchronized void close(Exception cause) {
         if (isCleanClose(cause) && !isOpen()) {
             return;
@@ -104,27 +107,18 @@ public class FAdapterTransport extends FTransport {
             return true;
         }
         if (cause instanceof TTransportException) {
-            return ((TTransportException) cause).getType() == TTransportException.END_OF_FILE;
+            return ((TTransportException) cause).getType() == TTransportExceptionType.END_OF_FILE;
         }
         return false;
     }
 
     @Override
-    public void write(byte[] buff, int off, int len) throws TTransportException {
-        framedTransport.write(buff, off, len);
-    }
+    protected void flush(byte[] payload) throws TTransportException {
 
-    @Override
-    public void write(byte[] buff) throws TTransportException {
-        write(buff, 0, buff.length);
-    }
-
-    @Override
-    public void flush() throws TTransportException {
-        if (!isOpen()) {
-            throw new TTransportException(TTransportException.NOT_OPEN);
-        }
-        framedTransport.flush();
+        // We need to write to the wrapped transport, not the framed transport, since
+        // data given to request is already framed.
+        transport.write(payload);
+        transport.flush();
     }
 
     protected Runnable newTransportReader() {
@@ -140,7 +134,7 @@ public class FAdapterTransport extends FTransport {
                 try {
                     frame = framedTransport.readFrame();
                 } catch (TTransportException e) {
-                    if (e.getType() == TTransportException.END_OF_FILE) {
+                    if (e.getType() == TTransportExceptionType.END_OF_FILE) {
                         // EOF indicates remote peer disconnected.
                         close();
                         return;
@@ -152,7 +146,7 @@ public class FAdapterTransport extends FTransport {
                 }
 
                 try {
-                    getRegistry().execute(frame);
+                    handleResponse(frame);
                 } catch (TException e) {
                     LOGGER.error("closing transport due to unrecoverable error processing frame: " + e.getMessage());
                     close(e);

@@ -1,58 +1,46 @@
-import logging
+from threading import Lock
 
-from thrift.transport import TTransport
+from thrift.transport.TTransport import TTransportException
+from thrift.transport.TTransport import TFramedTransport
 
-from .server import FServer
-
-logger = logging.getLogger(__name__)
+from . import FServer
 
 
 class FSimpleServer(FServer):
-    """Simple single-threaded server that just pumps around one transport."""
-
-    def __init__(self,
-                 processor_factory,
-                 transport,
-                 transport_factory,
-                 protocol_factory):
-        """Initalize an FSimpleServer
-
-        Args:
-            processor_factory: FProcessorFactory
-            transport: FServerTranpsort
-            transport_factory: FTransportFactory
-            protocol_factory: FProtocolFactory
-        """
-
+    def __init__(self, processor_factory, server_transport, protocol_factory):
         self._processor_factory = processor_factory
-        self._transport = transport
-        self._transport_factory = transport_factory
+        self._server_transport = server_transport
         self._protocol_factory = protocol_factory
         self._stopped = False
+        self._stopped_mu = Lock()
 
     def serve(self):
-        while not self._stopped:
-            client = self._transport.accept()
-            if not client:
-                continue
-            itrans = self.inputTransportFactory.getTransport(client)
-            otrans = self.outputTransportFactory.getTransport(client)
+        self._server_transport.listen()
+        while True:
+            with self._stopped_mu:
+                if self._stopped:
+                    return
 
-            iprot = self.inputProtocolFactory.getProtocol(itrans)
-            oprot = self.outputProtocolFactory.getProtocol(otrans)
+            client = self._server_transport.accept()
+            framed = TFramedTransport(client)
+            iprot = self._protocol_factory.get_protocol(framed)
+            oprot = self._protocol_factory.get_protocol(framed)
+            processor = self._processor_factory.get_processor(framed)
 
             try:
                 while True:
-                    self.processor.process(iprot, oprot)
-            except TTransport.TTransportException:
-                pass
-            except Exception as x:
-                logger.exception(x)
+                    with self._stopped_mu:
+                        if self._stopped:
+                            break
 
-            itrans.close()
-            otrans.close()
+                    processor.process(iprot, oprot)
+            except TTransportException:
+                continue
+            except Exception as e:
+                print(e)
+                break
 
-    def _process_requests(self, client_transport):
-        processor = self._processor_factory.get_processor(client_transport)
-        transport = self._transport_factory.get_transport(client_transport)
-        protocol = self._protocol_factory.get_protocol(transport)
+            framed.close()
+
+    def stop(self):
+        self._stopped = True

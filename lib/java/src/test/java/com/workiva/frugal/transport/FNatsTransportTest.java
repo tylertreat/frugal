@@ -1,7 +1,7 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.exception.FMessageSizeException;
-import com.workiva.frugal.protocol.FRegistry;
+import com.workiva.frugal.FContext;
+import com.workiva.frugal.exception.TTransportExceptionType;
 import io.nats.client.AsyncSubscription;
 import io.nats.client.Connection;
 import io.nats.client.Constants;
@@ -14,13 +14,14 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
+import java.util.concurrent.BlockingQueue;
 
+import static com.workiva.frugal.transport.FAsyncTransportTest.mockFrame;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,14 +38,13 @@ public class FNatsTransportTest {
     @Before
     public void setUp() {
         conn = mock(Connection.class);
-        transport = new FNatsTransport(conn, subject, inbox);
+        transport = FNatsTransport.of(conn, subject).withInbox(inbox);
     }
 
     @Test(expected = TTransportException.class)
     public void testOpen_natsDisconnected() throws TTransportException {
         assertFalse(transport.isOpen());
         when(conn.getState()).thenReturn(Constants.ConnState.CLOSED);
-
         transport.open();
     }
 
@@ -57,25 +57,28 @@ public class FNatsTransportTest {
         AsyncSubscription sub = mock(AsyncSubscription.class);
         when(conn.subscribe(inboxCaptor.capture(), handlerCaptor.capture())).thenReturn(sub);
 
-        FRegistry mockRegistry = mock(FRegistry.class);
-        transport.setRegistry(mockRegistry);
         transport.open();
 
         verify(conn).subscribe(inboxCaptor.getValue(), handlerCaptor.getValue());
         assertEquals(inbox, inboxCaptor.getValue());
 
         MessageHandler handler = handlerCaptor.getValue();
-        byte[] framedPayload = new byte[]{0, 1, 2, 3, 4, 5, 6, 7};
-        byte[] payload = new byte[]{4, 5, 6, 7};
+        FContext context = new FContext();
+        BlockingQueue<byte[]> mockQueue = mock(BlockingQueue.class);
+        transport.queueMap.put(FAsyncTransport.getOpId(context), mockQueue);
+
+        byte[] mockFrame = mockFrame(context);
+        byte[] framedPayload = new byte[mockFrame.length + 4];
+        System.arraycopy(mockFrame, 0, framedPayload, 4, mockFrame.length);
+
         Message msg = new Message("foo", "bar", framedPayload);
         handler.onMessage(msg);
-        verify(mockRegistry).execute(payload);
 
         try {
             transport.open();
             fail("Expected TTransportException");
         } catch (TTransportException e) {
-            assertEquals(TTransportException.ALREADY_OPEN, e.getType());
+            assertEquals(TTransportExceptionType.ALREADY_OPEN, e.getType());
         }
 
         FTransportClosedCallback mockCallback = mock(FTransportClosedCallback.class);
@@ -84,57 +87,24 @@ public class FNatsTransportTest {
 
         verify(sub).unsubscribe();
         verify(mockCallback).onClose(null);
-        verify(mockRegistry).close();
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testRead() throws TTransportException {
-        transport.read(new byte[0], 0, 0);
-    }
-
-    @Test(expected = FMessageSizeException.class)
-    public void testWrite_sizeException() throws TTransportException {
-        when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
-        AsyncSubscription sub = mock(AsyncSubscription.class);
-        when(conn.subscribe(any(String.class), any(MessageHandler.class))).thenReturn(sub);
-        transport.open();
-
-        transport.write(new byte[TNatsServiceTransport.NATS_MAX_MESSAGE_SIZE + 1]);
+        verify(mockQueue).put(mockFrame);
     }
 
     @Test
-    public void testWriteFlush() throws TTransportException, IOException {
+    public void testFlush() throws TTransportException, IOException, InterruptedException {
         when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
         AsyncSubscription sub = mock(AsyncSubscription.class);
         when(conn.subscribe(any(String.class), any(MessageHandler.class))).thenReturn(sub);
         transport.open();
 
         byte[] buff = "helloworld".getBytes();
-        transport.write(buff);
-        transport.flush();
-
-        byte[] expected = new byte[4 + buff.length];
-        expected[3] = (byte) buff.length;
-        System.arraycopy(buff, 0, expected, 4, buff.length);
-
-        verify(conn).publish(subject, inbox, expected);
+        transport.flush(buff);
+        verify(conn).publish(subject, inbox, buff);
     }
 
     @Test(expected = TTransportException.class)
-    public void testFlush_notOpen() throws TTransportException {
+    public void testRequest_notOpen() throws TTransportException {
         when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
-        transport.flush();
-    }
-
-    @Test
-    public void testFlush_noData() throws TTransportException, IOException {
-        when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
-        AsyncSubscription sub = mock(AsyncSubscription.class);
-        when(conn.subscribe(any(String.class), any(MessageHandler.class))).thenReturn(sub);
-        transport.open();
-
-        transport.flush();
-
-        verify(conn, times(0)).publish(any(String.class), any(String.class), any(byte[].class));
+        transport.request(new FContext(), "helloworld".getBytes());
     }
 }

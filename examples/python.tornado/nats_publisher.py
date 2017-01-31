@@ -13,7 +13,7 @@ from nats.io.client import Client as NATS
 from frugal.protocol import FProtocolFactory
 from frugal.provider import FScopeProvider
 from frugal.context import FContext
-from frugal.tornado.transport import FNatsScopeTransportFactory
+from frugal.tornado.transport import FNatsPublisherTransportFactory
 
 sys.path.append('gen-py.tornado')
 from v1.music.f_AlbumWinners_publisher import AlbumWinnersPublisher  # noqa
@@ -47,8 +47,8 @@ def main():
     yield nats_client.connect(**options)
 
     # Create a pub sub scope using the configured transport and protocol
-    scope_transport_factory = FNatsScopeTransportFactory(nats_client)
-    provider = FScopeProvider(scope_transport_factory, prot_factory)
+    transport_factory = FNatsPublisherTransportFactory(nats_client)
+    provider = FScopeProvider(transport_factory, None, prot_factory)
 
     # Create a publisher
     publisher = AlbumWinnersPublisher(provider)
@@ -64,12 +64,12 @@ def main():
                           composer="Béatrice Martin",
                           duration=169,
                           pro=PerfRightsOrg.ASCAP)]
-    publisher.publish_Winner(FContext(), album)
+    yield publisher.publish_Winner(FContext(), album)
+    yield publisher.publish_ContestStart(FContext(), [album, album])
 
     yield publisher.close()
+    yield nats_client.close()
 
 
 if __name__ == '__main__':
-    io_loop = ioloop.IOLoop.instance()
-    io_loop.add_callback(main)
-    io_loop.start()
+    ioloop.IOLoop.instance().run_sync(main)

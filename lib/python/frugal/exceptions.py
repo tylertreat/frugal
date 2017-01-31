@@ -1,65 +1,31 @@
 from thrift.Thrift import TApplicationException
-
-class FException(Exception):
-
-    def __init__(self, message=None):
-        super(FException, self).__init__(message)
+from thrift.transport.TTransport import TTransportException
 
 
-class FrugalVersionException(FException):
+class TTransportExceptionType(object):
+    """Exception types for TTransportExceptions"""
+    UNKNOWN = TTransportException.UNKNOWN
+    NOT_OPEN = TTransportException.NOT_OPEN
+    ALREADY_OPEN = TTransportException.ALREADY_OPEN
+    TIMED_OUT = TTransportException.TIMED_OUT
+    END_OF_FILE = TTransportException.END_OF_FILE
 
-    def __init__(self, message=None):
-        super(FrugalVersionException, self).__init__(message)
-
-
-class FContextHeaderException(FException):
-
-    def __init__(self, message=None):
-        super(FContextHeaderException, self).__init__(message)
-
-
-class FProtocolException(FException):
-
-    UNKNOWN = 0
-    INVALID_DATA = 1
-    BAD_VERSION = 2
-
-    def __init__(self, type=UNKNOWN, message=None):
-        super(FProtocolException, self).__init__(message)
-        self.type = type
+    REQUEST_TOO_LARGE = 100
+    RESPONSE_TOO_LARGE = 101
 
 
-class FExecuteCallbackNotSet(FException):
+class TApplicationExceptionType(object):
+    """Exception types for TApplicationExceptions"""
+    UNKNOWN = TApplicationException.UNKNOWN
+    UNKNOWN_METHOD = TApplicationException.UNKNOWN_METHOD
+    INVALID_MESSAGE_TYPE = TApplicationException.INVALID_MESSAGE_TYPE
+    WRONG_METHOD_NATE = TApplicationException.WRONG_METHOD_NAME
+    BAD_SEQUENCE_ID = TApplicationException.BAD_SEQUENCE_ID
+    MISSING_RESULT = TApplicationException.MISSING_RESULT
+    INTERNAL_ERROR = TApplicationException.INTERNAL_ERROR
+    PROTOCOL_ERROR = TApplicationException.PROTOCOL_ERROR
+    INVALID_TRANSFORM = TApplicationException.INVALID_TRANSFORM
+    INVALID_PROTOCOL = TApplicationException.INVALID_PROTOCOL
+    UNSUPPORTED_CLIENT_TYPE = TApplicationException.UNSUPPORTED_CLIENT_TYPE
 
-    def __init__(self, message=None):
-        super(FExecuteCallbackNotSet, self).__init__(message)
-
-
-class FMessageSizeException(FException):
-
-    def __init__(self, message=None):
-        super(FMessageSizeException, self).__init__(message)
-
-
-class FRateLimitException(TApplicationException):
-    """
-    FRateLimitException indicates that an application has exceeded a rate
-    limit threshold.
-    """
-
-    RATE_LIMIT_EXCEEDED = 102
-
-    def __init__(self, message="rate limit exceeded"):
-        """
-        Args:
-            message: exception message to provide with the rate limit error.
-            Defaults to "rate limit exceeded".
-        """
-        super(FRateLimitException, self).__init__(
-            type=FRateLimitException.RATE_LIMIT_EXCEEDED, message=message)
-
-
-class FOperationIdNotFoundException(FException):
-
-    def __init__(self, message=None):
-        super(FOperationIdNotFoundException, self).__init__(message)
+    RESPONSE_TOO_LARGE = 100

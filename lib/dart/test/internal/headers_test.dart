@@ -1,9 +1,11 @@
 import "dart:typed_data";
 import "package:test/test.dart";
-import "package:frugal/frugal.dart";
+import "package:thrift/thrift.dart";
 
-var headers = {"foo": "bar", "blah": "baz"};
-var list = [
+import "../../lib/src/frugal.dart";
+
+var _headers = {"foo": "bar", "blah": "baz"};
+var _list = [
   0,
   0,
   0,
@@ -42,29 +44,29 @@ var list = [
 
 void main() {
   test("read reads the headers out of the transport", () {
-    var encodedHeaders = new Uint8List.fromList(list);
+    var encodedHeaders = new Uint8List.fromList(_list);
     var transport = new TMemoryTransport.fromUint8List(encodedHeaders);
     var decodedHeaders = Headers.read(transport);
-    expect(decodedHeaders, headers);
+    expect(decodedHeaders, _headers);
   });
 
   test("read throws error for unsupported version", () {
     var encodedHeaders = new Uint8List.fromList([0x01]);
     var transport = new TMemoryTransport.fromUint8List(encodedHeaders);
     expect(() => Headers.read(transport),
-        throwsA(new isInstanceOf<FProtocolError>()));
+        throwsA(new isInstanceOf<TProtocolError>()));
   });
 
   test("decodeFromFrame decodes headers from a fixed frame", () {
-    var encodedHeaders = new Uint8List.fromList(list);
+    var encodedHeaders = new Uint8List.fromList(_list);
     var decodedHeaders = Headers.decodeFromFrame(encodedHeaders);
-    expect(decodedHeaders, headers);
+    expect(decodedHeaders, _headers);
   });
 
   test("encode encodes headers and decodeFromFrame decodes them", () {
-    var encodedHeaders = Headers.encode(headers);
+    var encodedHeaders = Headers.encode(_headers);
     var decodedHeaders = Headers.decodeFromFrame(encodedHeaders);
-    expect(decodedHeaders, headers);
+    expect(decodedHeaders, _headers);
   });
 
   test("encode encodes null headers and decodeFromFrame decodes them", () {
@@ -91,12 +93,12 @@ void main() {
 
   test("decodFromFrame throws error for bad frame", () {
     expect(() => Headers.decodeFromFrame(new Uint8List(3)),
-        throwsA(new isInstanceOf<FProtocolError>()));
+        throwsA(new isInstanceOf<TProtocolError>()));
   });
 
   test("decodeHeadersFromeFrame throws error for unsupported version", () {
     var encodedHeaders = new Uint8List.fromList([0x01, 0, 0, 0, 0]);
     expect(() => Headers.decodeFromFrame(encodedHeaders),
-        throwsA(new isInstanceOf<FProtocolError>()));
+        throwsA(new isInstanceOf<TProtocolError>()));
   });
 }

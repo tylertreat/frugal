@@ -7,9 +7,10 @@ import uuid
 import tornado
 from thrift.protocol import TBinaryProtocol
 from frugal.protocol import FProtocolFactory
-from frugal.tornado.server.http_handler import FTornadoHttpHandler
+from frugal.tornado.server.http_handler import FHttpHandler
 
 sys.path.append('gen-py.tornado')
+from http_client import logging_middleware
 from v1.music.f_Store import Processor as FStoreProcessor  # noqa
 from v1.music.f_Store import Iface  # noqa
 from v1.music.ttypes import Album, Track, PerfRightsOrg  # noqa
@@ -65,12 +66,16 @@ if __name__ == "__main__":
     # Results from the handler are returned back to the client.
     processor = FStoreProcessor(StoreHandler())
 
+    # Optionally add middleware to the processor before starting the server.
+    # add_middleware can take a list or single middleware.
+    processor.add_middleware(logging_middleware)
+
     # Create a new music store server using the a tornado handler
     # and our configured processor and protocol
     application = tornado.web.Application([
         (r"/frugal",
-            FTornadoHttpHandler,
+            FHttpHandler,
             dict(processor=processor, protocol_factory=prot_factory))
     ])
-    application.listen(8080)
+    application.listen(9090)
     tornado.ioloop.IOLoop.current().start()

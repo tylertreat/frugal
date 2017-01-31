@@ -18,14 +18,20 @@ func main() {
 	fProtocolFactory := frugal.NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
 
 	// Create an HTTP transport listening
-	httpTransport := frugal.NewHttpFTransportBuilder(&http.Client{}, "http://localhost:8080/frugal").Build()
+	httpTransport := frugal.NewFHTTPTransportBuilder(&http.Client{}, "http://localhost:9090/frugal").Build()
 	defer httpTransport.Close()
 	if err := httpTransport.Open(); err != nil {
 		panic(err)
 	}
 
-	// Create a client used to send messages with our desired protocol
-	storeClient := music.NewFStoreClient(httpTransport, fProtocolFactory, newLoggingMiddleware())
+	// Create a provider with the transport and protocol factory. The provider
+	// can be used to create multiple Clients.
+	provider := frugal.NewFServiceProvider(httpTransport, fProtocolFactory)
+
+	// Create a client used to send messages with our desired protocol.  You
+	// can also pass middleware in here if you only want it to intercept calls
+	// for this specific client.
+	storeClient := music.NewFStoreClient(provider, newLoggingMiddleware())
 
 	// Request to buy an album
 	album, err := storeClient.BuyAlbum(frugal.NewFContext("corr-id-1"), "ASIN-1290AIUBOA89", "ACCOUNT-12345")

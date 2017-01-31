@@ -7,7 +7,7 @@ from tornado.testing import AsyncHTTPTestCase
 from tornado.web import Application
 
 from frugal.protocol import FProtocolFactory
-from frugal.tornado.server import FTornadoHttpHandler
+from frugal.tornado.server import FHttpHandler
 
 
 class TestFTornadoHTTPHandler(AsyncHTTPTestCase):
@@ -20,7 +20,7 @@ class TestFTornadoHTTPHandler(AsyncHTTPTestCase):
         prot_factory = FProtocolFactory(
                 TBinaryProtocol.TBinaryProtocolFactory())
         return Application([
-            ('/frugal', FTornadoHttpHandler, {
+            ('/frugal', FHttpHandler, {
                 'processor': self.processor,
                 'protocol_factory': prot_factory,
             })
@@ -33,6 +33,7 @@ class TestFTornadoHTTPHandler(AsyncHTTPTestCase):
         response_data = bytearray([6, 7, 8, 9])
         response_frame = bytearray([0, 0, 0, 4]) + response_data
 
+        @gen.coroutine
         def process_data(_, oprot):
             oprot.get_transport().write(response_data)
         self.processor.process.side_effect = process_data
@@ -84,6 +85,7 @@ class TestFTornadoHTTPHandler(AsyncHTTPTestCase):
         request_payload = base64.b64encode(request_frame)
         response_data = bytearray([6, 7, 8, 9, 10, 11])
 
+        @gen.coroutine
         def process_data(_, oprot):
             oprot.get_transport().write(response_data)
         self.processor.process.side_effect = process_data

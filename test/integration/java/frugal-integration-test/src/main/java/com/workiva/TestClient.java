@@ -19,29 +19,28 @@
 
 package com.workiva;
 
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
-import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
+import com.workiva.frugal.provider.FServiceProvider;
 import com.workiva.frugal.transport.FHttpTransport;
 import com.workiva.frugal.transport.FTransport;
 import com.workiva.frugal.transport.FTransportFactory;
-import com.workiva.frugal.transport.TNatsServiceTransport;
 import com.workiva.frugal.transport.FNatsTransport;
-import com.workiva.frugal.transport.FMuxTransport;
-import com.workiva.frugal.transport.FScopeTransportFactory;
-import com.workiva.frugal.transport.FNatsScopeTransport;
+import com.workiva.frugal.transport.FPublisherTransportFactory;
+import com.workiva.frugal.transport.FNatsPublisherTransport;
+import com.workiva.frugal.transport.FNatsSubscriberTransport;
+import com.workiva.frugal.transport.FSubscriberTransportFactory;
 import com.workiva.utils;
 import frugal.test.*;
-import frugal.test.Numberz;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.protocol.TProtocolFactory;
-import org.apache.thrift.transport.TTransport;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -65,7 +64,6 @@ public class TestClient {
         String protocol_type = "binary";
         String transport_type = "stateless";
 
-        int socketTimeoutMs = 1000; // milliseconds
         ConnectionFactory cf = new ConnectionFactory("nats://localhost:4222");
         Connection conn = cf.createConnection();
 
@@ -84,7 +82,7 @@ public class TestClient {
                     System.out.println("  --help\t\t\tProduce help message");
                     System.out.println("  --host=arg (=" + host + ")\tHost to connect");
                     System.out.println("  --port=arg (=" + port + ")\tPort number to connect");
-                    System.out.println("  --transport=arg (=" + transport_type + ")\n\t\t\t\tTransport: stateless, stateful, stateless-stateful, http");
+                    System.out.println("  --transport=arg (=" + transport_type + ")\n\t\t\t\tTransport: stateless, http");
                     System.out.println("  --protocol=arg (=" + protocol_type + ")\tProtocol: binary, json, compact");
                     System.exit(0);
                 }
@@ -98,8 +96,6 @@ public class TestClient {
 
         List<String> validTransports = new ArrayList<>();
         validTransports.add("stateless");
-        validTransports.add("stateful");
-        validTransports.add("stateless-stateful");
         validTransports.add("http");
 
         if (!validTransports.contains(transport_type)) {
@@ -117,14 +113,8 @@ public class TestClient {
                     fTransport = httpTransport.build();
                     fTransport.open();
                     break;
-                case "stateful":
-                    TTransport tTransport = TNatsServiceTransport.client(conn, ""+ port, socketTimeoutMs, 3);
-                    FTransportFactory fTransportFactory = new FMuxTransport.Factory(2);
-                    fTransport = fTransportFactory.getTransport(tTransport);
-                    break;
                 case "stateless":
-                case "stateless-stateful":
-                    fTransport = new FNatsTransport(conn, Integer.toString(port));
+                    fTransport = FNatsTransport.of(conn, "frugal.foo.bar." + Integer.toString(port));
                     break;
             }
         } catch (Exception x) {
@@ -140,7 +130,7 @@ public class TestClient {
             System.exit(1);
         }
 
-        FFrugalTest.Client testClient = new FFrugalTest.Client(fTransport, new FProtocolFactory(protocolFactory), new ClientMiddleware());
+        FFrugalTest.Client testClient = new FFrugalTest.Client(new FServiceProvider(fTransport, new FProtocolFactory(protocolFactory)), new ClientMiddleware());
 
         Insanity insane = new Insanity();
         FContext context = new FContext("");
@@ -164,6 +154,21 @@ public class TestClient {
              */
             String s = testClient.testString(context, "Test");
             if (!s.equals("Test")) {
+                returnCode |= 1;
+                System.out.println("*** FAILURE ***\n");
+            }
+
+            /**
+             * BOOL TESTS
+             */
+            boolean bl = testClient.testBool(context, true);
+            if (!bl) {
+                returnCode |= 1;
+                System.out.println("*** FAILURE ***\n");
+            }
+
+            bl = testClient.testBool(context, false);
+            if (bl) {
                 returnCode |= 1;
                 System.out.println("*** FAILURE ***\n");
             }
@@ -378,6 +383,15 @@ public class TestClient {
             }
 
             /**
+             * BOOL TESTS
+             */
+            boolean uppercase = testClient.TestUppercaseMethod(context, true);
+            if (!uppercase) {
+                returnCode |= 1;
+                System.out.println("*** FAILURE ***\n");
+            }
+
+            /**
              * INSANITY TEST
              */
 
@@ -491,19 +505,25 @@ public class TestClient {
              */
             BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(1);
             Object o = null;
-            FScopeTransportFactory factory = new FNatsScopeTransport.Factory(conn);
-            FScopeProvider provider = new FScopeProvider(factory,  new FProtocolFactory(protocolFactory));
+            FPublisherTransportFactory publisherFactory = new FNatsPublisherTransport.Factory(conn);
+            FSubscriberTransportFactory subscriberFactory = new FNatsSubscriberTransport.Factory(conn);
+            FScopeProvider provider = new FScopeProvider(publisherFactory, subscriberFactory, new FProtocolFactory(protocolFactory));
 
-            EventsSubscriber subscriber = new EventsSubscriber(provider);
-            subscriber.subscribeEventCreated("foo", "Client", "response", Integer.toString(port), (ctx, event) -> {
+            String preamble = "foo";
+            String ramble = "bar";
+            EventsSubscriber.Iface subscriber = new EventsSubscriber.Client(provider);
+            subscriber.subscribeEventCreated(preamble, ramble, "response", Integer.toString(port), (ctx, event) -> {
                 System.out.println("Response received " + event);
                 queue.add(1);
             });
 
-            EventsPublisher publisher = new EventsPublisher(provider);
+            EventsPublisher.Iface publisher = new EventsPublisher.Client(provider);
             publisher.open();
             Event event = new Event(1, "Sending Call");
-            publisher.publishEventCreated(new FContext("Call"), "foo", "Client", "call", Integer.toString(port), event);
+            FContext ctx = new FContext("Call");
+            ctx.addRequestHeader(utils.PREAMBLE_HEADER, preamble);
+            ctx.addRequestHeader(utils.RAMBLE_HEADER, ramble);
+            publisher.publishEventCreated(ctx, preamble, ramble, "call", Integer.toString(port), event);
             System.out.print("Publishing...    ");
 
             try {

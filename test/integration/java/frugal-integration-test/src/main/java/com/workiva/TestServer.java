@@ -19,20 +19,21 @@
 
 package com.workiva;
 
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
-import com.workiva.frugal.protocol.FContext;
+import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
+import com.workiva.frugal.server.FDefaultNettyHttpProcessor;
 import com.workiva.frugal.server.FNatsServer;
+import com.workiva.frugal.server.FNettyHttpHandler;
+import com.workiva.frugal.server.FNettyHttpProcessor;
 import com.workiva.frugal.server.FServer;
-import com.workiva.frugal.server.FStatelessNatsServer;
-import com.workiva.frugal.transport.FMuxTransport;
-import com.workiva.frugal.transport.FNatsScopeTransport;
-import com.workiva.frugal.transport.FScopeTransportFactory;
-import com.workiva.frugal.transport.FTransportFactory;
-import com.workiva.HealthCheck;
-import com.workiva.utils;
+import com.workiva.frugal.transport.FPublisherTransportFactory;
+import com.workiva.frugal.transport.FNatsPublisherTransport;
+import com.workiva.frugal.transport.FNatsSubscriberTransport;
+import com.workiva.frugal.transport.FSubscriberTransportFactory;
 import frugal.test.Event;
 import frugal.test.EventsPublisher;
 import frugal.test.EventsSubscriber;
@@ -40,14 +41,18 @@ import frugal.test.FFrugalTest;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
 import io.nats.client.Constants;
-import main.java.com.workiva.FrugalTestHandler;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TProtocolFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.sql.Time;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -59,7 +64,7 @@ public class TestServer {
 
     public static boolean middlewareCalled = false;
 
-    public static void main(String [] args) {
+    public static void main(String[] args) {
         try {
             // default testing parameters, overwritten in Python runner
             int port = 9090;
@@ -81,7 +86,7 @@ public class TestServer {
                         System.out.println("  --help\t\t\tProduce help message");
                         System.out.println("  --port=arg (=" + port + ")\tPort number to connect");
                         System.out.println("  --protocol=arg (=" + protocol_type + ")\tProtocol: binary, json, compact");
-                        System.out.println("  --transport=arg (=" + transport_type + ")\tTransport: stateless, stateful, stateless-stateful");
+                        System.out.println("  --transport=arg (=" + transport_type + ")\tTransport: stateless");
                         System.exit(0);
                     }
                 }
@@ -96,10 +101,7 @@ public class TestServer {
             ConnectionFactory cf = new ConnectionFactory("nats://localhost:4222");
             Connection conn = cf.createConnection();
 
-            List<String> validTransports = new ArrayList<>();
-            validTransports.add("stateless");
-            validTransports.add("stateful");
-            validTransports.add("stateless-stateful");
+            List<String> validTransports = Arrays.asList("stateless", "http");
 
             if (!validTransports.contains(transport_type)) {
                 throw new Exception("Unknown transport type! " + transport_type);
@@ -114,35 +116,34 @@ public class TestServer {
             FServer server = null;
             switch (transport_type) {
                 case "stateless":
-                    server = new FStatelessNatsServer.Builder(
+                    server = new FNatsServer.Builder(
                             conn,
                             processor,
                             fProtocolFactory,
-                            Integer.toString(port)).build();
+                            new String[]{"frugal.*.*." + Integer.toString(port)}).build();
                     break;
-                case "stateful":
-                case "stateless-stateful":
-                    FTransportFactory fTransportFactory = new FMuxTransport.Factory(2);
-                    server = new FNatsServer(
-                            conn,
-                            Integer.toString(port),
-                            10000,
-                            processor,
-                            fTransportFactory,
-                            fProtocolFactory);
+                case "http":
                     break;
             }
 
             // Start a healthcheck server for the cross language tests
-            try {
-                HealthCheck healthcheck = new HealthCheck(port);
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
+            if (transport_type.equals("stateless")) {
+                try {
+                    new HealthCheck(port);
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
+                }
+
+                // Start server in separate thread
+                NatsServerThread serverThread = new NatsServerThread(server, transport_type);
+                serverThread.start();
+            } else {
+                // Start server in separate thread
+                FNettyHttpHandlerFactory handlerFactory = new FNettyHttpHandlerFactory(processor, fProtocolFactory);
+                NettyServerThread serverThread = new NettyServerThread(port, handlerFactory);
+                serverThread.start();
             }
 
-            // Start server in separate thread
-            runServer serverThread = new runServer(server, transport_type);
-            serverThread.start();
 
             // Wait for the middleware to be invoked, fail if it exceeds the longest client timeout (currently 20 sec)
             if (called.await(20, TimeUnit.SECONDS)) {
@@ -158,11 +159,11 @@ public class TestServer {
     }
 
 
-    private static class runServer extends Thread {
+    private static class NatsServerThread extends Thread {
         FServer server;
         String transport_type;
 
-        runServer(FServer server, String transport_type) {
+        NatsServerThread(FServer server, String transport_type) {
             this.server = server;
             this.transport_type = transport_type;
         }
@@ -177,6 +178,53 @@ public class TestServer {
         }
     }
 
+    public static class NettyServerThread extends Thread {
+        Integer port;
+        final FNettyHttpHandlerFactory handlerFactory;
+
+        NettyServerThread(Integer port, FNettyHttpHandlerFactory handlerFactory) {
+            this.port = port;
+            this.handlerFactory = handlerFactory;
+        }
+
+        public void run() {
+            EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+            EventLoopGroup workerGroup = new NioEventLoopGroup();
+            try {
+                ServerBootstrap b = new ServerBootstrap();
+                b.group(bossGroup, workerGroup)
+                        .channel(NioServerSocketChannel.class)
+                        .handler(new LoggingHandler(LogLevel.INFO))
+                        .childHandler(new NettyHttpInitializer(handlerFactory));
+
+                Channel ch = b.bind(port).sync().channel();
+
+                ch.closeFuture().sync();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                bossGroup.shutdownGracefully();
+                workerGroup.shutdownGracefully();
+            }
+        }
+    }
+
+    public static class FNettyHttpHandlerFactory {
+
+        final FProcessor processor;
+        final FProtocolFactory protocolFactory;
+
+        FNettyHttpHandlerFactory(FProcessor processor, FProtocolFactory protocolFactory) {
+            this.processor = processor;
+            this.protocolFactory = protocolFactory;
+        }
+
+        public FNettyHttpHandler newHandler() {
+            FNettyHttpProcessor httpProcessor = FDefaultNettyHttpProcessor.of(processor, protocolFactory);
+            return FNettyHttpHandler.of(httpProcessor);
+        }
+
+    }
 
     private static class ServerMiddleware implements ServiceMiddleware {
         CountDownLatch called;
@@ -222,17 +270,28 @@ public class TestServer {
             ConnectionFactory cf = new ConnectionFactory(Constants.DEFAULT_URL);
             try {
                 Connection conn = cf.createConnection();
-                FScopeTransportFactory factory = new FNatsScopeTransport.Factory(conn);
-                FScopeProvider provider = new FScopeProvider(factory, protocolFactory);
-                EventsSubscriber subscriber = new EventsSubscriber(provider);
+                FPublisherTransportFactory publisherFactory = new FNatsPublisherTransport.Factory(conn);
+                FSubscriberTransportFactory subscriberFactory = new FNatsSubscriberTransport.Factory(conn);
+                FScopeProvider provider = new FScopeProvider(publisherFactory, subscriberFactory, protocolFactory);
+                EventsSubscriber.Iface subscriber = new EventsSubscriber.Client(provider);
                 try {
-                    subscriber.subscribeEventCreated("foo", "Client", "call", Integer.toString(port), (context, event) -> {
+                    subscriber.subscribeEventCreated("*", "*", "call", Integer.toString(port), (context, event) -> {
                         System.out.format("received " + context + " : " + event);
-                        EventsPublisher publisher = new EventsPublisher(provider);
+                        EventsPublisher.Iface publisher = new EventsPublisher.Client(provider);
                         try {
                             publisher.open();
+                            String preamble = context.getRequestHeader(utils.PREAMBLE_HEADER);
+                            if (preamble == null || "".equals(preamble)) {
+                                System.out.println("Client did not provide preamble header");
+                                return;
+                            }
+                            String ramble = context.getRequestHeader(utils.RAMBLE_HEADER);
+                            if (ramble == null || "".equals(ramble)) {
+                                System.out.println("Client did not provide ramble header");
+                                return;
+                            }
                             event = new Event(1, "received call");
-                            publisher.publishEventCreated(new FContext("Call"), "foo", "Client", "response", Integer.toString(port), event);
+                            publisher.publishEventCreated(new FContext("Call"), preamble, ramble, "response", Integer.toString(port), event);
 
                         } catch (TException e) {
                             System.out.println("Error opening publisher to respond" + e.getMessage());

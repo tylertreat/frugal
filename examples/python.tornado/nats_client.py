@@ -8,6 +8,7 @@ from thrift.protocol import TBinaryProtocol
 from thrift.transport.TTransport import TTransportException
 from frugal.context import FContext
 from frugal.protocol import FProtocolFactory
+from frugal.provider import FServiceProvider
 from frugal.tornado.transport import FNatsTransport
 sys.path.append('gen-py.tornado')
 
@@ -52,7 +53,7 @@ def main():
 
     # Using the configured transport and protocol, create a client
     # to talk to the music store service.
-    store_client = FStoreClient(nats_transport, prot_factory,
+    store_client = FStoreClient(FServiceProvider(nats_transport, prot_factory),
                                 middleware=logging_middleware)
 
     album = yield store_client.buyAlbum(FContext(),

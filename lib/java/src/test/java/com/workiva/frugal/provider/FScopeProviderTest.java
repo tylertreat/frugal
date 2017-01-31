@@ -1,9 +1,10 @@
 package com.workiva.frugal.provider;
 
-import com.workiva.frugal.protocol.FProtocol;
 import com.workiva.frugal.protocol.FProtocolFactory;
-import com.workiva.frugal.transport.FScopeTransport;
-import com.workiva.frugal.transport.FScopeTransportFactory;
+import com.workiva.frugal.transport.FPublisherTransport;
+import com.workiva.frugal.transport.FPublisherTransportFactory;
+import com.workiva.frugal.transport.FSubscriberTransport;
+import com.workiva.frugal.transport.FSubscriberTransportFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -20,20 +21,34 @@ public class FScopeProviderTest {
 
     @Test
     public void testProvide() throws Exception {
-        FScopeTransportFactory transportFactory = mock(FScopeTransportFactory.class);
+        FPublisherTransportFactory publisherTransportFactory = mock(FPublisherTransportFactory.class);
+        FSubscriberTransportFactory subscriberTransportFactory = mock(FSubscriberTransportFactory.class);
         FProtocolFactory protocolFactory = mock(FProtocolFactory.class);
 
-        FScopeProvider provider = new FScopeProvider(transportFactory, protocolFactory);
+        FScopeProvider provider = new FScopeProvider(
+                publisherTransportFactory,
+                subscriberTransportFactory,
+                protocolFactory
+        );
 
-        FScopeTransport transport = mock(FScopeTransport.class);
-        FProtocol fProtocol = mock(FProtocol.class);
+        // Validate buildPublisher works as intended
+        FPublisherTransport publisherTransport = mock(FPublisherTransport.class);
+        when(publisherTransportFactory.getTransport()).thenReturn(publisherTransport);
 
-        when(transportFactory.getTransport()).thenReturn(transport);
-        when(protocolFactory.getProtocol(transport)).thenReturn(fProtocol);
+        FScopeProvider.Publisher publisher = provider.buildPublisher();
 
-        FScopeProvider.Client client = provider.build();
+        assertEquals(publisherTransport, publisher.getTransport());
+        assertEquals(protocolFactory, publisher.getProtocolFactory());
 
-        assertEquals(transport, client.getTransport());
-        assertEquals(fProtocol, client.getProtocol());
+        // Validate buildSubscriber works as intended
+        FSubscriberTransport subscriberTransport = mock(FSubscriberTransport.class);
+        when(subscriberTransportFactory.getTransport()).thenReturn(subscriberTransport);
+
+        FScopeProvider.Subscriber subscriber = provider.buildSubscriber();
+
+        assertEquals(subscriberTransport, subscriber.getTransport());
+        assertEquals(protocolFactory, subscriber.getProtocolFactory());
+
+
     }
 }

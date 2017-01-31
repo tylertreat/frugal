@@ -1,19 +1,18 @@
 package com.workiva;
 
-import com.workiva.frugal.middleware.InvocationHandler;
-import com.workiva.frugal.middleware.ServiceMiddleware;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 
 
 public class utils {
+
+    public static String PREAMBLE_HEADER = "preamble";
+    public static String RAMBLE_HEADER = "ramble";
 
     public static TProtocolFactory whichProtocolFactory (String protocol_type) throws Exception {
         List<String> validProtocols = new ArrayList<>();

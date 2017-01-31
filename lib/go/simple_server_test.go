@@ -1,7 +1,6 @@
 package frugal
 
 import (
-	"sync"
 	"testing"
 	"time"
 
@@ -12,36 +11,18 @@ import (
 
 const simpleServerAddr = "localhost:5535"
 
-type mockFProcessorFactory struct {
-	mock.Mock
-	sync.Mutex
-}
-
-func (m *mockFProcessorFactory) GetProcessor(tr thrift.TTransport) FProcessor {
-	m.Lock()
-	defer m.Unlock()
-	return m.Called(tr).Get(0).(FProcessor)
-}
-
-func (m *mockFProcessorFactory) AssertExpectations(t *testing.T) {
-	m.Lock()
-	defer m.Unlock()
-	m.Mock.AssertExpectations(t)
-}
-
 // Ensures FSimpleServer accepts connections.
 func TestSimpleServer(t *testing.T) {
-	mockFProcessorFactory := new(mockFProcessorFactory)
+	mockFProcessor := new(mockFProcessor)
 	protoFactory := thrift.NewTJSONProtocolFactory()
-	fTransportFactory := NewFMuxTransportFactory(1)
+	fTransportFactory := NewAdapterTransportFactory()
 	serverTr, err := thrift.NewTServerSocket(simpleServerAddr)
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := NewFSimpleServerFactory5(
-		mockFProcessorFactory,
+	server := NewFSimpleServer(
+		mockFProcessor,
 		serverTr,
-		NewFMuxTransportFactory(2),
 		NewFProtocolFactory(protoFactory),
 	)
 
@@ -50,10 +31,6 @@ func TestSimpleServer(t *testing.T) {
 	}()
 	time.Sleep(10 * time.Millisecond)
 
-	mockFProcessor := new(mockFProcessor)
-	mockFProcessorFactory.Lock() // IDK why this is needed to prevent races...
-	mockFProcessorFactory.On("GetProcessor", mock.AnythingOfType("*thrift.TSocket")).Return(mockFProcessor)
-	mockFProcessorFactory.Unlock()
 	mockFProcessor.On("Process", mock.AnythingOfType("*frugal.FProtocol"),
 		mock.AnythingOfType("*frugal.FProtocol")).Return(nil)
 
@@ -67,13 +44,13 @@ func TestSimpleServer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = fTransport.Write(make([]byte, 10))
-	assert.Nil(t, err)
-	assert.Nil(t, fTransport.Flush())
-	time.Sleep(5 * time.Millisecond)
+	ctx := NewFContext("")
+	ctx.SetTimeout(5 * time.Millisecond)
+	_, err = fTransport.Request(ctx, make([]byte, 10))
+	assert.Equal(t, TRANSPORT_EXCEPTION_TIMED_OUT, err.(thrift.TTransportException).TypeId())
 
 	assert.Nil(t, server.Stop())
 
-	mockFProcessorFactory.AssertExpectations(t)
+	mockFProcessor.AssertExpectations(t)
 	mockFProcessor.AssertExpectations(t)
 }
