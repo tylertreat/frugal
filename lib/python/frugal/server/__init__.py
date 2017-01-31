@@ -1,3 +1,7 @@
-from frugal.server.server import FServer
+from .server import FServer
+from .simple_server import FSimpleServer
 
-__all__ = ['FServer']
+__all__ = [
+    'FServer',
+    'FSimpleServer',
+]

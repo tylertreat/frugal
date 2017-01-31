@@ -39,11 +39,17 @@ enum Numberz
 typedef i64 id
 const id DEFAULT_ID = -1
 
-// acct = "foo"
-// mem = "Client"
+// preamble: client specified prefix stored in the FContext as the "preamble" 
+//           header. Servers should subscribe to "*" for this prefix and 
+//           publish a response with the preamble prefix specified by the 
+//           client.
+// ramble: client specified prefix stored in the FContext as the "ramble" 
+//         header. Servers should subscribe to "*" for this prefix and 
+//         publish a response with the preamble prefix specified by the 
+//         client.
 // role = "call" or "response"
 // RID = port - random ID to differentiate each client/server pair
-scope Events prefix {acct}.{mem}.{role}.{RID} {
+scope Events prefix {preamble}.{ramble}.{role}.{RID} {
     EventCreated: Event
 }
 
@@ -243,6 +249,13 @@ service FrugalTest
    *   {-4 => {-4 => -4, -3 => -3, -2 => -2, -1 => -1, }, 4 => {1 => 1, 2 => 2, 3 => 3, 4 => 4, }, }
    */
   map<i32,map<i32,i32>> testMapMap(1: i32 hello),
+
+  /**
+   * Prints 'TestUppercaseMethod("%s")' where '%s' with thing as 'true' or 'false'
+   * @param bool  thing - the bool data to print
+   * @return bool  - returns the bool 'thing'
+   */
+  bool TestUppercaseMethod(1: bool thing),
 
   /**
    * So you think you've got this all worked, out eh?

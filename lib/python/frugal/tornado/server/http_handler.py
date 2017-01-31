@@ -1,12 +1,17 @@
 import base64
-import struct
+import logging
 
+from thrift.Thrift import TApplicationException
 from thrift.transport.TTransport import TMemoryBuffer
 from tornado import gen
 from tornado.web import RequestHandler
 
+from frugal.transport import TMemoryOutputBuffer
 
-class FTornadoHttpHandler(RequestHandler):
+logger = logging.getLogger(__name__)
+
+
+class FHttpHandler(RequestHandler):
     """
     This class implements a Tornado web server request handler to interface
     with a frugal HTTP client.
@@ -36,18 +41,27 @@ class FTornadoHttpHandler(RequestHandler):
         iprot = self._protocol_factory.get_protocol(
             TMemoryBuffer(payload[4:])
         )
-        out_transport = TMemoryBuffer()
-        oprot = self._protocol_factory.get_protocol(out_transport)
-        yield gen.maybe_future(self._processor.process(iprot, oprot))
+
+        # TODO could be better with this limit
+        otrans = TMemoryOutputBuffer(0)
+        oprot = self._protocol_factory.get_protocol(otrans)
+
+        try:
+            yield gen.maybe_future(self._processor.process(iprot, oprot))
+        except TApplicationException:
+            # Continue so the exception is sent to the client
+            pass
+        except Exception as e:
+            self.send_error(status_code=400)
+            return
 
         # write back response
-        output_data = out_transport.getvalue()
+        output_data = otrans.getvalue()
         if len(output_data) > response_limit > 0:
             self.send_error(status_code=413)
             return
 
-        output_data_len = struct.pack('!I', len(output_data))
-        output_payload = base64.b64encode(output_data_len + output_data)
+        output_payload = base64.b64encode(output_data)
 
         self.set_header('content-transfer-encoding', 'base64')
         self.write(output_payload)

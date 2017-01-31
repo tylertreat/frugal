@@ -1,7 +1,10 @@
 package com.workiva.frugal.processor;
 
+import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.FProtocol;
 import org.apache.thrift.TException;
+
+import java.util.Map;
 
 /**
  * FProcessor is Frugal's equivalent of Thrift's TProcessor. It's a generic object
@@ -11,6 +14,24 @@ import org.apache.thrift.TException;
  */
 public interface FProcessor {
 
+    /**
+     * Processes the request from the input protocol and write the response to the output protocol.
+     *
+     * @param in  input FProtocol
+     * @param out output FProtocol
+     * @throws TException
+     */
     void process(FProtocol in, FProtocol out) throws TException;
 
+    /**
+     * Adds the given ServiceMiddleware to the FProcessor. This should only be called before the server is started.
+     *
+     * @param middleware the ServiceMiddleware to add
+     */
+    void addMiddleware(ServiceMiddleware middleware);
+
+    /**
+     * Returns a map of method name to annotations as defined in the service IDL that is serviced by this processor.
+     */
+    Map<String, Map<String, String>> getAnnotations();
 }

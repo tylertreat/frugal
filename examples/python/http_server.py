@@ -11,6 +11,7 @@ from frugal.protocol import FProtocolFactory
 from frugal.server.http_server import FHttpServer
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py"))
+from http_client import logging_middleware
 from v1.music.f_Store import Processor as FStoreProcessor  # noqa
 from v1.music.f_Store import Iface  # noqa
 from v1.music.ttypes import Album, Track, PerfRightsOrg  # noqa
@@ -68,9 +69,13 @@ def main():
     # Results from the handler are returned back to the client.
     processor = FStoreProcessor(StoreHandler())
 
+    # Optionally add middleware to the processor before starting the server.
+    # add_middleware can take a list or single middleware.
+    processor.add_middleware(logging_middleware)
+
     # Create a new music store server using the processor,
     # The sever will listen on the configured URL
-    server = FHttpServer(processor, ('', 8080), prot_factory)
+    server = FHttpServer(processor, ('', 9090), prot_factory)
     server.serve()
 
 

@@ -6,48 +6,27 @@ import 'package:test/test.dart';
 import 'package:thrift/thrift.dart';
 import 'package:mockito/mockito.dart';
 
+/**
+ * Returns a mock message frame.
+ */
+
 void main() {
   group('FTransport', () {
-    MockFRegistry registry;
-    FTransport transport;
+    int requestSizeLimit = 5;
+    _FTransportImpl transport;
     FContext context;
 
     setUp(() {
-      transport = new FTransportImpl();
-      registry = new MockFRegistry();
+      transport = new _FTransportImpl(requestSizeLimit);
       context = new FContext();
     });
 
-    test('test setting null registry throws FError', () async {
-      expect(() => transport.setRegistry(null),
-          throwsA(new isInstanceOf<FError>()));
-    });
-
-    test('test registering/unregistering beforw setting registry throws FError',
-        () async {
-      expect(() => transport.register(context, callback),
-          throwsA(new isInstanceOf<FError>()));
-      expect(() => transport.unregister(context),
-          throwsA(new isInstanceOf<FError>()));
-    });
-
-    test('test register/unregister call through to registry', () async {
-      transport.setRegistry(registry);
-      expect(registry.context, isNull);
-      expect(registry.callback, isNull);
-      transport.register(context, callback);
-      expect(registry.context, equals(context));
-      expect(registry.callback, equals(callback));
-      transport.unregister(context);
-      expect(registry.context, isNull);
-      expect(registry.callback, isNull);
-    });
-
     test(
-        'test closeWithException add the exeption to the onClose stream '
-        'and properly triggers the transport monitor', () async {
+        'test closeWithException adds the exeption to the onClose stream and properly triggers the transport monitor',
+        () async {
       var monitor = new MockTransportMonitor();
       transport.monitor = monitor;
+      transport.errors = [null, new TError(0, 'reopen failed'), null];
 
       var completer = new Completer<Error>();
       var err = new TTransportError();
@@ -55,60 +34,56 @@ void main() {
         completer.complete(e);
       });
 
-      when(monitor.onClosedUncleanly(any)).thenReturn(-1);
-      await transport.closeWithException(err);
+      // Open the transport
+      await transport.open();
+
+      // Close the transport with an error
+      when(monitor.onClosedUncleanly(any)).thenReturn(1);
+      when(monitor.onReopenFailed(any, any)).thenReturn(1);
+      await transport.close(err);
 
       var timeout = new Duration(seconds: 1);
       expect(await completer.future.timeout(timeout), equals(err));
       verify(monitor.onClosedUncleanly(err)).called(1);
+      verify(monitor.onReopenFailed(1, 1)).called(1);
+      verify(monitor.onReopenSucceeded()).called(1);
     });
   });
 }
 
-void callback(TTransport transport) {
+void _callback(TTransport transport) {
   return;
 }
 
-class FTransportImpl extends FTransport {}
+class _FTransportImpl extends FTransport {
+  // Default implementations of non-implemented methods
+  List<Error> errors = [];
+  int openCalls = 0;
 
-class MockFRegistry extends FRegistry {
-  List<Uint8List> data;
-  FContext context;
-  FAsyncCallback callback;
-  Completer executeCompleter;
-  Error executeError;
+  _FTransportImpl(int requestSizeLimit)
+      : super(requestSizeLimit: requestSizeLimit);
 
-  MockFRegistry() {
-    data = new List();
-  }
+  @override
+  Future<Null> oneway(FContext ctx, Uint8List payload) => new Future.value();
 
-  void initCompleter() {
-    executeCompleter = new Completer();
-  }
+  @override
+  Future<TTransport> request(FContext ctx, Uint8List payload) =>
+      new Future.value();
 
-  void register(FContext ctx, FAsyncCallback callback) {
-    this.context = ctx;
-    this.callback = callback;
-  }
-
-  void unregister(FContext ctx) {
-    if (this.context == ctx) {
-      this.context = null;
-      this.callback = null;
+  @override
+  Future open() async {
+    if (openCalls <= errors.length) {
+      if (errors[openCalls] != null) {
+        openCalls++;
+        throw errors[openCalls];
+      }
     }
+    openCalls++;
   }
 
-  void execute(Uint8List data) {
-    this.data.add(data);
-    if (executeCompleter != null && !executeCompleter.isCompleted) {
-      executeCompleter.complete();
-    }
-    if (executeError != null) {
-      throw executeError;
-    }
-  }
+  @override
+  bool get isOpen => false;
 }
 
-class MockTransportMonitor extends Mock implements FTransportMonitor {
-  noSuchMethod(i) => super.noSuchMethod(i);
-}
+/// Mock transport monitor.
+class MockTransportMonitor extends Mock implements FTransportMonitor {}

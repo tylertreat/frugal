@@ -1,7 +1,9 @@
 package com.workiva.frugal.transport.monitor;
 
-import com.workiva.frugal.protocol.FRegistry;
+import com.workiva.frugal.FContext;
+import com.workiva.frugal.exception.TTransportExceptionType;
 import com.workiva.frugal.transport.FTransport;
+import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -82,11 +84,9 @@ public class BaseFTransportMonitorTest {
         FTransport transport = new MockFTransport();
         FTransportMonitor monitor = mock(FTransportMonitor.class);
         CountDownLatch latch = new CountDownLatch(1);
-        Mockito.doAnswer(new Answer<Void>() {
-            public Void answer(InvocationOnMock invocation) {
-                latch.countDown();
-                return null;
-            }
+        Mockito.doAnswer(invocation -> {
+            latch.countDown();
+            return null;
         }).when(monitor).onClosedCleanly();
         transport.setMonitor(monitor);
 
@@ -222,15 +222,12 @@ public class BaseFTransportMonitorTest {
         private int errorCount;
 
         public MockFTransport() {
+            super();
         }
 
         public MockFTransport(int openErrorCount) {
+            super();
             this.openErrorCount = openErrorCount;
-        }
-
-        @Override
-        public void setRegistry(FRegistry registry) {
-
         }
 
         @Override
@@ -242,7 +239,7 @@ public class BaseFTransportMonitorTest {
         public void open() throws TTransportException {
             if (errorCount < openErrorCount) {
                 errorCount++;
-                throw new TTransportException(0, "open error");
+                throw new TTransportException(TTransportExceptionType.UNKNOWN, "open error");
             }
         }
 
@@ -251,18 +248,17 @@ public class BaseFTransportMonitorTest {
             signalClose(null);
         }
 
-        @Override
-        public int read(byte[] bytes, int i, int i1) throws TTransportException {
-            return 0;
-        }
-
-        @Override
-        public void write(byte[] bytes, int i, int i1) throws TTransportException {
-
-        }
-
         public void close(Exception cause) {
             signalClose(cause);
+        }
+
+        public void oneway(FContext context, byte[] payload) throws TTransportException {
+
+        }
+
+        @Override
+        public TTransport request(FContext context, byte[] payload) throws TTransportException {
+            return null;
         }
 
     }

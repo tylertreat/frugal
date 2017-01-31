@@ -11,7 +11,7 @@ import (
 // Ensures Execute returns an error if a bad frugal frame is passed.
 func TestClientRegistryBadFrame(t *testing.T) {
 	assert := assert.New(t)
-	registry := NewFClientRegistry()
+	registry := newFRegistry()
 	assert.Error(registry.Execute([]byte{0}))
 }
 
@@ -19,7 +19,7 @@ func TestClientRegistryBadFrame(t *testing.T) {
 // opID.
 func TestClientRegistryMissingOpID(t *testing.T) {
 	assert := assert.New(t)
-	registry := NewFClientRegistry()
+	registry := newFRegistry()
 	assert.Error(registry.Execute(basicFrame))
 }
 
@@ -27,43 +27,42 @@ func TestClientRegistryMissingOpID(t *testing.T) {
 // a valid frugal frame.
 func TestClientRegistry(t *testing.T) {
 	assert := assert.New(t)
-	called := 0
-	cb := func(tr thrift.TTransport) error {
-		called++
-		return nil
-	}
-	registry := NewFClientRegistry()
+	resultC := make(chan []byte, 1)
+	registry := newFRegistry()
 	ctx := NewFContext("")
+	opid, err := getOpID(ctx)
+	assert.Nil(err)
+	assert.True(opid > 0)
 
 	// Register the context for the first time
-	assert.Nil(registry.Register(ctx, cb))
-	opID := ctx.opID()
-	assert.True(opID > 0)
+	assert.Nil(registry.Register(ctx, resultC))
 	// Encode a frame with this context
 	transport := &thrift.TMemoryBuffer{Buffer: new(bytes.Buffer)}
 	proto := &FProtocol{tProtocolFactory.GetProtocol(transport)}
-	err := proto.writeHeader(ctx.RequestHeaders())
-	assert.Nil(err)
+	assert.Nil(proto.writeHeader(ctx.RequestHeaders()))
 	// Pass the frame to execute
 	frame := transport.Bytes()
 	assert.Nil(registry.Execute(frame))
-	assert.Equal(1, called)
+	assert.Equal(1, len(resultC))
 
-	// Reregister the same context
-	assert.Error(registry.Register(ctx, cb))
+	// Re-assign the same context
+	assert.Error(registry.Register(ctx, resultC))
 
 	// Unregister the context
 	registry.Unregister(ctx)
-	_, ok := registry.(*clientRegistry).handlers[ctx.opID()]
+	opid, err = getOpID(ctx)
+	assert.Nil(err)
+	_, ok := registry.(*fRegistryImpl).channels[opid]
 	assert.False(ok)
 	// But make sure execute sill returns nil when executing a frame with the
 	// same opID (it will just drop the frame)
 	assert.Nil(registry.Execute(frame))
-	assert.Equal(1, called)
+	assert.Equal(1, len(resultC))
 
 	// Now, register the same context again and ensure the opID is increased.
-	assert.Nil(registry.Register(ctx, cb))
-	assert.True(ctx.opID() > opID)
+	assert.Nil(registry.Register(ctx, resultC))
+	_, err = getOpID(ctx)
+	assert.Nil(err)
 }
 
 type mockProcessor struct {
@@ -78,19 +77,3 @@ func (p *mockProcessor) Process(in, out *FProtocol) error {
 }
 
 func (p *mockProcessor) AddMiddleware(middleware ServiceMiddleware) {}
-
-// Ensures registry Execute properly hands off frugal frames to the registry
-// Processor.
-func TestServerRegistry(t *testing.T) {
-	assert := assert.New(t)
-	processor := &mockProcessor{}
-	protocolFactory := NewFProtocolFactory(thrift.NewTBinaryProtocolFactoryDefault())
-	oprot := protocolFactory.GetProtocol(&mockFTransport{})
-
-	registry := NewServerRegistry(processor, protocolFactory, oprot)
-	assert.Nil(registry.Execute(frugalFrame))
-
-	ctx, err := processor.iprot.ReadRequestHeader()
-	assert.Nil(err)
-	assert.Equal(ctx.CorrelationID(), frugalHeaders[cidHeader])
-}

@@ -5,7 +5,8 @@ import mock
 from thrift.transport.TTransport import TTransportException
 
 from frugal.aio.transport import FHttpTransport
-from frugal.exceptions import FMessageSizeException
+from frugal.exceptions import TTransportExceptionType
+from frugal.context import FContext
 from frugal.tests.aio import utils
 
 
@@ -36,27 +37,29 @@ class TestFHttpTransport(utils.AsyncIOTestCase):
 
     @utils.async_runner
     async def test_open_close(self):
-        self.assertTrue(self.transport.isOpen())
+        self.assertTrue(self.transport.is_open())
         await self.transport.open()
-        self.assertTrue(self.transport.isOpen())
+        self.assertTrue(self.transport.is_open())
         await self.transport.close()
-        self.assertTrue(self.transport.isOpen())
+        self.assertTrue(self.transport.is_open())
 
     @utils.async_runner
-    async def test_write_too_much_data(self):
-        with self.assertRaises(FMessageSizeException):
-            self.transport.write(b'0' * 101)
+    async def test_oneway(self):
+        response_encoded = base64.b64encode(bytearray([0, 0, 0, 0]))
+        response_future = Future()
+        response_future.set_result((200, response_encoded))
+        self.make_request_mock.return_value = response_future
+
+        self.assertIsNone(await self.transport.oneway(
+            FContext(), bytearray([0, 0, 0, 3, 1, 2, 3])
+        ))
+
+        self.assertTrue(self.make_request_mock.called)
 
     @utils.async_runner
-    async def test_flush_success(self):
-        registry_mock = mock.Mock()
-        registry_future = Future()
-        registry_future.set_result(None)
-        registry_mock.execute.return_value = registry_future
-        self.transport.set_registry(registry_mock)
-
+    async def test_request(self):
         request_data = bytearray([4, 5, 6, 7, 8, 9, 10, 11, 13, 12, 3])
-        expected_payload = bytearray([0, 0, 0, 11]) + request_data
+        request_frame = bytearray([0, 0, 0, 11]) + request_data
 
         response_data = bytearray([23, 24, 25, 26, 27, 28, 29])
         response_frame = bytearray([0, 0, 0, 7]) + response_data
@@ -65,86 +68,81 @@ class TestFHttpTransport(utils.AsyncIOTestCase):
         response_future.set_result((200, response_encoded))
         self.make_request_mock.return_value = response_future
 
-        self.transport.write(request_data[:3])
-        self.transport.write(request_data[3:7])
-        self.transport.write(request_data[7:])
-        await self.transport.flush()
+        ctx = FContext()
+        response_transport = await self.transport.request(
+            ctx, request_frame)
 
+        self.assertEqual(response_data, response_transport.getvalue())
         self.assertTrue(self.make_request_mock.called)
-        request = self.make_request_mock.call_args[0][0]
-        self.assertEqual(request, base64.b64encode(expected_payload))
-
-        registry_mock.execute.assert_called_once_with(response_data)
+        request_args = self.make_request_mock.call_args[0]
+        self.assertEqual(request_args[0], ctx)
+        self.assertEqual(request_args[1], base64.b64encode(request_frame))
 
     @utils.async_runner
-    async def test_flush_invalid_response_frame(self):
+    async def test_request_too_much_data(self):
+        with self.assertRaises(TTransportException) as cm:
+            await self.transport.request(FContext(), b'0' * 101)
+        self.assertEqual(TTransportExceptionType.REQUEST_TOO_LARGE,
+                         cm.exception.type)
+
+    @utils.async_runner
+    async def test_request_invalid_response_frame(self):
         response_encoded = base64.b64encode(bytearray([4, 5]))
         response_future = Future()
         response_future.set_result((200, response_encoded))
         self.make_request_mock.return_value = response_future
 
-        self.transport.write(bytearray([1, 2, 3, 4]))
         with self.assertRaises(TTransportException):
-            await self.transport.flush()
+            await self.transport.request(
+                FContext(), bytearray([0, 0, 0, 4, 1, 2, 3, 4])
+            )
 
         self.assertTrue(self.make_request_mock.called)
 
     @utils.async_runner
-    async def test_flush_oneway(self):
-        registry_mock = mock.Mock()
-        self.transport.set_registry(registry_mock)
-
-        response_encoded = base64.b64encode(bytearray([0, 0, 0, 0]))
-        response_future = Future()
-        response_future.set_result((200, response_encoded))
-        self.make_request_mock.return_value = response_future
-
-        self.transport.write(bytearray([1, 2, 3]))
-        await self.transport.flush()
-
-        self.assertTrue(self.make_request_mock.called)
-        self.assertFalse(registry_mock.execute.called)
-
-    @utils.async_runner
-    async def test_flush_missing_data(self):
+    async def test_request_missing_data(self):
         response_encoded = base64.b64encode(bytearray([0, 0, 0, 1]))
         response_future = Future()
         response_future.set_result((200, response_encoded))
         self.make_request_mock.return_value = response_future
 
-        self.transport.write(bytearray([1, 2, 3]))
         with self.assertRaises(TTransportException) as e:
-            await self.transport.flush()
+            await self.transport.request(
+                FContext(), bytearray([0, 0, 0, 31, 2, 3]))
 
         self.assertEqual(str(e.exception), 'missing data')
 
     @utils.async_runner
-    async def test_flush_response_too_large(self):
+    async def test_request_response_too_large(self):
         message = b'something went wrong'
         encoded_message = base64.b64encode(message)
         response_future = Future()
         response_future.set_result((413, encoded_message))
         self.make_request_mock.return_value = response_future
 
-        self.transport.write(bytearray([1, 2, 3]))
-        with self.assertRaises(FMessageSizeException) as e:
-            await self.transport.flush()
+        with self.assertRaises(TTransportException) as e:
+            await self.transport.request(
+                FContext(), bytearray([0, 0, 0, 3, 1, 2, 3]))
 
+        self.assertEqual(TTransportExceptionType.RESPONSE_TOO_LARGE,
+                         e.exception.type)
         self.assertEqual(str(e.exception),
                          'response was too large for the transport')
 
     @utils.async_runner
-    async def test_flush_response_error(self):
+    async def test_request_response_error(self):
         message = b'something went wrong'
         response_future = Future()
         response_future.set_result((404, message))
         self.make_request_mock.return_value = response_future
 
-        self.transport.write(bytearray([1, 2, 3]))
         with self.assertRaises(TTransportException) as e:
-            await self.transport.flush()
+            await self.transport.request(
+                FContext(), bytearray([0, 0, 0, 3, 1, 2, 3]))
 
-        self.assertEqual(str(e.exception),
-                         'request errored with code {0} and message {1}'.format(
-                             404, str(message)
-                         ))
+        self.assertEqual(
+            str(e.exception),
+            'request errored with code {0} and message {1}'.format(
+                404, str(message)
+            )
+        )

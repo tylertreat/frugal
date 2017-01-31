@@ -1,18 +1,19 @@
 package examples;
 
-import com.workiva.frugal.protocol.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
-import com.workiva.frugal.transport.FNatsScopeTransport;
-import com.workiva.frugal.transport.FScopeTransportFactory;
+import com.workiva.frugal.transport.FNatsPublisherTransport;
+import com.workiva.frugal.transport.FNatsSubscriberTransport;
+import com.workiva.frugal.transport.FPublisherTransportFactory;
+import com.workiva.frugal.transport.FSubscriberTransportFactory;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
-import v1.music.Album;
 import v1.music.AlbumWinnersSubscriber;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -29,18 +30,15 @@ public class NatsSubscriber {
         ConnectionFactory cf = new ConnectionFactory(ConnectionFactory.DEFAULT_URL);
         Connection conn = cf.createConnection();
 
-        // Create the pubsub scope transport and provider, given the NATs connection and protocol
-        FScopeTransportFactory factory = new FNatsScopeTransport.Factory(conn);
-        FScopeProvider provider = new FScopeProvider(factory, protocolFactory);
+        // Create the pubsub scope provider, given the NATs connection and protocol
+        FPublisherTransportFactory publisherFactory = new FNatsPublisherTransport.Factory(conn);
+        FSubscriberTransportFactory subscriberFactory = new FNatsSubscriberTransport.Factory(conn);
+        FScopeProvider provider = new FScopeProvider(publisherFactory, subscriberFactory, protocolFactory);
 
         // Subscribe to winner announcements
-        AlbumWinnersSubscriber subscriber = new AlbumWinnersSubscriber(provider);
-        subscriber.subscribeWinner(new AlbumWinnersSubscriber.WinnerHandler() {
-            @Override
-            public void onWinner(FContext ctx, Album album) {
-                System.out.println("You won! " + album);
-            }
-        });
+        AlbumWinnersSubscriber.Iface subscriber = new AlbumWinnersSubscriber.Client(provider);
+        subscriber.subscribeWinner((ctx, album) -> System.out.println("You won! " + album));
+        subscriber.subscribeContestStart((ctx, albums) -> System.out.println("Contest started, available albums: " + albums));
         System.out.println("Subscriber started...");
     }
 }

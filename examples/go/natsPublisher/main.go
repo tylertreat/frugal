@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/nats-io/nats"
+	"github.com/nats-io/go-nats"
 
 	"github.com/Workiva/frugal/examples/go/gen-go/v1/music"
 	"github.com/Workiva/frugal/lib/go"
@@ -25,8 +25,9 @@ func main() {
 	defer conn.Close()
 
 	// Create a NATS scoped transport for the PubSub scope
-	factory := frugal.NewFNatsScopeTransportFactory(conn)
-	provider := frugal.NewFScopeProvider(factory, fProtocolFactory)
+	pfactory := frugal.NewFNatsPublisherTransportFactory(conn)
+	sfactory := frugal.NewFNatsSubscriberTransportFactory(conn)
+	provider := frugal.NewFScopeProvider(pfactory, sfactory, fProtocolFactory)
 	publisher := music.NewAlbumWinnersPublisher(provider)
 
 	// Open the publisher to receive traffic
@@ -40,7 +41,7 @@ func main() {
 	album := &music.Album{
 		ASIN:     "c54d385a-5024-4f3f-86ef-6314546a7e7f",
 		Duration: 1200,
-		Tracks: []*music.Track{&music.Track{
+		Tracks: []*music.Track{{
 			Title:     "Comme des enfants",
 			Artist:    "Coeur de pirate",
 			Publisher: "Grosse Boîte",
@@ -50,6 +51,9 @@ func main() {
 		}},
 	}
 	if err := publisher.PublishWinner(ctx, album); err != nil {
+		panic(err)
+	}
+	if err := publisher.PublishContestStart(ctx, []*music.Album{album, album}); err != nil {
 		panic(err)
 	}
 

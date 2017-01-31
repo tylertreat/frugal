@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -40,7 +41,7 @@ func TestReadRequestHeaderMissingOpID(t *testing.T) {
 	transport := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(basicFrame)}
 	proto := &FProtocol{tProtocolFactory.GetProtocol(transport)}
 
-	expectedErr := NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: request missing op id")
+	expectedErr := thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, errors.New("frugal: request missing op id"))
 	_, err := proto.ReadRequestHeader()
 	assert.Equal(expectedErr, err)
 }
@@ -55,7 +56,9 @@ func TestReadRequestHeader(t *testing.T) {
 	ctx, err := proto.ReadRequestHeader()
 	assert.Nil(err)
 	assert.Equal(frugalHeaders[cidHeader], ctx.CorrelationID())
-	assert.Equal(uint64(0), ctx.opID())
+	opid, err := getOpID(ctx)
+	assert.Nil(err)
+	assert.Equal(uint64(0), opid)
 	val, ok := ctx.RequestHeader("hello")
 	assert.True(ok)
 	assert.Equal(frugalHeaders["hello"], val)
@@ -82,7 +85,8 @@ func TestWriteHeaderErroredWrite(t *testing.T) {
 	writeErr := errors.New("write failed")
 	mft.On("Write", basicFrame).Return(0, writeErr)
 	proto := &FProtocol{tProtocolFactory.GetProtocol(mft)}
-	expectedErr := thrift.NewTTransportException(thrift.UNKNOWN_TRANSPORT_EXCEPTION, fmt.Sprintf("frugal: error writing protocol headers in writeHeader: %s", writeErr))
+	expectedErr := thrift.NewTTransportException(TRANSPORT_EXCEPTION_UNKNOWN,
+		fmt.Sprintf("frugal: error writing protocol headers in writeHeader: %s", writeErr))
 	assert.Equal(expectedErr, proto.writeHeader(basicHeaders))
 	mft.AssertExpectations(t)
 }
@@ -116,10 +120,12 @@ func TestWriteReadRequestHeader(t *testing.T) {
 	transport := &thrift.TMemoryBuffer{Buffer: &bytes.Buffer{}}
 	proto := &FProtocol{tProtocolFactory.GetProtocol(transport)}
 	ctx := NewFContext("123")
+	origOpID, err := getOpID(ctx)
+	assert.Nil(err)
 	ctx.AddRequestHeader("hello", "world")
 	ctx.AddRequestHeader("foo", "bar")
 	assert.Nil(proto.WriteRequestHeader(ctx))
-	ctx, err := proto.ReadRequestHeader()
+	ctx, err = proto.ReadRequestHeader()
 	assert.Nil(err)
 	header, ok := ctx.RequestHeader("hello")
 	assert.True(ok)
@@ -128,7 +134,9 @@ func TestWriteReadRequestHeader(t *testing.T) {
 	assert.True(ok)
 	assert.Equal("bar", header)
 	assert.Equal("123", ctx.CorrelationID())
-	assert.Equal(uint64(0), ctx.opID())
+	opid, err := getOpID(ctx)
+	assert.Nil(err)
+	assert.Equal(origOpID, opid)
 }
 
 // Ensures WriteResponseHeader properly encodes header bytes and
@@ -138,11 +146,14 @@ func TestWriteReadResponseHeader(t *testing.T) {
 	transport := &thrift.TMemoryBuffer{Buffer: &bytes.Buffer{}}
 	proto := &FProtocol{tProtocolFactory.GetProtocol(transport)}
 	ctx := NewFContext("123")
+	origOpID, err := getOpID(ctx)
+	assert.Nil(err)
 	ctx.AddResponseHeader("hello", "world")
 	ctx.AddResponseHeader("foo", "bar")
+	ctx.AddResponseHeader(opIDHeader, strconv.FormatUint(origOpID, 10))
 	assert.Nil(proto.WriteResponseHeader(ctx))
 	ctx = NewFContext("123")
-	err := proto.ReadResponseHeader(ctx)
+	err = proto.ReadResponseHeader(ctx)
 	assert.Nil(err)
 	header, ok := ctx.ResponseHeader("hello")
 	assert.True(ok)
@@ -151,7 +162,9 @@ func TestWriteReadResponseHeader(t *testing.T) {
 	assert.True(ok)
 	assert.Equal("bar", header)
 	assert.Equal("123", ctx.CorrelationID())
-	assert.Equal(uint64(0), ctx.opID())
+	opid, ok := ctx.ResponseHeader(opIDHeader)
+	assert.Nil(err)
+	assert.Equal(strconv.FormatUint(origOpID, 10), opid)
 }
 
 // Ensures readHeader returns an error if there are not enough frame bytes to
@@ -168,7 +181,7 @@ func TestReadHeaderTransportError(t *testing.T) {
 func TestReadHeaderUnsupportedVersion(t *testing.T) {
 	assert := assert.New(t)
 	transport := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer([]byte{0x01, 0, 0, 0, 0})}
-	expectedErr := NewFProtocolExceptionWithType(thrift.BAD_VERSION, "frugal: unsupported protocol version 1")
+	expectedErr := thrift.NewTProtocolExceptionWithType(thrift.BAD_VERSION, errors.New("frugal: unsupported protocol version 1"))
 	_, err := readHeader(transport)
 	assert.Equal(expectedErr, err)
 }
@@ -195,7 +208,7 @@ func TestReadHeader(t *testing.T) {
 // Ensures getHeadersFromFrame returns an error for frames with invalid size.
 func TestGetHeadersFromFrameInvalidSize(t *testing.T) {
 	assert := assert.New(t)
-	expectedErr := NewFProtocolExceptionWithType(thrift.INVALID_DATA, "frugal: invalid v0 frame size 0")
+	expectedErr := thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, errors.New("frugal: invalid v0 frame size 0"))
 	_, err := getHeadersFromFrame([]byte{0})
 	assert.Equal(expectedErr, err)
 }
@@ -204,7 +217,7 @@ func TestGetHeadersFromFrameInvalidSize(t *testing.T) {
 // frame encoding version.
 func TestGetHeadersFromFrameUnsupportedVersion(t *testing.T) {
 	assert := assert.New(t)
-	expectedErr := NewFProtocolExceptionWithType(thrift.BAD_VERSION, "frugal: unsupported protocol version 1")
+	expectedErr := thrift.NewTProtocolExceptionWithType(thrift.BAD_VERSION, errors.New("frugal: unsupported protocol version 1"))
 	_, err := getHeadersFromFrame([]byte{0x01, 0, 0, 0, 0})
 	assert.Equal(expectedErr, err)
 }
@@ -250,7 +263,7 @@ func TestAddHeadersToFrameShortFrame(t *testing.T) {
 	assert := assert.New(t)
 	_, err := addHeadersToFrame(make([]byte, 3), make(map[string]string))
 	assert.NotNil(err)
-	assert.Equal(thrift.INVALID_DATA, err.(FProtocolException).TypeId())
+	assert.Equal(thrift.INVALID_DATA, err.(thrift.TProtocolException).TypeId())
 }
 
 // Ensures addHeadersToFrame returns an error if the frame has an unsupported
@@ -261,7 +274,7 @@ func TestAddHeadersToFrameBadVersion(t *testing.T) {
 	frame[4] = 0xFF
 	_, err := addHeadersToFrame(frame, make(map[string]string))
 	assert.NotNil(err)
-	assert.Equal(thrift.BAD_VERSION, err.(FProtocolException).TypeId())
+	assert.Equal(thrift.BAD_VERSION, err.(thrift.TProtocolException).TypeId())
 }
 
 // Ensures addHeadersToFrame returns an error if the frame has an incorrect
@@ -273,7 +286,7 @@ func TestAddHeadersToFrameBadFrameSize(t *testing.T) {
 	frame[4] = protocolV0
 	_, err := addHeadersToFrame(frame, make(map[string]string))
 	assert.NotNil(err)
-	assert.Equal(thrift.INVALID_DATA, err.(FProtocolException).TypeId())
+	assert.Equal(thrift.INVALID_DATA, err.(thrift.TProtocolException).TypeId())
 }
 
 // Ensures headers with non-ascii characters can be encodeded and decoded

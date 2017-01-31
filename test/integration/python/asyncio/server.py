@@ -21,7 +21,8 @@ from frugal_test.ttypes import Event
 
 from frugal.aio.server import FNatsServer
 from frugal.aio.server.http_handler import new_http_handler
-from frugal.aio.transport.nats_scope_transport import FNatsScopeTransportFactory
+from frugal.aio.transport import FNatsPublisherTransportFactory
+from frugal.aio.transport import FNatsSubscriberTransportFactory
 
 from common.FrugalTestHandler import FrugalTestHandler
 from common.utils import *
@@ -49,26 +50,36 @@ async def main():
     port = args.port
 
     handler = FrugalTestHandler()
-    subject = args.port
+    subject = "frugal.*.*.{}".format(args.port)
     processor = Processor(handler)
 
     # Setup subscriber, send response upon receipt
-    scope_transport_factory = FNatsScopeTransportFactory(nats_client)
-    provider = FScopeProvider(scope_transport_factory, protocol_factory)
+    pub_transport_factory = FNatsPublisherTransportFactory(nats_client)
+    sub_transport_factory = FNatsSubscriberTransportFactory(nats_client)
+    provider = FScopeProvider(
+        pub_transport_factory, sub_transport_factory, protocol_factory)
     publisher = EventsPublisher(provider)
     await publisher.open()
 
     async def response_handler(context, event):
+        preamble = context.get_request_header(PREAMBLE_HEADER)
+        if preamble is None or preamble == "":
+            logging.error("Client did not provide preamble header")
+            return
+        ramble = context.get_request_header(RAMBLE_HEADER)
+        if ramble is None or ramble == "":
+            logging.error("Client did not provide ramble header")
+            return
         response_event = Event(Message="Sending Response")
         response_context = FContext("Call")
-        await publisher.publish_EventCreated(response_context, "foo", "Client", "response", "{}".format(port), response_event)
+        await publisher.publish_EventCreated(response_context, preamble, ramble, "response", "{}".format(port), response_event)
 
     subscriber = EventsSubscriber(provider)
-    await subscriber.subscribe_EventCreated("foo", "Client", "call", "{}".format(args.port), response_handler)
+    await subscriber.subscribe_EventCreated("*", "*", "call", "{}".format(args.port), response_handler)
 
     if args.transport_type in ["stateless", "stateless-stateful"]:
         server = FNatsServer(nats_client,
-                             subject,
+                             [subject],
                              processor,
                              protocol_factory)
         # start healthcheck so the test runner knows the server is running

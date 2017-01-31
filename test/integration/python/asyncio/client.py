@@ -7,16 +7,18 @@ sys.path.append('..')
 
 from frugal.context import FContext
 from frugal.provider import FScopeProvider
+from frugal.provider import FServiceProvider
 from frugal.aio.transport import (
     FNatsTransport,
     FHttpTransport,
-    FNatsScopeTransportFactory,
+    FNatsPublisherTransportFactory,
+    FNatsSubscriberTransportFactory,
 )
 
 from nats.aio.client import Client as NatsClient
 
 from frugal_test.f_Events_publisher import EventsPublisher
-from frugal_test import ttypes, Xception, Insanity, Xception2, Event
+from frugal_test.ttypes import Xception, Insanity, Xception2, Event
 from frugal_test.f_Events_subscriber import EventsSubscriber
 from frugal_test.f_FrugalTest import Client as FrugalTestClient
 
@@ -44,7 +46,7 @@ async def main():
     transport = None
 
     if args.transport_type in ["stateless", "stateless-stateful"]:
-        transport = FNatsTransport(nats_client, args.port)
+        transport = FNatsTransport(nats_client, "frugal.foo.bar.{}".format(args.port))
         await transport.open()
     elif args.transport_type == "http":
         transport = FHttpTransport("http://localhost:{port}".format(port=args.port))
@@ -52,7 +54,7 @@ async def main():
         print("Unknown transport type: {type}".format(type=args.transport_type))
         sys.exit(1)
 
-    client = FrugalTestClient(transport, protocol_factory, client_middleware)
+    client = FrugalTestClient(FServiceProvider(transport, protocol_factory), client_middleware)
     ctx = FContext("test")
 
     await test_rpc(client, ctx)
@@ -96,8 +98,10 @@ async def test_rpc(client, ctx):
 # test_pub_sub publishes an event and verifies that a response is received
 async def test_pub_sub(nats_client, protocol_factory, port):
     global response_received
-    scope_transport_factory = FNatsScopeTransportFactory(nats_client)
-    provider = FScopeProvider(scope_transport_factory, protocol_factory)
+    pub_transport_factory = FNatsPublisherTransportFactory(nats_client)
+    sub_transport_factory = FNatsSubscriberTransportFactory(nats_client)
+    provider = FScopeProvider(
+        pub_transport_factory, sub_transport_factory, protocol_factory)
     publisher = EventsPublisher(provider)
 
     await publisher.open()
@@ -109,13 +113,17 @@ async def test_pub_sub(nats_client, protocol_factory, port):
             response_received = True
 
     # Subscribe to response
+    preamble = "foo"
+    ramble = "bar"
     subscriber = EventsSubscriber(provider)
-    await subscriber.subscribe_EventCreated("foo", "Client", "response", "{}".format(port), subscribe_handler)
+    await subscriber.subscribe_EventCreated(preamble, ramble, "response", "{}".format(port), subscribe_handler)
 
     event = Event(Message="Sending Call")
     context = FContext("Call")
+    context.set_request_header(PREAMBLE_HEADER, preamble)
+    context.set_request_header(RAMBLE_HEADER, ramble)
     print("Publishing...")
-    await publisher.publish_EventCreated(context, "foo", "Client", "call", "{}".format(port), event)
+    await publisher.publish_EventCreated(context, preamble, ramble, "call", "{}".format(port), event)
 
     # Loop with sleep interval. Fail if not received within 3 seconds
     total_time = 0

@@ -1,23 +1,29 @@
 package com.workiva.frugal.transport;
 
-import com.workiva.frugal.exception.FMessageSizeException;
 
+import com.workiva.frugal.FContext;
+import com.workiva.frugal.exception.TTransportExceptionType;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.apache.thrift.TException;
+import org.apache.thrift.transport.TMemoryInputTransport;
+import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 
 /**
@@ -35,11 +41,11 @@ public class FHttpTransport extends FTransport {
     private final String url;
     private final int responseSizeLimit;
 
-    private FHttpTransport(CloseableHttpClient httpClient, String url,
-                           int requestSizeLimit, int responseSizeLimit) {
-        super(requestSizeLimit - 4);
+    private FHttpTransport(CloseableHttpClient httpClient, String url, int requestSizeLimit, int responseSizeLimit) {
+        super();
         this.httpClient = httpClient;
         this.url = url;
+        this.requestSizeLimit = requestSizeLimit;
         this.responseSizeLimit = responseSizeLimit;
     }
 
@@ -124,18 +130,27 @@ public class FHttpTransport extends FTransport {
     }
 
     /**
-     * Sends the buffered bytes over HTTP.
+     * Sends the framed frugal payload over HTTP.
      *
      * @throws TTransportException if there was an error writing out data.
      */
     @Override
-    public void flush() throws TTransportException {
-        if (!hasWriteData()) {
-            return;
-        }
-        byte[] data = getFramedWriteBytes();
-        resetWriteBuffer();
-        byte[] response = makeRequest(data);
+    public void oneway(FContext context, byte[] payload) throws TTransportException {
+        preflightRequestCheck(payload.length);
+
+        makeRequest(context, payload);
+    }
+
+    /**
+     * Sends the framed frugal payload over HTTP.
+     *
+     * @throws TTransportException if there was an error writing out data.
+     */
+    @Override
+    public TTransport request(FContext context, byte[] payload) throws TTransportException {
+        preflightRequestCheck(payload.length);
+
+        byte[] response = makeRequest(context, payload);
 
         // All responses should be framed with 4 bytes
         if (response.length < 4) {
@@ -148,18 +163,12 @@ public class FHttpTransport extends FTransport {
             if (ByteBuffer.wrap(response).getInt() != 0) {
                 throw new TTransportException("missing data");
             }
-            return;
+            return null;
         }
-
-        // Put the frame in the buffer
-        try {
-            executeFrame(response);
-        } catch (TException e) {
-            throw new TTransportException("could not execute response callback: " + e.getMessage());
-        }
+        return new TMemoryInputTransport(Arrays.copyOfRange(response, 4, response.length));
     }
 
-    private byte[] makeRequest(byte[] requestPayload) throws TTransportException {
+    private byte[] makeRequest(FContext context, byte[] requestPayload) throws TTransportException {
         // Encode request payload
         String encoded = Base64.encodeBase64String(requestPayload);
         StringEntity requestEntity = new StringEntity(encoded, ContentType.create("application/x-frugal", "utf-8"));
@@ -172,11 +181,18 @@ public class FHttpTransport extends FTransport {
             request.setHeader("x-frugal-payload-limit", Integer.toString(responseSizeLimit));
         }
         request.setEntity(requestEntity);
+        request.setConfig(RequestConfig.custom()
+                .setConnectTimeout((int) context.getTimeout())
+                .setSocketTimeout((int) context.getTimeout())
+                .build());
 
         // Make request
         CloseableHttpResponse response;
         try {
             response = httpClient.execute(request);
+        } catch (ConnectTimeoutException | SocketTimeoutException e) {
+            throw new TTransportException(TTransportExceptionType.TIMED_OUT,
+                    "http request timed out: " + e.getMessage());
         } catch (IOException e) {
             throw new TTransportException("http request failed: " + e.getMessage());
         }
@@ -185,8 +201,8 @@ public class FHttpTransport extends FTransport {
             // Response too large
             int status = response.getStatusLine().getStatusCode();
             if (status == HttpStatus.SC_REQUEST_TOO_LONG) {
-                throw new FMessageSizeException(FTransport.RESPONSE_TOO_LARGE,
-                        "response was too large for the transport");
+                throw new TTransportException(
+                        TTransportExceptionType.RESPONSE_TOO_LARGE, "response was too large for the transport");
             }
 
             // Decode body
@@ -203,7 +219,7 @@ public class FHttpTransport extends FTransport {
             return Base64.decodeBase64(responseBody);
 
         } catch (IOException e) {
-            throw new TTransportException("could not decode response body: " + e.getMessage());
+            throw new TTransportException("could not decodeFromFrame response body: " + e.getMessage());
         } finally {
             try {
                 response.close();

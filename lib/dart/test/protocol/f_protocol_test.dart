@@ -1,4 +1,3 @@
-import "dart:typed_data";
 import "package:test/test.dart";
 import "package:frugal/frugal.dart";
 import "package:thrift/thrift.dart";

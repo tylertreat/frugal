@@ -8,7 +8,7 @@ from thrift.protocol import TBinaryProtocol
 from thrift.transport.TTransport import TTransportException
 from frugal.context import FContext
 from frugal.protocol import FProtocolFactory
-from frugal.provider import FScopeProvider
+from frugal.provider import FServiceProvider
 from frugal.aio.transport import FHttpTransport
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py.asyncio"))
@@ -33,18 +33,18 @@ async def main():
     prot_factory = FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
 
     # Create an HTTP to query the configured server URL
-    transport = FHttpTransport("http://localhost:8080/frugal")
+    transport = FHttpTransport("http://localhost:9090/frugal")
 
     # Using the configured transport and protocol, create a client
     # to talk to the music store service.
-    store_client = FStoreClient(transport, prot_factory,
+    store_client = FStoreClient(FServiceProvider(transport, prot_factory),
                                 middleware=logging_middleware)
 
     album = await store_client.buyAlbum(FContext(),
                                         str(uuid.uuid4()),
                                         "ACT-12345")
 
-    root.info("Bought an album %s\n", album)
+    root.info("Bought an album %s\n", album.ASIN)
 
     await store_client.enterAlbumGiveaway(FContext(),
                                           "kevin@workiva.com",
@@ -55,9 +55,9 @@ async def main():
 
 def logging_middleware(next):
     def handler(method, args):
-        print('==== CALLING %s ====', method.__name__)
+        root.info('==== CALLING %s ====', method.__name__)
         ret = next(method, args)
-        print('==== CALLED  %s ====', method.__name__)
+        root.info('==== CALLED  %s ====', method.__name__)
         return ret
     return handler
 

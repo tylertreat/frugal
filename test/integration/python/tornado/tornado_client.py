@@ -8,16 +8,16 @@ sys.path.append('..')
 
 from frugal.context import FContext
 from frugal.provider import FScopeProvider
+from frugal.provider import FServiceProvider
 
 from frugal.tornado.transport import (
-    FMuxTornadoTransportFactory,
-    FNatsScopeTransportFactory,
+    FNatsPublisherTransportFactory,
+    FNatsSubscriberTransportFactory,
     FNatsTransport,
-    TNatsServiceTransport,
     FHttpTransport
 )
 
-from frugal_test import ttypes, Xception, Insanity, Xception2, Event
+from frugal_test.ttypes import Xception, Insanity, Xception2, Event
 from frugal_test.f_Events_publisher import EventsPublisher
 from frugal_test.f_Events_subscriber import EventsSubscriber
 from frugal_test.f_FrugalTest import Client as FrugalTestClient
@@ -40,7 +40,7 @@ def main():
     parser.add_argument('--port', dest='port', default= '9090')
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
     parser.add_argument('--transport', dest='transport_type', default="stateless",
-                        choices="stateless, stateful, stateless-stateful, http")
+                        choices="stateless, http")
 
     args = parser.parse_args()
 
@@ -53,18 +53,8 @@ def main():
 
     transport = None
 
-    if args.transport_type == "stateless" or args.transport_type == "stateless-stateful":
-        transport = FNatsTransport(nats_client, str(args.port))
-
-    elif args.transport_type == "stateful":  # @Deprecated TODO: Remove in 2.0
-        transport_factory = FMuxTornadoTransportFactory()
-        nats_transport = TNatsServiceTransport.Client(
-            nats_client=nats_client,
-            connection_subject=str(args.port),
-            connection_timeout=2000,
-            io_loop=5)
-        transport = transport_factory.get_transport(nats_transport)
-
+    if args.transport_type == "stateless":
+        transport = FNatsTransport(nats_client, "frugal.foo.bar.{}".format(args.port))
     elif args.transport_type == "http":
         transport = FHttpTransport("http://localhost:" + str(args.port))
     else:
@@ -77,7 +67,7 @@ def main():
         logging.error(ex)
         raise gen.Return()
 
-    client = FrugalTestClient(transport, protocol_factory, client_middleware)
+    client = FrugalTestClient(FServiceProvider(transport, protocol_factory), client_middleware)
 
     ctx = FContext("test")
 
@@ -97,8 +87,10 @@ def main():
 @gen.coroutine
 def test_pub_sub(nats_client, protocol_factory, port):
     global response_received
-    scope_transport_factory = FNatsScopeTransportFactory(nats_client)
-    provider = FScopeProvider(scope_transport_factory, protocol_factory)
+    pub_transport_factory = FNatsPublisherTransportFactory(nats_client)
+    sub_transport_factory = FNatsSubscriberTransportFactory(nats_client)
+    provider = FScopeProvider(
+        pub_transport_factory, sub_transport_factory, protocol_factory)
     publisher = EventsPublisher(provider)
     yield publisher.open()
 
@@ -109,13 +101,17 @@ def test_pub_sub(nats_client, protocol_factory, port):
             response_received = True
 
     # Subscribe to response
+    preamble = "foo"
+    ramble = "bar"
     subscriber = EventsSubscriber(provider)
-    yield subscriber.subscribe_EventCreated("foo", "Client", "response", "{}".format(port), subscribe_handler)
+    yield subscriber.subscribe_EventCreated(preamble, ramble, "response", "{}".format(port), subscribe_handler)
 
     event = Event(Message="Sending Call")
     context = FContext("Call")
+    context.set_request_header(PREAMBLE_HEADER, preamble)
+    context.set_request_header(RAMBLE_HEADER, ramble)
     print("Publishing...")
-    publisher.publish_EventCreated(context, "foo", "Client", "call", "{}".format(port), event)
+    publisher.publish_EventCreated(context, preamble, ramble, "call", "{}".format(port), event)
 
     # Loop with sleep interval. Fail if not received within 3 seconds
     total_time = 0

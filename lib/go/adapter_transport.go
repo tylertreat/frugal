@@ -1,7 +1,7 @@
 package frugal
 
 import (
-	"errors"
+	"bytes"
 	"io"
 	"sync"
 	"time"
@@ -26,13 +26,13 @@ func (f *fAdapterTransportFactory) GetTransport(tr thrift.TTransport) FTransport
 }
 
 type fAdapterTransport struct {
-	*TFramedTransport
+	transport          thrift.TTransport
 	isOpen             bool
 	mu                 sync.RWMutex
 	closeSignal        chan struct{}
 	closeChan          chan error
 	monitorCloseSignal chan<- error
-	registry           FRegistry
+	registry           fRegistry
 }
 
 // NewAdapterTransport returns an FTransport which uses the given TTransport
@@ -42,22 +42,24 @@ type fAdapterTransport struct {
 // the registry on received frames.
 func NewAdapterTransport(tr thrift.TTransport) FTransport {
 	return &fAdapterTransport{
-		TFramedTransport: NewTFramedTransport(tr),
-		closeSignal:      make(chan struct{}, 1),
+		registry:    newFRegistry(),
+		transport:   tr,
+		closeSignal: make(chan struct{}, 1),
 	}
 }
 
+// Open prepares the transport to send data.
 func (f *fAdapterTransport) Open() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.isOpen {
-		return thrift.NewTTransportException(thrift.ALREADY_OPEN,
+		return thrift.NewTTransportException(TRANSPORT_EXCEPTION_ALREADY_OPEN,
 			"frugal: transport already open")
 	}
 
-	if err := f.TFramedTransport.Open(); err != nil {
+	if err := f.transport.Open(); err != nil {
 		// It's OK if the underlying transport is already open.
-		if e, ok := err.(thrift.TTransportException); !(ok && e.TypeId() == thrift.ALREADY_OPEN) {
+		if e, ok := err.(thrift.TTransportException); !(ok && e.TypeId() == TRANSPORT_EXCEPTION_ALREADY_OPEN) {
 			return err
 		}
 	}
@@ -69,8 +71,9 @@ func (f *fAdapterTransport) Open() error {
 }
 
 func (f *fAdapterTransport) readLoop() {
+	framedTransport := NewTFramedTransport(f.transport)
 	for {
-		frame, err := f.readFrame()
+		frame, err := f.readFrame(framedTransport)
 		if err != nil {
 			// First check if the transport was closed.
 			select {
@@ -80,7 +83,7 @@ func (f *fAdapterTransport) readLoop() {
 			default:
 			}
 
-			if err, ok := err.(thrift.TTransportException); ok && err.TypeId() == thrift.END_OF_FILE {
+			if err, ok := err.(thrift.TTransportException); ok && err.TypeId() == TRANSPORT_EXCEPTION_END_OF_FILE {
 				// EOF indicates remote peer disconnected.
 				f.Close()
 				return
@@ -100,25 +103,27 @@ func (f *fAdapterTransport) readLoop() {
 	}
 }
 
-func (f *fAdapterTransport) readFrame() ([]byte, error) {
-	_, err := f.TFramedTransport.Read([]byte{})
+func (f *fAdapterTransport) readFrame(framedTransport *TFramedTransport) ([]byte, error) {
+	_, err := framedTransport.Read([]byte{})
 	if err != nil {
 		return nil, err
 	}
-	buff := make([]byte, f.RemainingBytes())
-	_, err = io.ReadFull(f.TFramedTransport, buff)
+	buff := make([]byte, framedTransport.RemainingBytes())
+	_, err = io.ReadFull(framedTransport, buff)
 	if err != nil {
 		return nil, err
 	}
 	return buff, nil
 }
 
+// IsOpen returns true if the transport is open, false otherwise.
 func (f *fAdapterTransport) IsOpen() bool {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
-	return f.isOpen && f.TFramedTransport.IsOpen()
+	return f.isOpen && f.transport.IsOpen()
 }
 
+// Close closes the transport.
 func (f *fAdapterTransport) Close() error {
 	return f.close(nil)
 }
@@ -128,11 +133,11 @@ func (f *fAdapterTransport) close(cause error) error {
 	defer f.mu.Unlock()
 
 	if !f.isOpen {
-		return thrift.NewTTransportException(thrift.NOT_OPEN, "Transport not open")
+		return thrift.NewTTransportException(TRANSPORT_EXCEPTION_NOT_OPEN, "Transport not open")
 	}
 
 	f.closeSignal <- struct{}{}
-	if err := f.TFramedTransport.Close(); err != nil {
+	if err := f.transport.Close(); err != nil {
 		// Close failed, drain close signal.
 		select {
 		case <-f.closeSignal:
@@ -163,37 +168,71 @@ func (f *fAdapterTransport) close(cause error) error {
 	return nil
 }
 
-// Read returns an error as it should not be called directly. The adapter
-// transport handles reading from the underlying transport and is responsible
-// for invoking callbacks on received frames.
-func (f *fAdapterTransport) Read(buf []byte) (int, error) {
-	return 0, errors.New("Do not call Read directly on FTransport")
+// Oneway transmits the given data and doesn't wait for a response.
+// Implementations of oneway should be threadsafe and respect the timeout
+// present on the context.
+func (f *fAdapterTransport) Oneway(ctx FContext, payload []byte) error {
+	errorC := make(chan error, 1)
+	go f.send(payload, errorC, true)
+
+	select {
+	case err := <-errorC:
+		return err
+	case <-time.After(ctx.Timeout()):
+		return thrift.NewTTransportException(TRANSPORT_EXCEPTION_TIMED_OUT, "frugal: request timed out")
+	}
 }
 
-func (f *fAdapterTransport) SetRegistry(registry FRegistry) {
-	if registry == nil {
-		panic("frugal: registry cannot be nil")
+// Request transmits the given data and waits for a response.
+// Implementations of request should be threadsafe and respect the timeout
+// present on the context.
+func (f *fAdapterTransport) Request(ctx FContext, payload []byte) (thrift.TTransport, error) {
+	resultC := make(chan []byte, 1)
+	errorC := make(chan error, 1)
+
+	f.registry.Register(ctx, resultC)
+	defer f.registry.Unregister(ctx)
+
+	go f.send(payload, errorC, false)
+
+	select {
+	case result := <-resultC:
+		return &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(result)}, nil
+	case err := <-errorC:
+		return nil, err
+	case <-time.After(ctx.Timeout()):
+		return nil, thrift.NewTTransportException(TRANSPORT_EXCEPTION_TIMED_OUT, "frugal: request timed out")
 	}
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	if f.registry != nil {
+}
+
+func (f *fAdapterTransport) send(payload []byte, errorC chan error, oneway bool) {
+	// TODO: does this need to be called in a goroutine?
+	// i.e. can Write() and Flush() block?
+	if _, err := f.transport.Write(payload); err != nil {
+		errorC <- err
 		return
 	}
-	f.registry = registry
+	if err := f.transport.Flush(); err != nil {
+		errorC <- err
+		return
+	}
+
+	if oneway {
+		// If it's a oneway, no result will be sent back from the server
+		// so let the goroutine know everything succeeded
+		errorC <- nil
+	}
 }
 
-func (f *fAdapterTransport) Register(ctx *FContext, cb FAsyncCallback) error {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-	return f.registry.Register(ctx, cb)
+// GetRequestSizeLimit returns the maximum number of bytes that can be
+// transmitted. Returns a non-positive number to indicate an unbounded
+// allowable size.
+func (f *fAdapterTransport) GetRequestSizeLimit() uint {
+	return 0
 }
 
-func (f *fAdapterTransport) Unregister(ctx *FContext) {
-	f.mu.RLock()
-	f.registry.Unregister(ctx)
-	f.mu.RUnlock()
-}
-
+// SetMonitor starts a monitor that can watch the health of, and reopen,
+// the transport.
 func (f *fAdapterTransport) SetMonitor(monitor FTransportMonitor) {
 	// Stop the previous monitor, if any.
 	select {
@@ -212,12 +251,10 @@ func (f *fAdapterTransport) SetMonitor(monitor FTransportMonitor) {
 	go runner.run()
 }
 
+// Closed channel receives the cause of an FTransport close (nil if clean
+// close).
 func (f *fAdapterTransport) Closed() <-chan error {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	return f.closeChan
-}
-
-func (f *fAdapterTransport) SetHighWatermark(watermark time.Duration) {
-	// No-op
 }

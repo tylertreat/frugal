@@ -3,17 +3,27 @@ import "dart:async";
 import "package:frugal/frugal.dart";
 import "package:test/test.dart";
 
+/// Test class.
 class MiddlewareTestingService {
+  /// A field.
   String str;
+
+  /// Handle something.
   Future<int> handleSomething(int first, int second, String str) {
     this.str = str;
     return new Future.value(first + second);
   }
 }
 
+/// Test struct.
 class MiddlewareDataStruct {
+  /// An arg.
   int arg;
+
+  /// A method name.
   String methodName;
+
+  /// A service name.
   String serviceName;
 }
 

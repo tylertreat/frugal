@@ -6,6 +6,7 @@ from tornado import ioloop, gen
 from thrift.protocol import TBinaryProtocol
 from frugal.context import FContext
 from frugal.protocol import FProtocolFactory
+from frugal.provider import FServiceProvider
 from frugal.tornado.transport import FHttpTransport
 sys.path.append('gen-py.tornado')
 
@@ -31,12 +32,12 @@ def main():
     prot_factory = FProtocolFactory(TBinaryProtocol.TBinaryProtocolFactory())
 
     # Create an HTTP transport using the connected client
-    transport = FHttpTransport("http://localhost:8080/frugal")
+    transport = FHttpTransport("http://localhost:9090/frugal")
     yield transport.open()
 
     # Using the configured transport and protocol, create a client
     # to talk to the music store service.
-    store_client = FStoreClient(transport, prot_factory,
+    store_client = FStoreClient(FServiceProvider(transport, prot_factory),
                                 middleware=logging_middleware)
 
     album = yield store_client.buyAlbum(FContext(),
@@ -56,9 +57,11 @@ def logging_middleware(next):
     def handler(method, args):
         service = '%s.%s' % (method.im_self.__module__,
                              method.im_class.__name__)
-        print '==== CALLING %s.%s ====' % (service, method.im_func.func_name)
+        root.info('==== CALLING %s.%s ===='.format(service,
+                                                   method.im_func.func_name))
         ret = next(method, args)
-        print '==== CALLED  %s.%s ====' % (service, method.im_func.func_name)
+        root.info('==== CALLED  %s.%s ===='.format(service,
+                                                   method.im_func.func_name))
         return ret
     return handler
 

@@ -4,6 +4,8 @@ namespace java variety.java
 namespace py variety.python
 
 include "base.frugal"
+include "validStructs.frugal"
+include "ValidTypes.frugal"
 include "subdir_includes/subdir_include.frugal"
 
 typedef i64 id
@@ -140,7 +142,7 @@ exception AwesomeException {
  */
 service Foo extends base.BaseFoo {
     /**@ Ping the server. */
-    void ping(),
+    void Ping(),
 
     /**@ Blah the server. */
     i64 blah(1:i32 num, 2:string Str, 3:Event event) throws (1:AwesomeException awe, 2:base.api_exception api),
@@ -154,6 +156,10 @@ service Foo extends base.BaseFoo {
 
     list<id> underlying_types_test(1:list<id> list_type, 2: set<id> set_type),
 
+    validStructs.Thing getThing(),
+
+    ValidTypes.MyInt getMyInt(),
+
     subdir_include.A use_subdir_struct(1:subdir_include.A a),
 }
 
@@ -165,4 +171,7 @@ service Foo extends base.BaseFoo {
 scope Events prefix foo.{user} {
     /**@ This is a docstring. */
     EventCreated: Event // Inline comments are also supported
+    SomeInt: i64
+    SomeStr: string
+    SomeList: list<map<id, Event>>
 }

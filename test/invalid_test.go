@@ -18,6 +18,54 @@ func TestInvalid(t *testing.T) {
 	}
 }
 
+func TestDuplicateServices(t *testing.T) {
+	options := compiler.Options{
+		File:  duplicateServices,
+		Gen:   "go",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if compiler.Compile(options) == nil {
+		t.Fatal("Expected error")
+	}
+}
+
+func TestDuplicateScopes(t *testing.T) {
+	options := compiler.Options{
+		File:  duplicateScopes,
+		Gen:   "go",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if compiler.Compile(options) == nil {
+		t.Fatal("Expected error")
+	}
+}
+
+func TestDuplicateMethods(t *testing.T) {
+	options := compiler.Options{
+		File:  duplicateMethods,
+		Gen:   "go",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if compiler.Compile(options) == nil {
+		t.Fatal("Expected error")
+	}
+}
+
+func TestDuplicateOperations(t *testing.T) {
+	options := compiler.Options{
+		File:  duplicateOperations,
+		Gen:   "go",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if compiler.Compile(options) == nil {
+		t.Fatal("Expected error")
+	}
+}
+
 func TestDuplicateMethodArgIds(t *testing.T) {
 	options := compiler.Options{
 		File:  duplicateMethodArgIds,
@@ -49,21 +97,6 @@ func TestWildcardNamespaceWithVendorAnnotation(t *testing.T) {
 		Gen:   "go",
 		Out:   outputDir,
 		Delim: delim,
-	}
-	if err := compiler.Compile(options); err == nil {
-		t.Fatal("Expected error")
-	}
-}
-
-// Ensures an error is returned when -use-vendor is used for an unsupported
-// language.
-func TestVendorUnsupportedLanguage(t *testing.T) {
-	options := compiler.Options{
-		File:      validFile,
-		Gen:       "java",
-		Out:       outputDir,
-		Delim:     delim,
-		UseVendor: true,
 	}
 	if err := compiler.Compile(options); err == nil {
 		t.Fatal("Expected error")

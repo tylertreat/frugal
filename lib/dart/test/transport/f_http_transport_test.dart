@@ -8,19 +8,16 @@ import 'package:test/test.dart';
 import 'package:thrift/thrift.dart';
 import 'package:w_transport/w_transport.dart';
 import 'package:w_transport/w_transport_mock.dart';
-import 'f_transport_test.dart' show MockFRegistry;
 
 void main() {
   configureWTransportForTest();
   const utf8Codec = const Utf8Codec();
 
-  group('FHttpClientTransport', () {
+  group('FHttpTransport', () {
     Client client;
-    FHttpConfig config;
-    MockFRegistry registry;
-    FHttpClientTransport transport;
+    FHttpTransport transport;
 
-    Map expectedRequestHeaders = {
+    Map<String, String> expectedRequestHeaders = {
       'x-frugal-payload-limit': '10',
       // TODO: When w_transport supports content-type overrides, enable this.
       // 'content-type': 'application/x-frugal',
@@ -28,14 +25,13 @@ void main() {
       'accept': 'application/x-frugal',
       'foo': 'bar'
     };
-    Map responseHeaders = {
+    Map<String, String> responseHeaders = {
       'content-type': 'application/x-frugal',
       'content-transfer-encoding': 'base64'
     };
-    Uint8List transportRequest = new Uint8List.fromList([1, 2, 3, 4, 5]);
-    Uint8List transportRequestFramed =
+    Uint8List transportRequest =
         new Uint8List.fromList([0, 0, 0, 5, 1, 2, 3, 4, 5]);
-    String transportRequestB64 = BASE64.encode(transportRequestFramed);
+    String transportRequestB64 = BASE64.encode(transportRequest);
     Uint8List transportResponse = new Uint8List.fromList([6, 7, 8, 9]);
     Uint8List transportResponseFramed =
         new Uint8List.fromList([0, 0, 0, 4, 6, 7, 8, 9]);
@@ -43,26 +39,21 @@ void main() {
 
     setUp(() {
       client = new Client();
-      config = new FHttpConfig(Uri.parse('http://localhost'), {'foo': 'bar'},
-          responseSizeLimit: 10);
-      transport = new FHttpClientTransport(client, config);
-      registry = new MockFRegistry();
-      transport.setRegistry(registry);
+      transport = new FHttpTransport(client, Uri.parse('http://localhost'),
+          responseSizeLimit: 10, additionalHeaders: {'foo': 'bar'});
     });
 
     test('Test transport sends body and receives response', () async {
-      transport.writeAll(transportRequest);
-
-      MockTransports.http.when(config.uri, (FinalizedRequest request) async {
+      MockTransports.http.when(transport.uri, (FinalizedRequest request) async {
         if (request.method == 'POST') {
-          HttpBody body = request.body as HttpBody;
+          HttpBody body = request.body;
           if (body == null || body.asString() != transportRequestB64)
             return new MockResponse.badRequest();
-          expectedRequestHeaders.forEach((K, V) {
-            if (request.headers[K] != V) {
+          for (var key in expectedRequestHeaders.keys) {
+            if (request.headers[key] != expectedRequestHeaders[key]) {
               return new MockResponse.badRequest();
             }
-          });
+          }
           return new MockResponse.ok(
               body: transportResponseB64, headers: responseHeaders);
         } else {
@@ -70,21 +61,39 @@ void main() {
         }
       });
 
-      await transport.flush();
-      expect(registry.data[0], transportResponse);
+      var response = await transport.request(new FContext(), transportRequest)
+          as TMemoryTransport;
+      expect(response.buffer, transportResponse);
+    });
+
+    test('Transport times out if request is not received within the timeout',
+        () async {
+      MockTransports.http.when(transport.uri, (FinalizedRequest request) async {
+        if (request.method == 'POST') {
+          await new Future.delayed(new Duration(milliseconds: 100));
+        }
+      });
+
+      try {
+        FContext ctx = new FContext()..timeout = new Duration(milliseconds: 20);
+        await transport.request(ctx, transportRequest);
+        fail('should have thrown an exception');
+      } on TTransportError catch (e) {
+        expect(e.type, FrugalTTransportErrorType.TIMED_OUT);
+      }
     });
 
     test('Multiple writes are not coalesced', () async {
-      MockTransports.http.when(config.uri, (FinalizedRequest request) async {
+      MockTransports.http.when(transport.uri, (FinalizedRequest request) async {
         if (request.method == 'POST') {
-          HttpBody body = request.body as HttpBody;
+          HttpBody body = request.body;
           if (body == null || body.asString() != transportRequestB64)
             return new MockResponse.badRequest();
-          expectedRequestHeaders.forEach((K, V) {
-            if (request.headers[K] != V) {
+          for (var key in expectedRequestHeaders.keys) {
+            if (request.headers[key] != expectedRequestHeaders[key]) {
               return new MockResponse.badRequest();
             }
-          });
+          }
           return new MockResponse.ok(
               body: transportResponseB64, headers: responseHeaders);
         } else {
@@ -92,121 +101,104 @@ void main() {
         }
       });
 
-      transport.writeAll(transportRequest);
-      Future first = transport.flush();
-      transport.writeAll(transportRequest);
-      Future second = transport.flush();
+      var first = transport.request(new FContext(), transportRequest);
+      var second = transport.request(new FContext(), transportRequest);
 
-      await first;
-      await second;
+      var firstResponse = (await first) as TMemoryTransport;
+      var secondResponse = (await second) as TMemoryTransport;
 
-      expect(registry.data[0], transportResponse);
-      expect(registry.data[1], transportResponse);
+      expect(firstResponse.buffer, transportResponse);
+      expect(secondResponse.buffer, transportResponse);
     });
 
     test('Test transport does not execute frame on oneway requests', () async {
-      transport.writeAll(transportRequest);
       Uint8List responseBytes = new Uint8List.fromList([0, 0, 0, 0]);
       Response response =
           new MockResponse.ok(body: BASE64.encode(responseBytes));
-      MockTransports.http.expect('POST', config.uri, respondWith: response);
-      await transport.flush();
-      expect(registry.data.length, 0);
+      MockTransports.http.expect('POST', transport.uri, respondWith: response);
+      var result = await transport.request(new FContext(), transportRequest);
+      expect(result, null);
     });
 
     test('Test transport throws TransportError on bad oneway requests',
         () async {
-      transport.writeAll(transportRequest);
       Uint8List responseBytes = new Uint8List.fromList([0, 0, 0, 1]);
       Response response =
           new MockResponse.ok(body: BASE64.encode(responseBytes));
-      MockTransports.http.expect('POST', config.uri, respondWith: response);
-      expect(transport.flush(), throwsA(new isInstanceOf<TTransportError>()));
+      MockTransports.http.expect('POST', transport.uri, respondWith: response);
+      expect(transport.request(new FContext(), transportRequest),
+          throwsA(new isInstanceOf<TTransportError>()));
     });
 
     test('Test transport receives non-base64 payload', () async {
-      transport.writeAll(transportRequest);
       Response response = new MockResponse.ok(body: '`');
-      MockTransports.http.expect('POST', config.uri, respondWith: response);
-      expect(transport.flush(), throwsA(new isInstanceOf<TProtocolError>()));
+      MockTransports.http.expect('POST', transport.uri, respondWith: response);
+      expect(transport.request(new FContext(), transportRequest),
+          throwsA(new isInstanceOf<TProtocolError>()));
     });
 
     test('Test transport receives unframed frugal payload', () async {
-      transport.writeAll(transportRequest);
       Response response = new MockResponse.ok();
-      MockTransports.http.expect('POST', config.uri, respondWith: response);
-      expect(transport.flush(), throwsA(new isInstanceOf<TProtocolError>()));
+      MockTransports.http.expect('POST', transport.uri, respondWith: response);
+      expect(transport.request(new FContext(), transportRequest),
+          throwsA(new isInstanceOf<TProtocolError>()));
     });
   });
 
-  group('FHttpClientTransport request size too large', () {
+  group('FHttpTransport request size too large', () {
     Client client;
-    MockFRegistry registry;
-    FHttpClientTransport transport;
+    FHttpTransport transport;
 
     setUp(() {
       client = new Client();
-      var config = new FHttpConfig(Uri.parse('http://localhost'), {},
+      transport = new FHttpTransport(client, Uri.parse('http://localhost'),
           requestSizeLimit: 10);
-      transport = new FHttpClientTransport(client, config);
-      registry = new MockFRegistry();
-      transport.setRegistry(registry);
     });
 
     test('Test transport receives error', () {
       expect(
-          () => transport.writeAll(utf8Codec.encode('my really long request')),
-          throwsA(new isInstanceOf<FMessageSizeError>()));
+          transport.request(
+              new FContext(), utf8Codec.encode('my really long request')),
+          throwsA(new isInstanceOf<TTransportError>()));
     });
   });
 
-  group('FHttpClientTransport http post failed', () {
-    FHttpConfig config;
-    MockFRegistry registry;
-    FHttpClientTransport transport;
+  group('FHttpTransport http post failed', () {
+    FHttpTransport transport;
 
     setUp(() {
-      config = new FHttpConfig(Uri.parse('http://localhost'), {});
-      transport = new FHttpClientTransport(new Client(), config);
-      registry = new MockFRegistry();
-      transport.setRegistry(registry);
+      transport =
+          new FHttpTransport(new Client(), Uri.parse('http://localhost'));
     });
 
     test('Test transport receives error on 401 response', () async {
-      transport.writeAll(utf8Codec.encode('my request'));
       Response response = new MockResponse.unauthorized();
-      MockTransports.http.expect('POST', config.uri, respondWith: response);
-      expect(transport.flush(), throwsA(new isInstanceOf<TTransportError>()));
+      MockTransports.http.expect('POST', transport.uri, respondWith: response);
+      expect(transport.request(new FContext(), utf8Codec.encode('my request')),
+          throwsA(new isInstanceOf<TTransportError>()));
     });
 
     test('Test transport receives response too large error on 413 response',
         () async {
-      transport.writeAll(utf8Codec.encode('my request'));
       Response response =
-          new MockResponse(FHttpClientTransport.REQUEST_ENTITY_TOO_LARGE);
-      MockTransports.http.expect('POST', config.uri, respondWith: response);
-      expect(transport.flush(), throwsA(new isInstanceOf<FMessageSizeError>()));
+          new MockResponse(FHttpTransport.REQUEST_ENTITY_TOO_LARGE);
+      MockTransports.http.expect('POST', transport.uri, respondWith: response);
+      expect(transport.request(new FContext(), utf8Codec.encode('my request')),
+          throwsA(new isInstanceOf<TTransportError>()));
     });
 
     test('Test transport receives error on 404 response', () async {
-      transport.writeAll(utf8Codec.encode('my request'));
       Response response = new MockResponse.badRequest();
-      MockTransports.http.expect('POST', config.uri, respondWith: response);
-      expect(transport.flush(), throwsA(new isInstanceOf<TTransportError>()));
+      MockTransports.http.expect('POST', transport.uri, respondWith: response);
+      expect(transport.request(new FContext(), utf8Codec.encode('my request')),
+          throwsA(new isInstanceOf<TTransportError>()));
     });
 
     test('Test transport receives error on no response', () async {
-      transport.writeAll(utf8Codec.encode('my request'));
       Response response = new MockResponse.badRequest();
-      MockTransports.http.expect('POST', config.uri, respondWith: response);
-      expect(transport.flush(), throwsA(new isInstanceOf<TTransportError>()));
-    });
-  });
-
-  group('FHttpConfig null uri', () {
-    test('Test initialization throws error', () {
-      expect(() => new FHttpConfig(null, {}),
-          throwsA(new isInstanceOf<ArgumentError>()));
+      MockTransports.http.expect('POST', transport.uri, respondWith: response);
+      expect(transport.request(new FContext(), utf8Codec.encode('my request')),
+          throwsA(new isInstanceOf<TTransportError>()));
     });
   });
 }

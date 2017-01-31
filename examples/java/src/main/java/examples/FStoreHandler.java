@@ -1,6 +1,6 @@
 package examples;
 
-import com.workiva.frugal.protocol.FContext;
+import com.workiva.frugal.FContext;
 import v1.music.Album;
 import v1.music.FStore;
 import v1.music.PerfRightsOrg;

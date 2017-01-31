@@ -2,7 +2,6 @@ package python
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -94,23 +93,29 @@ func (g *Generator) TeardownGenerator() error {
 
 // GenerateConstantsContents generates constants.
 func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) error {
-	if len(constants) == 0 {
-		return nil
+	file, err := g.GenerateFile("constants", g.outputDir, generator.ObjectFile)
+	defer file.Close()
+	if err != nil {
+		return err
 	}
 
 	contents := "\n\n"
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
 	contents += "from .ttypes import *\n\n"
 
-	for _, constant := range constants {
-		value := g.generateConstantValue(constant.Type, constant.Value, "")
-		contents += fmt.Sprintf("%s = %s\n", constant.Name, value)
+	for _, include := range g.Frugal.Includes {
+		namespace := filepath.Base(include.Name)
+		if ns := g.Frugal.NamespaceForInclude(namespace, lang); ns != nil {
+			namespace = ns.Value
+		}
+		contents += fmt.Sprintf("import %s.ttypes\n", namespace)
+		contents += fmt.Sprintf("import %s.constants\n", namespace)
+		contents += "\n"
 	}
 
-	file, err := g.GenerateFile("constants", g.outputDir, generator.ObjectFile)
-	defer file.Close()
-	if err != nil {
-		return err
+	for _, constant := range constants {
+		_, value := g.generateConstantValue(constant.Type, constant.Value, "")
+		contents += fmt.Sprintf("%s = %s\n", constant.Name, value)
 	}
 
 	if err = g.GenerateDocStringComment(file); err != nil {
@@ -120,81 +125,47 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	return err
 }
 
-func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind string) string {
+func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind string) (parser.IdentifierType, string) {
 	if value == nil {
-		return "None"
+		return parser.NonIdentifier, "None"
 	}
 
-	underlyingType := g.Frugal.UnderlyingType(t)
 	// If the value being referenced is of type Identifier, it's referencing
-	// another constant. Need to recurse to get that value.
+	// another constant.
 	identifier, ok := value.(parser.Identifier)
-	// TODO consolidate this between generators
 	if ok {
-		name := string(identifier)
-
-		// split based on '.', if present, it should be from an include
-		pieces := strings.Split(name, ".")
-		switch len(pieces) {
-		case 1:
-			// From this file
-			for _, constant := range g.Frugal.Thrift.Constants {
-				if name == constant.Name {
-					return g.generateConstantValue(t, constant.Value, ind)
-				}
+		idCtx := g.Frugal.ContextFromIdentifier(identifier)
+		switch idCtx.Type {
+		case parser.LocalConstant:
+			return idCtx.Type, idCtx.Constant.Name
+		case parser.LocalEnum:
+			return idCtx.Type, fmt.Sprintf("%s.%s", idCtx.Enum.Name, idCtx.EnumValue.Name)
+		case parser.IncludeConstant:
+			include := idCtx.Include.Name
+			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+				include = namespace.Value
 			}
-		case 2:
-			// Either from an include, or part of an enum
-			for _, enum := range g.Frugal.Thrift.Enums {
-				if pieces[0] == enum.Name {
-					for _, value := range enum.Values {
-						if pieces[1] == value.Name {
-							return fmt.Sprintf("%v", value.Value)
-						}
-					}
-					panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))
-				}
+			return idCtx.Type, fmt.Sprintf("%s.constants.%s", include, idCtx.Constant.Name)
+		case parser.IncludeEnum:
+			include := idCtx.Include.Name
+			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+				include = namespace.Value
 			}
-
-			// If not part of an enum , it's from an include
-			include, ok := g.Frugal.ParsedIncludes[pieces[0]]
-			if !ok {
-				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
-			}
-			for _, constant := range include.Thrift.Constants {
-				if pieces[1] == constant.Name {
-					return g.generateConstantValue(t, constant.Value, ind)
-				}
-			}
-		case 3:
-			// enum from an include
-			include, ok := g.Frugal.ParsedIncludes[pieces[0]]
-			if !ok {
-				panic(fmt.Sprintf("referenced include '%s' in constant '%s' not present", pieces[0], name))
-			}
-			for _, enum := range include.Thrift.Enums {
-				if pieces[1] == enum.Name {
-					for _, value := range enum.Values {
-						if pieces[2] == value.Name {
-							return fmt.Sprintf("%v", value.Value)
-						}
-					}
-					panic(fmt.Sprintf("referenced value '%s' of enum '%s' doesn't exist", pieces[1], pieces[0]))
-				}
-			}
+			return idCtx.Type, fmt.Sprintf("%s.ttypes.%s.%s", include, idCtx.Enum.Name, idCtx.EnumValue.Name)
 		default:
-			panic("reference constant doesn't exist: " + name)
+			panic(fmt.Sprintf("The Identifier %s has unexpected type %d", identifier, idCtx.Type))
 		}
 	}
 
+	underlyingType := g.Frugal.UnderlyingType(t)
 	if underlyingType.IsPrimitive() || underlyingType.IsContainer() {
 		switch underlyingType.Name {
 		case "bool":
-			return strings.Title(fmt.Sprintf("%v", value))
+			return parser.NonIdentifier, strings.Title(fmt.Sprintf("%v", value))
 		case "i8", "byte", "i16", "i32", "i64", "double":
-			return fmt.Sprintf("%v", value)
+			return parser.NonIdentifier, fmt.Sprintf("%v", value)
 		case "string", "binary":
-			return fmt.Sprintf("%s", strconv.Quote(value.(string)))
+			return parser.NonIdentifier, fmt.Sprintf("%s", strconv.Quote(value.(string)))
 		case "list", "set":
 			contents := ""
 			if underlyingType.Name == "set" {
@@ -202,29 +173,29 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 			}
 			contents += "[\n"
 			for _, v := range value.([]interface{}) {
-				val := g.generateConstantValue(underlyingType.ValueType, v, ind+tab)
+				_, val := g.generateConstantValue(underlyingType.ValueType, v, ind+tab)
 				contents += fmt.Sprintf(ind+tab+"%s,\n", val)
 			}
 			contents += ind + "]"
 			if underlyingType.Name == "set" {
 				contents += ")"
 			}
-			return contents
+			return parser.NonIdentifier, contents
 		case "map":
 			contents := "{\n"
 			for _, pair := range value.([]parser.KeyValue) {
-				key := g.generateConstantValue(underlyingType.KeyType, pair.Key, ind+tab)
-				val := g.generateConstantValue(underlyingType.ValueType, pair.Value, ind+tab)
+				_, key := g.generateConstantValue(underlyingType.KeyType, pair.Key, ind+tab)
+				_, val := g.generateConstantValue(underlyingType.ValueType, pair.Value, ind+tab)
 				contents += fmt.Sprintf(ind+tab+"%s: %s,\n", key, val)
 			}
 			contents += ind + "}"
-			return contents
+			return parser.NonIdentifier, contents
 		}
 	} else if g.Frugal.IsEnum(underlyingType) {
-		return fmt.Sprintf("%d", value)
+		return parser.NonIdentifier, fmt.Sprintf("%d", value)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		var s *parser.Struct
-		for _, potential := range g.Frugal.Thrift.Structs {
+		for _, potential := range g.Frugal.Structs {
 			if underlyingType.Name == potential.Name {
 				s = potential
 				break
@@ -238,13 +209,13 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 			name := pair.Key.(string)
 			for _, field := range s.Fields {
 				if name == field.Name {
-					val := g.generateConstantValue(field.Type, pair.Value, ind+tab)
+					_, val := g.generateConstantValue(field.Type, pair.Value, ind+tab)
 					contents += fmt.Sprintf(tab+ind+"\"%s\": %s,\n", name, val)
 				}
 			}
 		}
 		contents += ind + "})"
-		return contents
+		return parser.NonIdentifier, contents
 	}
 
 	panic("no entry for type " + underlyingType.Name)
@@ -304,35 +275,14 @@ func (g *Generator) GenerateException(exception *parser.Struct) error {
 	return err
 }
 
-// GenerateServiceArgsResults generates the args and results objects for the
+// generateServiceArgsResults generates the args and results objects for the
 // given service.
-func (g *Generator) GenerateServiceArgsResults(serviceName string, outputDir string, structs []*parser.Struct) error {
-	file, err := g.GenerateFile(serviceName, g.outputDir, generator.ObjectFile)
-	defer file.Close()
-	if err != nil {
-		return err
-	}
-
-	if err = g.GenerateDocStringComment(file); err != nil {
-		return err
-	}
-	if _, err = file.WriteString("\n\n"); err != nil {
-		return err
-	}
-	if err = g.GenerateTypesImports(file, true); err != nil {
-		return err
-	}
-	if _, err = file.WriteString("\n\n"); err != nil {
-		return err
-	}
-
+func (g *Generator) generateServiceArgsResults(service *parser.Service) string {
 	contents := ""
-	for _, s := range structs {
+	for _, s := range g.GetServiceMethodTypes(service) {
 		contents += g.generateStruct(s)
 	}
-
-	_, err = file.WriteString(contents)
-	return err
+	return contents
 }
 
 // generateStruct generates a python representation of a thrift struct
@@ -364,17 +314,26 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 // constant as a class variable to avoid order of declaration issues.
 func (g *Generator) generateDefaultMarkers(s *parser.Struct) string {
 	contents := ""
+	importConstants := false
 	for _, field := range s.Fields {
 		if field.Default != nil {
 			underlyingType := g.Frugal.UnderlyingType(field.Type)
 			// use 'object()' as a marker value to avoid instantiating
 			// a class defined later in the file
 			defaultVal := "object()"
+			idType := parser.NonIdentifier
 			if underlyingType.IsPrimitive() || g.Frugal.IsEnum(underlyingType) {
-				defaultVal = g.generateConstantValue(underlyingType, field.Default, tab)
+				idType, defaultVal = g.generateConstantValue(underlyingType, field.Default, tab)
+				if idType == parser.LocalConstant {
+					importConstants = true
+					defaultVal = fmt.Sprintf("constants.%s", defaultVal)
+				}
 			}
 			contents += fmt.Sprintf(tab+"_DEFAULT_%s_MARKER = %s\n", field.Name, defaultVal)
 		}
+	}
+	if importConstants {
+		contents = tab + "from . import constants\n" + contents
 	}
 	return contents
 }
@@ -395,15 +354,25 @@ func (g *Generator) generateInit(s *parser.Struct) string {
 		argList += fmt.Sprintf(", %s=%s", field.Name, defaultVal)
 	}
 	contents += fmt.Sprintf(tab+"def __init__(self%s):\n", argList)
+	fieldContents := ""
+	importConstants := false
 	for _, field := range s.Fields {
 		underlyingType := g.Frugal.UnderlyingType(field.Type)
 		if !underlyingType.IsPrimitive() && !g.Frugal.IsEnum(underlyingType) && field.Default != nil {
-			contents += fmt.Sprintf(tabtab+"if %s is self._DEFAULT_%s_MARKER:\n", field.Name, field.Name)
-			val := g.generateConstantValue(field.Type, field.Default, tabtabtab)
-			contents += fmt.Sprintf(tabtabtab+"%s = %s\n", field.Name, val)
+			fieldContents += fmt.Sprintf(tabtab+"if %s is self._DEFAULT_%s_MARKER:\n", field.Name, field.Name)
+			idType, val := g.generateConstantValue(field.Type, field.Default, tabtabtab)
+			if idType == parser.LocalConstant {
+				importConstants = true
+				val = fmt.Sprintf("constants.%s", val)
+			}
+			fieldContents += fmt.Sprintf(tabtabtab+"%s = %s\n", field.Name, val)
 		}
-		contents += fmt.Sprintf(tabtab+"self.%s = %s\n", field.Name, field.Name)
+		fieldContents += fmt.Sprintf(tabtab+"self.%s = %s\n", field.Name, field.Name)
 	}
+	if importConstants {
+		contents += tabtab + "from . import constants\n"
+	}
+	contents += fieldContents
 	contents += "\n"
 	return contents
 }
@@ -581,8 +550,8 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 		contents += fmt.Sprintf(ind+"%s%s = %s()\n", prefix, field.Name, g.qualifiedTypeName(underlyingType))
 		contents += fmt.Sprintf(ind+"%s%s.read(iprot)\n", prefix, field.Name)
 	} else if underlyingType.IsContainer() {
-		sizeElem := getElem()
-		valElem := getElem()
+		sizeElem := g.GetElem()
+		valElem := g.GetElem()
 		valField := parser.FieldFromType(underlyingType.ValueType, valElem)
 
 		switch underlyingType.Name {
@@ -604,7 +573,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 			contents += fmt.Sprintf(ind+"%s%s = {}\n", prefix, field.Name)
 			contents += fmt.Sprintf(ind+"(_, _, %s) = iprot.readMapBegin()\n", sizeElem)
 			contents += fmt.Sprintf(ind+"for _ in range(%s):\n", sizeElem)
-			keyElem := getElem()
+			keyElem := g.GetElem()
 			keyField := parser.FieldFromType(underlyingType.KeyType, keyElem)
 			contents += g.generateReadFieldRec(keyField, false, ind+tab)
 			contents += g.generateReadFieldRec(valField, false, ind+tab)
@@ -644,7 +613,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(ind+"%s%s.write(oprot)\n", prefix, field.Name)
 	} else if underlyingType.IsContainer() {
-		valElem := getElem()
+		valElem := g.GetElem()
 		valField := parser.FieldFromType(underlyingType.ValueType, valElem)
 		valTType := g.getTType(underlyingType.ValueType)
 
@@ -660,7 +629,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 			contents += g.generateWriteFieldRec(valField, false, ind+tab)
 			contents += ind + "oprot.writeSetEnd()\n"
 		case "map":
-			keyElem := getElem()
+			keyElem := g.GetElem()
 			keyField := parser.FieldFromType(underlyingType.KeyType, keyElem)
 			keyTType := g.getTType(underlyingType.KeyType)
 			contents += fmt.Sprintf(ind+"oprot.writeMapBegin(%s, %s, len(%s%s))\n", keyTType, valTType, prefix, field.Name)
@@ -676,7 +645,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 
 // GetOutputDir returns the output directory for generated files.
 func (g *Generator) GetOutputDir(dir string) string {
-	if namespace := g.Frugal.Thrift.Namespace(lang); namespace != nil {
+	if namespace := g.Frugal.Namespace(lang); namespace != nil {
 		path := generator.GetPackageComponents(namespace.Value)
 		dir = filepath.Join(append([]string{dir}, path...)...)
 	} else {
@@ -748,9 +717,10 @@ func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
 func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) error {
 	contents := ""
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
-	for _, include := range g.Frugal.Thrift.Includes {
+	for _, include := range g.Frugal.Includes {
 		includeName := g.getPackageNamespace(filepath.Base(include.Name))
 		contents += fmt.Sprintf("import %s.ttypes\n", includeName)
+		contents += fmt.Sprintf("import %s.constants\n", includeName)
 	}
 	contents += "\n"
 	if isArgsOrResult {
@@ -768,7 +738,8 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports := "from threading import Lock\n\n"
 
 	imports += "from frugal.middleware import Method\n"
-	imports += "from frugal.exceptions import FRateLimitException\n"
+	imports += "from frugal.exceptions import TApplicationExceptionType\n"
+	imports += "from frugal.exceptions import TTransportExceptionType\n"
 	imports += "from frugal.processor import FBaseProcessor\n"
 	imports += "from frugal.processor import FProcessorFunction\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
@@ -786,11 +757,19 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 }
 
 func (g *Generator) generateServiceExtendsImport(s *parser.Service) string {
-	if s.Extends == "" || strings.Contains(s.Extends, ".") {
-		// Either no super service or it's already imported in an include
+	if s.Extends == "" {
+		// No super service
 		return ""
 	}
 
+	if strings.Contains(s.Extends, ".") {
+		// From an include
+		extendsSlice := strings.SplitN(s.Extends, ".", 2)
+		namespace := g.getPackageNamespace(extendsSlice[0])
+		return fmt.Sprintf("import %s.f_%s\n", namespace, extendsSlice[1])
+	}
+
+	// From the same file
 	return fmt.Sprintf("from . import f_%s\n", s.Extends)
 }
 
@@ -803,12 +782,12 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) (string, er
 		return "", err
 	}
 	for _, include := range includes {
-		namespace := g.getPackageNamespace(include.Name)
-		imports += fmt.Sprintf("import %s\n", namespace)
+		namespace := g.getPackageNamespace(filepath.Base(include.Name))
+		imports += fmt.Sprintf("import %s.ttypes\n", namespace)
+		imports += fmt.Sprintf("import %s.constants\n", namespace)
 	}
 
 	// Import this service's modules.
-	imports += fmt.Sprintf("from .%s import *\n", s.Name)
 	imports += "from .ttypes import *\n"
 
 	return imports, nil
@@ -818,6 +797,7 @@ func (g *Generator) generateServiceIncludeImports(s *parser.Service) (string, er
 func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports := "from thrift.Thrift import TMessageType\n"
 	imports += "from frugal.middleware import Method\n"
+	imports += "from frugal.transport import TMemoryOutputBuffer\n"
 	_, err := file.WriteString(imports)
 	return err
 }
@@ -847,10 +827,11 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	}, tabtab)
 	publisher += "\n"
 
+	publisher += tabtab + "middleware = middleware or []\n"
 	publisher += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	publisher += tabtabtab + "middleware = [middleware]\n"
-	publisher += tabtab + "self._transport, protocol_factory = provider.new()\n"
-	publisher += tabtab + "self._protocol = protocol_factory.get_protocol(self._transport)\n"
+	publisher += tabtab + "middleware += provider.get_middleware()\n"
+	publisher += tabtab + "self._transport, self._protocol_factory = provider.new_publisher()\n"
 	publisher += tabtab + "self._methods = {\n"
 	for _, op := range scope.Operations {
 		publisher += tabtabtab + fmt.Sprintf("'publish_%s': Method(self._publish_%s, middleware),\n", op.Name, op.Name)
@@ -906,6 +887,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operation) string {
 	args := ""
+	asyncOpt := getAsyncOpt(g.Options)
 	docstr := []string{"Args:", tab + "ctx: FContext"}
 	if len(scope.Prefix.Variables) > 0 {
 		prefix := ""
@@ -923,43 +905,49 @@ func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operat
 	}
 
 	method := tab
-	if getAsyncOpt(g.Options) == asyncio {
+	switch asyncOpt {
+	case tornado:
+		method += "@gen.coroutine\n" + tab
+	case asyncio:
 		method += "async "
 	}
 	method += fmt.Sprintf("def publish_%s(self, ctx, %sreq):\n", op.Name, args)
 	method += g.generateDocString(docstr, tabtab)
 	method += tabtab
-	if getAsyncOpt(g.Options) == asyncio {
+	switch asyncOpt {
+	case tornado:
+		method += "yield "
+	case asyncio:
 		method += "await "
 	}
 	method += fmt.Sprintf("self._methods['publish_%s']([ctx, %sreq])\n\n", op.Name, args)
 
 	method += tab
-	if getAsyncOpt(g.Options) == asyncio {
+	switch asyncOpt {
+	case tornado:
+		method += "@gen.coroutine\n" + tab
+	case asyncio:
 		method += "async "
 	}
 	method += fmt.Sprintf("def _publish_%s(self, ctx, %sreq):\n", op.Name, args)
 	method += tabtab + fmt.Sprintf("op = '%s'\n", op.Name)
 	method += tabtab + fmt.Sprintf("prefix = %s\n", generatePrefixStringTemplate(scope))
 	method += tabtab + fmt.Sprintf("topic = '{}%s{}{}'.format(prefix, self._DELIMITER, op)\n", scope.Name)
-	method += tabtab + "oprot = self._protocol\n"
+	method += tabtab + "buffer = TMemoryOutputBuffer(self._transport.get_publish_size_limit())\n"
+	method += tabtab + "oprot = self._protocol_factory.get_protocol(buffer)\n"
+	method += tabtab + "oprot.write_request_headers(ctx)\n"
+	method += tabtab + "oprot.writeMessageBegin(op, TMessageType.CALL, 0)\n"
+	method += g.generateWriteFieldRec(parser.FieldFromType(op.Type, "req"), false, tabtab)
+	method += tabtab + "oprot.writeMessageEnd()\n"
+
 	method += tabtab
-	if getAsyncOpt(g.Options) == asyncio {
+	switch asyncOpt {
+	case tornado:
+		method += "yield "
+	case asyncio:
 		method += "await "
 	}
-	method += "self._transport.lock_topic(topic)\n"
-	method += tabtab + "try:\n"
-	method += tabtabtab + "oprot.write_request_headers(ctx)\n"
-	method += tabtabtab + "oprot.writeMessageBegin(op, TMessageType.CALL, 0)\n"
-	method += tabtabtab + "req.write(oprot)\n"
-	method += tabtabtab + "oprot.writeMessageEnd()\n"
-	method += tabtabtab
-	if getAsyncOpt(g.Options) == asyncio {
-		method += "await "
-	}
-	method += "oprot.get_transport().flush()\n"
-	method += tabtab + "finally:\n"
-	method += tabtabtab + "self._transport.unlock_topic()\n"
+	method += "self._transport.publish(topic, buffer.getvalue())\n"
 	return method
 }
 
@@ -989,13 +977,11 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 // GenerateService generates the given service.
 func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
-	if err := g.exposeServiceModule(filepath.Dir(file.Name()), s); err != nil {
-		return err
-	}
 	contents := ""
 	contents += g.generateServiceInterface(s)
 	contents += g.generateClient(s)
 	contents += g.generateServer(s)
+	contents += g.generateServiceArgsResults(s)
 
 	_, err := file.WriteString(contents)
 	return err
@@ -1039,9 +1025,9 @@ func (g *Generator) generateClientSendMethod(method *parser.Method) string {
 	contents += tab + fmt.Sprintf("def _send_%s(self, ctx%s):\n", method.Name, g.generateClientArgs(method.Arguments))
 	contents += tabtab + "oprot = self._oprot\n"
 	contents += tabtab + "with self._write_lock:\n"
-	contents += tabtabtab + "oprot.get_transport().set_timeout(ctx.get_timeout())\n"
+	contents += tabtabtab + "oprot.get_transport().set_timeout(ctx.timeout)\n"
 	contents += tabtabtab + "oprot.write_request_headers(ctx)\n"
-	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", method.Name)
+	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.CALL, 0)\n", parser.LowercaseFirstLetter(method.Name))
 	contents += tabtabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
 	for _, arg := range method.Arguments {
 		contents += tabtabtab + fmt.Sprintf("args.%s = %s\n", arg.Name, arg.Name)
@@ -1061,8 +1047,8 @@ func (g *Generator) generateClientRecvMethod(method *parser.Method) string {
 	contents += tabtabtab + "x = TApplicationException()\n"
 	contents += tabtabtab + "x.read(self._iprot)\n"
 	contents += tabtabtab + "self._iprot.readMessageEnd()\n"
-	contents += tabtabtab + "if x.type == FRateLimitException.RATE_LIMIT_EXCEEDED:\n"
-	contents += tabtabtabtab + "raise FRateLimitException(x.message)\n"
+	contents += tabtabtab + "if x.type == FApplicationException.RESPONSE_TOO_LARGE:\n"
+	contents += tabtabtabtab + "raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)\n"
 	contents += tabtabtab + "raise x\n"
 	contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
 	contents += tabtab + "result.read(self._iprot)\n"
@@ -1078,7 +1064,7 @@ func (g *Generator) generateClientRecvMethod(method *parser.Method) string {
 	contents += tabtab + "if result.success is not None:\n"
 	contents += tabtabtab + "return result.success\n"
 	contents += tabtab + fmt.Sprintf(
-		"x = TApplicationException(TApplicationException.MISSING_RESULT, \"%s failed: unknown result\")\n", method.Name)
+		"x = TApplicationException(TApplicationExceptionType.MISSING_RESULT, \"%s failed: unknown result\")\n", method.Name)
 	contents += tabtab + "raise x\n\n"
 
 	return contents
@@ -1092,39 +1078,35 @@ func (g *Generator) generateClientConstructor(service *parser.Service, async boo
 		contents += "class Client(Iface):\n\n"
 	}
 
-	contents += tab + "def __init__(self, transport, protocol_factory, middleware=None):\n"
+	contents += tab + "def __init__(self, provider, middleware=None):\n"
 	docstring := []string{
-		"Create a new Client with a transport and protocol factory.\n",
+		"Create a new Client with an FServiceProvider containing a transport",
+		"and protocol factory.\n",
 		"Args:",
 	}
 	if async {
-		docstring = append(docstring, tab+"transport: FTransport")
+		docstring = append(docstring, tab+"provider: FServiceProvider")
 	} else {
-		docstring = append(docstring, tab+"transport: FSynchronousTransport")
+		docstring = append(docstring, tab+"provider: FServiceProvider with TSynchronousTransport")
 	}
-	docstring = append(
-		docstring,
-		tab+"protocol_factory: FProtocolFactory",
-		tab+"middleware: ServiceMiddleware or list of ServiceMiddleware",
-	)
+	docstring = append(docstring, tab+"middleware: ServiceMiddleware or list of ServiceMiddleware")
 	contents += g.generateDocString(docstring, tabtab)
+	contents += tabtab + "middleware = middleware or []\n"
 	contents += tabtab + "if middleware and not isinstance(middleware, list):\n"
 	contents += tabtabtab + "middleware = [middleware]\n"
 	if service.Extends != "" {
-		contents += tabtab + "super(Client, self).__init__(transport, protocol_factory,\n"
-		contents += tabtab + "                             middleware=middleware)\n"
+		contents += tabtab + "super(Client, self).__init__(provider, middleware=middleware)\n"
+		contents += tabtab + "middleware += provider.get_middleware()\n"
 		contents += tabtab + "self._methods.update("
 	} else {
-		if async {
-			contents += tabtab + "transport.set_registry(FClientRegistry())\n"
-		}
-		contents += tabtab + "self._transport = transport\n"
-		contents += tabtab + "self._protocol_factory = protocol_factory\n"
-		contents += tabtab + "self._oprot = protocol_factory.get_protocol(transport)\n"
+		contents += tabtab + "self._transport = provider.get_transport()\n"
+		contents += tabtab + "self._protocol_factory = provider.get_protocol_factory()\n"
+		contents += tabtab + "self._oprot = self._protocol_factory.get_protocol(self._transport)\n"
 		if !async {
-			contents += tabtab + "self._iprot = protocol_factory.get_protocol(transport)\n"
+			contents += tabtab + "self._iprot = self._protocol_factory.get_protocol(self._transport)\n"
 		}
 		contents += tabtab + "self._write_lock = Lock()\n"
+		contents += tabtab + "middleware += provider.get_middleware()\n"
 		contents += tabtab + "self._methods = "
 	}
 	contents += "{\n"
@@ -1148,21 +1130,6 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	contents += g.generateWriteApplicationException()
 
 	return contents
-}
-
-func (g *Generator) exposeServiceModule(path string, service *parser.Service) error {
-	// Expose service in __init__.py.
-	// TODO: Generate __init__.py ourselves once Thrift is removed.
-	initFile := fmt.Sprintf("%s%s__init__.py", path, string(os.PathSeparator))
-	init, err := ioutil.ReadFile(initFile)
-	if err != nil {
-		return err
-	}
-	initStr := string(init)
-	initStr += fmt.Sprintf("\nfrom . import f_%s\n", service.Name)
-	initStr += fmt.Sprintf("from .f_%s import *\n", service.Name)
-	init = []byte(initStr)
-	return ioutil.WriteFile(initFile, init, os.ModePerm)
 }
 
 func (g *Generator) generateServiceInterface(service *parser.Service) string {
@@ -1219,19 +1186,30 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 		contents += tabtab + "super(Processor, self).__init__()\n"
 	}
 	for _, method := range service.Methods {
+		methodLower := parser.LowercaseFirstLetter(method.Name)
 		contents += tabtab + fmt.Sprintf("self.add_to_processor_map('%s', _%s(Method(handler.%s, middleware), self.get_write_lock()))\n",
-			method.Name, method.Name, method.Name)
+			methodLower, method.Name, method.Name)
+		if len(method.Annotations) > 0 {
+			annotations := make([]string, len(method.Annotations))
+			for i, annotation := range method.Annotations {
+				annotations[i] = fmt.Sprintf("'%s': '%s'", annotation.Name, annotation.Value)
+			}
+			contents += tabtab +
+				fmt.Sprintf("self.add_to_annotations_map('%s', {%s})\n", methodLower, strings.Join(annotations, ", "))
+		}
 	}
 	contents += "\n\n"
+
 	return contents
 }
 
 func (g *Generator) generateProcessorFunction(method *parser.Method) string {
+	methodLower := parser.LowercaseFirstLetter(method.Name)
 	contents := ""
 	contents += fmt.Sprintf("class _%s(FProcessorFunction):\n\n", method.Name)
 	contents += tab + "def __init__(self, handler, lock):\n"
-	contents += tabtab + "self._handler = handler\n"
-	contents += tabtab + "self._lock = lock\n\n"
+	contents += tabtab + fmt.Sprintf("super(_%s, self).__init__(handler, lock)\n", method.Name)
+	contents += "\n"
 
 	contents += tab + "def process(self, ctx, iprot, oprot):\n"
 	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
@@ -1252,25 +1230,32 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 		contents += tabtab + fmt.Sprintf("except %s as %s:\n", g.qualifiedTypeName(err.Type), err.Name)
 		contents += tabtabtab + fmt.Sprintf("result.%s = %s\n", err.Name, err.Name)
 	}
-	contents += tabtab + "except FRateLimitException as ex:\n"
+	contents += tabtab + "except TApplicationException as ex:\n"
 	contents += tabtabtab + "with self._lock:\n"
 	contents += tabtabtabtab +
-		fmt.Sprintf("_write_application_exception(ctx, oprot, FRateLimitException.RATE_LIMIT_EXCEEDED, \"%s\", ex.message)\n",
-			method.Name)
+		fmt.Sprintf("_write_application_exception(ctx, oprot, \"%s\", exception=ex)\n",
+			methodLower)
 	contents += tabtabtabtab + "return\n"
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("_write_application_exception(ctx, oprot, TApplicationException.UNKNOWN, \"%s\", e.message)\n", method.Name)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)\n", methodLower)
 	}
-	contents += tabtabtab + "raise\n"
+	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {
 		contents += tabtab + "with self._lock:\n"
-		contents += tabtabtab + "oprot.write_response_headers(ctx)\n"
-		contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", method.Name)
-		contents += tabtabtab + "result.write(oprot)\n"
-		contents += tabtabtab + "oprot.writeMessageEnd()\n"
-		contents += tabtabtab + "oprot.get_transport().flush()\n"
+		contents += tabtabtab + "try:\n"
+		contents += tabtabtabtab + "oprot.write_response_headers(ctx)\n"
+		contents += tabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin('%s', TMessageType.REPLY, 0)\n", methodLower)
+		contents += tabtabtabtab + "result.write(oprot)\n"
+		contents += tabtabtabtab + "oprot.writeMessageEnd()\n"
+		contents += tabtabtabtab + "oprot.get_transport().flush()\n"
+		contents += tabtabtab + "except TTransportException as e:\n"
+		contents += tabtabtabtab + "if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:\n"
+		contents += tabtabtabtabtab + fmt.Sprintf(
+			"raise _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])\n", methodLower)
+		contents += tabtabtabtab + "else:\n"
+		contents += tabtabtabtabtab + "raise e\n"
 	}
 	contents += "\n\n"
 
@@ -1278,13 +1263,17 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 }
 
 func (g *Generator) generateWriteApplicationException() string {
-	contents := "def _write_application_exception(ctx, oprot, typ, method, message):\n"
-	contents += tab + "x = TApplicationException(type=typ, message=message)\n"
+	contents := "def _write_application_exception(ctx, oprot, method, ex_code=None, message=None, exception=None):\n"
+	contents += tab + "if exception is not None:\n"
+	contents += tabtab + "x = exception\n"
+	contents += tab + "else:\n"
+	contents += tabtab + "x = TApplicationException(type=ex_code, message=message)\n"
 	contents += tab + "oprot.write_response_headers(ctx)\n"
 	contents += tab + "oprot.writeMessageBegin(method, TMessageType.EXCEPTION, 0)\n"
 	contents += tab + "x.write(oprot)\n"
 	contents += tab + "oprot.writeMessageEnd()\n"
 	contents += tab + "oprot.get_transport().flush()\n"
+	contents += tab + "return x"
 	contents += "\n\n"
 
 	return contents
@@ -1407,15 +1396,6 @@ func (g *Generator) getPackageNamespace(include string) string {
 		name = namespace.Value
 	}
 	return g.Options["package_prefix"] + name
-}
-
-var elemNum int
-
-// getElem returns a unique identifier name
-func getElem() string {
-	s := fmt.Sprintf("_elem%d", elemNum)
-	elemNum++
-	return s
 }
 
 func getAsyncOpt(options map[string]string) concurrencyModel {

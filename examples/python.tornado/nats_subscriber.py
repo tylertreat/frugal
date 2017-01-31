@@ -10,7 +10,7 @@ from nats.io.client import Client as NATS
 
 from frugal.protocol.protocol_factory import FProtocolFactory
 from frugal.provider import FScopeProvider
-from frugal.tornado.transport import FNatsScopeTransportFactory
+from frugal.tornado.transport import FNatsSubscriberTransportFactory
 
 sys.path.append('gen-py.tornado')
 from v1.music.f_AlbumWinners_subscriber import AlbumWinnersSubscriber  # noqa
@@ -43,15 +43,19 @@ def main():
     yield nats_client.connect(**options)
 
     # Create a pub sub scope using the configured transport and protocol
-    scope_transport_factory = FNatsScopeTransportFactory(nats_client)
-    provider = FScopeProvider(scope_transport_factory, prot_factory)
+    transport_factory = FNatsSubscriberTransportFactory(nats_client)
+    provider = FScopeProvider(None, transport_factory, prot_factory)
 
     subscriber = AlbumWinnersSubscriber(provider)
 
     def event_handler(ctx, req):
         root.info("You won! {}".format(req))
 
+    def start_contest_handler(ctx, albums):
+        root.info("Contest started, available albums: {}".format(albums))
+
     yield subscriber.subscribe_Winner(event_handler)
+    yield subscriber.subscribe_ContestStart(start_contest_handler)
 
     root.info("Subscriber starting...")
 

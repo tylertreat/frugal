@@ -1,405 +1,346 @@
 package com.workiva.frugal.server;
 
-import com.google.gson.Gson;
-import com.workiva.frugal.internal.NatsConnectionProtocol;
 import com.workiva.frugal.processor.FProcessor;
-import com.workiva.frugal.processor.FProcessorFactory;
-import com.workiva.frugal.protocol.FProtocol;
 import com.workiva.frugal.protocol.FProtocolFactory;
-import com.workiva.frugal.protocol.FServerRegistry;
-import com.workiva.frugal.transport.FTransport;
-import com.workiva.frugal.transport.FTransportClosedCallback;
-import com.workiva.frugal.transport.FTransportFactory;
-import com.workiva.frugal.transport.TNatsServiceTransport;
+import com.workiva.frugal.transport.TMemoryOutputBuffer;
 import com.workiva.frugal.util.BlockingRejectedExecutionHandler;
 import io.nats.client.Connection;
-import io.nats.client.Message;
 import io.nats.client.MessageHandler;
 import io.nats.client.Subscription;
 import org.apache.thrift.TException;
+import org.apache.thrift.transport.TMemoryInputTransport;
 import org.apache.thrift.transport.TTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.workiva.frugal.transport.FNatsTransport.NATS_MAX_MESSAGE_SIZE;
+
 /**
- * An implementation of FServer which uses NATS as the underlying transport. Clients must connect with the
- * TNatsServiceTransport or the FNatsTransport.
- *
- * @deprecated With the next major release of frugal, stateful NATS transports will no longer be supported.
- * With the release of 2.0, FStatelessNatsServer will be renamed to FNatsServer.
+ * An implementation of FServer which uses NATS as the underlying transport.
+ * Clients must connect with the FNatsTransport.
  */
-@Deprecated
 public class FNatsServer implements FServer {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(FNatsServer.class);
+    public static final int DEFAULT_WORK_QUEUE_LEN = 64;
+    public static final int DEFAULT_WATERMARK = 5000;
 
-    private static final int DEFAULT_WORK_QUEUE_LEN = 64;
-    private static final int DEFAULT_MAX_MISSED_HEARTBEATS = 3;
-    private static final String QUEUE = "rpc";
-    private static final byte LEFT_BRACE = 0x7b; // "{"
+    private final Connection conn;
+    private final FProcessor processor;
+    private final FProtocolFactory inputProtoFactory;
+    private final FProtocolFactory outputProtoFactory;
+    private final String[] subjects;
+    private final String queue;
+    private final long highWatermark;
 
-    private Connection conn;
-    private String[] subjects;
-    private String heartbeatSubject;
-    private final long heartbeatInterval;
-    private final int maxMissedHeartbeats;
-    private ConcurrentHashMap<String, Client> clients;
-    private FProcessorFactory processorFactory;
-    private FTransportFactory transportFactory;
-    private FProtocolFactory protocolFactory;
-    private final BlockingQueue<Object> shutdown = new ArrayBlockingQueue<>(1);
-    private long highWatermark = FTransport.DEFAULT_WATERMARK;
+    private final CountDownLatch shutdownSignal = new CountDownLatch(1);
+    private final ExecutorService executorService;
 
-    // Stateless utils
-    private ExecutorService workerPool;
-
-    private final ScheduledExecutorService heartbeatExecutor = Executors.newScheduledThreadPool(1);
-
-
-    @Deprecated
-    public FNatsServer(Connection conn, String subject, long heartbeatInterval,
-                       FProcessor processor, FTransportFactory transportFactory,
-                       FProtocolFactory protocolFactory) {
-        this(conn, new String[]{subject}, heartbeatInterval, processor, transportFactory, protocolFactory);
-    }
-
-    @Deprecated
-    public FNatsServer(Connection conn, String[] subjects, long heartbeatInterval,
-                       FProcessor processor, FTransportFactory transportFactory,
-                       FProtocolFactory protocolFactory) {
-        this(conn, subjects, heartbeatInterval, DEFAULT_MAX_MISSED_HEARTBEATS,
-                new FProcessorFactory(processor), transportFactory, protocolFactory);
-    }
-
-    @Deprecated
-    public FNatsServer(Connection conn, String subject, long heartbeatInterval, int maxMissedHeartbeats,
-                       FProcessorFactory processorFactory, FTransportFactory transportFactory,
-                       FProtocolFactory protocolFactory) {
-        this(conn, new String[]{subject}, heartbeatInterval, maxMissedHeartbeats,
-                processorFactory, transportFactory, protocolFactory);
-    }
-
-    @Deprecated
-    public FNatsServer(Connection conn, String[] subjects, long heartbeatInterval, int maxMissedHeartbeats,
-                       FProcessorFactory processorFactory, FTransportFactory transportFactory,
-                       FProtocolFactory protocolFactory) {
-        this(conn, subjects, heartbeatInterval, maxMissedHeartbeats,
-                0, DEFAULT_WORK_QUEUE_LEN, processorFactory, transportFactory, protocolFactory);
-    }
-
-    @Deprecated
-    public FNatsServer(Connection conn, String[] subjects, long heartbeatInterval, int maxMissedHeartbeats,
-                       int workerCount, int queueLength, FProcessorFactory processorFactory,
-                       FTransportFactory transportFactory, FProtocolFactory protocolFactory) {
-        this(conn, subjects, heartbeatInterval, maxMissedHeartbeats,
-                processorFactory, transportFactory, protocolFactory, new ThreadPoolExecutor(
-                        1, Math.max(1, workerCount), 30, TimeUnit.SECONDS,
-                        new ArrayBlockingQueue<>(queueLength),
-                        new BlockingRejectedExecutionHandler()
-                ));
-    }
-
-    @Deprecated
-    public FNatsServer(Connection conn, String[] subjects, long heartbeatInterval, int maxMissedHeartbeats,
-                       FProcessorFactory processorFactory, FTransportFactory transportFactory,
-                       FProtocolFactory protocolFactory, ExecutorService executorService) {
+    /**
+     * Creates a new FNatsServer which receives requests on the given subjects and queue.
+     * <p>
+     * The worker count controls the size of the thread pool used to process requests. This uses a provided queue
+     * length. If the queue fills up, newly received requests will block to be placed on the queue. If requests wait for
+     * too long based on the high watermark, the server will log that it is backed up. Clients must connect with the
+     * FNatsTransport.
+     *
+     * @param conn            NATS connection
+     * @param processor       FProcessor used to process requests
+     * @param protoFactory    FProtocolFactory used for input and output protocols
+     * @param subjects        NATS subjects to receive requests on
+     * @param queue           NATS queue group to receive requests on
+     * @param highWatermark   Milliseconds when high watermark logic is triggered
+     * @param executorService Custom executor service for processing messages
+     */
+    private FNatsServer(Connection conn, FProcessor processor, FProtocolFactory protoFactory,
+                        String[] subjects, String queue, long highWatermark, ExecutorService executorService) {
         this.conn = conn;
+        this.processor = processor;
+        this.inputProtoFactory = protoFactory;
+        this.outputProtoFactory = protoFactory;
         this.subjects = subjects;
-        this.heartbeatSubject = conn.newInbox();
-        this.heartbeatInterval = heartbeatInterval;
-        this.maxMissedHeartbeats = maxMissedHeartbeats;
-        this.clients = new ConcurrentHashMap<>();
-        this.processorFactory = processorFactory;
-        this.transportFactory = transportFactory;
-        this.protocolFactory = protocolFactory;
-        this.workerPool = executorService;
+        this.queue = queue;
+        this.highWatermark = highWatermark;
+        this.executorService = executorService;
     }
 
-    private class Client {
+    /**
+     * Builder for configuring and constructing FNatsServer instances.
+     */
+    public static class Builder {
 
-        TTransport transport;
-        String heartbeat;
-        AcceptHeartbeatThread heartbeatThread;
+        private final Connection conn;
+        private final FProcessor processor;
+        private final FProtocolFactory protoFactory;
+        private final String[] subjects;
 
-        Client(TTransport transport, String heartbeat) {
-            this.transport = transport;
-            this.heartbeat = heartbeat;
+        private String queue = "";
+        private int workerCount = 1;
+        private int queueLength = DEFAULT_WORK_QUEUE_LEN;
+        private long highWatermark = DEFAULT_WATERMARK;
+        private ExecutorService executorService;
+
+        /**
+         * Creates a new Builder which creates FStatelessNatsServers that subscribe to the given NATS subjects.
+         *
+         * @param conn         NATS connection
+         * @param processor    FProcessor used to process requests
+         * @param protoFactory FProtocolFactory used for input and output protocols
+         * @param subjects     NATS subjects to receive requests on
+         */
+        public Builder(Connection conn, FProcessor processor, FProtocolFactory protoFactory, String[] subjects) {
+            this.conn = conn;
+            this.processor = processor;
+            this.protoFactory = protoFactory;
+            this.subjects = subjects;
         }
 
-        void start() {
-            this.heartbeatThread = new AcceptHeartbeatThread(this);
-            this.heartbeatThread.start();
+        /**
+         * Adds a NATS queue group to receive requests on to the Builder.
+         *
+         * @param queue NATS queue group
+         * @return Builder
+         */
+        public Builder withQueueGroup(String queue) {
+            this.queue = queue;
+            return this;
         }
 
-        void kill() {
-            transport.close();
-            this.heartbeatThread.kill();
-            this.heartbeatThread = null;
+        /**
+         * Adds a worker count which controls the size of the thread pool used to process requests (defaults to 1).
+         *
+         * @param workerCount thread pool size
+         * @return Builder
+         */
+        public Builder withWorkerCount(int workerCount) {
+            this.workerCount = workerCount;
+            return this;
+        }
+
+        /**
+         * Adds a queue length which controls the size of the work queue buffering requests (defaults to 64).
+         *
+         * @param queueLength work queue length
+         * @return Builder
+         */
+        public Builder withQueueLength(int queueLength) {
+            this.queueLength = queueLength;
+            return this;
+        }
+
+        /**
+         * Set the executor service used to execute incoming processor tasks.
+         * If set, overrides withQueueLength and withWorkerCount options.
+         * <p>
+         * Defaults to:
+         * <pre>
+         * {@code
+         * new ThreadPoolExecutor(1,
+         *                        workerCount,
+         *                        30,
+         *                        TimeUnit.SECONDS,
+         *                        new ArrayBlockingQueue<>(queueLength),
+         *                        new BlockingRejectedExecutionHandler());
+         * }
+         * </pre>
+         *
+         * @param executorService ExecutorService to run tasks
+         * @return Builder
+         */
+        public Builder withExecutorService(ExecutorService executorService) {
+            this.executorService = executorService;
+            return this;
+        }
+
+        /**
+         * Controls the high watermark which determines the time spent waiting in the queue before triggering slow
+         * consumer logic.
+         *
+         * @param highWatermark duration in milliseconds
+         * @return Builder
+         */
+        public Builder withHighWatermark(long highWatermark) {
+            this.highWatermark = highWatermark;
+            return this;
+        }
+
+        /**
+         * Creates a new configured FNatsServer.
+         *
+         * @return FNatsServer
+         */
+        public FNatsServer build() {
+            if (executorService == null) {
+                this.executorService = new ThreadPoolExecutor(
+                        1, workerCount, 30, TimeUnit.SECONDS,
+                        new ArrayBlockingQueue<>(queueLength),
+                        new BlockingRejectedExecutionHandler());
+            }
+            return new FNatsServer(conn, processor, protoFactory, subjects, queue, highWatermark, executorService);
         }
 
     }
 
+    /**
+     * Starts the server by subscribing to messages on the configured NATS subject.
+     *
+     * @throws TException
+     */
+    @Override
     public void serve() throws TException {
-        Subscription[] subscriptions = new Subscription[subjects.length];
-        for (int i = 0; i < subjects.length; i++) {
-            subscriptions[i] = conn.subscribe(subjects[i], QUEUE, new ConnectionHandler());
-        }
-
-        if (isHeartbeating()) {
-            heartbeatExecutor.scheduleAtFixedRate(new MakeHeartbeatRunnable(), heartbeatInterval,
-                    heartbeatInterval, TimeUnit.MILLISECONDS);
+        ArrayList<Subscription> subscriptionArrayList = new ArrayList<>();
+        for (String subject : subjects) {
+            subscriptionArrayList.add(conn.subscribe(subject, queue, newRequestHandler()));
         }
 
         LOGGER.info("Frugal server running...");
         try {
-            shutdown.take();
+            shutdownSignal.await();
         } catch (InterruptedException ignored) {
         }
         LOGGER.info("Frugal server stopping...");
 
-        for (Subscription subscription : subscriptions) {
+        for (Subscription subscription : subscriptionArrayList) {
             try {
                 subscription.unsubscribe();
-            } catch (IOException ignored) {
+            } catch (IOException e) {
+                LOGGER.warn("Frugal server failed to unsubscribe from " + subscription.getSubject() + ": " +
+                        e.getMessage());
             }
         }
     }
 
+    /**
+     * Stops the server by shutting down the executor service processing tasks.
+     *
+     * @throws TException
+     */
+    @Override
     public void stop() throws TException {
-        Collection<Client> collection = clients.values();
-        for (Client client : collection) {
-            client.kill();
-        }
-        clients.clear();
-        heartbeatExecutor.shutdown();
-
-        // Kill worker pool
-        workerPool.shutdown();
+        // Attempt to perform an orderly shutdown of the worker pool by trying to complete any in-flight requests.
+        executorService.shutdown();
         try {
-            if (!workerPool.awaitTermination(30, TimeUnit.SECONDS)) {
-                workerPool.shutdownNow();
+            if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
             }
         } catch (InterruptedException e) {
-            workerPool.shutdownNow();
+            executorService.shutdownNow();
             Thread.currentThread().interrupt();
         }
 
         // Unblock serving thread.
-        try {
-            shutdown.put(new Object());
-        } catch (InterruptedException ignored) {
-        }
+        shutdownSignal.countDown();
     }
 
     /**
-     * Sets the maximum amount of time a frame is allowed to await processing
-     * before triggering transport overload logic. For now, this just
-     * consists of logging a warning. If not set, the default is 5 seconds.
-     *
-     * @param watermark the watermark time in milliseconds.
+     * Creates a new NATS MessageHandler which is invoked when a request is received.
      */
-    public synchronized void setHighWatermark(long watermark) {
-        this.highWatermark = watermark;
-    }
-
-    private synchronized long getHighWatermark() {
-        return highWatermark;
-    }
-
-    private String newFrugalInbox(String prefix) {
-        String[] tokens = prefix.split("\\.");
-        tokens[tokens.length - 1] = conn.newInbox(); // Always at least 1 token
-        String inbox = "";
-        String pre = "";
-        for (String token : tokens) {
-            inbox += pre + token;
-            pre = ".";
-        }
-        return inbox;
-    }
-
-    private TTransport accept(String listenTo, String replyTo, String heartbeatSubject) throws TException {
-        TTransport client = TNatsServiceTransport.server(conn, listenTo, replyTo);
-        FTransport transport = transportFactory.getTransport(client);
-        transport.setClosedCallback(new ClientRemover(heartbeatSubject));
-        FProcessor processor = processorFactory.getProcessor(transport);
-        FProtocol protocol = protocolFactory.getProtocol(transport);
-        transport.setRegistry(new FServerRegistry(processor, protocolFactory, protocol));
-        transport.setHighWatermark(getHighWatermark());
-        transport.open();
-        return client;
-    }
-
-    private void remove(String heartbeat) {
-        Client client = clients.get(heartbeat);
-        if (client == null) {
-            return;
-        }
-        client.kill();
-        clients.remove(heartbeat);
-    }
-
-    /**
-     * Called when a client attempts to connect to the server.
-     */
-    private class ConnectionHandler implements MessageHandler {
-
-        @Override
-        public void onMessage(Message message) {
+    protected MessageHandler newRequestHandler() {
+        return message -> {
             String reply = message.getReplyTo();
             if (reply == null || reply.isEmpty()) {
-                LOGGER.warn("Received a bad connection handshake. Discarding.");
+                LOGGER.warn("Discarding invalid NATS request (no reply)");
                 return;
             }
 
-            byte[] data = message.getData();
-            // Check to see if this is a stateless client
-            if (data != null && data.length > 0 && data[0] != LEFT_BRACE) {
-                FProcessor processor = processorFactory.getProcessor(null);
-                workerPool.submit(new FStatelessNatsServer.Request(message.getData(), System.currentTimeMillis(),
-                        message.getReplyTo(), getHighWatermark(), protocolFactory, protocolFactory, processor, conn));
-                return;
-            }
+            executorService.submit(
+                    new Request(message.getData(), System.currentTimeMillis(), message.getReplyTo(),
+                            highWatermark, inputProtoFactory, outputProtoFactory, processor, conn));
+        };
+    }
 
-            NatsConnectionProtocol connProtocol;
-            Gson gson = new Gson();
+    /**
+     * Runnable which encapsulates a request received by the server.
+     */
+    static class Request implements Runnable {
+
+        final byte[] frameBytes;
+        final long timestamp;
+        final String reply;
+        final long highWatermark;
+        final FProtocolFactory inputProtoFactory;
+        final FProtocolFactory outputProtoFactory;
+        final FProcessor processor;
+        final Connection conn;
+
+        Request(byte[] frameBytes, long timestamp, String reply, long highWatermark,
+                FProtocolFactory inputProtoFactory, FProtocolFactory outputProtoFactory,
+                FProcessor processor, Connection conn) {
+            this.frameBytes = frameBytes;
+            this.timestamp = timestamp;
+            this.reply = reply;
+            this.highWatermark = highWatermark;
+            this.inputProtoFactory = inputProtoFactory;
+            this.outputProtoFactory = outputProtoFactory;
+            this.processor = processor;
+            this.conn = conn;
+        }
+
+        @Override
+        public void run() {
+            long duration = System.currentTimeMillis() - timestamp;
+            if (duration > highWatermark) {
+                LOGGER.warn(String.format(
+                        "request spent %d ms in the transport buffer, your consumer might be backed up", duration));
+            }
+            process();
+        }
+
+        private void process() {
+            // Read and process frame (exclude first 4 bytes which represent frame size).
+            byte[] frame = Arrays.copyOfRange(frameBytes, 4, frameBytes.length);
+            TTransport input = new TMemoryInputTransport(frame);
+
+            TMemoryOutputBuffer output = new TMemoryOutputBuffer(NATS_MAX_MESSAGE_SIZE);
             try {
-                connProtocol = gson.fromJson(new String(message.getData(), "UTF-8"), NatsConnectionProtocol.class);
-                if (connProtocol.getVersion() != NatsConnectionProtocol.NATS_V0) {
-                    LOGGER.error(String.format("%d not a supported connect version", connProtocol.getVersion()));
-                    return;
-                }
-            } catch (UnsupportedEncodingException e) {
-                LOGGER.error("could not deserialize connect message");
-                return;
-            }
-
-            String heartbeat = conn.newInbox();
-            String listenTo = newFrugalInbox(message.getReplyTo());
-            TTransport transport;
-            try {
-                transport = accept(listenTo, reply, heartbeat);
+                processor.process(inputProtoFactory.getProtocol(input), outputProtoFactory.getProtocol(output));
             } catch (TException e) {
-                LOGGER.error("error accepting client transport " + e.getMessage());
+                LOGGER.error("error processing request", e);
                 return;
             }
 
-            Client client = new Client(transport, heartbeat);
-            if (isHeartbeating()) {
-                client.start();
-                clients.put(heartbeat, client);
-            }
-
-            // Connect message consists of "[heartbeat subject] [heartbeat reply subject] [expected interval ms]"
-            String connectMsg = heartbeatSubject + " " + heartbeat + " " + heartbeatInterval;
-            try {
-                conn.publish(reply, listenTo, connectMsg.getBytes());
-            } catch (Exception e) {
-                LOGGER.error("error publishing transport inbox " + e.getMessage());
-                transport.close();
-            }
-        }
-
-    }
-
-    private class MakeHeartbeatRunnable implements Runnable {
-
-        public void run() {
-            if (clients.size() == 0) {
+            if (!output.hasWriteData()) {
                 return;
             }
+
+            // Send response.
             try {
-                conn.publish(heartbeatSubject, null);
-                conn.flush((int) (heartbeatInterval * 3 / 4));
-            } catch (Exception e) {
-                LOGGER.error("error publishing heartbeat " + e.getMessage());
-            }
-        }
-
-    }
-
-    private class AcceptHeartbeatThread extends Thread {
-
-        private volatile boolean running;
-        private int missed;
-        private final Client client;
-        private SynchronousQueue<Object> heartbeatQueue = new SynchronousQueue<>();
-
-        AcceptHeartbeatThread(Client client) {
-            this.client = client;
-            setName("heartbeat-accept");
-        }
-
-        public void kill() {
-            if (this != Thread.currentThread()) {
-                interrupt();
-            }
-            running = false;
-        }
-
-        public void run() {
-            Subscription sub = conn.subscribe(client.heartbeat, new MessageHandler() {
-                @Override
-                public void onMessage(Message message) {
-                    missed = 0;
-                    heartbeatQueue.offer(new Object());
-                }
-            });
-
-            running = true;
-            while (running) {
-                long wait = maxMissedHeartbeats > 1 ? heartbeatInterval : heartbeatInterval + heartbeatInterval / 4;
-                try {
-                    Object ret = heartbeatQueue.poll(wait, TimeUnit.MILLISECONDS);
-                    if (ret == null) {
-                        missed++;
-                    } else {
-                        missed = 0;
-                    }
-                } catch (InterruptedException e) {
-                    continue;
-                }
-                if (missed >= maxMissedHeartbeats) {
-                    LOGGER.info("client heartbeat expired");
-                    remove(client.heartbeat);
-                }
-            }
-            try {
-                sub.unsubscribe();
+                conn.publish(reply, output.getWriteBytes());
             } catch (IOException e) {
-                LOGGER.warn("error unsubscribing from heartbeat " + e.getMessage());
+                LOGGER.warn("failed to request response: " + e.getMessage());
             }
         }
 
     }
 
-    private boolean isHeartbeating() {
-        return (heartbeatInterval > 0);
+    /**
+     * The NATS subject this server is listening on.
+     *
+     * @return the subject
+     */
+    public String[] getSubjects() {
+        return subjects;
     }
 
-    private class ClientRemover implements FTransportClosedCallback {
+    /**
+     * The NATS queue group this server is listening on.
+     *
+     * @return the queue
+     */
+    public String getQueue() {
+        return queue;
+    }
 
-        private String heartbeat;
-
-        ClientRemover(String heartbeat) {
-            this.heartbeat = heartbeat;
-        }
-
-        public void onClose(Exception cause) {
-            remove(this.heartbeat);
-        }
-
+    ExecutorService getExecutorService() {
+        return executorService;
     }
 }

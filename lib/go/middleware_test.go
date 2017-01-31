@@ -12,24 +12,30 @@ import (
 func TestServiceMiddleware(t *testing.T) {
 	assert := assert.New(t)
 	var (
-		calledArg1   int
-		serviceName1 string
-		methodName1  string
-		calledArg2   int
-		serviceName2 string
-		methodName2  string
+		calledContext1 FContext
+		calledArg1     int
+		serviceName1   string
+		methodName1    string
+		calledContext2 FContext
+		calledArg2     int
+		serviceName2   string
+		methodName2    string
 	)
-	middleware1 := newTestMiddleware(&calledArg1, &serviceName1, &methodName1)
-	middleware2 := newTestMiddleware(&calledArg2, &serviceName2, &methodName2)
+	ctx1 := NewFContext("ctx1")
+	middleware1 := newTestMiddleware(&calledContext1, nil, &calledArg1, &serviceName1, &methodName1)
+	middleware2 := newTestMiddleware(&calledContext2, ctx1, &calledArg2, &serviceName2, &methodName2)
 	handler := &testHandler{}
 	method := NewMethod(handler, handler.handlerMethod, "handlerMethod", []ServiceMiddleware{middleware1, middleware2})
 	called := make(chan bool, 1)
 	method.AddMiddleware(newTestSimpleMiddleware(called))
-	arg := 42
 
-	ret := method.Invoke([]interface{}{arg})
+	ctx2 := NewFContext("ctx2")
+	arg := 42
+	ret := method.Invoke([]interface{}{ctx2, arg})
 
 	assert.Equal("foo", ret[0])
+	assert.Equal(ctx1, calledContext1)
+	assert.Equal(ctx2, calledContext2)
 	assert.Equal(arg+2, handler.calledArg)
 	assert.Equal(arg, calledArg2)
 	assert.Equal("testHandler", serviceName2)
@@ -50,30 +56,37 @@ func TestServiceMiddlewareNoMiddleware(t *testing.T) {
 	assert := assert.New(t)
 	handler := &testHandler{}
 	method := NewMethod(handler, handler.handlerMethod, "handlerMethod", nil)
-	arg := 42
 
-	ret := method.Invoke([]interface{}{arg})
+	ctx := NewFContext("fooid")
+	arg := 42
+	ret := method.Invoke([]interface{}{ctx, arg})
 
 	assert.Equal("foo", ret[0])
 	assert.Equal(arg, handler.calledArg)
 }
 
 type testHandler struct {
-	calledArg int
+	calledContext FContext
+	calledArg     int
 }
 
-func (t *testHandler) handlerMethod(x int) string {
+func (t *testHandler) handlerMethod(ctx FContext, x int) string {
+	t.calledContext = ctx
 	t.calledArg = x
 	return "foo"
 }
 
-func newTestMiddleware(calledArg *int, serviceName, methodName *string) ServiceMiddleware {
+func newTestMiddleware(calledContext *FContext, setContext FContext, calledArg *int, serviceName, methodName *string) ServiceMiddleware {
 	return func(next InvocationHandler) InvocationHandler {
 		return func(service reflect.Value, method reflect.Method, args Arguments) Results {
-			*calledArg = args[0].(int)
+			*calledContext = args.Context()
+			if setContext != nil {
+				args.SetContext(setContext)
+			}
+			*calledArg = args[1].(int)
 			*serviceName = service.Type().Elem().Name()
 			*methodName = method.Name
-			args[0] = args[0].(int) + 1
+			args[1] = args[1].(int) + 1
 			return next(service, method, args)
 		}
 	}

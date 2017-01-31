@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/rs/cors"
 
 	"github.com/Workiva/frugal/examples/go/gen-go/v1/music"
 	"github.com/Workiva/frugal/lib/go"
@@ -23,11 +25,12 @@ func main() {
 	processor := music.NewFStoreProcessor(handler)
 
 	// Start the server using the configured processor, and protocol
-	http.HandleFunc("/frugal", frugal.NewFrugalHandlerFunc(processor, fProtocolFactory, fProtocolFactory))
-	func() {
-		fmt.Println("Starting the http server...")
-		http.ListenAndServe(":8080", http.DefaultServeMux)
-	}()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/frugal", frugal.NewFrugalHandlerFunc(processor, fProtocolFactory))
+	httpHandler := cors.Default().Handler(mux)
+
+	fmt.Println("Starting the http server...")
+	log.Fatal(http.ListenAndServe(":9090", httpHandler))
 }
 
 // StoreHandler handles all incoming requests to the server.
@@ -35,11 +38,11 @@ func main() {
 type StoreHandler struct{}
 
 // BuyAlbum always buys the same album
-func (f *StoreHandler) BuyAlbum(ctx *frugal.FContext, ASIN string, acct string) (r *music.Album, err error) {
+func (f *StoreHandler) BuyAlbum(ctx frugal.FContext, ASIN string, acct string) (r *music.Album, err error) {
 	album := &music.Album{
 		ASIN:     "c54d385a-5024-4f3f-86ef-6314546a7e7f",
 		Duration: 1200,
-		Tracks: []*music.Track{&music.Track{
+		Tracks: []*music.Track{{
 			Title:     "Comme des enfants",
 			Artist:    "Coeur de pirate",
 			Publisher: "Grosse Boîte",
@@ -53,6 +56,6 @@ func (f *StoreHandler) BuyAlbum(ctx *frugal.FContext, ASIN string, acct string) 
 }
 
 // EnterAlbumGiveaway always returns true
-func (f *StoreHandler) EnterAlbumGiveaway(ctx *frugal.FContext, email string, name string) (r bool, err error) {
+func (f *StoreHandler) EnterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error) {
 	return true, nil
 }

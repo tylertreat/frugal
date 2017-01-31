@@ -10,7 +10,8 @@ sys.path.append('gen-py')
 from frugal.context import FContext
 from frugal.provider import FScopeProvider
 from frugal.server.http_server import FHttpServer
-from frugal.tornado.transport import FNatsScopeTransportFactory
+from frugal.tornado.transport import FNatsPublisherTransportFactory
+from frugal.tornado.transport import FNatsSubscriberTransportFactory
 from nats.io.client import Client as NATS
 from tornado import gen, ioloop
 
@@ -59,21 +60,33 @@ def pub_sub(subject, protocol_factory):
     yield nats_client.connect(**get_nats_options())
 
     # Setup subscriber, send response upon receipt
-    scope_transport_factory = FNatsScopeTransportFactory(nats_client)
-    provider = FScopeProvider(scope_transport_factory, protocol_factory)
+    pub_transport_factory = FNatsPublisherTransportFactory(nats_client)
+    sub_transport_factory = FNatsSubscriberTransportFactory(nats_client)
+    provider = FScopeProvider(
+        pub_transport_factory, sub_transport_factory, protocol_factory)
     publisher = EventsPublisher(provider)
     yield publisher.open()
 
+    @gen.coroutine
     def response_handler(context, event):
         print("received {} : {}".format(context, event))
+        preamble = context.get_request_header(PREAMBLE_HEADER)
+        if preamble is None or preamble == "":
+            logging.error("Client did not provide preamble header")
+            return
+        ramble = context.get_request_header(RAMBLE_HEADER)
+        if ramble is None or ramble == "":
+            logging.error("Client did not provide ramble header")
+            return
         response_event = Event(Message="Sending Response")
         response_context = FContext("Call")
-        publisher.publish_EventCreated(response_context, "foo", "Client", "response", "{}".format(subject), response_event)
+
+        yield publisher.publish_EventCreated(response_context, preamble, ramble, "response", "{}".format(subject), response_event)
         print("Published event={}".format(response_event))
         publisher.close()
 
     subscriber = EventsSubscriber(provider)
-    yield subscriber.subscribe_EventCreated("foo", "Client", "call", "{}".format(subject), response_handler)
+    yield subscriber.subscribe_EventCreated("*", "*", "call", "{}".format(subject), response_handler)
 
 
 def tornado_thread(subject, protocol_factory):

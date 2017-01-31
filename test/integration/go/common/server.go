@@ -40,12 +40,13 @@ func StartServer(
 		Subscribe to events, publish response upon receipt
 	*/
 	go func() {
-		factory := frugal.NewFNatsScopeTransportFactory(conn)
-		provider := frugal.NewFScopeProvider(factory, frugal.NewFProtocolFactory(protocolFactory))
+		pfactory := frugal.NewFNatsPublisherTransportFactory(conn)
+		sfactory := frugal.NewFNatsSubscriberTransportFactory(conn)
+		provider := frugal.NewFScopeProvider(pfactory, sfactory, frugal.NewFProtocolFactory(protocolFactory))
 		subscriber := frugaltest.NewEventsSubscriber(provider)
 
 		// TODO: Document SubscribeEventCreated "user" cannot contain spaces
-		_, err = subscriber.SubscribeEventCreated("foo", "Client", "call", fmt.Sprintf("%d", port), func(ctx *frugal.FContext, e *frugaltest.Event) {
+		_, err = subscriber.SubscribeEventCreated("*", "*", "call", fmt.Sprintf("%d", port), func(ctx frugal.FContext, e *frugaltest.Event) {
 			// Send a message back to the client
 			fmt.Printf("received %+v : %+v\n", ctx, e)
 			publisher := frugaltest.NewEventsPublisher(provider)
@@ -53,9 +54,18 @@ func StartServer(
 				panic(err)
 			}
 			defer publisher.Close()
+			preamble, ok := ctx.RequestHeader(preambleHeader)
+			if !ok {
+				log.Fatal("Client did provide a preamble header")
+			}
+			ramble, ok := ctx.RequestHeader(rambleHeader)
+			if !ok {
+				log.Fatal("Client did provide a ramble header")
+			}
+
 			ctx = frugal.NewFContext("Response")
 			event := &frugaltest.Event{Message: "received call"}
-			if err := publisher.PublishEventCreated(ctx, "foo", "Client", "response", fmt.Sprintf("%d", port), event); err != nil {
+			if err := publisher.PublishEventCreated(ctx, preamble, ramble, "response", fmt.Sprintf("%d", port), event); err != nil {
 				panic(err)
 			}
 			// Explicitly flushing the publish to ensure it is sent before the main thread exits
@@ -81,7 +91,7 @@ func StartServer(
 			conn,
 			processor,
 			frugal.NewFProtocolFactory(protocolFactory),
-			fmt.Sprintf("%d", port))
+			[]string{fmt.Sprintf("frugal.*.*.%d", port)})
 		server = builder.Build()
 		// Start http server
 		// Healthcheck used in the cross language runner to check for server availability
@@ -90,23 +100,10 @@ func StartServer(
 	case "http":
 		http.HandleFunc("/",
 			frugal.NewFrugalHandlerFunc(processor,
-				frugal.NewFProtocolFactory(protocolFactory),
 				frugal.NewFProtocolFactory(protocolFactory)))
 		server = &httpServer{hostPort: hostPort}
-	case "stateful", "stateless-stateful": // @Deprecated TODO: Remove in 2.0
-		fTransportFactory := frugal.NewFMuxTransportFactory(2)
-		server = frugal.NewFNatsServer(
-			conn,
-			fmt.Sprintf("%d", port),
-			time.Minute,
-			processor,
-			fTransportFactory,
-			frugal.NewFProtocolFactory(protocolFactory),
-		)
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {})
-		go http.ListenAndServe(hostPort, nil)
 	}
-	fmt.Println("Starting %v server...", transport)
+	fmt.Printf("Starting %v server...\n", transport)
 	if err := server.Serve(); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}

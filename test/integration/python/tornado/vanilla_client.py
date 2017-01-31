@@ -7,7 +7,8 @@ sys.path.append('gen-py')
 sys.path.append('..')
 
 from frugal.context import FContext
-from frugal.transport.http_transport import FHttpTransport
+from frugal.provider import FServiceProvider
+from frugal.transport.http_transport import THttpTransport
 
 from common.test_definitions import rpc_test_definitions
 from common.utils import *
@@ -27,7 +28,7 @@ def main():
     protocol_factory = get_protocol_factory(args.protocol_type)
 
     if args.transport_type == "http":
-        transport = FHttpTransport("http://localhost:" + str(args.port))
+        transport = THttpTransport("http://localhost:" + str(args.port))
     else:
         print("Unknown transport type: {}".format(args.transport_type))
         sys.exit(1)
@@ -35,7 +36,7 @@ def main():
     transport.open()
 
     ctx = FContext("test")
-    client = FrugalTestClient(transport, protocol_factory, client_middleware)
+    client = FrugalTestClient(FServiceProvider(transport, protocol_factory), client_middleware)
 
     # Scope generation is not currently supported with vanilla python
     # TODO: Add Pub/Sub test once scopes are supported

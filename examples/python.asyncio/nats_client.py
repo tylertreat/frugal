@@ -9,11 +9,8 @@ from thrift.protocol import TBinaryProtocol
 from thrift.transport.TTransport import TTransportException
 from frugal.context import FContext
 from frugal.protocol import FProtocolFactory
-from frugal.provider import FScopeProvider
-from frugal.aio.transport import (
-    FNatsTransport,
-    FNatsScopeTransportFactory,
-)
+from frugal.provider import FServiceProvider
+from frugal.aio.transport import FNatsTransport
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "gen-py.asyncio"))
 from v1.music.f_Store import Client as FStoreClient  # noqa
@@ -55,28 +52,29 @@ async def main():
 
     # Using the configured transport and protocol, create a client
     # to talk to the music store service.
-    store_client = FStoreClient(nats_transport, prot_factory,
+    store_client = FStoreClient(FServiceProvider(nats_transport, prot_factory),
                                 middleware=logging_middleware)
 
     album = await store_client.buyAlbum(FContext(),
                                         str(uuid.uuid4()),
                                         "ACT-12345")
 
-    root.info("Bought an album %s\n", album)
+    root.info("Bought an album %s\n", album.tracks[0].title)
 
     await store_client.enterAlbumGiveaway(FContext(),
                                           "kevin@workiva.com",
                                           "Kevin")
 
+    # Close transport and nats client
     await nats_transport.close()
     await nats_client.close()
 
 
 def logging_middleware(next):
     def handler(method, args):
-        print('==== CALLING %s ====', method.__name__)
+        root.info('==== CALLING %s ====', method.__name__)
         ret = next(method, args)
-        print('==== CALLED  %s ====', method.__name__)
+        root.info('==== CALLED  %s ====', method.__name__)
         return ret
     return handler
 

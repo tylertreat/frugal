@@ -58,8 +58,9 @@ func StartClient(
 			panic(err)
 		}
 
-		factory := frugal.NewFNatsScopeTransportFactory(conn)
-		provider := frugal.NewFScopeProvider(factory, frugal.NewFProtocolFactory(protocolFactory))
+		pfactory := frugal.NewFNatsPublisherTransportFactory(conn)
+		sfactory := frugal.NewFNatsSubscriberTransportFactory(conn)
+		provider := frugal.NewFScopeProvider(pfactory, sfactory, frugal.NewFProtocolFactory(protocolFactory))
 		publisher := frugaltest.NewEventsPublisher(provider)
 		if err := publisher.Open(); err != nil {
 			panic(err)
@@ -69,22 +70,26 @@ func StartClient(
 		// Start Subscription, pass timeout
 		resp := make(chan bool)
 		subscriber := frugaltest.NewEventsSubscriber(provider)
+		preamble := "foo"
+		ramble := "bar"
 		// TODO: Document SubscribeEventCreated "user" cannot contain spaces
-		_, err = subscriber.SubscribeEventCreated("foo", "Client", "response", fmt.Sprintf("%d", port), func(ctx *frugal.FContext, e *frugaltest.Event) {
+		_, err = subscriber.SubscribeEventCreated(preamble, ramble, "response", fmt.Sprintf("%d", port), func(ctx frugal.FContext, e *frugaltest.Event) {
 			fmt.Printf(" Response received %v\n", e)
 			close(resp)
 		})
 		ctx := frugal.NewFContext("Call")
+		ctx.AddRequestHeader(preambleHeader, preamble)
+		ctx.AddRequestHeader(rambleHeader, ramble)
 		event := &frugaltest.Event{Message: "Sending call"}
 		fmt.Print("Publishing... ")
-		if err := publisher.PublishEventCreated(ctx, "foo", "Client", "call", fmt.Sprintf("%d", port), event); err != nil {
+		if err := publisher.PublishEventCreated(ctx, preamble, ramble, "call", fmt.Sprintf("%d", port), event); err != nil {
 			panic(err)
 		}
 
 		timeout := time.After(time.Second * 3)
 
 		select {
-		case <-resp:  // Response received is logged in the subscribe
+		case <-resp: // Response received is logged in the subscribe
 		case <-timeout:
 			log.Fatal("Pub/Sub response timed out!")
 		}
@@ -94,19 +99,10 @@ func StartClient(
 	// RPC client
 	var trans frugal.FTransport
 	switch transport {
-	case "stateless", "stateless-stateful":
-		trans = frugal.NewFNatsTransport(conn, fmt.Sprintf("%d", port), "")
+	case "stateless":
+		trans = frugal.NewFNatsTransport(conn, fmt.Sprintf("frugal.foo.bar.%d", port), "")
 	case "http":
-		trans = frugal.NewHttpFTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).Build()
-	case "stateful": // @Deprecated TODO: Remove in 2.0
-		fTransportFactory := frugal.NewFMuxTransportFactory(2)
-		natsTransport := frugal.NewNatsServiceTTransport(
-			conn,
-			fmt.Sprintf("%d", port),
-			time.Second*10,
-			5,
-		)
-		trans = fTransportFactory.GetTransport(natsTransport)
+		trans = frugal.NewFHTTPTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).Build()
 	default:
 		return nil, fmt.Errorf("Invalid transport specified %s", transport)
 	}
@@ -115,6 +111,6 @@ func StartClient(
 		return nil, fmt.Errorf("Error opening transport %s", err)
 	}
 
-	client = frugaltest.NewFFrugalTestClient(trans, fProtocolFactory, clientLoggingMiddleware(clientMiddlewareCalled))
+	client = frugaltest.NewFFrugalTestClient(frugal.NewFServiceProvider(trans, fProtocolFactory), clientLoggingMiddleware(clientMiddlewareCalled))
 	return
 }

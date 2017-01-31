@@ -57,10 +57,7 @@ func parseFrugal(filePath string, visitedIncludes []string) (*Frugal, error) {
 	frugal.File = filePath
 	frugal.Dir = filepath.Dir(file.Name())
 	frugal.Path = filePath
-	for _, incl := range frugal.Thrift.Includes {
-		// parse all the includes before validating.
-		// TODO when this isn't experimental this should be the only place things
-		// are parsed
+	for _, incl := range frugal.Includes {
 		include := incl.Value
 		if !strings.HasSuffix(include, ".thrift") && !strings.HasSuffix(include, ".frugal") {
 			return nil, fmt.Errorf("Bad include name: %s", include)

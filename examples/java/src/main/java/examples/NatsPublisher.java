@@ -1,10 +1,12 @@
 package examples;
 
-import com.workiva.frugal.protocol.FContext;
+import com.workiva.frugal.FContext;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
-import com.workiva.frugal.transport.FNatsScopeTransport;
-import com.workiva.frugal.transport.FScopeTransportFactory;
+import com.workiva.frugal.transport.FNatsPublisherTransport;
+import com.workiva.frugal.transport.FNatsSubscriberTransport;
+import com.workiva.frugal.transport.FPublisherTransportFactory;
+import com.workiva.frugal.transport.FSubscriberTransportFactory;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
 import org.apache.thrift.TException;
@@ -15,8 +17,9 @@ import v1.music.PerfRightsOrg;
 import v1.music.Track;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -33,12 +36,13 @@ public class NatsPublisher {
         ConnectionFactory cf = new ConnectionFactory(ConnectionFactory.DEFAULT_URL);
         Connection conn = cf.createConnection();
 
-        // Create the pubsub scope transport and provider, given the NATs connection and protocol
-        FScopeTransportFactory factory = new FNatsScopeTransport.Factory(conn);
-        FScopeProvider provider = new FScopeProvider(factory, protocolFactory);
+        // Create the pubsub scope provider, given the NATs connection and protocol
+        FPublisherTransportFactory publisherFactory = new FNatsPublisherTransport.Factory(conn);
+        FSubscriberTransportFactory subscriberFactory = new FNatsSubscriberTransport.Factory(conn);
+        FScopeProvider provider = new FScopeProvider(publisherFactory, subscriberFactory, protocolFactory);
 
         // Create and open a publisher
-        AlbumWinnersPublisher publisher = new AlbumWinnersPublisher(provider);
+        AlbumWinnersPublisher.Iface publisher = new AlbumWinnersPublisher.Client(provider);
         publisher.open();
 
         // Publish a winner announcement
@@ -54,9 +58,14 @@ public class NatsPublisher {
                         169,
                         PerfRightsOrg.ASCAP));
         publisher.publishWinner(new FContext(), album);
+        List<Album> albums = new ArrayList<>();
+        albums.add(album);
+        albums.add(album);
+        publisher.publishContestStart(new FContext(), albums);
 
         System.out.println("Published event");
 
         publisher.close();
+        conn.close();
     }
 }

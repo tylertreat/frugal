@@ -4,6 +4,7 @@ import logging
 from struct import pack
 
 from six.moves import BaseHTTPServer
+from thrift.Thrift import TApplicationException
 from thrift.transport import TTransport
 
 from frugal.server import FServer
@@ -47,13 +48,10 @@ class FHttpServer(FServer):
 
                 try:
                     processor.process(iprot, oprot)
-                except Exception as x:
-                    logger.exception(x)
-                    # TODO: This isn't actually right but it's what the other
-                    # implementations are doing. An exception here doesn't
-                    # necessarily mean a bad request. We should be checking
-                    # the exception type. Make this consistent across
-                    # languages.
+                except TApplicationException:
+                    # Continue so the exception is sent to the client
+                    pass
+                except Exception:
                     self.send_response(400)
                     self.end_headers()
                     return
