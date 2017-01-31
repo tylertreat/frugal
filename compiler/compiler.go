@@ -18,14 +18,13 @@ import (
 
 // Options contains compiler options for code generation.
 type Options struct {
-	File      string // Frugal file to generate
-	Gen       string // Language to generate
-	Out       string // Output location for generated code
-	Delim     string // Token delimiter for scope topics
-	DryRun    bool   // Do not generate code
-	Recurse   bool   // Generate includes
-	Verbose   bool   // Verbose mode
-	UseVendor bool   // Do not generate code for vendored includes
+	File    string // Frugal file to generate
+	Gen     string // Language to generate
+	Out     string // Output location for generated code
+	Delim   string // Token delimiter for scope topics
+	DryRun  bool   // Do not generate code
+	Recurse bool   // Generate includes
+	Verbose bool   // Verbose mode
 }
 
 // Compile parses the Frugal IDL and generates code for it, returning an error
@@ -39,7 +38,6 @@ func Compile(options Options) error {
 	globals.DryRun = options.DryRun
 	globals.Recurse = options.Recurse
 	globals.Verbose = options.Verbose
-	globals.UseVendor = options.UseVendor
 	globals.FileDir = filepath.Dir(options.File)
 
 	absFile, err := filepath.Abs(options.File)
@@ -71,11 +69,6 @@ func generateFrugal(f *parser.Frugal) error {
 	lang, options, err := cleanGenParam(gen)
 	if err != nil {
 		return err
-	}
-
-	// TODO: Address as needed when more languages support vendoring.
-	if globals.UseVendor && lang != "go" {
-		return fmt.Errorf("-use-vendor not supported by %s", lang)
 	}
 
 	// Resolve Frugal generator.

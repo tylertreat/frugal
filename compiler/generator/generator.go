@@ -40,6 +40,7 @@ var Languages = LanguageOptions{
 		"frugal_import":  "Override Frugal package import path (default: github.com/Workiva/frugal/lib/go)",
 		"package_prefix": "Package prefix for generated files",
 		"async":          "Generate async client code using channels",
+		"use_vendor":     "Use specified import references for vendored includes and do not generate code for them",
 	},
 	"java": Options{
 		"generated_annotations": "[undated|suppress] " +
