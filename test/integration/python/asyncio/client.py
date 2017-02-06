@@ -46,7 +46,7 @@ async def main():
     transport = None
 
     if args.transport_type in ["stateless", "stateless-stateful"]:
-        transport = FNatsTransport(nats_client, "frugal.foo.bar.{}".format(args.port))
+        transport = FNatsTransport(nats_client, "frugal.foo.bar.rpc.{}".format(args.port))
         await transport.open()
     elif args.transport_type == "http":
         transport = FHttpTransport("http://localhost:{port}".format(port=args.port))
