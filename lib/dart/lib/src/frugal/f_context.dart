@@ -56,7 +56,8 @@ class FContext {
       headers[_cidHeader] = _generateCorrelationId();
     }
     if (!headers.containsKey(_opidHeader) || headers[_opidHeader] == "") {
-      headers[_opidHeader] = "0";
+      _globalOpId++;
+      headers[_opidHeader] = _globalOpId.toString();
     }
     if (!headers.containsKey(_timeoutHeader) || headers[_timeoutHeader] == "") {
       headers[_timeoutHeader] = _defaultTimeout.inMilliseconds.toString();

@@ -6,7 +6,7 @@ void main() {
     var context = new FContext.withRequestHeaders({"Something": "Value"});
     expect(context.timeout, equals(new Duration(seconds: 5)));
     expect(context.correlationId, isNotNull);
-    expect(context.requestHeaders()["_opid"], equals("0"));
+    expect(context.requestHeaders()["_opid"], isNot(equals("0")));
     expect(context.requestHeaders()["_timeout"], equals("5000"));
   });
 
