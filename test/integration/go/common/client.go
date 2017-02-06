@@ -100,7 +100,7 @@ func StartClient(
 	var trans frugal.FTransport
 	switch transport {
 	case "stateless":
-		trans = frugal.NewFNatsTransport(conn, fmt.Sprintf("frugal.foo.bar.%d", port), "")
+		trans = frugal.NewFNatsTransport(conn, fmt.Sprintf("frugal.foo.bar.rpc.%d", port), "")
 	case "http":
 		trans = frugal.NewFHTTPTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).Build()
 	default:
