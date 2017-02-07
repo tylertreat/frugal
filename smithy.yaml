@@ -1,8 +1,8 @@
 project: frugal
 language: golang
 
-# https://dev.webfilings.org/zuul/release/313076
-runner_image: drydock-prod.workiva.net/workiva/messaging-docker-images:91836
+# https://dev.webfilings.org/zuul/release/368066
+runner_image: drydock-prod.workiva.net/workiva/messaging-docker-images:119185
 
 script:
     - ./scripts/smithy.sh
