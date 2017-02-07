@@ -41,6 +41,14 @@ public abstract class FBaseProcessor implements FProcessor {
                 // Don't raise an exception because the server should still send a response to the client.
                 LOGGER.error("Exception occurred while processing request with correlation id "
                         + ctx.getCorrelationId(), e);
+            } catch (Exception e) {
+                LOGGER.error("Unchecked exception occurred while processing request with correlation id "
+                        + ctx.getCorrelationId(), e);
+                synchronized (WRITE_LOCK) {
+                    writeApplicationException(ctx, oprot, TApplicationExceptionType.INTERNAL_ERROR, message.name,
+                            "Internal error processing " + message.name);
+                }
+                throw e;
             }
             return;
         }
@@ -49,14 +57,9 @@ public abstract class FBaseProcessor implements FProcessor {
                 message.name, ctx.getCorrelationId()));
         TProtocolUtil.skip(iprot, TType.STRUCT);
         iprot.readMessageEnd();
-        TApplicationException e = new TApplicationException(
-                TApplicationExceptionType.UNKNOWN_METHOD, "Unknown function " + message.name);
         synchronized (WRITE_LOCK) {
-            oprot.writeResponseHeader(ctx);
-            oprot.writeMessageBegin(new TMessage(message.name, TMessageType.EXCEPTION, 0));
-            e.write(oprot);
-            oprot.writeMessageEnd();
-            oprot.getTransport().flush();
+            writeApplicationException(ctx, oprot, TApplicationExceptionType.UNKNOWN_METHOD, message.name,
+                    "Unknown function " + message.name);
         }
     }
 
@@ -80,5 +83,27 @@ public abstract class FBaseProcessor implements FProcessor {
             annotationsMap = getAnnotationsMap();
         }
         return new HashMap<>(annotationsMap);
+    }
+
+    /**
+     * Write a TApplicationException out to the given protocol with the given type, method, and message.
+     *
+     * @param ctx FContext associated with the request
+     * @param oprot FProtocol tied to the client
+     * @param type TApplicationErrorType for the exception
+     * @param method the method name of the reqeust
+     * @param message the error message to put on the exception
+     * @return the written TAppicationException
+     * @throws TException If there is a problem writiing to the protocol
+     */
+    protected static TApplicationException writeApplicationException(FContext ctx, FProtocol oprot, int type,
+                                                                     String method, String message) throws TException {
+        TApplicationException x = new TApplicationException(type, message);
+        oprot.writeResponseHeader(ctx);
+        oprot.writeMessageBegin(new TMessage(method, TMessageType.EXCEPTION, 0));
+        x.write(oprot);
+        oprot.writeMessageEnd();
+        oprot.getTransport().flush();
+        return x;
     }
 }
