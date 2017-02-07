@@ -12,7 +12,9 @@ import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.ArgumentCaptor;
@@ -47,6 +49,9 @@ public class FNatsServerTest {
     private String subject = "foo";
     private String queue = "bar";
     private FNatsServer server;
+
+    @Rule
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     @Before
     public void setUp() {
@@ -165,6 +170,20 @@ public class FNatsServerTest {
     }
 
     @Test
+    public void testRequestProcessRuntimeException() throws TException, IOException {
+        exit.expectSystemExitWithStatus(1);
+        byte[] data = "xxxxhello".getBytes();
+        long timestamp = System.currentTimeMillis();
+        String reply = "reply";
+        long highWatermark = 5000;
+        MockFProcessor processor = new MockFProcessor(new RuntimeException());
+        mockProtocolFactory = new FProtocolFactory(new TJSONProtocol.Factory());
+        FNatsServer.Request request = new FNatsServer.Request(data, timestamp, reply, highWatermark,
+                mockProtocolFactory, mockProtocolFactory, processor, mockConn);
+        request.run();
+    }
+
+    @Test
     public void testRequestProcess_noResponse() throws TException, IOException {
         byte[] data = "xxxxhello".getBytes();
         long timestamp = System.currentTimeMillis();
@@ -184,14 +203,23 @@ public class FNatsServerTest {
 
         private byte[] expectedIn;
         private byte[] expectedOut;
+        private RuntimeException runtimeException;
 
         public MockFProcessor(byte[] expectedIn, byte[] expectedOut) {
             this.expectedIn = expectedIn;
             this.expectedOut = expectedOut;
         }
 
+        public MockFProcessor(RuntimeException runtimeException) {
+            this.runtimeException = runtimeException;
+        }
+
         @Override
         public void process(FProtocol in, FProtocol out) throws TException {
+            if (runtimeException != null) {
+                throw runtimeException;
+            }
+
             assertTrue(in.getTransport() instanceof TMemoryInputTransport);
 
             if (expectedIn != null) {

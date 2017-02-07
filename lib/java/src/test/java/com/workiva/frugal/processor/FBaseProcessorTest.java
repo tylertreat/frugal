@@ -80,7 +80,7 @@ public class FBaseProcessorTest {
         verify(oneWayFunction).process(ctx, iprot, oprot);
     }
 
-    @Test(expected = Exception.class)
+    @Test(expected = RuntimeException.class)
     public void testProcessCatchExceptionOnProcessorError() throws Exception {
 
         procMap.put(oneWay, oneWayFunction);
