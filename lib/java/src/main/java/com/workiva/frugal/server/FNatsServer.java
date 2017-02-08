@@ -312,7 +312,7 @@ public class FNatsServer implements FServer {
                     conn.flush();
                 } catch (Exception ignored) {
                 }
-                Runtime.getRuntime().exit(1);
+                throw e;
             }
 
             if (!output.hasWriteData()) {
