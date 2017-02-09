@@ -2959,16 +2959,6 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtab + "}\n\n"
 	}
 
-	contents += tabtab + "private static TApplicationException writeApplicationException(FContext ctx, FProtocol oprot, int type, String method, String message) throws TException {\n"
-	contents += tabtabtab + "TApplicationException x = new TApplicationException(type, message);\n"
-	contents += tabtabtab + "oprot.writeResponseHeader(ctx);\n"
-	contents += tabtabtab + "oprot.writeMessageBegin(new TMessage(method, TMessageType.EXCEPTION, 0));\n"
-	contents += tabtabtab + "x.write(oprot);\n"
-	contents += tabtabtab + "oprot.writeMessageEnd();\n"
-	contents += tabtabtab + "oprot.getTransport().flush();\n"
-	contents += tabtabtab + "return x;\n"
-	contents += tabtab + "}\n\n"
-
 	contents += tab + "}\n\n"
 
 	return contents

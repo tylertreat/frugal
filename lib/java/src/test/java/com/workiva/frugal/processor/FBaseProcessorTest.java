@@ -80,6 +80,23 @@ public class FBaseProcessorTest {
         verify(oneWayFunction).process(ctx, iprot, oprot);
     }
 
+    @Test(expected = RuntimeException.class)
+    public void testProcessCatchExceptionOnProcessorError() throws Exception {
+
+        procMap.put(oneWay, oneWayFunction);
+
+        FContext ctx = new FContext();
+        doThrow(new Exception()).when(oneWayFunction).process(ctx, iprot, oprot);
+        TMessage thriftMessage = new TMessage(oneWay, (byte) 0x00, 1);
+
+        when(iprot.readRequestHeader()).thenReturn(ctx);
+        when(iprot.readMessageBegin()).thenReturn(thriftMessage);
+
+        processor.process(iprot, oprot);
+
+        verify(oneWayFunction).process(ctx, iprot, oprot);
+    }
+
     @Test
     public void testProcessCatchTApplicationExceptionOnUnknownMethod() throws Exception {
         TField tField = mock(TField.class);

@@ -164,6 +164,19 @@ public class FNatsServerTest {
         verify(mockConn).publish(reply, expected);
     }
 
+    @Test(expected = RuntimeException.class)
+    public void testRequestProcessRuntimeException() throws TException, IOException {
+        byte[] data = "xxxxhello".getBytes();
+        long timestamp = System.currentTimeMillis();
+        String reply = "reply";
+        long highWatermark = 5000;
+        MockFProcessor processor = new MockFProcessor(new RuntimeException());
+        mockProtocolFactory = new FProtocolFactory(new TJSONProtocol.Factory());
+        FNatsServer.Request request = new FNatsServer.Request(data, timestamp, reply, highWatermark,
+                mockProtocolFactory, mockProtocolFactory, processor, mockConn);
+        request.run();
+    }
+
     @Test
     public void testRequestProcess_noResponse() throws TException, IOException {
         byte[] data = "xxxxhello".getBytes();
@@ -184,14 +197,23 @@ public class FNatsServerTest {
 
         private byte[] expectedIn;
         private byte[] expectedOut;
+        private RuntimeException runtimeException;
 
         public MockFProcessor(byte[] expectedIn, byte[] expectedOut) {
             this.expectedIn = expectedIn;
             this.expectedOut = expectedOut;
         }
 
+        public MockFProcessor(RuntimeException runtimeException) {
+            this.runtimeException = runtimeException;
+        }
+
         @Override
         public void process(FProtocol in, FProtocol out) throws TException {
+            if (runtimeException != null) {
+                throw runtimeException;
+            }
+
             assertTrue(in.getTransport() instanceof TMemoryInputTransport);
 
             if (expectedIn != null) {

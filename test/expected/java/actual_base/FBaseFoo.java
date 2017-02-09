@@ -198,16 +198,6 @@ public class FBaseFoo {
 			}
 		}
 
-		private static TApplicationException writeApplicationException(FContext ctx, FProtocol oprot, int type, String method, String message) throws TException {
-			TApplicationException x = new TApplicationException(type, message);
-			oprot.writeResponseHeader(ctx);
-			oprot.writeMessageBegin(new TMessage(method, TMessageType.EXCEPTION, 0));
-			x.write(oprot);
-			oprot.writeMessageEnd();
-			oprot.getTransport().flush();
-			return x;
-		}
-
 	}
 
 public static class basePing_args implements org.apache.thrift.TBase<basePing_args, basePing_args._Fields>, java.io.Serializable, Cloneable, Comparable<basePing_args> {

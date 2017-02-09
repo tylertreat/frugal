@@ -307,16 +307,6 @@ public class FStore {
 			}
 		}
 
-		private static TApplicationException writeApplicationException(FContext ctx, FProtocol oprot, int type, String method, String message) throws TException {
-			TApplicationException x = new TApplicationException(type, message);
-			oprot.writeResponseHeader(ctx);
-			oprot.writeMessageBegin(new TMessage(method, TMessageType.EXCEPTION, 0));
-			x.write(oprot);
-			oprot.writeMessageEnd();
-			oprot.getTransport().flush();
-			return x;
-		}
-
 	}
 
 public static class buyAlbum_args implements org.apache.thrift.TBase<buyAlbum_args, buyAlbum_args._Fields>, java.io.Serializable, Cloneable, Comparable<buyAlbum_args> {
