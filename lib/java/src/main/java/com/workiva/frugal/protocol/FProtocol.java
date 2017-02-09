@@ -12,6 +12,7 @@ import org.apache.thrift.protocol.TStruct;
 
 import java.nio.ByteBuffer;
 
+import static com.workiva.frugal.FContext.CID_HEADER;
 import static com.workiva.frugal.FContext.OPID_HEADER;
 
 /**
@@ -52,6 +53,10 @@ public class FProtocol extends TProtocol {
         FContext ctx = FContext.withRequestHeaders(HeaderUtils.read(wrapped.getTransport()));
         // Put op id in response headers
         ctx.addResponseHeader(OPID_HEADER, ctx.getRequestHeader(OPID_HEADER));
+        String cid = ctx.getCorrelationId();
+        if (cid != null && !cid.isEmpty()) {
+            ctx.addResponseHeader(CID_HEADER, cid);
+        }
         return ctx;
     }
 

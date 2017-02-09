@@ -35,23 +35,24 @@ class TestFBaseProcessor(AsyncTestCase):
     def test_process_missing_function(self):
         processor = FBaseProcessor()
         frame = bytearray(
-            b'\x00\x00\x00\x00\x0e\x00\x00\x00\x05_opid\x00\x00\x00\x011'
+            b'\x00\x00\x00\x004\x00\x00\x00\x04_cid\x00\x00\x00\x06someid'
+            b'\x00\x00\x00\x05_opid\x00\x00\x00\x011\x00\x00\x00\x08_timeout'
+            b'\x00\x00\x00\x045000'  # End of context
             b'\x80\x01\x00\x02\x00\x00\x00\x08basePing\x00\x00\x00\x00\x00'
         )
         itrans = TMemoryBuffer(value=frame)
         iprot = FProtocolFactory(TBinaryProtocolFactory()).get_protocol(itrans)
-        otrans = TMemoryOutputBuffer(100)
+        otrans = TMemoryOutputBuffer(1000)
         oprot = FProtocolFactory(TBinaryProtocolFactory()).get_protocol(otrans)
 
         yield processor.process(iprot, oprot)
 
         expected_response = bytearray(
-            b'\x00\x00\x00\x50\x00\x00\x00\x00\x0e\x00\x00\x00\x05_opid\x00'
-            b'\x00\x00\x011\x80\x01\x00\x03\x00\x00\x00\x08basePing\x00\x00'
+            b'\x80\x01\x00\x03\x00\x00\x00\x08basePing\x00\x00'
             b'\x00\x00\x0b\x00\x01\x00\x00\x00\x1aUnknown function: basePing'
             b'\x08\x00\x02\x00\x00\x00\x01\x00'
         )
-        self.assertEqual(otrans.getvalue(), expected_response)
+        self.assertEqual(otrans.getvalue()[41:], expected_response)
 
     @gen_test
     def test_process(self):
