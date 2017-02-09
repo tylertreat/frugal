@@ -13,9 +13,9 @@ import (
 // failures are added to the unexpected_failures.log.  Each result is logged to
 // the console.
 func RunConfig(pair *Pair, port int) {
+	var err error
 	// Create client/server log files
-	err := createLogs(pair)
-	if err != nil {
+	if err = createLogs(pair); err != nil {
 		reportCrossrunnerFailure(pair, err)
 		return
 	}
@@ -28,27 +28,25 @@ func RunConfig(pair *Pair, port int) {
 
 	// write server log header
 	log.Debug(serverCmd)
-	err = writeFileHeader(pair.Server.Logs, serverCmd, pair.Server.Workdir,
-		pair.Server.Timeout, pair.Client.Timeout)
-	if err != nil {
+
+	if err = writeFileHeader(pair.Server.Logs, serverCmd, pair.Server.Workdir,
+		pair.Server.Timeout, pair.Client.Timeout); err != nil {
 		reportCrossrunnerFailure(pair, err)
 		return
 	}
 
 	// start the server
 	sStartTime := time.Now()
-	err = server.Start()
-	if err != nil {
+	if err = server.Start(); err != nil {
 		reportCrossrunnerFailure(pair, err)
 		return
 	}
 	// Defer stopping the server to ensure the process is killed on exit
 	defer func() {
-		err = server.Process.Kill()
-		if err != nil {
-			pair.ReturnCode = CrossrunnerFailure
-			pair.Err = err
+		if err = server.Process.Kill(); err != nil {
+			reportCrossrunnerFailure(pair, err)
 			log.Info("Failed to kill " + pair.Server.Name + " server.")
+			return
 		}
 	}()
 	stimeout := pair.Server.Timeout * time.Millisecond * 1000
@@ -68,7 +66,10 @@ func RunConfig(pair *Pair, port int) {
 	}
 
 	if total >= stimeout {
-		err = writeServerTimeout(pair.Server.Logs, pair.Server.Name)
+		if err = writeServerTimeout(pair.Server.Logs, pair.Server.Name); err != nil {
+			reportCrossrunnerFailure(pair, err)
+			return
+		}
 		pair.ReturnCode = TestFailure
 		pair.Err = errors.New("Server has not started within the specified timeout")
 		log.Debug(pair.Server.Name + " server not started within specified timeout")
@@ -78,9 +79,8 @@ func RunConfig(pair *Pair, port int) {
 	}
 
 	// write client log header
-	err = writeFileHeader(pair.Client.Logs, clientCmd, pair.Client.Workdir,
-		pair.Server.Timeout, pair.Client.Timeout)
-	if err != nil {
+	if err = writeFileHeader(pair.Client.Logs, clientCmd, pair.Client.Workdir,
+		pair.Server.Timeout, pair.Client.Timeout); err != nil {
 		reportCrossrunnerFailure(pair, err)
 		return
 	}
@@ -90,8 +90,7 @@ func RunConfig(pair *Pair, port int) {
 	log.Debug(clientCmd)
 	cStartTime := time.Now()
 
-	err = client.Start()
-	if err != nil {
+	if err = client.Start(); err != nil {
 		pair.ReturnCode = TestFailure
 		pair.Err = err
 	}
@@ -104,14 +103,12 @@ func RunConfig(pair *Pair, port int) {
 	case <-time.After(pair.Client.Timeout * time.Second):
 		// TODO: It's a bit annoying to have this message duplicated in the
 		// unexpected_failures.log. Is there a better way to report this?
-		err = writeClientTimeout(pair, pair.Client.Name)
-		if err != nil {
+		if err = writeClientTimeout(pair, pair.Client.Name); err != nil {
 			reportCrossrunnerFailure(pair, err)
 			return
 		}
 
-		err = client.Process.Kill()
-		if err != nil {
+		if err = client.Process.Kill(); err != nil {
 			reportCrossrunnerFailure(pair, err)
 			return
 		}
@@ -126,13 +123,11 @@ func RunConfig(pair *Pair, port int) {
 	}
 
 	// write log footers
-	err = writeFileFooter(pair.Client.Logs, time.Since(cStartTime))
-	if err != nil {
+	if err = writeFileFooter(pair.Client.Logs, time.Since(cStartTime)); err != nil {
 		reportCrossrunnerFailure(pair, err)
 		return
 	}
-	err = writeFileFooter(pair.Server.Logs, time.Since(sStartTime))
-	if err != nil {
+	if err = writeFileFooter(pair.Server.Logs, time.Since(sStartTime)); err != nil {
 		reportCrossrunnerFailure(pair, err)
 		return
 	}
@@ -141,6 +136,7 @@ func RunConfig(pair *Pair, port int) {
 // reportCrossrunnerFailure is used in the error case when something goes wrong
 // in the crossrunner.
 func reportCrossrunnerFailure(pair *Pair, err error) {
+	log.Info("Unexpected error: " + err.Error())
 	pair.ReturnCode = CrossrunnerFailure
 	pair.Err = err
 	return

@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	// Default timeout in seconds for client/server configutions without a defined timeout
+	// Default timeout in seconds for client/server configurations without a defined timeout
 	DefaultTimeout     = 7
 	TestFailure        = 101
 	CrossrunnerFailure = 102

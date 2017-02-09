@@ -79,11 +79,12 @@ func main() {
 	var (
 		testsRun uint64
 		wg       sync.WaitGroup
+		port     int
 	)
 
 	crossrunner.PrintConsoleHeader()
 
-	for workers := 1; workers <= int(runtime.NumCPU()); workers++ {
+	for workers := 1; workers <= runtime.NumCPU()*2; workers++ {
 		go func(crossrunnerTasks <-chan *testCase) {
 			for task := range crossrunnerTasks {
 				wg.Add(1)
@@ -112,15 +113,14 @@ func main() {
 		}(crossrunnerTasks)
 	}
 
+	// TODO: This could run into issues if run outside of Skynet/Skynet-cli
+	port = 9000
 	// Add each configuration to the crossrunnerTasks channel
 	for _, pair := range pairs {
-		available, err := crossrunner.GetAvailablePort()
-		if err != nil {
-			panic(err)
-		}
-		tCase := testCase{pair, available}
+		tCase := testCase{pair, port}
 		// put the test case on the crossrunnerTasks channel
 		crossrunnerTasks <- &tCase
+		port++
 	}
 
 	wg.Wait()

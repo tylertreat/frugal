@@ -51,7 +51,7 @@ func writeFileHeader(file *os.File, cmd, dir string, delay, timeout time.Duratio
 
 // breakLine returns a formatted separator line.
 func breakLine() string {
-	return fmt.Sprintf("\n==================================================================================\n\n")
+	return fmt.Sprint("\n==================================================================================\n\n")
 }
 
 // starBreak returns 4 rows of stars.
@@ -100,7 +100,7 @@ func PrintConsoleHeader() {
 		"Protocol",
 		"Transport",
 		"Result")
-	fmt.Printf(breakLine())
+	fmt.Print(breakLine())
 }
 
 // PrintPairResult prints a formatted pair result to the console.
@@ -124,14 +124,14 @@ func PrintPairResult(pair *Pair) {
 
 // PrintConsoleFooter writes the metadata associated with the test suite to the console.
 func PrintConsoleFooter(failed int, total uint64, runtime time.Duration) {
-	fmt.Printf(breakLine())
+	fmt.Print(breakLine())
 	fmt.Println("Full logs for each test can be found at:")
 	// TODO: allow configurability of log location
 	fmt.Println("  test/integration/log/client-server_protocol_transport_client.log")
 	fmt.Println("  test/integration/log/client-server_protocol_transport_server.log")
 	fmt.Printf("%d of %d tests failed.\n", failed, total)
 	fmt.Printf("Test execution took %.1f seconds\n", runtime.Seconds())
-	fmt.Printf(GetTimestamp())
+	fmt.Print(GetTimestamp())
 }
 
 // Append to failures adds a the client and server logs from a failed
@@ -147,7 +147,7 @@ func AppendToFailures(failLog string, pair *Pair) (err error) {
 	// Add Client logs
 	contents += "================================= CLIENT LOG =====================================\n"
 	contents += getFileContents(pair.Client.Logs.Name())
-	contents += fmt.Sprintf(breakLine())
+	contents += fmt.Sprint(breakLine())
 	// Add Server logs
 	contents += "================================= SERVER LOG =====================================\n"
 	contents += getFileContents(pair.Server.Logs.Name())
