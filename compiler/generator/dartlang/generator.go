@@ -1094,7 +1094,7 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 				fName := toFieldName(field.Name)
 				if !g.isDartPrimitive(field.Type) {
 					contents += fmt.Sprintf(tabtab + "if(%s == null) {\n", fName)
-					contents += fmt.Sprintf(tabtabtab + "throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
+					contents += fmt.Sprintf(tabtabtab + "throw new thrift.TProtocolError(thrift.TProtocolErrorType.INVALID_DATA, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
 					contents += tabtab + "}\n"
 				}
 			}
@@ -1110,7 +1110,7 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 			contents += tabtab+"}\n"
 		}
 		contents += tabtab + "if(setFields != 1) {\n"
-		contents += tabtabtab + "throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, \"The union did not have exactly one field set, $setFields were set\");\n"
+		contents += tabtabtab + "throw new thrift.TProtocolError(thrift.TProtocolErrorType.INVALID_DATA, \"The union did not have exactly one field set, $setFields were set\");\n"
 		contents += tabtab + "}\n"
 	}
 
@@ -1122,7 +1122,7 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 				isSetCheck := fmt.Sprintf("isSet%s()", strings.Title(field.Name))
 				contents += fmt.Sprintf(tabtab+"if(%s && !%s.VALID_VALUES.contains(%s)) {\n",
 					isSetCheck, g.qualifiedTypeName(field.Type), fName)
-				contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, \"The field '%s' has been assigned the invalid value $%s\");\n", fName, fName)
+				contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.INVALID_DATA, \"The field '%s' has been assigned the invalid value $%s\");\n", fName, fName)
 				contents += tabtab + "}\n"
 			}
 		}

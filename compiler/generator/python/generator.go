@@ -450,10 +450,12 @@ func (g *Generator) generateWrite(s *parser.Struct) string {
 func (g *Generator) generateValidate(s *parser.Struct) string {
 	contents := ""
 	contents += tab + "def validate(self):\n"
-	for _, field := range s.Fields {
-		if field.Modifier == parser.Required {
-			contents += fmt.Sprintf(tabtab+"if self.%s is None:\n", field.Name)
-			contents += fmt.Sprintf(tabtabtab+"raise TProtocol.TProtocolException(message='Required field %s is unset!')\n", field.Name)
+	if s.Type != parser.StructTypeUnion {
+		for _, field := range s.Fields {
+			if field.Modifier == parser.Required {
+				contents += fmt.Sprintf(tabtab + "if self.%s is None:\n", field.Name)
+				contents += fmt.Sprintf(tabtabtab + "raise TProtocol.TProtocolException(message='Required field %s is unset!')\n", field.Name)
+			}
 		}
 	}
 
