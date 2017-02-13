@@ -116,6 +116,8 @@ func TestPythonPackagePrefix(t *testing.T) {
 	compareFiles(t, "expected/python/package_prefix/f_Foo.py", fFooPath)
 	ttypesPath := filepath.Join(outputDir, "service_inheritance", "ttypes.py")
 	compareFiles(t, "expected/python/package_prefix/ttypes.py", ttypesPath)
+	constantsPath := filepath.Join(outputDir, "service_inheritance", "constants.py")
+	compareFiles(t, "expected/python/package_prefix/constants.py", constantsPath)
 }
 
 func TestPythonExtendServiceSameFile(t *testing.T) {

@@ -1,6 +1,8 @@
 
 include "base.frugal"
 
+const i32 const_int = base.const_i32_from_base;
+
 struct new_thing {
     1:base.thing wrapped_thing,
 }

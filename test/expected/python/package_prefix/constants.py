@@ -7,4 +7,7 @@
 from thrift.Thrift import TType, TMessageType, TException, TApplicationException
 from .ttypes import *
 
-const_i32_from_base = 582
+import generic_package_prefix.actual_base.python.ttypes
+import generic_package_prefix.actual_base.python.constants
+
+const_int = generic_package_prefix.actual_base.python.constants.const_i32_from_base

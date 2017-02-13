@@ -104,10 +104,7 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	contents += "from .ttypes import *\n\n"
 
 	for _, include := range g.Frugal.Includes {
-		namespace := filepath.Base(include.Name)
-		if ns := g.Frugal.NamespaceForInclude(namespace, lang); ns != nil {
-			namespace = ns.Value
-		}
+		namespace := g.getPackageNamespace(filepath.Base(include.Name))
 		contents += fmt.Sprintf("import %s.ttypes\n", namespace)
 		contents += fmt.Sprintf("import %s.constants\n", namespace)
 		contents += "\n"
@@ -142,15 +139,11 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 			return idCtx.Type, fmt.Sprintf("%s.%s", idCtx.Enum.Name, idCtx.EnumValue.Name)
 		case parser.IncludeConstant:
 			include := idCtx.Include.Name
-			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
-				include = namespace.Value
-			}
+			include = g.getPackageNamespace(include)
 			return idCtx.Type, fmt.Sprintf("%s.constants.%s", include, idCtx.Constant.Name)
 		case parser.IncludeEnum:
 			include := idCtx.Include.Name
-			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
-				include = namespace.Value
-			}
+			include = g.getPackageNamespace(include)
 			return idCtx.Type, fmt.Sprintf("%s.ttypes.%s.%s", include, idCtx.Enum.Name, idCtx.EnumValue.Name)
 		default:
 			panic(fmt.Sprintf("The Identifier %s has unexpected type %d", identifier, idCtx.Type))

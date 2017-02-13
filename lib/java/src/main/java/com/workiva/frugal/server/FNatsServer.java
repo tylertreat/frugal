@@ -306,6 +306,13 @@ public class FNatsServer implements FServer {
             } catch (TException e) {
                 LOGGER.error("error processing request", e);
                 return;
+            } catch (RuntimeException e) {
+                try {
+                    conn.publish(reply, output.getWriteBytes());
+                    conn.flush();
+                } catch (Exception ignored) {
+                }
+                throw e;
             }
 
             if (!output.hasWriteData()) {
