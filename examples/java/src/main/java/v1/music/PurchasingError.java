@@ -435,13 +435,13 @@ public class PurchasingError extends TException implements org.apache.thrift.TBa
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.message != null) {
 				oprot.writeFieldBegin(MESSAGE_FIELD_DESC);
-				String elem26 = struct.message;
-				oprot.writeString(elem26);
+				String elem32 = struct.message;
+				oprot.writeString(elem32);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldBegin(ERROR_CODE_FIELD_DESC);
-			short elem27 = struct.error_code;
-			oprot.writeI16(elem27);
+			short elem33 = struct.error_code;
+			oprot.writeI16(elem33);
 			oprot.writeFieldEnd();
 			oprot.writeFieldStop();
 			oprot.writeStructEnd();
@@ -469,12 +469,12 @@ public class PurchasingError extends TException implements org.apache.thrift.TBa
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetMessage()) {
-				String elem28 = struct.message;
-				oprot.writeString(elem28);
+				String elem34 = struct.message;
+				oprot.writeString(elem34);
 			}
 			if (struct.isSetError_code()) {
-				short elem29 = struct.error_code;
-				oprot.writeI16(elem29);
+				short elem35 = struct.error_code;
+				oprot.writeI16(elem35);
 			}
 		}
 

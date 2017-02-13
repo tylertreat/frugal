@@ -2194,6 +2194,9 @@ func (p *TestingUnions) Read(iprot thrift.TProtocol) error {
 	if err := iprot.ReadStructEnd(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 	}
+	if c := p.CountSetFieldsTestingUnions(); c != 1 {
+		return fmt.Errorf("%T read union: exactly one field must be set (%d set).", p, c)
+	}
 	return nil
 }
 

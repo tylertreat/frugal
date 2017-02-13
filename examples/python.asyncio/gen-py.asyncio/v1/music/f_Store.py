@@ -45,6 +45,14 @@ class Iface(object):
         """
         pass
 
+    async def some_union_thing(self, ctx, some_union):
+        """
+        Args:
+            ctx: FContext
+            some_union: AUnion
+        """
+        pass
+
 
 class Client(Iface):
 
@@ -66,6 +74,7 @@ class Client(Iface):
         self._methods = {
             'buyAlbum': Method(self._buyAlbum, middleware),
             'enterAlbumGiveaway': Method(self._enterAlbumGiveaway, middleware),
+            'some_union_thing': Method(self._some_union_thing, middleware),
         }
 
     async def buyAlbum(self, ctx, ASIN, acct):
@@ -146,6 +155,42 @@ class Client(Iface):
             return result.success
         raise TApplicationException(TApplicationExceptionType.MISSING_RESULT, "enterAlbumGiveaway failed: unknown result")
 
+    async def some_union_thing(self, ctx, some_union):
+        """
+        Args:
+            ctx: FContext
+            some_union: AUnion
+        """
+        return await self._methods['some_union_thing']([ctx, some_union])
+
+    async def _some_union_thing(self, ctx, some_union):
+        memory_buffer = TMemoryOutputBuffer(self._transport.get_request_size_limit())
+        oprot = self._protocol_factory.get_protocol(memory_buffer)
+        oprot.write_request_headers(ctx)
+        oprot.writeMessageBegin('some_union_thing', TMessageType.CALL, 0)
+        args = some_union_thing_args()
+        args.some_union = some_union
+        args.write(oprot)
+        oprot.writeMessageEnd()
+        response_transport = await self._transport.request(ctx, memory_buffer.getvalue())
+
+        iprot = self._protocol_factory.get_protocol(response_transport)
+        iprot.read_response_headers(ctx)
+        _, mtype, _ = iprot.readMessageBegin()
+        if mtype == TMessageType.EXCEPTION:
+            x = TApplicationException()
+            x.read(iprot)
+            iprot.readMessageEnd()
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
+                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            raise x
+        result = some_union_thing_result()
+        result.read(iprot)
+        iprot.readMessageEnd()
+        if result.success is not None:
+            return result.success
+        raise TApplicationException(TApplicationExceptionType.MISSING_RESULT, "some_union_thing failed: unknown result")
+
 
 class Processor(FBaseProcessor):
 
@@ -162,6 +207,7 @@ class Processor(FBaseProcessor):
         super(Processor, self).__init__()
         self.add_to_processor_map('buyAlbum', _buyAlbum(Method(handler.buyAlbum, middleware), self.get_write_lock()))
         self.add_to_processor_map('enterAlbumGiveaway', _enterAlbumGiveaway(Method(handler.enterAlbumGiveaway, middleware), self.get_write_lock()))
+        self.add_to_processor_map('some_union_thing', _some_union_thing(Method(handler.some_union_thing, middleware), self.get_write_lock()))
 
 
 class _buyAlbum(FProcessorFunction):
@@ -240,6 +286,43 @@ class _enterAlbumGiveaway(FProcessorFunction):
                     raise e
 
 
+class _some_union_thing(FProcessorFunction):
+
+    def __init__(self, handler, lock):
+        super(_some_union_thing, self).__init__(handler, lock)
+
+    async def process(self, ctx, iprot, oprot):
+        args = some_union_thing_args()
+        args.read(iprot)
+        iprot.readMessageEnd()
+        result = some_union_thing_result()
+        try:
+            ret = self._handler([ctx, args.some_union])
+            if inspect.iscoroutine(ret):
+                ret = await ret
+            result.success = ret
+        except TApplicationException as ex:
+            async with self._lock:
+                _write_application_exception(ctx, oprot, "some_union_thing", exception=ex)
+                return
+        except Exception as e:
+            async with self._lock:
+                e = _write_application_exception(ctx, oprot, "some_union_thing", ex_code=TApplicationExceptionType.UNKNOWN, message=e.args[0])
+            raise e from None
+        async with self._lock:
+            try:
+                oprot.write_response_headers(ctx)
+                oprot.writeMessageBegin('some_union_thing', TMessageType.REPLY, 0)
+                result.write(oprot)
+                oprot.writeMessageEnd()
+                oprot.get_transport().flush()
+            except TTransportException as e:
+                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                    raise _write_application_exception(ctx, oprot, "some_union_thing", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.message)
+                else:
+                    raise e
+
+
 def _write_application_exception(ctx, oprot, method, ex_code=None, message=None, exception=None):
     if exception is not None:
         x = exception
@@ -282,8 +365,10 @@ class buyAlbum_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('buyAlbum_args')
         if self.ASIN is not None:
             oprot.writeFieldBegin('ASIN', TType.STRING, 1)
@@ -348,8 +433,10 @@ class buyAlbum_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('buyAlbum_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRUCT, 0)
@@ -412,8 +499,10 @@ class enterAlbumGiveaway_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('enterAlbumGiveaway_args')
         if self.email is not None:
             oprot.writeFieldBegin('email', TType.STRING, 1)
@@ -469,12 +558,124 @@ class enterAlbumGiveaway_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('enterAlbumGiveaway_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.BOOL, 0)
             oprot.writeBool(self.success)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __hash__(self):
+        value = 17
+        value = (value * 31) ^ hash(self.success)
+        return value
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+            for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+class some_union_thing_args(object):
+    """
+    Attributes:
+     - some_union
+    """
+    def __init__(self, some_union=None):
+        self.some_union = some_union
+
+    def read(self, iprot):
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.some_union = AUnion()
+                    self.some_union.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+        self.validate()
+
+    def write(self, oprot):
+        self.validate()
+        oprot.writeStructBegin('some_union_thing_args')
+        if self.some_union is not None:
+            oprot.writeFieldBegin('some_union', TType.STRUCT, 1)
+            self.some_union.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __hash__(self):
+        value = 17
+        value = (value * 31) ^ hash(self.some_union)
+        return value
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+            for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+class some_union_thing_result(object):
+    """
+    Attributes:
+     - success
+    """
+    def __init__(self, success=None):
+        self.success = success
+
+    def read(self, iprot):
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 0:
+                if ftype == TType.STRUCT:
+                    self.success = AUnion()
+                    self.success.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+        self.validate()
+
+    def write(self, oprot):
+        self.validate()
+        oprot.writeStructBegin('some_union_thing_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.STRUCT, 0)
+            self.success.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()

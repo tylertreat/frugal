@@ -609,6 +609,14 @@ func (g *Generator) generateRead(s *parser.Struct, sName string) string {
 			contents += "\t}\n"
 		}
 	}
+
+	// Only one field can be set for a union, make sure that's the case
+	if s.Type == parser.StructTypeUnion {
+		contents += fmt.Sprintf("\tif c := p.CountSetFields%s(); c != 1 {\n", sName)
+		contents += "\t\treturn fmt.Errorf(\"%T read union: exactly one field must be set (%d set).\", p, c)\n"
+		contents += "\t}\n"
+	}
+
 	contents += "\treturn nil\n"
 	contents += "}\n\n"
 

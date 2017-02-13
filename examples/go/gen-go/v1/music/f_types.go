@@ -531,6 +531,218 @@ func (p *Album) String() string {
 	return fmt.Sprintf("Album(%+v)", *p)
 }
 
+type AUnion struct {
+	Str    *string        `thrift:"str,1" db:"str" json:"str,omitempty"`
+	Num    *int64         `thrift:"num,2" db:"num" json:"num,omitempty"`
+	AnEnum *PerfRightsOrg `thrift:"an_enum,3" db:"an_enum" json:"an_enum,omitempty"`
+}
+
+func NewAUnion() *AUnion {
+	return &AUnion{}
+}
+
+var AUnion_Str_DEFAULT string
+
+func (p *AUnion) IsSetStr() bool {
+	return p.Str != nil
+}
+
+func (p *AUnion) GetStr() string {
+	if !p.IsSetStr() {
+		return AUnion_Str_DEFAULT
+	}
+	return *p.Str
+}
+
+var AUnion_Num_DEFAULT int64
+
+func (p *AUnion) IsSetNum() bool {
+	return p.Num != nil
+}
+
+func (p *AUnion) GetNum() int64 {
+	if !p.IsSetNum() {
+		return AUnion_Num_DEFAULT
+	}
+	return *p.Num
+}
+
+var AUnion_AnEnum_DEFAULT PerfRightsOrg
+
+func (p *AUnion) IsSetAnEnum() bool {
+	return p.AnEnum != nil
+}
+
+func (p *AUnion) GetAnEnum() PerfRightsOrg {
+	if !p.IsSetAnEnum() {
+		return AUnion_AnEnum_DEFAULT
+	}
+	return *p.AnEnum
+}
+
+func (p *AUnion) CountSetFieldsAUnion() int {
+	count := 0
+	if p.IsSetStr() {
+		count++
+	}
+	if p.IsSetNum() {
+		count++
+	}
+	if p.IsSetAnEnum() {
+		count++
+	}
+	return count
+}
+
+func (p *AUnion) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 1:
+			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+		case 2:
+			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
+		case 3:
+			if err := p.ReadField3(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	if c := p.CountSetFieldsAUnion(); c != 1 {
+		return fmt.Errorf("%T read union: exactly one field must be set (%d set).", p, c)
+	}
+	return nil
+}
+
+func (p *AUnion) ReadField1(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return thrift.PrependError("error reading field 1: ", err)
+	} else {
+		p.Str = &v
+	}
+	return nil
+}
+
+func (p *AUnion) ReadField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI64(); err != nil {
+		return thrift.PrependError("error reading field 2: ", err)
+	} else {
+		p.Num = &v
+	}
+	return nil
+}
+
+func (p *AUnion) ReadField3(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI32(); err != nil {
+		return thrift.PrependError("error reading field 3: ", err)
+	} else {
+		temp := PerfRightsOrg(v)
+		p.AnEnum = &temp
+	}
+	return nil
+}
+
+func (p *AUnion) Write(oprot thrift.TProtocol) error {
+	if c := p.CountSetFieldsAUnion(); c != 1 {
+		return fmt.Errorf("%T write union: exactly one field must be set (%d set).", p, c)
+	}
+	if err := oprot.WriteStructBegin("AUnion"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField3(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *AUnion) writeField1(oprot thrift.TProtocol) error {
+	if p.IsSetStr() {
+		if err := oprot.WriteFieldBegin("str", thrift.STRING, 1); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:str: ", p), err)
+		}
+		if err := oprot.WriteString(string(*p.Str)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T.str (1) field write error: ", p), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 1:str: ", p), err)
+		}
+	}
+	return nil
+}
+
+func (p *AUnion) writeField2(oprot thrift.TProtocol) error {
+	if p.IsSetNum() {
+		if err := oprot.WriteFieldBegin("num", thrift.I64, 2); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:num: ", p), err)
+		}
+		if err := oprot.WriteI64(int64(*p.Num)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T.num (2) field write error: ", p), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 2:num: ", p), err)
+		}
+	}
+	return nil
+}
+
+func (p *AUnion) writeField3(oprot thrift.TProtocol) error {
+	if p.IsSetAnEnum() {
+		if err := oprot.WriteFieldBegin("an_enum", thrift.I32, 3); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:an_enum: ", p), err)
+		}
+		if err := oprot.WriteI32(int32(*p.AnEnum)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T.an_enum (3) field write error: ", p), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 3:an_enum: ", p), err)
+		}
+	}
+	return nil
+}
+
+func (p *AUnion) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("AUnion(%+v)", *p)
+}
+
 // Exceptions are converted to the native format for each compiled
 // language.
 type PurchasingError struct {

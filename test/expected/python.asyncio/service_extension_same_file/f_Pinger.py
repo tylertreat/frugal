@@ -158,8 +158,10 @@ class ping_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('ping_args')
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -193,8 +195,10 @@ class ping_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('ping_result')
         oprot.writeFieldStop()
         oprot.writeStructEnd()

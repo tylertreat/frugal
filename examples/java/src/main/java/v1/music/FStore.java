@@ -70,6 +70,8 @@ public class FStore {
 
 		public boolean enterAlbumGiveaway(FContext ctx, String email, String name) throws TException;
 
+		public AUnion some_union_thing(FContext ctx, AUnion some_union) throws TException;
+
 	}
 
 	public static class Client implements Iface {
@@ -90,6 +92,10 @@ public class FStore {
 
 		public boolean enterAlbumGiveaway(FContext ctx, String email, String name) throws TException {
 			return proxy.enterAlbumGiveaway(ctx, email, name);
+		}
+
+		public AUnion some_union_thing(FContext ctx, AUnion some_union) throws TException {
+			return proxy.some_union_thing(ctx, some_union);
 		}
 
 	}
@@ -182,6 +188,43 @@ public class FStore {
 			}
 			throw new TApplicationException(TApplicationExceptionType.MISSING_RESULT, "enterAlbumGiveaway failed: unknown result");
 		}
+		public AUnion some_union_thing(FContext ctx, AUnion some_union) throws TException {
+			TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());
+			FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);
+			oprot.writeRequestHeader(ctx);
+			oprot.writeMessageBegin(new TMessage("some_union_thing", TMessageType.CALL, 0));
+			some_union_thing_args args = new some_union_thing_args();
+			args.setSome_union(some_union);
+			args.write(oprot);
+			oprot.writeMessageEnd();
+			TTransport response = this.transport.request(ctx, memoryBuffer.getWriteBytes());
+
+			FProtocol iprot = this.protocolFactory.getProtocol(response);
+			iprot.readResponseHeader(ctx);
+			TMessage message = iprot.readMessageBegin();
+			if (!message.name.equals("some_union_thing")) {
+				throw new TApplicationException(TApplicationExceptionType.WRONG_METHOD_NAME, "some_union_thing failed: wrong method name");
+			}
+			if (message.type == TMessageType.EXCEPTION) {
+				TApplicationException e = TApplicationException.read(iprot);
+				iprot.readMessageEnd();
+				TException returnedException = e;
+				if (e.getType() == TApplicationExceptionType.RESPONSE_TOO_LARGE) {
+					returnedException = new TTransportException(TTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());
+				}
+				throw returnedException;
+			}
+			if (message.type != TMessageType.REPLY) {
+				throw new TApplicationException(TApplicationExceptionType.INVALID_MESSAGE_TYPE, "some_union_thing failed: invalid message type");
+			}
+			some_union_thing_result res = new some_union_thing_result();
+			res.read(iprot);
+			iprot.readMessageEnd();
+			if (res.isSetSuccess()) {
+				return res.success;
+			}
+			throw new TApplicationException(TApplicationExceptionType.MISSING_RESULT, "some_union_thing failed: unknown result");
+		}
 	}
 
 	public static class Processor extends FBaseProcessor implements FProcessor {
@@ -196,6 +239,7 @@ public class FStore {
 			java.util.Map<String, FProcessorFunction> processMap = new java.util.HashMap<>();
 			processMap.put("buyAlbum", new BuyAlbum());
 			processMap.put("enterAlbumGiveaway", new EnterAlbumGiveaway());
+			processMap.put("some_union_thing", new Some_union_thing());
 			return processMap;
 		}
 
@@ -299,6 +343,54 @@ public class FStore {
 					} catch (TTransportException e) {
 						if (e.getType() == TTransportExceptionType.RESPONSE_TOO_LARGE) {
 							writeApplicationException(ctx, oprot, TApplicationExceptionType.RESPONSE_TOO_LARGE, "enterAlbumGiveaway", "response too large: " + e.getMessage());
+						} else {
+							throw e;
+						}
+					}
+				}
+			}
+		}
+
+		private class Some_union_thing implements FProcessorFunction {
+
+			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
+				some_union_thing_args args = new some_union_thing_args();
+				try {
+					args.read(iprot);
+				} catch (TException e) {
+					iprot.readMessageEnd();
+					synchronized (WRITE_LOCK) {
+						e = writeApplicationException(ctx, oprot, TApplicationExceptionType.PROTOCOL_ERROR, "some_union_thing", e.getMessage());
+					}
+					throw e;
+				}
+
+				iprot.readMessageEnd();
+				some_union_thing_result result = new some_union_thing_result();
+				try {
+					result.success = handler.some_union_thing(ctx, args.some_union);
+					result.setSuccessIsSet(true);
+				} catch (TApplicationException e) {
+					oprot.writeResponseHeader(ctx);
+					oprot.writeMessageBegin(new TMessage("some_union_thing", TMessageType.EXCEPTION, 0));
+					e.write(oprot);
+					return;
+				} catch (TException e) {
+					synchronized (WRITE_LOCK) {
+						e = writeApplicationException(ctx, oprot, TApplicationExceptionType.INTERNAL_ERROR, "some_union_thing", "Internal error processing some_union_thing: " + e.getMessage());
+					}
+					throw e;
+				}
+				synchronized (WRITE_LOCK) {
+					try {
+						oprot.writeResponseHeader(ctx);
+						oprot.writeMessageBegin(new TMessage("some_union_thing", TMessageType.REPLY, 0));
+						result.write(oprot);
+						oprot.writeMessageEnd();
+						oprot.getTransport().flush();
+					} catch (TTransportException e) {
+						if (e.getType() == TTransportExceptionType.RESPONSE_TOO_LARGE) {
+							writeApplicationException(ctx, oprot, TApplicationExceptionType.RESPONSE_TOO_LARGE, "some_union_thing", "response too large: " + e.getMessage());
 						} else {
 							throw e;
 						}
@@ -717,14 +809,14 @@ public static class buyAlbum_args implements org.apache.thrift.TBase<buyAlbum_ar
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.ASIN != null) {
 				oprot.writeFieldBegin(ASIN_FIELD_DESC);
-				String elem30 = struct.ASIN;
-				oprot.writeString(elem30);
+				String elem36 = struct.ASIN;
+				oprot.writeString(elem36);
 				oprot.writeFieldEnd();
 			}
 			if (struct.acct != null) {
 				oprot.writeFieldBegin(ACCT_FIELD_DESC);
-				String elem31 = struct.acct;
-				oprot.writeString(elem31);
+				String elem37 = struct.acct;
+				oprot.writeString(elem37);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -753,12 +845,12 @@ public static class buyAlbum_args implements org.apache.thrift.TBase<buyAlbum_ar
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetASIN()) {
-				String elem32 = struct.ASIN;
-				oprot.writeString(elem32);
+				String elem38 = struct.ASIN;
+				oprot.writeString(elem38);
 			}
 			if (struct.isSetAcct()) {
-				String elem33 = struct.acct;
-				oprot.writeString(elem33);
+				String elem39 = struct.acct;
+				oprot.writeString(elem39);
 			}
 		}
 
@@ -1643,14 +1735,14 @@ public static class enterAlbumGiveaway_args implements org.apache.thrift.TBase<e
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.email != null) {
 				oprot.writeFieldBegin(EMAIL_FIELD_DESC);
-				String elem34 = struct.email;
-				oprot.writeString(elem34);
+				String elem40 = struct.email;
+				oprot.writeString(elem40);
 				oprot.writeFieldEnd();
 			}
 			if (struct.name != null) {
 				oprot.writeFieldBegin(NAME_FIELD_DESC);
-				String elem35 = struct.name;
-				oprot.writeString(elem35);
+				String elem41 = struct.name;
+				oprot.writeString(elem41);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -1679,12 +1771,12 @@ public static class enterAlbumGiveaway_args implements org.apache.thrift.TBase<e
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetEmail()) {
-				String elem36 = struct.email;
-				oprot.writeString(elem36);
+				String elem42 = struct.email;
+				oprot.writeString(elem42);
 			}
 			if (struct.isSetName()) {
-				String elem37 = struct.name;
-				oprot.writeString(elem37);
+				String elem43 = struct.name;
+				oprot.writeString(elem43);
 			}
 		}
 
@@ -2013,8 +2105,8 @@ public static class enterAlbumGiveaway_result implements org.apache.thrift.TBase
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.isSetSuccess()) {
 				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
-				boolean elem38 = struct.success;
-				oprot.writeBool(elem38);
+				boolean elem44 = struct.success;
+				oprot.writeBool(elem44);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -2040,8 +2132,8 @@ public static class enterAlbumGiveaway_result implements org.apache.thrift.TBase
 			}
 			oprot.writeBitSet(optionals, 1);
 			if (struct.isSetSuccess()) {
-				boolean elem39 = struct.success;
-				oprot.writeBool(elem39);
+				boolean elem45 = struct.success;
+				oprot.writeBool(elem45);
 			}
 		}
 
@@ -2051,6 +2143,714 @@ public static class enterAlbumGiveaway_result implements org.apache.thrift.TBase
 			BitSet incoming = iprot.readBitSet(1);
 			if (incoming.get(0)) {
 				struct.success = iprot.readBool();
+				struct.setSuccessIsSet(true);
+			}
+		}
+
+	}
+
+}
+public static class some_union_thing_args implements org.apache.thrift.TBase<some_union_thing_args, some_union_thing_args._Fields>, java.io.Serializable, Cloneable, Comparable<some_union_thing_args> {
+	private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("some_union_thing_args");
+
+	private static final org.apache.thrift.protocol.TField SOME_UNION_FIELD_DESC = new org.apache.thrift.protocol.TField("some_union", org.apache.thrift.protocol.TType.STRUCT, (short)1);
+
+	private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+	static {
+		schemes.put(StandardScheme.class, new some_union_thing_argsStandardSchemeFactory());
+		schemes.put(TupleScheme.class, new some_union_thing_argsTupleSchemeFactory());
+	}
+
+	public AUnion some_union; // required
+	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+		SOME_UNION((short)1, "some_union")
+;
+
+		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+		static {
+			for (_Fields field : EnumSet.allOf(_Fields.class)) {
+				byName.put(field.getFieldName(), field);
+			}
+		}
+
+		/**
+		 * Find the _Fields constant that matches fieldId, or null if its not found.
+		 */
+		public static _Fields findByThriftId(int fieldId) {
+			switch(fieldId) {
+				case 1: // SOME_UNION
+					return SOME_UNION;
+				default:
+					return null;
+			}
+		}
+
+		/**
+		 * Find the _Fields constant that matches fieldId, throwing an exception
+		 * if it is not found.
+		 */
+		public static _Fields findByThriftIdOrThrow(int fieldId) {
+			_Fields fields = findByThriftId(fieldId);
+			if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+			return fields;
+		}
+
+		/**
+		 * Find the _Fields constant that matches name, or null if its not found.
+		 */
+		public static _Fields findByName(String name) {
+			return byName.get(name);
+		}
+
+		private final short _thriftId;
+		private final String _fieldName;
+
+		_Fields(short thriftId, String fieldName) {
+			_thriftId = thriftId;
+			_fieldName = fieldName;
+		}
+
+		public short getThriftFieldId() {
+			return _thriftId;
+		}
+
+		public String getFieldName() {
+			return _fieldName;
+		}
+	}
+
+	// isset id assignments
+	public some_union_thing_args() {
+	}
+
+	public some_union_thing_args(
+		AUnion some_union) {
+		this();
+		this.some_union = some_union;
+	}
+
+	/**
+	 * Performs a deep copy on <i>other</i>.
+	 */
+	public some_union_thing_args(some_union_thing_args other) {
+		if (other.isSetSome_union()) {
+			this.some_union = new AUnion(other.some_union);
+		}
+	}
+
+	public some_union_thing_args deepCopy() {
+		return new some_union_thing_args(this);
+	}
+
+	@Override
+	public void clear() {
+		this.some_union = null;
+
+	}
+
+	public AUnion getSome_union() {
+		return this.some_union;
+	}
+
+	public some_union_thing_args setSome_union(AUnion some_union) {
+		this.some_union = some_union;
+		return this;
+	}
+
+	public void unsetSome_union() {
+		this.some_union = null;
+	}
+
+	/** Returns true if field some_union is set (has been assigned a value) and false otherwise */
+	public boolean isSetSome_union() {
+		return this.some_union != null;
+	}
+
+	public void setSome_unionIsSet(boolean value) {
+		if (!value) {
+			this.some_union = null;
+		}
+	}
+
+	public void setFieldValue(_Fields field, Object value) {
+		switch (field) {
+		case SOME_UNION:
+			if (value == null) {
+				unsetSome_union();
+			} else {
+				setSome_union((AUnion)value);
+			}
+			break;
+
+		}
+	}
+
+	public Object getFieldValue(_Fields field) {
+		switch (field) {
+		case SOME_UNION:
+			return getSome_union();
+
+		}
+		throw new IllegalStateException();
+	}
+
+	/** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+	public boolean isSet(_Fields field) {
+		if (field == null) {
+			throw new IllegalArgumentException();
+		}
+
+		switch (field) {
+		case SOME_UNION:
+			return isSetSome_union();
+		}
+		throw new IllegalStateException();
+	}
+
+	@Override
+	public boolean equals(Object that) {
+		if (that == null)
+			return false;
+		if (that instanceof some_union_thing_args)
+			return this.equals((some_union_thing_args)that);
+		return false;
+	}
+
+	public boolean equals(some_union_thing_args that) {
+		if (that == null)
+			return false;
+
+		boolean this_present_some_union = true && this.isSetSome_union();
+		boolean that_present_some_union = true && that.isSetSome_union();
+		if (this_present_some_union || that_present_some_union) {
+			if (!(this_present_some_union && that_present_some_union))
+				return false;
+			if (!this.some_union.equals(that.some_union))
+				return false;
+		}
+
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		List<Object> list = new ArrayList<Object>();
+
+		boolean present_some_union = true && (isSetSome_union());
+		list.add(present_some_union);
+		if (present_some_union)
+			list.add(some_union);
+
+		return list.hashCode();
+	}
+
+	@Override
+	public int compareTo(some_union_thing_args other) {
+		if (!getClass().equals(other.getClass())) {
+			return getClass().getName().compareTo(other.getClass().getName());
+		}
+
+		int lastComparison = 0;
+
+		lastComparison = Boolean.valueOf(isSetSome_union()).compareTo(other.isSetSome_union());
+		if (lastComparison != 0) {
+			return lastComparison;
+		}
+		if (isSetSome_union()) {
+			lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.some_union, other.some_union);
+			if (lastComparison != 0) {
+				return lastComparison;
+			}
+		}
+		return 0;
+	}
+
+	public _Fields fieldForId(int fieldId) {
+		return _Fields.findByThriftId(fieldId);
+	}
+
+	public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+		schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+	}
+
+	public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+		schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder("some_union_thing_args(");
+		boolean first = true;
+
+		sb.append("some_union:");
+		if (this.some_union == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.some_union);
+		}
+		first = false;
+		sb.append(")");
+		return sb.toString();
+	}
+
+	public void validate() throws org.apache.thrift.TException {
+		// check for required fields
+		// check for sub-struct validity
+	}
+
+	private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+		try {
+			write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+		} catch (org.apache.thrift.TException te) {
+			throw new java.io.IOException(te);
+		}
+	}
+
+	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+		try {
+			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
+			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+		} catch (org.apache.thrift.TException te) {
+			throw new java.io.IOException(te);
+		}
+	}
+
+	private static class some_union_thing_argsStandardSchemeFactory implements SchemeFactory {
+		public some_union_thing_argsStandardScheme getScheme() {
+			return new some_union_thing_argsStandardScheme();
+		}
+	}
+
+	private static class some_union_thing_argsStandardScheme extends StandardScheme<some_union_thing_args> {
+
+		public void read(org.apache.thrift.protocol.TProtocol iprot, some_union_thing_args struct) throws org.apache.thrift.TException {
+			org.apache.thrift.protocol.TField schemeField;
+			iprot.readStructBegin();
+			while (true) {
+				schemeField = iprot.readFieldBegin();
+				if (schemeField.type == org.apache.thrift.protocol.TType.STOP) {
+					break;
+				}
+				switch (schemeField.id) {
+					case 1: // SOME_UNION
+						if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+							struct.some_union = new AUnion();
+							struct.some_union.read(iprot);
+							struct.setSome_unionIsSet(true);
+						} else {
+							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+						}
+						break;
+					default:
+						org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+				}
+				iprot.readFieldEnd();
+			}
+			iprot.readStructEnd();
+
+			// check for required fields of primitive type, which can't be checked in the validate method
+			struct.validate();
+		}
+
+		public void write(org.apache.thrift.protocol.TProtocol oprot, some_union_thing_args struct) throws org.apache.thrift.TException {
+			struct.validate();
+
+			oprot.writeStructBegin(STRUCT_DESC);
+			if (struct.some_union != null) {
+				oprot.writeFieldBegin(SOME_UNION_FIELD_DESC);
+				struct.some_union.write(oprot);
+				oprot.writeFieldEnd();
+			}
+			oprot.writeFieldStop();
+			oprot.writeStructEnd();
+		}
+
+	}
+
+	private static class some_union_thing_argsTupleSchemeFactory implements SchemeFactory {
+		public some_union_thing_argsTupleScheme getScheme() {
+			return new some_union_thing_argsTupleScheme();
+		}
+	}
+
+	private static class some_union_thing_argsTupleScheme extends TupleScheme<some_union_thing_args> {
+
+		@Override
+		public void write(org.apache.thrift.protocol.TProtocol prot, some_union_thing_args struct) throws org.apache.thrift.TException {
+			TTupleProtocol oprot = (TTupleProtocol) prot;
+			BitSet optionals = new BitSet();
+			if (struct.isSetSome_union()) {
+				optionals.set(0);
+			}
+			oprot.writeBitSet(optionals, 1);
+			if (struct.isSetSome_union()) {
+				struct.some_union.write(oprot);
+			}
+		}
+
+		@Override
+		public void read(org.apache.thrift.protocol.TProtocol prot, some_union_thing_args struct) throws org.apache.thrift.TException {
+			TTupleProtocol iprot = (TTupleProtocol) prot;
+			BitSet incoming = iprot.readBitSet(1);
+			if (incoming.get(0)) {
+				struct.some_union = new AUnion();
+				struct.some_union.read(iprot);
+				struct.setSome_unionIsSet(true);
+			}
+		}
+
+	}
+
+}
+public static class some_union_thing_result implements org.apache.thrift.TBase<some_union_thing_result, some_union_thing_result._Fields>, java.io.Serializable, Cloneable, Comparable<some_union_thing_result> {
+	private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("some_union_thing_result");
+
+	private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.STRUCT, (short)0);
+
+	private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+	static {
+		schemes.put(StandardScheme.class, new some_union_thing_resultStandardSchemeFactory());
+		schemes.put(TupleScheme.class, new some_union_thing_resultTupleSchemeFactory());
+	}
+
+	public AUnion success; // required
+	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+		SUCCESS((short)0, "success")
+;
+
+		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+		static {
+			for (_Fields field : EnumSet.allOf(_Fields.class)) {
+				byName.put(field.getFieldName(), field);
+			}
+		}
+
+		/**
+		 * Find the _Fields constant that matches fieldId, or null if its not found.
+		 */
+		public static _Fields findByThriftId(int fieldId) {
+			switch(fieldId) {
+				case 0: // SUCCESS
+					return SUCCESS;
+				default:
+					return null;
+			}
+		}
+
+		/**
+		 * Find the _Fields constant that matches fieldId, throwing an exception
+		 * if it is not found.
+		 */
+		public static _Fields findByThriftIdOrThrow(int fieldId) {
+			_Fields fields = findByThriftId(fieldId);
+			if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+			return fields;
+		}
+
+		/**
+		 * Find the _Fields constant that matches name, or null if its not found.
+		 */
+		public static _Fields findByName(String name) {
+			return byName.get(name);
+		}
+
+		private final short _thriftId;
+		private final String _fieldName;
+
+		_Fields(short thriftId, String fieldName) {
+			_thriftId = thriftId;
+			_fieldName = fieldName;
+		}
+
+		public short getThriftFieldId() {
+			return _thriftId;
+		}
+
+		public String getFieldName() {
+			return _fieldName;
+		}
+	}
+
+	// isset id assignments
+	public some_union_thing_result() {
+	}
+
+	public some_union_thing_result(
+		AUnion success) {
+		this();
+		this.success = success;
+	}
+
+	/**
+	 * Performs a deep copy on <i>other</i>.
+	 */
+	public some_union_thing_result(some_union_thing_result other) {
+		if (other.isSetSuccess()) {
+			this.success = new AUnion(other.success);
+		}
+	}
+
+	public some_union_thing_result deepCopy() {
+		return new some_union_thing_result(this);
+	}
+
+	@Override
+	public void clear() {
+		this.success = null;
+
+	}
+
+	public AUnion getSuccess() {
+		return this.success;
+	}
+
+	public some_union_thing_result setSuccess(AUnion success) {
+		this.success = success;
+		return this;
+	}
+
+	public void unsetSuccess() {
+		this.success = null;
+	}
+
+	/** Returns true if field success is set (has been assigned a value) and false otherwise */
+	public boolean isSetSuccess() {
+		return this.success != null;
+	}
+
+	public void setSuccessIsSet(boolean value) {
+		if (!value) {
+			this.success = null;
+		}
+	}
+
+	public void setFieldValue(_Fields field, Object value) {
+		switch (field) {
+		case SUCCESS:
+			if (value == null) {
+				unsetSuccess();
+			} else {
+				setSuccess((AUnion)value);
+			}
+			break;
+
+		}
+	}
+
+	public Object getFieldValue(_Fields field) {
+		switch (field) {
+		case SUCCESS:
+			return getSuccess();
+
+		}
+		throw new IllegalStateException();
+	}
+
+	/** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+	public boolean isSet(_Fields field) {
+		if (field == null) {
+			throw new IllegalArgumentException();
+		}
+
+		switch (field) {
+		case SUCCESS:
+			return isSetSuccess();
+		}
+		throw new IllegalStateException();
+	}
+
+	@Override
+	public boolean equals(Object that) {
+		if (that == null)
+			return false;
+		if (that instanceof some_union_thing_result)
+			return this.equals((some_union_thing_result)that);
+		return false;
+	}
+
+	public boolean equals(some_union_thing_result that) {
+		if (that == null)
+			return false;
+
+		boolean this_present_success = true && this.isSetSuccess();
+		boolean that_present_success = true && that.isSetSuccess();
+		if (this_present_success || that_present_success) {
+			if (!(this_present_success && that_present_success))
+				return false;
+			if (!this.success.equals(that.success))
+				return false;
+		}
+
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		List<Object> list = new ArrayList<Object>();
+
+		boolean present_success = true && (isSetSuccess());
+		list.add(present_success);
+		if (present_success)
+			list.add(success);
+
+		return list.hashCode();
+	}
+
+	@Override
+	public int compareTo(some_union_thing_result other) {
+		if (!getClass().equals(other.getClass())) {
+			return getClass().getName().compareTo(other.getClass().getName());
+		}
+
+		int lastComparison = 0;
+
+		lastComparison = Boolean.valueOf(isSetSuccess()).compareTo(other.isSetSuccess());
+		if (lastComparison != 0) {
+			return lastComparison;
+		}
+		if (isSetSuccess()) {
+			lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.success, other.success);
+			if (lastComparison != 0) {
+				return lastComparison;
+			}
+		}
+		return 0;
+	}
+
+	public _Fields fieldForId(int fieldId) {
+		return _Fields.findByThriftId(fieldId);
+	}
+
+	public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+		schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+	}
+
+	public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+		schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder("some_union_thing_result(");
+		boolean first = true;
+
+		sb.append("success:");
+		if (this.success == null) {
+			sb.append("null");
+		} else {
+			sb.append(this.success);
+		}
+		first = false;
+		sb.append(")");
+		return sb.toString();
+	}
+
+	public void validate() throws org.apache.thrift.TException {
+		// check for required fields
+		// check for sub-struct validity
+	}
+
+	private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+		try {
+			write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+		} catch (org.apache.thrift.TException te) {
+			throw new java.io.IOException(te);
+		}
+	}
+
+	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+		try {
+			// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
+			read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+		} catch (org.apache.thrift.TException te) {
+			throw new java.io.IOException(te);
+		}
+	}
+
+	private static class some_union_thing_resultStandardSchemeFactory implements SchemeFactory {
+		public some_union_thing_resultStandardScheme getScheme() {
+			return new some_union_thing_resultStandardScheme();
+		}
+	}
+
+	private static class some_union_thing_resultStandardScheme extends StandardScheme<some_union_thing_result> {
+
+		public void read(org.apache.thrift.protocol.TProtocol iprot, some_union_thing_result struct) throws org.apache.thrift.TException {
+			org.apache.thrift.protocol.TField schemeField;
+			iprot.readStructBegin();
+			while (true) {
+				schemeField = iprot.readFieldBegin();
+				if (schemeField.type == org.apache.thrift.protocol.TType.STOP) {
+					break;
+				}
+				switch (schemeField.id) {
+					case 0: // SUCCESS
+						if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+							struct.success = new AUnion();
+							struct.success.read(iprot);
+							struct.setSuccessIsSet(true);
+						} else {
+							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+						}
+						break;
+					default:
+						org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+				}
+				iprot.readFieldEnd();
+			}
+			iprot.readStructEnd();
+
+			// check for required fields of primitive type, which can't be checked in the validate method
+			struct.validate();
+		}
+
+		public void write(org.apache.thrift.protocol.TProtocol oprot, some_union_thing_result struct) throws org.apache.thrift.TException {
+			struct.validate();
+
+			oprot.writeStructBegin(STRUCT_DESC);
+			if (struct.success != null) {
+				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+				struct.success.write(oprot);
+				oprot.writeFieldEnd();
+			}
+			oprot.writeFieldStop();
+			oprot.writeStructEnd();
+		}
+
+	}
+
+	private static class some_union_thing_resultTupleSchemeFactory implements SchemeFactory {
+		public some_union_thing_resultTupleScheme getScheme() {
+			return new some_union_thing_resultTupleScheme();
+		}
+	}
+
+	private static class some_union_thing_resultTupleScheme extends TupleScheme<some_union_thing_result> {
+
+		@Override
+		public void write(org.apache.thrift.protocol.TProtocol prot, some_union_thing_result struct) throws org.apache.thrift.TException {
+			TTupleProtocol oprot = (TTupleProtocol) prot;
+			BitSet optionals = new BitSet();
+			if (struct.isSetSuccess()) {
+				optionals.set(0);
+			}
+			oprot.writeBitSet(optionals, 1);
+			if (struct.isSetSuccess()) {
+				struct.success.write(oprot);
+			}
+		}
+
+		@Override
+		public void read(org.apache.thrift.protocol.TProtocol prot, some_union_thing_result struct) throws org.apache.thrift.TException {
+			TTupleProtocol iprot = (TTupleProtocol) prot;
+			BitSet incoming = iprot.readBitSet(1);
+			if (incoming.get(0)) {
+				struct.success = new AUnion();
+				struct.success.read(iprot);
 				struct.setSuccessIsSet(true);
 			}
 		}

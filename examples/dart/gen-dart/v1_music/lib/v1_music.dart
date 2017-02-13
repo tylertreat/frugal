@@ -5,6 +5,7 @@ library v1_music;
 
 export 'src/f_track.dart' show Track;
 export 'src/f_album.dart' show Album;
+export 'src/f_a_union.dart' show AUnion;
 export 'src/f_purchasing_error.dart' show PurchasingError;
 export 'src/f_perf_rights_org.dart' show PerfRightsOrg;
 

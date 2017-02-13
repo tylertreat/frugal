@@ -54,6 +54,12 @@ exception PurchasingError {
     2: i16          error_code
 }
 
+union AUnion {
+    1: string str
+    2: i64 num
+    3: PerfRightsOrg an_enum
+}
+
 /**@
  * Services are the API for client and server interaction.
  * Users can buy an album or enter a giveaway for a free album.
@@ -61,6 +67,7 @@ exception PurchasingError {
 service Store {
     Album buyAlbum( 1: string ASIN, 2: string acct ) throws (1: PurchasingError error)
     bool enterAlbumGiveaway( 1: string email, 2: string name )
+    AUnion some_union_thing(1:AUnion some_union)
 }
 
 /**@

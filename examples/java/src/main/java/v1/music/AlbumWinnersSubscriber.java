@@ -111,12 +111,12 @@ public class AlbumWinnersSubscriber {
 						iprot.readMessageEnd();
 						throw new TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD);
 					}
-					org.apache.thrift.protocol.TList elem42 = iprot.readListBegin();
-					java.util.List<Album> received = new ArrayList<Album>(elem42.size);
-					for (int elem43 = 0; elem43 < elem42.size; ++elem43) {
-						Album elem44 = new Album();
-						elem44.read(iprot);
-						received.add(elem44);
+					org.apache.thrift.protocol.TList elem48 = iprot.readListBegin();
+					java.util.List<Album> received = new ArrayList<Album>(elem48.size);
+					for (int elem49 = 0; elem49 < elem48.size; ++elem49) {
+						Album elem50 = new Album();
+						elem50.read(iprot);
+						received.add(elem50);
 					}
 					iprot.readListEnd();
 					iprot.readMessageEnd();
