@@ -454,7 +454,7 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 		for _, field := range s.Fields {
 			if field.Modifier == parser.Required {
 				contents += fmt.Sprintf(tabtab + "if self.%s is None:\n", field.Name)
-				contents += fmt.Sprintf(tabtabtab + "raise TProtocol.TProtocolException(message='Required field %s is unset!')\n", field.Name)
+				contents += fmt.Sprintf(tabtabtab + "raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field %s is unset!')\n", field.Name)
 			}
 		}
 	}
@@ -466,7 +466,7 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 			contents += tabtabtab + "set_fields += 1\n"
 		}
 		contents += tabtab + "if set_fields != 1:\n"
-		contents += fmt.Sprintf(tabtabtab+"raise TProtocol.TProtocolException(message='The union did not have exactly one field set, {} were set'.format(set_fields))\n")
+		contents += fmt.Sprintf(tabtabtab+"raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='The union did not have exactly one field set, {} were set'.format(set_fields))\n")
 	}
 
 	contents += tabtab + "return\n\n"

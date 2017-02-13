@@ -565,9 +565,9 @@ class TestingDefaults(object):
 
     def validate(self):
         if self.status is None:
-            raise TProtocol.TProtocolException(message='Required field status is unset!')
+            raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field status is unset!')
         if self.base_status is None:
-            raise TProtocol.TProtocolException(message='Required field base_status is unset!')
+            raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field base_status is unset!')
         return
 
     def __hash__(self):
@@ -794,7 +794,7 @@ class EventWrapper(object):
 
     def validate(self):
         if self.Ev is None:
-            raise TProtocol.TProtocolException(message='Required field Ev is unset!')
+            raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field Ev is unset!')
         return
 
     def __hash__(self):
@@ -937,7 +937,7 @@ class TestingUnions(object):
         if self.bin_field_in_union is not None:
             set_fields += 1
         if set_fields != 1:
-            raise TProtocol.TProtocolException(message='The union did not have exactly one field set, {} were set'.format(set_fields))
+            raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='The union did not have exactly one field set, {} were set'.format(set_fields))
         return
 
     def __hash__(self):
