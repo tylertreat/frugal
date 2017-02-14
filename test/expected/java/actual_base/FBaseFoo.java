@@ -173,6 +173,8 @@ public class FBaseFoo {
 					oprot.writeResponseHeader(ctx);
 					oprot.writeMessageBegin(new TMessage("basePing", TMessageType.EXCEPTION, 0));
 					e.write(oprot);
+					oprot.writeMessageEnd();
+					oprot.getTransport().flush();
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
