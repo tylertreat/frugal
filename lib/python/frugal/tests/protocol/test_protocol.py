@@ -2,7 +2,7 @@ import unittest
 import mock
 
 from frugal.protocol.protocol import FProtocol
-from frugal.context import FContext, _OPID_HEADER
+from frugal.context import FContext, _OPID_HEADER, _CID_HEADER
 
 
 class TestFProtocol(unittest.TestCase):
@@ -14,12 +14,13 @@ class TestFProtocol(unittest.TestCase):
 
     @mock.patch('frugal.protocol.protocol._Headers._read')
     def test_read_request_headers(self, mock_read):
-        headers = {_OPID_HEADER: "0"}
+        headers = {_OPID_HEADER: "0", _CID_HEADER: "someid"}
         mock_read.return_value = headers
 
         ctx = self.protocol.read_request_headers()
 
         self.assertEqual(0, ctx._get_op_id())
+        self.assertEqual("someid", ctx.get_response_header(_CID_HEADER))
 
     @mock.patch('frugal.protocol.protocol._Headers._read')
     def test_read_response_headers(self, mock_read):

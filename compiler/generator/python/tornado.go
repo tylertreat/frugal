@@ -184,7 +184,7 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with (yield self._lock.acquire()):\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)\n", methodLower)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=e.message)\n", methodLower)
 	}
 	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {

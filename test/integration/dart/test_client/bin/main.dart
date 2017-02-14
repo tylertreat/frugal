@@ -348,6 +348,28 @@ List<FTest> _createTests() {
       await client.testOneway(ctx, 1);
   }));
 
+  tests.add(new FTest(1, 'testUncheckedException', () async {
+      try {
+        await client.testUncaughtException(ctx);
+      } on TApplicationError catch (e) {
+
+        if (e.type != FrugalTApplicationErrorType.INTERNAL_ERROR ||
+            !e.message.contains('An uncaught error')){
+          throw new FTestError(e, TApplicationError(FrugalTApplicationErrorType.INTERNAL_ERROR));
+        }
+      }}));
+
+  tests.add(new FTest(1, 'testUncheckedTApplicationException', () async {
+      try {
+        await client.testUncheckedTApplicationException(ctx);
+      } on TApplicationError catch (e) {
+        int expectedErrorType = 400;
+        if (e.type != expectedErrorType ||
+            !e.message.contains('Unchecked TApplicationException')) {
+          throw new FTestError(e, TApplicationError(expectedErrorType));
+        }
+      }}));
+
   return tests;
 }
 
