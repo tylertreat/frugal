@@ -6,6 +6,7 @@
 import 'dart:async';
 
 import 'dart:typed_data' show Uint8List;
+import 'package:logging/logging.dart' as logging;
 import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
 
@@ -18,6 +19,7 @@ abstract class FBaseFoo {
 }
 
 class FBaseFooClient implements FBaseFoo {
+  static final logging.Logger _log = new logging.Logger('BaseFoo');
   Map<String, frugal.FMethod> _methods;
 
   FBaseFooClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware]) {

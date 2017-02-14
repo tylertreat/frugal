@@ -431,6 +431,16 @@ type Annotation struct {
 // Annotations is the collection of Annotations present on an IDL definition.
 type Annotations []*Annotation
 
+func (a Annotations) Get(name string) (string, bool) {
+	for _, annotation := range a {
+		if annotation.Name == name {
+			return annotation.Value, true
+		}
+	}
+
+	return "", false
+}
+
 // Vendor returns true if the "vendor" annotation is present and its associated
 // value, if any.
 func (a Annotations) Vendor() (string, bool) {

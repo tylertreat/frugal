@@ -25,6 +25,11 @@ const (
 	ObjectFile             FileType = "object"
 )
 
+const (
+	// Deprecated is the annotation to mark a service method as deprecated.
+	Deprecated = "deprecated"
+)
+
 // Options contains language generator options. The map key is the option name,
 // and the value is the option description.
 type Options map[string]string

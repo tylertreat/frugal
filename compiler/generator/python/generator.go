@@ -735,6 +735,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from frugal.exceptions import TTransportExceptionType\n"
 	imports += "from frugal.processor import FBaseProcessor\n"
 	imports += "from frugal.processor import FProcessorFunction\n"
+	imports += "from frugal.util.deprecate import deprecated\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n\n"
 
@@ -1282,10 +1283,16 @@ func (g *Generator) generateMethodSignature(method *parser.Method) string {
 		docstr[0] = "\n" + tabtab + docstr[0]
 		docstr = append(method.Comment, docstr...)
 	}
+
+	if _, ok := method.Annotations.Get(generator.Deprecated); ok {
+		contents += tab + "@deprecated\n"
+	}
+
 	contents += tab
 	if getAsyncOpt(g.Options) == asyncio {
 		contents += "async "
 	}
+
 	contents += fmt.Sprintf("def %s(self, ctx%s):\n", method.Name, g.generateClientArgs(method.Arguments))
 	contents += g.generateDocString(docstr, tabtab)
 	return contents

@@ -13,6 +13,7 @@ from frugal.exceptions import TApplicationExceptionType
 from frugal.exceptions import TTransportExceptionType
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
+from frugal.util.deprecate import deprecated
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 
@@ -34,6 +35,7 @@ class Iface(actual_base.python.f_BaseFoo.Iface):
     a frugal Context for each service call.
     """
 
+    @deprecated
     def Ping(self, ctx):
         """
         Ping the server.
@@ -145,6 +147,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             'use_subdir_struct': Method(self._use_subdir_struct, middleware),
         })
 
+    @deprecated
     def Ping(self, ctx):
         """
         Ping the server.
@@ -550,6 +553,7 @@ class Processor(actual_base.python.f_BaseFoo.Processor):
 
         super(Processor, self).__init__(handler, middleware=middleware)
         self.add_to_processor_map('ping', _Ping(Method(handler.Ping, middleware), self.get_write_lock()))
+        self.add_to_annotations_map('ping', {'deprecated': ''})
         self.add_to_processor_map('blah', _blah(Method(handler.blah, middleware), self.get_write_lock()))
         self.add_to_processor_map('oneWay', _oneWay(Method(handler.oneWay, middleware), self.get_write_lock()))
         self.add_to_processor_map('bin_method', _bin_method(Method(handler.bin_method, middleware), self.get_write_lock()))

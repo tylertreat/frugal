@@ -1156,6 +1156,7 @@ func (g *Generator) GenerateThriftImports() string {
 func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) error {
 	imports := "import 'dart:async';\n\n"
 	imports += "import 'dart:typed_data' show Uint8List;\n"
+	imports += "import 'package:logging/logging.dart' as logging;\n"
 	imports += "import 'package:thrift/thrift.dart' as thrift;\n"
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
 	// import included packages
@@ -1396,6 +1397,11 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 		if method.Comment != nil {
 			contents += g.GenerateInlineComment(method.Comment, tab+"/")
 		}
+
+		if _, ok := method.Annotations.Get(generator.Deprecated); ok {
+			contents += tab + "@deprecated\n"
+		}
+
 		contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s);\n",
 			g.generateReturnArg(method), parser.LowercaseFirstLetter(method.Name), g.generateInputArgs(method.Arguments))
 	}
@@ -1431,6 +1437,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += fmt.Sprintf("class F%sClient implements F%s {\n",
 			servTitle, servTitle)
 	}
+	contents += fmt.Sprintf(tab + "static final logging.Logger _log = new logging.Logger('%s');\n", servTitle)
 	contents += tab + "Map<String, frugal.FMethod> _methods;\n\n"
 
 	if service.Extends != "" {
@@ -1470,9 +1477,20 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	if method.Comment != nil {
 		contents += g.GenerateInlineComment(method.Comment, tab+"/")
 	}
+
+	_, deprecated := method.Annotations.Get(generator.Deprecated)
+	if deprecated {
+		contents += tab + "@deprecated\n"
+	}
+
 	// Generate wrapper method
 	contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s) {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
+
+	if deprecated {
+		contents += fmt.Sprintf(tab+"_log.warning(\"Call to deprecated function '%s'\");\n", nameLower)
+	}
+
 	contents += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx%s]) as Future%s;\n",
 		nameLower, g.generateInputArgsWithoutTypes(method.Arguments), g.generateReturnArg(method))
 	contents += fmt.Sprintf(tab + "}\n\n")
