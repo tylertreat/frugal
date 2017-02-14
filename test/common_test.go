@@ -89,15 +89,8 @@ func copyAllFiles(t *testing.T, pairs []FileComparisonPair) {
 }
 
 func copyFilePair(pair FileComparisonPair) error {
-	_, err := os.Stat(pair.ExpectedPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			// TODO create?
-		} else {
-			return err
-		}
-	}
-
+	// TODO automatically create a missing expected file?
+	
 	generatedFile, err := os.Open(pair.GeneratedPath)
 	if err != nil {
 		return err

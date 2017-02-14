@@ -1491,7 +1491,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
 
 	if deprecated {
-		contents += fmt.Sprintf(tab+"_log.warning(\"Call to deprecated function '%s.%s'\");\n", service.Name, nameLower)
+		contents += fmt.Sprintf(tabtab+"_log.warning(\"Call to deprecated function '%s.%s'\");\n", service.Name, nameLower)
 	}
 
 	contents += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx%s]) as Future%s;\n",
