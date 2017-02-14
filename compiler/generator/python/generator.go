@@ -1205,6 +1205,9 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	contents += tabtab + fmt.Sprintf("super(_%s, self).__init__(handler, lock)\n", method.Name)
 	contents += "\n"
 
+	if _, ok := method.Annotations.Get(generator.Deprecated); ok {
+		contents += tab + "@deprecated\n"
+	}
 	contents += tab + "def process(self, ctx, iprot, oprot):\n"
 	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
 	contents += tabtab + "args.read(iprot)\n"

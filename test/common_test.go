@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"os"
 	"testing"
+	"flag"
+	"io"
 )
 
 const (
@@ -23,6 +25,19 @@ const (
 	includeVendorNoPath     = "idl/include_vendor_no_path.frugal"
 	vendorNamespace         = "idl/vendor_namespace.frugal"
 )
+
+var copyFiles bool
+
+func init() {
+	copyFilesPtr := flag.Bool("copy-files", false, "")
+	flag.Parse()
+	copyFiles = *copyFilesPtr
+}
+
+type FileComparisonPair struct {
+	ExpectedPath string
+	GeneratedPath string
+}
 
 func compareFiles(t *testing.T, expectedPath, generatedPath string) {
 	expected, err := os.Open(expectedPath)
@@ -53,4 +68,49 @@ func compareFiles(t *testing.T, expectedPath, generatedPath string) {
 	if generatedScanner.Scan() {
 		t.Fatalf("Generated has more lines than expected: exp %s gen %s", expectedPath, generatedPath)
 	}
+}
+
+func compareAllFiles(t *testing.T, pairs []FileComparisonPair) {
+	for _, pair := range pairs {
+		compareFiles(t, pair.ExpectedPath, pair.GeneratedPath)
+	}
+}
+
+func copyAllFiles(t *testing.T, pairs []FileComparisonPair) {
+	if !copyFiles {
+		return
+	}
+
+	for _, pair := range pairs {
+		if err := copyFilePair(pair); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func copyFilePair(pair FileComparisonPair) error {
+	_, err := os.Stat(pair.ExpectedPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// TODO create?
+		} else {
+			return err
+		}
+	}
+
+	generatedFile, err := os.Open(pair.GeneratedPath)
+	if err != nil {
+		return err
+	}
+	defer generatedFile.Close()
+
+	expectedFile, err := os.OpenFile(pair.ExpectedPath, os.O_RDWR, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	defer expectedFile.Close()
+	println(expectedFile.Name())
+
+	_, err = io.Copy(expectedFile, generatedFile)
+	return err
 }

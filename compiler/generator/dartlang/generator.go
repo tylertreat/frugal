@@ -1259,7 +1259,9 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		if op.Comment != nil {
 			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
+
 		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) {\n", op.Name, args, g.getDartTypeFromThriftType(op.Type))
+
 		publishers += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx, %sreq]);\n", op.Name, argsWithoutTypes)
 		publishers += tab + "}\n\n"
 
@@ -1347,6 +1349,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += fmt.Sprintf(tabtab+"frugal.FMethod method = new frugal.FMethod(on%s, '%s', 'subscribe%s', this._middleware);\n",
 			op.Type.ParamName(), strings.Title(scope.Name), op.Type.ParamName())
 		subscribers += fmt.Sprintf(tabtab+"callback%s(thrift.TTransport transport) {\n", op.Name)
+
 		subscribers += tabtabtab + "var iprot = protocolFactory.getProtocol(transport);\n"
 		subscribers += tabtabtab + "var ctx = iprot.readRequestHeader();\n"
 		subscribers += tabtabtab + "var tMsg = iprot.readMessageBegin();\n"
@@ -1488,7 +1491,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
 
 	if deprecated {
-		contents += fmt.Sprintf(tab+"_log.warning(\"Call to deprecated function '%s'\");\n", nameLower)
+		contents += fmt.Sprintf(tab+"_log.warning(\"Call to deprecated function '%s.%s'\");\n", service.Name, nameLower)
 	}
 
 	contents += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx%s]) as Future%s;\n",

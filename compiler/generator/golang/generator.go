@@ -1613,7 +1613,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		servTitle, nameTitle, g.generateInputArgs(method.Arguments), g.generateReturnArgs(method))
 
 	if deprecated {
-		contents += fmt.Sprintf("\tlogrus.Warn(\"Call to deprecated function '%s'\")\n", nameTitle)
+		contents += fmt.Sprintf("\tlogrus.Warn(\"Call to deprecated function '%s.%s'\")\n", service.Name, nameTitle)
 	}
 
 	contents += fmt.Sprintf("\tret := f.methods[\"%s\"].Invoke(%s)\n", nameLower, g.generateClientArgs(method))
@@ -1815,6 +1815,11 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 	contents += "}\n\n"
 
 	contents += fmt.Sprintf("func (p *%sF%s) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {\n", servLower, nameTitle)
+
+	if _, ok := method.Annotations.Get(generator.Deprecated); ok {
+		contents += fmt.Sprintf("\tlogrus.Warn(\"Deprecated function '%s.%s' was called by a client\")\n", service.Name, nameTitle)
+	}
+
 	contents += fmt.Sprintf("\targs := %s%sArgs{}\n", servTitle, nameTitle)
 	contents += "\tvar err error\n"
 	contents += "\tif err = args.Read(iprot); err != nil {\n"

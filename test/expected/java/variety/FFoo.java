@@ -116,7 +116,7 @@ public class FFoo {
 		 */
 		@Deprecated
 		public void Ping(FContext ctx) throws TException {
-			logger.warn("Call to deprecated function 'Ping'");
+			logger.warn("Call to deprecated function 'Foo.Ping'");
 			proxy.Ping(ctx);
 		}
 
@@ -537,6 +537,7 @@ public class FFoo {
 		private class Ping implements FProcessorFunction {
 
 			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
+				logger.warn("Deprecated function 'Foo.Ping' was called by a client");
 				Ping_args args = new Ping_args();
 				try {
 					args.read(iprot);

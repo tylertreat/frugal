@@ -2694,7 +2694,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 			g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments, false), g.generateExceptions(method.Exceptions))
 
 		if deprecated {
-			contents += tabtabtab + fmt.Sprintf("logger.warn(\"Call to deprecated function '%s'\");\n", method.Name);
+			contents += tabtabtab + fmt.Sprintf("logger.warn(\"Call to deprecated function '%s.%s'\");\n", service.Name, method.Name);
 		}
 
 		if method.ReturnType != nil {
@@ -2909,6 +2909,11 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtab + fmt.Sprintf("private class %s implements FProcessorFunction {\n\n", strings.Title(method.Name))
 
 		contents += tabtabtab + "public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {\n"
+
+		if _, ok := method.Annotations.Get(generator.Deprecated); ok {
+			contents += tabtabtabtab + fmt.Sprintf("logger.warn(\"Deprecated function '%s.%s' was called by a client\");\n", service.Name, method.Name)
+		}
+
 		contents += tabtabtabtab + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
 		contents += tabtabtabtab + "try {\n"
 		contents += tabtabtabtabtab + "args.read(iprot);\n"
