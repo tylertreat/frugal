@@ -1,6 +1,8 @@
 from frugal_test.ttypes import Xception, Insanity, Xception2, Event
 from frugal_test.f_FrugalTest import Xtruct, Xtruct2, Numberz
 
+from thrift.Thrift import TApplicationException
+
 
 def rpc_test_definitions():
     """
@@ -108,6 +110,17 @@ def rpc_test_definitions():
     e = Xception2(errorCode=2002, struct_thing=struct_thing)
     tests['testMultiException'] = dict(
         args=['Xception2', 'ignoreme'],
+        expected_result=e
+    )
+    e = TApplicationException(TApplicationException.INTERNAL_ERROR, 'An uncaught error')
+    tests['testUncaughtException'] = dict(
+        args=[],
+        expected_result=e
+    )
+
+    e = TApplicationException(400, 'Unchecked TApplicationException')
+    tests['testUncheckedTApplicationException'] = dict(
+        args=[],
         expected_result=e
     )
 

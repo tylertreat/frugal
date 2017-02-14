@@ -4,6 +4,8 @@ import (
 	"errors"
 	"time"
 
+	"git.apache.org/thrift.git/lib/go/thrift"
+
 	"github.com/Workiva/frugal/lib/go"
 	. "github.com/Workiva/frugal/test/integration/go/gen/frugaltest"
 )
@@ -162,6 +164,20 @@ func (p *printingHandler) TestException(ctx frugal.FContext, arg string) (err er
 		return errors.New("Just TException")
 	}
 	return
+}
+
+// TestUncaughtException
+// Raises an unexpected non-defined, non-TApplication exception in the processor handler.
+func (p *printingHandler) TestUncaughtException(ctx frugal.FContext) (err error) {
+	return errors.New("An uncaught error")
+}
+
+
+// TestUncheckedTApplicationException
+// Raises an unexpected non-defined, non-TApplication exception in the processor handler.
+func (p *printingHandler) TestUncheckedTApplicationException(ctx frugal.FContext) (err error) {
+	return thrift.NewTApplicationException(400, "Unchecked TApplicationException")
+
 }
 
 // TestMultiException

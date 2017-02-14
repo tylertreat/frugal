@@ -8,9 +8,12 @@ import (
 	"strconv"
 	"time"
 
+	"git.apache.org/thrift.git/lib/go/thrift"
+
 	"github.com/Workiva/frugal/lib/go"
 	"github.com/Workiva/frugal/test/integration/go/common"
 	"github.com/Workiva/frugal/test/integration/go/gen/frugaltest"
+	"strings"
 )
 
 var host = flag.String("host", "localhost", "Host to connect")
@@ -284,6 +287,18 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 	}
 	if !reflect.DeepEqual(err, &frugaltest.Xception{ErrorCode: 1001, Message: "This is an Xception"}) {
 		log.Fatalf("Unexpected TestMultiException() %#v ", err)
+	}
+
+	err = client.TestUncaughtException(ctx)
+	e, ok := err.(thrift.TApplicationException)
+	if e == nil || !ok || e.TypeId() != frugal.APPLICATION_EXCEPTION_INTERNAL_ERROR || !strings.Contains(e.Error(), "An uncaught error") {
+		log.Fatalf("TestUncheckedTApplicationException expected TApplicationException with typeID=%v, got %v.\n Got error=%v", frugal.APPLICATION_EXCEPTION_INTERNAL_ERROR, e.TypeId(), e.Error())
+	}
+
+	err = client.TestUncheckedTApplicationException(ctx)
+	e, ok = err.(thrift.TApplicationException)
+	if e == nil || !ok || e.TypeId() != 400 || !strings.Contains(e.Error(), "Unchecked TApplicationException") {
+		log.Fatalf("TestUncheckedTApplicationException expected TApplicationException with typeID=%v, got %v.\n Got error=%v", 400, e.TypeId(), e.Error())
 	}
 
 	ign, err = client.TestMultiException(ctx, "Xception2", "ignoreme")
