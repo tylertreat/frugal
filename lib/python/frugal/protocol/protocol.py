@@ -1,6 +1,6 @@
 from thrift.protocol.TProtocolDecorator import TProtocolDecorator
 
-from frugal.context import FContext, _OPID_HEADER
+from frugal.context import FContext, _OPID_HEADER, _CID_HEADER
 from frugal.util.headers import _Headers
 
 _V0 = 0
@@ -57,6 +57,9 @@ class FProtocol(TProtocolDecorator, object):
 
         op_id = headers[_OPID_HEADER]
         context._set_response_op_id(op_id)
+        cid = context.correlation_id
+        if cid:
+            context._set_response_header(_CID_HEADER, cid)
         return context
 
     def read_response_headers(self, context):
