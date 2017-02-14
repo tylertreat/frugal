@@ -291,13 +291,13 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 
 	err = client.TestUncaughtException(ctx)
 	e, ok := err.(thrift.TApplicationException)
-	if e == nil || !ok || e.TypeId() != frugal.APPLICATION_EXCEPTION_INTERNAL_ERROR || !strings.Contains(e.Error(), "An uncaught error") {
+	if !ok || e.TypeId() != frugal.APPLICATION_EXCEPTION_INTERNAL_ERROR || !strings.Contains(e.Error(), "An uncaught error") {
 		log.Fatalf("TestUncheckedTApplicationException expected TApplicationException with typeID=%v, got %v.\n Got error=%v", frugal.APPLICATION_EXCEPTION_INTERNAL_ERROR, e.TypeId(), e.Error())
 	}
 
 	err = client.TestUncheckedTApplicationException(ctx)
 	e, ok = err.(thrift.TApplicationException)
-	if e == nil || !ok || e.TypeId() != 400 || !strings.Contains(e.Error(), "Unchecked TApplicationException") {
+	if !ok || e.TypeId() != 400 || !strings.Contains(e.Error(), "Unchecked TApplicationException") {
 		log.Fatalf("TestUncheckedTApplicationException expected TApplicationException with typeID=%v, got %v.\n Got error=%v", 400, e.TypeId(), e.Error())
 	}
 

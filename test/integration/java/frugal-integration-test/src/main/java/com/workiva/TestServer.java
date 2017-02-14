@@ -68,8 +68,8 @@ public class TestServer {
         try {
             // default testing parameters, overwritten in Python runner
             int port = 9090;
-            String transport_type = "http";
-            String protocol_type = "json";
+            String transport_type = "stateless";
+            String protocol_type = "binary";
 
             try {
                 for (String arg : args) {
