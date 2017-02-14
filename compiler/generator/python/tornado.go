@@ -6,6 +6,7 @@ import (
 
 	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
+	"github.com/Workiva/frugal/compiler/generator"
 )
 
 // TornadoGenerator implements the LanguageGenerator interface for Python using
@@ -157,6 +158,9 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += "\n"
 
 	contents += tab + "@gen.coroutine\n"
+	if _, ok := method.Annotations.Get(generator.Deprecated); ok {
+		contents += tab + "@deprecated\n"
+	}
 	contents += tab + "def process(self, ctx, iprot, oprot):\n"
 	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
 	contents += tabtab + "args.read(iprot)\n"

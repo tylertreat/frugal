@@ -90,7 +90,7 @@ func copyAllFiles(t *testing.T, pairs []FileComparisonPair) {
 
 func copyFilePair(pair FileComparisonPair) error {
 	// TODO automatically create a missing expected file?
-	
+
 	generatedFile, err := os.Open(pair.GeneratedPath)
 	if err != nil {
 		return err

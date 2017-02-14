@@ -7,6 +7,7 @@ import (
 
 	"github.com/Workiva/frugal/compiler/globals"
 	"github.com/Workiva/frugal/compiler/parser"
+	"github.com/Workiva/frugal/compiler/generator"
 )
 
 // AsyncIOGenerator implements the LanguageGenerator interface for Python using
@@ -230,6 +231,9 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += tabtab + fmt.Sprintf("super(_%s, self).__init__(handler, lock)\n", method.Name)
 	contents += "\n"
 
+	if _, ok := method.Annotations.Get(generator.Deprecated); ok {
+		contents += tab + "@deprecated\n"
+	}
 	contents += tab + "async def process(self, ctx, iprot, oprot):\n"
 	contents += tabtab + fmt.Sprintf("args = %s_args()\n", method.Name)
 	contents += tabtab + "args.read(iprot)\n"

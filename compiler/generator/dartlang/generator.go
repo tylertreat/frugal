@@ -179,6 +179,7 @@ func (g *Generator) addToPubspec(dir string) error {
 	pubFilePath := filepath.Join(dir, "pubspec.yaml")
 
 	deps := map[interface{}]interface{}{
+		"logging": "^0.11.2",
 		"thrift": dep{
 			Hosted:  hostedDep{Name: "thrift", URL: "https://pub.workiva.org"},
 			Version: "^0.0.6",

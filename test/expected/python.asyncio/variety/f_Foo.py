@@ -504,6 +504,7 @@ class _Ping(FProcessorFunction):
     def __init__(self, handler, lock):
         super(_Ping, self).__init__(handler, lock)
 
+    @deprecated
     async def process(self, ctx, iprot, oprot):
         args = Ping_args()
         args.read(iprot)

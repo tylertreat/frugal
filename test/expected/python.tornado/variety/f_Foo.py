@@ -509,6 +509,7 @@ class _Ping(FProcessorFunction):
         super(_Ping, self).__init__(handler, lock)
 
     @gen.coroutine
+    @deprecated
     def process(self, ctx, iprot, oprot):
         args = Ping_args()
         args.read(iprot)

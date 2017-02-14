@@ -68,6 +68,7 @@ public class FStore {
 	 */
 	public interface Iface {
 
+		@Deprecated
 		public Album buyAlbum(FContext ctx, String ASIN, String acct) throws TException, PurchasingError;
 
 		public boolean enterAlbumGiveaway(FContext ctx, String email, String name) throws TException;
@@ -86,7 +87,9 @@ public class FStore {
 			proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);
 		}
 
+		@Deprecated
 		public Album buyAlbum(FContext ctx, String ASIN, String acct) throws TException, PurchasingError {
+			logger.warn("Call to deprecated function 'Store.buyAlbum'");
 			return proxy.buyAlbum(ctx, ASIN, acct);
 		}
 
@@ -203,6 +206,9 @@ public class FStore {
 
 		protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {
 			java.util.Map<String, java.util.Map<String, String>> annotationsMap = new java.util.HashMap<>();
+			java.util.Map<String, String> buyAlbumMap = new java.util.HashMap<>();
+			buyAlbumMap.put("deprecated", "");
+			annotationsMap.put("buyAlbum", buyAlbumMap);
 			return annotationsMap;
 		}
 
@@ -214,6 +220,7 @@ public class FStore {
 		private class BuyAlbum implements FProcessorFunction {
 
 			public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {
+				logger.warn("Deprecated function 'Store.buyAlbum' was called by a client");
 				buyAlbum_args args = new buyAlbum_args();
 				try {
 					args.read(iprot);
