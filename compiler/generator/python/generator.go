@@ -457,9 +457,7 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 				contents += fmt.Sprintf(tabtabtab + "raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field %s is unset!')\n", field.Name)
 			}
 		}
-	}
-
-	if s.Type == parser.StructTypeUnion {
+	} else {
 		contents += tabtab + "set_fields = 0\n"
 		for _, field := range s.Fields {
 			contents += fmt.Sprintf(tabtab + "if self.%s is not None:\n", field.Name)

@@ -634,7 +634,7 @@ func (g *Generator) generateWrite(s *parser.Struct, sName string) string {
 	// Only one field can be set for a union, make sure that's the case
 	if s.Type == parser.StructTypeUnion {
 		contents += fmt.Sprintf("\tif c := p.CountSetFields%s(); c != 1 {\n", sName)
-		contents += "\t\treturn thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf(\"%T read union: exactly one field must be set (%d set).\", p, c))\n"
+		contents += "\t\treturn thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf(\"%T write union: exactly one field must be set (%d set).\", p, c))\n"
 		contents += "\t}\n"
 	}
 

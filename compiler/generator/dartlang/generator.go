@@ -1099,9 +1099,7 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 				}
 			}
 		}
-	}
-
-	if s.Type == parser.StructTypeUnion {
+	} else {
 		contents += tabtab + "// check exactly one field is set\n"
 		contents += tabtab + "int setFields = 0;\n"
 		for _, field := range s.Fields {
