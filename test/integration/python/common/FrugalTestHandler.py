@@ -1,5 +1,7 @@
 import time
 
+from thrift.Thrift import TApplicationException
+
 from frugal_test.f_FrugalTest import Iface, Xtruct, Xception, Xception2, Insanity
 
 
@@ -104,6 +106,12 @@ class FrugalTestHandler(Iface):
         elif arg == "TException":
             raise Xception.message("Just TException")
         return
+
+    def testUncaughtException(self, ctx):
+        raise ValueError('An uncaught error')
+
+    def testUncheckedTApplicationException(self, ctx):
+        raise TApplicationException(400, 'Unchecked TApplicationException')
 
     def testMultiException(self, ctx, arg0, arg1):
         print("test_multi_exception({}, {})".format(arg0, arg1))

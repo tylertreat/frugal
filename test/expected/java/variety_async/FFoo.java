@@ -631,6 +631,8 @@ public class FFoo {
 					oprot.writeResponseHeader(ctx);
 					oprot.writeMessageBegin(new TMessage("ping", TMessageType.EXCEPTION, 0));
 					e.write(oprot);
+					oprot.writeMessageEnd();
+					oprot.getTransport().flush();
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -683,6 +685,8 @@ public class FFoo {
 					oprot.writeResponseHeader(ctx);
 					oprot.writeMessageBegin(new TMessage("blah", TMessageType.EXCEPTION, 0));
 					e.write(oprot);
+					oprot.writeMessageEnd();
+					oprot.getTransport().flush();
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -749,6 +753,8 @@ public class FFoo {
 					oprot.writeResponseHeader(ctx);
 					oprot.writeMessageBegin(new TMessage("bin_method", TMessageType.EXCEPTION, 0));
 					e.write(oprot);
+					oprot.writeMessageEnd();
+					oprot.getTransport().flush();
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -797,6 +803,8 @@ public class FFoo {
 					oprot.writeResponseHeader(ctx);
 					oprot.writeMessageBegin(new TMessage("param_modifiers", TMessageType.EXCEPTION, 0));
 					e.write(oprot);
+					oprot.writeMessageEnd();
+					oprot.getTransport().flush();
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -845,6 +853,8 @@ public class FFoo {
 					oprot.writeResponseHeader(ctx);
 					oprot.writeMessageBegin(new TMessage("underlying_types_test", TMessageType.EXCEPTION, 0));
 					e.write(oprot);
+					oprot.writeMessageEnd();
+					oprot.getTransport().flush();
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -893,6 +903,8 @@ public class FFoo {
 					oprot.writeResponseHeader(ctx);
 					oprot.writeMessageBegin(new TMessage("getThing", TMessageType.EXCEPTION, 0));
 					e.write(oprot);
+					oprot.writeMessageEnd();
+					oprot.getTransport().flush();
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -941,6 +953,8 @@ public class FFoo {
 					oprot.writeResponseHeader(ctx);
 					oprot.writeMessageBegin(new TMessage("getMyInt", TMessageType.EXCEPTION, 0));
 					e.write(oprot);
+					oprot.writeMessageEnd();
+					oprot.getTransport().flush();
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
@@ -989,6 +1003,8 @@ public class FFoo {
 					oprot.writeResponseHeader(ctx);
 					oprot.writeMessageBegin(new TMessage("use_subdir_struct", TMessageType.EXCEPTION, 0));
 					e.write(oprot);
+					oprot.writeMessageEnd();
+					oprot.getTransport().flush();
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {

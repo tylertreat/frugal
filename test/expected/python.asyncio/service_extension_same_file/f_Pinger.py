@@ -119,7 +119,7 @@ class _ping(FProcessorFunction):
                 return
         except Exception as e:
             async with self._lock:
-                e = _write_application_exception(ctx, oprot, "ping", ex_code=TApplicationExceptionType.UNKNOWN, message=e.args[0])
+                e = _write_application_exception(ctx, oprot, "ping", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=e.args[0])
             raise e from None
         async with self._lock:
             try:

@@ -2929,6 +2929,8 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		contents += tabtabtabtabtab + "oprot.writeResponseHeader(ctx);\n"
 		contents += tabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.EXCEPTION, 0));\n", methodLower)
 		contents += tabtabtabtabtab + "e.write(oprot);\n"
+		contents += tabtabtabtabtab + "oprot.writeMessageEnd();\n"
+		contents += tabtabtabtabtab + "oprot.getTransport().flush();\n"
 		contents += tabtabtabtabtab + "return;\n"
 		contents += tabtabtabtab + "} catch (TException e) {\n"
 		contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"

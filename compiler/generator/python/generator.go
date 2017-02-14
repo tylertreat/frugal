@@ -1053,7 +1053,7 @@ func (g *Generator) generateClientRecvMethod(method *parser.Method) string {
 	contents += tabtabtab + "x = TApplicationException()\n"
 	contents += tabtabtab + "x.read(self._iprot)\n"
 	contents += tabtabtab + "self._iprot.readMessageEnd()\n"
-	contents += tabtabtab + "if x.type == FApplicationException.RESPONSE_TOO_LARGE:\n"
+	contents += tabtabtab + "if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:\n"
 	contents += tabtabtabtab + "raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)\n"
 	contents += tabtabtab + "raise x\n"
 	contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
@@ -1245,7 +1245,7 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)\n", methodLower)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=e.message)\n", methodLower)
 	}
 	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {
