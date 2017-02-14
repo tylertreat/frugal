@@ -181,8 +181,10 @@ class get_thing_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('get_thing_args')
         if self.the_thing is not None:
             oprot.writeFieldBegin('the_thing', TType.STRUCT, 1)
@@ -234,8 +236,10 @@ class get_thing_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('get_thing_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRUCT, 0)

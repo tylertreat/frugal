@@ -90,8 +90,10 @@ class Track(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('Track')
         if self.title is not None:
             oprot.writeFieldBegin('title', TType.STRING, 1)
@@ -190,8 +192,10 @@ class Album(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('Album')
         if self.tracks is not None:
             oprot.writeFieldBegin('tracks', TType.LIST, 1)
@@ -265,8 +269,10 @@ class PurchasingError(TException):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('PurchasingError')
         if self.message is not None:
             oprot.writeFieldBegin('message', TType.STRING, 1)

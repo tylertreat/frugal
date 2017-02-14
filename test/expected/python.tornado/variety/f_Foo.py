@@ -828,8 +828,10 @@ class Ping_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('Ping_args')
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -863,8 +865,10 @@ class Ping_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('Ping_result')
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -925,8 +929,10 @@ class blah_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('blah_args')
         if self.num is not None:
             oprot.writeFieldBegin('num', TType.I32, 1)
@@ -1003,8 +1009,10 @@ class blah_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('blah_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.I64, 0)
@@ -1078,8 +1086,10 @@ class oneWay_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('oneWay_args')
         if self.id is not None:
             oprot.writeFieldBegin('id', TType.I64, 1)
@@ -1146,8 +1156,10 @@ class bin_method_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('bin_method_args')
         if self.bin is not None:
             oprot.writeFieldBegin('bin', TType.STRING, 1)
@@ -1211,8 +1223,10 @@ class bin_method_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('bin_method_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRING, 0)
@@ -1282,8 +1296,10 @@ class param_modifiers_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('param_modifiers_args')
         if self.opt_num is not None:
             oprot.writeFieldBegin('opt_num', TType.I32, 1)
@@ -1302,7 +1318,7 @@ class param_modifiers_args(object):
 
     def validate(self):
         if self.req_num is None:
-            raise TProtocol.TProtocolException(message='Required field req_num is unset!')
+            raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field req_num is unset!')
         return
 
     def __hash__(self):
@@ -1346,8 +1362,10 @@ class param_modifiers_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('param_modifiers_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.I64, 0)
@@ -1415,8 +1433,10 @@ class underlying_types_test_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('underlying_types_test_args')
         if self.list_type is not None:
             oprot.writeFieldBegin('list_type', TType.LIST, 1)
@@ -1483,8 +1503,10 @@ class underlying_types_test_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('underlying_types_test_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.LIST, 0)
@@ -1526,8 +1548,10 @@ class getThing_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('getThing_args')
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1574,8 +1598,10 @@ class getThing_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('getThing_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRUCT, 0)
@@ -1614,8 +1640,10 @@ class getMyInt_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('getMyInt_args')
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1661,8 +1689,10 @@ class getMyInt_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('getMyInt_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.I32, 0)
@@ -1714,8 +1744,10 @@ class use_subdir_struct_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('use_subdir_struct_args')
         if self.a is not None:
             oprot.writeFieldBegin('a', TType.STRUCT, 1)
@@ -1767,8 +1799,10 @@ class use_subdir_struct_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('use_subdir_struct_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRUCT, 0)

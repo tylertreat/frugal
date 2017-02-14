@@ -36,8 +36,10 @@ class new_thing(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('new_thing')
         if self.wrapped_thing is not None:
             oprot.writeFieldBegin('wrapped_thing', TType.STRUCT, 1)

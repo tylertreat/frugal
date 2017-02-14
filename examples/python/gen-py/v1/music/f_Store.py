@@ -288,8 +288,10 @@ class buyAlbum_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('buyAlbum_args')
         if self.ASIN is not None:
             oprot.writeFieldBegin('ASIN', TType.STRING, 1)
@@ -354,8 +356,10 @@ class buyAlbum_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('buyAlbum_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRUCT, 0)
@@ -418,8 +422,10 @@ class enterAlbumGiveaway_args(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('enterAlbumGiveaway_args')
         if self.email is not None:
             oprot.writeFieldBegin('email', TType.STRING, 1)
@@ -475,8 +481,10 @@ class enterAlbumGiveaway_result(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('enterAlbumGiveaway_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.BOOL, 0)

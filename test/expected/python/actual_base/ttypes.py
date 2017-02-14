@@ -60,8 +60,10 @@ class thing(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('thing')
         if self.an_id is not None:
             oprot.writeFieldBegin('an_id', TType.I32, 1)
@@ -123,8 +125,10 @@ class nested_thing(object):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('nested_thing')
         if self.things is not None:
             oprot.writeFieldBegin('things', TType.LIST, 1)
@@ -166,8 +170,10 @@ class api_exception(TException):
                 iprot.skip(ftype)
             iprot.readFieldEnd()
         iprot.readStructEnd()
+        self.validate()
 
     def write(self, oprot):
+        self.validate()
         oprot.writeStructBegin('api_exception')
         oprot.writeFieldStop()
         oprot.writeStructEnd()

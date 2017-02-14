@@ -379,7 +379,29 @@ class TestingUnions implements thrift.TBase {
   }
 
   validate() {
-    // check for required fields
+    // check exactly one field is set
+    int setFields = 0;
+    if(isSetAnID()) {
+      setFields++;
+    }
+    if(isSetAString()) {
+      setFields++;
+    }
+    if(isSetSomeotherthing()) {
+      setFields++;
+    }
+    if(isSetAnInt16()) {
+      setFields++;
+    }
+    if(isSetRequests()) {
+      setFields++;
+    }
+    if(isSetBin_field_in_union()) {
+      setFields++;
+    }
+    if(setFields != 1) {
+      throw new thrift.TProtocolError(thrift.TProtocolErrorType.INVALID_DATA, "The union did not have exactly one field set, $setFields were set");
+    }
     // check that fields of type enum have valid values
   }
 }
