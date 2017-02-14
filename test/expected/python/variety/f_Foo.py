@@ -176,7 +176,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
-            if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = Ping_result()
@@ -221,7 +221,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
-            if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = blah_result()
@@ -270,7 +270,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
-            if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = oneWay_result()
@@ -311,7 +311,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
-            if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = bin_method_result()
@@ -359,7 +359,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
-            if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = param_modifiers_result()
@@ -403,7 +403,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
-            if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = underlying_types_test_result()
@@ -443,7 +443,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
-            if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = getThing_result()
@@ -483,7 +483,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
-            if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = getMyInt_result()
@@ -525,7 +525,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(self._iprot)
             self._iprot.readMessageEnd()
-            if x.type == FApplicationException.RESPONSE_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = use_subdir_struct_result()
@@ -578,7 +578,7 @@ class _Ping(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "ping", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "ping", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=e.message)
             raise e
         with self._lock:
             try:
@@ -616,7 +616,7 @@ class _blah(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "blah", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "blah", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=e.message)
             raise e
         with self._lock:
             try:
@@ -671,7 +671,7 @@ class _bin_method(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "bin_method", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "bin_method", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=e.message)
             raise e
         with self._lock:
             try:
@@ -705,7 +705,7 @@ class _param_modifiers(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "param_modifiers", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "param_modifiers", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=e.message)
             raise e
         with self._lock:
             try:
@@ -739,7 +739,7 @@ class _underlying_types_test(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "underlying_types_test", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "underlying_types_test", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=e.message)
             raise e
         with self._lock:
             try:
@@ -773,7 +773,7 @@ class _getThing(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "getThing", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "getThing", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=e.message)
             raise e
         with self._lock:
             try:
@@ -807,7 +807,7 @@ class _getMyInt(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "getMyInt", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "getMyInt", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=e.message)
             raise e
         with self._lock:
             try:
@@ -841,7 +841,7 @@ class _use_subdir_struct(FProcessorFunction):
                 return
         except Exception as e:
             with self._lock:
-                e = _write_application_exception(ctx, oprot, "use_subdir_struct", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)
+                e = _write_application_exception(ctx, oprot, "use_subdir_struct", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=e.message)
             raise e
         with self._lock:
             try:
