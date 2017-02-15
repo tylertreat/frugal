@@ -72,8 +72,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   frugal.FProtocolFactory _protocolFactory;
 
   /// Ping the server.
-  /// deprecated: use something else
-  @deprecated
+  @Deprecated("use something else")
   Future ping(frugal.FContext ctx) {
     _log.warning("Call to deprecated function 'Foo.ping'");
     return this._methods['ping']([ctx]) as Future;

@@ -21,7 +21,6 @@ var _ = logrus.DebugLevel
 // Services are the API for client and server interaction.
 // Users can buy an album or enter a giveaway for a free album.
 type FStore interface {
-	// Deprecated
 	BuyAlbum(ctx frugal.FContext, ASIN string, acct string) (r *Album, err error)
 	EnterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error)
 }
@@ -47,9 +46,7 @@ func NewFStoreClient(provider *frugal.FServiceProvider, middleware ...frugal.Ser
 	return client
 }
 
-// Deprecated
 func (f *FStoreClient) BuyAlbum(ctx frugal.FContext, asin string, acct string) (r *Album, err error) {
-	logrus.Warn("Call to deprecated function 'Store.BuyAlbum'")
 	ret := f.methods["buyAlbum"].Invoke([]interface{}{ctx, asin, acct})
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
@@ -226,9 +223,6 @@ type FStoreProcessor struct {
 func NewFStoreProcessor(handler FStore, middleware ...frugal.ServiceMiddleware) *FStoreProcessor {
 	p := &FStoreProcessor{frugal.NewFBaseProcessor()}
 	p.AddToProcessorMap("buyAlbum", &storeFBuyAlbum{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.BuyAlbum, "BuyAlbum", middleware))})
-	p.AddToAnnotationsMap("buyAlbum", map[string]string{
-		"deprecated": "",
-	})
 	p.AddToProcessorMap("enterAlbumGiveaway", &storeFEnterAlbumGiveaway{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.EnterAlbumGiveaway, "EnterAlbumGiveaway", middleware))})
 	return p
 }
@@ -238,7 +232,6 @@ type storeFBuyAlbum struct {
 }
 
 func (p *storeFBuyAlbum) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
-	logrus.Warn("Deprecated function 'Store.BuyAlbum' was called by a client")
 	args := StoreBuyAlbumArgs{}
 	var err error
 	if err = args.Read(iprot); err != nil {

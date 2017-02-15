@@ -26,7 +26,6 @@ class Iface(object):
     Users can buy an album or enter a giveaway for a free album.
     """
 
-    @deprecated
     def buyAlbum(self, ctx, ASIN, acct):
         """
         Args:
@@ -71,7 +70,6 @@ class Client(Iface):
             'enterAlbumGiveaway': Method(self._enterAlbumGiveaway, middleware),
         }
 
-    @deprecated
     def buyAlbum(self, ctx, ASIN, acct):
         """
         Args:
@@ -176,7 +174,6 @@ class Processor(FBaseProcessor):
 
         super(Processor, self).__init__()
         self.add_to_processor_map('buyAlbum', _buyAlbum(Method(handler.buyAlbum, middleware), self.get_write_lock()))
-        self.add_to_annotations_map('buyAlbum', {'deprecated': ''})
         self.add_to_processor_map('enterAlbumGiveaway', _enterAlbumGiveaway(Method(handler.enterAlbumGiveaway, middleware), self.get_write_lock()))
 
 
@@ -185,7 +182,6 @@ class _buyAlbum(FProcessorFunction):
     def __init__(self, handler, lock):
         super(_buyAlbum, self).__init__(handler, lock)
 
-    @deprecated
     def process(self, ctx, iprot, oprot):
         args = buyAlbum_args()
         args.read(iprot)

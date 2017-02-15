@@ -17,7 +17,6 @@ import 'package:v1_music/v1_music.dart' as t_v1_music;
 /// Users can buy an album or enter a giveaway for a free album.
 abstract class FStore {
 
-  @deprecated
   Future<t_v1_music.Album> buyAlbum(frugal.FContext ctx, String aSIN, String acct);
 
   Future<bool> enterAlbumGiveaway(frugal.FContext ctx, String email, String name);
@@ -42,9 +41,7 @@ class FStoreClient implements FStore {
   frugal.FTransport _transport;
   frugal.FProtocolFactory _protocolFactory;
 
-  @deprecated
   Future<t_v1_music.Album> buyAlbum(frugal.FContext ctx, String aSIN, String acct) {
-    _log.warning("Call to deprecated function 'Store.buyAlbum'");
     return this._methods['buyAlbum']([ctx, aSIN, acct]) as Future<t_v1_music.Album>;
   }
 

@@ -59,7 +59,7 @@ exception PurchasingError {
  * Users can buy an album or enter a giveaway for a free album.
  */
 service Store {
-    Album buyAlbum( 1: string ASIN, 2: string acct ) throws (1: PurchasingError error) (deprecated)
+    Album buyAlbum( 1: string ASIN, 2: string acct ) throws (1: PurchasingError error)
     bool enterAlbumGiveaway( 1: string email, 2: string name )
 }
 

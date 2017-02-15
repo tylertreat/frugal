@@ -1478,21 +1478,17 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	nameLower := parser.LowercaseFirstLetter(method.Name)
 	contents := ""
 
-	comment := []string{}
 	if method.Comment != nil {
-		comment = append(comment, method.Comment...)
+		contents += g.GenerateInlineComment(method.Comment, tab+"/")
 	}
 
 	deprecationValue, deprecated := method.Annotations.Deprecated()
-	if deprecated && deprecationValue != "" {
-		comment = append(comment, fmt.Sprintf("deprecated: %s", deprecationValue))
-	}
-	if len(comment) != 0 {
-		contents += g.GenerateInlineComment(comment, tab+"/")
-	}
-
 	if deprecated {
-		contents += tab + "@deprecated\n"
+		if deprecationValue != "" {
+			contents += fmt.Sprintf(tab+"@Deprecated(\"%s\")\n", deprecationValue)
+		} else {
+			contents += tab + "@deprecated\n"
+		}
 	}
 
 	// Generate wrapper method
