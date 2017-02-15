@@ -193,6 +193,16 @@ service FooService {
 }
 ```
 
+### Annotations
+
+Annotations are extra directive in the IDL that can alter the way code is generated.
+Some common annotations are listed below
+
+| Annotation    | Values        | Allowed Places | Description
+| ------------- | ------------- | -------------- | -----------
+| vendor        | Optional location | Namespaces | See [vendoring includes](#vendoring-includes)
+| deprecated    | None          | Service methods | Marks a method as deprecated (if supported by the language) and logs a warning if the method is called.
+
 ### Vendoring Includes
 
 Frugal does not generate code for includes by default. The `-r` flag is
@@ -211,8 +221,8 @@ includes they wish to vendor. The value provided on the include-side `vendor`
 annotation, if any, is ignored.
 
 When an include is annotated with `vendor`, Frugal will skip generating the
-include if `-use-vendor` is set since this flag indicates intention to use the
-vendored code as advertised by the `vendor` annotation.
+include if `use_vendor` language option is set since this flag indicates
+intention to use the vendored code as advertised by the `vendor` annotation.
 
 If no location is specified by the `vendor` annotation, the behavior is defined
 by the language generator.
@@ -238,23 +248,14 @@ service MyService {
 ```
 
 ```
-frugal -r -gen go:package_prefix=github.com/Workiva/my-other-repo/gen-go -use-vendor foo.frugal
+frugal -r -gen go:package_prefix=github.com/Workiva/my-other-repo/gen-go,use_vendor foo.frugal
 ```
 
 When we run the above command to generate `foo.frugal`, Frugal will not
-generate code for `bar.frugal` since `-use-vendor` is set and the "providing"
+generate code for `bar.frugal` since `use_vendor` is set and the "providing"
 IDL has a vendor path set for the Go namespace. Instead, the generated code for
 `foo.frugal` will reference the vendor path specified in `bar.frugal`
 (github.com/Workiva/my-repo/gen-go/bar).
-
-### Annotations
-
-Annotations are extra directive in the IDL that can alter the way code is generated.
-Some common annotations are listed below
-
-| Annotation    | Values        | Description
-| ------------- | ------------- | -----------
-| deprecated    | None          | Marks a method as deprecated (if supported by the language) and logs a warning if the method is called.
 
 
 ## Thrift Parity

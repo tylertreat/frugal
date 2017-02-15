@@ -59,7 +59,7 @@ func compareFiles(t *testing.T, expectedPath, generatedPath string) {
 		expectedLine := expectedScanner.Text()
 		generatedLine := generatedScanner.Text()
 		if expectedLine != generatedLine {
-			t.Fatalf("Expected line <%s> (%s), generated line <%s> (%s) at line %d",
+			t.Fatalf("\nExpected line \n<%s> (%s)\n generated line\n <%s> (%s) at line %d",
 				expectedLine, expectedPath, generatedLine, generatedPath, line)
 		}
 		line++
@@ -102,7 +102,6 @@ func copyFilePair(pair FileComparisonPair) error {
 		return err
 	}
 	defer expectedFile.Close()
-	println(expectedFile.Name())
 
 	_, err = io.Copy(expectedFile, generatedFile)
 	return err

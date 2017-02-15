@@ -1456,8 +1456,8 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 			contents += g.GenerateInlineComment(method.Comment, "\t")
 		}
 
-		if _, ok := method.Annotations.Get(generator.Deprecated); ok {
-			contents += "\t// DEPRECATED\n"
+		if _, ok := method.Annotations.Deprecated(); ok {
+			contents += "\t// Deprecated\n"
 		}
 
 		contents += fmt.Sprintf("\t%s(ctx frugal.FContext%s) %s\n",
@@ -1604,9 +1604,9 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += g.GenerateInlineComment(method.Comment, "")
 	}
 
-	_, deprecated := method.Annotations.Get(generator.Deprecated)
+	_, deprecated := method.Annotations.Deprecated()
 	if deprecated {
-		contents += "// DEPRECATED\n"
+		contents += "// Deprecated\n"
 	}
 
 	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx frugal.FContext%s) %s {\n",
@@ -1816,7 +1816,7 @@ func (g *Generator) generateMethodProcessor(service *parser.Service, method *par
 
 	contents += fmt.Sprintf("func (p *%sF%s) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {\n", servLower, nameTitle)
 
-	if _, ok := method.Annotations.Get(generator.Deprecated); ok {
+	if _, ok := method.Annotations.Deprecated(); ok {
 		contents += fmt.Sprintf("\tlogrus.Warn(\"Deprecated function '%s.%s' was called by a client\")\n", service.Name, nameTitle)
 	}
 

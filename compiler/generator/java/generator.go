@@ -2594,7 +2594,7 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 			contents += g.GenerateBlockComment(method.Comment, tabtab)
 		}
 
-		if _, ok := method.Annotations.Get(generator.Deprecated); ok {
+		if _, ok := method.Annotations.Deprecated(); ok {
 			contents += tabtab+"@Deprecated\n"
 		}
 
@@ -2685,7 +2685,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 			contents += g.GenerateBlockComment(method.Comment, tabtab)
 		}
 
-		_, deprecated := method.Annotations.Get(generator.Deprecated)
+		_, deprecated := method.Annotations.Deprecated()
 		if deprecated {
 			contents += tabtab+"@Deprecated\n"
 		}
@@ -2910,7 +2910,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 
 		contents += tabtabtab + "public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {\n"
 
-		if _, ok := method.Annotations.Get(generator.Deprecated); ok {
+		if _, ok := method.Annotations.Deprecated(); ok {
 			contents += tabtabtabtab + fmt.Sprintf("logger.warn(\"Deprecated function '%s.%s' was called by a client\");\n", service.Name, method.Name)
 		}
 

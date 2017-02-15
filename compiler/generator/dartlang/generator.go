@@ -1402,7 +1402,7 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 			contents += g.GenerateInlineComment(method.Comment, tab+"/")
 		}
 
-		if _, ok := method.Annotations.Get(generator.Deprecated); ok {
+		if _, ok := method.Annotations.Deprecated(); ok {
 			contents += tab + "@deprecated\n"
 		}
 
@@ -1482,7 +1482,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += g.GenerateInlineComment(method.Comment, tab+"/")
 	}
 
-	_, deprecated := method.Annotations.Get(generator.Deprecated)
+	_, deprecated := method.Annotations.Deprecated()
 	if deprecated {
 		contents += tab + "@deprecated\n"
 	}

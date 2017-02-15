@@ -12,7 +12,6 @@ def deprecated(func):
     @functools.wraps(func)
     def new_func(*args, **kwargs):
         func_code = six.get_function_code(func)
-        print('calling')
         warnings.warn_explicit(
             "Call to deprecated function {}.".format(func.__name__),
             category=DeprecationWarning,
