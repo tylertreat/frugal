@@ -28,7 +28,7 @@ type FFoo interface {
 	golang.FBaseFoo
 
 	// Ping the server.
-	// DEPRECATED
+	// Deprecated
 	Ping(ctx frugal.FContext) (err error)
 	// Blah the server.
 	Blah(ctx frugal.FContext, num int32, Str string, event *Event) (r int64, err error)
@@ -73,7 +73,7 @@ func NewFFooClient(provider *frugal.FServiceProvider, middleware ...frugal.Servi
 }
 
 // Ping the server.
-// DEPRECATED
+// Deprecated
 func (f *FFooClient) Ping(ctx frugal.FContext) (err error) {
 	logrus.Warn("Call to deprecated function 'Foo.Ping'")
 	ret := f.methods["ping"].Invoke([]interface{}{ctx})

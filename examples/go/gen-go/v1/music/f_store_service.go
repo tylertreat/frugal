@@ -21,7 +21,7 @@ var _ = logrus.DebugLevel
 // Services are the API for client and server interaction.
 // Users can buy an album or enter a giveaway for a free album.
 type FStore interface {
-	// DEPRECATED
+	// Deprecated
 	BuyAlbum(ctx frugal.FContext, ASIN string, acct string) (r *Album, err error)
 	EnterAlbumGiveaway(ctx frugal.FContext, email string, name string) (r bool, err error)
 }
@@ -47,7 +47,7 @@ func NewFStoreClient(provider *frugal.FServiceProvider, middleware ...frugal.Ser
 	return client
 }
 
-// DEPRECATED
+// Deprecated
 func (f *FStoreClient) BuyAlbum(ctx frugal.FContext, asin string, acct string) (r *Album, err error) {
 	logrus.Warn("Call to deprecated function 'Store.BuyAlbum'")
 	ret := f.methods["buyAlbum"].Invoke([]interface{}{ctx, asin, acct})
