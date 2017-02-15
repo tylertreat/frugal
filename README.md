@@ -200,7 +200,7 @@ Some common annotations are listed below
 
 | Annotation    | Values        | Allowed Places | Description
 | ------------- | ------------- | -------------- | -----------
-| vendor        | Optional location | Namespaces | See [vendoring includes](#vendoring-includes)
+| vendor        | Optional location | Namespaces, Includes | See [vendoring includes](#vendoring-includes)
 | deprecated    | None          | Service methods | Marks a method as deprecated (if supported by the language) and logs a warning if the method is called.
 
 ### Vendoring Includes
