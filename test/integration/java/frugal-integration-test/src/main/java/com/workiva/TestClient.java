@@ -114,7 +114,7 @@ public class TestClient {
                     fTransport.open();
                     break;
                 case "stateless":
-                    fTransport = FNatsTransport.of(conn, "frugal.foo.bar." + Integer.toString(port));
+                    fTransport = FNatsTransport.of(conn, "frugal.foo.bar.rpc." + Integer.toString(port));
                     break;
             }
         } catch (Exception x) {
@@ -439,6 +439,69 @@ public class TestClient {
             if (insanityFailed) {
                 returnCode |= 1;
                 System.out.println("*** FAILURE ***\n");
+            }
+
+            /**
+             * UNCHECKED EXCEPTION TEST
+             */
+            try {
+                testClient.testUncaughtException(context);
+                System.out.print("  void\n*** FAILURE ***\n");
+                returnCode |= 1;
+            } catch (TApplicationException e) {
+                boolean failed = false;
+                String expectedMessage = "An uncaught error";
+                int expectedErrorType = 6;
+                if (e.getType() != expectedErrorType){
+                    System.out.printf("  Expected type %d, got type %d\n", expectedErrorType, e.getType());
+                    failed = true;
+                }
+                if (!e.getMessage().contains(expectedMessage)){
+                    System.out.printf("  Expected message %s, got message %s\n", expectedMessage, e.getMessage());
+                    failed = true;
+                }
+                if (failed){
+                    System.out.print("  void\n*** FAILURE ***\n");
+                    returnCode |= 1;
+                } else {
+                    System.out.printf("  {\"%s\"}\n", e);
+                }
+
+                if (e.getType() != expectedErrorType){
+                    System.out.printf("  Expected type %d, got type %d\n", expectedErrorType, e.getType());
+                    System.out.printf("  void\n*** FAILURE ***\n");
+                    returnCode |= 1;
+                } else {
+                    System.out.printf("  {\"%s\"}\n", e);
+                }
+            }
+
+
+            /**
+             * UNCHECKED TAPPLICATION EXCEPTION TEST
+             */
+            try {
+                testClient.testUncheckedTApplicationException(context);
+                System.out.print("  void\n*** FAILURE ***\n");
+                returnCode |= 1;
+            } catch (TApplicationException e) {
+                boolean failed = false;
+                String expectedMessage = "Unchecked TApplicationException";
+                int expectedErrorType = 400;
+                if (e.getType() != expectedErrorType){
+                    System.out.printf("  Expected type %d, got type %d\n", expectedErrorType, e.getType());
+                    failed = true;
+                }
+                if (!e.getMessage().contains(expectedMessage)){
+                    System.out.printf("  Expected message %s, got message %s\n", expectedMessage, e.getMessage());
+                    failed = true;
+                }
+                if (failed){
+                    System.out.print("  void\n*** FAILURE ***\n");
+                    returnCode |= 1;
+                } else {
+                    System.out.printf("  {\"%s\"}\n", e);
+                }
             }
 
             /**

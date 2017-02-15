@@ -120,7 +120,7 @@ public class TestServer {
                             conn,
                             processor,
                             fProtocolFactory,
-                            new String[]{"frugal.*.*." + Integer.toString(port)}).build();
+                            new String[]{"frugal.*.*.rpc." + Integer.toString(port)}).build();
                     break;
                 case "http":
                     break;
@@ -145,7 +145,7 @@ public class TestServer {
             }
 
 
-            // Wait for the middleware to be invoked, fail if it exceeds the longest client timeout (currently 20 sec)
+             // Wait for the middleware to be invoked, fail if it exceeds the longest client timeout (currently 20 sec)
             if (called.await(20, TimeUnit.SECONDS)) {
                 System.out.println("Server middleware called successfully");
             } else {

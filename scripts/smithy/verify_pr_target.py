@@ -51,7 +51,7 @@ def main():
         cur_branch = os.environ['GIT_BRANCH']
 
         if merge_branch == 'master' and not _allow_master_merge(cur_branch):
-            print('ERROR: Your branch:{cur_branch} does not appear to be a release PR, but was made against master'.format(cur_branch=cur_branch))
+            print('ERROR: Your branch:{cur_branch} does not appear to be a release PR, but was made against master instead of develop.'.format(cur_branch=cur_branch))
             sys.exit(1)
 
 

@@ -9,6 +9,7 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 // _opid0_cid123[1,"ping",1,0,{}]
@@ -121,9 +122,11 @@ func TestFBaseProcessorNoProcessorFunction(t *testing.T) {
 	reads <- pingFrame[5:34] // FContext headers
 	reads <- pingFrame[34:]  // request body
 	mockTransport.reads = reads
-	// _opid0
-	responseCtx := []byte{0, 0, 0, 0, 14, 0, 0, 0, 5, 95, 111, 112, 105, 100, 0, 0, 0, 1, 48}
-	mockTransport.On("Write", responseCtx).Return(len(responseCtx), nil).Once()
+	// _opid0, cid 123
+	// The ordering of opid and cid in the header is non-deterministic,
+	// so cant check for equality.
+	responseCtx := []byte{0, 0, 0, 0, 29, 0, 0, 0, 5, 95, 111, 112, 105, 100, 0, 0, 0, 1, 48, 0, 0, 0, 4, 95, 99, 105, 100, 0, 0, 0, 3, 49, 50, 51}
+	mockTransport.On("Write", mock.Anything).Return(len(responseCtx), nil).Once()
 	// [1,"ping",3,0,{"1":{"str":"Unknown function ping"},"2":{"i32":1}}]
 	responseBody := []byte{
 		91, 49, 44, 34, 112, 105, 110, 103, 34, 44, 51, 44, 48, 44, 123, 34,
@@ -165,9 +168,11 @@ func TestFBaseProcessorNoProcessorFunctionWriteError(t *testing.T) {
 	reads <- pingFrame[5:34] // FContext headers
 	reads <- pingFrame[34:]  // request body
 	mockTransport.reads = reads
-	// _opid0
-	responseCtx := []byte{0, 0, 0, 0, 14, 0, 0, 0, 5, 95, 111, 112, 105, 100, 0, 0, 0, 1, 48}
-	mockTransport.On("Write", responseCtx).Return(0, errors.New("error")).Once()
+	// _opid0, cid 123
+	// The ordering of opid and cid in the header is non-deterministic,
+	// so cant check for equality.
+	//responseCtx := []byte{0, 0, 0, 0, 29, 0, 0, 0, 5, 95, 111, 112, 105, 100, 0, 0, 0, 1, 48, 0, 0, 0, 4, 95, 99, 105, 100, 0, 0, 0, 3, 49, 50, 51}
+	mockTransport.On("Write", mock.Anything).Return(0, errors.New("error")).Once()
 	proto := &FProtocol{thrift.NewTJSONProtocol(mockTransport)}
 	processor := NewFBaseProcessor()
 
@@ -199,9 +204,11 @@ func TestFBaseProcessorNoProcessorFunctionFlushError(t *testing.T) {
 	reads <- pingFrame[5:34] // FContext headers
 	reads <- pingFrame[34:]  // request body
 	mockTransport.reads = reads
-	// _opid0
-	responseCtx := []byte{0, 0, 0, 0, 14, 0, 0, 0, 5, 95, 111, 112, 105, 100, 0, 0, 0, 1, 48}
-	mockTransport.On("Write", responseCtx).Return(len(responseCtx), nil).Once()
+	// _opid0, cid 123
+	// The ordering of opid and cid in the header is non-deterministic,
+	// so cant check for equality.
+	responseCtx := []byte{0, 0, 0, 0, 29, 0, 0, 0, 5, 95, 111, 112, 105, 100, 0, 0, 0, 1, 48, 0, 0, 0, 4, 95, 99, 105, 100, 0, 0, 0, 3, 49, 50, 51}
+	mockTransport.On("Write", mock.Anything).Return(len(responseCtx), nil).Once()
 	// [1,"ping",3,0,{"1":{"str":"Unknown function ping"},"2":{"i32":1}}]
 	responseBody := []byte{
 		91, 49, 44, 34, 112, 105, 110, 103, 34, 44, 51, 44, 48, 44, 123, 34,

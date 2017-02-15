@@ -117,6 +117,11 @@ func (f *FProtocol) ReadRequestHeader() (FContext, error) {
 	}
 	setResponseOpID(ctx, opid)
 
+	cid := ctx.CorrelationID()
+	if cid != "" {
+		ctx.AddResponseHeader(cidHeader, cid)
+	}
+
 	return ctx, nil
 }
 

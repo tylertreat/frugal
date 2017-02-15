@@ -50,7 +50,7 @@ async def main():
     port = args.port
 
     handler = FrugalTestHandler()
-    subject = "frugal.*.*.{}".format(args.port)
+    subject = "frugal.*.*.rpc.{}".format(args.port)
     processor = Processor(handler)
 
     # Setup subscriber, send response upon receipt

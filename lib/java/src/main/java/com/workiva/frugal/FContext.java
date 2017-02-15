@@ -34,7 +34,7 @@ public class FContext {
     /**
      * Header containing correlation id.
      */
-    protected static final String CID_HEADER = "_cid";
+    public static final String CID_HEADER = "_cid";
 
     /**
      * Header containing op id (uint64 as string).
