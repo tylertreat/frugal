@@ -1287,7 +1287,12 @@ func (g *Generator) generateMethodSignature(method *parser.Method) string {
 		docstr = append(method.Comment, docstr...)
 	}
 
-	if _, ok := method.Annotations.Deprecated(); ok {
+	deprecationValue, deprecated := method.Annotations.Deprecated()
+	if deprecationValue != "" && deprecated {
+		docstr = append(docstr, "", fmt.Sprintf("deprecated: %s", deprecationValue))
+	}
+
+	if deprecated {
 		contents += tab + "@deprecated\n"
 	}
 

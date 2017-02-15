@@ -102,6 +102,8 @@ func copyFilePair(pair FileComparisonPair) error {
 		return err
 	}
 	defer expectedFile.Close()
+	// In case lines were removed
+	expectedFile.Truncate(0)
 
 	_, err = io.Copy(expectedFile, generatedFile)
 	return err

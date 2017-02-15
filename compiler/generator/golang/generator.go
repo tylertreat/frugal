@@ -1604,9 +1604,12 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		contents += g.GenerateInlineComment(method.Comment, "")
 	}
 
-	_, deprecated := method.Annotations.Deprecated()
+	deprecationValue, deprecated := method.Annotations.Deprecated()
 	if deprecated {
-		contents += "// Deprecated\n"
+		if deprecationValue != "" {
+			deprecationValue = ": " + deprecationValue
+		}
+		contents += fmt.Sprintf("// Deprecated%s\n", deprecationValue)
 	}
 
 	contents += fmt.Sprintf("func (f *F%sClient) %s(ctx frugal.FContext%s) %s {\n",

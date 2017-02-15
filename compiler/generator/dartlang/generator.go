@@ -1476,13 +1476,21 @@ func (g *Generator) generateClient(service *parser.Service) string {
 
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
 	nameLower := parser.LowercaseFirstLetter(method.Name)
-
 	contents := ""
+
+	comment := []string{}
 	if method.Comment != nil {
-		contents += g.GenerateInlineComment(method.Comment, tab+"/")
+		comment = append(comment, method.Comment...)
 	}
 
-	_, deprecated := method.Annotations.Deprecated()
+	deprecationValue, deprecated := method.Annotations.Deprecated()
+	if deprecated && deprecationValue != "" {
+		comment = append(comment, fmt.Sprintf("deprecated: %s", deprecationValue))
+	}
+	if len(comment) != 0 {
+		contents += g.GenerateInlineComment(comment, tab+"/")
+	}
+
 	if deprecated {
 		contents += tab + "@deprecated\n"
 	}

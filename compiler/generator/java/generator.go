@@ -2590,11 +2590,21 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 		contents += tab + "public interface Iface {\n\n"
 	}
 	for _, method := range service.Methods {
+		comment := []string{}
 		if method.Comment != nil {
-			contents += g.GenerateBlockComment(method.Comment, tabtab)
+			comment = append(comment, method.Comment...)
 		}
 
-		if _, ok := method.Annotations.Deprecated(); ok {
+		deprecationValue, deprecated := method.Annotations.Deprecated()
+		if deprecated && deprecationValue != "" {
+			comment = append(comment, fmt.Sprintf("@deprecated %s", deprecationValue))
+		}
+
+		if len(comment) != 0 {
+			contents += g.GenerateBlockComment(comment, tabtab)
+		}
+
+		if deprecated {
 			contents += tabtab+"@Deprecated\n"
 		}
 
