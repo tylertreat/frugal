@@ -137,7 +137,9 @@ func (f *fNatsTransport) Request(ctx FContext, data []byte) (thrift.TTransport, 
 		return nil, nil
 	}
 
-	f.registry.Register(ctx, resultC)
+	if err := f.registry.Register(ctx, resultC); err != nil {
+		return nil, thrift.NewTTransportException(TRANSPORT_EXCEPTION_UNKNOWN, err.Error())
+	}
 	defer f.registry.Unregister(ctx)
 
 	if err := f.checkMessageSize(data); err != nil {

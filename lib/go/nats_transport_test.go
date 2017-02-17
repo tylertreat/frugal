@@ -94,9 +94,9 @@ func TestNatsTransportOpen(t *testing.T) {
 	}
 }
 
-// Ensures Write buffers data. If the buffer exceeds 1MB, ErrTooLarge is
-// returned.
-func TestNatsTransportWrite(t *testing.T) {
+// Ensures Request returns TTransportException with type
+// TRANSPORT_EXCEPTION_REQUEST_TOO_LARGE if too much data is provided.
+func TestNatsTransportRequestTooLarge(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
 	tr, server, conn := newClientAndServer(t, false)
@@ -113,9 +113,9 @@ func TestNatsTransportWrite(t *testing.T) {
 	assert.Equal(t, 0, tr.writeBuffer.Len())
 }
 
-// Ensures Flush returns a NOT_OPEN TTransportException if the transport is not
+// Ensures Request returns a NOT_OPEN TTransportException if the transport is not
 // open.
-func TestNatsTransportFlushNotOpen(t *testing.T) {
+func TestNatsTransportRequestNotOpen(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
 	conn, err := nats.Connect(fmt.Sprintf("nats://localhost:%d", defaultOptions.Port))
@@ -131,9 +131,9 @@ func TestNatsTransportFlushNotOpen(t *testing.T) {
 	assert.Equal(t, TRANSPORT_EXCEPTION_NOT_OPEN, trErr.TypeId())
 }
 
-// Ensures Flush returns a NOT_OPEN TTransportException if NATS is not
+// Ensures Request returns a NOT_OPEN TTransportException if NATS is not
 // connected.
-func TestNatsTransportFlushNatsDisconnected(t *testing.T) {
+func TestNatsTransportRequestNatsDisconnected(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
 	tr, server, conn := newClientAndServer(t, false)
@@ -145,14 +145,13 @@ func TestNatsTransportFlushNatsDisconnected(t *testing.T) {
 
 	conn.Close()
 
-	//err := tr.Send(nil, []byte{})
 	_, err := tr.Request(nil, []byte{})
 	trErr := err.(thrift.TTransportException)
 	assert.Equal(t, TRANSPORT_EXCEPTION_NOT_OPEN, trErr.TypeId())
 }
 
-// Ensures Flush doesn't send anything to NATS if no data is buffered.
-func TestNatsTransportFlushNoData(t *testing.T) {
+// Ensures Request doesn't send anything to NATS if no data is buffered.
+func TestNatsTransportRequesthNoData(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
 	tr, server, conn := newClientAndServer(t, false)
@@ -171,8 +170,8 @@ func TestNatsTransportFlushNoData(t *testing.T) {
 	assert.Equal(t, nats.ErrTimeout, err)
 }
 
-// Ensures Flush sends the frame to the correct NATS subject.
-func TestNatsTransportFlush(t *testing.T) {
+// Ensures Request sends the frame to the correct NATS subject.
+func TestNatsTransportRequest(t *testing.T) {
 	s := runServer(nil)
 	defer s.Shutdown()
 	tr, server, conn := newClientAndServer(t, false)
@@ -195,6 +194,28 @@ func TestNatsTransportFlush(t *testing.T) {
 	msg, err := sub.NextMsg(5 * time.Millisecond)
 	assert.Nil(t, err)
 	assert.Equal(t, prependFrameSize(frame), msg.Data)
+}
+
+// Ensures Request returns an error if a duplicate opid is used.
+func TestNatsTransportRequestSameOpid(t *testing.T) {
+	s := runServer(nil)
+	defer s.Shutdown()
+	tr, server, conn := newClientAndServer(t, false)
+	defer server.Stop()
+	defer conn.Close()
+	assert.Nil(t, tr.Open())
+	defer tr.Close()
+	assert.True(t, tr.IsOpen())
+
+	frame := []byte("helloworld")
+	ctx := NewFContext("")
+	go func() {
+		tr.Request(ctx, prependFrameSize(frame))
+	}()
+	time.Sleep(10 * time.Millisecond)
+	_, err := tr.Request(ctx, prependFrameSize(frame))
+	assert.Equal(t, TRANSPORT_EXCEPTION_UNKNOWN, err.(thrift.TTransportException).TypeId())
+	assert.Equal(t, "frugal: context already registered", err.Error())
 }
 
 // HELPER METHODS
