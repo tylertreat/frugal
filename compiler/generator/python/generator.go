@@ -422,7 +422,8 @@ func (g *Generator) generateRead(s *parser.Struct) string {
 	contents += tabtabtab + "else:\n"
 	contents += tabtabtabtab + "iprot.skip(ftype)\n"
 	contents += tabtabtab + "iprot.readFieldEnd()\n"
-	contents += tabtab + "iprot.readStructEnd()\n\n"
+	contents += tabtab + "iprot.readStructEnd()\n"
+	contents += tabtab + "self.validate()\n\n"
 	return contents
 }
 
@@ -430,6 +431,7 @@ func (g *Generator) generateRead(s *parser.Struct) string {
 func (g *Generator) generateWrite(s *parser.Struct) string {
 	contents := ""
 	contents += tab + "def write(self, oprot):\n"
+	contents += tabtab + "self.validate()\n"
 	contents += fmt.Sprintf(tabtab+"oprot.writeStructBegin('%s')\n", s.Name)
 	for _, field := range s.Fields {
 		contents += fmt.Sprintf(tabtab+"if self.%s is not None:\n", field.Name)
@@ -448,12 +450,23 @@ func (g *Generator) generateWrite(s *parser.Struct) string {
 func (g *Generator) generateValidate(s *parser.Struct) string {
 	contents := ""
 	contents += tab + "def validate(self):\n"
-	for _, field := range s.Fields {
-		if field.Modifier == parser.Required {
-			contents += fmt.Sprintf(tabtab+"if self.%s is None:\n", field.Name)
-			contents += fmt.Sprintf(tabtabtab+"raise TProtocol.TProtocolException(message='Required field %s is unset!')\n", field.Name)
+	if s.Type != parser.StructTypeUnion {
+		for _, field := range s.Fields {
+			if field.Modifier == parser.Required {
+				contents += fmt.Sprintf(tabtab + "if self.%s is None:\n", field.Name)
+				contents += fmt.Sprintf(tabtabtab + "raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field %s is unset!')\n", field.Name)
+			}
 		}
+	} else {
+		contents += tabtab + "set_fields = 0\n"
+		for _, field := range s.Fields {
+			contents += fmt.Sprintf(tabtab + "if self.%s is not None:\n", field.Name)
+			contents += tabtabtab + "set_fields += 1\n"
+		}
+		contents += tabtab + "if set_fields != 1:\n"
+		contents += fmt.Sprintf(tabtabtab+"raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='The union did not have exactly one field set, {} were set'.format(set_fields))\n")
 	}
+
 	contents += tabtab + "return\n\n"
 	return contents
 }
@@ -1041,7 +1054,7 @@ func (g *Generator) generateClientRecvMethod(method *parser.Method) string {
 	contents += tabtabtab + "x = TApplicationException()\n"
 	contents += tabtabtab + "x.read(self._iprot)\n"
 	contents += tabtabtab + "self._iprot.readMessageEnd()\n"
-	contents += tabtabtab + "if x.type == FApplicationException.RESPONSE_TOO_LARGE:\n"
+	contents += tabtabtab + "if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:\n"
 	contents += tabtabtabtab + "raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)\n"
 	contents += tabtabtab + "raise x\n"
 	contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)
@@ -1236,7 +1249,7 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationExceptionType.UNKNOWN, message=e.message)\n", methodLower)
+		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=e.message)\n", methodLower)
 	}
 	contents += tabtabtab + "raise e\n"
 	if !method.Oneway {

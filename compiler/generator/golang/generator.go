@@ -42,6 +42,7 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 
 // SetupGenerator initializes globals the generator needs, like the types file.
 func (g *Generator) SetupGenerator(outputDir string) error {
+	g.generateConstants = true
 	t, err := g.GenerateFile("", outputDir, generator.TypeFile)
 	if err != nil {
 		return err
@@ -609,6 +610,14 @@ func (g *Generator) generateRead(s *parser.Struct, sName string) string {
 			contents += "\t}\n"
 		}
 	}
+
+	// Only one field can be set for a union, make sure that's the case
+	if s.Type == parser.StructTypeUnion {
+		contents += fmt.Sprintf("\tif c := p.CountSetFields%s(); c != 1 {\n", sName)
+		contents += "\t\treturn thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf(\"%T read union: exactly one field must be set (%d set).\", p, c))\n"
+		contents += "\t}\n"
+	}
+
 	contents += "\treturn nil\n"
 	contents += "}\n\n"
 
@@ -626,7 +635,7 @@ func (g *Generator) generateWrite(s *parser.Struct, sName string) string {
 	// Only one field can be set for a union, make sure that's the case
 	if s.Type == parser.StructTypeUnion {
 		contents += fmt.Sprintf("\tif c := p.CountSetFields%s(); c != 1 {\n", sName)
-		contents += "\t\treturn fmt.Errorf(\"%T write union: exactly one field must be set (%d set).\", p, c)\n"
+		contents += "\t\treturn thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf(\"%T write union: exactly one field must be set (%d set).\", p, c))\n"
 		contents += "\t}\n"
 	}
 

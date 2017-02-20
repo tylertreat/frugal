@@ -3,6 +3,7 @@ package com.workiva;
 import com.workiva.frugal.FContext;
 import frugal.test.*;
 import org.apache.thrift.TException;
+import org.apache.thrift.TApplicationException;
 import frugal.test.Numberz;
 
 import java.nio.ByteBuffer;
@@ -159,6 +160,18 @@ public class FrugalTestHandler implements FFrugalTest.Iface {
                     throw new TException("Just TException");
                 default:
             }
+        }
+
+        // This doesn't really make the same sense to check in Java
+        // as in other languages, because we rethrow any caught runtime exceptions.
+        @Override
+        public void testUncaughtException(FContext ctx) throws TException {
+            throw new TException("An uncaught error which will be caught in Java");
+        }
+
+        @Override
+        public void testUncheckedTApplicationException(FContext ctx) throws TException {
+            throw new TApplicationException(400, "Unchecked TApplicationException");
         }
 
         @Override
