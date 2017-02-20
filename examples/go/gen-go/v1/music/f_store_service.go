@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/Sirupsen/logrus"
 	"github.com/Workiva/frugal/lib/go"
 )
 
@@ -15,6 +16,7 @@ import (
 var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
+var _ = logrus.DebugLevel
 
 // Services are the API for client and server interaction.
 // Users can buy an album or enter a giveaway for a free album.

@@ -16,6 +16,7 @@ from frugal.exceptions import TApplicationExceptionType
 from frugal.exceptions import TTransportExceptionType
 from frugal.middleware import Method
 from frugal.transport import TMemoryOutputBuffer
+from frugal.util.deprecate import deprecated
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from . import f_BasePinger

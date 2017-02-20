@@ -15,6 +15,7 @@ from frugal.middleware import Method
 from frugal.tornado.processor import FBaseProcessor
 from frugal.tornado.processor import FProcessorFunction
 from frugal.transport import TMemoryOutputBuffer
+from frugal.util.deprecate import deprecated
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from tornado import gen
