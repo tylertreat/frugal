@@ -42,6 +42,7 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 
 // SetupGenerator initializes globals the generator needs, like the types file.
 func (g *Generator) SetupGenerator(outputDir string) error {
+	g.generateConstants = true
 	t, err := g.GenerateFile("", outputDir, generator.TypeFile)
 	if err != nil {
 		return err
