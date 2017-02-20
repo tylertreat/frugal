@@ -1,7 +1,7 @@
 package frugal
 
 import (
-	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 
@@ -62,7 +62,7 @@ func (c *fRegistryImpl) Register(ctx FContext, resultC chan []byte) error {
 	if err == nil {
 		_, ok := c.channels[opID]
 		if ok {
-			return errors.New("frugal: context already registered")
+			return fmt.Errorf("frugal: context already registered, opid %d is in-flight for another request", opID)
 		}
 	}
 	c.channels[opID] = resultC

@@ -215,7 +215,9 @@ func TestNatsTransportRequestSameOpid(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 	_, err := tr.Request(ctx, prependFrameSize(frame))
 	assert.Equal(t, TRANSPORT_EXCEPTION_UNKNOWN, err.(thrift.TTransportException).TypeId())
-	assert.Equal(t, "frugal: context already registered", err.Error())
+	opID, opErr := getOpID(ctx)
+	assert.Nil(t, opErr)
+	assert.Equal(t, fmt.Sprintf("frugal: context already registered, opid %d is in-flight for another request", opID), err.Error())
 }
 
 // HELPER METHODS
