@@ -536,10 +536,6 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 	if first {
 		prefix = "self."
 	}
-	decodeCall := ".decode('utf-8')"
-	if isPy3(g.Options) {
-		decodeCall = ""
-	}
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	isEnum := g.Frugal.IsEnum(underlyingType)
 	if underlyingType.IsPrimitive() || isEnum {
@@ -556,12 +552,8 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 				panic("unknown type: " + underlyingType.Name)
 			}
 		}
-		switch underlyingType.Name {
-		case "string":
-			contents += fmt.Sprintf(ind+"%s%s = iprot.read%s()%s\n", prefix, field.Name, thriftType, decodeCall)
-		default:
-			contents += fmt.Sprintf(ind+"%s%s = iprot.read%s()\n", prefix, field.Name, thriftType)
-		}
+		contents += fmt.Sprintf(ind+"%s%s = iprot.read%s()\n", prefix, field.Name, thriftType)
+
 	} else if g.Frugal.IsStruct(underlyingType) {
 		g.qualifiedTypeName(underlyingType)
 		contents += fmt.Sprintf(ind+"%s%s = %s()\n", prefix, field.Name, g.qualifiedTypeName(underlyingType))
@@ -610,10 +602,6 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 	if first {
 		prefix = "self."
 	}
-	encodeCall := ".encode('utf-8')"
-	if isPy3(g.Options) {
-		encodeCall = ""
-	}
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	isEnum := g.Frugal.IsEnum(underlyingType)
 	if underlyingType.IsPrimitive() || isEnum {
@@ -630,12 +618,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, ind s
 				panic("unknown type: " + underlyingType.Name)
 			}
 		}
-		switch underlyingType.Name {
-		case "string":
-			contents += fmt.Sprintf(ind+"oprot.write%s(%s%s%s)\n", thriftType, prefix, field.Name, encodeCall)
-		default:
-			contents += fmt.Sprintf(ind+"oprot.write%s(%s%s)\n", thriftType, prefix, field.Name)
-		}
+		contents += fmt.Sprintf(ind+"oprot.write%s(%s%s)\n", thriftType, prefix, field.Name)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		contents += fmt.Sprintf(ind+"%s%s.write(oprot)\n", prefix, field.Name)
 	} else if underlyingType.IsContainer() {
@@ -1446,11 +1429,4 @@ func getAsyncOpt(options map[string]string) concurrencyModel {
 		return asyncio
 	}
 	return synchronous
-}
-
-func isPy3(options map[string]string) bool {
-	if _, ok := options["asyncio"]; ok {
-		return true
-	}
-	return false
 }
