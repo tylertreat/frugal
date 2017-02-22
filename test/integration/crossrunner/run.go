@@ -32,7 +32,7 @@ func RunConfig(pair *Pair, port int) {
 
 	if err = writeFileHeader(pair.Server.Logs, serverCmd, pair.Server.Workdir,
 		pair.Server.Timeout, pair.Client.Timeout); err != nil {
-		log.Debugf("Failed to write header to %", pair.Server.Logs.Name())
+		log.Debugf("Failed to write header to %s", pair.Server.Logs.Name())
 		reportCrossrunnerFailure(pair, err)
 		return
 	}
