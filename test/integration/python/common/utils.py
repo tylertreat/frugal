@@ -58,11 +58,7 @@ def check_for_failure(actual, expected):
     elif expected != actual:
         failed = True
     if failed:
-        if sys.version_info[0] == 3:
-            print("Unexpected result, expected:\n{e}\n but received:\n{a} ".format(
-                e=expected, a=actual))
-        if sys.version_info[0] == 2:
-            print(u"Unexpected result, expected:\n{e}\n but received:\n{a} ".format(
-                e=expected, a=actual))
+        print(u"Unexpected result, expected:\n{e}\n but received:\n{a} ".format(
+            e=expected, a=actual))
 
     return failed
