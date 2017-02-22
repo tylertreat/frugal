@@ -13,7 +13,7 @@ class FrugalTestHandler(Iface):
         return
 
     def testString(self, ctx, thing):
-        print("test_string({})".format(handle_string_encoding(thing)))
+        print(u"test_string({})".format(thing))
         return thing
 
     def testBool(self, ctx, thing):
