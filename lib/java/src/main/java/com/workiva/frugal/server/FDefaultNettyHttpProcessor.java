@@ -196,6 +196,8 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
                     HTTP_1_1,
                     BAD_REQUEST,
                     Unpooled.copiedBuffer(errorMessage.getBytes()));
+        } finally {
+            body.release();
         }
 
         Integer responseLimit = getResponseLimit(request.headers());
