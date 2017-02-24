@@ -1,3 +1,4 @@
+import sys
 from thrift.protocol.TProtocolDecorator import TProtocolDecorator
 
 from frugal.context import FContext, _OPID_HEADER, _CID_HEADER
@@ -73,3 +74,23 @@ class FProtocol(TProtocolDecorator, object):
 
         for key, value in headers.items():
             context.set_response_header(key, value)
+
+    def writeString(self, value):
+        """
+        Write a string to the protocol, if python 2, encode to utf-8
+        bytes from a unicode string.
+        """
+        if sys.version_info[0] == 2:
+            self._wrapped_protocol.writeString(value.encode('utf-8'))
+        else:
+            self._wrapped_protocol.writeString(value)
+
+    def readString(self):
+        """
+        Read a string from the protocol, if python 2, decode from utf-8
+        bytes to a unicode string.
+        """
+        if sys.version_info[0] == 2:
+            return self._wrapped_protocol.readString().decode('utf-8')
+        return self._wrapped_protocol.readString()
+
