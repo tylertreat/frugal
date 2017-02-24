@@ -71,8 +71,9 @@ async def test_rpc(client, ctx):
         method = getattr(client, rpc)
         args = vals['args']
         expected_result = vals['expected_result']
-
+        ctx = FContext(rpc)
         result = None
+
         try:
             if args:
                 result = await method(ctx, *args)
@@ -149,7 +150,7 @@ def client_middleware(next):
     def handler(method, args):
         global middleware_called
         middleware_called = True
-        print("{}({}) = ".format(method.__name__, args[1:]), end="")
+        print(u"{}({}) = ".format(method.__name__, args[1:], end=""))
         # ret is a <class 'coroutine'>
         ret = next(method, args)
         # Use asyncIO.ensure_future to convert the coroutine to a task

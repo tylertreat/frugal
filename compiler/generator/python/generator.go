@@ -453,18 +453,18 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 	if s.Type != parser.StructTypeUnion {
 		for _, field := range s.Fields {
 			if field.Modifier == parser.Required {
-				contents += fmt.Sprintf(tabtab + "if self.%s is None:\n", field.Name)
-				contents += fmt.Sprintf(tabtabtab + "raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field %s is unset!')\n", field.Name)
+				contents += fmt.Sprintf(tabtab+"if self.%s is None:\n", field.Name)
+				contents += fmt.Sprintf(tabtabtab+"raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field %s is unset!')\n", field.Name)
 			}
 		}
 	} else {
 		contents += tabtab + "set_fields = 0\n"
 		for _, field := range s.Fields {
-			contents += fmt.Sprintf(tabtab + "if self.%s is not None:\n", field.Name)
+			contents += fmt.Sprintf(tabtab+"if self.%s is not None:\n", field.Name)
 			contents += tabtabtab + "set_fields += 1\n"
 		}
 		contents += tabtab + "if set_fields != 1:\n"
-		contents += fmt.Sprintf(tabtabtab+"raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='The union did not have exactly one field set, {} were set'.format(set_fields))\n")
+		contents += fmt.Sprintf(tabtabtab + "raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='The union did not have exactly one field set, {} were set'.format(set_fields))\n")
 	}
 
 	contents += tabtab + "return\n\n"
@@ -551,6 +551,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 			}
 		}
 		contents += fmt.Sprintf(ind+"%s%s = iprot.read%s()\n", prefix, field.Name, thriftType)
+
 	} else if g.Frugal.IsStruct(underlyingType) {
 		g.qualifiedTypeName(underlyingType)
 		contents += fmt.Sprintf(ind+"%s%s = %s()\n", prefix, field.Name, g.qualifiedTypeName(underlyingType))
