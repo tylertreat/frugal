@@ -15,7 +15,7 @@ from thrift.Thrift import TType
 from tornado import gen
 from frugal.exceptions import TApplicationExceptionType
 from frugal.middleware import Method
-from frugal.subscription import FSubscription
+from frugal.tornado.subscription import FSubscription
 from frugal.transport import TMemoryOutputBuffer
 
 from .ttypes import *
@@ -64,6 +64,7 @@ class EventsSubscriber(object):
 
         transport, protocol_factory = self._provider.new_subscriber()
         yield transport.subscribe(topic, self._recv_EventCreated(protocol_factory, op, EventCreated_handler))
+        raise gen.Return(FSubscription(topic, transport))
 
     def _recv_EventCreated(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
@@ -103,6 +104,7 @@ class EventsSubscriber(object):
 
         transport, protocol_factory = self._provider.new_subscriber()
         yield transport.subscribe(topic, self._recv_SomeInt(protocol_factory, op, SomeInt_handler))
+        raise gen.Return(FSubscription(topic, transport))
 
     def _recv_SomeInt(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
@@ -141,6 +143,7 @@ class EventsSubscriber(object):
 
         transport, protocol_factory = self._provider.new_subscriber()
         yield transport.subscribe(topic, self._recv_SomeStr(protocol_factory, op, SomeStr_handler))
+        raise gen.Return(FSubscription(topic, transport))
 
     def _recv_SomeStr(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
@@ -179,6 +182,7 @@ class EventsSubscriber(object):
 
         transport, protocol_factory = self._provider.new_subscriber()
         yield transport.subscribe(topic, self._recv_SomeList(protocol_factory, op, SomeList_handler))
+        raise gen.Return(FSubscription(topic, transport))
 
     def _recv_SomeList(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)

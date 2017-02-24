@@ -15,7 +15,7 @@ from thrift.Thrift import TType
 from tornado import gen
 from frugal.exceptions import TApplicationExceptionType
 from frugal.middleware import Method
-from frugal.subscription import FSubscription
+from frugal.tornado.subscription import FSubscription
 from frugal.transport import TMemoryOutputBuffer
 
 from .ttypes import *
@@ -60,6 +60,7 @@ class AlbumWinnersSubscriber(object):
 
         transport, protocol_factory = self._provider.new_subscriber()
         yield transport.subscribe(topic, self._recv_ContestStart(protocol_factory, op, ContestStart_handler))
+        raise gen.Return(FSubscription(topic, transport))
 
     def _recv_ContestStart(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
@@ -102,6 +103,7 @@ class AlbumWinnersSubscriber(object):
 
         transport, protocol_factory = self._provider.new_subscriber()
         yield transport.subscribe(topic, self._recv_TimeLeft(protocol_factory, op, TimeLeft_handler))
+        raise gen.Return(FSubscription(topic, transport))
 
     def _recv_TimeLeft(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
@@ -138,6 +140,7 @@ class AlbumWinnersSubscriber(object):
 
         transport, protocol_factory = self._provider.new_subscriber()
         yield transport.subscribe(topic, self._recv_Winner(protocol_factory, op, Winner_handler))
+        raise gen.Return(FSubscription(topic, transport))
 
     def _recv_Winner(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)

@@ -54,7 +54,7 @@ func (t *TornadoGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from tornado import gen\n"
 	imports += "from frugal.exceptions import TApplicationExceptionType\n"
 	imports += "from frugal.middleware import Method\n"
-	imports += "from frugal.subscription import FSubscription\n"
+	imports += "from frugal.tornado.subscription import FSubscription\n"
 	imports += "from frugal.transport import TMemoryOutputBuffer\n\n"
 
 	imports += "from .ttypes import *\n"
@@ -275,8 +275,9 @@ func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 
 	method += tabtab + "transport, protocol_factory = self._provider.new_subscriber()\n"
 	method += tabtab + fmt.Sprintf(
-		"yield transport.subscribe(topic, self._recv_%s(protocol_factory, op, %s_handler))\n\n",
+		"yield transport.subscribe(topic, self._recv_%s(protocol_factory, op, %s_handler))\n",
 		op.Name, op.Name)
+	method += tabtab + "raise gen.Return(FSubscription(topic, transport))\n\n"
 
 	method += tab + fmt.Sprintf("def _recv_%s(self, protocol_factory, op, handler):\n", op.Name)
 	method += tabtab + "method = Method(handler, self._middleware)\n\n"

@@ -15,7 +15,7 @@ from thrift.Thrift import TMessageType
 from thrift.Thrift import TType
 from frugal.exceptions import TApplicationExceptionType
 from frugal.middleware import Method
-from frugal.subscription import FSubscription
+from frugal.aio.subscription import FSubscription
 from frugal.transport import TMemoryOutputBuffer
 
 from .ttypes import *
