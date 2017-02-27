@@ -54,7 +54,7 @@ func (t *TornadoGenerator) GenerateScopeImports(file *os.File, s *parser.Scope) 
 	imports += "from tornado import gen\n"
 	imports += "from frugal.exceptions import TApplicationExceptionType\n"
 	imports += "from frugal.middleware import Method\n"
-	imports += "from frugal.tornado.subscription import FSubscription\n"
+	imports += "from frugal.subscription import FSubscription\n"
 	imports += "from frugal.transport import TMemoryOutputBuffer\n\n"
 
 	imports += "from .ttypes import *\n"
