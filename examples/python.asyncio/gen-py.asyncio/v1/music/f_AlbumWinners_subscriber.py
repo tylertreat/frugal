@@ -59,6 +59,7 @@ class AlbumWinnersSubscriber(object):
 
         transport, protocol_factory = self._provider.new_subscriber()
         await transport.subscribe(topic, self._recv_ContestStart(protocol_factory, op, ContestStart_handler))
+        return FSubscription(topic, transport)
 
     def _recv_ContestStart(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
@@ -102,6 +103,7 @@ class AlbumWinnersSubscriber(object):
 
         transport, protocol_factory = self._provider.new_subscriber()
         await transport.subscribe(topic, self._recv_TimeLeft(protocol_factory, op, TimeLeft_handler))
+        return FSubscription(topic, transport)
 
     def _recv_TimeLeft(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
@@ -139,6 +141,7 @@ class AlbumWinnersSubscriber(object):
 
         transport, protocol_factory = self._provider.new_subscriber()
         await transport.subscribe(topic, self._recv_Winner(protocol_factory, op, Winner_handler))
+        return FSubscription(topic, transport)
 
     def _recv_Winner(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)

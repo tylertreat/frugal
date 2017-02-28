@@ -348,8 +348,9 @@ func (a *AsyncIOGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 
 	method += tabtab + "transport, protocol_factory = self._provider.new_subscriber()\n"
 	method += tabtab + fmt.Sprintf(
-		"await transport.subscribe(topic, self._recv_%s(protocol_factory, op, %s_handler))\n\n",
+		"await transport.subscribe(topic, self._recv_%s(protocol_factory, op, %s_handler))\n",
 		op.Name, op.Name)
+	method += tabtab + "return FSubscription(topic, transport)\n\n"
 
 	method += tab + fmt.Sprintf("def _recv_%s(self, protocol_factory, op, handler):\n", op.Name)
 	method += tabtab + "method = Method(handler, self._middleware)\n\n"

@@ -20,4 +20,4 @@ class TestFSubscription(unittest.TestCase):
 
         sub.unsubscribe()
 
-        trans.close.assert_called_with()
+        trans.unsubscribe.assert_called_with()
