@@ -1,10 +1,34 @@
+import functools
 import sys
 from thrift.protocol.TProtocolDecorator import TProtocolDecorator
+from thrift.protocol.TCompactProtocol import CLEAR, TCompactProtocol
 
 from frugal.context import FContext, _OPID_HEADER, _CID_HEADER
 from frugal.util.headers import _Headers
 
 _V0 = 0
+
+
+def _state_reset_decorator(func):
+    """
+    Decorator that resets the state of the TCompactProtocol as a hacky
+    workaround for when an exception  occurs so the protocol can be reused, i.e.
+    if "REQUEST_TOO_LARGE" error is thrown. This is only required for the
+    compact protocol as other protocols don't track internal state as a sanity
+    check.
+    """
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not isinstance(self._wrapped_protocol, TCompactProtocol):
+            return func(self, *args, **kwargs)
+
+        try:
+            return func(self, *args, **kwargs)
+        except Exception:
+            self._wrapped_protocol.state = CLEAR
+            raise
+
+    return wrapper
 
 
 class FProtocol(TProtocolDecorator, object):
@@ -29,11 +53,13 @@ class FProtocol(TProtocolDecorator, object):
         """
         return self.trans
 
+    @_state_reset_decorator
     def write_request_headers(self, context):
         """Write the request headers to the underlying TTranpsort."""
 
         self._write_headers(context.get_request_headers())
 
+    @_state_reset_decorator
     def write_response_headers(self, context):
         """Write the response headers to the underlying TTransport."""
         self._write_headers(context.get_response_headers())
@@ -75,6 +101,83 @@ class FProtocol(TProtocolDecorator, object):
         for key, value in headers.items():
             context.set_response_header(key, value)
 
+    @_state_reset_decorator
+    def writeMessageBegin(self, name, ttype, seqid):
+        self._wrapped_protocol.writeMessageBegin(name, ttype, seqid)
+
+    @_state_reset_decorator
+    def writeMessageEnd(self):
+        self._wrapped_protocol.writeMessageEnd()
+
+    @_state_reset_decorator
+    def writeStructBegin(self, name):
+        self._wrapped_protocol.writeStructBegin(name)
+
+    @_state_reset_decorator
+    def writeStructEnd(self):
+        self._wrapped_protocol.writeStructEnd()
+
+    @_state_reset_decorator
+    def writeFieldBegin(self, name, ttype, fid):
+        self._wrapped_protocol.writeFieldBegin(name, ttype, fid)
+
+    @_state_reset_decorator
+    def writeFieldEnd(self):
+        self._wrapped_protocol.writeFieldEnd()
+
+    @_state_reset_decorator
+    def writeFieldStop(self):
+        self._wrapped_protocol.writeFieldStop()
+
+    @_state_reset_decorator
+    def writeMapBegin(self, ktype, vtype, size):
+        self._wrapped_protocol.writeMapBegin(ktype, vtype, size)
+
+    @_state_reset_decorator
+    def writeMapEnd(self):
+        self._wrapped_protocol.writeMapEnd()
+
+    @_state_reset_decorator
+    def writeListBegin(self, etype, size):
+        self._wrapped_protocol.writeListBegin(etype, size)
+
+    @_state_reset_decorator
+    def writeListEnd(self):
+        self._wrapped_protocol.writeListEnd()
+
+    @_state_reset_decorator
+    def writeSetBegin(self, etype, size):
+        self._wrapped_protocol.writeSetBegin(etype, size)
+
+    @_state_reset_decorator
+    def writeSetEnd(self):
+        self._wrapped_protocol.writeSetEnd()
+
+    @_state_reset_decorator
+    def writeBool(self, bool_val):
+        self._wrapped_protocol.writeBool(bool_val)
+
+    @_state_reset_decorator
+    def writeByte(self, byte):
+        self._wrapped_protocol.writeByte(byte)
+
+    @_state_reset_decorator
+    def writeI16(self, i16):
+        self._wrapped_protocol.writeI16(i16)
+
+    @_state_reset_decorator
+    def writeI32(self, i32):
+        self._wrapped_protocol.writeI32(i32)
+
+    @_state_reset_decorator
+    def writeI64(self, i64):
+        self._wrapped_protocol.writeI64(i64)
+
+    @_state_reset_decorator
+    def writeDouble(self, dub):
+        self._wrapped_protocol.writeDouble(dub)
+
+    @_state_reset_decorator
     def writeString(self, value):
         """
         Write a string to the protocol, if python 2, encode to utf-8
@@ -84,6 +187,10 @@ class FProtocol(TProtocolDecorator, object):
             self._wrapped_protocol.writeString(value.encode('utf-8'))
         else:
             self._wrapped_protocol.writeString(value)
+
+    @_state_reset_decorator
+    def writeBinary(self, value):
+        self._wrapped_protocol.writeBinary(value)
 
     def readString(self):
         """
