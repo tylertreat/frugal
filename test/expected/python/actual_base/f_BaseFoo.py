@@ -16,6 +16,7 @@ from frugal.processor import FProcessorFunction
 from frugal.util.deprecate import deprecated
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
+from thrift.transport.TTransport import TTransportException
 
 from .ttypes import *
 
@@ -135,7 +136,8 @@ class _basePing(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
+                if e.type == TTransportExceptionType.REQUEST_TOO_LARGE:
                     raise _write_application_exception(ctx, oprot, "basePing", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])
                 else:
                     raise e

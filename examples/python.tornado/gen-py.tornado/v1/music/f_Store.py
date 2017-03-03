@@ -18,6 +18,7 @@ from frugal.transport import TMemoryOutputBuffer
 from frugal.util.deprecate import deprecated
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
+from thrift.transport.TTransport import TTransportException
 from tornado import gen
 from tornado.concurrent import Future
 
@@ -102,8 +103,9 @@ class Client(Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TTransportExceptionType.REQUEST_TOO_LARGE:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
+                raise TTransportException(type=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = buyAlbum_result()
         result.read(iprot)
@@ -142,8 +144,9 @@ class Client(Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TTransportExceptionType.REQUEST_TOO_LARGE:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
+                raise TTransportException(type=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = enterAlbumGiveaway_result()
         result.read(iprot)

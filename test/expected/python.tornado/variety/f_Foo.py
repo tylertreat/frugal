@@ -18,6 +18,7 @@ from frugal.transport import TMemoryOutputBuffer
 from frugal.util.deprecate import deprecated
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
+from thrift.transport.TTransport import TTransportException
 from tornado import gen
 from tornado.concurrent import Future
 
@@ -183,8 +184,9 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TTransportExceptionType.REQUEST_TOO_LARGE:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
+                raise TTransportException(type=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = Ping_result()
         result.read(iprot)
@@ -222,8 +224,9 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TTransportExceptionType.REQUEST_TOO_LARGE:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
+                raise TTransportException(type=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = blah_result()
         result.read(iprot)
@@ -288,8 +291,9 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TTransportExceptionType.REQUEST_TOO_LARGE:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
+                raise TTransportException(type=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = bin_method_result()
         result.read(iprot)
@@ -330,8 +334,9 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TTransportExceptionType.REQUEST_TOO_LARGE:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
+                raise TTransportException(type=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = param_modifiers_result()
         result.read(iprot)
@@ -368,8 +373,9 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TTransportExceptionType.REQUEST_TOO_LARGE:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
+                raise TTransportException(type=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = underlying_types_test_result()
         result.read(iprot)
@@ -402,8 +408,9 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TTransportExceptionType.REQUEST_TOO_LARGE:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
+                raise TTransportException(type=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = getThing_result()
         result.read(iprot)
@@ -436,8 +443,9 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TTransportExceptionType.REQUEST_TOO_LARGE:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
+                raise TTransportException(type=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = getMyInt_result()
         result.read(iprot)
@@ -472,8 +480,9 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
-                raise TTransportException(type=TTransportExceptionType.REQUEST_TOO_LARGE, message=x.message)
+            if x.type == TTransportExceptionType.REQUEST_TOO_LARGE:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
+                raise TTransportException(type=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = use_subdir_struct_result()
         result.read(iprot)

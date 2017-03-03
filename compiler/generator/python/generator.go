@@ -751,7 +751,8 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from frugal.processor import FProcessorFunction\n"
 	imports += "from frugal.util.deprecate import deprecated\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
-	imports += "from thrift.Thrift import TMessageType\n\n"
+	imports += "from thrift.Thrift import TMessageType\n"
+	imports += "from thrift.transport.TTransport import TTransportException\n\n"
 
 	imports += g.generateServiceExtendsImport(s)
 	if imp, err := g.generateServiceIncludeImports(s); err != nil {
@@ -1262,7 +1263,8 @@ func (g *Generator) generateProcessorFunction(method *parser.Method) string {
 		contents += tabtabtabtab + "oprot.writeMessageEnd()\n"
 		contents += tabtabtabtab + "oprot.get_transport().flush()\n"
 		contents += tabtabtab + "except TTransportException as e:\n"
-		contents += tabtabtabtab + "if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:\n"
+		contents += tabtabtabtab + "# catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written\n"
+		contents += tabtabtabtab + "if e.type == TTransportExceptionType.REQUEST_TOO_LARGE:\n"
 		contents += tabtabtabtabtab + fmt.Sprintf(
 			"raise _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.args[0])\n", methodLower)
 		contents += tabtabtabtab + "else:\n"
