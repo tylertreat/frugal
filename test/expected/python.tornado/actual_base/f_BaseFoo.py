@@ -83,7 +83,7 @@ class Client(Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.REQUEST_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = basePing_result()

@@ -117,7 +117,7 @@ func (t *TornadoGenerator) generateClientMethod(method *parser.Method) string {
 	contents += tabtabtab + "x = TApplicationException()\n"
 	contents += tabtabtab + "x.read(iprot)\n"
 	contents += tabtabtab + "iprot.readMessageEnd()\n"
-	contents += tabtabtab + "if x.type == TApplicationExceptionType.REQUEST_TOO_LARGE:\n"
+	contents += tabtabtab + "if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:\n"
 	contents += tabtabtabtab + "raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)\n"
 	contents += tabtabtab + "raise x\n"
 	contents += tabtab + fmt.Sprintf("result = %s_result()\n", method.Name)

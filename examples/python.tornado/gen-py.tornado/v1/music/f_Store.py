@@ -103,7 +103,7 @@ class Client(Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.REQUEST_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = buyAlbum_result()
@@ -143,7 +143,7 @@ class Client(Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.REQUEST_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = enterAlbumGiveaway_result()
@@ -201,6 +201,7 @@ class _buyAlbum(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
                 if e.type == TTransportExceptionType.REQUEST_TOO_LARGE:
                     raise _write_application_exception(ctx, oprot, "buyAlbum", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.message)
                 else:
@@ -236,6 +237,7 @@ class _enterAlbumGiveaway(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
                 if e.type == TTransportExceptionType.REQUEST_TOO_LARGE:
                     raise _write_application_exception(ctx, oprot, "enterAlbumGiveaway", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.message)
                 else:

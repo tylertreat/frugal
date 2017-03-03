@@ -184,7 +184,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.REQUEST_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = Ping_result()
@@ -223,7 +223,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.REQUEST_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = blah_result()
@@ -289,7 +289,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.REQUEST_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = bin_method_result()
@@ -331,7 +331,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.REQUEST_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = param_modifiers_result()
@@ -369,7 +369,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.REQUEST_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = underlying_types_test_result()
@@ -403,7 +403,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.REQUEST_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = getThing_result()
@@ -437,7 +437,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.REQUEST_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = getMyInt_result()
@@ -473,7 +473,7 @@ class Client(actual_base.python.f_BaseFoo.Client, Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TApplicationExceptionType.REQUEST_TOO_LARGE:
+            if x.type == TApplicationExceptionType.RESPONSE_TOO_LARGE:
                 raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = use_subdir_struct_result()
