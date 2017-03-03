@@ -17,5 +17,10 @@ class FSubscription(object):
         return self._topic
 
     def unsubscribe(self):
-        """Unsubscribe from the topic."""
-        self._transport.close()
+        """
+        Unsubscribe from the topic.
+
+        The result of this is a future that should be awaited/yielded
+        appropriately.
+        """
+        return self._transport.unsubscribe()
