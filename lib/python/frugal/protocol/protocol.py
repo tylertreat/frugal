@@ -38,7 +38,7 @@ class FProtocol(TProtocolDecorator, object):
         """Initialize FProtocol.
 
         Args:
-            _wrapped_protocol.protocol: _wrapped_protocol.thrift protocol extending TProtocolBase.
+            wrapped_protocol: wrapped thrift protocol extending TProtocolBase.
         """
         self._wrapped_protocol = wrapped_protocol
         super(FProtocol, self).__init__(self._wrapped_protocol)
