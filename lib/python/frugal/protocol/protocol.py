@@ -187,6 +187,9 @@ class FProtocol(TProtocolDecorator, object):
             self._wrapped_protocol.writeString(value)
 
     @_state_reset_decorator
+    def writeBinary(self, value):
+        self._wrapped_protocol.writeBinary(value)
+
     def readString(self):
         """
         Read a string from the protocol, if python 2, decode from utf-8
