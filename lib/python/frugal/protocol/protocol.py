@@ -11,9 +11,11 @@ _V0 = 0
 
 def _state_reset_decorator(func):
     """
-    Decorator that resets the state of the TCompactProtocol when an exception
-    occurs so the protocol can be reused, i.e. if "REQUEST_TOO_LARGE" error
-    is thrown.
+    Decorator that resets the state of the TCompactProtocol as a hacky
+    workaround for when an exception  occurs so the protocol can be reused, i.e.
+    if "REQUEST_TOO_LARGE" error is thrown. This is only required for the
+    compact protocol as other protocols don't track internal state as a sanity
+    check.
     """
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
