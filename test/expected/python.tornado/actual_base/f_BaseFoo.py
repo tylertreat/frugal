@@ -83,9 +83,8 @@ class Client(Iface):
             x = TApplicationException()
             x.read(iprot)
             iprot.readMessageEnd()
-            if x.type == TTransportExceptionType.REQUEST_TOO_LARGE:
-                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
-                raise TTransportException(type=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=x.message)
+            if x.type == TApplicationExceptionType.REQUEST_TOO_LARGE:
+                raise TTransportException(type=TTransportExceptionType.RESPONSE_TOO_LARGE, message=x.message)
             raise x
         result = basePing_result()
         result.read(iprot)
@@ -136,7 +135,8 @@ class _basePing(FProcessorFunction):
                 oprot.writeMessageEnd()
                 oprot.get_transport().flush()
             except TTransportException as e:
-                if e.type == TTransportExceptionType.RESPONSE_TOO_LARGE:
+                # catch a request too large error because the TMemoryOutputBuffer always throws that if too much data is written
+                if e.type == TTransportExceptionType.REQUEST_TOO_LARGE:
                     raise _write_application_exception(ctx, oprot, "basePing", ex_code=TApplicationExceptionType.RESPONSE_TOO_LARGE, message=e.message)
                 else:
                     raise e
