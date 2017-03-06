@@ -132,7 +132,7 @@ class TestFNatsTransport(AsyncTestCase):
         f = concurrent.Future()
         f.set_result("")
         self.mock_nats_client.publish_request.return_value = f
-        self.mock_nats_client.flush.return_value = f
+        self.mock_nats_client._flush_pending.return_value = f
 
         yield self.transport.flush(frame_length + data)
 
@@ -141,7 +141,7 @@ class TestFNatsTransport(AsyncTestCase):
             self.inbox,
             frame_length + data
         )
-        self.mock_nats_client.flush.assert_called_with()
+        self.mock_nats_client._flush_pending.assert_called_with()
 
     def test_request_size_limit(self):
         self.assertEqual(_NATS_MAX_MESSAGE_SIZE,
