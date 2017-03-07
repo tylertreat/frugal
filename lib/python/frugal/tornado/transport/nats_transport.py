@@ -72,5 +72,13 @@ class FNatsTransport(FAsyncTransport):
         subject = self._subject
         inbox = self._inbox
         yield self._nats_client.publish_request(subject, inbox, payload)
-        # If we don't flush here the ioloop waits for 2 minutes before flushing
-        yield self._nats_client.flush()
+
+        # We need to flush here as publish_request() doesn't flush messages
+        # sent via it like publish() does. NOTE: Can't use flush() here
+        # because flush() also sends a ping to the server. There are a finite
+        # number of pings allowed to be in flight, which causes the nats client
+        # to disconnect itself if that happens. Each concurrent request causes
+        # a ping, causing the nats client to disconnect if that threshold is
+        # reached.
+        # TODO this won't be needed once the nats client is fixed.
+        yield self._nats_client._flush_pending()
