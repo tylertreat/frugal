@@ -133,13 +133,7 @@ def rpc_test_definitions(transport):
     if transport != "http":
         e = TTransportException(TTransportExceptionType.REQUEST_TOO_LARGE)
         tests['testRequestTooLarge'] = dict(
-            args=[six.binary_type(b'\x00' * 1024 * 1024)],
-            expected_result=e
-        )
-
-        e = TTransportException(TTransportExceptionType.REQUEST_TOO_LARGE)
-        tests['testRequestAlmostTooLarge'] = dict(
-            args=[six.binary_type(b'\x00' * (1024 * 1024 - 1))],
+            args=[six.binary_type(b'0' * (1024 * 1024))],
             expected_result=e
         )
 

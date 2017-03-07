@@ -138,11 +138,6 @@ class FrugalTestHandler(Iface):
 
     def testRequestTooLarge(self, ctx, request):
         raise SizeError("testRequestTooLarge should never be successfully called")
-        return
-
-    def testRequestAlmostTooLarge(self, ctx, request):
-        raise SizeError("testRequestAlmostTooLarge should never be successfully called")
-        return
 
     def testResponseTooLarge(self, ctx, request):
         print("test_response_too_large({})".format(request))

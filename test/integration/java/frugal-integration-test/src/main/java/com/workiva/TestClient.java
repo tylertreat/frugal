@@ -600,30 +600,13 @@ public class TestClient {
 
 
                 /**
-                 * REQUEST ALMOST TOO LARGE TEST
-                 */
-                context = new FContext("testRequestAlmostTooLarge");
-                try {
-                    java.nio.ByteBuffer request = ByteBuffer
-                            .allocate(1024*1024-1);
-                    testClient.testRequestAlmostTooLarge(context, request);
-                    System.out.print("\n*** FAILURE ***\n");
-                    returnCode |= 1;
-                } catch (TTransportException e) {
-                    if (e.getType() != TTransportExceptionType.REQUEST_TOO_LARGE) {
-                        System.out.printf("  Unexpected exception %s\n", e);
-                        System.out.print("\n*** FAILURE ***\n");
-                        returnCode |= 1;
-                    }
-                }
-
-                /**
                  * RESPONSE TOO LARGE TEST
                  */
                 context = new FContext("testResponseTooLarge");
+                java.nio.ByteBuffer response;
                 try {
                     java.nio.ByteBuffer request = ByteBuffer.allocate(1);
-                    java.nio.ByteBuffer response = testClient.testResponseTooLarge(context, request);
+                    response = testClient.testResponseTooLarge(context, request);
                     System.out.print("  result\n*** FAILURE ***\n");
                     returnCode |= 1;
                 } catch (TTransportException e) {

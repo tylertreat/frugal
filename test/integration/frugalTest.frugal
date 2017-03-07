@@ -296,17 +296,10 @@ service FrugalTest
 
   /**
    * Print 'testRequestTooLarge(%s)' with request as '%s'
-   * @param binary request - a byte array exceeding 1mb
+   * @param binary request - a byte array at the 1mb
    * There should be no return value, as the request should hit an exception
    */
   void testRequestTooLarge(1: binary request)
-
-  /**
-   * Print 'testRequestAlmostTooLarge(%s)' with request as '%s'
-   * @param binary request - a byte array within 4 bytes of 1mb
-   * There should be no return value, as the request should hit an exception
-   */
-  void testRequestAlmostTooLarge(1: binary request)
 
   /**
    * Print 'testResponseTooLarge(%s)' with request as '%s'

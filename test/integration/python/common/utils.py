@@ -57,10 +57,7 @@ def check_for_failure(actual, expected):
         except Exception:
             failed = True
     elif isinstance(expected, TTransportException):
-        try:
-            if actual.type != expected.type:
-                failed = True
-        except Exception:
+        if actual.type != expected.type:
             failed = True
     elif expected != actual:
         failed = True

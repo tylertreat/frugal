@@ -335,22 +335,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		err = client.TestRequestTooLarge(ctx, request)
 		switch e := err.(type){
 		case thrift.TTransportException:
-			if e.TypeId() != 100{
-				log.Fatalf("Unexpected error code %v",
-					e.TypeId())
-			}
-			log.Println("TApplicationException")
-		default:
-			log.Fatalf("Unexpected TestRequestTooLarge() %v", e)
-		}
-
-		// Request 4 bytes less than the 1mb limit
-		request = make([]byte, 1024 * 1024 - 4)
-		ctx = frugal.NewFContext("TestRequestAlmostTooLarge")
-		err = client.TestRequestAlmostTooLarge(ctx, request)
-		switch e := err.(type){
-		case thrift.TTransportException:
-			if e.TypeId() != 100{
+			if e.TypeId() != frugal.TRANSPORT_EXCEPTION_REQUEST_TOO_LARGE {
 				log.Fatalf("Unexpected error code %v",
 					e.TypeId())
 			}
@@ -364,7 +349,7 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		response, err := client.TestResponseTooLarge(ctx, request)
 		switch e := err.(type){
 		case thrift.TTransportException:
-			if e.TypeId() != 101{
+			if e.TypeId() != frugal.TRANSPORT_EXCEPTION_RESPONSE_TOO_LARGE {
 				log.Fatalf("Unexpected error  %v",
 				e)
 			}

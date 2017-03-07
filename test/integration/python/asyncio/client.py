@@ -151,7 +151,7 @@ def client_middleware(next):
         global middleware_called
         middleware_called = True
         if len(args) > 1 and sys.getsizeof(args[1]) > 1000000:
-            print("{}({}) = ".format(method.__name__, sys.getsizeof(args[1])), end="")
+            print("{}({}) = ".format(method.__name__, len(args[1])), end="")
         else:
             print("{}({}) = ".format(method.__name__, args[1:]), end="")
         # ret is a <class 'coroutine'>

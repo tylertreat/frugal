@@ -190,19 +190,10 @@ func(p *printingHandler) TestRequestTooLarge(ctx frugal.FContext, request []byte
 	return
 }
 
-// TestRequestAlmostTooLarge
-// Only used for testing with NATS.
-// This case should never be hit because the client should encounter a
-// message size error.
-func(p *printingHandler) TestRequestAlmostTooLarge(ctx frugal.FContext, request []byte) (err error) {
-	log.Fatal("TestRequestAlmostTooLarge should never be succeessfully called.")
-	return
-}
-
 // TestResponseTooLarge
 // Only used for testing with NATS.
 // Takes a []btye that is under the 1mb limit and returns with a message that is
-// over the 1mb limit.
+// at the 1mb limit.
 func(p *printingHandler) TestResponseTooLarge (ctx frugal.FContext, request []byte) (response []byte, err error) {
 	response = make([]byte, 1024*1024)
 	return response, nil
