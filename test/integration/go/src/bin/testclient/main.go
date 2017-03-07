@@ -330,10 +330,10 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 	// Only check message size exceptions with NATS transports
 	if *transport != "http" {
 		// Request at the 1mb limit
-		request := make([]byte, 1024 * 1024)
+		request := make([]byte, 1024*1024)
 		ctx = frugal.NewFContext("TestRequestTooLarge")
 		err = client.TestRequestTooLarge(ctx, request)
-		switch e := err.(type){
+		switch e := err.(type) {
 		case thrift.TTransportException:
 			if e.TypeId() != frugal.TRANSPORT_EXCEPTION_REQUEST_TOO_LARGE {
 				log.Fatalf("Unexpected error code %v",
@@ -347,11 +347,11 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		request = make([]byte, 4)
 		ctx = frugal.NewFContext("TestResponseTooLarge")
 		response, err := client.TestResponseTooLarge(ctx, request)
-		switch e := err.(type){
+		switch e := err.(type) {
 		case thrift.TTransportException:
 			if e.TypeId() != frugal.TRANSPORT_EXCEPTION_RESPONSE_TOO_LARGE {
 				log.Fatalf("Unexpected error  %v",
-				e)
+					e)
 			}
 			log.Println("TApplicationException")
 		default:

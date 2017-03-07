@@ -31,8 +31,8 @@ func clientLoggingMiddleware(called chan<- bool) frugal.ServiceMiddleware {
 		return func(service reflect.Value, method reflect.Method, args frugal.Arguments) frugal.Results {
 			var (
 				isByteArray bool
-				length int
-				ret frugal.Results
+				length      int
+				ret         frugal.Results
 			)
 
 			select {
@@ -74,8 +74,8 @@ func serverLoggingMiddleware(called chan<- bool) frugal.ServiceMiddleware {
 		return func(service reflect.Value, method reflect.Method, args frugal.Arguments) frugal.Results {
 			var (
 				isByteArray bool
-				length int
-				ret frugal.Results
+				length      int
+				ret         frugal.Results
 			)
 
 			select {
