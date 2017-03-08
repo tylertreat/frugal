@@ -180,19 +180,17 @@ func (p *printingHandler) TestUncheckedTApplicationException(ctx frugal.FContext
 
 }
 
-// TestRequestTooLarge
-// Only used for testing with NATS.
-// This case should never be hit because the client should encounter a
-// message size error.
+// TestRequestTooLarge takes a []byte that is at the 1mb limit. This code
+// should never be invoked in the handler, as the request should hit a
+// REQUEST_TOO_LARGE error.  This should only be used for testing over NATS.
 func (p *printingHandler) TestRequestTooLarge(ctx frugal.FContext, request []byte) (err error) {
 	log.Fatal("TestRequestTooLarge should never be successfully called.")
 	return
 }
 
-// TestResponseTooLarge
-// Only used for testing with NATS.
-// Takes a []btye that is under the 1mb limit and returns with a message that is
-// at the 1mb limit.
+// TestResponseTooLarge takes a []byte that is under the 1mb limit and
+// returns a []byte that is at the 1mb limit.  The response should hit a
+// RESPONSE_TOO_LARGE error. This should only used for testing with NATS.
 func (p *printingHandler) TestResponseTooLarge(ctx frugal.FContext, request []byte) (response []byte, err error) {
 	response = make([]byte, 1024*1024)
 	return response, nil
