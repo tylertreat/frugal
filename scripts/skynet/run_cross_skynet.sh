@@ -30,9 +30,13 @@ go run scripts/skynet/cross/cross_setup.go
 
 # Run cross tests - want to report any failures, so don't allow command to exit
 # without cleaning up
-cd ${FRUGAL_HOME}
+cd ${FRUGAL_HOME}/test/integration
 
-if go run test/integration/test.go test/integration/tests.json; then
+# Flags for test.go default correctly for Frugal. If either of the following
+# move, these flags will need to be updated or supplied.
+# - test/integration/tests.json
+# - test/integration/log - configured in skynet artifacts section
+if go run test.go; then
     /testing/scripts/skynet/test_cleanup.sh
 else
     /testing/scripts/skynet/test_cleanup.sh
