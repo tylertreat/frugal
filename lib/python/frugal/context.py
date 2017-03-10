@@ -17,6 +17,11 @@ _DEFAULT_TIMEOUT = 5 * 1000
 _OP_ID = 0
 
 
+def _get_next_op_id():
+    global _OP_ID
+    _OP_ID += 1
+    return str(_OP_ID)
+
 class FContext(object):
     """FContext is the context for a Frugal message. Every RPC has an FContext,
     which can be used to set request headers, response headers, and the request
@@ -55,9 +60,7 @@ class FContext(object):
         self._request_headers[_TIMEOUT_HEADER] = str(timeout)
 
         # Take the current op id and increment the counter
-        global _OP_ID
-        self._request_headers[_OPID_HEADER] = str(_OP_ID)
-        _OP_ID += 1
+        self._request_headers[_OPID_HEADER] = _get_next_op_id()
 
     @property
     def correlation_id(self):
@@ -155,6 +158,20 @@ class FContext(object):
         # TODO: check the type of timeout
         self._request_headers[_TIMEOUT_HEADER] = str(timeout)
         return self
+
+    def copy(self):
+        """
+        Performs a deep copy of an FContext while handling opids correctly.
+
+        Returns:
+            A new instance of FContext with identical headers, with the
+            exception of _opid.
+        """
+        copied = FContext()
+        copied._request_headers = self.get_request_headers()
+        copied._response_headers = self.get_response_headers()
+        copied._request_headers[_OPID_HEADER] = _get_next_op_id()
+        return copied
 
     def _check_string(self, string):
         if _IS_PY2 and not \
