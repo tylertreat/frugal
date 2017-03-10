@@ -107,6 +107,9 @@ func (f *FProtocol) ReadRequestHeader() (FContext, error) {
 	}
 
 	for name, value := range headers {
+		if name == opIDHeader {
+			continue
+		}
 		ctx.AddRequestHeader(name, value)
 	}
 
@@ -116,6 +119,10 @@ func (f *FProtocol) ReadRequestHeader() (FContext, error) {
 		return nil, thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, errors.New("frugal: request missing op id"))
 	}
 	setResponseOpID(ctx, opid)
+
+	// Put a new opid in the request headers so this context
+	// can be used/propagated on the receiver
+	ctx.AddRequestHeader(opIDHeader, getNextOpID())
 
 	cid := ctx.CorrelationID()
 	if cid != "" {
@@ -140,6 +147,11 @@ func (f *FProtocol) ReadResponseHeader(ctx FContext) error {
 	}
 
 	for name, value := range headers {
+		// Don't want to overwrite the opid header we set for a
+		// propagated response
+		if name == opIDHeader {
+			continue
+		}
 		ctx.AddResponseHeader(name, value)
 	}
 

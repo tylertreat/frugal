@@ -16,6 +16,18 @@ Smithy build artifacts whereas the 'cross-local' configuration does not
 require these to execute the test suite.  'cross-local' will only execute
 tests using Frugal code generation.
 
+### Debugging
+Errors are reported to unexpected_failures.log (under "Artifacts" on a Skynet
+run or under "Test Artifacts" at the end of the logs in skynet-cli).  This log
+will enable you to see exactly where tests are failing.  This log also contains
+the command (and directory where the command was run) that was used to run each
+configuration near the top of the pair. These commands can be used in local
+debugging - no need to run skynet-cli or push a new commit.  _Note: If you do
+ not via the test suite, you will need to manually take care of setup, such
+ as re-generating code, before executing. You will also need to have gnats
+ running locally._
+
+
 ### General Overview
 The major components of this test suite include:
 * frugalTest.frugal IDL file
@@ -24,7 +36,9 @@ The major components of this test suite include:
 * language specific clients/servers
 
 ##### frugalTest.frugal
-The IDL file from which test cases are generated.
+The IDL file from which test cases are generated.  _This is where tests are
+defined and described. Look here if you aren't sure what a particular test
+should be doing._
 
 The FrugalTest service defines every type of value (int, string, map, list,
 map of maps, etc.) that could be sent across the wire.  Please contact Jacob
@@ -69,6 +83,11 @@ For publish/subscribe testing, servers are set up as a subscriber and publish
 an acknowledgement upon receipt of a publish.  Clients act as a publisher
 (subscribing to the acknowledgement) and verify that an acknowledgement is
 returned after publishing.
+
+### Contributing
+Follow Frugal's contribution [guidelines](https://github.com/Workiva/frugal/blob/master/CONTRIBUTING.md).
+Any tests that are added should be added to all languages (where applicable).
+
 
 ### Known Issues
 

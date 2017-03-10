@@ -82,7 +82,22 @@ type FContext interface {
 	Timeout() time.Duration
 }
 
+// Clone performs a deep copy of an FContext while handling opids correctly.
+// TODO 3.0 consider adding this to the FContext interface.
+func Clone(ctx FContext) FContext {
+	clone := &FContextImpl{
+		requestHeaders: ctx.RequestHeaders(),
+		responseHeaders: ctx.ResponseHeaders(),
+	}
+	clone.requestHeaders[opIDHeader] = getNextOpID()
+	return clone
+}
+
 var nextOpID uint64
+
+func getNextOpID() string {
+	return strconv.FormatUint(atomic.AddUint64(&nextOpID, 1), 10)
+}
 
 // FContextImpl is an implementation of FContext.
 type FContextImpl struct {
@@ -102,14 +117,12 @@ func NewFContext(correlationID string) FContext {
 	ctx := &FContextImpl{
 		requestHeaders: map[string]string{
 			cidHeader:     correlationID,
-			opIDHeader:    "0",
+			opIDHeader:    getNextOpID(),
 			timeoutHeader: strconv.FormatInt(int64(defaultTimeout/time.Millisecond), 10),
 		},
 		responseHeaders: make(map[string]string),
 	}
 
-	opID := atomic.AddUint64(&nextOpID, 1)
-	setRequestOpID(ctx, opID)
 	return ctx
 }
 
