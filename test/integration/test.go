@@ -31,8 +31,7 @@ type failures struct {
 	mu     sync.Mutex
 }
 
-// These are properly configured for Frugal. They are set as flags so the
-// crossrunner can be reused in the SDK.
+// These are properly configured for Frugal.
 var testDefinitions = flag.String("tests", "tests.json", "Location of json test definitions")
 var outDir = flag.String("outDir", "log", "Output directory of crossrunner logs")
 

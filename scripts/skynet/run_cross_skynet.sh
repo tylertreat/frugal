@@ -32,11 +32,7 @@ go run scripts/skynet/cross/cross_setup.go
 # without cleaning up
 cd ${FRUGAL_HOME}/test/integration
 
-# Flags for test.go default correctly for Frugal. If either of the following
-# move, these flags will need to be updated or supplied.
-# - test/integration/tests.json
-# - test/integration/log - configured in skynet artifacts section
-if go run test.go; then
+if go run test.go --tests tests.json --outDir log; then
     /testing/scripts/skynet/test_cleanup.sh
 else
     /testing/scripts/skynet/test_cleanup.sh
