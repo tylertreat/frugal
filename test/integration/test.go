@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"runtime"
@@ -30,23 +31,20 @@ type failures struct {
 	mu     sync.Mutex
 }
 
-func main() {
-	startTime := time.Now()
+// These are properly configured for Frugal.
+var testDefinitions = flag.String("tests", "tests.json", "Location of json test definitions")
+var outDir = flag.String("outDir", "log", "Output directory of crossrunner logs")
 
-	// path to json test definitions
-	var testDefinitions string
-	if len(os.Args) < 2 {
-		log.Fatal("Expected test definition json file. None provided.")
-	} else {
-		testDefinitions = os.Args[1]
-	}
+func main() {
+	flag.Parse()
+	startTime := time.Now()
 
 	// TODO: Allow setting loglevel to debug with -V flag/-debug/similar
 	// log.SetLevel(log.DebugLevel)
 
 	// pairs is a struct of valid client/server pairs loaded from the provided
 	// json file
-	pairs, err := crossrunner.Load(testDefinitions)
+	pairs, err := crossrunner.Load(*testDefinitions)
 	if err != nil {
 		log.Info("Error in parsing json test definitions")
 		panic(err)
@@ -54,22 +52,16 @@ func main() {
 
 	crossrunnerTasks := make(chan *testCase)
 
-	// All tests run relative to test/integration
-	if err := os.Chdir("test/integration"); err != nil {
-		log.Info("Unable to change directory to /test/integration")
-		panic(err)
-	}
-
 	// Need to create log directory for Skynet-cli. This isn't an issue on Skynet.
-	if _, err = os.Stat("log"); os.IsNotExist(err) {
-		if err = os.Mkdir("log", 0755); err != nil {
-			log.Info("Unable to create 'log' directory")
+	if _, err = os.Stat(*outDir); os.IsNotExist(err) {
+		if err = os.Mkdir(*outDir, 0755); err != nil {
+			log.Infof("Unable to create '%s' directory", *outDir)
 			panic(err)
 		}
 	}
 	// Make log file for unexpected failures
 	failLog := &failures{
-		path: "log/unexpected_failures.log",
+		path: fmt.Sprintf("%s/unexpected_failures.log", *outDir),
 	}
 	if file, err := os.Create(failLog.path); err != nil {
 		log.Info("Unable to create 'unexpected_failures.log'")
