@@ -28,7 +28,9 @@ def main():
     protocol_factory = get_protocol_factory(args.protocol_type)
 
     if args.transport_type == "http":
-        transport = THttpTransport("http://localhost:" + str(args.port))
+        transport = THttpTransport("http://localhost:" + str(args.port),
+                                   request_capacity=1048576,
+                                   response_capacity=1048576)
     else:
         print("Unknown transport type: {}".format(args.transport_type))
         sys.exit(1)
@@ -85,7 +87,10 @@ def client_middleware(next):
     def handler(method, args):
         global middleware_called
         middleware_called = True
-        print(u"{}({}) = ".format(method.im_func.func_name, args[1:], end=""))
+        if len(args) > 1 and sys.getsizeof(args[1]) > 1000000:
+            print(u"{}({}) = ".format(method.im_func.func_name, len(args[1]), end=""))
+        else:
+            print(u"{}({}) = ".format(method.im_func.func_name, args[1:], end=""))
         ret = next(method, args)
         print(u"{}".format(ret))
         return ret

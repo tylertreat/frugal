@@ -112,7 +112,7 @@ public class TestClient {
                 case "http":
                     String url = "http://" + host + ":" + port;
                     CloseableHttpClient httpClient = HttpClients.createDefault();
-                    FHttpTransport.Builder httpTransport = new FHttpTransport.Builder(httpClient, url);
+                    FHttpTransport.Builder httpTransport = new FHttpTransport.Builder(httpClient, url).withRequestSizeLimit(1048576).withResponseSizeLimit(1048576);
                     fTransport = httpTransport.build();
                     fTransport.open();
                     break;
@@ -575,47 +575,43 @@ public class TestClient {
             }
 
 
-            // Only check message size exceptions with NATS transports
-            if (!transport_type.equals("http")) {
-
-                /**
-                 * REQUEST TOO LARGE TEST
-                 */
-                context = new FContext("testRequestTooLarge");
-                try {
-                    java.nio.ByteBuffer request = ByteBuffer
-                            .allocate(1024*1024);
-                    testClient.testRequestTooLarge(context, request);
+            /**
+             * REQUEST TOO LARGE TEST
+             */
+            context = new FContext("testRequestTooLarge");
+            try {
+                java.nio.ByteBuffer request = ByteBuffer
+                        .allocate(1024*1024);
+                testClient.testRequestTooLarge(context, request);
+                System.out.print("\n*** FAILURE ***\n");
+                returnCode |= 1;
+            } catch (TTransportException e) {
+                System.out.println("Failed Request Too Large");
+                System.out.println(e);
+                if (e.getType() != TTransportExceptionType.REQUEST_TOO_LARGE) {
+                    System.out.printf("  Unexpected exception %s\n", e);
                     System.out.print("\n*** FAILURE ***\n");
                     returnCode |= 1;
-                } catch (TTransportException e) {
-                    System.out.println("Failed Request Too Large");
-                    System.out.println(e);
-                    if (e.getType() != TTransportExceptionType.REQUEST_TOO_LARGE) {
-                        System.out.printf("  Unexpected exception %s\n", e);
-                        System.out.print("\n*** FAILURE ***\n");
-                        returnCode |= 1;
-                    }
                 }
+            }
 
 
-                /**
-                 * RESPONSE TOO LARGE TEST
-                 */
-                context = new FContext("testResponseTooLarge");
-                java.nio.ByteBuffer response;
-                try {
-                    java.nio.ByteBuffer request = ByteBuffer.allocate(1);
-                    response = testClient.testResponseTooLarge(context, request);
+            /**
+             * RESPONSE TOO LARGE TEST
+             */
+            context = new FContext("testResponseTooLarge");
+            java.nio.ByteBuffer response;
+            try {
+                java.nio.ByteBuffer request = ByteBuffer.allocate(1);
+                response = testClient.testResponseTooLarge(context, request);
+                System.out.print("  result\n*** FAILURE ***\n");
+                returnCode |= 1;
+            } catch (TTransportException e) {
+                TTransportException expectedException = new TTransportException(TTransportExceptionType.RESPONSE_TOO_LARGE);
+                if (e.getType() != expectedException.getType()) {
+                    System.out.printf("  Unexpected exception %s\n", e);
                     System.out.print("  result\n*** FAILURE ***\n");
                     returnCode |= 1;
-                } catch (TTransportException e) {
-                    TTransportException expectedException = new TTransportException(TTransportExceptionType.RESPONSE_TOO_LARGE);
-                    if (e.getType() != expectedException.getType()) {
-                        System.out.printf("  Unexpected exception %s\n", e);
-                        System.out.print("  result\n*** FAILURE ***\n");
-                        returnCode |= 1;
-                    }
                 }
             }
 

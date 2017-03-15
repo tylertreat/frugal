@@ -49,7 +49,8 @@ async def main():
         transport = FNatsTransport(nats_client, "frugal.foo.bar.rpc.{}".format(args.port))
         await transport.open()
     elif args.transport_type == "http":
-        transport = FHttpTransport("http://localhost:{port}".format(port=args.port))
+        transport = FHttpTransport("http://localhost:{port}".format(
+            port=args.port), request_capacity=1048576, response_capacity=1048576)
     else:
         print("Unknown transport type: {type}".format(type=args.transport_type))
         sys.exit(1)

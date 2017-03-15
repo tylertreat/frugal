@@ -327,37 +327,35 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatalf("Unexpected TestMultiException() %#v ", err)
 	}
 
-	// Only check message size exceptions with NATS transports
-	if *transport != "http" {
-		// Request at the 1mb limit
-		request := make([]byte, 1024*1024)
-		ctx = frugal.NewFContext("TestRequestTooLarge")
-		err = client.TestRequestTooLarge(ctx, request)
-		switch e := err.(type) {
-		case thrift.TTransportException:
-			if e.TypeId() != frugal.TRANSPORT_EXCEPTION_REQUEST_TOO_LARGE {
-				log.Fatalf("Unexpected error code %v",
-					e.TypeId())
-			}
-			log.Println("TApplicationException")
-		default:
-			log.Fatalf("Unexpected TestRequestTooLarge() %v", e)
+	// Request at the 1mb limit
+	request := make([]byte, 1024*1024)
+	ctx = frugal.NewFContext("TestRequestTooLarge")
+	err = client.TestRequestTooLarge(ctx, request)
+	switch e := err.(type) {
+	case thrift.TTransportException:
+		if e.TypeId() != frugal.TRANSPORT_EXCEPTION_REQUEST_TOO_LARGE {
+			log.Fatalf("Unexpected error code %v",
+				e.TypeId())
 		}
+		log.Println("TApplicationException")
+	default:
+		log.Fatalf("Unexpected TestRequestTooLarge() %v", e.Error())
+	}
 
-		request = make([]byte, 4)
-		ctx = frugal.NewFContext("TestResponseTooLarge")
-		response, err := client.TestResponseTooLarge(ctx, request)
-		switch e := err.(type) {
-		case thrift.TTransportException:
-			if e.TypeId() != frugal.TRANSPORT_EXCEPTION_RESPONSE_TOO_LARGE {
-				log.Fatalf("Unexpected error  %v",
-					e)
-			}
-			log.Println("TApplicationException")
-		default:
-			log.Fatalf("Unexpected TestRequestTooLarge() %v",
-				response)
+	request = make([]byte, 4)
+	ctx = frugal.NewFContext("TestResponseTooLarge")
+	response, err := client.TestResponseTooLarge(ctx, request)
+	switch e := err.(type) {
+	case thrift.TTransportException:
+		if e.TypeId() != frugal.TRANSPORT_EXCEPTION_RESPONSE_TOO_LARGE {
+			log.Fatalf("Unexpected error  %v",
+				e)
 		}
+		log.Println("TApplicationException")
+	default:
+		log.Fatalf("Unexpected TestResponseTooLarge() %v",
+			response)
+		log.Fatalf("TestResponseTooLarge() error: %v", e.Error())
 	}
 
 	ctx = frugal.NewFContext("TestOneway")

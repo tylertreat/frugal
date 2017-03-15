@@ -103,7 +103,7 @@ func StartClient(
 	case "stateless":
 		trans = frugal.NewFNatsTransport(conn, fmt.Sprintf("frugal.foo.bar.rpc.%d", port), "")
 	case "http":
-		trans = frugal.NewFHTTPTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).Build()
+		trans = frugal.NewFHTTPTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).WithRequestSizeLimit(1048576).WithResponseSizeLimit(1048576).Build()
 	default:
 		return nil, fmt.Errorf("Invalid transport specified %s", transport)
 	}

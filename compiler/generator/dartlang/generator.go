@@ -1555,7 +1555,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += tabtab + "if (msg.type == thrift.TMessageType.EXCEPTION) {\n"
 	contents += tabtabtab + "thrift.TApplicationError error = thrift.TApplicationError.read(iprot);\n"
 	contents += tabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtab + "if (error.type == frugal.FrugalTApplicationErrorType.RESPONSE_TOO_LARGE) {\n"
+	contents += tabtabtab + "if (error.type == frugal.FrugalTTransportErrorType.REQUEST_TOO_LARGE) {\n"
 	contents += tabtabtabtab + "throw new thrift.TTransportError(frugal.FrugalTTransportErrorType.RESPONSE_TOO_LARGE, error.message);\n"
 	contents += tabtabtab + "}\n"
 	contents += tabtabtab + "throw error;\n"
