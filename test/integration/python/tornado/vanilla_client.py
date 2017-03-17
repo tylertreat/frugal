@@ -28,9 +28,11 @@ def main():
     protocol_factory = get_protocol_factory(args.protocol_type)
 
     if args.transport_type == "http":
+        # Set request and response capacity to 1mb
+        max_size = 1048576
         transport = THttpTransport("http://localhost:" + str(args.port),
-                                   request_capacity=1048576,
-                                   response_capacity=1048576)
+                                   request_capacity=max_size,
+                                   response_capacity=max_size)
     else:
         print("Unknown transport type: {}".format(args.transport_type))
         sys.exit(1)

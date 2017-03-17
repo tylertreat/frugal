@@ -178,7 +178,9 @@ Future _initTestClient(
 
 //  Nats is not available without the SDK in dart, so HTTP is the only transport we can test
   var uri = Uri.parse('http://$host:$port');
-  transport = new FHttpTransport(new wt.Client(), uri, requestSizeLimit: 1048576, responseSizeLimit: 1048576);
+// Set request and response size limit to 1mb
+  var maxSize = 1048576;
+  transport = new FHttpTransport(new wt.Client(), uri, requestSizeLimit: maxSize, responseSizeLimit: maxSize);
   await transport.open();
 
   fProtocolFactory = new FProtocolFactory(getProtocolFactory(protocolType));

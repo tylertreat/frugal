@@ -112,7 +112,9 @@ public class TestClient {
                 case "http":
                     String url = "http://" + host + ":" + port;
                     CloseableHttpClient httpClient = HttpClients.createDefault();
-                    FHttpTransport.Builder httpTransport = new FHttpTransport.Builder(httpClient, url).withRequestSizeLimit(1048576).withResponseSizeLimit(1048576);
+                    // Set request and response size limit to 1mb
+                    int maxSize = 1048576;
+                    FHttpTransport.Builder httpTransport = new FHttpTransport.Builder(httpClient, url).withRequestSizeLimit(maxSize).withResponseSizeLimit(maxSize);
                     fTransport = httpTransport.build();
                     fTransport.open();
                     break;
