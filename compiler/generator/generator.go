@@ -122,6 +122,8 @@ type LanguageGenerator interface {
 	GenerateScopeImports(*os.File, *parser.Scope) error
 	GeneratePublisher(*os.File, *parser.Scope) error
 	GenerateSubscriber(*os.File, *parser.Scope) error
+	GenerateDurablePublisher(*os.File, *parser.Scope) error
+	GenerateDurableSubscriber(*os.File, *parser.Scope) error
 }
 
 // GetPackageComponents returns the package string split on dots.
@@ -300,6 +302,30 @@ func (o *programGenerator) generateScopeFile(scope *parser.Scope, outputDir stri
 
 	if fileType == CombinedScopeFile || fileType == SubscribeFile {
 		if err := o.GenerateSubscriber(file, scope); err != nil {
+			return err
+		}
+	}
+
+	if fileType == CombinedScopeFile {
+		if err := o.GenerateNewline(file, 2); err != nil {
+			return err
+		}
+	}
+
+	if fileType == CombinedScopeFile || fileType == PublishFile {
+		if err := o.GenerateDurablePublisher(file, scope); err != nil {
+			return err
+		}
+	}
+
+	if fileType == CombinedScopeFile {
+		if err := o.GenerateNewline(file, 2); err != nil {
+			return err
+		}
+	}
+
+	if fileType == CombinedScopeFile || fileType == SubscribeFile {
+		if err := o.GenerateDurableSubscriber(file, scope); err != nil {
 			return err
 		}
 	}

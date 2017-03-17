@@ -43,6 +43,16 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	}
 }
 
+func (g *Generator) GenerateDurablePublisher(file *os.File, scope *parser.Scope) error {
+	// TODO
+	return nil
+}
+
+func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
+	// TODO
+	return nil
+}
+
 // ADTs would be really nice
 type IsSetType int64
 

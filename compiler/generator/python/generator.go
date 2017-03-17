@@ -49,6 +49,16 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	return gen
 }
 
+func (g *Generator) GenerateDurablePublisher(file *os.File, scope *parser.Scope) error {
+	// TODO
+	return nil
+}
+
+func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
+	// TODO
+	return nil
+}
+
 // SetupGenerator performs any setup logic before generation.
 func (g *Generator) SetupGenerator(outputDir string) error {
 	g.outputDir = outputDir

@@ -56,6 +56,51 @@ type FSubscriberTransport interface {
 	IsSubscribed() bool
 }
 
+
+type FDurablePublisherTransportFactory interface {
+	GetTransport() FDurablePublisherTransport
+}
+
+type FDurableSubscriberTransportFactory interface {
+	GetTransport() FDurableSubscriberTransport
+}
+
+type AckFunc func() error
+
+type FDurableAsyncCallback func(thrift.TTransport, *string, AckFunc) error
+
+type FDurablePublisherTransport interface {
+	// Open opens the transport.
+	Open() error
+
+	// Close closes the transport.
+	Close() error
+
+	// IsOpen returns true if the transport is open, false otherwise.
+	IsOpen() bool
+
+	// GetPublishSizeLimit returns the maximum allowable size of a payload
+	// to be published. A non-positive number is returned to indicate an
+	// unbounded allowable size.
+	GetPublishSizeLimit() uint
+
+	// Publish sends the given payload with the transport. Implementations
+	// of publish should be threadsafe.
+	Publish(string, *string, []byte) error
+}
+
+type FDurableSubscriberTransport interface {
+	// Subscribe opens the transport and sets the subscribe topic.
+	Subscribe(string, FDurableAsyncCallback) error
+
+	// Unsubscribe unsubscribes from the topic and closes the transport.
+	Unsubscribe() error
+
+	// IsSubscribed returns true if the transport is subscribed to a topic,
+	// false otherwise.
+	IsSubscribed() bool
+}
+
 // FTransport is Frugal's equivalent of Thrift's TTransport. FTransport is
 // comparable to Thrift's TTransport in that it represents the transport layer
 // for frugal clients. However, frugal is callback based and sends only framed
