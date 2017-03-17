@@ -1,1 +1,1 @@
-frugal
+e ../../lib/python/

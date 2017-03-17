@@ -1,1 +1,1 @@
-frugal[tornado]
+e ../../lib/python/[tornado]

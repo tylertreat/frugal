@@ -1,1 +1,1 @@
-frugal[asyncio]
+e ../../lib/python/[asyncio]
