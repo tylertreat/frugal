@@ -39,15 +39,11 @@ func clientLoggingMiddleware(called chan<- bool) frugal.ServiceMiddleware {
 			case called <- true:
 			default:
 			}
+
+			isByteArray, length = checkForByteArray(args)
+
 			// If first argument after the fContext is a byte array
 			// print the length (size) instead of the contents
-			if len(args) > 1 {
-				byteArray, ok := args[1].([]byte)
-				if ok {
-					isByteArray = true
-					length = len(byteArray)
-				}
-			}
 			if isByteArray {
 				fmt.Printf("%v(%v) = ", method.Name, length)
 				ret = next(service, method, args)
@@ -82,13 +78,7 @@ func serverLoggingMiddleware(called chan<- bool) frugal.ServiceMiddleware {
 
 			ret = next(service, method, args)
 
-			if len(args) > 1 {
-				byteArray, ok := args[1].([]byte)
-				if ok {
-					isByteArray = true
-					length = len(byteArray)
-				}
-			}
+			isByteArray, length = checkForByteArray(args)
 
 			if isByteArray {
 				byteArray, ok := ret[0].([]byte)
@@ -105,4 +95,16 @@ func serverLoggingMiddleware(called chan<- bool) frugal.ServiceMiddleware {
 			return ret
 		}
 	}
+}
+
+func checkForByteArray(args frugal.Arguments) (isByteArray bool, length int) {
+	if len(args) > 1 {
+		byteArray, ok := args[1].([]byte)
+		if ok {
+			isByteArray = true
+			length = len(byteArray)
+			return isByteArray, length
+		}
+	}
+	return false, 0
 }
