@@ -362,7 +362,7 @@ func (p *albumWinnersDurablePublisher) Close() error {
 }
 
 func (p *albumWinnersDurablePublisher) PublishContestStart(ctx frugal.FContext, groupID *string, req []*Album) error {
-	ret := p.methods["publishContestStart"].Invoke([]interface{}{ctx, req})
+	ret := p.methods["publishContestStart"].Invoke([]interface{}{ctx, groupID, req})
 	if ret[0] != nil {
 		return ret[0].(error)
 	}
@@ -402,7 +402,7 @@ func (p *albumWinnersDurablePublisher) publishContestStart(ctx frugal.FContext, 
 }
 
 func (p *albumWinnersDurablePublisher) PublishTimeLeft(ctx frugal.FContext, groupID *string, req Minutes) error {
-	ret := p.methods["publishTimeLeft"].Invoke([]interface{}{ctx, req})
+	ret := p.methods["publishTimeLeft"].Invoke([]interface{}{ctx, groupID, req})
 	if ret[0] != nil {
 		return ret[0].(error)
 	}
@@ -434,7 +434,7 @@ func (p *albumWinnersDurablePublisher) publishTimeLeft(ctx frugal.FContext, grou
 }
 
 func (p *albumWinnersDurablePublisher) PublishWinner(ctx frugal.FContext, groupID *string, req *Album) error {
-	ret := p.methods["publishWinner"].Invoke([]interface{}{ctx, req})
+	ret := p.methods["publishWinner"].Invoke([]interface{}{ctx, groupID, req})
 	if ret[0] != nil {
 		return ret[0].(error)
 	}
@@ -469,9 +469,9 @@ func (p *albumWinnersDurablePublisher) publishWinner(ctx frugal.FContext, groupI
 // semantics. Subscribers to this scope will be notified if they win a contest.
 // Scopes must have a prefix.
 type AlbumWinnersDurableSubscriber interface {
-	SubscribeContestStart(handler func(frugal.FContext, *string, frugal.AckFunc, []*Album)) (*frugal.FSubscription, error)
-	SubscribeTimeLeft(handler func(frugal.FContext, *string, frugal.AckFunc, Minutes)) (*frugal.FSubscription, error)
-	SubscribeWinner(handler func(frugal.FContext, *string, frugal.AckFunc, *Album)) (*frugal.FSubscription, error)
+	SubscribeContestStart(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, []*Album)) (*frugal.FSubscription, error)
+	SubscribeTimeLeft(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, Minutes)) (*frugal.FSubscription, error)
+	SubscribeWinner(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, *Album)) (*frugal.FSubscription, error)
 }
 
 type albumWinnersDurableSubscriber struct {
@@ -484,11 +484,11 @@ func NewAlbumWinnersDurableSubscriber(provider *frugal.FDurableScopeProvider, mi
 	return &albumWinnersDurableSubscriber{provider: provider, middleware: middleware}
 }
 
-func (l *albumWinnersDurableSubscriber) SubscribeContestStart(handler func(frugal.FContext, *string, frugal.AckFunc, []*Album)) (*frugal.FSubscription, error) {
+func (l *albumWinnersDurableSubscriber) SubscribeContestStart(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, []*Album)) (*frugal.FSubscription, error) {
 	op := "ContestStart"
 	prefix := "v1.music."
 	topic := fmt.Sprintf("%sAlbumWinners%s%s", prefix, delimiter, op)
-	transport, protocolFactory := l.provider.NewSubscriber()
+	transport, protocolFactory := l.provider.NewSubscriber(manualAck)
 	cb := l.recvContestStart(op, protocolFactory, handler)
 	if err := transport.Subscribe(topic, cb); err != nil {
 		return nil, err
@@ -498,7 +498,7 @@ func (l *albumWinnersDurableSubscriber) SubscribeContestStart(handler func(fruga
 	return sub, nil
 }
 
-func (l *albumWinnersDurableSubscriber) recvContestStart(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, []*Album)) frugal.FDurableAsyncCallback {
+func (l *albumWinnersDurableSubscriber) recvContestStart(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, frugal.AckFunc, []*Album)) frugal.FDurableAsyncCallback {
 	method := frugal.NewMethod(l, handler, "SubscribeContestStart", l.middleware)
 	return func(transport thrift.TTransport, groupID *string, ackFunc frugal.AckFunc) error {
 		iprot := pf.GetProtocol(transport)
@@ -539,11 +539,11 @@ func (l *albumWinnersDurableSubscriber) recvContestStart(op string, pf *frugal.F
 	}
 }
 
-func (l *albumWinnersDurableSubscriber) SubscribeTimeLeft(handler func(frugal.FContext, *string, frugal.AckFunc, Minutes)) (*frugal.FSubscription, error) {
+func (l *albumWinnersDurableSubscriber) SubscribeTimeLeft(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, Minutes)) (*frugal.FSubscription, error) {
 	op := "TimeLeft"
 	prefix := "v1.music."
 	topic := fmt.Sprintf("%sAlbumWinners%s%s", prefix, delimiter, op)
-	transport, protocolFactory := l.provider.NewSubscriber()
+	transport, protocolFactory := l.provider.NewSubscriber(manualAck)
 	cb := l.recvTimeLeft(op, protocolFactory, handler)
 	if err := transport.Subscribe(topic, cb); err != nil {
 		return nil, err
@@ -553,7 +553,7 @@ func (l *albumWinnersDurableSubscriber) SubscribeTimeLeft(handler func(frugal.FC
 	return sub, nil
 }
 
-func (l *albumWinnersDurableSubscriber) recvTimeLeft(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, Minutes)) frugal.FDurableAsyncCallback {
+func (l *albumWinnersDurableSubscriber) recvTimeLeft(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, frugal.AckFunc, Minutes)) frugal.FDurableAsyncCallback {
 	method := frugal.NewMethod(l, handler, "SubscribeTimeLeft", l.middleware)
 	return func(transport thrift.TTransport, groupID *string, ackFunc frugal.AckFunc) error {
 		iprot := pf.GetProtocol(transport)
@@ -586,11 +586,11 @@ func (l *albumWinnersDurableSubscriber) recvTimeLeft(op string, pf *frugal.FProt
 	}
 }
 
-func (l *albumWinnersDurableSubscriber) SubscribeWinner(handler func(frugal.FContext, *string, frugal.AckFunc, *Album)) (*frugal.FSubscription, error) {
+func (l *albumWinnersDurableSubscriber) SubscribeWinner(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, *Album)) (*frugal.FSubscription, error) {
 	op := "Winner"
 	prefix := "v1.music."
 	topic := fmt.Sprintf("%sAlbumWinners%s%s", prefix, delimiter, op)
-	transport, protocolFactory := l.provider.NewSubscriber()
+	transport, protocolFactory := l.provider.NewSubscriber(manualAck)
 	cb := l.recvWinner(op, protocolFactory, handler)
 	if err := transport.Subscribe(topic, cb); err != nil {
 		return nil, err
@@ -600,7 +600,7 @@ func (l *albumWinnersDurableSubscriber) SubscribeWinner(handler func(frugal.FCon
 	return sub, nil
 }
 
-func (l *albumWinnersDurableSubscriber) recvWinner(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *Album)) frugal.FDurableAsyncCallback {
+func (l *albumWinnersDurableSubscriber) recvWinner(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, frugal.AckFunc, *Album)) frugal.FDurableAsyncCallback {
 	method := frugal.NewMethod(l, handler, "SubscribeWinner", l.middleware)
 	return func(transport thrift.TTransport, groupID *string, ackFunc frugal.AckFunc) error {
 		iprot := pf.GetProtocol(transport)

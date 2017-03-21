@@ -70,8 +70,8 @@ func (p *FDurableScopeProvider) NewPublisher() (FDurablePublisherTransport, *FPr
 
 // NewSubscriber returns a new FSubscriberTransport and FProtocolFactory used by
 // scope subscribers.
-func (p *FDurableScopeProvider) NewSubscriber() (FDurableSubscriberTransport, *FProtocolFactory) {
-	transport := p.subscriberTransportFactory.GetTransport()
+func (p *FDurableScopeProvider) NewSubscriber(manualAck bool) (FDurableSubscriberTransport, *FProtocolFactory) {
+	transport := p.subscriberTransportFactory.GetTransport(manualAck)
 	return transport, p.protocolFactory
 }
 

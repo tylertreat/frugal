@@ -62,7 +62,7 @@ type FDurablePublisherTransportFactory interface {
 }
 
 type FDurableSubscriberTransportFactory interface {
-	GetTransport() FDurableSubscriberTransport
+	GetTransport(manualAck bool) FDurableSubscriberTransport
 }
 
 type AckFunc func() error

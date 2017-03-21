@@ -1434,7 +1434,7 @@ func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope, durab
 	} else {
 		subscriber += fmt.Sprintf("type %sDurableSubscriber interface {\n", scopeCamel)
 		for _, op := range scope.Operations {
-			subscriber += fmt.Sprintf("\tSubscribe%s(%shandler func(frugal.FContext, *string, frugal.AckFunc, %s)) (*frugal.FSubscription, error)\n",
+			subscriber += fmt.Sprintf("\tSubscribe%s(%smanualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, %s)) (*frugal.FSubscription, error)\n",
 				op.Name, args, g.getGoTypeFromThriftType(op.Type))
 		}
 	}
@@ -1489,13 +1489,17 @@ func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Oper
 		subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(frugal.FContext, %s)) (*frugal.FSubscription, error) {\n",
 			scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
 	} else {
-		subscriber += fmt.Sprintf("func (l *%sDurableSubscriber) Subscribe%s(%shandler func(frugal.FContext, *string, frugal.AckFunc, %s)) (*frugal.FSubscription, error) {\n",
+		subscriber += fmt.Sprintf("func (l *%sDurableSubscriber) Subscribe%s(%smanualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, %s)) (*frugal.FSubscription, error) {\n",
 			scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
 	}
 	subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 	subscriber += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 	subscriber += "\ttopic := fmt.Sprintf(\"%s" + scopeTitle + "%s%s\", prefix, delimiter, op)\n"
-	subscriber += "\ttransport, protocolFactory := l.provider.NewSubscriber()\n"
+	if !durable {
+		subscriber += "\ttransport, protocolFactory := l.provider.NewSubscriber()\n"
+	} else {
+		subscriber += "\ttransport, protocolFactory := l.provider.NewSubscriber(manualAck)\n"
+	}
 	subscriber += fmt.Sprintf("\tcb := l.recv%s(op, protocolFactory, handler)\n", op.Name)
 	subscriber += "\tif err := transport.Subscribe(topic, cb); err != nil {\n"
 	subscriber += "\t\treturn nil, err\n"
