@@ -65,11 +65,12 @@ func callEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatal("Unexpected error in TestVoid() call: ", err)
 	}
 
-	thing, err := client.TestString(ctx, "thing")
+	strInput := "thingå∫ç"
+	thing, err := client.TestString(ctx, strInput)
 	if err != nil {
 		log.Fatal("Unexpected error in TestString() call: ", err)
 	}
-	if thing != "thing" {
+	if thing != strInput {
 		log.Fatalf("Unexpected TestString() result, expected 'thing' got '%s' ", thing)
 	}
 

@@ -192,7 +192,7 @@ List<FTest> _createTests() {
   }));
 
   tests.add(new FTest(1, 'testString', () async {
-    var input = 'Test';
+    var input = 'Testå∫ç';
     var result = await client.testString(ctx, input);
     if (result != input) throw new FTestError(result, input);
   }));
