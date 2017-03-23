@@ -2,9 +2,10 @@ package common
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"

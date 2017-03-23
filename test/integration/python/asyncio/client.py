@@ -49,7 +49,11 @@ async def main():
         transport = FNatsTransport(nats_client, "frugal.foo.bar.rpc.{}".format(args.port))
         await transport.open()
     elif args.transport_type == "http":
-        transport = FHttpTransport("http://localhost:{port}".format(port=args.port))
+        # Set request and response capacity to 1mb
+        max_size = 1048576
+        transport = FHttpTransport("http://localhost:{port}".format(
+            port=args.port), request_capacity=max_size,
+            response_capacity=max_size)
     else:
         print("Unknown transport type: {type}".format(type=args.transport_type))
         sys.exit(1)
@@ -57,17 +61,17 @@ async def main():
     client = FrugalTestClient(FServiceProvider(transport, protocol_factory), client_middleware)
     ctx = FContext("test")
 
-    await test_rpc(client, ctx)
+    await test_rpc(client, ctx, args.transport_type)
     await test_pub_sub(nats_client, protocol_factory, args.port)
 
     await nats_client.close()
 
 
-async def test_rpc(client, ctx):
+async def test_rpc(client, ctx, transport):
     test_failed = False
 
     # Iterate over all expected RPC results
-    for rpc, vals in rpc_test_definitions().items():
+    for rpc, vals in rpc_test_definitions(transport).items():
         method = getattr(client, rpc)
         args = vals['args']
         expected_result = vals['expected_result']
@@ -150,7 +154,10 @@ def client_middleware(next):
     def handler(method, args):
         global middleware_called
         middleware_called = True
-        print(u"{}({}) = ".format(method.__name__, args[1:], end=""))
+        if len(args) > 1 and sys.getsizeof(args[1]) > 1000000:
+            print("{}({}) = ".format(method.__name__, len(args[1])), end="")
+        else:
+            print("{}({}) = ".format(method.__name__, args[1:]), end="")
         # ret is a <class 'coroutine'>
         ret = next(method, args)
         # Use asyncIO.ensure_future to convert the coroutine to a task

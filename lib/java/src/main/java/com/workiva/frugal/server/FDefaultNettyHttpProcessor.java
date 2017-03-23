@@ -204,9 +204,12 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
         if (responseLimit > 0 && outputBuffer.readableBytes() > responseLimit) {
             LOGGER.error("Response size too large for client." +
                     " Received: " + outputBuffer.readableBytes() + ", Limit: " + responseLimit);
-            return new DefaultFullHttpResponse(
+
+            FullHttpResponse errorResponse = new DefaultFullHttpResponse(
                     HTTP_1_1,
                     REQUEST_ENTITY_TOO_LARGE);
+            errorResponse.headers().set(CONTENT_LENGTH, "0");
+            return errorResponse;
         }
 
         FullHttpResponse response = new DefaultFullHttpResponse(

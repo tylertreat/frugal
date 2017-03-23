@@ -3,10 +3,11 @@ package common
 import (
 	"flag"
 	"fmt"
-	"log"
 	"time"
 
 	"net/http"
+
+	log "github.com/Sirupsen/logrus"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"
@@ -102,7 +103,9 @@ func StartClient(
 	case "stateless":
 		trans = frugal.NewFNatsTransport(conn, fmt.Sprintf("frugal.foo.bar.rpc.%d", port), "")
 	case "http":
-		trans = frugal.NewFHTTPTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).Build()
+		// Set request and response capacity to 1mb
+		maxSize := uint(1048576)
+		trans = frugal.NewFHTTPTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).WithRequestSizeLimit(maxSize).WithResponseSizeLimit(maxSize).Build()
 	default:
 		return nil, fmt.Errorf("Invalid transport specified %s", transport)
 	}
