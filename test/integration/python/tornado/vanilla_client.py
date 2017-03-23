@@ -58,7 +58,7 @@ def test_rpc(client, ctx, transport):
     test_failed = False
 
     # Iterate over all expected RPC results
-    for rpc, vals in rpc_test_definitions(transport).items():
+    for rpc, vals in rpc_test_definitions(transport):
         method = getattr(client, rpc)
         args = vals['args']
         expected_result = vals['expected_result']
