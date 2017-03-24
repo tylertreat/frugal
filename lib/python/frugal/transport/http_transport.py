@@ -52,6 +52,11 @@ class THttpTransport(TBaseHttpTransport):
             raise TTransportException(
                 type=TTransportExceptionType.TIMED_OUT,
                 message='Request timed out')
+        if resp.status_code == 413:
+            raise TTransportException(
+                type=TTransportExceptionType.RESPONSE_TOO_LARGE,
+                message='response was too large for the transport'
+            )
         if resp.status_code >= 400:
             raise TTransportException(
                 type=TTransportExceptionType.UNKNOWN,

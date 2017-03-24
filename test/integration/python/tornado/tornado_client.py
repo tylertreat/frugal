@@ -56,7 +56,11 @@ def main():
     if args.transport_type == "stateless":
         transport = FNatsTransport(nats_client, "frugal.foo.bar.rpc.{}".format(args.port))
     elif args.transport_type == "http":
-        transport = FHttpTransport("http://localhost:" + str(args.port))
+        # Set request and response capacity to 1mb
+        max_size = 1048576
+        transport = FHttpTransport("http://localhost:" + str(args.port),
+                                   request_capacity=max_size,
+                                   response_capacity=max_size)
     else:
         print("Unknown transport type: {}".format(args.transport_type))
         sys.exit(1)
@@ -71,7 +75,7 @@ def main():
 
     ctx = FContext("test")
 
-    yield test_rpc(client, ctx)
+    yield test_rpc(client, ctx, args.transport_type)
     yield test_pub_sub(nats_client, protocol_factory, args.port)
 
     global middleware_called
@@ -133,11 +137,11 @@ def test_pub_sub(nats_client, protocol_factory, port):
 
 # test_rpc makes RPC calls with each type defined in FrugalTest.frugal
 @gen.coroutine
-def test_rpc(client, ctx):
+def test_rpc(client, ctx, transport):
     test_failed = False
 
     # Iterate over all expected RPC results
-    for rpc, vals in rpc_test_definitions().items():
+    for rpc, vals in rpc_test_definitions(transport):
         method = getattr(client, rpc)
         args = vals['args']
         expected_result = vals['expected_result']
@@ -171,7 +175,11 @@ def client_middleware(next):
     def handler(method, args):
         global middleware_called
         middleware_called = True
-        print(u"{}({}) = ".format(method.im_func.func_name, args[1:]), end="")
+        if len(args) > 1 and sys.getsizeof(args[1]) > 1000000:
+            print("{}({}) = ".format(method.__name__, sys.getsizeof(
+                args[1])), end="")
+        else:
+            print("{}({}) = ".format(method.__name__, args[1:]), end="")
         ret = next(method, args)
         ret.add_done_callback(log_future)
         return ret

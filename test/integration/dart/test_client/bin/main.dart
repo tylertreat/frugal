@@ -19,6 +19,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'dart:typed_data';
 import 'package:args/args.dart';
 import 'package:collection/collection.dart';
 import 'package:thrift/thrift.dart';
@@ -149,7 +150,12 @@ TProtocolFactory getProtocolFactory(String protocolType) {
 Middleware clientMiddleware() {
   return (InvocationHandler next) {
     return (String serviceName, String methodName, List<Object> args) {
-      stdout.write(methodName + "(" + args.sublist(1).toString() + ") = ");
+      if (args.length > 1 && args[1].runtimeType == Uint8List){
+          stdout.write(methodName + "(" + args[1].length.toString() + ")"
+              " = ");
+      } else {
+        stdout.write(methodName + "(" + args.sublist(1).toString() + ") = ");
+      }
       middleware_called = true;
       return next(serviceName, methodName, args).then((result) {
         stdout.write(result.toString() + '\n');
@@ -159,6 +165,7 @@ Middleware clientMiddleware() {
         throw e;
       });
     };
+
   };
 }
 
@@ -171,7 +178,9 @@ Future _initTestClient(
 
 //  Nats is not available without the SDK in dart, so HTTP is the only transport we can test
   var uri = Uri.parse('http://$host:$port');
-  transport = new FHttpTransport(new wt.Client(), uri);
+// Set request and response size limit to 1mb
+  var maxSize = 1048576;
+  transport = new FHttpTransport(new wt.Client(), uri, requestSizeLimit: maxSize, responseSizeLimit: maxSize);
   await transport.open();
 
   fProtocolFactory = new FProtocolFactory(getProtocolFactory(protocolType));
@@ -192,7 +201,7 @@ List<FTest> _createTests() {
   }));
 
   tests.add(new FTest(1, 'testString', () async {
-    var input = 'Test';
+    var input = 'Testå∫ç';
     var result = await client.testString(ctx, input);
     if (result != input) throw new FTestError(result, input);
   }));
@@ -369,6 +378,28 @@ List<FTest> _createTests() {
           throw new FTestError(e, TApplicationError(expectedErrorType));
         }
       }}));
+
+  tests.add(new FTest(1, 'testRequestTooLarge', () async {
+    var request = new Uint8List(1024*1024);
+    try {
+      await client.testRequestTooLarge(ctx, request);
+    } on TTransportError catch (e) {
+      if (e.type != FrugalTTransportErrorType.REQUEST_TOO_LARGE) {
+        throw new FTestError(e, FrugalTTransportErrorType.REQUEST_TOO_LARGE);
+      }
+    }
+  }));
+
+  tests.add(new FTest(1, 'testResponseTooLarge', () async {
+    var request = new Uint8List(1);
+    try {
+      await client.testResponseTooLarge(ctx, request);
+    } on TTransportError catch (e) {
+      if (e.type != FrugalTTransportErrorType.RESPONSE_TOO_LARGE) {
+        throw new FTestError(e, FrugalTTransportErrorType.RESPONSE_TOO_LARGE);
+      }
+    }
+  }));
 
   return tests;
 }

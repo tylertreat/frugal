@@ -4,8 +4,9 @@ import (
 	"errors"
 	"time"
 
-	"git.apache.org/thrift.git/lib/go/thrift"
+	log "github.com/Sirupsen/logrus"
 
+	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/Workiva/frugal/lib/go"
 	. "github.com/Workiva/frugal/test/integration/go/gen/frugaltest"
 )
@@ -172,12 +173,27 @@ func (p *printingHandler) TestUncaughtException(ctx frugal.FContext) (err error)
 	return errors.New("An uncaught error")
 }
 
-
 // TestUncheckedTApplicationException
 // Raises an unexpected non-defined, non-TApplication exception in the processor handler.
 func (p *printingHandler) TestUncheckedTApplicationException(ctx frugal.FContext) (err error) {
 	return thrift.NewTApplicationException(400, "Unchecked TApplicationException")
 
+}
+
+// TestRequestTooLarge takes a []byte that is at the 1mb limit. This code
+// should never be invoked in the handler, as the request should hit a
+// REQUEST_TOO_LARGE error.
+func (p *printingHandler) TestRequestTooLarge(ctx frugal.FContext, request []byte) (err error) {
+	log.Fatal("TestRequestTooLarge should never be successfully called.")
+	return
+}
+
+// TestResponseTooLarge takes a []byte that is under the 1mb limit and
+// returns a []byte that is at the 1mb limit.  The response should hit a
+// RESPONSE_TOO_LARGE error.
+func (p *printingHandler) TestResponseTooLarge(ctx frugal.FContext, request []byte) (response []byte, err error) {
+	response = make([]byte, 1024*1024)
+	return response, nil
 }
 
 // TestMultiException
