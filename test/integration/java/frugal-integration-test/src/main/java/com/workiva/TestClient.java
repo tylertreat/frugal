@@ -159,8 +159,9 @@ public class TestClient {
              * STRING TEST
              */
             context = new FContext("testString");
-            String s = testClient.testString(context, "Test");
-            if (!s.equals("Test")) {
+            String strInput = "Testå∫ç";
+            String s = testClient.testString(context, strInput);
+            if (!s.equals(strInput)) {
                 returnCode |= 1;
                 System.out.println("*** FAILURE ***\n");
             }
