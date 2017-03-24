@@ -56,19 +56,31 @@ type FSubscriberTransport interface {
 	IsSubscribed() bool
 }
 
-
+// FDurablePublisherTransportFactory produces FDurablePublisherTransports and is
+// typically used by an FDurableScopeProvider.
 type FDurablePublisherTransportFactory interface {
 	GetTransport() FDurablePublisherTransport
 }
 
+// FDurableSubscriberTransportFactory produces FDurableSubscriberTransports and
+// is typically used by an FDurableScopeProvider.
 type FDurableSubscriberTransportFactory interface {
 	GetTransport(manualAck bool) FDurableSubscriberTransport
 }
 
+// AckFunc is a function which user defined callbacks should take as an
+// argument. An AckFunc will ack the message being received. It should
+// be called iff manual acking is selected, otherwise messages will be acked
+// automatically by the transport.
 type AckFunc func() error
 
+// FDurableAsyncCallback is an internal callback which is constructed by
+// generated code and invoked by an FDurableSubscriberTransport when a message
+// is received.
 type FDurableAsyncCallback func(thrift.TTransport, *string, AckFunc) error
 
+// FDurablePublisherTransport is used exclusively for pub/sub scopes. Publishers
+// use it to publish messages durably to a topic.
 type FDurablePublisherTransport interface {
 	// Open opens the transport.
 	Open() error
@@ -89,6 +101,8 @@ type FDurablePublisherTransport interface {
 	Publish(string, *string, []byte) error
 }
 
+// FDurableSubscriberTransport is used exclusively for pub/sub scopes.
+// Subscribers use it to durably subscribe to a pub/sub topic.
 type FDurableSubscriberTransport interface {
 	// Subscribe opens the transport and sets the subscribe topic.
 	Subscribe(string, FDurableAsyncCallback) error

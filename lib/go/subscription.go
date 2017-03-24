@@ -1,5 +1,6 @@
 package frugal
 
+// Unsubscriber is something that can unsubscribe.
 type Unsubscriber interface {
 	Unsubscribe() error
 }
