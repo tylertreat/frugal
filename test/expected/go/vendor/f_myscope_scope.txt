@@ -135,3 +135,126 @@ func (l *myScopeSubscriber) recvnewItem(op string, pf *frugal.FProtocolFactory, 
 		return nil
 	}
 }
+
+type MyScopeDurablePublisher interface {
+	Open() error
+	Close() error
+	PublishnewItem(ctx frugal.FContext, groupID *string, req *vendor_namespace.Item) error
+}
+
+type myScopeDurablePublisher struct {
+	transport       frugal.FDurablePublisherTransport
+	protocolFactory *frugal.FProtocolFactory
+	methods         map[string]*frugal.Method
+}
+
+func NewMyScopeDurablePublisher(provider *frugal.FDurableScopeProvider, middleware ...frugal.ServiceMiddleware) MyScopeDurablePublisher {
+	transport, protocolFactory := provider.NewPublisher()
+	methods := make(map[string]*frugal.Method)
+	publisher := &myScopeDurablePublisher{
+		transport:       transport,
+		protocolFactory: protocolFactory,
+		methods:         methods,
+	}
+	middleware = append(middleware, provider.GetMiddleware()...)
+	methods["publishnewItem"] = frugal.NewMethod(publisher, publisher.publishnewItem, "publishnewItem", middleware)
+	return publisher
+}
+
+func (p *myScopeDurablePublisher) Open() error {
+	return p.transport.Open()
+}
+
+func (p *myScopeDurablePublisher) Close() error {
+	return p.transport.Close()
+}
+
+func (p *myScopeDurablePublisher) PublishnewItem(ctx frugal.FContext, groupID *string, req *vendor_namespace.Item) error {
+	ret := p.methods["publishnewItem"].Invoke([]interface{}{ctx, groupID, req})
+	if ret[0] != nil {
+		return ret[0].(error)
+	}
+	return nil
+}
+
+func (p *myScopeDurablePublisher) publishnewItem(ctx frugal.FContext, groupID *string, req *vendor_namespace.Item) error {
+	op := "newItem"
+	prefix := ""
+	topic := fmt.Sprintf("%sMyScope%s%s", prefix, delimiter, op)
+	buffer := frugal.NewTMemoryOutputBuffer(p.transport.GetPublishSizeLimit())
+	oprot := p.protocolFactory.GetProtocol(buffer)
+	if err := oprot.WriteRequestHeader(ctx); err != nil {
+		return err
+	}
+	if err := oprot.WriteMessageBegin(op, thrift.CALL, 0); err != nil {
+		return err
+	}
+	if err := req.Write(oprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", req), err)
+	}
+	if err := oprot.WriteMessageEnd(); err != nil {
+		return err
+	}
+	if err := oprot.Flush(); err != nil {
+		return err
+	}
+	return p.transport.Publish(topic, groupID, buffer.Bytes())
+}
+
+type MyScopeDurableSubscriber interface {
+	SubscribenewItem(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, *vendor_namespace.Item)) (*frugal.FSubscription, error)
+}
+
+type myScopeDurableSubscriber struct {
+	provider   *frugal.FDurableScopeProvider
+	middleware []frugal.ServiceMiddleware
+}
+
+func NewMyScopeDurableSubscriber(provider *frugal.FDurableScopeProvider, middleware ...frugal.ServiceMiddleware) MyScopeDurableSubscriber {
+	middleware = append(middleware, provider.GetMiddleware()...)
+	return &myScopeDurableSubscriber{provider: provider, middleware: middleware}
+}
+
+func (l *myScopeDurableSubscriber) SubscribenewItem(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, *vendor_namespace.Item)) (*frugal.FSubscription, error) {
+	op := "newItem"
+	prefix := ""
+	topic := fmt.Sprintf("%sMyScope%s%s", prefix, delimiter, op)
+	transport, protocolFactory := l.provider.NewSubscriber(manualAck)
+	cb := l.recvnewItem(op, protocolFactory, handler)
+	if err := transport.Subscribe(topic, cb); err != nil {
+		return nil, err
+	}
+
+	sub := frugal.NewFSubscription(topic, transport)
+	return sub, nil
+}
+
+func (l *myScopeDurableSubscriber) recvnewItem(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, frugal.AckFunc, *vendor_namespace.Item)) frugal.FDurableAsyncCallback {
+	method := frugal.NewMethod(l, handler, "SubscribenewItem", l.middleware)
+	return func(transport thrift.TTransport, groupID *string, ackFunc frugal.AckFunc) error {
+		iprot := pf.GetProtocol(transport)
+		ctx, err := iprot.ReadRequestHeader()
+		if err != nil {
+			return err
+		}
+
+		name, _, _, err := iprot.ReadMessageBegin()
+		if err != nil {
+			return err
+		}
+
+		if name != op {
+			iprot.Skip(thrift.STRUCT)
+			iprot.ReadMessageEnd()
+			return thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN_METHOD, "Unknown function"+name)
+		}
+		req := vendor_namespace.NewItem()
+		if err := req.Read(iprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", req), err)
+		}
+		iprot.ReadMessageEnd()
+
+		method.Invoke([]interface{}{ctx, groupID, ackFunc, req})
+		return nil
+	}
+}
