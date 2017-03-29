@@ -1424,7 +1424,6 @@ func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope, durab
 		args += " string, "
 	}
 
-
 	if !durable {
 		subscriber += fmt.Sprintf("type %sSubscriber interface {\n", scopeCamel)
 		for _, op := range scope.Operations {

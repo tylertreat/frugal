@@ -1104,8 +1104,8 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 			if field.Modifier == parser.Required {
 				fName := toFieldName(field.Name)
 				if !g.isDartPrimitive(field.Type) {
-					contents += fmt.Sprintf(tabtab + "if(%s == null) {\n", fName)
-					contents += fmt.Sprintf(tabtabtab + "throw new thrift.TProtocolError(thrift.TProtocolErrorType.INVALID_DATA, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
+					contents += fmt.Sprintf(tabtab+"if(%s == null) {\n", fName)
+					contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.INVALID_DATA, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
 					contents += tabtab + "}\n"
 				}
 			}
@@ -1115,8 +1115,8 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 		contents += tabtab + "int setFields = 0;\n"
 		for _, field := range s.Fields {
 			contents += fmt.Sprintf(tabtab+"if(isSet%s()) {\n", strings.Title(field.Name))
-			contents += tabtabtab+"setFields++;\n"
-			contents += tabtab+"}\n"
+			contents += tabtabtab + "setFields++;\n"
+			contents += tabtab + "}\n"
 		}
 		contents += tabtab + "if(setFields != 1) {\n"
 		contents += tabtabtab + "throw new thrift.TProtocolError(thrift.TProtocolErrorType.INVALID_DATA, \"The union did not have exactly one field set, $setFields were set\");\n"
@@ -1294,7 +1294,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 		// Inject the prefix variables into the FContext to send
 		for _, prefixVar := range scope.Prefix.Variables {
-			publishers += fmt.Sprintf(tabtab + "ctx.addRequestHeader('_topic_%s', %s);\n", prefixVar, prefixVar)
+			publishers += fmt.Sprintf(tabtab+"ctx.addRequestHeader('_topic_%s', %s);\n", prefixVar, prefixVar)
 		}
 
 		publishers += tabtab + fmt.Sprintf("var op = \"%s\";\n", op.Name)
@@ -1470,7 +1470,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += fmt.Sprintf("class F%sClient implements F%s {\n",
 			servTitle, servTitle)
 	}
-	contents += fmt.Sprintf(tab + "static final logging.Logger _log = new logging.Logger('%s');\n", servTitle)
+	contents += fmt.Sprintf(tab+"static final logging.Logger _log = new logging.Logger('%s');\n", servTitle)
 	contents += tab + "Map<String, frugal.FMethod> _methods;\n\n"
 
 	if service.Extends != "" {

@@ -15,10 +15,12 @@ type FileType string
 
 // Valid FileTypes.
 const (
-	CombinedServiceFile FileType = "combined_service"
-	CombinedScopeFile   FileType = "combined_scope"
-	PublishFile         FileType = "publish"
-	SubscribeFile       FileType = "subscribe"
+	CombinedServiceFile  FileType = "combined_service"
+	CombinedScopeFile    FileType = "combined_scope"
+	DurablePublishFile   FileType = "durablePublish"
+	DurableSubscribeFile FileType = "durableSubscribe"
+	PublishFile          FileType = "publish"
+	SubscribeFile        FileType = "subscribe"
 
 	TypeFile               FileType = "types"
 	ServiceArgsResultsFile FileType = "service_args_results"
@@ -201,6 +203,12 @@ func (o *programGenerator) Generate(frugal *parser.Frugal, outputDir string) err
 			if err := o.generateScopeFile(scope, outputDir, SubscribeFile); err != nil {
 				return err
 			}
+			if err := o.generateScopeFile(scope, outputDir, DurablePublishFile); err != nil {
+				return err
+			}
+			if err := o.generateScopeFile(scope, outputDir, DurableSubscribeFile); err != nil {
+				return err
+			}
 		} else {
 			if err := o.generateScopeFile(scope, outputDir, CombinedScopeFile); err != nil {
 				return err
@@ -312,7 +320,7 @@ func (o *programGenerator) generateScopeFile(scope *parser.Scope, outputDir stri
 		}
 	}
 
-	if fileType == CombinedScopeFile || fileType == PublishFile {
+	if fileType == CombinedScopeFile || fileType == DurablePublishFile {
 		if err := o.GenerateDurablePublisher(file, scope); err != nil {
 			return err
 		}
@@ -324,7 +332,7 @@ func (o *programGenerator) generateScopeFile(scope *parser.Scope, outputDir stri
 		}
 	}
 
-	if fileType == CombinedScopeFile || fileType == SubscribeFile {
+	if fileType == CombinedScopeFile || fileType == DurableSubscribeFile {
 		if err := o.GenerateDurableSubscriber(file, scope); err != nil {
 			return err
 		}

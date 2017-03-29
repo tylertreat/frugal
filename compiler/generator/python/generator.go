@@ -698,6 +698,10 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 		return g.CreateFile(fmt.Sprintf("f_%s_publisher", name), outputDir, lang, false)
 	case generator.SubscribeFile:
 		return g.CreateFile(fmt.Sprintf("f_%s_subscriber", name), outputDir, lang, false)
+	case generator.DurablePublishFile:
+		return g.CreateFile(fmt.Sprintf("f_%s_durable_subscriber", name), outputDir, lang, false)
+	case generator.DurableSubscribeFile:
+		return g.CreateFile(fmt.Sprintf("f_%s_durable_publisher", name), outputDir, lang, false)
 	case generator.CombinedServiceFile:
 		return g.CreateFile(fmt.Sprintf("f_%s", name), outputDir, lang, false)
 	case generator.ObjectFile:
