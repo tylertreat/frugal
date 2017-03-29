@@ -1,1 +1,1 @@
-frugal==2.0.0rc8
+e ../../lib/python/
