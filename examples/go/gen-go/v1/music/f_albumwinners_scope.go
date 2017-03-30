@@ -469,9 +469,9 @@ func (p *albumWinnersDurablePublisher) publishWinner(ctx frugal.FContext, groupI
 // semantics. Subscribers to this scope will be notified if they win a contest.
 // Scopes must have a prefix.
 type AlbumWinnersDurableSubscriber interface {
-	SubscribeContestStart(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, []*Album)) (*frugal.FSubscription, error)
-	SubscribeTimeLeft(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, Minutes)) (*frugal.FSubscription, error)
-	SubscribeWinner(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, *Album)) (*frugal.FSubscription, error)
+	SubscribeContestStart(handler func(frugal.FContext, *string, []*Album)) (*frugal.FSubscription, error)
+	SubscribeTimeLeft(handler func(frugal.FContext, *string, Minutes)) (*frugal.FSubscription, error)
+	SubscribeWinner(handler func(frugal.FContext, *string, *Album)) (*frugal.FSubscription, error)
 }
 
 type albumWinnersDurableSubscriber struct {
@@ -484,11 +484,11 @@ func NewAlbumWinnersDurableSubscriber(provider *frugal.FDurableScopeProvider, mi
 	return &albumWinnersDurableSubscriber{provider: provider, middleware: middleware}
 }
 
-func (l *albumWinnersDurableSubscriber) SubscribeContestStart(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, []*Album)) (*frugal.FSubscription, error) {
+func (l *albumWinnersDurableSubscriber) SubscribeContestStart(handler func(frugal.FContext, *string, []*Album)) (*frugal.FSubscription, error) {
 	op := "ContestStart"
 	prefix := "v1.music."
 	topic := fmt.Sprintf("%sAlbumWinners%s%s", prefix, delimiter, op)
-	transport, protocolFactory := l.provider.NewSubscriber(manualAck)
+	transport, protocolFactory := l.provider.NewSubscriber()
 	cb := l.recvContestStart(op, protocolFactory, handler)
 	if err := transport.Subscribe(topic, cb); err != nil {
 		return nil, err
@@ -498,9 +498,9 @@ func (l *albumWinnersDurableSubscriber) SubscribeContestStart(manualAck bool, ha
 	return sub, nil
 }
 
-func (l *albumWinnersDurableSubscriber) recvContestStart(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, frugal.AckFunc, []*Album)) frugal.FDurableAsyncCallback {
+func (l *albumWinnersDurableSubscriber) recvContestStart(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, []*Album)) frugal.FDurableAsyncCallback {
 	method := frugal.NewMethod(l, handler, "SubscribeContestStart", l.middleware)
-	return func(transport thrift.TTransport, groupID *string, ackFunc frugal.AckFunc) error {
+	return func(transport thrift.TTransport, groupID *string) error {
 		iprot := pf.GetProtocol(transport)
 		ctx, err := iprot.ReadRequestHeader()
 		if err != nil {
@@ -534,16 +534,16 @@ func (l *albumWinnersDurableSubscriber) recvContestStart(op string, pf *frugal.F
 		}
 		iprot.ReadMessageEnd()
 
-		method.Invoke([]interface{}{ctx, groupID, ackFunc, req})
+		method.Invoke([]interface{}{ctx, groupID, req})
 		return nil
 	}
 }
 
-func (l *albumWinnersDurableSubscriber) SubscribeTimeLeft(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, Minutes)) (*frugal.FSubscription, error) {
+func (l *albumWinnersDurableSubscriber) SubscribeTimeLeft(handler func(frugal.FContext, *string, Minutes)) (*frugal.FSubscription, error) {
 	op := "TimeLeft"
 	prefix := "v1.music."
 	topic := fmt.Sprintf("%sAlbumWinners%s%s", prefix, delimiter, op)
-	transport, protocolFactory := l.provider.NewSubscriber(manualAck)
+	transport, protocolFactory := l.provider.NewSubscriber()
 	cb := l.recvTimeLeft(op, protocolFactory, handler)
 	if err := transport.Subscribe(topic, cb); err != nil {
 		return nil, err
@@ -553,9 +553,9 @@ func (l *albumWinnersDurableSubscriber) SubscribeTimeLeft(manualAck bool, handle
 	return sub, nil
 }
 
-func (l *albumWinnersDurableSubscriber) recvTimeLeft(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, frugal.AckFunc, Minutes)) frugal.FDurableAsyncCallback {
+func (l *albumWinnersDurableSubscriber) recvTimeLeft(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, Minutes)) frugal.FDurableAsyncCallback {
 	method := frugal.NewMethod(l, handler, "SubscribeTimeLeft", l.middleware)
-	return func(transport thrift.TTransport, groupID *string, ackFunc frugal.AckFunc) error {
+	return func(transport thrift.TTransport, groupID *string) error {
 		iprot := pf.GetProtocol(transport)
 		ctx, err := iprot.ReadRequestHeader()
 		if err != nil {
@@ -581,16 +581,16 @@ func (l *albumWinnersDurableSubscriber) recvTimeLeft(op string, pf *frugal.FProt
 		}
 		iprot.ReadMessageEnd()
 
-		method.Invoke([]interface{}{ctx, groupID, ackFunc, req})
+		method.Invoke([]interface{}{ctx, groupID, req})
 		return nil
 	}
 }
 
-func (l *albumWinnersDurableSubscriber) SubscribeWinner(manualAck bool, handler func(frugal.FContext, *string, frugal.AckFunc, *Album)) (*frugal.FSubscription, error) {
+func (l *albumWinnersDurableSubscriber) SubscribeWinner(handler func(frugal.FContext, *string, *Album)) (*frugal.FSubscription, error) {
 	op := "Winner"
 	prefix := "v1.music."
 	topic := fmt.Sprintf("%sAlbumWinners%s%s", prefix, delimiter, op)
-	transport, protocolFactory := l.provider.NewSubscriber(manualAck)
+	transport, protocolFactory := l.provider.NewSubscriber()
 	cb := l.recvWinner(op, protocolFactory, handler)
 	if err := transport.Subscribe(topic, cb); err != nil {
 		return nil, err
@@ -600,9 +600,9 @@ func (l *albumWinnersDurableSubscriber) SubscribeWinner(manualAck bool, handler 
 	return sub, nil
 }
 
-func (l *albumWinnersDurableSubscriber) recvWinner(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, frugal.AckFunc, *Album)) frugal.FDurableAsyncCallback {
+func (l *albumWinnersDurableSubscriber) recvWinner(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, *Album)) frugal.FDurableAsyncCallback {
 	method := frugal.NewMethod(l, handler, "SubscribeWinner", l.middleware)
-	return func(transport thrift.TTransport, groupID *string, ackFunc frugal.AckFunc) error {
+	return func(transport thrift.TTransport, groupID *string) error {
 		iprot := pf.GetProtocol(transport)
 		ctx, err := iprot.ReadRequestHeader()
 		if err != nil {
@@ -625,7 +625,7 @@ func (l *albumWinnersDurableSubscriber) recvWinner(op string, pf *frugal.FProtoc
 		}
 		iprot.ReadMessageEnd()
 
-		method.Invoke([]interface{}{ctx, groupID, ackFunc, req})
+		method.Invoke([]interface{}{ctx, groupID, req})
 		return nil
 	}
 }

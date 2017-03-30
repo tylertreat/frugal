@@ -91,8 +91,10 @@ type FDurablePublisherTransport interface {
 	GetPublishSizeLimit() uint
 
 	// Publish sends the given payload with the transport. Implementations
-	// of publish should be threadsafe.
-	Publish(string, *string, []byte) error
+	// of publish should be threadsafe. The parameter groupID allows you
+	// to assign arbitrary groupings to messages. A value of nil indicates
+	// the message isn't part of any group.
+	Publish(subejct string, groupID *string, payload []byte) error
 }
 
 // FDurableSubscriberTransport is used exclusively for pub/sub scopes.
