@@ -1,19 +1,24 @@
 package frugal
 
+// Unsubscriber is something that can unsubscribe.
+type Unsubscriber interface {
+	Unsubscribe() error
+}
+
 // FSubscription is a subscription to a pub/sub topic created by a scope. The
 // topic subscription is actually handled by an FScopeTransport, which the
 // FSubscription wraps. Each FSubscription should have its own FScopeTransport.
 // The FSubscription is used to unsubscribe from the topic.
 type FSubscription struct {
 	topic     string
-	transport FSubscriberTransport
+	transport Unsubscriber
 	errorC    chan error
 }
 
 // NewFSubscription creates a new FSubscription to the given topic which should
 // be subscribed on the given FScopeTransport. This is to be used by generated
 // code and should not be called directly.
-func NewFSubscription(topic string, transport FSubscriberTransport) *FSubscription {
+func NewFSubscription(topic string, transport Unsubscriber) *FSubscription {
 	return &FSubscription{
 		topic:     topic,
 		transport: transport,

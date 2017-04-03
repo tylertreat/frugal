@@ -46,6 +46,16 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	}
 }
 
+func (g *Generator) GenerateDurablePublisher(file *os.File, scope *parser.Scope) error {
+	// TODO
+	return nil
+}
+
+func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
+	// TODO
+	return nil
+}
+
 func (g *Generator) getLibraryName() string {
 	if ns := g.Frugal.Namespace(lang); ns != nil {
 		return parser.LowercaseFirstLetter(toLibraryName(ns.Value))
