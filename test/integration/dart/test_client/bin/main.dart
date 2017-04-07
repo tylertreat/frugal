@@ -57,7 +57,7 @@ main(List<String> args) async {
 
   // run tests
   int result = 0;
-  _tests = CreateTests(client);
+  _tests = createTests(client);
 
   for (FTest test in _tests) {
     if (verbose) stdout.write('${test.name}... ');

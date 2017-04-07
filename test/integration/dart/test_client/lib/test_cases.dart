@@ -30,7 +30,7 @@ class FTestError extends Error {
 
 FContext ctx;
 
-List<FTest> CreateTests(FFrugalTestClient client) {
+List<FTest> createTests(FFrugalTestClient client) {
   List<FTest> tests = [];
 
   var xtruct = new Xtruct()
