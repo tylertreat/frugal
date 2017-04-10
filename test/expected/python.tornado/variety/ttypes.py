@@ -460,7 +460,7 @@ class TestingDefaults(object):
                     iprot.skip(ftype)
             elif fid == 18:
                 if ftype == TType.I32:
-                    self.base_status = base.base_health_condition(iprot.readI32())
+                    self.base_status = actual_base.python.ttypes.base_health_condition(iprot.readI32())
                 else:
                     iprot.skip(ftype)
             else:
