@@ -548,7 +548,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 		}
 		contents += fmt.Sprintf(ind+"%s%s = iprot.read%s()\n", prefix, field.Name, thriftType)
 	} else if isEnum {
-		contents += fmt.Sprintf(ind+"%s%s = %s(iprot.readI32())\n", prefix, field.Name, underlyingType.Name)
+		contents += fmt.Sprintf(ind+"%s%s = %s(iprot.readI32())\n", prefix, field.Name, g.qualifiedTypeName(underlyingType))
 	} else if g.Frugal.IsStruct(underlyingType) {
 		g.qualifiedTypeName(underlyingType)
 		contents += fmt.Sprintf(ind+"%s%s = %s()\n", prefix, field.Name, g.qualifiedTypeName(underlyingType))
