@@ -65,19 +65,13 @@ type FDurablePublisherTransportFactory interface {
 // FDurableSubscriberTransportFactory produces FDurableSubscriberTransports and
 // is typically used by an FDurableScopeProvider.
 type FDurableSubscriberTransportFactory interface {
-	GetTransport(manualAck bool) FDurableSubscriberTransport
+	GetTransport() FDurableSubscriberTransport
 }
-
-// AckFunc is a function which user defined callbacks should take as an
-// argument. An AckFunc will ack the message being received. It should
-// be called iff manual acking is selected, otherwise messages will be acked
-// automatically by the transport.
-type AckFunc func() error
 
 // FDurableAsyncCallback is an internal callback which is constructed by
 // generated code and invoked by an FDurableSubscriberTransport when a message
 // is received.
-type FDurableAsyncCallback func(thrift.TTransport, *string, AckFunc) error
+type FDurableAsyncCallback func(thrift.TTransport, *string) error
 
 // FDurablePublisherTransport is used exclusively for pub/sub scopes. Publishers
 // use it to publish messages durably to a topic.
@@ -97,8 +91,10 @@ type FDurablePublisherTransport interface {
 	GetPublishSizeLimit() uint
 
 	// Publish sends the given payload with the transport. Implementations
-	// of publish should be threadsafe.
-	Publish(string, *string, []byte) error
+	// of publish should be threadsafe. The parameter groupID allows you
+	// to assign arbitrary groupings to messages. A value of nil indicates
+	// the message isn't part of any group.
+	Publish(subejct string, groupID *string, payload []byte) error
 }
 
 // FDurableSubscriberTransport is used exclusively for pub/sub scopes.
