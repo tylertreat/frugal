@@ -51,7 +51,9 @@ func TestValidPythonTornado(t *testing.T) {
 		{"expected/python.tornado/variety/constants.py", filepath.Join(outputDir, "tornado", "variety", "python", "constants.py")},
 		{"expected/python.tornado/variety/ttypes.py", filepath.Join(outputDir, "tornado", "variety", "python", "ttypes.py")},
 		{"expected/python.tornado/variety/f_Events_publisher.py", filepath.Join(outputDir, "tornado", "variety", "python", "f_Events_publisher.py")},
+		{"expected/python.tornado/variety/f_Events_durable_publisher.py", filepath.Join(outputDir, "tornado", "variety", "python", "f_Events_durable_publisher.py")},
 		{"expected/python.tornado/variety/f_Events_subscriber.py", filepath.Join(outputDir, "tornado", "variety", "python", "f_Events_subscriber.py")},
+		{"expected/python.tornado/variety/f_Events_durable_subscriber.py", filepath.Join(outputDir, "tornado", "variety", "python", "f_Events_durable_subscriber.py")},
 		{"expected/python.tornado/variety/f_Foo.py", filepath.Join(outputDir, "tornado", "variety", "python", "f_Foo.py")},
 
 		{"expected/python.tornado/actual_base/constants.py", filepath.Join(outputDir, "tornado", "actual_base", "python", "constants.py")},
@@ -79,7 +81,9 @@ func TestValidPythonAsyncIO(t *testing.T) {
 		{"expected/python.asyncio/variety/constants.py", filepath.Join(outputDir, "asyncio", "variety", "python", "constants.py")},
 		{"expected/python.asyncio/variety/ttypes.py", filepath.Join(outputDir, "asyncio", "variety", "python", "ttypes.py")},
 		{"expected/python.asyncio/variety/f_Events_publisher.py", filepath.Join(outputDir, "asyncio", "variety", "python", "f_Events_publisher.py")},
+		{"expected/python.asyncio/variety/f_Events_durable_publisher.py", filepath.Join(outputDir, "asyncio", "variety", "python", "f_Events_durable_publisher.py")},
 		{"expected/python.asyncio/variety/f_Events_subscriber.py", filepath.Join(outputDir, "asyncio", "variety", "python", "f_Events_subscriber.py")},
+		{"expected/python.asyncio/variety/f_Events_durable_subscriber.py", filepath.Join(outputDir, "asyncio", "variety", "python", "f_Events_durable_subscriber.py")},
 		{"expected/python.asyncio/variety/f_Foo.py", filepath.Join(outputDir, "asyncio", "variety", "python", "f_Foo.py")},
 
 		{"expected/python.asyncio/actual_base/constants.py", filepath.Join(outputDir, "asyncio", "actual_base", "python", "constants.py")},
@@ -115,9 +119,9 @@ func TestPythonPackagePrefix(t *testing.T) {
 
 func TestPythonExtendServiceSameFile(t *testing.T) {
 	options := compiler.Options{
-		File: "idl/service_extension_same_file.frugal",
-		Gen: "py:asyncio",
-		Out: outputDir,
+		File:  "idl/service_extension_same_file.frugal",
+		Gen:   "py:asyncio",
+		Out:   outputDir,
 		Delim: delim,
 	}
 	if err := compiler.Compile(options); err != nil {

@@ -6,13 +6,13 @@
 
 
 
+import inspect
 import sys
 import traceback
 
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from thrift.Thrift import TType
-from tornado import gen
 from frugal.exceptions import TApplicationExceptionType
 from frugal.middleware import Method
 from frugal.subscription import FSubscription
@@ -23,7 +23,7 @@ from .ttypes import *
 
 
 
-class EventsSubscriber(object):
+class EventsDurableSubscriber(object):
     """
     This docstring gets added to the generated code because it has
     the @ sign. Prefix specifies topic prefix tokens, which can be static or
@@ -48,8 +48,7 @@ class EventsSubscriber(object):
         self._middleware = middleware
         self._provider = provider
 
-    @gen.coroutine
-    def subscribe_EventCreated(self, user, EventCreated_handler):
+    async def subscribe_EventCreated(self, user, EventCreated_handler):
         """
         This is a docstring.
         
@@ -63,13 +62,13 @@ class EventsSubscriber(object):
         topic = '{}Events{}{}'.format(prefix, self._DELIMITER, op)
 
         transport, protocol_factory = self._provider.new_subscriber()
-        yield transport.subscribe(topic, self._recv_EventCreated(protocol_factory, op, EventCreated_handler))
-        raise gen.Return(FSubscription(topic, transport))
+        await transport.subscribe(topic, self._recv_EventCreated(protocol_factory, op, EventCreated_handler))
+        return FSubscription(topic, transport)
 
     def _recv_EventCreated(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
 
-        def callback(transport):
+        async def callback(transport, group_id=''):
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()
@@ -81,7 +80,9 @@ class EventsSubscriber(object):
             req.read(iprot)
             iprot.readMessageEnd()
             try:
-                method([ctx, req])
+                ret = method([ctx, group_id, req])
+                if inspect.iscoroutine(ret):
+                    await ret
             except:
                 traceback.print_exc()
                 sys.exit(1)
@@ -90,8 +91,7 @@ class EventsSubscriber(object):
 
 
 
-    @gen.coroutine
-    def subscribe_SomeInt(self, user, SomeInt_handler):
+    async def subscribe_SomeInt(self, user, SomeInt_handler):
         """
         Args:
             user: string
@@ -103,13 +103,13 @@ class EventsSubscriber(object):
         topic = '{}Events{}{}'.format(prefix, self._DELIMITER, op)
 
         transport, protocol_factory = self._provider.new_subscriber()
-        yield transport.subscribe(topic, self._recv_SomeInt(protocol_factory, op, SomeInt_handler))
-        raise gen.Return(FSubscription(topic, transport))
+        await transport.subscribe(topic, self._recv_SomeInt(protocol_factory, op, SomeInt_handler))
+        return FSubscription(topic, transport)
 
     def _recv_SomeInt(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
 
-        def callback(transport):
+        async def callback(transport, group_id=''):
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()
@@ -120,7 +120,9 @@ class EventsSubscriber(object):
             req = iprot.readI64()
             iprot.readMessageEnd()
             try:
-                method([ctx, req])
+                ret = method([ctx, group_id, req])
+                if inspect.iscoroutine(ret):
+                    await ret
             except:
                 traceback.print_exc()
                 sys.exit(1)
@@ -129,8 +131,7 @@ class EventsSubscriber(object):
 
 
 
-    @gen.coroutine
-    def subscribe_SomeStr(self, user, SomeStr_handler):
+    async def subscribe_SomeStr(self, user, SomeStr_handler):
         """
         Args:
             user: string
@@ -142,13 +143,13 @@ class EventsSubscriber(object):
         topic = '{}Events{}{}'.format(prefix, self._DELIMITER, op)
 
         transport, protocol_factory = self._provider.new_subscriber()
-        yield transport.subscribe(topic, self._recv_SomeStr(protocol_factory, op, SomeStr_handler))
-        raise gen.Return(FSubscription(topic, transport))
+        await transport.subscribe(topic, self._recv_SomeStr(protocol_factory, op, SomeStr_handler))
+        return FSubscription(topic, transport)
 
     def _recv_SomeStr(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
 
-        def callback(transport):
+        async def callback(transport, group_id=''):
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()
@@ -159,7 +160,9 @@ class EventsSubscriber(object):
             req = iprot.readString()
             iprot.readMessageEnd()
             try:
-                method([ctx, req])
+                ret = method([ctx, group_id, req])
+                if inspect.iscoroutine(ret):
+                    await ret
             except:
                 traceback.print_exc()
                 sys.exit(1)
@@ -168,8 +171,7 @@ class EventsSubscriber(object):
 
 
 
-    @gen.coroutine
-    def subscribe_SomeList(self, user, SomeList_handler):
+    async def subscribe_SomeList(self, user, SomeList_handler):
         """
         Args:
             user: string
@@ -181,13 +183,13 @@ class EventsSubscriber(object):
         topic = '{}Events{}{}'.format(prefix, self._DELIMITER, op)
 
         transport, protocol_factory = self._provider.new_subscriber()
-        yield transport.subscribe(topic, self._recv_SomeList(protocol_factory, op, SomeList_handler))
-        raise gen.Return(FSubscription(topic, transport))
+        await transport.subscribe(topic, self._recv_SomeList(protocol_factory, op, SomeList_handler))
+        return FSubscription(topic, transport)
 
     def _recv_SomeList(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
 
-        def callback(transport):
+        async def callback(transport, group_id=''):
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()
@@ -196,21 +198,23 @@ class EventsSubscriber(object):
                 iprot.readMessageEnd()
                 raise TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD)
             req = []
-            (_, elem62) = iprot.readListBegin()
-            for _ in range(elem62):
-                elem63 = {}
-                (_, _, elem64) = iprot.readMapBegin()
-                for _ in range(elem64):
-                    elem66 = iprot.readI64()
-                    elem65 = Event()
-                    elem65.read(iprot)
-                    elem63[elem66] = elem65
+            (_, elem67) = iprot.readListBegin()
+            for _ in range(elem67):
+                elem68 = {}
+                (_, _, elem69) = iprot.readMapBegin()
+                for _ in range(elem69):
+                    elem71 = iprot.readI64()
+                    elem70 = Event()
+                    elem70.read(iprot)
+                    elem68[elem71] = elem70
                 iprot.readMapEnd()
-                req.append(elem63)
+                req.append(elem68)
             iprot.readListEnd()
             iprot.readMessageEnd()
             try:
-                method([ctx, req])
+                ret = method([ctx, group_id, req])
+                if inspect.iscoroutine(ret):
+                    await ret
             except:
                 traceback.print_exc()
                 sys.exit(1)

@@ -286,10 +286,24 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	return contents
 }
 
+// GenerateDurableSubscriber generates a durable subscriber.
+func (a *AsyncIOGenerator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
+	return a.generateSubscriber(file, scope, true)
+}
+
 // GenerateSubscriber generates the subscriber for the given scope.
 func (a *AsyncIOGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
+	return a.generateSubscriber(file, scope, false)
+}
+
+func (a *AsyncIOGenerator) generateSubscriber(file *os.File, scope *parser.Scope, durable bool) error {
 	subscriber := ""
-	subscriber += fmt.Sprintf("class %sSubscriber(object):\n", scope.Name)
+	if !durable {
+		subscriber += fmt.Sprintf("class %sSubscriber(object):\n", scope.Name)
+	} else {
+		subscriber += fmt.Sprintf("class %sDurableSubscriber(object):\n", scope.Name)
+	}
+
 	if scope.Comment != nil {
 		subscriber += a.generateDocString(scope.Comment, tab)
 	}
@@ -313,7 +327,7 @@ func (a *AsyncIOGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope
 	subscriber += tabtab + "self._provider = provider\n\n"
 
 	for _, op := range scope.Operations {
-		subscriber += a.generateSubscribeMethod(scope, op)
+		subscriber += a.generateSubscribeMethod(scope, op, durable)
 		subscriber += "\n\n"
 	}
 
@@ -321,7 +335,7 @@ func (a *AsyncIOGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope
 	return err
 }
 
-func (a *AsyncIOGenerator) generateSubscribeMethod(scope *parser.Scope, op *parser.Operation) string {
+func (a *AsyncIOGenerator) generateSubscribeMethod(scope *parser.Scope, op *parser.Operation, durable bool) string {
 	args := ""
 	docstr := []string{}
 	if len(scope.Prefix.Variables) > 0 {
@@ -357,7 +371,11 @@ func (a *AsyncIOGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	method += tab + fmt.Sprintf("def _recv_%s(self, protocol_factory, op, handler):\n", op.Name)
 	method += tabtab + "method = Method(handler, self._middleware)\n\n"
 
-	method += tabtab + "async def callback(transport):\n"
+	if !durable {
+		method += tabtab + "async def callback(transport):\n"
+	} else {
+		method += tabtab + "async def callback(transport, group_id=''):\n"
+	}
 	method += tabtabtab + "iprot = protocol_factory.get_protocol(transport)\n"
 	method += tabtabtab + "ctx = iprot.read_request_headers()\n"
 	method += tabtabtab + "mname, _, _ = iprot.readMessageBegin()\n"
@@ -368,7 +386,11 @@ func (a *AsyncIOGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	method += a.generateReadFieldRec(parser.FieldFromType(op.Type, "req"), false, tabtabtab)
 	method += tabtabtab + "iprot.readMessageEnd()\n"
 	method += tabtabtab + "try:\n"
-	method += tabtabtabtab + "ret = method([ctx, req])\n"
+	if !durable {
+		method += tabtabtabtab + "ret = method([ctx, req])\n"
+	} else {
+		method += tabtabtabtab + "ret = method([ctx, group_id, req])\n"
+	}
 	method += tabtabtabtab + "if inspect.iscoroutine(ret):\n"
 	method += tabtabtabtabtab + "await ret\n"
 	method += tabtabtab + "except:\n"

@@ -1,4 +1,3 @@
-
 class FScopeProvider(object):
     """FScopeProviders produce FScopeTransports and FProtocols for use with
     Frugal Publishers and Subscribers. This also provides a shim for adding

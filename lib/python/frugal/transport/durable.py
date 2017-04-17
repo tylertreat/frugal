@@ -42,18 +42,6 @@ class FDurablePublisherTransport(object):
         pass
 
 
-class FDurablePublisherTransportFactory(object):
-    """Factory for creating FDurablePublisherTransports."""
-
-    def get_transport(self):
-        """Return an instance of FDurablePublisherTransport.
-
-        :return: a durable transport used for publishing
-        :rtype: FDurablePublisherTransport
-        """
-        pass
-
-
 class FDurableSubscriberTransport(object):
     """FDurableSubscriberTransport is used exclusively for pub/sub scopes.
     Subscribers use it to durable subscribe to a pub/sub topic.
@@ -80,17 +68,5 @@ class FDurableSubscriberTransport(object):
 
         :return: true if subscribed, false if not
         :rtype: bool
-        """
-        pass
-
-
-class FDurableSubscriberTransportFactory(object):
-    """Factory for creating FDurableSubscriberTransports."""
-
-    def get_transport(self):
-        """Return an instance of FDurableSubscriberTransport.
-
-        :return: a transport to be used for durable message subscriptions
-        :rtype: FDurableSubscriberTransport
         """
         pass

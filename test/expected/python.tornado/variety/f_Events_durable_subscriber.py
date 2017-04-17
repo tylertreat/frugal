@@ -23,7 +23,7 @@ from .ttypes import *
 
 
 
-class EventsSubscriber(object):
+class EventsDurableSubscriber(object):
     """
     This docstring gets added to the generated code because it has
     the @ sign. Prefix specifies topic prefix tokens, which can be static or
@@ -55,7 +55,7 @@ class EventsSubscriber(object):
         
         Args:
             user: string
-            EventCreated_handler: function which takes FContext and Event
+            EventCreated_handler: function which takes FContext, group_id, and Event
         """
 
         op = 'EventCreated'
@@ -69,7 +69,7 @@ class EventsSubscriber(object):
     def _recv_EventCreated(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
 
-        def callback(transport):
+        def callback(transport, group_id=''):
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()
@@ -81,7 +81,7 @@ class EventsSubscriber(object):
             req.read(iprot)
             iprot.readMessageEnd()
             try:
-                method([ctx, req])
+                method([ctx, group_id, req])
             except:
                 traceback.print_exc()
                 sys.exit(1)
@@ -95,7 +95,7 @@ class EventsSubscriber(object):
         """
         Args:
             user: string
-            SomeInt_handler: function which takes FContext and i64
+            SomeInt_handler: function which takes FContext, group_id, and i64
         """
 
         op = 'SomeInt'
@@ -109,7 +109,7 @@ class EventsSubscriber(object):
     def _recv_SomeInt(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
 
-        def callback(transport):
+        def callback(transport, group_id=''):
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()
@@ -120,7 +120,7 @@ class EventsSubscriber(object):
             req = iprot.readI64()
             iprot.readMessageEnd()
             try:
-                method([ctx, req])
+                method([ctx, group_id, req])
             except:
                 traceback.print_exc()
                 sys.exit(1)
@@ -134,7 +134,7 @@ class EventsSubscriber(object):
         """
         Args:
             user: string
-            SomeStr_handler: function which takes FContext and string
+            SomeStr_handler: function which takes FContext, group_id, and string
         """
 
         op = 'SomeStr'
@@ -148,7 +148,7 @@ class EventsSubscriber(object):
     def _recv_SomeStr(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
 
-        def callback(transport):
+        def callback(transport, group_id=''):
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()
@@ -159,7 +159,7 @@ class EventsSubscriber(object):
             req = iprot.readString()
             iprot.readMessageEnd()
             try:
-                method([ctx, req])
+                method([ctx, group_id, req])
             except:
                 traceback.print_exc()
                 sys.exit(1)
@@ -173,7 +173,7 @@ class EventsSubscriber(object):
         """
         Args:
             user: string
-            SomeList_handler: function which takes FContext and list<map<id,Event>>
+            SomeList_handler: function which takes FContext, group_id, and list<map<id,Event>>
         """
 
         op = 'SomeList'
@@ -187,7 +187,7 @@ class EventsSubscriber(object):
     def _recv_SomeList(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
 
-        def callback(transport):
+        def callback(transport, group_id=''):
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()
@@ -196,21 +196,21 @@ class EventsSubscriber(object):
                 iprot.readMessageEnd()
                 raise TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD)
             req = []
-            (_, elem62) = iprot.readListBegin()
-            for _ in range(elem62):
-                elem63 = {}
-                (_, _, elem64) = iprot.readMapBegin()
-                for _ in range(elem64):
-                    elem66 = iprot.readI64()
-                    elem65 = Event()
-                    elem65.read(iprot)
-                    elem63[elem66] = elem65
+            (_, elem67) = iprot.readListBegin()
+            for _ in range(elem67):
+                elem68 = {}
+                (_, _, elem69) = iprot.readMapBegin()
+                for _ in range(elem69):
+                    elem71 = iprot.readI64()
+                    elem70 = Event()
+                    elem70.read(iprot)
+                    elem68[elem71] = elem70
                 iprot.readMapEnd()
-                req.append(elem63)
+                req.append(elem68)
             iprot.readListEnd()
             iprot.readMessageEnd()
             try:
-                method([ctx, req])
+                method([ctx, group_id, req])
             except:
                 traceback.print_exc()
                 sys.exit(1)
