@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * FDurableScopeProvider produces FDurablePublisherTransports, FDurableSubscriberTransports, and
  * FProtocols for use by pub/sub scopes. It does this by wrapping an
- * FDurablePublisherTransportFactory, an FDuralbeSubscriberTransportFactory, and an
+ * FDurablePublisherTransportFactory, an FDurableSubscriberTransportFactory, and an
  * FProtocolFactory. This also provides a shim for adding middleware to a
  * publisher or subscriber.
  */

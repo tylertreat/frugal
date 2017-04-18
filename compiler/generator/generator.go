@@ -17,8 +17,8 @@ type FileType string
 const (
 	CombinedServiceFile  FileType = "combined_service"
 	CombinedScopeFile    FileType = "combined_scope"
-	DurablePublishFile   FileType = "durablePublish"
-	DurableSubscribeFile FileType = "durableSubscribe"
+	DurablePublishFile   FileType = "durable_publish"
+	DurableSubscribeFile FileType = "durable_subscribe"
 	PublishFile          FileType = "publish"
 	SubscribeFile        FileType = "subscribe"
 

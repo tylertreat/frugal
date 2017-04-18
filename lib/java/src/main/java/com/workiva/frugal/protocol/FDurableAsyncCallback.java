@@ -12,8 +12,6 @@ import org.apache.thrift.transport.TTransport;
  * exception if an unrecoverable error occurs and the transport needs to be
  * shutdown.
  */
-
- // TODO: change the comments
 public interface FDurableAsyncCallback {
     void onMessage(TTransport transport, String groupID) throws TException;
 }
