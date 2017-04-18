@@ -46,16 +46,6 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	}
 }
 
-func (g *Generator) GenerateDurablePublisher(file *os.File, scope *parser.Scope) error {
-	// TODO
-	return nil
-}
-
-func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
-	// TODO
-	return nil
-}
-
 func (g *Generator) getLibraryName() string {
 	if ns := g.Frugal.Namespace(lang); ns != nil {
 		return parser.LowercaseFirstLetter(toLibraryName(ns.Value))
@@ -302,8 +292,8 @@ func (g *Generator) exportClasses(dir string) error {
 			scopeSrcDir = filename
 		}
 		scopeTitle := strings.Title(scope.Name)
-		exports += fmt.Sprintf("export '%s/%s%s%s.%s' show %sPublisher, %sSubscriber;\n",
-			scopeSrcDir, generator.FilePrefix, toFileName(scope.Name), scopeSuffix, lang, scopeTitle, scopeTitle)
+		exports += fmt.Sprintf("export '%s/%s%s%s.%s' show %sPublisher, %sSubscriber, %sDurablePublisher, %sDurableSubscriber;\n",
+			scopeSrcDir, generator.FilePrefix, toFileName(scope.Name), scopeSuffix, lang, scopeTitle, scopeTitle, scopeTitle, scopeTitle)
 	}
 	stat, err := mainFile.Stat()
 	if err != nil {
@@ -1104,8 +1094,8 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 			if field.Modifier == parser.Required {
 				fName := toFieldName(field.Name)
 				if !g.isDartPrimitive(field.Type) {
-					contents += fmt.Sprintf(tabtab + "if(%s == null) {\n", fName)
-					contents += fmt.Sprintf(tabtabtab + "throw new thrift.TProtocolError(thrift.TProtocolErrorType.INVALID_DATA, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
+					contents += fmt.Sprintf(tabtab+"if(%s == null) {\n", fName)
+					contents += fmt.Sprintf(tabtabtab+"throw new thrift.TProtocolError(thrift.TProtocolErrorType.INVALID_DATA, \"Required field '%s' was not present in struct %s\");\n", fName, s.Name)
 					contents += tabtab + "}\n"
 				}
 			}
@@ -1115,8 +1105,8 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 		contents += tabtab + "int setFields = 0;\n"
 		for _, field := range s.Fields {
 			contents += fmt.Sprintf(tabtab+"if(isSet%s()) {\n", strings.Title(field.Name))
-			contents += tabtabtab+"setFields++;\n"
-			contents += tabtab+"}\n"
+			contents += tabtabtab + "setFields++;\n"
+			contents += tabtab + "}\n"
 		}
 		contents += tabtab + "if(setFields != 1) {\n"
 		contents += tabtabtab + "throw new thrift.TProtocolError(thrift.TProtocolErrorType.INVALID_DATA, \"The union did not have exactly one field set, $setFields were set\");\n"
@@ -1238,18 +1228,34 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 	return err
 }
 
+// TODO docs
+func (g *Generator) GenerateDurablePublisher(file *os.File, scope *parser.Scope) error {
+	return g.generatePublisher(file, scope, true)
+}
+
 // GeneratePublisher generates the publisher for the given scope.
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
+	return g.generatePublisher(file, scope, false)
+}
+
+func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope, durable bool) error {
 	publishers := ""
 	if scope.Comment != nil {
 		publishers += g.GenerateInlineComment(scope.Comment, "/")
 	}
-	publishers += fmt.Sprintf("class %sPublisher {\n", strings.Title(scope.Name))
-	publishers += tab + "frugal.FPublisherTransport transport;\n"
+
+	durableName := ""
+	if durable {
+		durableName = "Durable"
+	}
+
+	publishers += fmt.Sprintf("class %s%sPublisher {\n", strings.Title(scope.Name), durableName)
+	publishers += fmt.Sprintf(tab+"frugal.F%sPublisherTransport transport;\n", durableName)
 	publishers += tab + "frugal.FProtocolFactory protocolFactory;\n"
 	publishers += tab + "Map<String, frugal.FMethod> _methods;\n"
 
-	publishers += fmt.Sprintf(tab+"%sPublisher(frugal.FScopeProvider provider, [List<frugal.Middleware> middleware]) {\n", strings.Title(scope.Name))
+	publishers += fmt.Sprintf(tab+"%s%sPublisher(frugal.F%sScopeProvider provider, [List<frugal.Middleware> middleware]) {\n",
+		strings.Title(scope.Name), durableName, durableName)
 	publishers += tabtab + "transport = provider.publisherTransportFactory.getTransport();\n"
 	publishers += tabtab + "protocolFactory = provider.protocolFactory;\n"
 	publishers += tabtab + "var combined = middleware ?? [];\n"
@@ -1271,6 +1277,10 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 	args := ""
 	argsWithoutTypes := ""
+	if durable {
+		args = "String groupId, "
+		argsWithoutTypes = "groupId, "
+	}
 	if len(scope.Prefix.Variables) > 0 {
 		for _, variable := range scope.Prefix.Variables {
 			args = fmt.Sprintf("%sString %s, ", args, variable)
@@ -1294,7 +1304,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 		// Inject the prefix variables into the FContext to send
 		for _, prefixVar := range scope.Prefix.Variables {
-			publishers += fmt.Sprintf(tabtab + "ctx.addRequestHeader('_topic_%s', %s);\n", prefixVar, prefixVar)
+			publishers += fmt.Sprintf(tabtab+"ctx.addRequestHeader('_topic_%s', %s);\n", prefixVar, prefixVar)
 		}
 
 		publishers += tabtab + fmt.Sprintf("var op = \"%s\";\n", op.Name)
@@ -1307,7 +1317,12 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += tabtab + "oprot.writeMessageBegin(msg);\n"
 		publishers += g.generateWriteFieldRec(parser.FieldFromType(op.Type, "req"), false, "")
 		publishers += tabtab + "oprot.writeMessageEnd();\n"
-		publishers += tabtab + "await transport.publish(topic, memoryBuffer.writeBytes);\n"
+
+		groupIDArg := ""
+		if durable {
+			groupIDArg = "groupId, "
+		}
+		publishers += fmt.Sprintf(tabtab+"await transport.publish(topic, %smemoryBuffer.writeBytes);\n", groupIDArg)
 		publishers += tab + "}\n"
 	}
 
@@ -1335,17 +1350,31 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 	return template
 }
 
+func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
+	return g.generateSubscriber(file, scope, true)
+}
+
 // GenerateSubscriber generates the subscriber for the given scope.
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
+	return g.generateSubscriber(file, scope, false)
+}
+
+func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope, durable bool) error {
 	subscribers := ""
 	if scope.Comment != nil {
 		subscribers += g.GenerateInlineComment(scope.Comment, "/")
 	}
-	subscribers += fmt.Sprintf("class %sSubscriber {\n", strings.Title(scope.Name))
-	subscribers += tab + "final frugal.FScopeProvider provider;\n"
+
+	durableName := ""
+	if durable {
+		durableName = "Durable"
+	}
+
+	subscribers += fmt.Sprintf("class %s%sSubscriber {\n", strings.Title(scope.Name), durableName)
+	subscribers += fmt.Sprintf(tab+"final frugal.F%sScopeProvider provider;\n", durableName)
 	subscribers += tab + "final List<frugal.Middleware> _middleware;\n\n"
 
-	subscribers += tab + fmt.Sprintf("%sSubscriber(this.provider, [List<frugal.Middleware> middleware])\n", strings.Title(scope.Name))
+	subscribers += tab + fmt.Sprintf("%s%sSubscriber(this.provider, [List<frugal.Middleware> middleware])\n", strings.Title(scope.Name), durableName)
 	subscribers += tabtabtab + ": this._middleware = middleware ?? [] {\n"
 	subscribers += tabtab + "this._middleware.addAll(provider.middleware);\n"
 	subscribers += "}\n\n"
@@ -1363,8 +1392,13 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		if op.Comment != nil {
 			subscribers += g.GenerateInlineComment(op.Comment, tab+"/")
 		}
-		subscribers += fmt.Sprintf(tab+"Future<frugal.FSubscription> subscribe%s(%sdynamic on%s(frugal.FContext ctx, %s req)) async {\n",
-			op.Name, args, op.Type.ParamName(), g.getDartTypeFromThriftType(op.Type))
+
+		groupIDArg := ""
+		if durable {
+			groupIDArg = "String groupId, "
+		}
+		subscribers += fmt.Sprintf(tab+"Future<frugal.FSubscription> subscribe%s(%sdynamic on%s(frugal.FContext ctx, %s%s req)) async {\n",
+			op.Name, args, op.Type.ParamName(), groupIDArg, g.getDartTypeFromThriftType(op.Type))
 		subscribers += fmt.Sprintf(tabtab+"var op = \"%s\";\n", op.Name)
 		subscribers += fmt.Sprintf(tabtab+"var prefix = \"%s\";\n", generatePrefixStringTemplate(scope))
 		subscribers += tabtab + "var topic = \"${prefix}" + strings.Title(scope.Name) + "${delimiter}${op}\";\n"
@@ -1374,11 +1408,15 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += tabtab + "return new frugal.FSubscription(topic, transport);\n"
 		subscribers += tab + "}\n\n"
 
-		subscribers += fmt.Sprintf(tab+"frugal.FAsyncCallback _recv%s(String op, frugal.FProtocolFactory protocolFactory, dynamic on%s(frugal.FContext ctx, %s req)) {\n",
-			op.Name, op.Type.ParamName(), g.getDartTypeFromThriftType(op.Type))
+		subscribers += fmt.Sprintf(tab+"frugal.F%sAsyncCallback _recv%s(String op, frugal.FProtocolFactory protocolFactory, dynamic on%s(frugal.FContext ctx, %s%s req)) {\n",
+			durableName, op.Name, op.Type.ParamName(), groupIDArg, g.getDartTypeFromThriftType(op.Type))
 		subscribers += fmt.Sprintf(tabtab+"frugal.FMethod method = new frugal.FMethod(on%s, '%s', 'subscribe%s', this._middleware);\n",
 			op.Type.ParamName(), strings.Title(scope.Name), op.Type.ParamName())
-		subscribers += fmt.Sprintf(tabtab+"callback%s(thrift.TTransport transport) {\n", op.Name)
+		if !durable {
+			subscribers += fmt.Sprintf(tabtab+"callback%s(thrift.TTransport transport) {\n", op.Name)
+		} else {
+			subscribers += fmt.Sprintf(tabtab+"callback%s(thrift.TTransport transport, String groupId) {\n", op.Name)
+		}
 
 		subscribers += tabtabtab + "var iprot = protocolFactory.getProtocol(transport);\n"
 		subscribers += tabtabtab + "var ctx = iprot.readRequestHeader();\n"
@@ -1391,7 +1429,11 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += tabtabtab + "}\n"
 		subscribers += g.generateReadFieldRec(parser.FieldFromType(op.Type, "req"), false, tabtabtab)
 		subscribers += tabtabtab + "iprot.readMessageEnd();\n"
-		subscribers += tabtabtab + "method([ctx, req]);\n"
+		if !durable {
+			subscribers += tabtabtab + "method([ctx, req]);\n"
+		} else {
+			subscribers += tabtabtab + "method([ctx, groupId, req]);\n"
+		}
 		subscribers += tabtab + "}\n"
 		subscribers += fmt.Sprintf(tabtab+"return callback%s;\n", op.Name)
 		subscribers += tab + "}\n"
@@ -1470,7 +1512,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += fmt.Sprintf("class F%sClient implements F%s {\n",
 			servTitle, servTitle)
 	}
-	contents += fmt.Sprintf(tab + "static final logging.Logger _log = new logging.Logger('%s');\n", servTitle)
+	contents += fmt.Sprintf(tab+"static final logging.Logger _log = new logging.Logger('%s');\n", servTitle)
 	contents += tab + "Map<String, frugal.FMethod> _methods;\n\n"
 
 	if service.Extends != "" {

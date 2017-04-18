@@ -209,6 +209,198 @@ class AlbumWinnersSubscriber {
 }
 
 
+/// Scopes are a Frugal extension to the IDL for declaring PubSub
+/// semantics. Subscribers to this scope will be notified if they win a contest.
+/// Scopes must have a prefix.
+class AlbumWinnersDurablePublisher {
+  frugal.FDurablePublisherTransport transport;
+  frugal.FProtocolFactory protocolFactory;
+  Map<String, frugal.FMethod> _methods;
+  AlbumWinnersDurablePublisher(frugal.FDurableScopeProvider provider, [List<frugal.Middleware> middleware]) {
+    transport = provider.publisherTransportFactory.getTransport();
+    protocolFactory = provider.protocolFactory;
+    var combined = middleware ?? [];
+    combined.addAll(provider.middleware);
+    this._methods = {};
+    this._methods['ContestStart'] = new frugal.FMethod(this._publishContestStart, 'AlbumWinners', 'publishContestStart', combined);
+    this._methods['TimeLeft'] = new frugal.FMethod(this._publishTimeLeft, 'AlbumWinners', 'publishTimeLeft', combined);
+    this._methods['Winner'] = new frugal.FMethod(this._publishWinner, 'AlbumWinners', 'publishWinner', combined);
+  }
+
+  Future open() {
+    return transport.open();
+  }
+
+  Future close() {
+    return transport.close();
+  }
+
+  Future publishContestStart(frugal.FContext ctx, String groupId, List<t_v1_music.Album> req) {
+    return this._methods['ContestStart']([ctx, groupId, req]);
+  }
+
+  Future _publishContestStart(frugal.FContext ctx, String groupId, List<t_v1_music.Album> req) async {
+    var op = "ContestStart";
+    var prefix = "v1.music.";
+    var topic = "${prefix}AlbumWinners${delimiter}${op}";
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(transport.publishSizeLimit);
+    var oprot = protocolFactory.getProtocol(memoryBuffer);
+    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(msg);
+    oprot.writeListBegin(new thrift.TList(thrift.TType.STRUCT, req.length));
+    for(var elem8 in req) {
+      elem8.write(oprot);
+    }
+    oprot.writeListEnd();
+    oprot.writeMessageEnd();
+    await transport.publish(topic, groupId, memoryBuffer.writeBytes);
+  }
 
 
+  Future publishTimeLeft(frugal.FContext ctx, String groupId, double req) {
+    return this._methods['TimeLeft']([ctx, groupId, req]);
+  }
+
+  Future _publishTimeLeft(frugal.FContext ctx, String groupId, double req) async {
+    var op = "TimeLeft";
+    var prefix = "v1.music.";
+    var topic = "${prefix}AlbumWinners${delimiter}${op}";
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(transport.publishSizeLimit);
+    var oprot = protocolFactory.getProtocol(memoryBuffer);
+    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(msg);
+    oprot.writeDouble(req);
+    oprot.writeMessageEnd();
+    await transport.publish(topic, groupId, memoryBuffer.writeBytes);
+  }
+
+
+  Future publishWinner(frugal.FContext ctx, String groupId, t_v1_music.Album req) {
+    return this._methods['Winner']([ctx, groupId, req]);
+  }
+
+  Future _publishWinner(frugal.FContext ctx, String groupId, t_v1_music.Album req) async {
+    var op = "Winner";
+    var prefix = "v1.music.";
+    var topic = "${prefix}AlbumWinners${delimiter}${op}";
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(transport.publishSizeLimit);
+    var oprot = protocolFactory.getProtocol(memoryBuffer);
+    var msg = new thrift.TMessage(op, thrift.TMessageType.CALL, 0);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(msg);
+    req.write(oprot);
+    oprot.writeMessageEnd();
+    await transport.publish(topic, groupId, memoryBuffer.writeBytes);
+  }
+}
+
+
+/// Scopes are a Frugal extension to the IDL for declaring PubSub
+/// semantics. Subscribers to this scope will be notified if they win a contest.
+/// Scopes must have a prefix.
+class AlbumWinnersDurableSubscriber {
+  final frugal.FDurableScopeProvider provider;
+  final List<frugal.Middleware> _middleware;
+
+  AlbumWinnersDurableSubscriber(this.provider, [List<frugal.Middleware> middleware])
+      : this._middleware = middleware ?? [] {
+    this._middleware.addAll(provider.middleware);
+}
+
+  Future<frugal.FSubscription> subscribeContestStart(dynamic onlist(frugal.FContext ctx, String groupId, List<t_v1_music.Album> req)) async {
+    var op = "ContestStart";
+    var prefix = "v1.music.";
+    var topic = "${prefix}AlbumWinners${delimiter}${op}";
+    var transport = provider.subscriberTransportFactory.getTransport();
+    await transport.subscribe(topic, _recvContestStart(op, provider.protocolFactory, onlist));
+    return new frugal.FSubscription(topic, transport);
+  }
+
+  frugal.FDurableAsyncCallback _recvContestStart(String op, frugal.FProtocolFactory protocolFactory, dynamic onlist(frugal.FContext ctx, String groupId, List<t_v1_music.Album> req)) {
+    frugal.FMethod method = new frugal.FMethod(onlist, 'AlbumWinners', 'subscribelist', this._middleware);
+    callbackContestStart(thrift.TTransport transport, String groupId) {
+      var iprot = protocolFactory.getProtocol(transport);
+      var ctx = iprot.readRequestHeader();
+      var tMsg = iprot.readMessageBegin();
+      if (tMsg.name != op) {
+        thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
+        iprot.readMessageEnd();
+        throw new thrift.TApplicationError(
+        frugal.FrugalTApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+      }
+      thrift.TList elem9 = iprot.readListBegin();
+      List<t_v1_music.Album> req = new List<t_v1_music.Album>();
+      for(int elem11 = 0; elem11 < elem9.length; ++elem11) {
+        t_v1_music.Album elem10 = new t_v1_music.Album();
+        elem10.read(iprot);
+        req.add(elem10);
+      }
+      iprot.readListEnd();
+      iprot.readMessageEnd();
+      method([ctx, groupId, req]);
+    }
+    return callbackContestStart;
+  }
+
+
+  Future<frugal.FSubscription> subscribeTimeLeft(dynamic onMinutes(frugal.FContext ctx, String groupId, double req)) async {
+    var op = "TimeLeft";
+    var prefix = "v1.music.";
+    var topic = "${prefix}AlbumWinners${delimiter}${op}";
+    var transport = provider.subscriberTransportFactory.getTransport();
+    await transport.subscribe(topic, _recvTimeLeft(op, provider.protocolFactory, onMinutes));
+    return new frugal.FSubscription(topic, transport);
+  }
+
+  frugal.FDurableAsyncCallback _recvTimeLeft(String op, frugal.FProtocolFactory protocolFactory, dynamic onMinutes(frugal.FContext ctx, String groupId, double req)) {
+    frugal.FMethod method = new frugal.FMethod(onMinutes, 'AlbumWinners', 'subscribeMinutes', this._middleware);
+    callbackTimeLeft(thrift.TTransport transport, String groupId) {
+      var iprot = protocolFactory.getProtocol(transport);
+      var ctx = iprot.readRequestHeader();
+      var tMsg = iprot.readMessageBegin();
+      if (tMsg.name != op) {
+        thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
+        iprot.readMessageEnd();
+        throw new thrift.TApplicationError(
+        frugal.FrugalTApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+      }
+      double req = iprot.readDouble();
+      iprot.readMessageEnd();
+      method([ctx, groupId, req]);
+    }
+    return callbackTimeLeft;
+  }
+
+
+  Future<frugal.FSubscription> subscribeWinner(dynamic onAlbum(frugal.FContext ctx, String groupId, t_v1_music.Album req)) async {
+    var op = "Winner";
+    var prefix = "v1.music.";
+    var topic = "${prefix}AlbumWinners${delimiter}${op}";
+    var transport = provider.subscriberTransportFactory.getTransport();
+    await transport.subscribe(topic, _recvWinner(op, provider.protocolFactory, onAlbum));
+    return new frugal.FSubscription(topic, transport);
+  }
+
+  frugal.FDurableAsyncCallback _recvWinner(String op, frugal.FProtocolFactory protocolFactory, dynamic onAlbum(frugal.FContext ctx, String groupId, t_v1_music.Album req)) {
+    frugal.FMethod method = new frugal.FMethod(onAlbum, 'AlbumWinners', 'subscribeAlbum', this._middleware);
+    callbackWinner(thrift.TTransport transport, String groupId) {
+      var iprot = protocolFactory.getProtocol(transport);
+      var ctx = iprot.readRequestHeader();
+      var tMsg = iprot.readMessageBegin();
+      if (tMsg.name != op) {
+        thrift.TProtocolUtil.skip(iprot, thrift.TType.STRUCT);
+        iprot.readMessageEnd();
+        throw new thrift.TApplicationError(
+        frugal.FrugalTApplicationErrorType.UNKNOWN_METHOD, tMsg.name);
+      }
+      t_v1_music.Album req = new t_v1_music.Album();
+      req.read(iprot);
+      iprot.readMessageEnd();
+      method([ctx, groupId, req]);
+    }
+    return callbackWinner;
+  }
+}
 
