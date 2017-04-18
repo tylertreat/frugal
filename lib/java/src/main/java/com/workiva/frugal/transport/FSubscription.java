@@ -10,10 +10,18 @@ public final class FSubscription {
 
     private final String topic;
     private final FSubscriberTransport transport;
+    private final FDurableSubscriberTransport durableTransport;
 
     private FSubscription(String topic, FSubscriberTransport transport) {
         this.topic = topic;
         this.transport = transport;
+        this.durableTransport = null;
+    }
+
+    private FSubscription(String topic, FDurableSubscriberTransport transport) {
+        this.topic = topic;
+        this.transport = null;
+        this.durableTransport = transport;
     }
 
     /**
@@ -26,6 +34,10 @@ public final class FSubscription {
      * @return FSubscription
      */
     public static FSubscription of(String topic, FSubscriberTransport transport) {
+        return new FSubscription(topic, transport);
+    }
+
+    public static FSubscription of(String topic, FDurableSubscriberTransport transport) {
         return new FSubscription(topic, transport);
     }
 
@@ -42,7 +54,11 @@ public final class FSubscription {
      * Unsubscribe from the topic.
      */
     public void unsubscribe() {
-        transport.unsubscribe();
+        if (this.transport != null) {
+            transport.unsubscribe();
+        } else if (durableTransport != null) {
+            durableTransport.unsubscribe();
+        }
     }
 
 }

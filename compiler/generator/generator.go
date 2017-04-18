@@ -17,10 +17,10 @@ type FileType string
 const (
 	CombinedServiceFile  FileType = "combined_service"
 	CombinedScopeFile    FileType = "combined_scope"
-	PublishFile          FileType = "publish"
 	DurablePublishFile   FileType = "durable_publish"
-	SubscribeFile        FileType = "subscribe"
 	DurableSubscribeFile FileType = "durable_subscribe"
+	PublishFile          FileType = "publish"
+	SubscribeFile        FileType = "subscribe"
 
 	TypeFile               FileType = "types"
 	ServiceArgsResultsFile FileType = "service_args_results"
@@ -200,10 +200,10 @@ func (o *programGenerator) Generate(frugal *parser.Frugal, outputDir string) err
 			if err := o.generateScopeFile(scope, outputDir, PublishFile); err != nil {
 				return err
 			}
-			if err := o.generateScopeFile(scope, outputDir, DurablePublishFile); err != nil {
+			if err := o.generateScopeFile(scope, outputDir, SubscribeFile); err != nil {
 				return err
 			}
-			if err := o.generateScopeFile(scope, outputDir, SubscribeFile); err != nil {
+			if err := o.generateScopeFile(scope, outputDir, DurablePublishFile); err != nil {
 				return err
 			}
 			if err := o.generateScopeFile(scope, outputDir, DurableSubscribeFile); err != nil {

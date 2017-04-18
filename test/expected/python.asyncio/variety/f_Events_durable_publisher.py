@@ -153,11 +153,11 @@ class EventsDurablePublisher(object):
         oprot.write_request_headers(ctx)
         oprot.writeMessageBegin(op, TMessageType.CALL, 0)
         oprot.writeListBegin(TType.MAP, len(req))
-        for elem59 in req:
-            oprot.writeMapBegin(TType.I64, TType.STRUCT, len(elem59))
-            for elem61, elem60 in elem59.items():
-                oprot.writeI64(elem61)
-                elem60.write(oprot)
+        for elem64 in req:
+            oprot.writeMapBegin(TType.I64, TType.STRUCT, len(elem64))
+            for elem66, elem65 in elem64.items():
+                oprot.writeI64(elem66)
+                elem65.write(oprot)
             oprot.writeMapEnd()
         oprot.writeListEnd()
         oprot.writeMessageEnd()
