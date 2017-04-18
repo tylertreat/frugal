@@ -29,13 +29,34 @@ func getNatsConn() *nats.Conn {
 func clientLoggingMiddleware(called chan<- bool) frugal.ServiceMiddleware {
 	return func(next frugal.InvocationHandler) frugal.InvocationHandler {
 		return func(service reflect.Value, method reflect.Method, args frugal.Arguments) frugal.Results {
+			var (
+				isByteArray bool
+				length      int
+				ret         frugal.Results
+			)
+
 			select {
 			case called <- true:
 			default:
 			}
-			fmt.Printf("%v(%v) = ", method.Name, args[1:])
-			ret := next(service, method, args)
-			fmt.Printf("%v\n", ret[:1])
+
+			isByteArray, length = checkForByteArray(args)
+
+			// If first argument after the fContext is a byte array
+			// print the length (size) instead of the contents
+			if isByteArray {
+				fmt.Printf("%v(%v) = ", method.Name, length)
+				ret = next(service, method, args)
+				byteArray, ok := ret[0].([]byte)
+				if ok {
+					length = len(byteArray)
+				}
+				fmt.Printf("%v\n", length)
+			} else {
+				fmt.Printf("%v(%v) = ", method.Name, args[1:])
+				ret = next(service, method, args)
+				fmt.Printf("%v\n", ret[:1])
+			}
 			return ret
 		}
 	}
@@ -44,13 +65,46 @@ func clientLoggingMiddleware(called chan<- bool) frugal.ServiceMiddleware {
 func serverLoggingMiddleware(called chan<- bool) frugal.ServiceMiddleware {
 	return func(next frugal.InvocationHandler) frugal.InvocationHandler {
 		return func(service reflect.Value, method reflect.Method, args frugal.Arguments) frugal.Results {
+			var (
+				isByteArray bool
+				length      int
+				ret         frugal.Results
+			)
+
 			select {
 			case called <- true:
 			default:
 			}
-			fmt.Printf("%v(%v) \n", method.Name, args[1:])
-			ret := next(service, method, args)
+
+			ret = next(service, method, args)
+
+			isByteArray, length = checkForByteArray(args)
+
+			if isByteArray {
+				byteArray, ok := ret[0].([]byte)
+				if ok {
+					isByteArray = true
+					retLength := len(byteArray)
+					fmt.Printf("%v(%v) = ", method.Name, length)
+					fmt.Printf("%v\n", retLength)
+				}
+			} else {
+				fmt.Printf("%v(%v) = ", method.Name, args[1:])
+				fmt.Printf("%v\n", ret[:1])
+			}
 			return ret
 		}
 	}
+}
+
+func checkForByteArray(args frugal.Arguments) (isByteArray bool, length int) {
+	if len(args) > 1 {
+		byteArray, ok := args[1].([]byte)
+		if ok {
+			isByteArray = true
+			length = len(byteArray)
+			return isByteArray, length
+		}
+	}
+	return false, 0
 }

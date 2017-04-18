@@ -196,6 +196,18 @@ public class FrugalTestHandler implements FFrugalTest.Iface {
         }
 
         @Override
+        public void testRequestTooLarge(FContext ctx, java.nio.ByteBuffer request) throws TException {
+             throw new TApplicationException(400, "testRequestTooLarge should" +
+                     " never be sucessfully called.");
+        }
+
+        @Override
+        public java.nio.ByteBuffer testResponseTooLarge(FContext ctx, java.nio.ByteBuffer request) {
+            java.nio.ByteBuffer response = ByteBuffer.allocate(1024*1024);
+            return response;
+        }
+
+        @Override
         public void testOneway(FContext ctx, int secondsToSleep) throws TException {
         }
 }
