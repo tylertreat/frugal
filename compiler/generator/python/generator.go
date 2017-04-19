@@ -757,13 +757,13 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from thrift.transport.TTransport import TTransportException\n\n"
 
 	imports += g.generateServiceExtendsImport(s)
-	if imp, err := g.generateServiceIncludeImports(s); err != nil {
+	imp, err := g.generateServiceIncludeImports(s)
+	if err != nil {
 		return err
-	} else {
-		imports += imp
 	}
+	imports += imp
 
-	_, err := file.WriteString(imports)
+	_, err = file.WriteString(imports)
 	return err
 }
 
@@ -1024,6 +1024,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 
 // GenerateDurableSubscriber generates the durable subscriber for the given scope.
 func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
+	globals.PrintWarning(fmt.Sprintf("%s: scope durable subscriber generation is not implemented for Python", scope.Name))
 	return nil
 }
 
