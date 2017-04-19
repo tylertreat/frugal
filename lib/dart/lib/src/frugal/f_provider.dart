@@ -43,7 +43,7 @@ class FDurableScopeProvider {
   /// [FProtocolFactory] used by the scope.
   final FProtocolFactory protocolFactory;
 
-  /// Middleware applied to publishers and subscribers.
+  /// [Middleware] applied to publishers and subscribers.
   final List<Middleware> _middleware;
 
   /// Creates a new [FScopeProvider].

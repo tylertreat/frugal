@@ -46,6 +46,6 @@ abstract class FDurableSubscriberTransport {
 
 /// Produces [FDurableSubscriberTransport] instances.
 abstract class FDurableSubscriberTransportFactory {
-  /// Returns a new [FSubscriberTransport] instance.
+  /// Returns a new [FDurableSubscriberTransport] instance.
   FDurableSubscriberTransport getTransport();
 }

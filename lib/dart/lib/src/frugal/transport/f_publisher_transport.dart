@@ -47,11 +47,13 @@ abstract class FDurablePublisherTransport {
 
   /// Publish the given framed frugal payload over the transport.
   /// Throws [TTransportError] if publishing the payload failed.
+  /// The parameter groupID allows you to assign arbitrary groupings to
+  /// messages. A value of null indicates the message isn't part of any group.
   Future<Null> publish(String topic, String groupId, Uint8List payload);
 }
 
-/// Produces [FPublisherTransport] instances.
+/// Produces [FDurablePublisherTransport] instances.
 abstract class FDurablePublisherTransportFactory {
-  /// Returns a new [FPublisherTransport] instance.
+  /// Returns a new [FDurablePublisherTransport] instance.
   FDurablePublisherTransport getTransport();
 }
