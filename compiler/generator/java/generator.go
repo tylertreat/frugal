@@ -2333,7 +2333,7 @@ func (g *Generator) generatePublisherIface(scope *parser.Scope, durable bool) st
 
 	groupIDParam := ""
 	if durable {
-		groupIDParam = "String groupID, "
+		groupIDParam = "String groupId, "
 	}
 
 	for _, op := range scope.Operations {
@@ -2384,7 +2384,7 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope, durable bool) s
 
 	groupIDParam := ""
 	if durable {
-		groupIDParam = "String groupID, "
+		groupIDParam = "String groupId, "
 	}
 
 	for _, op := range scope.Operations {
@@ -2435,8 +2435,8 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope, durable bool) s
 
 		var groupIDParam, groupID string
 		if durable {
-			groupIDParam = "String groupID, "
-			groupID = "groupID, "
+			groupIDParam = "String groupId, "
+			groupID = "groupId, "
 		}
 
 		publisher += fmt.Sprintf(tabtabtab+"public void publish%s(FContext ctx, %s%s%s req) throws TException {\n", op.Name, groupIDParam, args, g.getJavaTypeFromThriftType(op.Type))
@@ -2543,7 +2543,7 @@ func (g *Generator) generateHandlerIfaces(scope *parser.Scope, durable bool) str
 
 	groupID := ""
 	if durable {
-		groupID = "String groupID, "
+		groupID = "String groupId, "
 	}
 
 	for _, op := range scope.Operations {
@@ -2618,8 +2618,8 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope, durable bool) 
 
 		var groupID, groupIDParam string
 		if durable {
-			groupIDParam = ", String groupID"
-			groupID = "groupID, "
+			groupIDParam = ", String groupId"
+			groupID = "groupId, "
 		}
 		subscriber += tabtabtabtab + fmt.Sprintf("public void onMessage(TTransport tr%s) throws TException {\n", groupIDParam)
 		subscriber += tabtabtabtabtab + "FProtocol iprot = pf.getProtocol(tr);\n"
@@ -3095,7 +3095,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 func (g *Generator) generateScopeArgs(scope *parser.Scope, durable bool) string {
 	args := "ctx"
 	if durable {
-		args += ", groupID"
+		args += ", groupId"
 	}
 	for _, v := range scope.Prefix.Variables {
 		args += ", " + v

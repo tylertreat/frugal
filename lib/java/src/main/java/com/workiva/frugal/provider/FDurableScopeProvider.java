@@ -76,10 +76,10 @@ public class FDurableScopeProvider {
     }
 
     /**
-     * Returns a new Publisher containing an FPublisherTransport and FProtocolFactory
+     * Returns a new Publisher containing an FDurablePublisherTransport and FProtocolFactory
      * used for publishing.
      *
-     * @return Publisher with FPublisherTransport and FProtocol.
+     * @return Publisher with FDurablePublisherTransport and FProtocol.
      */
     public Publisher buildPublisher() {
         FDurablePublisherTransport transport = publisherTransportFactory.getTransport();
@@ -87,10 +87,10 @@ public class FDurableScopeProvider {
     }
 
     /**
-     * Returns a new Subscriber containing an FSubscriberTransport and FProtocolFactory
-     * used for subscribing.
+     * Returns a new Subscriber containing an FDurableSubscriberTransport and
+     * FProtocolFactory used for subscribing.
      *
-     * @return SubscriberClient with FSubscriberTransport and FProtocol.
+     * @return Subscriber with FDurableSubscriberTransport and FProtocol.
      */
     public Subscriber buildSubscriber() {
         FDurableSubscriberTransport transport = subscriberTransportFactory.getTransport();

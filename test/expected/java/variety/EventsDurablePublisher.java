@@ -61,13 +61,13 @@ public class EventsDurablePublisher {
 		/**
 		 * This is a docstring.
 		 */
-		public void publishEventCreated(FContext ctx, String groupID, String user, Event req) throws TException;
+		public void publishEventCreated(FContext ctx, String groupId, String user, Event req) throws TException;
 
-		public void publishSomeInt(FContext ctx, String groupID, String user, long req) throws TException;
+		public void publishSomeInt(FContext ctx, String groupId, String user, long req) throws TException;
 
-		public void publishSomeStr(FContext ctx, String groupID, String user, String req) throws TException;
+		public void publishSomeStr(FContext ctx, String groupId, String user, String req) throws TException;
 
-		public void publishSomeList(FContext ctx, String groupID, String user, java.util.List<java.util.Map<Long, Event>> req) throws TException;
+		public void publishSomeList(FContext ctx, String groupId, String user, java.util.List<java.util.Map<Long, Event>> req) throws TException;
 
 	}
 
@@ -101,20 +101,20 @@ public class EventsDurablePublisher {
 		/**
 		 * This is a docstring.
 		 */
-		public void publishEventCreated(FContext ctx, String groupID, String user, Event req) throws TException {
-			proxy.publishEventCreated(ctx, groupID, user, req);
+		public void publishEventCreated(FContext ctx, String groupId, String user, Event req) throws TException {
+			proxy.publishEventCreated(ctx, groupId, user, req);
 		}
 
-		public void publishSomeInt(FContext ctx, String groupID, String user, long req) throws TException {
-			proxy.publishSomeInt(ctx, groupID, user, req);
+		public void publishSomeInt(FContext ctx, String groupId, String user, long req) throws TException {
+			proxy.publishSomeInt(ctx, groupId, user, req);
 		}
 
-		public void publishSomeStr(FContext ctx, String groupID, String user, String req) throws TException {
-			proxy.publishSomeStr(ctx, groupID, user, req);
+		public void publishSomeStr(FContext ctx, String groupId, String user, String req) throws TException {
+			proxy.publishSomeStr(ctx, groupId, user, req);
 		}
 
-		public void publishSomeList(FContext ctx, String groupID, String user, java.util.List<java.util.Map<Long, Event>> req) throws TException {
-			proxy.publishSomeList(ctx, groupID, user, req);
+		public void publishSomeList(FContext ctx, String groupId, String user, java.util.List<java.util.Map<Long, Event>> req) throws TException {
+			proxy.publishSomeList(ctx, groupId, user, req);
 		}
 
 		protected static class InternalEventsPublisher implements Iface {
@@ -144,7 +144,7 @@ public class EventsDurablePublisher {
 			/**
 			 * This is a docstring.
 			 */
-			public void publishEventCreated(FContext ctx, String groupID, String user, Event req) throws TException {
+			public void publishEventCreated(FContext ctx, String groupId, String user, Event req) throws TException {
 				ctx.addRequestHeader("_topic_user", user);
 				String op = "EventCreated";
 				String prefix = String.format("foo.%s.", user);
@@ -155,11 +155,11 @@ public class EventsDurablePublisher {
 				oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
 				req.write(oprot);
 				oprot.writeMessageEnd();
-				transport.publish(topic, groupID, memoryBuffer.getWriteBytes());
+				transport.publish(topic, groupId, memoryBuffer.getWriteBytes());
 			}
 
 
-			public void publishSomeInt(FContext ctx, String groupID, String user, long req) throws TException {
+			public void publishSomeInt(FContext ctx, String groupId, String user, long req) throws TException {
 				ctx.addRequestHeader("_topic_user", user);
 				String op = "SomeInt";
 				String prefix = String.format("foo.%s.", user);
@@ -171,11 +171,11 @@ public class EventsDurablePublisher {
 				long elem284 = req;
 				oprot.writeI64(elem284);
 				oprot.writeMessageEnd();
-				transport.publish(topic, groupID, memoryBuffer.getWriteBytes());
+				transport.publish(topic, groupId, memoryBuffer.getWriteBytes());
 			}
 
 
-			public void publishSomeStr(FContext ctx, String groupID, String user, String req) throws TException {
+			public void publishSomeStr(FContext ctx, String groupId, String user, String req) throws TException {
 				ctx.addRequestHeader("_topic_user", user);
 				String op = "SomeStr";
 				String prefix = String.format("foo.%s.", user);
@@ -187,11 +187,11 @@ public class EventsDurablePublisher {
 				String elem285 = req;
 				oprot.writeString(elem285);
 				oprot.writeMessageEnd();
-				transport.publish(topic, groupID, memoryBuffer.getWriteBytes());
+				transport.publish(topic, groupId, memoryBuffer.getWriteBytes());
 			}
 
 
-			public void publishSomeList(FContext ctx, String groupID, String user, java.util.List<java.util.Map<Long, Event>> req) throws TException {
+			public void publishSomeList(FContext ctx, String groupId, String user, java.util.List<java.util.Map<Long, Event>> req) throws TException {
 				ctx.addRequestHeader("_topic_user", user);
 				String op = "SomeList";
 				String prefix = String.format("foo.%s.", user);
@@ -212,7 +212,7 @@ public class EventsDurablePublisher {
 				}
 				oprot.writeListEnd();
 				oprot.writeMessageEnd();
-				transport.publish(topic, groupID, memoryBuffer.getWriteBytes());
+				transport.publish(topic, groupId, memoryBuffer.getWriteBytes());
 			}
 		}
 	}
