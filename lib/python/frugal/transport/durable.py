@@ -52,7 +52,9 @@ class FDurableSubscriberTransport(object):
 
         :param subject: the subject to subscribe to
         :type subject: string
-        :param callback: function to call when a message is received
+        :param callback: function to call when a message is received, 
+            the first two params should be an FContext and a string 
+            group id if fifo, None otherwise.
         :type callback: func
         """
         pass
