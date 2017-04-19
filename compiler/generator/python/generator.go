@@ -49,16 +49,6 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 	return gen
 }
 
-func (g *Generator) GenerateDurablePublisher(file *os.File, scope *parser.Scope) error {
-	// TODO
-	return nil
-}
-
-func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
-	// TODO
-	return nil
-}
-
 // SetupGenerator performs any setup logic before generation.
 func (g *Generator) SetupGenerator(outputDir string) error {
 	g.outputDir = outputDir
@@ -732,6 +722,7 @@ func (g *Generator) GenerateScopePackage(file *os.File, s *parser.Scope) error {
 	return nil
 }
 
+// GenerateTypesImports generates the thirft type imports
 func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) error {
 	contents := ""
 	contents += "from thrift.Thrift import TType, TMessageType, TException, TApplicationException\n"
@@ -766,13 +757,13 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from thrift.transport.TTransport import TTransportException\n\n"
 
 	imports += g.generateServiceExtendsImport(s)
-	if imp, err := g.generateServiceIncludeImports(s); err != nil {
+	imp, err := g.generateServiceIncludeImports(s)
+	if err != nil {
 		return err
-	} else {
-		imports += imp
 	}
+	imports += imp
 
-	_, err := file.WriteString(imports)
+	_, err = file.WriteString(imports)
 	return err
 }
 
@@ -829,8 +820,21 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 
 // GeneratePublisher generates the publisher for the given scope.
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
+	return g.generatePublisher(file, scope, false)
+}
+
+// GenerateDurablePublisher generates the durable publisher for the given scope.
+func (g *Generator) GenerateDurablePublisher(file *os.File, scope *parser.Scope) error {
+	return g.generatePublisher(file, scope, true)
+}
+
+func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope, durable bool) error {
 	publisher := ""
-	publisher += fmt.Sprintf("class %sPublisher(object):\n", scope.Name)
+	if !durable {
+		publisher += fmt.Sprintf("class %sPublisher(object):\n", scope.Name)
+	} else {
+		publisher += fmt.Sprintf("class %sDurablePublisher(object):\n", scope.Name)
+	}
 	if scope.Comment != nil {
 		publisher += g.generateDocString(scope.Comment, tab)
 	}
@@ -839,10 +843,16 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	publisher += tab + fmt.Sprintf("_DELIMITER = '%s'\n\n", globals.TopicDelimiter)
 
 	publisher += tab + "def __init__(self, provider, middleware=None):\n"
+	var provider string
+	if !durable {
+		provider = "FScopeProvider"
+	} else {
+		provider = "FDurableScopeProvider"
+	}
 	publisher += g.generateDocString([]string{
 		fmt.Sprintf("Create a new %sPublisher.\n", scope.Name),
 		"Args:",
-		tab + "provider: FScopeProvider",
+		tab + fmt.Sprintf("provider: %s", provider),
 		tab + "middleware: ServiceMiddleware or list of ServiceMiddleware",
 	}, tabtab)
 	publisher += "\n"
@@ -897,7 +907,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 
 	prefix := ""
 	for _, op := range scope.Operations {
-		publisher += prefix + g.generatePublishMethod(scope, op)
+		publisher += prefix + g.generatePublishMethod(scope, op, durable)
 		prefix = "\n\n"
 	}
 
@@ -905,10 +915,13 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	return err
 }
 
-func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operation) string {
+func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operation, durable bool) string {
 	args := ""
 	asyncOpt := getAsyncOpt(g.Options)
 	docstr := []string{"Args:", tab + "ctx: FContext"}
+	if durable {
+		docstr = append(docstr, tab+"group_id: string")
+	}
 	if len(scope.Prefix.Variables) > 0 {
 		prefix := ""
 		for _, variable := range scope.Prefix.Variables {
@@ -931,7 +944,11 @@ func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operat
 	case asyncio:
 		method += "async "
 	}
-	method += fmt.Sprintf("def publish_%s(self, ctx, %sreq):\n", op.Name, args)
+	if !durable {
+		method += fmt.Sprintf("def publish_%s(self, ctx, %sreq):\n", op.Name, args)
+	} else {
+		method += fmt.Sprintf("def publish_%s(self, ctx, group_id, %sreq):\n", op.Name, args)
+	}
 	method += g.generateDocString(docstr, tabtab)
 	method += tabtab
 	switch asyncOpt {
@@ -940,7 +957,11 @@ func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operat
 	case asyncio:
 		method += "await "
 	}
-	method += fmt.Sprintf("self._methods['publish_%s']([ctx, %sreq])\n\n", op.Name, args)
+	if !durable {
+		method += fmt.Sprintf("self._methods['publish_%s']([ctx, %sreq])\n\n", op.Name, args)
+	} else {
+		method += fmt.Sprintf("self._methods['publish_%s']([ctx, group_id, %sreq])\n\n", op.Name, args)
+	}
 
 	method += tab
 	switch asyncOpt {
@@ -949,7 +970,11 @@ func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operat
 	case asyncio:
 		method += "async "
 	}
-	method += fmt.Sprintf("def _publish_%s(self, ctx, %sreq):\n", op.Name, args)
+	if !durable {
+		method += fmt.Sprintf("def _publish_%s(self, ctx, %sreq):\n", op.Name, args)
+	} else {
+		method += fmt.Sprintf("def _publish_%s(self, ctx, group_id, %sreq):\n", op.Name, args)
+	}
 	// Inject the prefix variables into the FContext to send
 	for _, prefixVar := range scope.Prefix.Variables {
 		method += fmt.Sprintf(tabtab+"ctx.set_request_header('_topic_%s', %s)\n", prefixVar, prefixVar)
@@ -971,7 +996,11 @@ func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operat
 	case asyncio:
 		method += "await "
 	}
-	method += "self._transport.publish(topic, buffer.getvalue())\n"
+	if !durable {
+		method += "self._transport.publish(topic, buffer.getvalue())\n"
+	} else {
+		method += "self._transport.publish(topic, group_id, buffer.getvalue())\n"
+	}
 	return method
 }
 
@@ -996,6 +1025,12 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	// TODO
 	globals.PrintWarning(fmt.Sprintf("%s: scope subscriber generation is not implemented for Python", scope.Name))
+	return nil
+}
+
+// GenerateDurableSubscriber generates the durable subscriber for the given scope.
+func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
+	globals.PrintWarning(fmt.Sprintf("%s: scope durable subscriber generation is not implemented for Python", scope.Name))
 	return nil
 }
 

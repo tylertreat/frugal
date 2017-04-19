@@ -2117,6 +2117,7 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 		return g.CreateFile(strings.Title(name)+"Publisher", outputDir, lang, false)
 	case generator.SubscribeFile:
 		return g.CreateFile(strings.Title(name)+"Subscriber", outputDir, lang, false)
+
 	case generator.DurablePublishFile:
 		return g.CreateFile(strings.Title(name)+"DurablePublisher", outputDir, lang, false)
 	case generator.DurableSubscribeFile:

@@ -1,3 +1,5 @@
+from .durable import FDurablePublisherTransport
+from .durable import FDurableSubscriberTransport
 from .memory_output_buffer import TMemoryOutputBuffer
 from .scope_transport import FPublisherTransport
 from .scope_transport import FSubscriberTransport
@@ -11,9 +13,10 @@ __all__ = [
     'TSynchronousTransport',
     'FTransportFactory',
     'TMemoryOutputBuffer',
-    'FScopeTransportFactory',
     'FPublisherTransport',
     'FSubscriberTransport',
+    'FDurablePublisherTransport',
+    'FDurableSubscriberTransport',
     'FPublisherTransportFactory',
     'FSubscriberTransportFactory',
 ]

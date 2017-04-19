@@ -213,10 +213,23 @@ func (t *TornadoGenerator) generateProcessorFunction(method *parser.Method) stri
 	return contents
 }
 
+// GenerateDurableSubscriber generates a durable subscriber for the given scope.
+func (t *TornadoGenerator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
+	return t.generateSubscriber(file, scope, true)
+}
+
 // GenerateSubscriber generates the subscriber for the given scope.
 func (t *TornadoGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
+	return t.generateSubscriber(file, scope, false)
+}
+
+func (t *TornadoGenerator) generateSubscriber(file *os.File, scope *parser.Scope, durable bool) error {
 	subscriber := ""
-	subscriber += fmt.Sprintf("class %sSubscriber(object):\n", scope.Name)
+	if !durable {
+		subscriber += fmt.Sprintf("class %sSubscriber(object):\n", scope.Name)
+	} else {
+		subscriber += fmt.Sprintf("class %sDurableSubscriber(object):\n", scope.Name)
+	}
 	if scope.Comment != nil {
 		subscriber += t.generateDocString(scope.Comment, tab)
 	}
@@ -240,7 +253,7 @@ func (t *TornadoGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope
 	subscriber += tabtab + "self._provider = provider\n\n"
 
 	for _, op := range scope.Operations {
-		subscriber += t.generateSubscribeMethod(scope, op)
+		subscriber += t.generateSubscribeMethod(scope, op, durable)
 		subscriber += "\n\n"
 	}
 
@@ -248,7 +261,7 @@ func (t *TornadoGenerator) GenerateSubscriber(file *os.File, scope *parser.Scope
 	return err
 }
 
-func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *parser.Operation) string {
+func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *parser.Operation, durable bool) string {
 	args := ""
 	docstr := []string{}
 	if len(scope.Prefix.Variables) > 0 {
@@ -261,7 +274,11 @@ func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 		}
 		args += ", "
 	}
-	docstr = append(docstr, tab+fmt.Sprintf("%s_handler: function which takes FContext and %s", op.Name, op.Type))
+	if !durable {
+		docstr = append(docstr, tab+fmt.Sprintf("%s_handler: function which takes FContext and %s", op.Name, op.Type))
+	} else {
+		docstr = append(docstr, tab+fmt.Sprintf("%s_handler: function which takes FContext, group_id, and %s", op.Name, op.Type))
+	}
 	if op.Comment != nil {
 		docstr[0] = "\n" + tabtab + docstr[0]
 		docstr = append(op.Comment, docstr...)
@@ -284,7 +301,12 @@ func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	method += tab + fmt.Sprintf("def _recv_%s(self, protocol_factory, op, handler):\n", op.Name)
 	method += tabtab + "method = Method(handler, self._middleware)\n\n"
 
-	method += tabtab + "def callback(transport):\n"
+	if !durable {
+		method += tabtab + "def callback(transport):\n"
+	} else {
+		method += tabtab + "def callback(transport, group_id=None):\n"
+	}
+
 	method += tabtabtab + "iprot = protocol_factory.get_protocol(transport)\n"
 	method += tabtabtab + "ctx = iprot.read_request_headers()\n"
 	method += tabtabtab + "mname, _, _ = iprot.readMessageBegin()\n"
@@ -295,7 +317,11 @@ func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	method += t.generateReadFieldRec(parser.FieldFromType(op.Type, "req"), false, tabtabtab)
 	method += tabtabtab + "iprot.readMessageEnd()\n"
 	method += tabtabtab + "try:\n"
-	method += tabtabtabtab + "method([ctx, req])\n"
+	if !durable {
+		method += tabtabtabtab + "method([ctx, req])\n"
+	} else {
+		method += tabtabtabtab + "method([ctx, group_id, req])\n"
+	}
 	method += tabtabtab + "except:\n"
 	method += tabtabtabtab + "traceback.print_exc()\n"
 	method += tabtabtabtab + "sys.exit(1)\n\n"
