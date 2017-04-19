@@ -233,7 +233,7 @@ func (g *Generator) GenerateTypeDef(*parser.TypeDef) error {
 // GenerateEnum generates the given enum.
 func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents := ""
-	contents += fmt.Sprintf("class %s(object):\n", enum.Name)
+	contents += fmt.Sprintf("class %s(int):\n", enum.Name)
 	if enum.Comment != nil {
 		contents += g.generateDocString(enum.Comment, tab)
 	}
@@ -546,7 +546,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 	}
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	isEnum := g.Frugal.IsEnum(underlyingType)
-	if underlyingType.IsPrimitive() || isEnum {
+	if underlyingType.IsPrimitive() {
 		thriftType := ""
 		switch underlyingType.Name {
 		case "bool", "byte", "i16", "i32", "i64", "double", "string", "binary":
@@ -554,14 +554,11 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, ind st
 		case "i8":
 			thriftType = "Byte"
 		default:
-			if isEnum {
-				thriftType = "I32"
-			} else {
-				panic("unknown type: " + underlyingType.Name)
-			}
+			panic("unknown type: " + underlyingType.Name)
 		}
 		contents += fmt.Sprintf(ind+"%s%s = iprot.read%s()\n", prefix, field.Name, thriftType)
-
+	} else if isEnum {
+		contents += fmt.Sprintf(ind+"%s%s = %s(iprot.readI32())\n", prefix, field.Name, underlyingType.Name)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		g.qualifiedTypeName(underlyingType)
 		contents += fmt.Sprintf(ind+"%s%s = %s()\n", prefix, field.Name, g.qualifiedTypeName(underlyingType))
@@ -698,6 +695,10 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 		return g.CreateFile(fmt.Sprintf("f_%s_publisher", name), outputDir, lang, false)
 	case generator.SubscribeFile:
 		return g.CreateFile(fmt.Sprintf("f_%s_subscriber", name), outputDir, lang, false)
+	case generator.DurablePublishFile:
+		return g.CreateFile(fmt.Sprintf("f_%s_durable_publisher", name), outputDir, lang, false)
+	case generator.DurableSubscribeFile:
+		return g.CreateFile(fmt.Sprintf("f_%s_durable_subscriber", name), outputDir, lang, false)
 	case generator.CombinedServiceFile:
 		return g.CreateFile(fmt.Sprintf("f_%s", name), outputDir, lang, false)
 	case generator.ObjectFile:

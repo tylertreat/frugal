@@ -66,6 +66,8 @@ func TestValidJavaFrugalCompiler(t *testing.T) {
 		{"expected/java/variety/TestLowercase.java", filepath.Join(outputDir, "variety", "java", "TestLowercase.java")},
 		{"expected/java/variety/EventsPublisher.java", filepath.Join(outputDir, "variety", "java", "EventsPublisher.java")},
 		{"expected/java/variety/EventsSubscriber.java", filepath.Join(outputDir, "variety", "java", "EventsSubscriber.java")},
+		{"expected/java/variety/EventsDurablePublisher.java", filepath.Join(outputDir, "variety", "java", "EventsDurablePublisher.java")},
+		{"expected/java/variety/EventsDurableSubscriber.java", filepath.Join(outputDir, "variety", "java", "EventsDurableSubscriber.java")},
 		{"expected/java/variety/FFoo.java", filepath.Join(outputDir, "variety", "java", "FFoo.java")},
 
 		{"expected/java/actual_base/api_exception.java", filepath.Join(outputDir, "actual_base", "java", "api_exception.java")},
