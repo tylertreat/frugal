@@ -312,10 +312,16 @@ func (a *AsyncIOGenerator) generateSubscriber(file *os.File, scope *parser.Scope
 	subscriber += tab + fmt.Sprintf("_DELIMITER = '%s'\n\n", globals.TopicDelimiter)
 
 	subscriber += tab + "def __init__(self, provider, middleware=None):\n"
+	var provider string
+	if !durable {
+		provider = "FScopeProvider"
+	} else {
+		provider = "FDurableScopeProvider"
+	}
 	subscriber += a.generateDocString([]string{
 		fmt.Sprintf("Create a new %sSubscriber.\n", scope.Name),
 		"Args:",
-		tab + "provider: FScopeProvider",
+		tab + fmt.Sprintf("provider: %s", provider),
 		tab + "middleware: ServiceMiddleware or list of ServiceMiddleware",
 	}, tabtab)
 	subscriber += "\n"
@@ -374,7 +380,7 @@ func (a *AsyncIOGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	if !durable {
 		method += tabtab + "async def callback(transport):\n"
 	} else {
-		method += tabtab + "async def callback(transport, group_id=''):\n"
+		method += tabtab + "async def callback(transport, group_id=None):\n"
 	}
 	method += tabtabtab + "iprot = protocol_factory.get_protocol(transport)\n"
 	method += tabtabtab + "ctx = iprot.read_request_headers()\n"

@@ -37,7 +37,7 @@ class EventsDurableSubscriber(object):
         Create a new EventsSubscriber.
 
         Args:
-            provider: FScopeProvider
+            provider: FDurableScopeProvider
             middleware: ServiceMiddleware or list of ServiceMiddleware
         """
 
@@ -68,7 +68,7 @@ class EventsDurableSubscriber(object):
     def _recv_EventCreated(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
 
-        async def callback(transport, group_id=''):
+        async def callback(transport, group_id=None):
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()
@@ -109,7 +109,7 @@ class EventsDurableSubscriber(object):
     def _recv_SomeInt(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
 
-        async def callback(transport, group_id=''):
+        async def callback(transport, group_id=None):
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()
@@ -149,7 +149,7 @@ class EventsDurableSubscriber(object):
     def _recv_SomeStr(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
 
-        async def callback(transport, group_id=''):
+        async def callback(transport, group_id=None):
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()
@@ -189,7 +189,7 @@ class EventsDurableSubscriber(object):
     def _recv_SomeList(self, protocol_factory, op, handler):
         method = Method(handler, self._middleware)
 
-        async def callback(transport, group_id=''):
+        async def callback(transport, group_id=None):
             iprot = protocol_factory.get_protocol(transport)
             ctx = iprot.read_request_headers()
             mname, _, _ = iprot.readMessageBegin()

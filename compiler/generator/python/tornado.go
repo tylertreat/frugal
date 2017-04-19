@@ -304,7 +304,7 @@ func (t *TornadoGenerator) generateSubscribeMethod(scope *parser.Scope, op *pars
 	if !durable {
 		method += tabtab + "def callback(transport):\n"
 	} else {
-		method += tabtab + "def callback(transport, group_id=''):\n"
+		method += tabtab + "def callback(transport, group_id=None):\n"
 	}
 
 	method += tabtabtab + "iprot = protocol_factory.get_protocol(transport)\n"

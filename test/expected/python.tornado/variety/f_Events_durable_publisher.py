@@ -37,7 +37,7 @@ class EventsDurablePublisher(object):
         Create a new EventsPublisher.
 
         Args:
-            provider: FScopeProvider
+            provider: FDurableScopeProvider
             middleware: ServiceMiddleware or list of ServiceMiddleware
         """
 

@@ -843,10 +843,16 @@ func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope, durabl
 	publisher += tab + fmt.Sprintf("_DELIMITER = '%s'\n\n", globals.TopicDelimiter)
 
 	publisher += tab + "def __init__(self, provider, middleware=None):\n"
+	var provider string
+	if !durable {
+		provider = "FScopeProvider"
+	} else {
+		provider = "FDurableScopeProvider"
+	}
 	publisher += g.generateDocString([]string{
 		fmt.Sprintf("Create a new %sPublisher.\n", scope.Name),
 		"Args:",
-		tab + "provider: FScopeProvider",
+		tab + fmt.Sprintf("provider: %s", provider),
 		tab + "middleware: ServiceMiddleware or list of ServiceMiddleware",
 	}, tabtab)
 	publisher += "\n"
