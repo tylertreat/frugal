@@ -58,11 +58,11 @@ public class AlbumWinnersDurablePublisher {
 
 		public void close() throws TException;
 
-		public void publishContestStart(FContext ctx, String groupID, java.util.List<Album> req) throws TException;
+		public void publishContestStart(FContext ctx, String groupId, java.util.List<Album> req) throws TException;
 
-		public void publishTimeLeft(FContext ctx, String groupID, double req) throws TException;
+		public void publishTimeLeft(FContext ctx, String groupId, double req) throws TException;
 
-		public void publishWinner(FContext ctx, String groupID, Album req) throws TException;
+		public void publishWinner(FContext ctx, String groupId, Album req) throws TException;
 
 	}
 
@@ -93,16 +93,16 @@ public class AlbumWinnersDurablePublisher {
 			target.close();
 		}
 
-		public void publishContestStart(FContext ctx, String groupID, java.util.List<Album> req) throws TException {
-			proxy.publishContestStart(ctx, groupID, req);
+		public void publishContestStart(FContext ctx, String groupId, java.util.List<Album> req) throws TException {
+			proxy.publishContestStart(ctx, groupId, req);
 		}
 
-		public void publishTimeLeft(FContext ctx, String groupID, double req) throws TException {
-			proxy.publishTimeLeft(ctx, groupID, req);
+		public void publishTimeLeft(FContext ctx, String groupId, double req) throws TException {
+			proxy.publishTimeLeft(ctx, groupId, req);
 		}
 
-		public void publishWinner(FContext ctx, String groupID, Album req) throws TException {
-			proxy.publishWinner(ctx, groupID, req);
+		public void publishWinner(FContext ctx, String groupId, Album req) throws TException {
+			proxy.publishWinner(ctx, groupId, req);
 		}
 
 		protected static class InternalAlbumWinnersPublisher implements Iface {
@@ -129,7 +129,7 @@ public class AlbumWinnersDurablePublisher {
 				transport.close();
 			}
 
-			public void publishContestStart(FContext ctx, String groupID, java.util.List<Album> req) throws TException {
+			public void publishContestStart(FContext ctx, String groupId, java.util.List<Album> req) throws TException {
 				String op = "ContestStart";
 				String prefix = "v1.music.";
 				String topic = String.format("%sAlbumWinners%s%s", prefix, DELIMITER, op);
@@ -143,11 +143,11 @@ public class AlbumWinnersDurablePublisher {
 				}
 				oprot.writeListEnd();
 				oprot.writeMessageEnd();
-				transport.publish(topic, groupID, memoryBuffer.getWriteBytes());
+				transport.publish(topic, groupId, memoryBuffer.getWriteBytes());
 			}
 
 
-			public void publishTimeLeft(FContext ctx, String groupID, double req) throws TException {
+			public void publishTimeLeft(FContext ctx, String groupId, double req) throws TException {
 				String op = "TimeLeft";
 				String prefix = "v1.music.";
 				String topic = String.format("%sAlbumWinners%s%s", prefix, DELIMITER, op);
@@ -158,11 +158,11 @@ public class AlbumWinnersDurablePublisher {
 				double elem46 = req;
 				oprot.writeDouble(elem46);
 				oprot.writeMessageEnd();
-				transport.publish(topic, groupID, memoryBuffer.getWriteBytes());
+				transport.publish(topic, groupId, memoryBuffer.getWriteBytes());
 			}
 
 
-			public void publishWinner(FContext ctx, String groupID, Album req) throws TException {
+			public void publishWinner(FContext ctx, String groupId, Album req) throws TException {
 				String op = "Winner";
 				String prefix = "v1.music.";
 				String topic = String.format("%sAlbumWinners%s%s", prefix, DELIMITER, op);
@@ -172,7 +172,7 @@ public class AlbumWinnersDurablePublisher {
 				oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));
 				req.write(oprot);
 				oprot.writeMessageEnd();
-				transport.publish(topic, groupID, memoryBuffer.getWriteBytes());
+				transport.publish(topic, groupId, memoryBuffer.getWriteBytes());
 			}
 		}
 	}

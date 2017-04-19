@@ -28,8 +28,9 @@ public interface FDurablePublisherTransport {
     void close();
 
     /**
-     * Get the maximum publish size permitted by the transport. If <code>getPublishSizeLimit</code>
-     * returns a non-positive number, the transport is assumed to have no publish size limit.
+     * Get the maximum publish size permitted by the transport. If
+     * {@link #getPublishSizeLimit} returns a non-positive number, the
+     * transport is assumed to have no publish size limit.
      *
      * @return the publish size limit
      */
@@ -40,9 +41,10 @@ public interface FDurablePublisherTransport {
      * should be thread-safe.
      *
      * @param topic the topic on which to publish the payload
-     * @param groupID the groupID associated with the durable queue
+     * @param groupId the group id associated with the durable queue
      * @param payload framed frugal bytes
      * @throws TTransportException if publishing the payload failed
      */
-    void publish(String topic, String groupID, byte[] payload) throws TTransportException;
+    void publish(String topic, String groupId, byte[] payload) throws
+    TTransportException;
 }

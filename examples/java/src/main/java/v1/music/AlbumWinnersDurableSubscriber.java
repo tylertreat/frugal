@@ -63,15 +63,15 @@ public class AlbumWinnersDurableSubscriber {
 	}
 
 	public interface ContestStartHandler {
-		void onContestStart(FContext ctx, String groupID, java.util.List<Album> req);
+		void onContestStart(FContext ctx, String groupId, java.util.List<Album> req);
 	}
 
 	public interface TimeLeftHandler {
-		void onTimeLeft(FContext ctx, String groupID, double req);
+		void onTimeLeft(FContext ctx, String groupId, double req);
 	}
 
 	public interface WinnerHandler {
-		void onWinner(FContext ctx, String groupID, Album req);
+		void onWinner(FContext ctx, String groupId, Album req);
 	}
 
 	/**
@@ -106,7 +106,7 @@ public class AlbumWinnersDurableSubscriber {
 
 		private FDurableAsyncCallback recvContestStart(String op, FProtocolFactory pf, ContestStartHandler handler) {
 			return new FDurableAsyncCallback() {
-				public void onMessage(TTransport tr, String groupID) throws TException {
+				public void onMessage(TTransport tr, String groupId) throws TException {
 					FProtocol iprot = pf.getProtocol(tr);
 					FContext ctx = iprot.readRequestHeader();
 					TMessage msg = iprot.readMessageBegin();
@@ -124,7 +124,7 @@ public class AlbumWinnersDurableSubscriber {
 					}
 					iprot.readListEnd();
 					iprot.readMessageEnd();
-					handler.onContestStart(ctx, groupID, received);
+					handler.onContestStart(ctx, groupId, received);
 				}
 			};
 		}
@@ -144,7 +144,7 @@ public class AlbumWinnersDurableSubscriber {
 
 		private FDurableAsyncCallback recvTimeLeft(String op, FProtocolFactory pf, TimeLeftHandler handler) {
 			return new FDurableAsyncCallback() {
-				public void onMessage(TTransport tr, String groupID) throws TException {
+				public void onMessage(TTransport tr, String groupId) throws TException {
 					FProtocol iprot = pf.getProtocol(tr);
 					FContext ctx = iprot.readRequestHeader();
 					TMessage msg = iprot.readMessageBegin();
@@ -155,7 +155,7 @@ public class AlbumWinnersDurableSubscriber {
 					}
 					double received = iprot.readDouble();
 					iprot.readMessageEnd();
-					handler.onTimeLeft(ctx, groupID, received);
+					handler.onTimeLeft(ctx, groupId, received);
 				}
 			};
 		}
@@ -175,7 +175,7 @@ public class AlbumWinnersDurableSubscriber {
 
 		private FDurableAsyncCallback recvWinner(String op, FProtocolFactory pf, WinnerHandler handler) {
 			return new FDurableAsyncCallback() {
-				public void onMessage(TTransport tr, String groupID) throws TException {
+				public void onMessage(TTransport tr, String groupId) throws TException {
 					FProtocol iprot = pf.getProtocol(tr);
 					FContext ctx = iprot.readRequestHeader();
 					TMessage msg = iprot.readMessageBegin();
@@ -187,7 +187,7 @@ public class AlbumWinnersDurableSubscriber {
 					Album received = new Album();
 					received.read(iprot);
 					iprot.readMessageEnd();
-					handler.onWinner(ctx, groupID, received);
+					handler.onWinner(ctx, groupId, received);
 				}
 			};
 		}

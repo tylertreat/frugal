@@ -68,19 +68,19 @@ public class EventsDurableSubscriber {
 	}
 
 	public interface EventCreatedHandler {
-		void onEventCreated(FContext ctx, String groupID, Event req);
+		void onEventCreated(FContext ctx, String groupId, Event req);
 	}
 
 	public interface SomeIntHandler {
-		void onSomeInt(FContext ctx, String groupID, long req);
+		void onSomeInt(FContext ctx, String groupId, long req);
 	}
 
 	public interface SomeStrHandler {
-		void onSomeStr(FContext ctx, String groupID, String req);
+		void onSomeStr(FContext ctx, String groupId, String req);
 	}
 
 	public interface SomeListHandler {
-		void onSomeList(FContext ctx, String groupID, java.util.List<java.util.Map<Long, Event>> req);
+		void onSomeList(FContext ctx, String groupId, java.util.List<java.util.Map<Long, Event>> req);
 	}
 
 	/**
@@ -118,7 +118,7 @@ public class EventsDurableSubscriber {
 
 		private FDurableAsyncCallback recvEventCreated(String op, FProtocolFactory pf, EventCreatedHandler handler) {
 			return new FDurableAsyncCallback() {
-				public void onMessage(TTransport tr, String groupID) throws TException {
+				public void onMessage(TTransport tr, String groupId) throws TException {
 					FProtocol iprot = pf.getProtocol(tr);
 					FContext ctx = iprot.readRequestHeader();
 					TMessage msg = iprot.readMessageBegin();
@@ -130,7 +130,7 @@ public class EventsDurableSubscriber {
 					Event received = new Event();
 					received.read(iprot);
 					iprot.readMessageEnd();
-					handler.onEventCreated(ctx, groupID, received);
+					handler.onEventCreated(ctx, groupId, received);
 				}
 			};
 		}
@@ -150,7 +150,7 @@ public class EventsDurableSubscriber {
 
 		private FDurableAsyncCallback recvSomeInt(String op, FProtocolFactory pf, SomeIntHandler handler) {
 			return new FDurableAsyncCallback() {
-				public void onMessage(TTransport tr, String groupID) throws TException {
+				public void onMessage(TTransport tr, String groupId) throws TException {
 					FProtocol iprot = pf.getProtocol(tr);
 					FContext ctx = iprot.readRequestHeader();
 					TMessage msg = iprot.readMessageBegin();
@@ -161,7 +161,7 @@ public class EventsDurableSubscriber {
 					}
 					long received = iprot.readI64();
 					iprot.readMessageEnd();
-					handler.onSomeInt(ctx, groupID, received);
+					handler.onSomeInt(ctx, groupId, received);
 				}
 			};
 		}
@@ -181,7 +181,7 @@ public class EventsDurableSubscriber {
 
 		private FDurableAsyncCallback recvSomeStr(String op, FProtocolFactory pf, SomeStrHandler handler) {
 			return new FDurableAsyncCallback() {
-				public void onMessage(TTransport tr, String groupID) throws TException {
+				public void onMessage(TTransport tr, String groupId) throws TException {
 					FProtocol iprot = pf.getProtocol(tr);
 					FContext ctx = iprot.readRequestHeader();
 					TMessage msg = iprot.readMessageBegin();
@@ -192,7 +192,7 @@ public class EventsDurableSubscriber {
 					}
 					String received = iprot.readString();
 					iprot.readMessageEnd();
-					handler.onSomeStr(ctx, groupID, received);
+					handler.onSomeStr(ctx, groupId, received);
 				}
 			};
 		}
@@ -212,7 +212,7 @@ public class EventsDurableSubscriber {
 
 		private FDurableAsyncCallback recvSomeList(String op, FProtocolFactory pf, SomeListHandler handler) {
 			return new FDurableAsyncCallback() {
-				public void onMessage(TTransport tr, String groupID) throws TException {
+				public void onMessage(TTransport tr, String groupId) throws TException {
 					FProtocol iprot = pf.getProtocol(tr);
 					FContext ctx = iprot.readRequestHeader();
 					TMessage msg = iprot.readMessageBegin();
@@ -237,7 +237,7 @@ public class EventsDurableSubscriber {
 					}
 					iprot.readListEnd();
 					iprot.readMessageEnd();
-					handler.onSomeList(ctx, groupID, received);
+					handler.onSomeList(ctx, groupId, received);
 				}
 			};
 		}
