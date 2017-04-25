@@ -112,7 +112,9 @@ func generateFrugalRec(f *parser.Frugal, g generator.ProgramGenerator, generate 
 		return err
 	}
 
-	for _, inclFrugal := range f.ParsedIncludes {
+	// Iterate through includes in order to ensure determinism in
+	// generated code.
+	for _, inclFrugal := range f.OrderedIncludes() {
 		if err := generateFrugalRec(inclFrugal, g, globals.Recurse, lang); err != nil {
 			return err
 		}
