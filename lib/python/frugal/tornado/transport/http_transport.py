@@ -87,7 +87,7 @@ class FHttpTransport(FTransportBase):
         except HTTPError as e:
             if e.code == httplib.REQUEST_ENTITY_TOO_LARGE:
                 raise TTransportException(
-                    type=TTransportExceptionType.REQUEST_TOO_LARGE,
+                    type=TTransportExceptionType.RESPONSE_TOO_LARGE,
                     message='response was too large')
 
             # Tornado HttpClient uses 599 as the HTTP code to indicate a

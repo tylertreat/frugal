@@ -49,7 +49,6 @@
       "command": [ "/usr/bin/java", "-Djava.security.egd=file:///dev/urandom", "-cp", "cross.jar", "com.workiva.TestServer" ],
       "transports": [ "stateless", "http" ]
     },
-    "sockets": [ "ip" ],
     "protocols": [ "binary", "compact", "json" ],
     "workdir": "java/frugal-integration-test"
   },
@@ -64,7 +63,6 @@
       "command": [ "python", "-u", "tornado_server.py" ]
     },
     "transports": [ "stateless", "http" ],
-    "sockets": [ "ip" ],
     "protocols": [ "binary", "compact", "json" ],
     "workdir": "python/tornado"
   },
@@ -79,7 +77,6 @@
       "command": [ "python3.5", "-u", "server.py" ]
     },
     "transports": [ "stateless", "http" ],
-    "sockets": [ "ip" ],
     "protocols": [ "binary", "compact", "json" ],
     "workdir": "python/asyncio"
   },
@@ -94,7 +91,6 @@
       "command": [ "python", "-u", "vanilla_server.py" ]
     },
     "transports": [ "http" ], 
-    "sockets": [ "ip" ],
     "protocols": [ "binary", "compact", "json" ],
     "workdir": "python/tornado"
   }
