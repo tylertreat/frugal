@@ -107,7 +107,9 @@ public class FHttpTransport extends FTransport {
          * @return Builder
          */
         public Builder withRequestHeaders(Map<String, String> requestHeaders) {
-            this.requestHeaders = Collections.unmodifiableMap(requestHeaders);
+            if (requestHeaders != null) {
+                this.requestHeaders = Collections.unmodifiableMap(requestHeaders);
+            }
             return this;
         }
 

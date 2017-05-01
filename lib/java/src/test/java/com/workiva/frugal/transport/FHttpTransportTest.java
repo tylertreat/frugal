@@ -156,7 +156,7 @@ public class FHttpTransportTest {
         assertEquals(0, actual.length);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testNullRequestHeaders() throws TException, IOException {
         transport = new FHttpTransport.Builder(client, url)
                 .withRequestHeaders(null)
@@ -175,6 +175,9 @@ public class FHttpTransportTest {
 
         byte[] buff = "helloserver".getBytes();
         transport.request(context, buff);
+
+        Header[] actual = topicCaptor.getValue().getHeaders("foo");
+        assertEquals(0, actual.length);
     }
 
     @Test
