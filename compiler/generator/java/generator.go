@@ -1560,8 +1560,8 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 	for _, field := range s.Fields {
 		if field.Modifier == parser.Required && !g.isJavaPrimitive(field.Type) {
 			contents += fmt.Sprintf(tabtab+"if (%s == null) {\n", field.Name)
-			contents += fmt.Sprintf(tabtabtab+"throw new org.apache.thrift.protocol.TProtocolException(\"Required field '%s' was not present! Struct: \" + toString());\n",
-				field.Name)
+			contents += fmt.Sprintf(tabtabtab+"throw new org.apache.thrift.protocol.TProtocolException(\"Required field '%s' was not present for struct type '%s');\n",
+				field.Name, s.Name)
 			contents += tabtab + "}\n"
 		}
 	}
@@ -1657,7 +1657,7 @@ func (g *Generator) generateStandardScheme(s *parser.Struct, isResult bool) stri
 	for _, field := range s.Fields {
 		if field.Modifier == parser.Required && g.isJavaPrimitive(field.Type) {
 			contents += fmt.Sprintf(tabtabtab+"if (!struct.isSet%s()) {\n", strings.Title(field.Name))
-			contents += fmt.Sprintf(tabtabtabtab+"throw new org.apache.thrift.protocol.TProtocolException(\"Required field '%s' was not found in serialized data! Struct: \" + toString());\n", field.Name)
+			contents += fmt.Sprintf(tabtabtabtab+"throw new org.apache.thrift.protocol.TProtocolException(\"Required field '%s' was not found in serialized data for struct type '%s'\");\n", field.Name, s.Name)
 			contents += tabtabtab + "}\n"
 		}
 	}
