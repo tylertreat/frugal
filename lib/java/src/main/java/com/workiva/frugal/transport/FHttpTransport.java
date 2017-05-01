@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
 
 
 /**
@@ -40,13 +42,16 @@ public class FHttpTransport extends FTransport {
     private final CloseableHttpClient httpClient;
     private final String url;
     private final int responseSizeLimit;
+    private final Map<String, String>requestHeaders;
 
-    private FHttpTransport(CloseableHttpClient httpClient, String url, int requestSizeLimit, int responseSizeLimit) {
+    private FHttpTransport(CloseableHttpClient httpClient, String url, int requestSizeLimit, int responseSizeLimit,
+            Map<String, String>requestHeaders) {
         super();
         this.httpClient = httpClient;
         this.url = url;
         this.requestSizeLimit = requestSizeLimit;
         this.responseSizeLimit = responseSizeLimit;
+        this.requestHeaders = requestHeaders;
     }
 
     /**
@@ -57,6 +62,8 @@ public class FHttpTransport extends FTransport {
         private final String url;
         private int requestSizeLimit;
         private int responseSizeLimit;
+        private Map<String, String>requestHeaders;
+        
 
         /**
          * Create a new Builder which create FHttpTransports that communicate with a server
@@ -93,6 +100,17 @@ public class FHttpTransport extends FTransport {
             this.responseSizeLimit = responseSizeLimit;
             return this;
         }
+        
+        /**
+         * Adds HTTP request headers to the builder.
+         * 
+         * @param requestHeaders Map of HTTP request headers to add to request.
+         * @return Builder
+         */
+        public Builder withRequestHeaders(Map<String, String> requestHeaders) {
+            this.requestHeaders = Collections.unmodifiableMap(requestHeaders);
+            return this;
+        }
 
         /**
          * Creates new configured FHttpTransport.
@@ -101,7 +119,8 @@ public class FHttpTransport extends FTransport {
          */
         public FHttpTransport build() {
             return new FHttpTransport(this.httpClient, this.url,
-                    this.requestSizeLimit, this.responseSizeLimit);
+                    this.requestSizeLimit, this.responseSizeLimit,
+                    this.requestHeaders);
         }
     }
 
@@ -175,6 +194,19 @@ public class FHttpTransport extends FTransport {
 
         // Set headers and payload
         HttpPost request = new HttpPost(url);
+
+        // add user supplied headers first, to avoid monkeying
+        // with the size limits headers below.
+        if (requestHeaders != null) {
+            for (Map.Entry<String, String> entry : requestHeaders.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if (key != null && value != null) {
+                    request.setHeader(key, value);
+                }
+            }
+        }
+        
         request.setHeader("accept", "application/x-frugal");
         request.setHeader("content-transfer-encoding", "base64");
         if (responseSizeLimit > 0) {
