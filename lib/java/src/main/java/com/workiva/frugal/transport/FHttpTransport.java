@@ -63,7 +63,6 @@ public class FHttpTransport extends FTransport {
         private int requestSizeLimit;
         private int responseSizeLimit;
         private Map<String, String>requestHeaders;
-        
 
         /**
          * Create a new Builder which create FHttpTransports that communicate with a server
@@ -100,10 +99,10 @@ public class FHttpTransport extends FTransport {
             this.responseSizeLimit = responseSizeLimit;
             return this;
         }
-        
+
         /**
          * Adds HTTP request headers to the builder.
-         * 
+         *
          * @param requestHeaders Map of HTTP request headers to add to request.
          * @return Builder
          */
@@ -206,7 +205,7 @@ public class FHttpTransport extends FTransport {
                 }
             }
         }
-        
+
         request.setHeader("accept", "application/x-frugal");
         request.setHeader("content-transfer-encoding", "base64");
         if (responseSizeLimit > 0) {

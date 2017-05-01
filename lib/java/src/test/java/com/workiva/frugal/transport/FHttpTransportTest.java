@@ -2,9 +2,9 @@ package com.workiva.frugal.transport;
 
 import com.workiva.frugal.FContext;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.http.Header;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
-import org.apache.http.Header;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -102,7 +102,7 @@ public class FHttpTransportTest {
         assertEquals(expected.getFirstHeader("content-type"), actual.getFirstHeader("content-type"));
         assertEquals(expected.getURI(), actual.getURI());
     }
-    
+
     @Test
     public void testRequestHeaders() throws TException, IOException {
         Map<String, String> requestHeaders = new HashMap<String, String>();
@@ -110,7 +110,7 @@ public class FHttpTransportTest {
         transport = new FHttpTransport.Builder(client, url)
                 .withRequestHeaders(requestHeaders)
                 .build();
-        
+
         StatusLine statusLine = new StatusLineImpl(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, null);
         byte[] framedResponsePayload = new byte[]{0, 1, 2, 3, 4, 5, 6, 7};
         String encoded = Base64.encodeBase64String(framedResponsePayload);
@@ -130,14 +130,14 @@ public class FHttpTransportTest {
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getValue(), actual.getValue());
     }
-    
+
     @Test
     public void testEmptyRequestHeaders() throws TException, IOException {
         Map<String, String> requestHeaders = new HashMap<String, String>();
         transport = new FHttpTransport.Builder(client, url)
                 .withRequestHeaders(requestHeaders)
                 .build();
-        
+
         StatusLine statusLine = new StatusLineImpl(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, null);
         byte[] framedResponsePayload = new byte[]{0, 1, 2, 3, 4, 5, 6, 7};
         String encoded = Base64.encodeBase64String(framedResponsePayload);
@@ -155,13 +155,13 @@ public class FHttpTransportTest {
         Header[] actual = topicCaptor.getValue().getHeaders("foo");
         assertEquals(0, actual.length);
     }
-    
+
     @Test(expected = NullPointerException.class)
     public void testNullRequestHeaders() throws TException, IOException {
         transport = new FHttpTransport.Builder(client, url)
                 .withRequestHeaders(null)
                 .build();
-        
+
         StatusLine statusLine = new StatusLineImpl(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, null);
         byte[] framedResponsePayload = new byte[]{0, 1, 2, 3, 4, 5, 6, 7};
         String encoded = Base64.encodeBase64String(framedResponsePayload);
