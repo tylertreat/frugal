@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Map;
 
 
@@ -42,16 +41,29 @@ public class FHttpTransport extends FTransport {
     private final CloseableHttpClient httpClient;
     private final String url;
     private final int responseSizeLimit;
-    private final Map<String, String>requestHeaders;
+    private final FHttpTransportHeaders requestHeaders;
 
     private FHttpTransport(CloseableHttpClient httpClient, String url, int requestSizeLimit, int responseSizeLimit,
-            Map<String, String>requestHeaders) {
+            FHttpTransportHeaders requestHeaders) {
         super();
         this.httpClient = httpClient;
         this.url = url;
         this.requestSizeLimit = requestSizeLimit;
         this.responseSizeLimit = responseSizeLimit;
         this.requestHeaders = requestHeaders;
+    }
+
+    /**
+     * Interface that returns a Map of HTTP request headers.
+     */
+    public interface FHttpTransportHeaders {
+
+        /**
+         * Returns a Map of HTTP request headers.
+         *
+         * @return Map of HTTP request headers.
+         */
+        public Map<String, String> getRequestHeaders();
     }
 
     /**
@@ -62,7 +74,7 @@ public class FHttpTransport extends FTransport {
         private final String url;
         private int requestSizeLimit;
         private int responseSizeLimit;
-        private Map<String, String>requestHeaders;
+        private FHttpTransportHeaders requestHeaders;
 
         /**
          * Create a new Builder which create FHttpTransports that communicate with a server
@@ -106,10 +118,8 @@ public class FHttpTransport extends FTransport {
          * @param requestHeaders Map of HTTP request headers to add to request.
          * @return Builder
          */
-        public Builder withRequestHeaders(Map<String, String> requestHeaders) {
-            if (requestHeaders != null) {
-                this.requestHeaders = Collections.unmodifiableMap(requestHeaders);
-            }
+        public Builder withRequestHeaders(FHttpTransportHeaders requestHeaders) {
+            this.requestHeaders = requestHeaders;
             return this;
         }
 
@@ -199,7 +209,7 @@ public class FHttpTransport extends FTransport {
         // add user supplied headers first, to avoid monkeying
         // with the size limits headers below.
         if (requestHeaders != null) {
-            for (Map.Entry<String, String> entry : requestHeaders.entrySet()) {
+            for (Map.Entry<String, String> entry : requestHeaders.getRequestHeaders().entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
                 if (key != null && value != null) {

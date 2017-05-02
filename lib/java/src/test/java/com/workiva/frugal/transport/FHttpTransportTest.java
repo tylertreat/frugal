@@ -1,6 +1,8 @@
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.FContext;
+import com.workiva.frugal.transport.FHttpTransport.FHttpTransportHeaders;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.Header;
 import org.apache.http.HttpStatus;
@@ -103,10 +105,24 @@ public class FHttpTransportTest {
         assertEquals(expected.getURI(), actual.getURI());
     }
 
+    private class TestFHttpTransportHeaders implements FHttpTransportHeaders {
+        public Map<String, String> getRequestHeaders() {
+            Map<String, String> ret = new HashMap<String, String>();
+            ret.put("foo", "bar");
+            return ret;
+        }
+    }
+
+    private class EmptyFHttpTransportHeaders implements FHttpTransportHeaders {
+        public Map<String, String> getRequestHeaders() {
+            Map<String, String> ret = new HashMap<String, String>();
+            return ret;
+        }
+    }
+
     @Test
     public void testRequestHeaders() throws TException, IOException {
-        Map<String, String> requestHeaders = new HashMap<String, String>();
-        requestHeaders.put("foo",  "bar");
+        FHttpTransportHeaders requestHeaders = new TestFHttpTransportHeaders();
         transport = new FHttpTransport.Builder(client, url)
                 .withRequestHeaders(requestHeaders)
                 .build();
@@ -133,7 +149,7 @@ public class FHttpTransportTest {
 
     @Test
     public void testEmptyRequestHeaders() throws TException, IOException {
-        Map<String, String> requestHeaders = new HashMap<String, String>();
+        FHttpTransportHeaders requestHeaders = new EmptyFHttpTransportHeaders();
         transport = new FHttpTransport.Builder(client, url)
                 .withRequestHeaders(requestHeaders)
                 .build();
