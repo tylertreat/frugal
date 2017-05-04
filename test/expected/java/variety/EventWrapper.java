@@ -1100,7 +1100,7 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 	public void validate() throws org.apache.thrift.TException {
 		// check for required fields
 		if (Ev == null) {
-			throw new org.apache.thrift.protocol.TProtocolException("Required field 'Ev' was not present for struct type 'EventWrapper');
+			throw new org.apache.thrift.protocol.TProtocolException("Required field 'Ev' was not present for struct type 'EventWrapper'");
 		}
 		// check for sub-struct validity
 		if (Ev != null) {
