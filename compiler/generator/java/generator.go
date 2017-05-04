@@ -1560,7 +1560,7 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 	for _, field := range s.Fields {
 		if field.Modifier == parser.Required && !g.isJavaPrimitive(field.Type) {
 			contents += fmt.Sprintf(tabtab+"if (%s == null) {\n", field.Name)
-			contents += fmt.Sprintf(tabtabtab+"throw new org.apache.thrift.protocol.TProtocolException(\"Required field '%s' was not present for struct type '%s');\n",
+			contents += fmt.Sprintf(tabtabtab+"throw new org.apache.thrift.protocol.TProtocolException(\"Required field '%s' was not present for struct type '%s'\");\n",
 				field.Name, s.Name)
 			contents += tabtab + "}\n"
 		}
