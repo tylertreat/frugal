@@ -141,7 +141,6 @@ class TestFNatsTransport(AsyncTestCase):
             self.inbox,
             frame_length + data
         )
-        self.mock_nats_client._flush_pending.assert_called_with()
 
     def test_request_size_limit(self):
         self.assertEqual(_NATS_MAX_MESSAGE_SIZE,

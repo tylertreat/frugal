@@ -104,3 +104,28 @@ func TestValidGoVendorNamespaceTargetGenerate(t *testing.T) {
 	copyAllFiles(t, files)
 	compareAllFiles(t, files)
 }
+
+// Ensures includes are generated in the same order
+func TestIncludeOrdering(t *testing.T) {
+	options := compiler.Options{
+		File:    "idl/ordering/main.frugal",
+		Gen:     "go:package_prefix=github.com/Workiva/frugal/test/out/ordering",
+		Out:     "out/ordering",
+		Delim:   delim,
+		Recurse: true,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("Unexpected error", err)
+	}
+
+	files := []FileComparisonPair{
+		{"expected/go/ordering/one/f_types.go", filepath.Join(outputDir, "ordering", "one", "f_types.go")},
+		{"expected/go/ordering/two/f_types.go", filepath.Join(outputDir, "ordering", "two", "f_types.go")},
+		{"expected/go/ordering/three/f_types.go", filepath.Join(outputDir, "ordering", "three", "f_types.go")},
+		{"expected/go/ordering/four/f_types.go", filepath.Join(outputDir, "ordering", "four", "f_types.go")},
+		{"expected/go/ordering/five/f_types.go", filepath.Join(outputDir, "ordering", "five", "f_types.go")},
+	}
+
+	copyAllFiles(t, files)
+	compareAllFiles(t, files)
+}
