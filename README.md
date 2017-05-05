@@ -227,13 +227,14 @@ intention to use the vendored code as advertised by the `vendor` annotation.
 If no location is specified by the `vendor` annotation, the behavior is defined
 by the language generator.
 
-The `vendor` annotation is currently only supported by Go.
+The `vendor` annotation is currently only supported by Go and Dart.
 
 The example below illustrates how this works.
 
 bar.frugal ("providing" IDL):
 ```thrift
 namespace go bar (vendor="github.com/Workiva/my-repo/gen-go/bar")
+namespace dart bar (vendor="my-repo/gen-go")
 
 struct Struct {}
 ```
