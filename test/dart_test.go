@@ -93,6 +93,10 @@ func TestValidDartVendor(t *testing.T) {
 			"expected/dart/include_vendor/include_vendor.dart",
 			filepath.Join(outputDir, "include_vendor", "lib", "include_vendor.dart"),
 		},
+		{
+			"expected/dart/include_vendor/pubspec.yaml",
+			filepath.Join(outputDir, "include_vendor", "pubspec.yaml"),
+		},
 	}
 
 	copyAllFiles(t, files)

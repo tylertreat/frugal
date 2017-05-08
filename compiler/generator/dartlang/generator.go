@@ -195,20 +195,23 @@ func (g *Generator) addToPubspec(dir string) error {
 		}
 	}
 
-	includesSet := make(map[string]bool)
+	includesSet := make(map[string]bool)	// include.Name ---> include.Annotations.Vendor()
+
 	scopeIncludes, err := g.Frugal.ReferencedScopeIncludes()
 	if err != nil {
 		return err
 	}
 	for _, include := range scopeIncludes {
-		includesSet[include.Name] = true
+		_, vendored := include.Annotations.Vendor()
+		includesSet[include.Name] = vendored
 	}
 	servIncludes, err := g.Frugal.ReferencedServiceIncludes()
 	if err != nil {
 		return err
 	}
 	for _, include := range servIncludes {
-		includesSet[include.Name] = true
+		_, vendored := include.Annotations.Vendor()
+		includesSet[include.Name] = vendored
 	}
 	includes := make([]string, 0, len(includesSet))
 	for include := range includesSet {
@@ -218,10 +221,20 @@ func (g *Generator) addToPubspec(dir string) error {
 
 	for _, include := range includes {
 		name := include
-		if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+		namespace := g.Frugal.NamespaceForInclude(include, lang);
+		if namespace != nil {
 			name = namespace.Value
 		}
-		deps[toLibraryName(name)] = dep{Path: "../" + toLibraryName(name)}
+
+		if g.useVendor() && includesSet[include] {
+			vendorPath, _ := namespace.Annotations.Vendor()
+			deps[toLibraryName(vendorPath)] = dep{
+				Hosted: hostedDep{Name: toLibraryName(vendorPath), URL: "https://pub.workiva.org"},
+				Version: "any",
+			}
+		} else {
+			deps[toLibraryName(name)] = dep{Path: "../" + toLibraryName(name)}
+		}
 	}
 
 	namespace := g.Frugal.Namespace(lang)
