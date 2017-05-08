@@ -221,7 +221,7 @@ func (g *Generator) addToPubspec(dir string) error {
 
 	for _, include := range includes {
 		name := include
-		namespace := g.Frugal.NamespaceForInclude(include, lang);
+		namespace := g.Frugal.NamespaceForInclude(include, lang)
 		if namespace != nil {
 			name = namespace.Value
 		}
