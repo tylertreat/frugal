@@ -82,15 +82,15 @@ func TestValidDartVendor(t *testing.T) {
 
 	files := []FileComparisonPair{
 		{
-			"expected/dart/include_vendor/f_my_scope_scope.txt",
+			"expected/dart/include_vendor/f_my_scope_scope.dart",
 			filepath.Join(outputDir, "include_vendor", "lib", "src", "f_my_scope_scope.dart"),
 		},
 		{
-			"expected/dart/include_vendor/f_my_service_service.txt",
+			"expected/dart/include_vendor/f_my_service_service.dart",
 			filepath.Join(outputDir, "include_vendor", "lib", "src", "f_my_service_service.dart"),
 		},
 		{
-			"expected/dart/include_vendor/include_vendor.txt",
+			"expected/dart/include_vendor/include_vendor.dart",
 			filepath.Join(outputDir, "include_vendor", "lib", "include_vendor.dart"),
 		},
 	}
@@ -127,8 +127,8 @@ func TestValidDartVendorNamespaceTargetGenerate(t *testing.T) {
 	}
 
 	files := []FileComparisonPair{
-		{"expected/dart/vendor_namespace/vendor_namespace.txt", filepath.Join(outputDir, "vendor_namespace", "lib", "vendor_namespace.dart")},
-		{"expected/dart/vendor_namespace/f_item.txt", filepath.Join(outputDir, "vendor_namespace", "lib", "src", "f_item.dart")},
+		{"expected/dart/vendor_namespace/vendor_namespace.dart", filepath.Join(outputDir, "vendor_namespace", "lib", "vendor_namespace.dart")},
+		{"expected/dart/vendor_namespace/f_item.dart", filepath.Join(outputDir, "vendor_namespace", "lib", "src", "f_item.dart")},
 	}
 	copyAllFiles(t, files)
 	compareAllFiles(t, files)
