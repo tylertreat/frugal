@@ -11,11 +11,11 @@ const circularFile = "idl/circular_1.frugal"
 
 func TestCircularIncludes(t *testing.T) {
 	options := compiler.Options{
-		File:               circularFile,
-		Gen:                "go",
-		Out:                "out",
-		Delim:              ".",
-		DryRun:             true,
+		File:   circularFile,
+		Gen:    "go",
+		Out:    "out",
+		Delim:  ".",
+		DryRun: true,
 	}
 	err := compiler.Compile(options)
 	assert.Error(t, err)

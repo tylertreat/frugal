@@ -2611,7 +2611,7 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 		}
 
 		if deprecated {
-			contents += tabtab+"@Deprecated\n"
+			contents += tabtab + "@Deprecated\n"
 		}
 
 		contents += fmt.Sprintf(tabtab+"public %s %s(FContext ctx%s) %s;\n\n",
@@ -2703,14 +2703,14 @@ func (g *Generator) generateClient(service *parser.Service) string {
 
 		_, deprecated := method.Annotations.Deprecated()
 		if deprecated {
-			contents += tabtab+"@Deprecated\n"
+			contents += tabtab + "@Deprecated\n"
 		}
 
 		contents += tabtab + fmt.Sprintf("public %s %s(FContext ctx%s) %s {\n",
 			g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments, false), g.generateExceptions(method.Exceptions))
 
 		if deprecated {
-			contents += tabtabtab + fmt.Sprintf("logger.warn(\"Call to deprecated function '%s.%s'\");\n", service.Name, method.Name);
+			contents += tabtabtab + fmt.Sprintf("logger.warn(\"Call to deprecated function '%s.%s'\");\n", service.Name, method.Name)
 		}
 
 		if method.ReturnType != nil {

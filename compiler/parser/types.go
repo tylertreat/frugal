@@ -616,7 +616,7 @@ func (f *Frugal) Include(name string) *Include {
 	return nil
 }
 
-// NamespaceForInclude returns the Namespace for the given inclue name and
+// NamespaceForInclude returns the Namespace for the given include name and
 // language.
 func (f *Frugal) NamespaceForInclude(include, lang string) *Namespace {
 	parsed, ok := f.ParsedIncludes[include]
