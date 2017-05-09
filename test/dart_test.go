@@ -45,7 +45,6 @@ func TestValidDartFrugalCompiler(t *testing.T) {
 	copyAllFiles(t, files)
 	compareAllFiles(t, files)
 
-
 }
 
 func TestValidDartEnums(t *testing.T) {
@@ -63,6 +62,77 @@ func TestValidDartEnums(t *testing.T) {
 	files := []FileComparisonPair{
 		{"expected/dart/enum/f_testing_enums.dart", filepath.Join(outputDir, "enum_dart", "lib", "src", "f_testing_enums.dart")},
 		{"expected/dart/enum/enum_dart.dart", filepath.Join(outputDir, "enum_dart", "lib", "enum_dart.dart")},
+	}
+	copyAllFiles(t, files)
+	compareAllFiles(t, files)
+}
+
+// Ensures correct import references are used when -use-vendor is set and the
+// IDL has a vendored include
+func TestValidDartVendor(t *testing.T) {
+	options := compiler.Options{
+		File:  includeVendor,
+		Gen:   "dart:use_vendor",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("Unexpected error", err)
+	}
+
+	files := []FileComparisonPair{
+		{
+			"expected/dart/include_vendor/f_my_scope_scope.dart",
+			filepath.Join(outputDir, "include_vendor", "lib", "src", "f_my_scope_scope.dart"),
+		},
+		{
+			"expected/dart/include_vendor/f_my_service_service.dart",
+			filepath.Join(outputDir, "include_vendor", "lib", "src", "f_my_service_service.dart"),
+		},
+		{
+			"expected/dart/include_vendor/include_vendor.dart",
+			filepath.Join(outputDir, "include_vendor", "lib", "include_vendor.dart"),
+		},
+		{
+			"expected/dart/include_vendor/pubspec.yaml",
+			filepath.Join(outputDir, "include_vendor", "pubspec.yaml"),
+		},
+	}
+
+	copyAllFiles(t, files)
+	compareAllFiles(t, files)
+}
+
+// Ensures an error is returned when -use-vendor is set and the vendored
+// include does not specify a path.
+func TestValidDartVendorPathNotSpecified(t *testing.T) {
+	options := compiler.Options{
+		File:  includeVendorNoPath,
+		Gen:   "dart:use_vendor",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if err := compiler.Compile(options); err == nil {
+		t.Fatal("Expected error")
+	}
+}
+
+// Ensures the target IDL is generated when -use-vendor is set and it has a
+// vendored namespace.
+func TestValidDartVendorNamespaceTargetGenerate(t *testing.T) {
+	options := compiler.Options{
+		File:  vendorNamespace,
+		Gen:   "dart:use_vendor",
+		Out:   outputDir,
+		Delim: delim,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("Unexpected error", err)
+	}
+
+	files := []FileComparisonPair{
+		{"expected/dart/vendor_namespace/vendor_namespace.dart", filepath.Join(outputDir, "vendor_namespace", "lib", "vendor_namespace.dart")},
+		{"expected/dart/vendor_namespace/f_item.dart", filepath.Join(outputDir, "vendor_namespace", "lib", "src", "f_item.dart")},
 	}
 	copyAllFiles(t, files)
 	compareAllFiles(t, files)

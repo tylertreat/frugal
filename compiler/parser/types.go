@@ -616,7 +616,7 @@ func (f *Frugal) Include(name string) *Include {
 	return nil
 }
 
-// NamespaceForInclude returns the Namespace for the given inclue name and
+// NamespaceForInclude returns the Namespace for the given include name and
 // language.
 func (f *Frugal) NamespaceForInclude(include, lang string) *Namespace {
 	parsed, ok := f.ParsedIncludes[include]
@@ -630,6 +630,22 @@ func (f *Frugal) NamespaceForInclude(include, lang string) *Namespace {
 // scope or service definitions.
 func (f *Frugal) ContainsFrugalDefinitions() bool {
 	return len(f.Scopes)+len(f.Services) > 0
+}
+
+// OrderedIncludes returns the ParsedIncludes in order, sorted by the include
+// name.
+func (f *Frugal) OrderedIncludes() []*Frugal {
+	keys := make([]string, 0, len(f.ParsedIncludes))
+	for key := range f.ParsedIncludes {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	includes := make([]*Frugal, 0, len(f.ParsedIncludes))
+	for _, key := range keys {
+		includes = append(includes, f.ParsedIncludes[key])
+	}
+	return includes
 }
 
 // ReferencedIncludes returns a slice containing the referenced includes which

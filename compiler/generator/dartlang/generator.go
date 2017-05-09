@@ -30,6 +30,8 @@ const (
 	tabtabtabtabtab       = tab + tab + tab + tab + tab
 	tabtabtabtabtabtab    = tab + tab + tab + tab + tab + tab
 	tabtabtabtabtabtabtab = tab + tab + tab + tab + tab + tab + tab
+	libraryPrefixOption   = "library_prefix"
+	useVendorOption       = "use_vendor"
 )
 
 // Generator implements the LanguageGenerator interface for Dart.
@@ -101,7 +103,7 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 
 func (g *Generator) createExport(structName string, isEnum bool) string {
 	srcDir := "src"
-	if _, ok := g.Options["library_prefix"]; ok {
+	if _, ok := g.Options[libraryPrefixOption]; ok {
 		srcDir = g.getLibraryName()
 	}
 	if !isEnum || !g.useEnums() {
@@ -135,7 +137,7 @@ func (g *Generator) PostProcess(f *os.File) error { return nil }
 
 // GenerateDependencies modifies the pubspec.yaml as needed.
 func (g *Generator) GenerateDependencies(dir string) error {
-	if _, ok := g.Options["library_prefix"]; !ok {
+	if _, ok := g.Options[libraryPrefixOption]; !ok {
 		if err := g.addToPubspec(dir); err != nil {
 			return err
 		}
@@ -193,20 +195,23 @@ func (g *Generator) addToPubspec(dir string) error {
 		}
 	}
 
-	includesSet := make(map[string]bool)
+	includesSet := make(map[string]bool)	// include.Name ---> include.Annotations.Vendor()
+
 	scopeIncludes, err := g.Frugal.ReferencedScopeIncludes()
 	if err != nil {
 		return err
 	}
 	for _, include := range scopeIncludes {
-		includesSet[include.Name] = true
+		_, vendored := include.Annotations.Vendor()
+		includesSet[include.Name] = vendored
 	}
 	servIncludes, err := g.Frugal.ReferencedServiceIncludes()
 	if err != nil {
 		return err
 	}
 	for _, include := range servIncludes {
-		includesSet[include.Name] = true
+		_, vendored := include.Annotations.Vendor()
+		includesSet[include.Name] = vendored
 	}
 	includes := make([]string, 0, len(includesSet))
 	for include := range includesSet {
@@ -216,10 +221,20 @@ func (g *Generator) addToPubspec(dir string) error {
 
 	for _, include := range includes {
 		name := include
-		if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+		namespace := g.Frugal.NamespaceForInclude(include, lang)
+		if namespace != nil {
 			name = namespace.Value
 		}
-		deps[toLibraryName(name)] = dep{Path: "../" + toLibraryName(name)}
+
+		if g.useVendor() && includesSet[include] {
+			vendorPath, _ := namespace.Annotations.Vendor()
+			deps[toLibraryName(vendorPath)] = dep{
+				Hosted: hostedDep{Name: toLibraryName(vendorPath), URL: "https://pub.workiva.org"},
+				Version: "any",
+			}
+		} else {
+			deps[toLibraryName(name)] = dep{Path: "../" + toLibraryName(name)}
+		}
 	}
 
 	namespace := g.Frugal.Namespace(lang)
@@ -258,7 +273,7 @@ func (g *Generator) getExportFilePath(dir string) string {
 	libName := g.getLibraryName()
 	dartFile := fmt.Sprintf("%s.%s", libName, lang)
 
-	if _, ok := g.Options["library_prefix"]; ok {
+	if _, ok := g.Options[libraryPrefixOption]; ok {
 		return filepath.Join(dir, "..", dartFile)
 	}
 	return filepath.Join(dir, "lib", dartFile)
@@ -276,7 +291,7 @@ func (g *Generator) exportClasses(dir string) error {
 	exports := "\n"
 	for _, service := range g.Frugal.Services {
 		servSrcDir := "src"
-		if _, ok := g.Options["library_prefix"]; ok {
+		if _, ok := g.Options[libraryPrefixOption]; ok {
 			servSrcDir = filename
 		}
 
@@ -288,7 +303,7 @@ func (g *Generator) exportClasses(dir string) error {
 	}
 	for _, scope := range g.Frugal.Scopes {
 		scopeSrcDir := "src"
-		if _, ok := g.Options["library_prefix"]; ok {
+		if _, ok := g.Options[libraryPrefixOption]; ok {
 			scopeSrcDir = filename
 		}
 		scopeTitle := strings.Title(scope.Name)
@@ -305,7 +320,7 @@ func (g *Generator) exportClasses(dir string) error {
 
 // GenerateFile generates the given FileType.
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
-	if _, ok := g.Options["library_prefix"]; !ok {
+	if _, ok := g.Options[libraryPrefixOption]; !ok {
 		outputDir = filepath.Join(outputDir, "lib")
 		outputDir = filepath.Join(outputDir, "src")
 	}
@@ -356,7 +371,7 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 		return err
 	}
 
-	if _, err = file.WriteString(g.GenerateThriftImports()); err != nil {
+	if err = g.writeThriftImports(file); err != nil {
 		return err
 	}
 
@@ -566,7 +581,7 @@ func (g *Generator) GenerateStruct(s *parser.Struct) error {
 		return err
 	}
 
-	if _, err = file.WriteString(g.GenerateThriftImports()); err != nil {
+	if err = g.writeThriftImports(file); err != nil {
 		return err
 	}
 
@@ -1147,24 +1162,37 @@ func (g *Generator) GenerateObjectPackage(file *os.File, name string) error {
 }
 
 // GenerateThriftImports generates necessary imports for Thrift.
-func (g *Generator) GenerateThriftImports() string {
+func (g *Generator) GenerateThriftImports() (string, error) {
 	imports := "import 'dart:typed_data' show Uint8List;\n"
 	imports += "import 'package:thrift/thrift.dart' as thrift;\n"
 	// Import the current package
-	imports += g.getImportDeclaration(g.getNamespaceOrName())
+	imports += g.getImportDeclaration(g.getNamespaceOrName(), g.getPackagePrefix())
 
 	// Import includes
 	for _, include := range g.Frugal.Includes {
-		name := include.Name
-		if namespace := g.Frugal.NamespaceForInclude(filepath.Base(include.Name), lang); namespace != nil {
-			name = namespace.Value
+		if imp, err := g.generateIncludeImport(include); err != nil {
+			return "", err
+		} else {
+			imports += imp
 		}
-
-		imports += g.getImportDeclaration(name)
 	}
 
 	imports += "\n"
-	return imports
+	return imports, nil
+}
+
+func (g *Generator) writeThriftImports(file *os.File) error {
+	imports, err := g.GenerateThriftImports()
+	if err != nil {
+		return err
+	}
+
+	_, err = file.WriteString(imports)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GenerateServiceImports generates necessary imports for the given service.
@@ -1180,16 +1208,15 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 		return err
 	}
 	for _, include := range includes {
-		name := include.Name
-		if namespace := g.Frugal.NamespaceForInclude(include.Name, lang); namespace != nil {
-			name = namespace.Value
+		if imp, err := g.generateIncludeImport(include); err != nil {
+			return err
+		} else {
+			imports += imp
 		}
-
-		imports += g.getImportDeclaration(name)
 	}
 
 	// Import same package.
-	imports += g.getImportDeclaration(g.getNamespaceOrName())
+	imports += g.getImportDeclaration(g.getNamespaceOrName(), g.getPackagePrefix())
 
 	_, err = file.WriteString(imports)
 	return err
@@ -1206,16 +1233,15 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 		return err
 	}
 	for _, include := range scopeIncludes {
-		name := include.Name
-		if namespace := s.Frugal.NamespaceForInclude(include.Name, lang); namespace != nil {
-			name = namespace.Value
+		if imp, err := g.generateIncludeImport(include); err != nil {
+			return err
+		} else {
+			imports += imp
 		}
-
-		imports += g.getImportDeclaration(name)
 	}
 
 	// Import same package.
-	imports += g.getImportDeclaration(g.getNamespaceOrName())
+	imports += g.getImportDeclaration(g.getNamespaceOrName(), g.getPackagePrefix())
 
 	_, err = file.WriteString(imports)
 	return err
@@ -1790,8 +1816,8 @@ func (g *Generator) includeQualifier(t *parser.Type) string {
 
 func (g *Generator) getLibraryPrefix() string {
 	prefix := ""
-	if _, ok := g.Options["library_prefix"]; ok {
-		prefix += g.Options["library_prefix"]
+	if _, ok := g.Options[libraryPrefixOption]; ok {
+		prefix += g.Options[libraryPrefixOption]
 		if !strings.HasSuffix(prefix, ".") {
 			prefix += "."
 		}
@@ -1801,17 +1827,43 @@ func (g *Generator) getLibraryPrefix() string {
 
 func (g *Generator) getPackagePrefix() string {
 	prefix := ""
-	if _, ok := g.Options["library_prefix"]; ok {
+	if _, ok := g.Options[libraryPrefixOption]; ok {
 		prefix += strings.Replace(g.getLibraryPrefix(), ".", "/", -1)
 	}
 	return prefix
 }
 
-func (g *Generator) getImportDeclaration(namespace string) string {
-	namespace = toLibraryName(filepath.Base(namespace))
+func (g *Generator) generateIncludeImport(include *parser.Include) (string, error) {
+	name := include.Name
+
+	_, vendored := include.Annotations.Vendor()
+	vendored = vendored && g.useVendor()
+	vendorPath := ""
+
+	if namespace := g.Frugal.NamespaceForInclude(name, lang); namespace != nil {
+		name = namespace.Value
+		if nsVendorPath, ok := namespace.Annotations.Vendor(); ok {
+			vendorPath = nsVendorPath
+		}
+	}
+
 	prefix := g.getPackagePrefix()
+	if vendored {
+		if vendorPath == "" {
+			return "", fmt.Errorf("Vendored include %s does not specify vendor path for dart namespace", include.Name)
+		}
+		prefix = vendorPath
+	}
+
+	return g.getImportDeclaration(name, prefix), nil
+}
+
+func (g *Generator) getImportDeclaration(namespace, prefix string) string {
+	namespace = toLibraryName(filepath.Base(namespace))
 	if prefix == "" {
 		prefix += namespace + "/"
+	} else if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
 	}
 	return fmt.Sprintf("import 'package:%s%s.dart' as t_%s;\n", prefix, namespace, namespace)
 }
@@ -1827,6 +1879,11 @@ func (g *Generator) getNamespaceOrName() string {
 func (g *Generator) useEnums() bool {
 	_, useEnums := g.Options["use_enums"]
 	return useEnums
+}
+
+func (g *Generator) useVendor() bool {
+	_, ok := g.Options[useVendorOption]
+	return ok
 }
 
 func toLibraryName(name string) string {

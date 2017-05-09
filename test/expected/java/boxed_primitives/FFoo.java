@@ -4457,7 +4457,7 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 	public void validate() throws org.apache.thrift.TException {
 		// check for required fields
 		if (req_num == null) {
-			throw new org.apache.thrift.protocol.TProtocolException("Required field 'req_num' was not present! Struct: " + toString());
+			throw new org.apache.thrift.protocol.TProtocolException("Required field 'req_num' was not present for struct type 'param_modifiers_args'");
 		}
 		// check for sub-struct validity
 	}

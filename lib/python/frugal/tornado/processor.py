@@ -143,8 +143,8 @@ class FBaseProcessor(FProcessor):
                     'correlation id {}'.format(context.correlation_id))
             return
 
-        logging.warn('frugal: client invoked unknown method {0} on request ' +
-                     'with correlation id {1}'.format(
+        logger.warn('frugal: client invoked unknown method {0} on request '
+                    'with correlation id {1}'.format(
                          name, context.correlation_id))
         iprot.skip(TType.STRUCT)
         iprot.readMessageEnd()

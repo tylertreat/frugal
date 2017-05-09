@@ -4568,7 +4568,7 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 
 			// check for required fields of primitive type, which can't be checked in the validate method
 			if (!struct.isSetReq_num()) {
-				throw new org.apache.thrift.protocol.TProtocolException("Required field 'req_num' was not found in serialized data! Struct: " + toString());
+				throw new org.apache.thrift.protocol.TProtocolException("Required field 'req_num' was not found in serialized data for struct type 'param_modifiers_args'");
 			}
 			struct.validate();
 		}

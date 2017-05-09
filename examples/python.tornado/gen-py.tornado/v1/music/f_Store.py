@@ -40,12 +40,15 @@ class Iface(object):
         """
         pass
 
+    @deprecated
     def enterAlbumGiveaway(self, ctx, email, name):
         """
         Args:
             ctx: FContext
             email: string
             name: string
+        
+        deprecated: use something else
         """
         pass
 
@@ -114,12 +117,15 @@ class Client(Iface):
         if result.success is not None:
             raise gen.Return(result.success)
         raise TApplicationException(TApplicationExceptionType.MISSING_RESULT, "buyAlbum failed: unknown result")
+    @deprecated
     def enterAlbumGiveaway(self, ctx, email, name):
         """
         Args:
             ctx: FContext
             email: string
             name: string
+        
+        deprecated: use something else
         """
         return self._methods['enterAlbumGiveaway']([ctx, email, name])
 
@@ -168,6 +174,7 @@ class Processor(FBaseProcessor):
         super(Processor, self).__init__()
         self.add_to_processor_map('buyAlbum', _buyAlbum(Method(handler.buyAlbum, middleware), self.get_write_lock()))
         self.add_to_processor_map('enterAlbumGiveaway', _enterAlbumGiveaway(Method(handler.enterAlbumGiveaway, middleware), self.get_write_lock()))
+        self.add_to_annotations_map('enterAlbumGiveaway', {'deprecated': 'use something else'})
 
 
 class _buyAlbum(FProcessorFunction):
@@ -214,6 +221,7 @@ class _enterAlbumGiveaway(FProcessorFunction):
         super(_enterAlbumGiveaway, self).__init__(handler, lock)
 
     @gen.coroutine
+    @deprecated
     def process(self, ctx, iprot, oprot):
         args = enterAlbumGiveaway_args()
         args.read(iprot)

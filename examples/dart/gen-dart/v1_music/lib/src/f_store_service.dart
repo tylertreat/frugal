@@ -19,6 +19,7 @@ abstract class FStore {
 
   Future<t_v1_music.Album> buyAlbum(frugal.FContext ctx, String aSIN, String acct);
 
+  @deprecated
   Future<bool> enterAlbumGiveaway(frugal.FContext ctx, String email, String name);
 }
 
@@ -83,7 +84,9 @@ class FStoreClient implements FStore {
       frugal.FrugalTApplicationErrorType.MISSING_RESULT, "buyAlbum failed: unknown result"
     );
   }
+  @Deprecated("use something else")
   Future<bool> enterAlbumGiveaway(frugal.FContext ctx, String email, String name) {
+    _log.warning("Call to deprecated function 'Store.enterAlbumGiveaway'");
     return this._methods['enterAlbumGiveaway']([ctx, email, name]) as Future<bool>;
   }
 

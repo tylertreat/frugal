@@ -118,14 +118,14 @@ service FrugalTest
    * @param string thing - the string to print
    * @return string - returns the string 'thing'
    */
-  string       testString(1: string thing),
+  string       testString(1: required string thing),
 
   /**
    * Prints 'testBool("%s")' where '%s' with thing as 'true' or 'false'
    * @param bool  thing - the bool data to print
    * @return bool  - returns the bool 'thing'
    */
-  bool         testBool(1: bool thing),
+  bool         testBool(1: bool thing) (deprecated="use something else"),
 
   /**
    * Prints 'testByte("%d")' with thing as '%d'
