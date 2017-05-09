@@ -1560,7 +1560,7 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 	for _, field := range s.Fields {
 		if field.Modifier == parser.Required && !g.isJavaPrimitive(field.Type) {
 			contents += fmt.Sprintf(tabtab+"if (%s == null) {\n", field.Name)
-			contents += fmt.Sprintf(tabtabtab+"throw new org.apache.thrift.protocol.TProtocolException(\"Required field '%s' was not present for struct type '%s');\n",
+			contents += fmt.Sprintf(tabtabtab+"throw new org.apache.thrift.protocol.TProtocolException(\"Required field '%s' was not present for struct type '%s'\");\n",
 				field.Name, s.Name)
 			contents += tabtab + "}\n"
 		}
@@ -2611,7 +2611,7 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 		}
 
 		if deprecated {
-			contents += tabtab+"@Deprecated\n"
+			contents += tabtab + "@Deprecated\n"
 		}
 
 		contents += fmt.Sprintf(tabtab+"public %s %s(FContext ctx%s) %s;\n\n",
@@ -2703,14 +2703,14 @@ func (g *Generator) generateClient(service *parser.Service) string {
 
 		_, deprecated := method.Annotations.Deprecated()
 		if deprecated {
-			contents += tabtab+"@Deprecated\n"
+			contents += tabtab + "@Deprecated\n"
 		}
 
 		contents += tabtab + fmt.Sprintf("public %s %s(FContext ctx%s) %s {\n",
 			g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments, false), g.generateExceptions(method.Exceptions))
 
 		if deprecated {
-			contents += tabtabtab + fmt.Sprintf("logger.warn(\"Call to deprecated function '%s.%s'\");\n", service.Name, method.Name);
+			contents += tabtabtab + fmt.Sprintf("logger.warn(\"Call to deprecated function '%s.%s'\");\n", service.Name, method.Name)
 		}
 
 		if method.ReturnType != nil {

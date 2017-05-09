@@ -115,9 +115,9 @@ func TestPythonPackagePrefix(t *testing.T) {
 
 func TestPythonExtendServiceSameFile(t *testing.T) {
 	options := compiler.Options{
-		File: "idl/service_extension_same_file.frugal",
-		Gen: "py:asyncio",
-		Out: outputDir,
+		File:  "idl/service_extension_same_file.frugal",
+		Gen:   "py:asyncio",
+		Out:   outputDir,
 		Delim: delim,
 	}
 	if err := compiler.Compile(options); err != nil {

@@ -60,7 +60,8 @@ exception PurchasingError {
  */
 service Store {
     Album buyAlbum( 1: string ASIN, 2: string acct ) throws (1: PurchasingError error)
-    bool enterAlbumGiveaway( 1: string email, 2: string name )
+    // The deprecated annotation will mark a service method as deprecated.
+    bool enterAlbumGiveaway( 1: string email, 2: string name ) (deprecated="use something else")
 }
 
 /**@

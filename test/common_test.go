@@ -2,10 +2,10 @@ package test
 
 import (
 	"bufio"
-	"os"
-	"testing"
 	"flag"
 	"io"
+	"os"
+	"testing"
 )
 
 const (
@@ -35,7 +35,7 @@ func init() {
 }
 
 type FileComparisonPair struct {
-	ExpectedPath string
+	ExpectedPath  string
 	GeneratedPath string
 }
 
