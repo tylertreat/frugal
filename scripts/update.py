@@ -57,6 +57,8 @@ def update_compiler(version, root):
 def update_tests(version, root):
     """Update the frugal generation tests."""
     os.chdir('{0}/test'.format(root))
+    if call(['go', 'get', 'github.com/stretchr/testify/assert/...']) != 0:
+        raise Exception('Failed to get testify depdendency')
     if call(['go', 'test', '--copy-files']) != 0:
         raise Exception('Failed to update generated tests')
 
