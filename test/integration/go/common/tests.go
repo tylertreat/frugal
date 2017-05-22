@@ -185,6 +185,12 @@ func CallEverything(client *frugaltest.FFrugalTestClient) {
 	if eret != frugaltest.Numberz_TWO {
 		log.Fatalf("Unexpected TestEnum() result expected %#v, got %#v ", frugaltest.Numberz_TWO, eret)
 	}
+	switch typ := interface{}(eret).(type) {
+	case frugaltest.Numberz:
+		break
+	default:
+		log.Fatalf("Unexpected TestEnum() result expected %#v, got %#v ", "frugaltest.Numberz", typ)
+	}
 
 	ctx = frugal.NewFContext("TestTypedef")
 	tret, err := client.TestTypedef(ctx, frugaltest.UserId(42))

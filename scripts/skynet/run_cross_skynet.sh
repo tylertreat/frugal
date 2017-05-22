@@ -23,7 +23,7 @@ frugal --gen java -r --out='test/integration/java/frugal-integration-test/gen-ja
 frugal --gen py:tornado -r --out='test/integration/python/tornado/gen_py_tornado' test/integration/frugalTest.frugal
 frugal --gen py:asyncio -r --out='test/integration/python/asyncio/gen_py_asyncio' test/integration/frugalTest.frugal
 frugal --gen py -r -out='test/integration/python/tornado/gen-py' test/integration/frugalTest.frugal
-frugal --gen dart -r --out='test/integration/dart/gen-dart' test/integration/frugalTest.frugal
+frugal --gen dart:use_enums=true -r --out='test/integration/dart/gen-dart' test/integration/frugalTest.frugal
 
 # Set everything up in parallel (code generation is fast enough to not require in parallel)
 go run scripts/skynet/cross/cross_setup.go

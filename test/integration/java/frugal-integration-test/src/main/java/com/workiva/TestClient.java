@@ -376,6 +376,12 @@ public class TestClient {
                 System.out.println("*** FAILURE ***\n");
             }
 
+            ret = testClient.testEnum(context, Numberz.NINE);
+            if (ret.getClass().equals("frugal.test.Numberz")) {
+                returnCode |= 1;
+                System.out.println("*** FAILURE ***\n");
+            }
+
             /**
              * TYPEDEF TEST
              */

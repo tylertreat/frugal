@@ -7,6 +7,7 @@ from thrift.protocol.TCompactProtocol import TCompactProtocolFactory
 from thrift.Thrift import TApplicationException
 from thrift.transport.TTransport import TTransportException
 from frugal.protocol import FProtocolFactory
+from frugal_test.f_FrugalTest import Numberz
 
 PREAMBLE_HEADER = "preamble"
 RAMBLE_HEADER = "ramble"
@@ -58,6 +59,9 @@ def check_for_failure(actual, expected):
             failed = True
     elif isinstance(expected, TTransportException):
         if actual.type != expected.type:
+            failed = True
+    elif isinstance(expected, Numberz):
+        if type(actual) != type(expected):
             failed = True
     elif expected != actual:
         failed = True
