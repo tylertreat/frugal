@@ -371,12 +371,6 @@ public class TestClient {
             }
 
             ret = testClient.testEnum(context, Numberz.EIGHT);
-            if (ret != Numberz.EIGHT) {
-                returnCode |= 1;
-                System.out.println("*** FAILURE ***\n");
-            }
-
-            ret = testClient.testEnum(context, Numberz.NINE);
             if (ret.getClass().equals("frugal.test.Numberz")) {
                 returnCode |= 1;
                 System.out.println("*** FAILURE ***\n");
