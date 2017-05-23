@@ -276,4 +276,5 @@ List<FTest> createTests(FFrugalTestClient client) {
 Future _testEnum(FFrugalTestClient client, int input) async {
   var result = await client.testEnum(ctx, input);
   if (result != input) throw new FTestError(result, input);
+  if (!(result is Numberz)) throw new FTestError(result.runtimeType.toString(), "Numberz");
 }

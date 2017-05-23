@@ -71,7 +71,7 @@ def rpc_test_definitions(transport):
     list = [1, 2, 42]
     tests.append(('testList', dict(args=[list], expected_result=list)))
 
-    enum = Numberz.TWO
+    enum = Numberz(2)
     tests.append(('testEnum', dict(args=[enum], expected_result=enum)))
 
     type_def = 42
