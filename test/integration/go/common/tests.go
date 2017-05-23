@@ -177,6 +177,7 @@ func CallEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatalf("Unexpected TestSet() result expected %#v, got %#v ", l, lret)
 	}
 
+	// Note: No enum type check. Go is statically typed
 	ctx = frugal.NewFContext("TestEnum")
 	eret, err := client.TestEnum(ctx, frugaltest.Numberz_TWO)
 	if err != nil {
@@ -184,12 +185,6 @@ func CallEverything(client *frugaltest.FFrugalTestClient) {
 	}
 	if eret != frugaltest.Numberz_TWO {
 		log.Fatalf("Unexpected TestEnum() result expected %#v, got %#v ", frugaltest.Numberz_TWO, eret)
-	}
-	switch typ := interface{}(eret).(type) {
-	case frugaltest.Numberz:
-		break
-	default:
-		log.Fatalf("Unexpected TestEnum() result expected %#v, got %#v ", "frugaltest.Numberz", typ)
 	}
 
 	ctx = frugal.NewFContext("TestTypedef")

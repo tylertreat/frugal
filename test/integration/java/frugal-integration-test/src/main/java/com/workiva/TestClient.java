@@ -344,6 +344,7 @@ public class TestClient {
 
             /**
              * ENUM TEST
+             * Note: No enum type check. Java is staticly typed
              */
             context = new FContext("testEnum");
             Numberz ret = testClient.testEnum(context, Numberz.ONE);
@@ -371,7 +372,7 @@ public class TestClient {
             }
 
             ret = testClient.testEnum(context, Numberz.EIGHT);
-            if (ret.getClass().equals("frugal.test.Numberz")) {
+            if (ret != Numberz.EIGHT) {
                 returnCode |= 1;
                 System.out.println("*** FAILURE ***\n");
             }
