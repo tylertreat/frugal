@@ -4,7 +4,6 @@
     "client": {
       "timeout": 15,
       "transports": [ "http" ],
-      "sockets": [ "ip" ],
       "protocols": [ "binary", "compact", "json" ],
       "command": [ "dart", "test_client/bin/main.dart" ]
     },
@@ -27,9 +26,6 @@
     "transports": [
       "stateless",
       "http"
-    ],
-    "sockets": [
-      "ip"
     ],
     "protocols": [
       "binary",
