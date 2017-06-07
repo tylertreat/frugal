@@ -38,6 +38,7 @@ public class HttpServer {
         // Configure the server.
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+        FNettyHttpHandler httpHandler = FNettyHttpHandler.of(FDefaultNettyHttpProcessor.of(processor, protocolFactory));
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
@@ -49,7 +50,7 @@ public class HttpServer {
                             ChannelPipeline p = ch.pipeline();
                             ch.pipeline().addLast("codec", new HttpServerCodec());
                             ch.pipeline().addLast("aggregator", new HttpObjectAggregator(512*1024));
-                            p.addLast(FNettyHttpHandler.of(FDefaultNettyHttpProcessor.of(processor, protocolFactory)));
+                            p.addLast(httpHandler);
                         }
                     });
             // Start the server.
