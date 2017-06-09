@@ -29,6 +29,8 @@ var GoUnusedProtection__ int
 
 const RedefConst = golang.ConstI32FromBase
 
+var ConstThing *golang.Thing
+
 var DEFAULT_ID ID
 
 var OtherDefault ID
@@ -62,6 +64,10 @@ const EvilString2 = "th'ing\"ad\"f"
 var ConstLower *TestLowercase
 
 func init() {
+	ConstThing = &Thing{
+		AnID:    1,
+		AString: "some string",
+	}
 	DEFAULT_ID = -1
 	OtherDefault = DEFAULT_ID
 	MAPCONSTANT = map[string]string{

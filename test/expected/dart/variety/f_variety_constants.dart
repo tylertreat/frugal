@@ -13,6 +13,9 @@ import 'dart:convert' show UTF8;
 
 class VarietyConstants {
   static final int redef_const = t_actual_base_dart.ActualBaseDartConstants.const_i32_from_base;
+  static final t_actual_base_dart.thing const_thing = new t_variety.thing()
+    ..an_id = 1
+    ..a_string = "some string";
   static final int DEFAULT_ID = -1;
   static final int other_default = t_variety.VarietyConstants.DEFAULT_ID;
   static final int thirtyfour = 34;

@@ -17,6 +17,7 @@ typedef map<int, string> request
  * it doesn't have the @ sign.
  */
 const i32 redef_const = base.const_i32_from_base;
+const base.thing const_thing = {an_id: 1, a_string: "some string"}
 const id DEFAULT_ID = -1
 const id other_default = DEFAULT_ID
 
