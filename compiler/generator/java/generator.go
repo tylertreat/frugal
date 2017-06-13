@@ -2543,13 +2543,15 @@ func (g *Generator) generateHandlerIfaces(scope *parser.Scope, durable bool) str
 	contents := ""
 
 	groupID := ""
+	throwsClause := ""
 	if durable {
 		groupID = "String groupId, "
+		throwsClause = " throws TException"
 	}
 
 	for _, op := range scope.Operations {
 		contents += fmt.Sprintf(tab+"public interface %sHandler {\n", op.Name)
-		contents += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s%s req);\n", op.Name, groupID, g.getJavaTypeFromThriftType(op.Type))
+		contents += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s%s req)%s;\n", op.Name, groupID, g.getJavaTypeFromThriftType(op.Type), throwsClause)
 		contents += tab + "}\n\n"
 	}
 
