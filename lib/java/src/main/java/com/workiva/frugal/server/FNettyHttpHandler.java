@@ -1,6 +1,7 @@
 package com.workiva.frugal.server;
 
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -15,6 +16,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
  * This handler uses {@link FDefaultNettyHttpProcessor} to process HTTP requests
  * using a Frugal processor and protocol.
  */
+@ChannelHandler.Sharable
 public class FNettyHttpHandler extends ChannelInboundHandlerAdapter {
 
     private final FNettyHttpProcessor processor;
