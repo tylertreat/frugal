@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+const (
+	// Default timeout in seconds for client/server configurations without a defined timeout
+	DefaultTimeout     = 7
+	TestFailure        = 101
+	CrossrunnerFailure = 102
+)
+
 // client/server level options defined in tests.json
 // this is useful if there is option supported by a client but not a server within a language.
 type options struct {
@@ -98,4 +105,27 @@ func Load(jsonFile string) (pairs []*Pair, err error) {
 	}
 
 	return pairs, nil
+}
+
+// getExpandedConfigs takes a client/server at the language level and the options
+// associated with that client/server and returns a list of unique configs.
+func getExpandedConfigs(options options, test languages) (apps []config) {
+	app := new(config)
+
+	// Loop through each transport and protocol to construct expanded list
+	for _, transport := range options.Transports {
+		for _, protocol := range options.Protocols {
+			app.Name = test.Name
+			app.Protocol = protocol
+			app.Transport = transport
+			app.Command = append(test.Command, options.Command...)
+			app.Workdir = test.Workdir
+			app.Timeout = DefaultTimeout * time.Second
+			if options.Timeout != 0 {
+				app.Timeout = options.Timeout
+			}
+			apps = append(apps, *app)
+		}
+	}
+	return apps
 }
