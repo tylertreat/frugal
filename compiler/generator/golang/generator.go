@@ -261,18 +261,16 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 	} else if g.Frugal.IsEnum(underlyingType) {
 		return fmt.Sprintf("%d", value)
 	} else if g.Frugal.IsStruct(underlyingType) {
-		var s *parser.Struct
-		for _, potential := range g.Frugal.Structs {
-			if underlyingType.Name == potential.Name {
-				s = potential
-				break
-			}
+		s := g.Frugal.FindStruct(underlyingType)
+		if s == nil {
+			panic("no struct for type " + underlyingType.Name)
 		}
+
 		contents := ""
 		contents += fmt.Sprintf("&%s{\n", title(s.Name))
 
 		for _, pair := range value.([]parser.KeyValue) {
-			name := title(pair.Key.(string))
+			name := title(pair.KeyToString())
 			for _, field := range s.Fields {
 				if name == title(field.Name) {
 					val := g.generateConstantValue(field.Type, pair.Value)

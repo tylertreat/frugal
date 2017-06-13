@@ -37,6 +37,12 @@ import org.slf4j.LoggerFactory;
 public class varietyConstants {
 		public static final int redef_const = actual_base.java.baseConstants.const_i32_from_base;
 
+		public static final actual_base.java.thing const_thing = new actual_base.java.thing();
+		static {
+			const_thing.setAn_id(1);
+			const_thing.setA_string("some string");
+		}
+
 		public static final long DEFAULT_ID = -1L;
 
 		public static final long other_default = varietyConstants.DEFAULT_ID;

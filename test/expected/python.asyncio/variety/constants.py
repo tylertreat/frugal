@@ -20,6 +20,10 @@ import subdir_include.ttypes
 import subdir_include.constants
 
 redef_const = actual_base.python.constants.const_i32_from_base
+const_thing = actual_base.python.ttypes.thing(**{
+    "an_id": 1,
+    "a_string": "some string",
+})
 DEFAULT_ID = -1
 other_default = DEFAULT_ID
 thirtyfour = 34

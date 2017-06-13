@@ -174,7 +174,7 @@ func formatValue(value interface{}, module *parser.Frugal) template.HTML {
 		prefix := ""
 		for _, keyValue := range v {
 			display += fmt.Sprintf("%s%s = %s", prefix,
-				formatValue(keyValue.Key, module), formatValue(keyValue.Value, module))
+				formatValue(keyValue.KeyToString(), module), formatValue(keyValue.Value, module))
 			prefix = ", "
 		}
 		display += " }"

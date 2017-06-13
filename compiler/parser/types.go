@@ -422,6 +422,17 @@ type KeyValue struct {
 	Key, Value interface{}
 }
 
+func (k *KeyValue) KeyToString() string {
+	switch t := k.Key.(type) {
+	case string:
+		return t
+	case Identifier:
+		return string(t)
+	default:
+		panic(fmt.Sprintf("non-string type %T as a key", t))
+	}
+}
+
 // Annotation is key-value metadata attached to an IDL definition.
 type Annotation struct {
 	Name  string
@@ -603,6 +614,27 @@ func (f *Frugal) Namespace(scope string) *Namespace {
 		return namespace
 	}
 	return f.namespaceIndex["*"]
+}
+
+func (f *Frugal) FindStruct(typ *Type) *Struct {
+	frugal := f
+	includeName := typ.IncludeName()
+	paramName := typ.ParamName()
+	if includeName != "" {
+		frugalInclude, ok := f.ParsedIncludes[includeName]
+		if !ok {
+			return nil
+		}
+		frugal = frugalInclude
+	}
+
+	for _, s := range frugal.Structs {
+		if paramName == s.Name {
+			return s
+		}
+	}
+
+	return nil
 }
 
 // Include returns the Include with the given name.
