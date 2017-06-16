@@ -2,6 +2,8 @@
 
 set -exo pipefail
 
+go env
+
 # Test deps
 go get github.com/Sirupsen/logrus
 go get github.com/stretchr/testify/assert
