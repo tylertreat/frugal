@@ -7,5 +7,8 @@ python $SMITHY_ROOT/scripts/smithy/verify_pr_target.py
 
 mkdir -p $SMITHY_ROOT/test_results/
 
+# Logrus for testing
+go get github.com/Sirupsen/logrus
+
 # Run each language build and tests in parallel
 cd $FRUGAL_HOME && go run scripts/smithy/parallel_smithy.go
