@@ -350,7 +350,7 @@ func TestHTTPRequestHeaders(t *testing.T) {
 	customRequestHeaders := make(map[string]string, 1)
 	customRequestHeaders["foo"] = "bar"
 	// Instantiate http transport
-	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).withRequestHeaders(customRequestHeaders).Build().(*fHTTPTransport)
+	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).WithRequestHeaders(customRequestHeaders).Build().(*fHTTPTransport)
 
 	// Open
 	assert.Nil(transport.Open())
