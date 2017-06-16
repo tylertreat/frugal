@@ -68,19 +68,19 @@ public class EventsDurableSubscriber {
 	}
 
 	public interface EventCreatedHandler {
-		void onEventCreated(FContext ctx, String groupId, Event req);
+		void onEventCreated(FContext ctx, String groupId, Event req) throws TException;
 	}
 
 	public interface SomeIntHandler {
-		void onSomeInt(FContext ctx, String groupId, long req);
+		void onSomeInt(FContext ctx, String groupId, long req) throws TException;
 	}
 
 	public interface SomeStrHandler {
-		void onSomeStr(FContext ctx, String groupId, String req);
+		void onSomeStr(FContext ctx, String groupId, String req) throws TException;
 	}
 
 	public interface SomeListHandler {
-		void onSomeList(FContext ctx, String groupId, java.util.List<java.util.Map<Long, Event>> req);
+		void onSomeList(FContext ctx, String groupId, java.util.List<java.util.Map<Long, Event>> req) throws TException;
 	}
 
 	/**

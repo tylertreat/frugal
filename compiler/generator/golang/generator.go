@@ -1433,7 +1433,7 @@ func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope, durab
 	} else {
 		subscriber += fmt.Sprintf("type %sDurableSubscriber interface {\n", scopeCamel)
 		for _, op := range scope.Operations {
-			subscriber += fmt.Sprintf("\tSubscribe%s(%shandler func(frugal.FContext, *string, %s)) (*frugal.FSubscription, error)\n",
+			subscriber += fmt.Sprintf("\tSubscribe%s(%shandler func(frugal.FContext, *string, %s) error) (*frugal.FSubscription, error)\n",
 				op.Name, args, g.getGoTypeFromThriftType(op.Type))
 		}
 	}
@@ -1488,7 +1488,7 @@ func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Oper
 		subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(frugal.FContext, %s)) (*frugal.FSubscription, error) {\n",
 			scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
 	} else {
-		subscriber += fmt.Sprintf("func (l *%sDurableSubscriber) Subscribe%s(%shandler func(frugal.FContext, *string, %s)) (*frugal.FSubscription, error) {\n",
+		subscriber += fmt.Sprintf("func (l *%sDurableSubscriber) Subscribe%s(%shandler func(frugal.FContext, *string, %s) error) (*frugal.FSubscription, error) {\n",
 			scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
 	}
 	subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
@@ -1512,7 +1512,7 @@ func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Oper
 		subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, %s)) frugal.FAsyncCallback {\n",
 			scopeLower, op.Name, g.getGoTypeFromThriftType(op.Type))
 	} else {
-		subscriber += fmt.Sprintf("func (l *%sDurableSubscriber) recv%s(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, %s)) frugal.FDurableAsyncCallback {\n",
+		subscriber += fmt.Sprintf("func (l *%sDurableSubscriber) recv%s(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, %s) error) frugal.FDurableAsyncCallback {\n",
 			scopeLower, op.Name, g.getGoTypeFromThriftType(op.Type))
 	}
 	subscriber += fmt.Sprintf("\tmethod := frugal.NewMethod(l, handler, \"Subscribe%s\", l.middleware)\n", op.Name)
@@ -1539,10 +1539,10 @@ func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Oper
 	subscriber += "\t\tiprot.ReadMessageEnd()\n\n"
 	if !durable {
 		subscriber += "\t\tmethod.Invoke([]interface{}{ctx, req})\n"
+		subscriber += "\t\treturn nil\n"
 	} else {
-		subscriber += "\t\tmethod.Invoke([]interface{}{ctx, groupID, req})\n"
+		subscriber += "\t\treturn method.Invoke([]interface{}{ctx, groupID, req}).Error()\n"
 	}
-	subscriber += "\t\treturn nil\n"
 	subscriber += "\t}\n"
 	subscriber += "}"
 

@@ -634,10 +634,10 @@ func (p *eventsDurablePublisher) publishSomeList(ctx frugal.FContext, groupID *s
 // the @ sign. Prefix specifies topic prefix tokens, which can be static or
 // variable.
 type EventsDurableSubscriber interface {
-	SubscribeEventCreated(user string, handler func(frugal.FContext, *string, *Event)) (*frugal.FSubscription, error)
-	SubscribeSomeInt(user string, handler func(frugal.FContext, *string, int64)) (*frugal.FSubscription, error)
-	SubscribeSomeStr(user string, handler func(frugal.FContext, *string, string)) (*frugal.FSubscription, error)
-	SubscribeSomeList(user string, handler func(frugal.FContext, *string, []map[ID]*Event)) (*frugal.FSubscription, error)
+	SubscribeEventCreated(user string, handler func(frugal.FContext, *string, *Event) error) (*frugal.FSubscription, error)
+	SubscribeSomeInt(user string, handler func(frugal.FContext, *string, int64) error) (*frugal.FSubscription, error)
+	SubscribeSomeStr(user string, handler func(frugal.FContext, *string, string) error) (*frugal.FSubscription, error)
+	SubscribeSomeList(user string, handler func(frugal.FContext, *string, []map[ID]*Event) error) (*frugal.FSubscription, error)
 }
 
 type eventsDurableSubscriber struct {
@@ -651,7 +651,7 @@ func NewEventsDurableSubscriber(provider *frugal.FDurableScopeProvider, middlewa
 }
 
 // This is a docstring.
-func (l *eventsDurableSubscriber) SubscribeEventCreated(user string, handler func(frugal.FContext, *string, *Event)) (*frugal.FSubscription, error) {
+func (l *eventsDurableSubscriber) SubscribeEventCreated(user string, handler func(frugal.FContext, *string, *Event) error) (*frugal.FSubscription, error) {
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
@@ -665,7 +665,7 @@ func (l *eventsDurableSubscriber) SubscribeEventCreated(user string, handler fun
 	return sub, nil
 }
 
-func (l *eventsDurableSubscriber) recvEventCreated(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, *Event)) frugal.FDurableAsyncCallback {
+func (l *eventsDurableSubscriber) recvEventCreated(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, *Event) error) frugal.FDurableAsyncCallback {
 	method := frugal.NewMethod(l, handler, "SubscribeEventCreated", l.middleware)
 	return func(transport thrift.TTransport, groupID *string) error {
 		iprot := pf.GetProtocol(transport)
@@ -690,12 +690,11 @@ func (l *eventsDurableSubscriber) recvEventCreated(op string, pf *frugal.FProtoc
 		}
 		iprot.ReadMessageEnd()
 
-		method.Invoke([]interface{}{ctx, groupID, req})
-		return nil
+		return method.Invoke([]interface{}{ctx, groupID, req}).Error()
 	}
 }
 
-func (l *eventsDurableSubscriber) SubscribeSomeInt(user string, handler func(frugal.FContext, *string, int64)) (*frugal.FSubscription, error) {
+func (l *eventsDurableSubscriber) SubscribeSomeInt(user string, handler func(frugal.FContext, *string, int64) error) (*frugal.FSubscription, error) {
 	op := "SomeInt"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
@@ -709,7 +708,7 @@ func (l *eventsDurableSubscriber) SubscribeSomeInt(user string, handler func(fru
 	return sub, nil
 }
 
-func (l *eventsDurableSubscriber) recvSomeInt(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, int64)) frugal.FDurableAsyncCallback {
+func (l *eventsDurableSubscriber) recvSomeInt(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, int64) error) frugal.FDurableAsyncCallback {
 	method := frugal.NewMethod(l, handler, "SubscribeSomeInt", l.middleware)
 	return func(transport thrift.TTransport, groupID *string) error {
 		iprot := pf.GetProtocol(transport)
@@ -736,12 +735,11 @@ func (l *eventsDurableSubscriber) recvSomeInt(op string, pf *frugal.FProtocolFac
 		}
 		iprot.ReadMessageEnd()
 
-		method.Invoke([]interface{}{ctx, groupID, req})
-		return nil
+		return method.Invoke([]interface{}{ctx, groupID, req}).Error()
 	}
 }
 
-func (l *eventsDurableSubscriber) SubscribeSomeStr(user string, handler func(frugal.FContext, *string, string)) (*frugal.FSubscription, error) {
+func (l *eventsDurableSubscriber) SubscribeSomeStr(user string, handler func(frugal.FContext, *string, string) error) (*frugal.FSubscription, error) {
 	op := "SomeStr"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
@@ -755,7 +753,7 @@ func (l *eventsDurableSubscriber) SubscribeSomeStr(user string, handler func(fru
 	return sub, nil
 }
 
-func (l *eventsDurableSubscriber) recvSomeStr(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, string)) frugal.FDurableAsyncCallback {
+func (l *eventsDurableSubscriber) recvSomeStr(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, string) error) frugal.FDurableAsyncCallback {
 	method := frugal.NewMethod(l, handler, "SubscribeSomeStr", l.middleware)
 	return func(transport thrift.TTransport, groupID *string) error {
 		iprot := pf.GetProtocol(transport)
@@ -782,12 +780,11 @@ func (l *eventsDurableSubscriber) recvSomeStr(op string, pf *frugal.FProtocolFac
 		}
 		iprot.ReadMessageEnd()
 
-		method.Invoke([]interface{}{ctx, groupID, req})
-		return nil
+		return method.Invoke([]interface{}{ctx, groupID, req}).Error()
 	}
 }
 
-func (l *eventsDurableSubscriber) SubscribeSomeList(user string, handler func(frugal.FContext, *string, []map[ID]*Event)) (*frugal.FSubscription, error) {
+func (l *eventsDurableSubscriber) SubscribeSomeList(user string, handler func(frugal.FContext, *string, []map[ID]*Event) error) (*frugal.FSubscription, error) {
 	op := "SomeList"
 	prefix := fmt.Sprintf("foo.%s.", user)
 	topic := fmt.Sprintf("%sEvents%s%s", prefix, delimiter, op)
@@ -801,7 +798,7 @@ func (l *eventsDurableSubscriber) SubscribeSomeList(user string, handler func(fr
 	return sub, nil
 }
 
-func (l *eventsDurableSubscriber) recvSomeList(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, []map[ID]*Event)) frugal.FDurableAsyncCallback {
+func (l *eventsDurableSubscriber) recvSomeList(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, []map[ID]*Event) error) frugal.FDurableAsyncCallback {
 	method := frugal.NewMethod(l, handler, "SubscribeSomeList", l.middleware)
 	return func(transport thrift.TTransport, groupID *string) error {
 		iprot := pf.GetProtocol(transport)
@@ -855,7 +852,6 @@ func (l *eventsDurableSubscriber) recvSomeList(op string, pf *frugal.FProtocolFa
 		}
 		iprot.ReadMessageEnd()
 
-		method.Invoke([]interface{}{ctx, groupID, req})
-		return nil
+		return method.Invoke([]interface{}{ctx, groupID, req}).Error()
 	}
 }
