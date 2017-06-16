@@ -2,6 +2,10 @@
 
 set -exo pipefail
 
+# Test deps
+go get github.com/Sirupsen/logrus
+go get github.com/stretchr/testify/assert
+
 mkdir -p /go/src/github.com/Workiva/
 
 # Symlink frugal to gopath - this allows skynet-cli editing for interactive/directmount
