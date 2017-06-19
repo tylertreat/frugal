@@ -7,6 +7,7 @@ import 'package:dart_dev/dart_dev.dart'
 main(List<String> args) async {
   // https://github.com/Workiva/dart_dev
 
+  config.analyze.strong = true;
   config.analyze.entryPoints = ['lib/'];
   config.format.paths = ['lib/', 'test/', 'tool/'];
 
