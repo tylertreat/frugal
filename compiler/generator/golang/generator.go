@@ -1391,6 +1391,10 @@ func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope) error
 			op.Name, args, g.getGoTypeFromThriftType(op.Type))
 	}
 	subscriber += "}\n\n"
+
+	if scope.Comment != nil {
+		subscriber += g.GenerateInlineComment(scope.Comment, "")
+	}
 	subscriber += fmt.Sprintf("type %sErrorableSubscriber interface {\n", scopeCamel)
 	for _, op := range scope.Operations {
 		subscriber += fmt.Sprintf("\tSubscribe%sErrorable(%shandler func(frugal.FContext, %s) error) (*frugal.FSubscription, error)\n",
@@ -1445,6 +1449,9 @@ func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Oper
 	subscriber += "\t})\n"
 	subscriber += "}\n\n"
 
+	if op.Comment != nil {
+		subscriber += g.GenerateInlineComment(op.Comment, "")
+	}
 	subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%sErrorable(%shandler func(frugal.FContext, %s) error) (*frugal.FSubscription, error) {\n",
 		scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
 	subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)

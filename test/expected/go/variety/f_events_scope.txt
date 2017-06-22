@@ -216,6 +216,9 @@ type EventsSubscriber interface {
 	SubscribeSomeList(user string, handler func(frugal.FContext, []map[ID]*Event)) (*frugal.FSubscription, error)
 }
 
+// This docstring gets added to the generated code because it has
+// the @ sign. Prefix specifies topic prefix tokens, which can be static or
+// variable.
 type EventsErrorableSubscriber interface {
 	SubscribeEventCreatedErrorable(user string, handler func(frugal.FContext, *Event) error) (*frugal.FSubscription, error)
 	SubscribeSomeIntErrorable(user string, handler func(frugal.FContext, int64) error) (*frugal.FSubscription, error)
@@ -246,6 +249,7 @@ func (l *eventsSubscriber) SubscribeEventCreated(user string, handler func(fruga
 	})
 }
 
+// This is a docstring.
 func (l *eventsSubscriber) SubscribeEventCreatedErrorable(user string, handler func(frugal.FContext, *Event) error) (*frugal.FSubscription, error) {
 	op := "EventCreated"
 	prefix := fmt.Sprintf("foo.%s.", user)
