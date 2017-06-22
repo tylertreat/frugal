@@ -63,15 +63,15 @@ public class AlbumWinnersDurableSubscriber {
 	}
 
 	public interface ContestStartHandler {
-		void onContestStart(FContext ctx, String groupId, java.util.List<Album> req);
+		void onContestStart(FContext ctx, String groupId, java.util.List<Album> req) throws TException;
 	}
 
 	public interface TimeLeftHandler {
-		void onTimeLeft(FContext ctx, String groupId, double req);
+		void onTimeLeft(FContext ctx, String groupId, double req) throws TException;
 	}
 
 	public interface WinnerHandler {
-		void onWinner(FContext ctx, String groupId, Album req);
+		void onWinner(FContext ctx, String groupId, Album req) throws TException;
 	}
 
 	/**

@@ -1192,14 +1192,15 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 
 // GeneratePublisher generates the publisher for the given scope.
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
-	return g.generatePublisher(file, scope, false)
+	return g.generatePublisher(file, scope)
 }
 
 func (g *Generator) GenerateDurablePublisher(file *os.File, scope *parser.Scope) error {
-	return g.generatePublisher(file, scope, true)
+	// TODO remove
+	return nil
 }
 
-func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope, durable bool) error {
+func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope) error {
 	var (
 		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeCamel = snakeToCamel(scope.Name)
@@ -1219,47 +1220,25 @@ func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope, durabl
 		args += " string, "
 	}
 
-	if !durable {
-		publisher += fmt.Sprintf("type %sPublisher interface {\n", scopeCamel)
-	} else {
-		publisher += fmt.Sprintf("type %sDurablePublisher interface {\n", scopeCamel)
-	}
+	publisher += fmt.Sprintf("type %sPublisher interface {\n", scopeCamel)
 	publisher += "\tOpen() error\n"
 	publisher += "\tClose() error\n"
 	for _, op := range scope.Operations {
-		if !durable {
-			publisher += fmt.Sprintf("\tPublish%s(ctx frugal.FContext, %sreq %s) error\n", op.Name, args, g.getGoTypeFromThriftType(op.Type))
-		} else {
-			publisher += fmt.Sprintf("\tPublish%s(ctx frugal.FContext, groupID *string, %sreq %s) error\n", op.Name, args, g.getGoTypeFromThriftType(op.Type))
-		}
+		publisher += fmt.Sprintf("\tPublish%s(ctx frugal.FContext, %sreq %s) error\n", op.Name, args, g.getGoTypeFromThriftType(op.Type))
 	}
 	publisher += "}\n\n"
 
-	if !durable {
-		publisher += fmt.Sprintf("type %sPublisher struct {\n", scopeLower)
-		publisher += "\ttransport frugal.FPublisherTransport\n"
-	} else {
-		publisher += fmt.Sprintf("type %sDurablePublisher struct {\n", scopeLower)
-		publisher += "\ttransport frugal.FDurablePublisherTransport\n"
-	}
+	publisher += fmt.Sprintf("type %sPublisher struct {\n", scopeLower)
+	publisher += "\ttransport frugal.FPublisherTransport\n"
 	publisher += "\tprotocolFactory *frugal.FProtocolFactory\n"
 	publisher += "\tmethods   map[string]*frugal.Method\n"
 	publisher += "}\n\n"
 
-	if !durable {
-		publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) %sPublisher {\n",
-			scopeCamel, scopeCamel)
-	} else {
-		publisher += fmt.Sprintf("func New%sDurablePublisher(provider *frugal.FDurableScopeProvider, middleware ...frugal.ServiceMiddleware) %sDurablePublisher {\n",
-			scopeCamel, scopeCamel)
-	}
+	publisher += fmt.Sprintf("func New%sPublisher(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) %sPublisher {\n",
+		scopeCamel, scopeCamel)
 	publisher += "\ttransport, protocolFactory := provider.NewPublisher()\n"
 	publisher += "\tmethods := make(map[string]*frugal.Method)\n"
-	if !durable {
-		publisher += fmt.Sprintf("\tpublisher := &%sPublisher{\n", scopeLower)
-	} else {
-		publisher += fmt.Sprintf("\tpublisher := &%sDurablePublisher{\n", scopeLower)
-	}
+	publisher += fmt.Sprintf("\tpublisher := &%sPublisher{\n", scopeLower)
 	publisher += "\t\ttransport: transport,\n"
 	publisher += "\t\tprotocolFactory:  protocolFactory,\n"
 	publisher += "\t\tmethods:   methods,\n"
@@ -1272,20 +1251,12 @@ func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope, durabl
 	publisher += "\treturn publisher\n"
 	publisher += "}\n\n"
 
-	if !durable {
-		publisher += fmt.Sprintf("func (p *%sPublisher) Open() error {\n", scopeLower)
-	} else {
-		publisher += fmt.Sprintf("func (p *%sDurablePublisher) Open() error {\n", scopeLower)
-	}
+	publisher += fmt.Sprintf("func (p *%sPublisher) Open() error {\n", scopeLower)
 
 	publisher += "\treturn p.transport.Open()\n"
 	publisher += "}\n\n"
 
-	if !durable {
-		publisher += fmt.Sprintf("func (p *%sPublisher) Close() error {\n", scopeLower)
-	} else {
-		publisher += fmt.Sprintf("func (p *%sDurablePublisher) Close() error {\n", scopeLower)
-	}
+	publisher += fmt.Sprintf("func (p *%sPublisher) Close() error {\n", scopeLower)
 	publisher += "\treturn p.transport.Close()\n"
 	publisher += "}\n\n"
 
@@ -1293,14 +1264,14 @@ func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope, durabl
 	for _, op := range scope.Operations {
 		publisher += prefix
 		prefix = "\n\n"
-		publisher += g.generatePublishMethod(scope, op, args, durable)
+		publisher += g.generatePublishMethod(scope, op, args)
 	}
 
 	_, err := file.WriteString(publisher)
 	return err
 }
 
-func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operation, args string, durable bool) string {
+func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operation, args string) string {
 	var (
 		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		publisher  = ""
@@ -1309,39 +1280,30 @@ func (g *Generator) generatePublishMethod(scope *parser.Scope, op *parser.Operat
 	if op.Comment != nil {
 		publisher += g.GenerateInlineComment(op.Comment, "")
 	}
-	if !durable {
-		publisher += fmt.Sprintf("func (p *%sPublisher) Publish%s(ctx frugal.FContext, %sreq %s) error {\n",
-			scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
-	} else {
-		publisher += fmt.Sprintf("func (p *%sDurablePublisher) Publish%s(ctx frugal.FContext, groupID *string, %sreq %s) error {\n",
-			scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
-	}
-	publisher += fmt.Sprintf("\tret := p.methods[\"publish%s\"].Invoke(%s)\n", op.Name, g.generateScopeArgs(scope, durable))
+
+	publisher += fmt.Sprintf("func (p *%sPublisher) Publish%s(ctx frugal.FContext, %sreq %s) error {\n",
+		scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
+	publisher += fmt.Sprintf("\tret := p.methods[\"publish%s\"].Invoke(%s)\n", op.Name, g.generateScopeArgs(scope))
 	publisher += "\tif ret[0] != nil {\n"
 	publisher += "\t\treturn ret[0].(error)\n"
 	publisher += "\t}\n"
 	publisher += "\treturn nil\n"
 	publisher += "}\n\n"
 
-	publisher += g.generateInternalPublishMethod(scope, op, args, durable)
+	publisher += g.generateInternalPublishMethod(scope, op, args)
 
 	return publisher
 }
 
-func (g *Generator) generateInternalPublishMethod(scope *parser.Scope, op *parser.Operation, args string, durable bool) string {
+func (g *Generator) generateInternalPublishMethod(scope *parser.Scope, op *parser.Operation, args string) string {
 	var (
 		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeTitle = strings.Title(scope.Name)
 		publisher  = ""
 	)
 
-	if !durable {
-		publisher += fmt.Sprintf("func (p *%sPublisher) publish%s(ctx frugal.FContext, %sreq %s) error {\n",
-			scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
-	} else {
-		publisher += fmt.Sprintf("func (p *%sDurablePublisher) publish%s(ctx frugal.FContext, groupID *string, %sreq %s) error {\n",
-			scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
-	}
+	publisher += fmt.Sprintf("func (p *%sPublisher) publish%s(ctx frugal.FContext, %sreq %s) error {\n",
+		scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
 
 	// Inject the prefix variables into the FContext to send
 	for _, prefixVar := range scope.Prefix.Variables {
@@ -1366,11 +1328,7 @@ func (g *Generator) generateInternalPublishMethod(scope *parser.Scope, op *parse
 	publisher += "\tif err := oprot.Flush(); err != nil {\n"
 	publisher += "\t\treturn err\n"
 	publisher += "\t}\n"
-	if !durable {
-		publisher += "\treturn p.transport.Publish(topic, buffer.Bytes())\n"
-	} else {
-		publisher += "\treturn p.transport.Publish(topic, groupID, buffer.Bytes())\n"
-	}
+	publisher += "\treturn p.transport.Publish(topic, buffer.Bytes())\n"
 	publisher += "}\n"
 	return publisher
 }
@@ -1396,14 +1354,15 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 
 // GenerateSubscriber generates the subscriber for the given scope.
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
-	return g.generateSubscriber(file, scope, false)
+	return g.generateSubscriber(file, scope)
 }
 
 func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
-	return g.generateSubscriber(file, scope, true)
+	// TODO remove
+	return nil
 }
 
-func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope, durable bool) error {
+func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope) error {
 	var (
 		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeCamel = snakeToCamel(scope.Name)
@@ -1415,67 +1374,59 @@ func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope, durab
 	}
 
 	args := ""
+	argsWithoutTypes := ""
 	prefix := ""
 	if len(scope.Prefix.Variables) > 0 {
 		for _, variable := range scope.Prefix.Variables {
 			args += prefix + variable
 			prefix = ", "
 		}
+		argsWithoutTypes = args + ", "
 		args += " string, "
 	}
 
-	if !durable {
-		subscriber += fmt.Sprintf("type %sSubscriber interface {\n", scopeCamel)
-		for _, op := range scope.Operations {
-			subscriber += fmt.Sprintf("\tSubscribe%s(%shandler func(frugal.FContext, %s)) (*frugal.FSubscription, error)\n",
-				op.Name, args, g.getGoTypeFromThriftType(op.Type))
-		}
-	} else {
-		subscriber += fmt.Sprintf("type %sDurableSubscriber interface {\n", scopeCamel)
-		for _, op := range scope.Operations {
-			subscriber += fmt.Sprintf("\tSubscribe%s(%shandler func(frugal.FContext, *string, %s) error) (*frugal.FSubscription, error)\n",
-				op.Name, args, g.getGoTypeFromThriftType(op.Type))
-		}
+	subscriber += fmt.Sprintf("type %sSubscriber interface {\n", scopeCamel)
+	for _, op := range scope.Operations {
+		subscriber += fmt.Sprintf("\tSubscribe%s(%shandler func(frugal.FContext, %s)) (*frugal.FSubscription, error)\n",
+			op.Name, args, g.getGoTypeFromThriftType(op.Type))
+	}
+	subscriber += "}\n\n"
+	subscriber += fmt.Sprintf("type %sErrorableSubscriber interface {\n", scopeCamel)
+	for _, op := range scope.Operations {
+		subscriber += fmt.Sprintf("\tSubscribe%sErrorable(%shandler func(frugal.FContext, %s) error) (*frugal.FSubscription, error)\n",
+			op.Name, args, g.getGoTypeFromThriftType(op.Type))
 	}
 	subscriber += "}\n\n"
 
-	if !durable {
-		subscriber += fmt.Sprintf("type %sSubscriber struct {\n", scopeLower)
-		subscriber += "\tprovider   *frugal.FScopeProvider\n"
-	} else {
-		subscriber += fmt.Sprintf("type %sDurableSubscriber struct {\n", scopeLower)
-		subscriber += "\tprovider   *frugal.FDurableScopeProvider\n"
-	}
+	subscriber += fmt.Sprintf("type %sSubscriber struct {\n", scopeLower)
+	subscriber += "\tprovider   *frugal.FScopeProvider\n"
 	subscriber += "\tmiddleware []frugal.ServiceMiddleware\n"
 	subscriber += "}\n\n"
 
-	if !durable {
-		subscriber += fmt.Sprintf("func New%sSubscriber(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) %sSubscriber {\n",
-			scopeCamel, scopeCamel)
-	} else {
-		subscriber += fmt.Sprintf("func New%sDurableSubscriber(provider *frugal.FDurableScopeProvider, middleware ...frugal.ServiceMiddleware) %sDurableSubscriber {\n",
-			scopeCamel, scopeCamel)
-	}
+	subscriber += fmt.Sprintf("func New%sSubscriber(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) %sSubscriber {\n",
+		scopeCamel, scopeCamel)
 	subscriber += "\tmiddleware = append(middleware, provider.GetMiddleware()...)\n"
-	if !durable {
-		subscriber += fmt.Sprintf("\treturn &%sSubscriber{provider: provider, middleware: middleware}\n", scopeLower)
-	} else {
-		subscriber += fmt.Sprintf("\treturn &%sDurableSubscriber{provider: provider, middleware: middleware}\n", scopeLower)
-	}
+	subscriber += fmt.Sprintf("\treturn &%sSubscriber{provider: provider, middleware: middleware}\n", scopeLower)
+	subscriber += "}\n\n"
+
+	subscriber += fmt.Sprintf("func New%sErrorableSubscriber(provider *frugal.FScopeProvider, middleware ...frugal.ServiceMiddleware) %sErrorableSubscriber {\n",
+		scopeCamel, scopeCamel)
+	subscriber += "\tmiddleware = append(middleware, provider.GetMiddleware()...)\n"
+	subscriber += fmt.Sprintf("\treturn &%sSubscriber{provider: provider, middleware: middleware}\n", scopeLower)
 	subscriber += "}\n\n"
 
 	prefix = ""
 	for _, op := range scope.Operations {
 		subscriber += prefix
 		prefix = "\n\n"
-		subscriber += g.generateSubscribeMethod(scope, op, args, durable)
+		subscriber += g.generateSubscribeMethod(scope, op, args, argsWithoutTypes)
 	}
 
 	_, err := file.WriteString(subscriber)
 	return err
 }
 
-func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Operation, args string, durable bool) string {
+func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Operation, args, argsWithoutTypes string) string {
 	var (
 		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeTitle = strings.Title(scope.Name)
@@ -1484,21 +1435,22 @@ func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Oper
 	if op.Comment != nil {
 		subscriber += g.GenerateInlineComment(op.Comment, "")
 	}
-	if !durable {
-		subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(frugal.FContext, %s)) (*frugal.FSubscription, error) {\n",
-			scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
-	} else {
-		subscriber += fmt.Sprintf("func (l *%sDurableSubscriber) Subscribe%s(%shandler func(frugal.FContext, *string, %s) error) (*frugal.FSubscription, error) {\n",
-			scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
-	}
+
+	subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%s(%shandler func(frugal.FContext, %s)) (*frugal.FSubscription, error) {\n",
+		scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
+	subscriber += fmt.Sprintf("\treturn l.Subscribe%sErrorable(%sfunc(fctx frugal.FContext, arg %s) error {\n",
+		op.Name, argsWithoutTypes, g.getGoTypeFromThriftType(op.Type))
+	subscriber += "\t\thandler(fctx, arg)\n"
+	subscriber += "\t\treturn nil\n"
+	subscriber += "\t})\n"
+	subscriber += "}\n\n"
+
+	subscriber += fmt.Sprintf("func (l *%sSubscriber) Subscribe%sErrorable(%shandler func(frugal.FContext, %s) error) (*frugal.FSubscription, error) {\n",
+		scopeLower, op.Name, args, g.getGoTypeFromThriftType(op.Type))
 	subscriber += fmt.Sprintf("\top := \"%s\"\n", op.Name)
 	subscriber += fmt.Sprintf("\tprefix := %s\n", generatePrefixStringTemplate(scope))
 	subscriber += "\ttopic := fmt.Sprintf(\"%s" + scopeTitle + "%s%s\", prefix, delimiter, op)\n"
-	if !durable {
-		subscriber += "\ttransport, protocolFactory := l.provider.NewSubscriber()\n"
-	} else {
-		subscriber += "\ttransport, protocolFactory := l.provider.NewSubscriber()\n"
-	}
+	subscriber += "\ttransport, protocolFactory := l.provider.NewSubscriber()\n"
 	subscriber += fmt.Sprintf("\tcb := l.recv%s(op, protocolFactory, handler)\n", op.Name)
 	subscriber += "\tif err := transport.Subscribe(topic, cb); err != nil {\n"
 	subscriber += "\t\treturn nil, err\n"
@@ -1508,19 +1460,10 @@ func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Oper
 	subscriber += "\treturn sub, nil\n"
 	subscriber += "}\n\n"
 
-	if !durable {
-		subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, %s)) frugal.FAsyncCallback {\n",
-			scopeLower, op.Name, g.getGoTypeFromThriftType(op.Type))
-	} else {
-		subscriber += fmt.Sprintf("func (l *%sDurableSubscriber) recv%s(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, *string, %s) error) frugal.FDurableAsyncCallback {\n",
-			scopeLower, op.Name, g.getGoTypeFromThriftType(op.Type))
-	}
+	subscriber += fmt.Sprintf("func (l *%sSubscriber) recv%s(op string, pf *frugal.FProtocolFactory, handler func(frugal.FContext, %s) error) frugal.FAsyncCallback {\n",
+		scopeLower, op.Name, g.getGoTypeFromThriftType(op.Type))
 	subscriber += fmt.Sprintf("\tmethod := frugal.NewMethod(l, handler, \"Subscribe%s\", l.middleware)\n", op.Name)
-	if !durable {
-		subscriber += "\treturn func(transport thrift.TTransport) error {\n"
-	} else {
-		subscriber += "\treturn func(transport thrift.TTransport, groupID *string) error {\n"
-	}
+	subscriber += "\treturn func(transport thrift.TTransport) error {\n"
 	subscriber += "\t\tiprot := pf.GetProtocol(transport)\n"
 	subscriber += "\t\tctx, err := iprot.ReadRequestHeader()\n"
 	subscriber += "\t\tif err != nil {\n"
@@ -1537,12 +1480,7 @@ func (g *Generator) generateSubscribeMethod(scope *parser.Scope, op *parser.Oper
 	subscriber += "\t\t}\n"
 	subscriber += g.generateReadFieldRec(parser.FieldFromType(op.Type, "req"), false)
 	subscriber += "\t\tiprot.ReadMessageEnd()\n\n"
-	if !durable {
-		subscriber += "\t\tmethod.Invoke([]interface{}{ctx, req})\n"
-		subscriber += "\t\treturn nil\n"
-	} else {
-		subscriber += "\t\treturn method.Invoke([]interface{}{ctx, groupID, req}).Error()\n"
-	}
+	subscriber += "\t\treturn method.Invoke([]interface{}{ctx, req}).Error()\n"
 	subscriber += "\t}\n"
 	subscriber += "}"
 
@@ -2053,11 +1991,8 @@ func (g *Generator) generateClientArgs(method *parser.Method) string {
 	return args
 }
 
-func (g *Generator) generateScopeArgs(scope *parser.Scope, durable bool) string {
+func (g *Generator) generateScopeArgs(scope *parser.Scope) string {
 	args := "[]interface{}{ctx"
-	if durable {
-		args += ", groupID"
-	}
 	for _, v := range scope.Prefix.Variables {
 		args += ", " + v
 	}
