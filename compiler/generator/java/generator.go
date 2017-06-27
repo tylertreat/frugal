@@ -2118,6 +2118,7 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 	case generator.SubscribeFile:
 		return g.CreateFile(strings.Title(name)+"Subscriber", outputDir, lang, false)
 
+	// TODO: remove durable files
 	case generator.DurablePublishFile:
 		return g.CreateFile(strings.Title(name)+"DurablePublisher", outputDir, lang, false)
 	case generator.DurableSubscribeFile:
@@ -2249,11 +2250,8 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 	imports += "import com.workiva.frugal.middleware.InvocationHandler;\n"
 	imports += "import com.workiva.frugal.middleware.ServiceMiddleware;\n"
 	imports += "import com.workiva.frugal.protocol.*;\n"
-	imports += "import com.workiva.frugal.provider.FDurableScopeProvider;\n"
 	imports += "import com.workiva.frugal.provider.FScopeProvider;\n"
-	imports += "import com.workiva.frugal.transport.FDurablePublisherTransport;\n"
 	imports += "import com.workiva.frugal.transport.FPublisherTransport;\n"
-	imports += "import com.workiva.frugal.transport.FDurableSubscriberTransport;\n"
 	imports += "import com.workiva.frugal.transport.FSubscriberTransport;\n"
 	imports += "import com.workiva.frugal.transport.FSubscription;\n"
 	imports += "import com.workiva.frugal.transport.TMemoryOutputBuffer;\n"
@@ -2288,14 +2286,15 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 }
 
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
-	return g.generatePublisher(file, scope, false)
+	return g.generatePublisher(file, scope)
 }
 
 func (g *Generator) GenerateDurablePublisher(file *os.File, scope *parser.Scope) error {
-	return g.generatePublisher(file, scope, true)
+	//TODO: remove
+	return nil
 }
 
-func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope, durable bool) error {
+func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope) error {
 	scopeTitle := strings.Title(scope.Name)
 	publisher := ""
 
@@ -2303,15 +2302,10 @@ func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope, durabl
 		publisher += g.generatedAnnotation()
 	}
 
-	durableArg := ""
-	if durable {
-		durableArg = "Durable"
-	}
+	publisher += fmt.Sprintf("public class %sPublisher {\n\n", scopeTitle)
 
-	publisher += fmt.Sprintf("public class %s%sPublisher {\n\n", scopeTitle, durableArg)
-
-	publisher += g.generatePublisherIface(scope, durable)
-	publisher += g.generatePublisherClient(scope, durable)
+	publisher += g.generatePublisherIface(scope)
+	publisher += g.generatePublisherClient(scope)
 
 	publisher += "}"
 
@@ -2319,7 +2313,7 @@ func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope, durabl
 	return err
 }
 
-func (g *Generator) generatePublisherIface(scope *parser.Scope, durable bool) string {
+func (g *Generator) generatePublisherIface(scope *parser.Scope) string {
 	contents := ""
 
 	if scope.Comment != nil {
@@ -2332,23 +2326,18 @@ func (g *Generator) generatePublisherIface(scope *parser.Scope, durable bool) st
 
 	args := g.generateScopePrefixArgs(scope)
 
-	groupIDParam := ""
-	if durable {
-		groupIDParam = "String groupId, "
-	}
-
 	for _, op := range scope.Operations {
 		if op.Comment != nil {
 			contents += g.GenerateBlockComment(op.Comment, tabtab)
 		}
-		contents += fmt.Sprintf(tabtab+"public void publish%s(FContext ctx, %s%s%s req) throws TException;\n\n", op.Name, groupIDParam, args, g.getJavaTypeFromThriftType(op.Type))
+		contents += fmt.Sprintf(tabtab+"public void publish%s(FContext ctx, %s%s req) throws TException;\n\n", op.Name, args, g.getJavaTypeFromThriftType(op.Type))
 	}
 
 	contents += tab + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generatePublisherClient(scope *parser.Scope, durable bool) string {
+func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 	publisher := ""
 
 	scopeTitle := strings.Title(scope.Name)
@@ -2362,9 +2351,6 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope, durable bool) s
 	publisher += tabtab + "private final Iface proxy;\n\n"
 
 	provider := "FScopeProvider"
-	if durable {
-		provider = "FDurableScopeProvider"
-	}
 	publisher += tabtab + fmt.Sprintf("public Client(%s provider, ServiceMiddleware... middleware) {\n", provider)
 	publisher += fmt.Sprintf(tabtabtab+"target = new Internal%sPublisher(provider);\n", scopeTitle)
 	publisher += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
@@ -2383,26 +2369,18 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope, durable bool) s
 
 	args := g.generateScopePrefixArgs(scope)
 
-	groupIDParam := ""
-	if durable {
-		groupIDParam = "String groupId, "
-	}
-
 	for _, op := range scope.Operations {
 		if op.Comment != nil {
 			publisher += g.GenerateBlockComment(op.Comment, tabtab)
 		}
-		publisher += fmt.Sprintf(tabtab+"public void publish%s(FContext ctx, %s%s%s req) throws TException {\n", op.Name, groupIDParam, args, g.getJavaTypeFromThriftType(op.Type))
-		publisher += fmt.Sprintf(tabtabtab+"proxy.publish%s(%s);\n", op.Name, g.generateScopeArgs(scope, durable))
+		publisher += fmt.Sprintf(tabtab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.getJavaTypeFromThriftType(op.Type))
+		publisher += fmt.Sprintf(tabtabtab+"proxy.publish%s(%s);\n", op.Name, g.generateScopeArgs(scope))
 		publisher += tabtab + "}\n\n"
 	}
 
 	publisher += fmt.Sprintf(tabtab+"protected static class Internal%sPublisher implements Iface {\n\n", scopeTitle)
 
 	transport := "FPublisherTransport"
-	if durable {
-		transport = "FDurablePublisherTransport"
-	}
 	publisher += tabtabtab + fmt.Sprintf("private %s provider;\n", provider)
 	publisher += tabtabtab + fmt.Sprintf("private %s transport;\n", transport)
 
@@ -2434,13 +2412,7 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope, durable bool) s
 			publisher += g.GenerateBlockComment(op.Comment, tabtabtab)
 		}
 
-		var groupIDParam, groupID string
-		if durable {
-			groupIDParam = "String groupId, "
-			groupID = "groupId, "
-		}
-
-		publisher += fmt.Sprintf(tabtabtab+"public void publish%s(FContext ctx, %s%s%s req) throws TException {\n", op.Name, groupIDParam, args, g.getJavaTypeFromThriftType(op.Type))
+		publisher += fmt.Sprintf(tabtabtab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.getJavaTypeFromThriftType(op.Type))
 
 		// Inject the prefix variables into the FContext to send
 		for _, prefixVar := range scope.Prefix.Variables {
@@ -2456,7 +2428,7 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope, durable bool) s
 		publisher += tabtabtabtab + "oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));\n"
 		publisher += g.generateWriteFieldRec(parser.FieldFromType(op.Type, "req"), false, false, tabtabtabtab)
 		publisher += tabtabtabtab + "oprot.writeMessageEnd();\n"
-		publisher += tabtabtabtab + fmt.Sprintf("transport.publish(topic, %smemoryBuffer.getWriteBytes());\n", groupID)
+		publisher += tabtabtabtab + fmt.Sprint("transport.publish(topic, memoryBuffer.getWriteBytes());\n")
 		publisher += tabtabtab + "}\n"
 	}
 
@@ -2486,30 +2458,26 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 }
 
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
-	return g.generateSubscriber(file, scope, false)
+	return g.generateSubscriber(file, scope)
 }
 
 func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
-	return g.generateSubscriber(file, scope, true)
+	//TODO: remove
+	return nil
 }
 
-func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope, durable bool) error {
+func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope) error {
 	subscriber := ""
 	scopeName := strings.Title(scope.Name)
 	if g.includeGeneratedAnnotation() {
 		subscriber += g.generatedAnnotation()
 	}
 
-	durableArg := ""
-	if durable {
-		durableArg = "Durable"
-	}
-
-	subscriber += fmt.Sprintf("public class %s%sSubscriber {\n\n", scopeName, durableArg)
+	subscriber += fmt.Sprintf("public class %sSubscriber {\n\n", scopeName)
 
 	subscriber += g.generateSubscriberIface(scope)
-	subscriber += g.generateHandlerIfaces(scope, durable)
-	subscriber += g.generateSubscriberClient(scope, durable)
+	subscriber += g.generateHandlerIfaces(scope)
+	subscriber += g.generateSubscriberClient(scope)
 
 	subscriber += "\n}"
 
@@ -2539,26 +2507,19 @@ func (g *Generator) generateSubscriberIface(scope *parser.Scope) string {
 	return contents
 }
 
-func (g *Generator) generateHandlerIfaces(scope *parser.Scope, durable bool) string {
+func (g *Generator) generateHandlerIfaces(scope *parser.Scope) string {
 	contents := ""
-
-	groupID := ""
-	throwsClause := ""
-	if durable {
-		groupID = "String groupId, "
-		throwsClause = " throws TException"
-	}
 
 	for _, op := range scope.Operations {
 		contents += fmt.Sprintf(tab+"public interface %sHandler {\n", op.Name)
-		contents += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s%s req)%s;\n", op.Name, groupID, g.getJavaTypeFromThriftType(op.Type), throwsClause)
+		contents += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s req) throws TException;\n", op.Name, g.getJavaTypeFromThriftType(op.Type))
 		contents += tab + "}\n\n"
 	}
 
 	return contents
 }
 
-func (g *Generator) generateSubscriberClient(scope *parser.Scope, durable bool) string {
+func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 	subscriber := ""
 
 	prefix := ""
@@ -2573,10 +2534,6 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope, durable bool) 
 	subscriber += tabtab + "private static final Logger LOGGER = LoggerFactory.getLogger(Client.class);\n\n"
 
 	provider := "FScopeProvider"
-	if durable {
-		provider = "FDurableScopeProvider"
-	}
-
 	subscriber += tabtab + fmt.Sprintf("private final %s provider;\n", provider)
 	subscriber += tabtab + "private final ServiceMiddleware[] middleware;\n\n"
 
@@ -2600,9 +2557,6 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope, durable bool) 
 		subscriber += tabtabtab + fmt.Sprintf("final %s.Subscriber subscriber = provider.buildSubscriber();\n", provider)
 
 		transport := "FSubscriberTransport"
-		if durable {
-			transport = "FDurableSubscriberTransport"
-		}
 		subscriber += tabtabtab + fmt.Sprintf("final %s transport = subscriber.getTransport();\n", transport)
 		subscriber += tabtabtab + fmt.Sprintf(
 			"final %sHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, %sHandler.class, middleware);\n",
@@ -2613,18 +2567,10 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope, durable bool) 
 		subscriber += tabtab + "}\n\n"
 
 		callback := "FAsyncCallback"
-		if durable {
-			callback = "FDurableAsyncCallback"
-		}
 		subscriber += tabtab + fmt.Sprintf("private %s recv%s(String op, FProtocolFactory pf, %sHandler handler) {\n", callback, op.Name, op.Name)
 		subscriber += tabtabtab + fmt.Sprintf("return new %s() {\n", callback)
 
-		var groupID, groupIDParam string
-		if durable {
-			groupIDParam = ", String groupId"
-			groupID = "groupId, "
-		}
-		subscriber += tabtabtabtab + fmt.Sprintf("public void onMessage(TTransport tr%s) throws TException {\n", groupIDParam)
+		subscriber += tabtabtabtab + fmt.Sprint("public void onMessage(TTransport tr) throws TException {\n")
 		subscriber += tabtabtabtabtab + "FProtocol iprot = pf.getProtocol(tr);\n"
 		subscriber += tabtabtabtabtab + "FContext ctx = iprot.readRequestHeader();\n"
 		subscriber += tabtabtabtabtab + "TMessage msg = iprot.readMessageBegin();\n"
@@ -2636,7 +2582,7 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope, durable bool) 
 		subscriber += g.generateReadFieldRec(parser.FieldFromType(op.Type, "received"), false, false, false, tabtabtabtabtab)
 		subscriber += tabtabtabtabtab + "iprot.readMessageEnd();\n"
 
-		subscriber += tabtabtabtabtab + fmt.Sprintf("handler.on%s(ctx, %sreceived);\n", op.Name, groupID)
+		subscriber += tabtabtabtabtab + fmt.Sprintf("handler.on%s(ctx, received);\n", op.Name)
 		subscriber += tabtabtabtab + "}\n"
 		subscriber += tabtabtab + "};\n"
 		subscriber += tabtab + "}\n\n"
@@ -3095,11 +3041,8 @@ func (g *Generator) generateServer(service *parser.Service) string {
 	return contents
 }
 
-func (g *Generator) generateScopeArgs(scope *parser.Scope, durable bool) string {
+func (g *Generator) generateScopeArgs(scope *parser.Scope) string {
 	args := "ctx"
-	if durable {
-		args += ", groupId"
-	}
 	for _, v := range scope.Prefix.Variables {
 		args += ", " + v
 	}

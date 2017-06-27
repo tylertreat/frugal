@@ -12,11 +12,8 @@ import com.workiva.frugal.exception.TApplicationExceptionType;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.*;
-import com.workiva.frugal.provider.FDurableScopeProvider;
 import com.workiva.frugal.provider.FScopeProvider;
-import com.workiva.frugal.transport.FDurablePublisherTransport;
 import com.workiva.frugal.transport.FPublisherTransport;
-import com.workiva.frugal.transport.FDurableSubscriberTransport;
 import com.workiva.frugal.transport.FSubscriberTransport;
 import com.workiva.frugal.transport.FSubscription;
 import com.workiva.frugal.transport.TMemoryOutputBuffer;
@@ -68,19 +65,19 @@ public class EventsSubscriber {
 	}
 
 	public interface EventCreatedHandler {
-		void onEventCreated(FContext ctx, Event req);
+		void onEventCreated(FContext ctx, Event req) throws TException;
 	}
 
 	public interface SomeIntHandler {
-		void onSomeInt(FContext ctx, long req);
+		void onSomeInt(FContext ctx, long req) throws TException;
 	}
 
 	public interface SomeStrHandler {
-		void onSomeStr(FContext ctx, String req);
+		void onSomeStr(FContext ctx, String req) throws TException;
 	}
 
 	public interface SomeListHandler {
-		void onSomeList(FContext ctx, java.util.List<java.util.Map<Long, Event>> req);
+		void onSomeList(FContext ctx, java.util.List<java.util.Map<Long, Event>> req) throws TException;
 	}
 
 	/**

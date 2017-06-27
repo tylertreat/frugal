@@ -12,11 +12,8 @@ import com.workiva.frugal.exception.TApplicationExceptionType;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.*;
-import com.workiva.frugal.provider.FDurableScopeProvider;
 import com.workiva.frugal.provider.FScopeProvider;
-import com.workiva.frugal.transport.FDurablePublisherTransport;
 import com.workiva.frugal.transport.FPublisherTransport;
-import com.workiva.frugal.transport.FDurableSubscriberTransport;
 import com.workiva.frugal.transport.FSubscriberTransport;
 import com.workiva.frugal.transport.FSubscription;
 import com.workiva.frugal.transport.TMemoryOutputBuffer;
@@ -63,15 +60,15 @@ public class AlbumWinnersSubscriber {
 	}
 
 	public interface ContestStartHandler {
-		void onContestStart(FContext ctx, java.util.List<Album> req);
+		void onContestStart(FContext ctx, java.util.List<Album> req) throws TException;
 	}
 
 	public interface TimeLeftHandler {
-		void onTimeLeft(FContext ctx, double req);
+		void onTimeLeft(FContext ctx, double req) throws TException;
 	}
 
 	public interface WinnerHandler {
-		void onWinner(FContext ctx, Album req);
+		void onWinner(FContext ctx, Album req) throws TException;
 	}
 
 	/**
