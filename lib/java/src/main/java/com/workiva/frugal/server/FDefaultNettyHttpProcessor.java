@@ -235,6 +235,8 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
 
     /**
      * Add a custom header to the returned response.
+     * NOTE: Once an HTTP handler is created with this processor,
+     * this should not be called.
      *
      * @param key   Header name
      * @param value Header value
@@ -245,6 +247,8 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
 
     /**
      * Add a map of custom headers to the returned response.
+     * NOTE: Once an HTTP handler is created with this processor,
+     * this should not be called.
      *
      * @param headers Map of header name, header value pairs.
      */

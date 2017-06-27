@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+const (
+	// Default timeout in seconds for client/server configurations without a defined timeout
+	DefaultTimeout     = 7
+	TestFailure        = 101
+	CrossrunnerFailure = 102
+)
+
 // client/server level options defined in tests.json
 // this is useful if there is option supported by a client but not a server within a language.
 type options struct {
@@ -28,7 +35,7 @@ type languages struct { // Example
 }
 
 //  Complete information required to shell out a client or server command.
-type config struct {
+type Config struct {
 	Name      string
 	Timeout   time.Duration
 	Transport string
@@ -40,13 +47,13 @@ type config struct {
 
 // Matched client and server commands.
 type Pair struct {
-	Client     config
-	Server     config
+	Client     Config
+	Server     Config
 	ReturnCode int
 	Err        error
 }
 
-func newPair(client, server config) *Pair {
+func newPair(client, server Config) *Pair {
 	return &Pair{
 		Client: client,
 		Server: server,
@@ -69,8 +76,8 @@ func Load(jsonFile string) (pairs []*Pair, err error) {
 	}
 
 	// Create empty lists of client and server configurations
-	var clients []config
-	var servers []config
+	var clients []Config
+	var servers []Config
 
 	// Iterate over each language to get all client/server configurations in that language
 	for _, test := range tests {
@@ -81,7 +88,7 @@ func Load(jsonFile string) (pairs []*Pair, err error) {
 		test.Client.Protocols = append(test.Client.Protocols, test.Protocols...)
 		test.Server.Protocols = append(test.Server.Protocols, test.Protocols...)
 
-		// Get expanded list of clients/servers, using both language and config level options
+		// Get expanded list of clients/servers, using both language and Config level options
 		clients = append(clients, getExpandedConfigs(test.Client, test)...)
 		servers = append(servers, getExpandedConfigs(test.Server, test)...)
 	}
@@ -98,4 +105,27 @@ func Load(jsonFile string) (pairs []*Pair, err error) {
 	}
 
 	return pairs, nil
+}
+
+// getExpandedConfigs takes a client/server at the language level and the options
+// associated with that client/server and returns a list of unique configs.
+func getExpandedConfigs(options options, test languages) (apps []Config) {
+	app := new(Config)
+
+	// Loop through each transport and protocol to construct expanded list
+	for _, transport := range options.Transports {
+		for _, protocol := range options.Protocols {
+			app.Name = test.Name
+			app.Protocol = protocol
+			app.Transport = transport
+			app.Command = append(test.Command, options.Command...)
+			app.Workdir = test.Workdir
+			app.Timeout = DefaultTimeout * time.Second
+			if options.Timeout != 0 {
+				app.Timeout = options.Timeout
+			}
+			apps = append(apps, *app)
+		}
+	}
+	return apps
 }

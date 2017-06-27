@@ -19,10 +19,15 @@ func TestHTML(t *testing.T) {
 		t.Fatal("Unexpected error", err)
 	}
 
-	compareFiles(t, "expected/html/style.css", filepath.Join(outputDir, "style.css"))
-	compareFiles(t, "expected/html/index.html", filepath.Join(outputDir, "index.html"))
-	compareFiles(t, "expected/html/base.html", filepath.Join(outputDir, "base.html"))
-	compareFiles(t, "expected/html/variety.html", filepath.Join(outputDir, "variety.html"))
+	files := []FileComparisonPair{
+		{"expected/html/style.css", filepath.Join(outputDir, "style.css")},
+		{"expected/html/index.html", filepath.Join(outputDir, "index.html")},
+		{"expected/html/base.html", filepath.Join(outputDir, "base.html")},
+		{"expected/html/variety.html", filepath.Join(outputDir, "variety.html")},
+	}
+
+	copyAllFiles(t, files)
+	compareAllFiles(t, files)
 }
 
 func TestHTMLStandalone(t *testing.T) {
@@ -37,7 +42,12 @@ func TestHTMLStandalone(t *testing.T) {
 		t.Fatal("Unexpected error", err)
 	}
 
-	compareFiles(t, "expected/html/standalone/index.html", filepath.Join(outputDir, "index.html"))
-	compareFiles(t, "expected/html/standalone/base.html", filepath.Join(outputDir, "base.html"))
-	compareFiles(t, "expected/html/standalone/variety.html", filepath.Join(outputDir, "variety.html"))
+	files := []FileComparisonPair{
+		{"expected/html/standalone/index.html", filepath.Join(outputDir, "index.html")},
+		{"expected/html/standalone/base.html", filepath.Join(outputDir, "base.html")},
+		{"expected/html/standalone/variety.html", filepath.Join(outputDir, "variety.html")},
+	}
+
+	copyAllFiles(t, files)
+	compareAllFiles(t, files)
 }
