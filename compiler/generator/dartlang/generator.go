@@ -195,7 +195,7 @@ func (g *Generator) addToPubspec(dir string) error {
 		}
 	}
 
-	includesSet := make(map[string]bool)	// include.Name ---> include.Annotations.Vendor()
+	includesSet := make(map[string]bool) // include.Name ---> include.Annotations.Vendor()
 
 	scopeIncludes, err := g.Frugal.ReferencedScopeIncludes()
 	if err != nil {
@@ -229,7 +229,7 @@ func (g *Generator) addToPubspec(dir string) error {
 		if g.useVendor() && includesSet[include] {
 			vendorPath, _ := namespace.Annotations.Vendor()
 			deps[toLibraryName(vendorPath)] = dep{
-				Hosted: hostedDep{Name: toLibraryName(vendorPath), URL: "https://pub.workiva.org"},
+				Hosted:  hostedDep{Name: toLibraryName(vendorPath), URL: "https://pub.workiva.org"},
 				Version: "any",
 			}
 		} else {
