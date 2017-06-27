@@ -1254,11 +1254,6 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 	return err
 }
 
-func (g *Generator) GenerateDurablePublisher(file *os.File, scope *parser.Scope) error {
-	// TODO remove this
-	return nil
-}
-
 // GeneratePublisher generates the publisher for the given scope.
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
 	publishers := ""
@@ -1354,11 +1349,6 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 	}
 	template = fmt.Sprintf(template, vars...)
 	return template
-}
-
-func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
-	// TODO remove this
-	return nil
 }
 
 // GenerateSubscriber generates the subscriber for the given scope.

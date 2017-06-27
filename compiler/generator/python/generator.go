@@ -689,11 +689,6 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 		return g.CreateFile(fmt.Sprintf("f_%s", name), outputDir, lang, false)
 	case generator.ObjectFile:
 		return g.CreateFile(fmt.Sprintf("%s", name), outputDir, lang, false)
-	// TODO remove these
-	case generator.DurablePublishFile:
-		return g.CreateFile(fmt.Sprintf("f_%s_durable_publisher", name), outputDir, lang, false)
-	case generator.DurableSubscribeFile:
-		return g.CreateFile(fmt.Sprintf("f_%s_durable_subscriber", name), outputDir, lang, false)
 	default:
 		return nil, fmt.Errorf("Bad file type for Python generator: %s", fileType)
 	}
@@ -815,11 +810,6 @@ func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
 
 // GenerateConstants generates any static constants.
 func (g *Generator) GenerateConstants(file *os.File, name string) error {
-	return nil
-}
-
-func (g *Generator) GenerateDurablePublisher(file *os.File, scope *parser.Scope) error {
-	// TODO remove this
 	return nil
 }
 
@@ -986,11 +976,6 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 	}
 	template += ")"
 	return template
-}
-
-func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
-	// TODO remove this
-	return nil
 }
 
 // GenerateSubscriber generates the subscriber for the given scope.

@@ -1195,11 +1195,6 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	return g.generatePublisher(file, scope)
 }
 
-func (g *Generator) GenerateDurablePublisher(file *os.File, scope *parser.Scope) error {
-	// TODO remove
-	return nil
-}
-
 func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope) error {
 	var (
 		scopeLower = parser.LowercaseFirstLetter(scope.Name)
@@ -1355,11 +1350,6 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 // GenerateSubscriber generates the subscriber for the given scope.
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	return g.generateSubscriber(file, scope)
-}
-
-func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
-	// TODO remove
-	return nil
 }
 
 func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope) error {
