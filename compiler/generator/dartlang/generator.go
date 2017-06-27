@@ -184,7 +184,7 @@ func (g *Generator) addToPubspec(dir string) error {
 		"logging": "^0.11.2",
 		"thrift": dep{
 			Hosted:  hostedDep{Name: "thrift", URL: "https://pub.workiva.org"},
-			Version: "^0.0.6",
+			Version: "^0.0.7",
 		},
 	}
 
@@ -465,12 +465,9 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 	} else if g.Frugal.IsEnum(underlyingType) {
 		return fmt.Sprintf("%d", value)
 	} else if g.Frugal.IsStruct(underlyingType) {
-		var s *parser.Struct
-		for _, potential := range g.Frugal.Structs {
-			if underlyingType.Name == potential.Name {
-				s = potential
-				break
-			}
+		s := g.Frugal.FindStruct(underlyingType)
+		if s == nil {
+			panic("no struct for type " + underlyingType.Name)
 		}
 
 		contents := ""
@@ -478,7 +475,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 		dartType := g.getDartTypeFromThriftType(parser.TypeFromStruct(s))
 		contents += fmt.Sprintf("new %s()", dartType)
 		for _, pair := range value.([]parser.KeyValue) {
-			name := pair.Key.(string)
+			name := pair.KeyToString()
 			for _, field := range s.Fields {
 				if name == field.Name {
 					val := g.generateConstantValue(field.Type, pair.Value, ind+tab)

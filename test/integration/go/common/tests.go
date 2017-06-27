@@ -177,6 +177,7 @@ func CallEverything(client *frugaltest.FFrugalTestClient) {
 		log.Fatalf("Unexpected TestSet() result expected %#v, got %#v ", l, lret)
 	}
 
+	// Note: No enum type check. Go is statically typed
 	ctx = frugal.NewFContext("TestEnum")
 	eret, err := client.TestEnum(ctx, frugaltest.Numberz_TWO)
 	if err != nil {

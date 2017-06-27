@@ -344,6 +344,7 @@ public class TestClient {
 
             /**
              * ENUM TEST
+             * Note: No enum type check. Java is statically typed
              */
             context = new FContext("testEnum");
             Numberz ret = testClient.testEnum(context, Numberz.ONE);

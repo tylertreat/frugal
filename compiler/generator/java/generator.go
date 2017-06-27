@@ -142,12 +142,9 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 		_, val := g.generateConstantValueRec(t, value)
 		return fmt.Sprintf("%s%s = %s;\n", contents, fieldName, val)
 	} else if g.Frugal.IsStruct(underlyingType) {
-		var s *parser.Struct
-		for _, potential := range g.Frugal.Structs {
-			if underlyingType.Name == potential.Name {
-				s = potential
-				break
-			}
+		s := g.Frugal.FindStruct(underlyingType)
+		if s == nil {
+			panic("no struct for type " + underlyingType.Name)
 		}
 
 		contents += fmt.Sprintf("%s = new %s();\n", fieldName, g.getJavaTypeFromThriftType(underlyingType))
@@ -159,7 +156,7 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 		}
 
 		for _, pair := range value.([]parser.KeyValue) {
-			name := pair.Key.(string)
+			name := pair.KeyToString()
 			for _, field := range s.Fields {
 				if name == field.Name {
 					preamble, val := g.generateConstantValueRec(field.Type, pair.Value)
