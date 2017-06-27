@@ -2117,12 +2117,6 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 		return g.CreateFile(strings.Title(name)+"Publisher", outputDir, lang, false)
 	case generator.SubscribeFile:
 		return g.CreateFile(strings.Title(name)+"Subscriber", outputDir, lang, false)
-
-	// TODO: remove durable files
-	case generator.DurablePublishFile:
-		return g.CreateFile(strings.Title(name)+"DurablePublisher", outputDir, lang, false)
-	case generator.DurableSubscribeFile:
-		return g.CreateFile(strings.Title(name)+"DurableSubscriber", outputDir, lang, false)
 	case generator.CombinedServiceFile:
 		return g.CreateFile("F"+name, outputDir, lang, false)
 	case generator.ObjectFile:
@@ -2287,11 +2281,6 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
 	return g.generatePublisher(file, scope)
-}
-
-func (g *Generator) GenerateDurablePublisher(file *os.File, scope *parser.Scope) error {
-	//TODO: remove
-	return nil
 }
 
 func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope) error {
@@ -2459,11 +2448,6 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	return g.generateSubscriber(file, scope)
-}
-
-func (g *Generator) GenerateDurableSubscriber(file *os.File, scope *parser.Scope) error {
-	//TODO: remove
-	return nil
 }
 
 func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope) error {

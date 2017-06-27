@@ -17,8 +17,6 @@ type FileType string
 const (
 	CombinedServiceFile  FileType = "combined_service"
 	CombinedScopeFile    FileType = "combined_scope"
-	DurablePublishFile   FileType = "durable_publish"
-	DurableSubscribeFile FileType = "durable_subscribe"
 	PublishFile          FileType = "publish"
 	SubscribeFile        FileType = "subscribe"
 
@@ -125,9 +123,6 @@ type LanguageGenerator interface {
 	GenerateScopeImports(*os.File, *parser.Scope) error
 	GeneratePublisher(*os.File, *parser.Scope) error
 	GenerateSubscriber(*os.File, *parser.Scope) error
-	// TODO remove
-	GenerateDurablePublisher(*os.File, *parser.Scope) error
-	GenerateDurableSubscriber(*os.File, *parser.Scope) error
 }
 
 // GetPackageComponents returns the package string split on dots.
@@ -203,12 +198,6 @@ func (o *programGenerator) Generate(frugal *parser.Frugal, outputDir string) err
 				return err
 			}
 			if err := o.generateScopeFile(scope, outputDir, SubscribeFile); err != nil {
-				return err
-			}
-			if err := o.generateScopeFile(scope, outputDir, DurablePublishFile); err != nil {
-				return err
-			}
-			if err := o.generateScopeFile(scope, outputDir, DurableSubscribeFile); err != nil {
 				return err
 			}
 		} else {
@@ -312,31 +301,6 @@ func (o *programGenerator) generateScopeFile(scope *parser.Scope, outputDir stri
 
 	if fileType == CombinedScopeFile || fileType == SubscribeFile {
 		if err := o.GenerateSubscriber(file, scope); err != nil {
-			return err
-		}
-	}
-
-	if fileType == CombinedScopeFile {
-		if err := o.GenerateNewline(file, 2); err != nil {
-			return err
-		}
-	}
-
-	// TODO remove
-	if fileType == CombinedScopeFile || fileType == DurablePublishFile {
-		if err := o.GenerateDurablePublisher(file, scope); err != nil {
-			return err
-		}
-	}
-
-	if fileType == CombinedScopeFile {
-		if err := o.GenerateNewline(file, 2); err != nil {
-			return err
-		}
-	}
-
-	if fileType == CombinedScopeFile || fileType == DurableSubscribeFile {
-		if err := o.GenerateDurableSubscriber(file, scope); err != nil {
 			return err
 		}
 	}
