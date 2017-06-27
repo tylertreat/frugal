@@ -2428,7 +2428,7 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 		publisher += tabtabtabtab + "oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));\n"
 		publisher += g.generateWriteFieldRec(parser.FieldFromType(op.Type, "req"), false, false, tabtabtabtab)
 		publisher += tabtabtabtab + "oprot.writeMessageEnd();\n"
-		publisher += tabtabtabtab + fmt.Sprint("transport.publish(topic, memoryBuffer.getWriteBytes());\n")
+		publisher += tabtabtabtab + "transport.publish(topic, memoryBuffer.getWriteBytes());\n"
 		publisher += tabtabtab + "}\n"
 	}
 
@@ -2609,7 +2609,7 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 
 			subscriber += tabtabtab + fmt.Sprintf("return new %s() {\n", callback)
 
-			subscriber += tabtabtabtab + fmt.Sprint("public void onMessage(TTransport tr) throws TException {\n")
+			subscriber += tabtabtabtab + "public void onMessage(TTransport tr) throws TException {\n"
 			subscriber += tabtabtabtabtab + "FProtocol iprot = pf.getProtocol(tr);\n"
 			subscriber += tabtabtabtabtab + "FContext ctx = iprot.readRequestHeader();\n"
 			subscriber += tabtabtabtabtab + "TMessage msg = iprot.readMessageBegin();\n"
