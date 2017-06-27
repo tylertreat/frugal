@@ -28,34 +28,6 @@ class FScopeProvider {
   List<Middleware> get middleware => new List.from(this._middleware);
 }
 
-/// Produces [FDurablePublisherTransport], [FDurableSubscriberTransport] and
-/// [FProtocol] instances for use by pub/sub scopes. It does this by wrapping an
-/// [FDurablePublisherTransportFactory], an
-/// [FDurableSubscriberTransportFactory], and an [FProtocolFactory]. This also
-/// provides a shim for adding middleware to a publisher or subscriber.
-class FDurableScopeProvider {
-  /// [FDurablePublisherTransport] used by the scope.
-  final FDurablePublisherTransportFactory publisherTransportFactory;
-
-  /// [FDurableSubscriberTransport] used by the scope.
-  final FDurableSubscriberTransportFactory subscriberTransportFactory;
-
-  /// [FProtocolFactory] used by the scope.
-  final FProtocolFactory protocolFactory;
-
-  /// [Middleware] applied to publishers and subscribers.
-  final List<Middleware> _middleware;
-
-  /// Creates a new [FScopeProvider].
-  FDurableScopeProvider(this.publisherTransportFactory,
-      this.subscriberTransportFactory, this.protocolFactory,
-      {List<Middleware> middleware: null})
-      : _middleware = middleware ?? [];
-
-  /// The middleware stored on this FDurableScopeProvider
-  List<Middleware> get middleware => new List.from(this._middleware);
-}
-
 /// The service equivalent of [FScopeProvider]. It produces [FTransport] and
 /// [FProtocol] instances for use by RPC service clients. The main purpose of
 /// this is to provide a shim for adding middleware to a client.

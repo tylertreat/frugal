@@ -165,6 +165,9 @@ type AlbumWinnersSubscriber interface {
 	SubscribeWinner(handler func(frugal.FContext, *Album)) (*frugal.FSubscription, error)
 }
 
+// Scopes are a Frugal extension to the IDL for declaring PubSub
+// semantics. Subscribers to this scope will be notified if they win a contest.
+// Scopes must have a prefix.
 type AlbumWinnersErrorableSubscriber interface {
 	SubscribeContestStartErrorable(handler func(frugal.FContext, []*Album) error) (*frugal.FSubscription, error)
 	SubscribeTimeLeftErrorable(handler func(frugal.FContext, Minutes) error) (*frugal.FSubscription, error)

@@ -25,27 +25,3 @@ abstract class FSubscriberTransportFactory {
   /// Return a new [FSubscriberTransport] instance.
   FSubscriberTransport getTransport();
 }
-
-/// An internal callback which is constructed by generated code and invoked when
-/// a durable pub/sub message is received. This function is passed an
-/// in-memory [TTransport] which wraps the complete message and the groupId
-/// of the message.
-typedef void FDurableAsyncCallback(TTransport transport, String groupId);
-
-/// Transport layer for durable scope subscribers.
-abstract class FDurableSubscriberTransport {
-  /// Queries whether the transport is subscribed to a topic.
-  bool get isSubscribed;
-
-  /// Sets the subscription topic and opens the transports.
-  Future<Null> subscribe(String topic, FDurableAsyncCallback callback);
-
-  /// Unsets the subscription topic and closes the transport.
-  Future<Null> unsubscribe();
-}
-
-/// Produces [FDurableSubscriberTransport] instances.
-abstract class FDurableSubscriberTransportFactory {
-  /// Returns a new [FDurableSubscriberTransport] instance.
-  FDurableSubscriberTransport getTransport();
-}

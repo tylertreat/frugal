@@ -12,11 +12,8 @@ import com.workiva.frugal.exception.TApplicationExceptionType;
 import com.workiva.frugal.middleware.InvocationHandler;
 import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.protocol.*;
-import com.workiva.frugal.provider.FDurableScopeProvider;
 import com.workiva.frugal.provider.FScopeProvider;
-import com.workiva.frugal.transport.FDurablePublisherTransport;
 import com.workiva.frugal.transport.FPublisherTransport;
-import com.workiva.frugal.transport.FDurableSubscriberTransport;
 import com.workiva.frugal.transport.FSubscriberTransport;
 import com.workiva.frugal.transport.FSubscription;
 import com.workiva.frugal.transport.TMemoryOutputBuffer;
@@ -62,16 +59,37 @@ public class AlbumWinnersSubscriber {
 
 	}
 
+	public interface IfaceThrowable {
+		public FSubscription subscribeContestStart(final ContestStartThrowableHandler handler) throws TException;
+
+		public FSubscription subscribeTimeLeft(final TimeLeftThrowableHandler handler) throws TException;
+
+		public FSubscription subscribeWinner(final WinnerThrowableHandler handler) throws TException;
+
+	}
+
 	public interface ContestStartHandler {
-		void onContestStart(FContext ctx, java.util.List<Album> req);
+		void onContestStart(FContext ctx, java.util.List<Album> req) throws TException;
 	}
 
 	public interface TimeLeftHandler {
-		void onTimeLeft(FContext ctx, double req);
+		void onTimeLeft(FContext ctx, double req) throws TException;
 	}
 
 	public interface WinnerHandler {
-		void onWinner(FContext ctx, Album req);
+		void onWinner(FContext ctx, Album req) throws TException;
+	}
+
+	public interface ContestStartThrowableHandler {
+		void onContestStart(FContext ctx, java.util.List<Album> req) throws TException;
+	}
+
+	public interface TimeLeftThrowableHandler {
+		void onTimeLeft(FContext ctx, double req) throws TException;
+	}
+
+	public interface WinnerThrowableHandler {
+		void onWinner(FContext ctx, Album req) throws TException;
 	}
 
 	/**
@@ -79,7 +97,7 @@ public class AlbumWinnersSubscriber {
 	 * semantics. Subscribers to this scope will be notified if they win a contest.
 	 * Scopes must have a prefix.
 	 */
-	public static class Client implements Iface {
+	public static class Client implements Iface, IfaceThrowable {
 		private static final String DELIMITER = ".";
 		private static final Logger LOGGER = LoggerFactory.getLogger(Client.class);
 
@@ -129,8 +147,6 @@ public class AlbumWinnersSubscriber {
 			};
 		}
 
-
-
 		public FSubscription subscribeTimeLeft(final TimeLeftHandler handler) throws TException {
 			final String op = "TimeLeft";
 			String prefix = "v1.music.";
@@ -159,8 +175,6 @@ public class AlbumWinnersSubscriber {
 				}
 			};
 		}
-
-
 
 		public FSubscription subscribeWinner(final WinnerHandler handler) throws TException {
 			final String op = "Winner";
@@ -192,6 +206,100 @@ public class AlbumWinnersSubscriber {
 			};
 		}
 
+		public FSubscription subscribeContestStart(final ContestStartThrowableHandler handler) throws TException {
+			final String op = "ContestStart";
+			String prefix = "v1.music.";
+			final String topic = String.format("%sAlbumWinners%s%s", prefix, DELIMITER, op);
+			final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();
+			final FSubscriberTransport transport = subscriber.getTransport();
+			final ContestStartThrowableHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, ContestStartThrowableHandler.class, middleware);
+			transport.subscribe(topic, recvContestStart(op, subscriber.getProtocolFactory(), proxiedHandler));
+			return FSubscription.of(topic, transport);
+		}
+
+		private FAsyncCallback recvContestStart(String op, FProtocolFactory pf, ContestStartThrowableHandler handler) {
+			return new FAsyncCallback() {
+				public void onMessage(TTransport tr) throws TException {
+					FProtocol iprot = pf.getProtocol(tr);
+					FContext ctx = iprot.readRequestHeader();
+					TMessage msg = iprot.readMessageBegin();
+					if (!msg.name.equals(op)) {
+						TProtocolUtil.skip(iprot, TType.STRUCT);
+						iprot.readMessageEnd();
+						throw new TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD);
+					}
+					org.apache.thrift.protocol.TList elem45 = iprot.readListBegin();
+					java.util.List<Album> received = new ArrayList<Album>(elem45.size);
+					for (int elem46 = 0; elem46 < elem45.size; ++elem46) {
+						Album elem47 = new Album();
+						elem47.read(iprot);
+						received.add(elem47);
+					}
+					iprot.readListEnd();
+					iprot.readMessageEnd();
+					handler.onContestStart(ctx, received);
+				}
+			};
+		}
+
+		public FSubscription subscribeTimeLeft(final TimeLeftThrowableHandler handler) throws TException {
+			final String op = "TimeLeft";
+			String prefix = "v1.music.";
+			final String topic = String.format("%sAlbumWinners%s%s", prefix, DELIMITER, op);
+			final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();
+			final FSubscriberTransport transport = subscriber.getTransport();
+			final TimeLeftThrowableHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, TimeLeftThrowableHandler.class, middleware);
+			transport.subscribe(topic, recvTimeLeft(op, subscriber.getProtocolFactory(), proxiedHandler));
+			return FSubscription.of(topic, transport);
+		}
+
+		private FAsyncCallback recvTimeLeft(String op, FProtocolFactory pf, TimeLeftThrowableHandler handler) {
+			return new FAsyncCallback() {
+				public void onMessage(TTransport tr) throws TException {
+					FProtocol iprot = pf.getProtocol(tr);
+					FContext ctx = iprot.readRequestHeader();
+					TMessage msg = iprot.readMessageBegin();
+					if (!msg.name.equals(op)) {
+						TProtocolUtil.skip(iprot, TType.STRUCT);
+						iprot.readMessageEnd();
+						throw new TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD);
+					}
+					double received = iprot.readDouble();
+					iprot.readMessageEnd();
+					handler.onTimeLeft(ctx, received);
+				}
+			};
+		}
+
+		public FSubscription subscribeWinner(final WinnerThrowableHandler handler) throws TException {
+			final String op = "Winner";
+			String prefix = "v1.music.";
+			final String topic = String.format("%sAlbumWinners%s%s", prefix, DELIMITER, op);
+			final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();
+			final FSubscriberTransport transport = subscriber.getTransport();
+			final WinnerThrowableHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, WinnerThrowableHandler.class, middleware);
+			transport.subscribe(topic, recvWinner(op, subscriber.getProtocolFactory(), proxiedHandler));
+			return FSubscription.of(topic, transport);
+		}
+
+		private FAsyncCallback recvWinner(String op, FProtocolFactory pf, WinnerThrowableHandler handler) {
+			return new FAsyncCallback() {
+				public void onMessage(TTransport tr) throws TException {
+					FProtocol iprot = pf.getProtocol(tr);
+					FContext ctx = iprot.readRequestHeader();
+					TMessage msg = iprot.readMessageBegin();
+					if (!msg.name.equals(op)) {
+						TProtocolUtil.skip(iprot, TType.STRUCT);
+						iprot.readMessageEnd();
+						throw new TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD);
+					}
+					Album received = new Album();
+					received.read(iprot);
+					iprot.readMessageEnd();
+					handler.onWinner(ctx, received);
+				}
+			};
+		}
 	}
 
 }
