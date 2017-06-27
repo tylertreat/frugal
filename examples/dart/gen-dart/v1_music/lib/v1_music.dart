@@ -10,4 +10,4 @@ export 'src/f_perf_rights_org.dart' show PerfRightsOrg;
 
 export 'src/f_store_service.dart' show FStore;
 export 'src/f_store_service.dart' show FStoreClient;
-export 'src/f_album_winners_scope.dart' show AlbumWinnersPublisher, AlbumWinnersSubscriber, AlbumWinnersDurablePublisher, AlbumWinnersDurableSubscriber;
+export 'src/f_album_winners_scope.dart' show AlbumWinnersPublisher, AlbumWinnersSubscriber;

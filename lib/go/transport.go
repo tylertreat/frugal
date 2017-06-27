@@ -56,61 +56,6 @@ type FSubscriberTransport interface {
 	IsSubscribed() bool
 }
 
-// FDurablePublisherTransportFactory produces FDurablePublisherTransports and is
-// typically used by an FDurableScopeProvider.
-type FDurablePublisherTransportFactory interface {
-	GetTransport() FDurablePublisherTransport
-}
-
-// FDurableSubscriberTransportFactory produces FDurableSubscriberTransports and
-// is typically used by an FDurableScopeProvider.
-type FDurableSubscriberTransportFactory interface {
-	GetTransport() FDurableSubscriberTransport
-}
-
-// FDurableAsyncCallback is an internal callback which is constructed by
-// generated code and invoked by an FDurableSubscriberTransport when a message
-// is received.
-type FDurableAsyncCallback func(thrift.TTransport, *string) error
-
-// FDurablePublisherTransport is used exclusively for pub/sub scopes. Publishers
-// use it to publish messages durably to a topic.
-type FDurablePublisherTransport interface {
-	// Open opens the transport.
-	Open() error
-
-	// Close closes the transport.
-	Close() error
-
-	// IsOpen returns true if the transport is open, false otherwise.
-	IsOpen() bool
-
-	// GetPublishSizeLimit returns the maximum allowable size of a payload
-	// to be published. A non-positive number is returned to indicate an
-	// unbounded allowable size.
-	GetPublishSizeLimit() uint
-
-	// Publish sends the given payload with the transport. Implementations
-	// of publish should be threadsafe. The parameter groupID allows you
-	// to assign arbitrary groupings to messages. A value of nil indicates
-	// the message isn't part of any group.
-	Publish(subejct string, groupID *string, payload []byte) error
-}
-
-// FDurableSubscriberTransport is used exclusively for pub/sub scopes.
-// Subscribers use it to durably subscribe to a pub/sub topic.
-type FDurableSubscriberTransport interface {
-	// Subscribe opens the transport and sets the subscribe topic.
-	Subscribe(string, FDurableAsyncCallback) error
-
-	// Unsubscribe unsubscribes from the topic and closes the transport.
-	Unsubscribe() error
-
-	// IsSubscribed returns true if the transport is subscribed to a topic,
-	// false otherwise.
-	IsSubscribed() bool
-}
-
 // FTransport is Frugal's equivalent of Thrift's TTransport. FTransport is
 // comparable to Thrift's TTransport in that it represents the transport layer
 // for frugal clients. However, frugal is callback based and sends only framed

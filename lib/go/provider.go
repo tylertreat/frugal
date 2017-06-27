@@ -43,45 +43,6 @@ func (p *FScopeProvider) GetMiddleware() []ServiceMiddleware {
 	return middleware
 }
 
-type FDurableScopeProvider struct {
-	publisherTransportFactory  FDurablePublisherTransportFactory
-	subscriberTransportFactory FDurableSubscriberTransportFactory
-	protocolFactory            *FProtocolFactory
-	middleware                 []ServiceMiddleware
-}
-
-// NewFDurableScopeProvider creates a new FScopeProvider using the given factories.
-func NewFDurableScopeProvider(pub FDurablePublisherTransportFactory, sub FDurableSubscriberTransportFactory,
-prot *FProtocolFactory, middleware ...ServiceMiddleware) *FDurableScopeProvider {
-	return &FDurableScopeProvider{
-		publisherTransportFactory:  pub,
-		subscriberTransportFactory: sub,
-		protocolFactory:            prot,
-		middleware:                 middleware,
-	}
-}
-
-// NewPublisher returns a new FPublisherTransport and FProtocol used by
-// scope publishers.
-func (p *FDurableScopeProvider) NewPublisher() (FDurablePublisherTransport, *FProtocolFactory) {
-	transport := p.publisherTransportFactory.GetTransport()
-	return transport, p.protocolFactory
-}
-
-// NewSubscriber returns a new FSubscriberTransport and FProtocolFactory used by
-// scope subscribers.
-func (p *FDurableScopeProvider) NewSubscriber() (FDurableSubscriberTransport, *FProtocolFactory) {
-	transport := p.subscriberTransportFactory.GetTransport()
-	return transport, p.protocolFactory
-}
-
-// GetMiddleware returns the ServiceMiddleware stored on this FScopeProvider.
-func (p *FDurableScopeProvider) GetMiddleware() []ServiceMiddleware {
-	middleware := make([]ServiceMiddleware, len(p.middleware))
-	copy(middleware, p.middleware)
-	return middleware
-}
-
 // FServiceProvider produces FTransports and FProtocolFactories for use by RPC
 // service clients. The main purpose of this is to provide a shim for adding
 // middleware to a client.

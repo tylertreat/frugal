@@ -125,6 +125,7 @@ type LanguageGenerator interface {
 	GenerateScopeImports(*os.File, *parser.Scope) error
 	GeneratePublisher(*os.File, *parser.Scope) error
 	GenerateSubscriber(*os.File, *parser.Scope) error
+	// TODO remove
 	GenerateDurablePublisher(*os.File, *parser.Scope) error
 	GenerateDurableSubscriber(*os.File, *parser.Scope) error
 }
@@ -321,6 +322,7 @@ func (o *programGenerator) generateScopeFile(scope *parser.Scope, outputDir stri
 		}
 	}
 
+	// TODO remove
 	if fileType == CombinedScopeFile || fileType == DurablePublishFile {
 		if err := o.GenerateDurablePublisher(file, scope); err != nil {
 			return err
