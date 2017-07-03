@@ -11,10 +11,9 @@
  * limitations under the License.
  */
 
-package main
+package crossrunner
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"runtime"
@@ -23,14 +22,13 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-
-	"github.com/Workiva/frugal/test/integration/crossrunner"
+	"os/exec"
 )
 
 // a testCase is a pointer to a valid test pair (client/server) and port to run
 // the pair on.
 type testCase struct {
-	pair *crossrunner.Pair
+	pair *Pair
 	port int
 }
 
@@ -44,12 +42,9 @@ type failures struct {
 	mu     sync.Mutex
 }
 
-// These are properly configured for Frugal.
-var testDefinitions = flag.String("tests", "tests.json", "Location of json test definitions")
-var outDir = flag.String("outDir", "log", "Output directory of crossrunner logs")
 
-func main() {
-	flag.Parse()
+
+func Run(testDefinitions, outDir *string, getCommand func (config Config, port int) (cmd *exec.Cmd, formatted string)) error {
 	startTime := time.Now()
 
 	// TODO: Allow setting loglevel to debug with -V flag/-debug/similar
@@ -57,7 +52,7 @@ func main() {
 
 	// pairs is a struct of valid client/server pairs loaded from the provided
 	// json file
-	pairs, err := crossrunner.Load(*testDefinitions)
+	pairs, err := Load(*testDefinitions)
 	if err != nil {
 		log.Info("Error in parsing json test definitions")
 		panic(err)
@@ -90,18 +85,18 @@ func main() {
 		port     int
 	)
 
-	crossrunner.PrintConsoleHeader()
+	PrintConsoleHeader()
 
 	for workers := 1; workers <= runtime.NumCPU()*2; workers++ {
 		go func(crossrunnerTasks <-chan *testCase) {
 			for task := range crossrunnerTasks {
 				wg.Add(1)
 				// Run each configuration
-				crossrunner.RunConfig(task.pair, task.port)
+				RunConfig(task.pair, task.port, getCommand)
 				errorLog := "\n"
 				// Check return code
 				if task.pair.ReturnCode != 0 {
-					if task.pair.ReturnCode == crossrunner.CrossrunnerFailure {
+					if task.pair.ReturnCode == CrossrunnerFailure {
 						// If there was a crossrunner failure, add logs to the client
 						errorLog += "***** CROSSRUNNER FAILURE *****\n"
 					} else {
@@ -109,7 +104,7 @@ func main() {
 					}
 					// Add error to client logs
 					errorLog += fmt.Sprintf("%s\n", task.pair.Err.Error())
-					if err := crossrunner.WriteCustomData(task.pair.Client.Logs.Name(), errorLog); err != nil {
+					if err := WriteCustomData(task.pair.Client.Logs.Name(), errorLog); err != nil {
 						log.Infof("Failed to append crossrunner failure to %s", task.pair.Client.Logs.Name())
 						panic(err)
 					}
@@ -117,14 +112,14 @@ func main() {
 					failLog.mu.Lock()
 					failLog.failed += 1
 					// copy the logs to the unexpected_failures.log file
-					if err := crossrunner.AppendToFailures(failLog.path, task.pair); err != nil {
+					if err := AppendToFailures(failLog.path, task.pair); err != nil {
 						log.Infof("Failed to copy %s and %s to 'unexpected_failures.log'", task.pair.Client.Logs.Name(), task.pair.Server.Logs.Name())
 						panic(err)
 					}
 					failLog.mu.Unlock()
 				}
 				// Print configuration results to console
-				crossrunner.PrintPairResult(task.pair)
+				PrintPairResult(task.pair)
 				// Increment the count of tests run
 				atomic.AddUint64(&testsRun, 1)
 				wg.Done()
@@ -148,7 +143,7 @@ func main() {
 	// Print out console results
 	runningTime := time.Since(startTime)
 	testCount := atomic.LoadUint64(&testsRun)
-	crossrunner.PrintConsoleFooter(failLog.failed, testCount, runningTime)
+	PrintConsoleFooter(failLog.failed, testCount, runningTime)
 
 	// If any configurations failed, fail the suite.
 	if failLog.failed > 0 {
@@ -165,4 +160,5 @@ func main() {
 			log.Info("Unable to remove empty unexpected_failures.log")
 		}
 	}
+	return nil
 }
