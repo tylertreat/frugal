@@ -72,7 +72,7 @@ func TestRunCleanClose(t *testing.T) {
 	select {
 	case <-runExited:
 	case <-time.After(testTimeout):
-		t.Fail()
+		t.Fatal("test timed out")
 	}
 	ftm.AssertExpectations(t)
 }
@@ -98,7 +98,7 @@ func TestRunUncleanClose(t *testing.T) {
 	select {
 	case <-runExited:
 	case <-time.After(testTimeout):
-		t.Fail()
+		t.Fatal("test timed out")
 	}
 	ftm.AssertExpectations(t)
 }
@@ -118,7 +118,7 @@ func TestHandleCleanClose(t *testing.T) {
 	select {
 	case <-handleCleanCloseExited:
 	case <-time.After(testTimeout):
-		t.Fail()
+		t.Fatal("test timed out")
 	}
 	ftm.AssertExpectations(t)
 }
@@ -139,7 +139,7 @@ func TestHandleUncleanCloseNoRetry(t *testing.T) {
 	select {
 	case <-handleUncleanCloseExited:
 	case <-time.After(testTimeout):
-		t.Fail()
+		t.Fatal("test timed out")
 	}
 	ftm.AssertExpectations(t)
 }
@@ -167,7 +167,7 @@ func TestHandleUncleanClose(t *testing.T) {
 	select {
 	case <-handleUncleanCloseExited:
 	case <-time.After(testTimeout):
-		t.Fail()
+		t.Fatal("test timed out")
 	}
 	ftm.AssertExpectations(t)
 	mft.AssertExpectations(t)
@@ -194,7 +194,7 @@ func TestAttemptReopenSuccess(t *testing.T) {
 	select {
 	case <-attemptReopenExited:
 	case <-time.After(testTimeout):
-		t.Fail()
+		t.Fatal("test timed out")
 	}
 	ftm.AssertExpectations(t)
 	mft.AssertExpectations(t)
@@ -223,8 +223,9 @@ func TestAttemptReopenFailRetrySucceed(t *testing.T) {
 	select {
 	case <-attemptReopenExited:
 	case <-time.After(testTimeout):
-		t.Fail()
+		t.Fatal("test timed out")
 	}
+
 	ftm.AssertExpectations(t)
 	mft.AssertExpectations(t)
 }
@@ -249,7 +250,7 @@ func TestAttemptReopenFailNoRetry(t *testing.T) {
 	select {
 	case <-attemptReopenExited:
 	case <-time.After(testTimeout):
-		t.Fail()
+		t.Fatal("test timed out")
 	}
 	ftm.AssertExpectations(t)
 	mft.AssertExpectations(t)
