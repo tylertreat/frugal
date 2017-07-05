@@ -15,10 +15,10 @@ type FileType string
 
 // Valid FileTypes.
 const (
-	CombinedServiceFile  FileType = "combined_service"
-	CombinedScopeFile    FileType = "combined_scope"
-	PublishFile          FileType = "publish"
-	SubscribeFile        FileType = "subscribe"
+	CombinedServiceFile FileType = "combined_service"
+	CombinedScopeFile   FileType = "combined_scope"
+	PublishFile         FileType = "publish"
+	SubscribeFile       FileType = "subscribe"
 
 	TypeFile               FileType = "types"
 	ServiceArgsResultsFile FileType = "service_args_results"

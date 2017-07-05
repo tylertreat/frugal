@@ -7,7 +7,7 @@ part of frugal.src.frugal;
 class FSubscription {
   /// Scope topic for the subscription.
   final String topic;
-  dynamic _transport;
+  FSubscriberTransport _transport;
 
   /// Create a new [FSubscription] with the given topic and transport.
   FSubscription(this.topic, this._transport);
