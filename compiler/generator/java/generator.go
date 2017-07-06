@@ -2482,7 +2482,7 @@ func (g *Generator) generateSubscriberIface(scope *parser.Scope) string {
 		if op.Comment != nil {
 			contents += g.GenerateBlockComment(op.Comment, tabtab)
 		}
-		contents += fmt.Sprintf(tabtab+"public FSubscription subscribe%s(%sfinal %sThrowableHandler handler) throws TException;\n\n",
+		contents += fmt.Sprintf(tabtab+"public FSubscription subscribe%sThrowable(%sfinal %sThrowableHandler handler) throws TException;\n\n",
 			op.Name, throwableArgs, op.Name)
 	}
 
@@ -2544,7 +2544,7 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 			}
 
 			if throwable {
-				subscriber += tabtab + fmt.Sprintf("public FSubscription subscribe%s(%sfinal %sThrowableHandler handler) throws TException {\n", op.Name, args, op.Name)
+				subscriber += tabtab + fmt.Sprintf("public FSubscription subscribe%sThrowable(%sfinal %sThrowableHandler handler) throws TException {\n", op.Name, args, op.Name)
 			} else {
 				subscriber += tabtab + fmt.Sprintf("public FSubscription subscribe%s(%sfinal %sHandler handler) throws TException {\n", op.Name, args, op.Name)
 			}
