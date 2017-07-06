@@ -216,6 +216,7 @@ class FProtocol(TProtocolDecorator, object):
         else:
             self._wrapped_protocol.writeString(value)
 
+
     @_state_reset_decorator
     def writeBinary(self, value):
         self._wrapped_protocol.writeBinary(value)
