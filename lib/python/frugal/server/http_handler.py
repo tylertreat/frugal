@@ -49,14 +49,23 @@ class _FHttpResponse(object):
 
     @property
     def status_code(self):
+        """
+        Status code of the response as an integer.
+        """
         return self._status_code
 
     @property
     def headers(self):
+        """
+        dict of the HTTP response headers.
+        """
         return self._headers
 
     @property
     def body(self):
+        """
+        The http response body.
+        """
         return self._body
 
 
@@ -144,7 +153,7 @@ class _FHttpRequestHandler(object):
         Handles an unexpected exception from a processor.
 
         Args:
-            e: The exception.
+            ex: The exception.
         Returns:
             A _FHttpResponse.
         """
@@ -168,8 +177,19 @@ class _FHttpRequestHandler(object):
 
 
 class _FSynchronousHttpRequestHandler(_FHttpRequestHandler):
-    """An http request handler for synchronous processors."""
+    """
+    An http request handler for synchronous processors.
+    """
+
     def handle_http_request(self, request):
+        """
+        Handle a given http request
+
+        Args:
+            request - http request to handle
+        Returns:
+            _FHttpResponse
+        """
         try:
             otrans, iprot, oprot, response_limit = \
                 self._preprocess_http_request(request)

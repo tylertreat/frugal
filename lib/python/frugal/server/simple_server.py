@@ -51,7 +51,8 @@ class FSimpleServer(FServer):
                     processor.process(iprot, oprot)
             except TTransportException:
                 continue
-            except Exception:
+            except Exception as e:
+                print(e)
                 break
 
             framed.close()

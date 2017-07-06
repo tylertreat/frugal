@@ -126,7 +126,7 @@ class FNatsSubscriberTransport(FSubscriberTransport):
     async def subscribe(self, topic: str, callback):
         """
         Subscribe to the given topic and register a callback to
-        invoke when a message is received.abs
+        invoke when a message is received.
 
         Args:
             topic: str

@@ -56,7 +56,7 @@ class FHttpServer(FServer):
 
                 if len(payload) <= 4:
                     logging.exception(
-                        'Invalid request frame length {}'.format(len(payload)))
+                        'Invalid request frame length %s', len(payload))
                     self.send_response(400)
                     self.end_headers()
                     return
