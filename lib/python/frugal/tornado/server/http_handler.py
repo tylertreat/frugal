@@ -44,8 +44,9 @@ class FHttpHandler(RequestHandler):
 
         # check for response size limit
         response_limit = 0
-        if self.request.headers.get('x-frugal-payload-limit') is not None:
-            response_limit = int(self.request.headers['x-frugal-payload-limit'])
+        limit_header_name = "x-frugal-payload-limit"
+        if self.request.headers.get(limit_header_name) is not None:
+            response_limit = int(self.request.headers[limit_header_name])
 
         # decode payload and process
         payload = base64.b64decode(self.request.body)
@@ -62,7 +63,7 @@ class FHttpHandler(RequestHandler):
         except TApplicationException:
             # Continue so the exception is sent to the client
             pass
-        except Exception as e:
+        except Exception:
             self.send_error(status_code=400)
             return
 

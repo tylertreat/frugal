@@ -20,11 +20,14 @@ from frugal.transport import TSynchronousTransport
 
 
 class TBaseHttpTransport(TSynchronousTransport):
-    """Base synchronous transport implemented with HTTP."""
+    """
+    Base synchronous transport implemented with HTTP.
+    """
 
     def __init__(self, url, request_capacity=0, response_capacity=0,
                  headers=None, get_headers=None):
-        """Initialize a new FBaseHttpTransport.
+        """
+        Initialize a new FBaseHttpTransport.
 
         Args:
             url: url of the Frugal server.
@@ -46,7 +49,8 @@ class TBaseHttpTransport(TSynchronousTransport):
         self._timeout = None
 
     def set_timeout(self, timeout):
-        """Set the request timeout.
+        """
+        Set the request timeout.
 
         Args:
             timeout: request timeout in milliseconds.
@@ -77,7 +81,8 @@ class TBaseHttpTransport(TSynchronousTransport):
         self._wbuff.write(buf)
 
     def _get_headers_and_body(self):
-        """Return the request headers and body.
+        """
+        Return the request headers and body.
 
         Returns:
             headers dict and base64-encoded body string.
@@ -115,4 +120,3 @@ class TBaseHttpTransport(TSynchronousTransport):
             headers['User-Agent'] = 'Python/TBaseHttpTransport'
 
         return headers, body
-

@@ -99,4 +99,3 @@ def _compose_middleware(method, middleware):
         for m in middleware:
             handler = m(handler)
     return handler
-

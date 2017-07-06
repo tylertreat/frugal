@@ -3,8 +3,8 @@ test/idl/constants.thrift
 target/
 *.iml
 .idea
-*.pyc
 py3env
+.vscode
 
 
 # Do not commit the following directories created by pub.

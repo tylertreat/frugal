@@ -24,7 +24,7 @@ class _FHttpException(Exception):
         self.code = code
 
 
-class _FHttpRequest:
+class _FHttpRequest(object):
     """
     _FHttpRequest stores data from an http request in a generic format.
     """
@@ -35,7 +35,7 @@ class _FHttpRequest:
         self.body = body
 
 
-class _FHttpResponse:
+class _FHttpResponse(object):
     """
     _FHttpResponse returns data to be sent in an http response in a generic
     format.
@@ -60,7 +60,7 @@ class _FHttpResponse:
         return self._body
 
 
-class _FHttpRequestHandler:
+class _FHttpRequestHandler(object):
     """
     _FHttpRequestHandler provides functionality to process rpcs from http.
 
@@ -97,15 +97,16 @@ class _FHttpRequestHandler:
 
         # Need 4 bytes for the frame size, at a minimum.
         if len(payload) < 4:
-            logger.exception('invalid request size {}'.format(len(payload)))
+            logger.exception("invalid request size %s", len(payload))
             raise _FHttpException(400)
 
         # Ensure expected frame size equals actual size.
-        sz = struct.unpack('!I', payload[:4])[0]
-        if sz != len(payload) - 4:
+        size = struct.unpack('!I', payload[:4])[0]
+        length = len(payload) - 4
+        if size != length:
             raise _FHttpException(
                 400, message='Mismatch between expected frame ' +
-                'size ({}) and actual size ({})'.format(sz, len(payload) - 4))
+                'size ({}) and actual size ({})'.format(size, length))
 
         itrans = TMemoryBuffer(payload[4:])
         otrans = TMemoryBuffer()
@@ -138,7 +139,7 @@ class _FHttpRequestHandler:
         }
         return _FHttpResponse(headers=headers, body=frame)
 
-    def _handle_processor_exception(self, e):
+    def _handle_processor_exception(self, ex):
         """
         Handles an unexpected exception from a processor.
 
@@ -147,7 +148,7 @@ class _FHttpRequestHandler:
         Returns:
             A _FHttpResponse.
         """
-        return _FHttpResponse(status_code=500, body=e.message)
+        return _FHttpResponse(status_code=500, body=ex.message)
 
     def handle_http_request(self, request):
         """
