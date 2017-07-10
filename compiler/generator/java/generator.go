@@ -2277,10 +2277,6 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 }
 
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
-	return g.generatePublisher(file, scope)
-}
-
-func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope) error {
 	scopeTitle := strings.Title(scope.Name)
 	publisher := ""
 
@@ -2336,8 +2332,7 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 	publisher += tabtab + "private final Iface target;\n"
 	publisher += tabtab + "private final Iface proxy;\n\n"
 
-	provider := "FScopeProvider"
-	publisher += tabtab + fmt.Sprintf("public Client(%s provider, ServiceMiddleware... middleware) {\n", provider)
+	publisher += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
 	publisher += fmt.Sprintf(tabtabtab+"target = new Internal%sPublisher(provider);\n", scopeTitle)
 	publisher += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
 	publisher += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
@@ -2366,21 +2361,20 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 
 	publisher += fmt.Sprintf(tabtab+"protected static class Internal%sPublisher implements Iface {\n\n", scopeTitle)
 
-	transport := "FPublisherTransport"
-	publisher += tabtabtab + fmt.Sprintf("private %s provider;\n", provider)
-	publisher += tabtabtab + fmt.Sprintf("private %s transport;\n", transport)
+	publisher += tabtabtab + "private FScopeProvider provider;\n"
+	publisher += tabtabtab + "private FPublisherTransport transport;\n"
 
 	publisher += tabtabtab + "private FProtocolFactory protocolFactory;\n\n"
 
 	publisher += fmt.Sprintf(tabtabtab+"protected Internal%sPublisher() {\n", scopeTitle)
 	publisher += tabtabtab + "}\n\n"
 
-	publisher += fmt.Sprintf(tabtabtab+"public Internal%sPublisher(%s provider) {\n", scopeTitle, provider)
+	publisher += fmt.Sprintf(tabtabtab+"public Internal%sPublisher(FScopeProvider provider) {\n", scopeTitle)
 	publisher += tabtabtabtab + "this.provider = provider;\n"
 	publisher += tabtabtab + "}\n\n"
 
 	publisher += tabtabtab + "public void open() throws TException {\n"
-	publisher += tabtabtabtab + fmt.Sprintf("%s.Publisher publisher = provider.buildPublisher();\n", provider)
+	publisher += tabtabtabtab + "FScopeProvider.Publisher publisher = provider.buildPublisher();\n"
 	publisher += tabtabtabtab + "transport = publisher.getTransport();\n"
 	publisher += tabtabtabtab + "protocolFactory = publisher.getProtocolFactory();\n"
 	publisher += tabtabtabtab + "transport.open();\n"
@@ -2444,10 +2438,6 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 }
 
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
-	return g.generateSubscriber(file, scope)
-}
-
-func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope) error {
 	subscriber := ""
 	scopeName := strings.Title(scope.Name)
 	if g.includeGeneratedAnnotation() {
@@ -2492,7 +2482,7 @@ func (g *Generator) generateSubscriberIface(scope *parser.Scope) string {
 		if op.Comment != nil {
 			contents += g.GenerateBlockComment(op.Comment, tabtab)
 		}
-		contents += fmt.Sprintf(tabtab+"public FSubscription subscribe%s(%sfinal %sThrowableHandler handler) throws TException;\n\n",
+		contents += fmt.Sprintf(tabtab+"public FSubscription subscribe%sThrowable(%sfinal %sThrowableHandler handler) throws TException;\n\n",
 			op.Name, throwableArgs, op.Name)
 	}
 
@@ -2534,11 +2524,10 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 	subscriber += fmt.Sprintf(tabtab+"private static final String DELIMITER = \"%s\";\n", globals.TopicDelimiter)
 	subscriber += tabtab + "private static final Logger LOGGER = LoggerFactory.getLogger(Client.class);\n\n"
 
-	provider := "FScopeProvider"
-	subscriber += tabtab + fmt.Sprintf("private final %s provider;\n", provider)
+	subscriber += tabtab + "private final FScopeProvider provider;\n"
 	subscriber += tabtab + "private final ServiceMiddleware[] middleware;\n\n"
 
-	subscriber += tabtab + fmt.Sprintf("public Client(%s provider, ServiceMiddleware... middleware) {\n", provider)
+	subscriber += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
 	subscriber += tabtabtab + "this.provider = provider;\n"
 	subscriber += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
 	subscriber += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
@@ -2555,17 +2544,16 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 			}
 
 			if throwable {
-				subscriber += tabtab + fmt.Sprintf("public FSubscription subscribe%s(%sfinal %sThrowableHandler handler) throws TException {\n", op.Name, args, op.Name)
+				subscriber += tabtab + fmt.Sprintf("public FSubscription subscribe%sThrowable(%sfinal %sThrowableHandler handler) throws TException {\n", op.Name, args, op.Name)
 			} else {
 				subscriber += tabtab + fmt.Sprintf("public FSubscription subscribe%s(%sfinal %sHandler handler) throws TException {\n", op.Name, args, op.Name)
 			}
 			subscriber += tabtabtab + fmt.Sprintf("final String op = \"%s\";\n", op.Name)
 			subscriber += tabtabtab + fmt.Sprintf("String prefix = %s;\n", generatePrefixStringTemplate(scope))
 			subscriber += tabtabtab + "final String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, DELIMITER, op);\n"
-			subscriber += tabtabtab + fmt.Sprintf("final %s.Subscriber subscriber = provider.buildSubscriber();\n", provider)
+			subscriber += tabtabtab + "final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();\n"
 
-			transport := "FSubscriberTransport"
-			subscriber += tabtabtab + fmt.Sprintf("final %s transport = subscriber.getTransport();\n", transport)
+			subscriber += tabtabtab + "final FSubscriberTransport transport = subscriber.getTransport();\n"
 
 			if throwable {
 				subscriber += tabtabtab + fmt.Sprintf(

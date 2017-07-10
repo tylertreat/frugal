@@ -68,13 +68,13 @@ public class EventsSubscriber {
 		/**
 		 * This is a docstring.
 		 */
-		public FSubscription subscribeEventCreated(String user, final EventCreatedThrowableHandler handler) throws TException;
+		public FSubscription subscribeEventCreatedThrowable(String user, final EventCreatedThrowableHandler handler) throws TException;
 
-		public FSubscription subscribeSomeInt(String user, final SomeIntThrowableHandler handler) throws TException;
+		public FSubscription subscribeSomeIntThrowable(String user, final SomeIntThrowableHandler handler) throws TException;
 
-		public FSubscription subscribeSomeStr(String user, final SomeStrThrowableHandler handler) throws TException;
+		public FSubscription subscribeSomeStrThrowable(String user, final SomeStrThrowableHandler handler) throws TException;
 
-		public FSubscription subscribeSomeList(String user, final SomeListThrowableHandler handler) throws TException;
+		public FSubscription subscribeSomeListThrowable(String user, final SomeListThrowableHandler handler) throws TException;
 
 	}
 
@@ -266,7 +266,7 @@ public class EventsSubscriber {
 		/**
 		 * This is a docstring.
 		 */
-		public FSubscription subscribeEventCreated(String user, final EventCreatedThrowableHandler handler) throws TException {
+		public FSubscription subscribeEventCreatedThrowable(String user, final EventCreatedThrowableHandler handler) throws TException {
 			final String op = "EventCreated";
 			String prefix = String.format("foo.%s.", user);
 			final String topic = String.format("%sEvents%s%s", prefix, DELIMITER, op);
@@ -296,7 +296,7 @@ public class EventsSubscriber {
 			};
 		}
 
-		public FSubscription subscribeSomeInt(String user, final SomeIntThrowableHandler handler) throws TException {
+		public FSubscription subscribeSomeIntThrowable(String user, final SomeIntThrowableHandler handler) throws TException {
 			final String op = "SomeInt";
 			String prefix = String.format("foo.%s.", user);
 			final String topic = String.format("%sEvents%s%s", prefix, DELIMITER, op);
@@ -325,7 +325,7 @@ public class EventsSubscriber {
 			};
 		}
 
-		public FSubscription subscribeSomeStr(String user, final SomeStrThrowableHandler handler) throws TException {
+		public FSubscription subscribeSomeStrThrowable(String user, final SomeStrThrowableHandler handler) throws TException {
 			final String op = "SomeStr";
 			String prefix = String.format("foo.%s.", user);
 			final String topic = String.format("%sEvents%s%s", prefix, DELIMITER, op);
@@ -354,7 +354,7 @@ public class EventsSubscriber {
 			};
 		}
 
-		public FSubscription subscribeSomeList(String user, final SomeListThrowableHandler handler) throws TException {
+		public FSubscription subscribeSomeListThrowable(String user, final SomeListThrowableHandler handler) throws TException {
 			final String op = "SomeList";
 			String prefix = String.format("foo.%s.", user);
 			final String topic = String.format("%sEvents%s%s", prefix, DELIMITER, op);

@@ -1190,10 +1190,6 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 
 // GeneratePublisher generates the publisher for the given scope.
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
-	return g.generatePublisher(file, scope)
-}
-
-func (g *Generator) generatePublisher(file *os.File, scope *parser.Scope) error {
 	var (
 		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeCamel = snakeToCamel(scope.Name)
@@ -1347,10 +1343,6 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 
 // GenerateSubscriber generates the subscriber for the given scope.
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
-	return g.generateSubscriber(file, scope)
-}
-
-func (g *Generator) generateSubscriber(file *os.File, scope *parser.Scope) error {
 	var (
 		scopeLower = parser.LowercaseFirstLetter(scope.Name)
 		scopeCamel = snakeToCamel(scope.Name)
