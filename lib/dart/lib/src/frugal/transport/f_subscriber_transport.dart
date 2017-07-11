@@ -14,10 +14,10 @@ abstract class FSubscriberTransport {
   bool get isSubscribed;
 
   /// Sets the subscribe topic and opens the transport.
-  Future subscribe(String topic, FAsyncCallback callback);
+  Future<Null> subscribe(String topic, FAsyncCallback callback);
 
   /// Unsets the subscribe topic and closes the transport.
-  Future unsubscribe();
+  Future<Null> unsubscribe();
 }
 
 /// Produces [FSubscriberTransport] instances.
