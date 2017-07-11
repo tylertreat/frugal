@@ -42,7 +42,7 @@ public final class FSubscription {
      * Unsubscribe from the topic.
      */
     public void unsubscribe() {
-        if (this.transport != null) {
+        if (transport != null) {
             transport.unsubscribe();
         }
     }
