@@ -2283,6 +2283,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 	if g.includeGeneratedAnnotation() {
 		publisher += g.generatedAnnotation()
 	}
+
 	publisher += fmt.Sprintf("public class %sPublisher {\n\n", scopeTitle)
 
 	publisher += g.generatePublisherIface(scope)
@@ -2362,6 +2363,7 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 
 	publisher += tabtabtab + "private FScopeProvider provider;\n"
 	publisher += tabtabtab + "private FPublisherTransport transport;\n"
+
 	publisher += tabtabtab + "private FProtocolFactory protocolFactory;\n\n"
 
 	publisher += fmt.Sprintf(tabtabtab+"protected Internal%sPublisher() {\n", scopeTitle)
@@ -2389,6 +2391,7 @@ func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
 		if op.Comment != nil {
 			publisher += g.GenerateBlockComment(op.Comment, tabtabtab)
 		}
+
 		publisher += fmt.Sprintf(tabtabtab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.getJavaTypeFromThriftType(op.Type))
 
 		// Inject the prefix variables into the FContext to send
@@ -2440,6 +2443,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 	if g.includeGeneratedAnnotation() {
 		subscriber += g.generatedAnnotation()
 	}
+
 	subscriber += fmt.Sprintf("public class %sSubscriber {\n\n", scopeName)
 
 	subscriber += g.generateSubscriberIface(scope)
@@ -2458,16 +2462,28 @@ func (g *Generator) generateSubscriberIface(scope *parser.Scope) string {
 	if scope.Comment != nil {
 		contents += g.GenerateBlockComment(scope.Comment, tab)
 	}
+
+	// generate a non-throwable interface
 	contents += tab + "public interface Iface {\n"
-
 	args := g.generateScopePrefixArgs(scope)
-
 	for _, op := range scope.Operations {
 		if op.Comment != nil {
 			contents += g.GenerateBlockComment(op.Comment, tabtab)
 		}
 		contents += fmt.Sprintf(tabtab+"public FSubscription subscribe%s(%sfinal %sHandler handler) throws TException;\n\n",
 			op.Name, args, op.Name)
+	}
+
+	// generate a throwable interface
+	contents += tab + "}\n\n"
+	contents += tab + "public interface IfaceThrowable {\n"
+	throwableArgs := g.generateScopePrefixArgs(scope)
+	for _, op := range scope.Operations {
+		if op.Comment != nil {
+			contents += g.GenerateBlockComment(op.Comment, tabtab)
+		}
+		contents += fmt.Sprintf(tabtab+"public FSubscription subscribe%sThrowable(%sfinal %sThrowableHandler handler) throws TException;\n\n",
+			op.Name, throwableArgs, op.Name)
 	}
 
 	contents += tab + "}\n\n"
@@ -2477,9 +2493,17 @@ func (g *Generator) generateSubscriberIface(scope *parser.Scope) string {
 func (g *Generator) generateHandlerIfaces(scope *parser.Scope) string {
 	contents := ""
 
+	// generate non-throwable handler interfaces
 	for _, op := range scope.Operations {
 		contents += fmt.Sprintf(tab+"public interface %sHandler {\n", op.Name)
-		contents += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s req);\n", op.Name, g.getJavaTypeFromThriftType(op.Type))
+		contents += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s req) throws TException;\n", op.Name, g.getJavaTypeFromThriftType(op.Type))
+		contents += tab + "}\n\n"
+	}
+
+	// generate throwable handler interfaces
+	for _, op := range scope.Operations {
+		contents += fmt.Sprintf(tab+"public interface %sThrowableHandler {\n", op.Name)
+		contents += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s req) throws TException;\n", op.Name, g.getJavaTypeFromThriftType(op.Type))
 		contents += tab + "}\n\n"
 	}
 
@@ -2495,7 +2519,7 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 	if scope.Comment != nil {
 		subscriber += g.GenerateBlockComment(scope.Comment, tab)
 	}
-	subscriber += tab + "public static class Client implements Iface {\n"
+	subscriber += tab + "public static class Client implements Iface, IfaceThrowable {\n"
 
 	subscriber += fmt.Sprintf(tabtab+"private static final String DELIMITER = \"%s\";\n", globals.TopicDelimiter)
 	subscriber += tabtab + "private static final Logger LOGGER = LoggerFactory.getLogger(Client.class);\n\n"
@@ -2510,46 +2534,70 @@ func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
 	subscriber += tabtabtab + "this.middleware = combined.toArray(new ServiceMiddleware[0]);\n"
 	subscriber += tabtab + "}\n\n"
 
-	for _, op := range scope.Operations {
-		subscriber += prefix
-		prefix = "\n\n"
-		if op.Comment != nil {
-			subscriber += g.GenerateBlockComment(op.Comment, tabtab)
+	throwable := false
+	for i := 0; i < 2; i++ {
+		for _, op := range scope.Operations {
+			subscriber += prefix
+			prefix = "\n\n"
+			if op.Comment != nil {
+				subscriber += g.GenerateBlockComment(op.Comment, tabtab)
+			}
+
+			if throwable {
+				subscriber += tabtab + fmt.Sprintf("public FSubscription subscribe%sThrowable(%sfinal %sThrowableHandler handler) throws TException {\n", op.Name, args, op.Name)
+			} else {
+				subscriber += tabtab + fmt.Sprintf("public FSubscription subscribe%s(%sfinal %sHandler handler) throws TException {\n", op.Name, args, op.Name)
+			}
+			subscriber += tabtabtab + fmt.Sprintf("final String op = \"%s\";\n", op.Name)
+			subscriber += tabtabtab + fmt.Sprintf("String prefix = %s;\n", generatePrefixStringTemplate(scope))
+			subscriber += tabtabtab + "final String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, DELIMITER, op);\n"
+			subscriber += tabtabtab + "final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();\n"
+
+			subscriber += tabtabtab + "final FSubscriberTransport transport = subscriber.getTransport();\n"
+
+			if throwable {
+				subscriber += tabtabtab + fmt.Sprintf(
+					"final %sThrowableHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, %sThrowableHandler.class, middleware);\n",
+					op.Name, op.Name)
+			} else {
+				subscriber += tabtabtab + fmt.Sprintf(
+					"final %sHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, %sHandler.class, middleware);\n",
+					op.Name, op.Name)
+			}
+
+			subscriber += tabtabtab + fmt.Sprintf("transport.subscribe(topic, recv%s(op, subscriber.getProtocolFactory(), proxiedHandler));\n", op.Name)
+			subscriber += tabtabtab + "return FSubscription.of(topic, transport);\n"
+			subscriber += tabtab + "}\n\n"
+
+			callback := "FAsyncCallback"
+			if throwable {
+				subscriber += tabtab + fmt.Sprintf("private %s recv%s(String op, FProtocolFactory pf, %sThrowableHandler handler) {\n", callback, op.Name, op.Name)
+			} else {
+				subscriber += tabtab + fmt.Sprintf("private %s recv%s(String op, FProtocolFactory pf, %sHandler handler) {\n", callback, op.Name, op.Name)
+			}
+
+			subscriber += tabtabtab + fmt.Sprintf("return new %s() {\n", callback)
+
+			subscriber += tabtabtabtab + "public void onMessage(TTransport tr) throws TException {\n"
+			subscriber += tabtabtabtabtab + "FProtocol iprot = pf.getProtocol(tr);\n"
+			subscriber += tabtabtabtabtab + "FContext ctx = iprot.readRequestHeader();\n"
+			subscriber += tabtabtabtabtab + "TMessage msg = iprot.readMessageBegin();\n"
+			subscriber += tabtabtabtabtab + "if (!msg.name.equals(op)) {\n"
+			subscriber += tabtabtabtabtabtab + "TProtocolUtil.skip(iprot, TType.STRUCT);\n"
+			subscriber += tabtabtabtabtabtab + "iprot.readMessageEnd();\n"
+			subscriber += tabtabtabtabtabtab + "throw new TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD);\n"
+			subscriber += tabtabtabtabtab + "}\n"
+			subscriber += g.generateReadFieldRec(parser.FieldFromType(op.Type, "received"), false, false, false, tabtabtabtabtab)
+			subscriber += tabtabtabtabtab + "iprot.readMessageEnd();\n"
+
+			subscriber += tabtabtabtabtab + fmt.Sprintf("handler.on%s(ctx, received);\n", op.Name)
+			subscriber += tabtabtabtab + "}\n"
+			subscriber += tabtabtab + "};\n"
+			subscriber += tabtab + "}"
 		}
-		subscriber += tabtab + fmt.Sprintf("public FSubscription subscribe%s(%sfinal %sHandler handler) throws TException {\n", op.Name, args, op.Name)
-		subscriber += tabtabtab + fmt.Sprintf("final String op = \"%s\";\n", op.Name)
-		subscriber += tabtabtab + fmt.Sprintf("String prefix = %s;\n", generatePrefixStringTemplate(scope))
-		subscriber += tabtabtab + "final String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, DELIMITER, op);\n"
-		subscriber += tabtabtab + "final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();\n"
-		subscriber += tabtabtab + "final FSubscriberTransport transport = subscriber.getTransport();\n"
-		subscriber += tabtabtab + fmt.Sprintf(
-			"final %sHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, %sHandler.class, middleware);\n",
-			op.Name, op.Name)
-
-		subscriber += tabtabtab + fmt.Sprintf("transport.subscribe(topic, recv%s(op, subscriber.getProtocolFactory(), proxiedHandler));\n", op.Name)
-		subscriber += tabtabtab + "return FSubscription.of(topic, transport);\n"
-		subscriber += tabtab + "}\n\n"
-
-		subscriber += tabtab + fmt.Sprintf("private FAsyncCallback recv%s(String op, FProtocolFactory pf, %sHandler handler) {\n", op.Name, op.Name)
-		subscriber += tabtabtab + "return new FAsyncCallback() {\n"
-		subscriber += tabtabtabtab + "public void onMessage(TTransport tr) throws TException {\n"
-		subscriber += tabtabtabtabtab + "FProtocol iprot = pf.getProtocol(tr);\n"
-		subscriber += tabtabtabtabtab + "FContext ctx = iprot.readRequestHeader();\n"
-		subscriber += tabtabtabtabtab + "TMessage msg = iprot.readMessageBegin();\n"
-		subscriber += tabtabtabtabtab + "if (!msg.name.equals(op)) {\n"
-		subscriber += tabtabtabtabtabtab + "TProtocolUtil.skip(iprot, TType.STRUCT);\n"
-		subscriber += tabtabtabtabtabtab + "iprot.readMessageEnd();\n"
-		subscriber += tabtabtabtabtabtab + "throw new TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD);\n"
-		subscriber += tabtabtabtabtab + "}\n"
-		subscriber += g.generateReadFieldRec(parser.FieldFromType(op.Type, "received"), false, false, false, tabtabtabtabtab)
-		subscriber += tabtabtabtabtab + "iprot.readMessageEnd();\n"
-		subscriber += tabtabtabtabtab + fmt.Sprintf("handler.on%s(ctx, received);\n", op.Name)
-		subscriber += tabtabtabtab + "}\n"
-		subscriber += tabtabtab + "};\n"
-		subscriber += tabtab + "}\n\n"
+		throwable = true
 	}
-
-	subscriber += tab + "}\n"
+	subscriber += "\n" + tab + "}\n"
 
 	return subscriber
 }
