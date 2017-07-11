@@ -11,7 +11,6 @@ __all__ = [
     'TSynchronousTransport',
     'FTransportFactory',
     'TMemoryOutputBuffer',
-    'FScopeTransportFactory',
     'FPublisherTransport',
     'FSubscriberTransport',
     'FPublisherTransportFactory',

@@ -23,6 +23,10 @@ public class FContextTest {
                 new FContext().getRequestHeader(FContext.OPID_HEADER),
                 new FContext().getRequestHeader(FContext.OPID_HEADER)
         );
+        assertNotEquals(
+                FContext.withRequestHeaders(new HashMap<>()).getRequestHeader(FContext.OPID_HEADER),
+                FContext.withRequestHeaders(new HashMap<>()).getRequestHeader(FContext.OPID_HEADER)
+        );
     }
 
     @Test
