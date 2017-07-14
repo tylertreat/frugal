@@ -2,9 +2,9 @@ package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.TTransportExceptionType;
 import io.nats.client.Connection;
-import io.nats.client.Constants;
 import io.nats.client.Message;
 import io.nats.client.MessageHandler;
+import io.nats.client.Nats;
 import io.nats.client.Subscription;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
@@ -71,7 +71,7 @@ public class FNatsTransport extends FAsyncTransport {
      */
     @Override
     public boolean isOpen() {
-        return sub != null && conn.getState() == Constants.ConnState.CONNECTED;
+        return sub != null && conn.getState() == Nats.ConnState.CONNECTED;
     }
 
     /**
@@ -81,7 +81,7 @@ public class FNatsTransport extends FAsyncTransport {
      */
     @Override
     public void open() throws TTransportException {
-        if (conn.getState() != Constants.ConnState.CONNECTED) {
+        if (conn.getState() != Nats.ConnState.CONNECTED) {
             throw getClosedConditionException(conn.getState(), "open:");
         }
         if (sub != null) {
@@ -141,8 +141,8 @@ public class FNatsTransport extends FAsyncTransport {
      * @param prefix    prefix to add to exception message
      * @return a TTransportException type
      */
-    protected static TTransportException getClosedConditionException(Constants.ConnState connState, String prefix) {
-        if (connState != Constants.ConnState.CONNECTED) {
+    protected static TTransportException getClosedConditionException(Nats.ConnState connState, String prefix) {
+        if (connState != Nats.ConnState.CONNECTED) {
             return new TTransportException(TTransportExceptionType.NOT_OPEN,
                     String.format("%s NATS client not connected (has status %s)", prefix, connState.name()));
         }

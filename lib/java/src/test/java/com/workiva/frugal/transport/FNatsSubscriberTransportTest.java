@@ -3,9 +3,9 @@ package com.workiva.frugal.transport;
 import com.workiva.frugal.protocol.FAsyncCallback;
 import io.nats.client.AsyncSubscription;
 import io.nats.client.Connection;
-import io.nats.client.Constants;
 import io.nats.client.Message;
 import io.nats.client.MessageHandler;
+import io.nats.client.Nats;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -61,7 +61,7 @@ public class FNatsSubscriberTransportTest {
 
     @Test
     public void testSubscribe() throws Exception {
-        when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.CONNECTED);
         ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<MessageHandler> handlerCaptor = ArgumentCaptor.forClass(MessageHandler.class);
 
@@ -104,7 +104,7 @@ public class FNatsSubscriberTransportTest {
     @Test
     public void testSubscribeQueue() throws Exception {
         transport = new FNatsSubscriberTransport.Factory(conn, "foo").getTransport();
-        when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.CONNECTED);
         ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> queueCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -122,7 +122,7 @@ public class FNatsSubscriberTransportTest {
 
     @Test
     public void testSubscribeEmptySubjectThrowsException() throws Exception {
-        when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.CONNECTED);
         try {
             transport.subscribe("", new Handler());
             fail();
@@ -133,7 +133,7 @@ public class FNatsSubscriberTransportTest {
 
     @Test(expected = TTransportException.class)
     public void testSubscribeNotConnectedThrowsException() throws Exception {
-        when(conn.getState()).thenReturn(Constants.ConnState.DISCONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.DISCONNECTED);
         transport.subscribe("", new Handler());
     }
 

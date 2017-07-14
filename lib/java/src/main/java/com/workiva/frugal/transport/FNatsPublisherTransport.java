@@ -2,7 +2,7 @@ package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.TTransportExceptionType;
 import io.nats.client.Connection;
-import io.nats.client.Constants;
+import io.nats.client.Nats;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,13 +59,13 @@ public class FNatsPublisherTransport implements FPublisherTransport {
 
     @Override
     public synchronized boolean isOpen() {
-        return conn.getState() == Constants.ConnState.CONNECTED;
+        return conn.getState() == Nats.ConnState.CONNECTED;
     }
 
     @Override
     public synchronized void open() throws TTransportException {
         // We only need to check that the NATS client is connected
-        if (conn.getState() != Constants.ConnState.CONNECTED) {
+        if (conn.getState() != Nats.ConnState.CONNECTED) {
             throw new TTransportException(TTransportExceptionType.NOT_OPEN,
                     "NATS not connected, has status " + conn.getState());
         }

@@ -3,7 +3,7 @@ package com.workiva.frugal.transport;
 import com.workiva.frugal.exception.TTransportExceptionType;
 import com.workiva.frugal.protocol.FAsyncCallback;
 import io.nats.client.Connection;
-import io.nats.client.Constants;
+import io.nats.client.Nats;
 import io.nats.client.Subscription;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TMemoryInputTransport;
@@ -85,12 +85,12 @@ public class FNatsSubscriberTransport implements FSubscriberTransport {
 
     @Override
     public boolean isSubscribed() {
-        return conn.getState() == Constants.ConnState.CONNECTED && sub != null;
+        return conn.getState() == Nats.ConnState.CONNECTED && sub != null;
     }
 
     @Override
     public void subscribe(String topic, FAsyncCallback callback) throws TException {
-        if (conn.getState() != Constants.ConnState.CONNECTED) {
+        if (conn.getState() != Nats.ConnState.CONNECTED) {
             throw new TTransportException(TTransportExceptionType.NOT_OPEN,
                     "NATS not connected, has status " + conn.getState());
         }

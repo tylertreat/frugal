@@ -3,7 +3,7 @@
 
     <groupId>com.workiva</groupId>
     <artifactId>frugal</artifactId>
-    <version>2.6.0</version>
+    <version>2.6.1</version>
 
     <name>frugal</name>
     <url>https://github.com/Workiva/frugal/lib/java</url>
@@ -22,7 +22,7 @@
         <dependency>
             <groupId>io.nats</groupId>
             <artifactId>jnats</artifactId>
-            <version>0.5.3</version>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
