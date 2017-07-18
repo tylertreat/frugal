@@ -22,14 +22,16 @@ _ALREADY_OPEN = 'NATS transport already open.'
 
 
 class FNatsTransport(FAsyncTransport):
-    """FNatsTransport is an extension of FAsyncTransport. This is a "stateless"
+    """
+    FNatsTransport is an extension of FAsyncTransport. This is a "stateless"
     transport in the sense that there is no connection with a server. A request
     is simply published to a subject and responses are received on another
     subject. This assumes requests/responses fit within a single NATS message.
     """
 
     def __init__(self, nats_client, subject, inbox=""):
-        """Create a new instance of FNatsTransport
+        """
+        Create a new instance of FNatsTransport
 
         Args:
             nats_client: connected instance of nats.io.Client
@@ -48,7 +50,9 @@ class FNatsTransport(FAsyncTransport):
 
     @gen.coroutine
     def open(self):
-        """Subscribes to the configured inbox subject"""
+        """
+        Subscribes to the configured inbox subject.
+        """
         if not self._nats_client.is_connected:
             raise TTransportException(
                 type=TTransportExceptionType.NOT_OPEN,
@@ -70,7 +74,9 @@ class FNatsTransport(FAsyncTransport):
 
     @gen.coroutine
     def close(self):
-        """Unsubscribes from the inbox subject"""
+        """
+        Unsubscribes from the inbox subject
+        """
         if not self._sub_id:
             return
         yield self._nats_client.flush()
@@ -79,7 +85,9 @@ class FNatsTransport(FAsyncTransport):
 
     @gen.coroutine
     def flush(self, payload):
-        """Sends the buffered bytes over NATS"""
+        """
+        Sends the buffered bytes over NATS
+        """
         subject = self._subject
         inbox = self._inbox
         yield self._nats_client.publish_request(subject, inbox, payload)

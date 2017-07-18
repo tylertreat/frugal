@@ -19,6 +19,7 @@ class FTransportBase(FTransport):
     FBaseTransport extends FTransport using the async decorators used by all
     asyncio FTransports.
     """
+
     def is_open(self) -> bool:
         raise NotImplementedError('You must override this')
 
@@ -33,4 +34,3 @@ class FTransportBase(FTransport):
 
     async def request(self, context, payload) -> TTransportBase:
         raise NotImplementedError('You must override this')
-

@@ -24,12 +24,14 @@ logger = logging.getLogger(__name__)
 
 
 class FHttpServer(FServer):
-    """Simple FServer implementation using HTTP. This is merely a reference
+    """
+    Simple FServer implementation using HTTP. This is merely a reference
     implementation and is not production-ready.
     """
 
     def __init__(self, processor, address, proto_factory):
-        """Initialize an FHttpServer.
+        """
+        Initialize an FHttpServer.
 
         Args:
             processor: FProcessor used to process requests.
@@ -39,7 +41,14 @@ class FHttpServer(FServer):
         """
 
         class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+            """
+            Request handler implements a frugal HTTP handler.
+            """
+
             def do_POST(self):
+                """
+                do_POST implements POST method on a frugal server.
+                """
                 length = self.headers.getheader('Content-Length')
                 payload = b64decode(self.rfile.read(int(length)))
                 response_limit = int(self.headers.getheader(
@@ -47,7 +56,7 @@ class FHttpServer(FServer):
 
                 if len(payload) <= 4:
                     logging.exception(
-                        'Invalid request frame length {}'.format(len(payload)))
+                        'Invalid request frame length %s', len(payload))
                     self.send_response(400)
                     self.end_headers()
                     return
@@ -92,4 +101,3 @@ class FHttpServer(FServer):
 
     def stop(self):
         self._httpd.socket.close()
-

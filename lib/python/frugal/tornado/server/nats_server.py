@@ -24,12 +24,15 @@ logger = logging.getLogger(__name__)
 
 
 class FNatsServer(FServer):
-    """An implementation of FServer which uses NATS as the underlying transport.
-    Clients must connect with the FNatsTransport"""
+    """
+    An implementation of FServer which uses NATS as the underlying transport.
+    Clients must connect with the FNatsTransport.
+    """
 
     def __init__(self, nats_client, subjects, processor,
                  protocol_factory, queue=""):
-        """Create a new instance of FStatelessNatsTornadoServer
+        """
+        Create a new instance of FStatelessNatsTornadoServer
 
         Args:
             nats_client: connected instance of nats.io.Client
@@ -48,15 +51,17 @@ class FNatsServer(FServer):
 
     @gen.coroutine
     def serve(self):
-        """Subscribe to provided subject and listen on provided queue"""
+        """
+        Subscribe to provided subject and listen on provided queue
+        """
         queue = self._queue
-        cb = self._on_message_callback
+        _cb = self._on_message_callback
 
         self._sub_ids = [
             (yield self._nats_client.subscribe_async(
                 subject,
                 queue=queue,
-                cb=cb
+                cb=_cb
             )) for subject in self._subjects
         ]
 
@@ -64,14 +69,17 @@ class FNatsServer(FServer):
 
     @gen.coroutine
     def stop(self):
-        """Unsubscribe from server subject"""
+        """
+        Unsubscribe from server subject
+        """
         logger.debug("Frugal server stopping...")
         for sid in self._sub_ids:
             yield self._nats_client.unsubscribe(sid)
 
     @gen.coroutine
     def _on_message_callback(self, msg):
-        """Process and respond to server request on server subject
+        """
+        Process and respond to server request on server subject
 
         Args:
             msg: request message published to server subject

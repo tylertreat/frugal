@@ -23,10 +23,10 @@ _V0 = 0
 def _state_reset_decorator(func):
     """
     Decorator that resets the state of the TCompactProtocol as a hacky
-    workaround for when an exception  occurs so the protocol can be reused, i.e.
-    if "REQUEST_TOO_LARGE" error is thrown. This is only required for the
-    compact protocol as other protocols don't track internal state as a sanity
-    check.
+    workaround for when an exception  occurs so the protocol can be reused,
+    i.e. if "REQUEST_TOO_LARGE" error is thrown. This is only required for
+    the compact protocol as other protocols don't track internal state as a
+    sanity check.
     """
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -48,7 +48,8 @@ class FProtocol(TProtocolDecorator, object):
     """
 
     def __init__(self, wrapped_protocol):
-        """Initialize FProtocol.
+        """
+        Initialize FProtocol.
 
         Args:
             wrapped_protocol: wrapped thrift protocol extending TProtocolBase.
@@ -57,7 +58,8 @@ class FProtocol(TProtocolDecorator, object):
         super(FProtocol, self).__init__(self._wrapped_protocol)
 
     def get_transport(self):
-        """Return the extended TProtocolBase's underlying tranpsort
+        """
+        Return the extended TProtocolBase's underlying tranpsort
 
         Returns:
             TTransportBase
@@ -66,13 +68,18 @@ class FProtocol(TProtocolDecorator, object):
 
     @_state_reset_decorator
     def write_request_headers(self, context):
-        """Write the request headers to the underlying TTranpsort."""
+        """
+        Write the request headers to the underlying TTranpsort.
+        """
 
         self._write_headers(context.get_request_headers())
 
     @_state_reset_decorator
     def write_response_headers(self, context):
-        """Write the response headers to the underlying TTransport."""
+        """
+        Write the response headers to the underlying TTransport.
+        """
+
         self._write_headers(context.get_response_headers())
 
     def _write_headers(self, headers):
@@ -80,7 +87,8 @@ class FProtocol(TProtocolDecorator, object):
         self.get_transport().write(buff)
 
     def read_request_headers(self):
-        """Reads the request headers out of the underlying TTransportBase and
+        """
+        Reads the request headers out of the underlying TTransportBase and
         return an FContext
 
         Returns:
@@ -105,8 +113,9 @@ class FProtocol(TProtocolDecorator, object):
         return context
 
     def read_response_headers(self, context):
-        """Read the response headers from the underlying transport and set them
-        on a given FContext
+        """
+        Read the response headers from the underlying transport
+        and set them on a given FContext.
 
         Returns:
             FContext
@@ -202,7 +211,7 @@ class FProtocol(TProtocolDecorator, object):
         Write a string to the protocol, if python 2, encode to utf-8
         bytes from a unicode string.
         """
-        if sys.version_info[0] == 2 and isinstance(value, unicode):
+        if sys.version_info[0] == 2 and isinstance(value, unicode):  # noqa: F821,E501
             self._wrapped_protocol.writeString(value.encode('utf-8'))
         else:
             self._wrapped_protocol.writeString(value)
@@ -219,4 +228,3 @@ class FProtocol(TProtocolDecorator, object):
         if sys.version_info[0] == 2:
             return self._wrapped_protocol.readString().decode('utf-8')
         return self._wrapped_protocol.readString()
-

@@ -25,6 +25,8 @@ class FTransport(object):
     """
     def __init__(self, request_size_limit=0):
         """
+        Initialize the transport optionally passing a request size limit.
+
         Args:
             request_size_limit: The maximum request payload size for this
                                 transport. A non-positive number indicates
@@ -33,15 +35,21 @@ class FTransport(object):
         self._request_size_limit = request_size_limit
 
     def open(self):
-        """Open the transport."""
+        """
+        Open the transport.
+        """
         raise NotImplementedError('You must override this')
 
     def close(self):
-        """Close the transport."""
+        """
+        Close the transport.
+        """
         raise NotImplementedError('You must override this')
 
     def is_open(self):
-        """Return True if the transport is open, False otherwise."""
+        """
+        Return True if the transport is open, False otherwise.
+        """
         raise NotImplementedError('You must override this')
 
     def set_monitor(self, monitor):
@@ -105,15 +113,16 @@ class FTransport(object):
 
 
 class TSynchronousTransport(TTransportBase, object):
-    """TSynchronousTransport is a Thrift TTransport for services which make
+    """
+    TSynchronousTransport is a Thrift TTransport for services which make
     synchronous requests.
     """
 
     def set_timeout(self, timeout):
-        """Set the request timeout.
+        """
+        Set the request timeout.
 
         Args:
             timeout: request timeout in milliseconds.
         """
         pass
-

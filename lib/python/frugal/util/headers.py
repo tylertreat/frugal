@@ -10,7 +10,8 @@
 # limitations under the License.
 
 import logging
-from struct import pack_into, unpack_from
+from struct import pack_into
+from struct import unpack_from
 
 from thrift.protocol.TProtocol import TProtocolException
 
@@ -28,7 +29,8 @@ class _Headers(object):
 
     @staticmethod
     def _write_to_bytearray(headers):
-        """Writes a given dictionary to a bytearray object and returns it
+        """
+        Writes a given dictionary to a bytearray object and returns it
         TODO : Point to Protocol doc in the repo
 
         Args:
@@ -86,6 +88,9 @@ class _Headers(object):
 
     @staticmethod
     def decode_from_frame(frame):
+        """
+        Decode a frugal message from a frame.
+        """
         if len(frame) < 5:
             ex = TProtocolException(TProtocolException.INVALID_DATA,
                                     "Invalid frame size: {}".format(len(frame))
@@ -144,5 +149,3 @@ class _Headers(object):
             parsed_headers[name.decode('utf8')] = val.decode('utf8')
 
         return parsed_headers
-
-

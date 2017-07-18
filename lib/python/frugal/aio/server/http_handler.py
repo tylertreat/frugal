@@ -20,7 +20,8 @@ from frugal.protocol import FProtocolFactory
 from frugal.transport import TMemoryOutputBuffer
 
 
-def new_http_handler(processor: FProcessor, protocol_factory: FProtocolFactory):
+def new_http_handler(processor: FProcessor,
+                     protocol_factory: FProtocolFactory):
     """
     Returns a function that can be used as a request handler in an aiohttp
     web server.

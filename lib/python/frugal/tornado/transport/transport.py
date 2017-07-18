@@ -37,4 +37,3 @@ class FTransportBase(FTransport):
     @gen.coroutine
     def request(self, context, payload):
         raise NotImplementedError('You must override this.')
-
