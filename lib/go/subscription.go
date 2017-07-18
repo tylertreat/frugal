@@ -20,7 +20,6 @@ package frugal
 type FSubscription struct {
 	topic     string
 	transport FSubscriberTransport
-	errorC    chan error
 }
 
 // NewFSubscription creates a new FSubscription to the given topic which should
@@ -30,7 +29,6 @@ func NewFSubscription(topic string, transport FSubscriberTransport) *FSubscripti
 	return &FSubscription{
 		topic:     topic,
 		transport: transport,
-		errorC:    make(chan error, 1),
 	}
 }
 

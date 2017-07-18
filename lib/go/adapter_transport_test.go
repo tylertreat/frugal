@@ -134,7 +134,7 @@ func TestAdapterTransportReadError(t *testing.T) {
 	select {
 	case reason := <-tr.Closed():
 		assert.Equal(err, reason)
-	case <-time.After(10 * time.Millisecond):
+	case <-time.After(50 * time.Millisecond):
 		t.Fatal("Expected transport to close")
 	}
 
@@ -230,7 +230,7 @@ func TestAdapterTransportSetMonitor(t *testing.T) {
 	// Setting a new monitor should trigger clean close on the previous one.
 	tr.SetMonitor(mockMonitor2)
 	assert.Nil(t, tr.Close())
-	time.Sleep(5 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 
 	mockTr.AssertExpectations(t)
 	mockMonitor.AssertExpectations(t)
