@@ -116,7 +116,9 @@ type HealthCondition int64
 const (
 	// This docstring gets added to the generated code because it
 	// has the @ sign.
-	HealthCondition_PASS    HealthCondition = 1
+	HealthCondition_PASS HealthCondition = 1
+	// This docstring also gets added to the generated code
+	// because it has the @ sign.
 	HealthCondition_WARN    HealthCondition = 2
 	HealthCondition_FAIL    HealthCondition = 3
 	HealthCondition_UNKNOWN HealthCondition = 4

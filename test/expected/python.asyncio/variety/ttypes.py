@@ -20,8 +20,10 @@ from thrift.protocol import TBinaryProtocol, TProtocol
 
 class HealthCondition(int):
     """
-    This docstring gets added to the generated code because it
+    PASS: This docstring gets added to the generated code because it
     has the @ sign.
+    WARN: This docstring also gets added to the generated code
+    because it has the @ sign.
     """
     PASS = 1
     WARN = 2

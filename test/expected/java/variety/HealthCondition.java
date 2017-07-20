@@ -16,6 +16,10 @@ public enum HealthCondition implements org.apache.thrift.TEnum {
 	 * has the @ sign.
 	 */
 	PASS(1),
+	/**
+	 * This docstring also gets added to the generated code
+	 * because it has the @ sign.
+	 */
 	WARN(2),
 	FAIL(3),
 	UNKNOWN(4);
