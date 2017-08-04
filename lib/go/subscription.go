@@ -7,7 +7,6 @@ package frugal
 type FSubscription struct {
 	topic     string
 	transport FSubscriberTransport
-	errorC    chan error
 }
 
 type suspender interface {
@@ -21,7 +20,6 @@ func NewFSubscription(topic string, transport FSubscriberTransport) *FSubscripti
 	return &FSubscription{
 		topic:     topic,
 		transport: transport,
-		errorC:    make(chan error, 1),
 	}
 }
 
