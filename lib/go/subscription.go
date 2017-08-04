@@ -10,6 +10,10 @@ type FSubscription struct {
 	errorC    chan error
 }
 
+type suspender interface {
+	Suspend() error
+}
+
 // NewFSubscription creates a new FSubscription to the given topic which should
 // be subscribed on the given FScopeTransport. This is to be used by generated
 // code and should not be called directly.
@@ -23,6 +27,18 @@ func NewFSubscription(topic string, transport FSubscriberTransport) *FSubscripti
 
 // Unsubscribe from the topic.
 func (s *FSubscription) Unsubscribe() error {
+	return s.transport.Unsubscribe()
+}
+
+// Suspend unsubscribes without removing durable information on the server,
+// if applicable
+func (s *FSubscription) Suspend() error {
+	// If the subscriber transport has a suspend method, use it
+	// otherwise call unsubscribe
+	// TODO 3.0 get rid of this
+	if suspender, ok := s.transport.(suspender); ok {
+		return suspender.Suspend()
+	}
 	return s.transport.Unsubscribe()
 }
 

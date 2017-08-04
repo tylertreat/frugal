@@ -24,3 +24,6 @@ class FSubscription(object):
         appropriately.
         """
         return self._transport.unsubscribe()
+
+    def suspend(self):
+        return self._transport.suspend()

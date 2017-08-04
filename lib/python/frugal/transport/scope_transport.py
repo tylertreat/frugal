@@ -53,6 +53,9 @@ class FSubscriberTransport(object):
         """Unsubscribes from the current topic."""
         raise NotImplementedError('You must override this')
 
+    def suspend(self):
+        return self.unsubscribe()
+
     def is_subscribed(self):
         """
         Returns True if the transport is subscribed to a topic, False otherwise.

@@ -28,4 +28,10 @@ public interface FSubscriberTransport {
      */
     void unsubscribe();
 
+    /**
+     * Unsubscribes without removing durable information on the server, if applicable.
+     */
+    default void suspend() {
+        unsubscribe();
+    }
 }

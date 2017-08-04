@@ -45,4 +45,10 @@ public final class FSubscription {
         transport.unsubscribe();
     }
 
+    /**
+     * Unsubscribes without removing durable information on the server, if applicable.
+     */
+    public void suspend() {
+        transport.suspend();
+    }
 }
