@@ -1,5 +1,4 @@
 import base64
-import httplib
 import logging
 
 from thrift.transport.TTransport import TMemoryBuffer
@@ -85,7 +84,7 @@ class FHttpTransport(FTransportBase):
         try:
             response = yield self._http.fetch(request)
         except HTTPError as e:
-            if e.code == httplib.REQUEST_ENTITY_TOO_LARGE:
+            if e.code == 413:
                 raise TTransportException(
                     type=TTransportExceptionType.RESPONSE_TOO_LARGE,
                     message='response was too large')
