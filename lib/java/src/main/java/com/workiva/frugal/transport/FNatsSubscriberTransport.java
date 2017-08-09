@@ -79,7 +79,7 @@ public class FNatsSubscriberTransport implements FSubscriberTransport {
          * @return A new FSubscriberTransport instance.
          */
         public FNatsSubscriberTransport getTransport() {
-            return new FNatsSubscriberTransport(this.conn, this.queue);
+            return new FNatsSubscriberTransport(conn, queue);
         }
     }
 
@@ -117,6 +117,8 @@ public class FNatsSubscriberTransport implements FSubscriberTransport {
     @Override
     public synchronized void unsubscribe() {
         if (sub == null) {
+            LOGGER.warn("attempted to unsubscribe with a null internal " +
+                    "subscription - possibly unsubscribing more than once - subject: " + subject);
             return;
         }
         try {
@@ -128,7 +130,7 @@ public class FNatsSubscriberTransport implements FSubscriberTransport {
     }
 
     private String getFormattedSubject() {
-        return FRUGAL_PREFIX + this.subject;
+        return FRUGAL_PREFIX + subject;
     }
 
 }
