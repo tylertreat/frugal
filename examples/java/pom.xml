@@ -20,11 +20,6 @@
             <version>0.9.3</version>
         </dependency>
         <dependency>
-            <groupId>io.nats</groupId>
-            <artifactId>jnats</artifactId>
-            <version>0.5.3</version>
-        </dependency>
-        <dependency>
             <groupId>com.workiva</groupId>
             <artifactId>frugal</artifactId>
             <version>2.7.1</version>
