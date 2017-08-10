@@ -6,8 +6,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for {@link FSubscription}.
@@ -24,6 +27,21 @@ public class FSubscriptionTest {
     public void setUp() throws Exception {
         mockTransport = mock(FSubscriberTransport.class);
         subscription = FSubscription.of(topic, mockTransport);
+    }
+
+    @Test
+    public void testIsSubscribed() throws Exception {
+        when(mockTransport.isSubscribed()).thenReturn(true);
+        assertTrue(subscription.isSubscribed());
+
+        when(mockTransport.isSubscribed()).thenReturn(false);
+        assertFalse(subscription.isSubscribed());
+    }
+
+    @Test
+    public void testIsSubscribedNoTransport() throws Exception {
+        FSubscription sub = FSubscription.of(topic, null);
+        assertFalse(sub.isSubscribed());
     }
 
     @Test

@@ -28,4 +28,10 @@ public interface FSubscriberTransport {
      */
     void unsubscribe();
 
+    /**
+     * Remove unsubscribes and removes durably stored information on the broker, if applicable.
+     */
+    default void remove() throws TException {
+        unsubscribe();
+    }
 }

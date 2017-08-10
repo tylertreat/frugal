@@ -18,6 +18,10 @@ abstract class FSubscriberTransport {
 
   /// Unsets the subscribe topic and closes the transport.
   Future<Null> unsubscribe();
+
+  /// Unsubscribe and remove durable information on the server,
+  /// if applicable.
+  Future remove() => unsubscribe();
 }
 
 /// Produces [FSubscriberTransport] instances.
