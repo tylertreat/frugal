@@ -9,8 +9,12 @@ type FSubscription struct {
 	transport FSubscriberTransport
 }
 
-type suspender interface {
-	Suspend() error
+// remover allows unsubscribing and removing durably stored information
+// on the message broker.
+type remover interface {
+	// Remove unsubscribes and removes durably stored information on the broker,
+	// if applicable.
+	Remove() error
 }
 
 // NewFSubscription creates a new FSubscription to the given topic which should
@@ -28,14 +32,14 @@ func (s *FSubscription) Unsubscribe() error {
 	return s.transport.Unsubscribe()
 }
 
-// Suspend unsubscribes without removing durable information on the server,
-// if applicable
-func (s *FSubscription) Suspend() error {
-	// If the subscriber transport has a suspend method, use it
+// Remove unsubscribes and removes durably stored information on the broker,
+// if applicable.
+func (s *FSubscription) Remove() error {
+	// If the subscriber transport has a remove method, use it
 	// otherwise call unsubscribe
 	// TODO 3.0 get rid of this
-	if suspender, ok := s.transport.(suspender); ok {
-		return suspender.Suspend()
+	if suspender, ok := s.transport.(remover); ok {
+		return suspender.Remove()
 	}
 	return s.transport.Unsubscribe()
 }

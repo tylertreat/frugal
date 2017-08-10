@@ -25,5 +25,9 @@ class FSubscription(object):
         """
         return self._transport.unsubscribe()
 
-    def suspend(self):
-        return self._transport.suspend()
+    def remove(self):
+        """
+        Unsubscribe and removes durably stored information on the broker,
+        if applicable.
+        """
+        return self._transport.remove()

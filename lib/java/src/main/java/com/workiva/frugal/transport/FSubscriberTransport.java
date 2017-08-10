@@ -29,9 +29,9 @@ public interface FSubscriberTransport {
     void unsubscribe();
 
     /**
-     * Unsubscribes without removing durable information on the server, if applicable.
+     * Remove unsubscribes and removes durably stored information on the broker, if applicable.
      */
-    default void suspend() {
+    default void remove() throws TException {
         unsubscribe();
     }
 }

@@ -53,7 +53,11 @@ class FSubscriberTransport(object):
         """Unsubscribes from the current topic."""
         raise NotImplementedError('You must override this')
 
-    def suspend(self):
+    def remove(self):
+        """
+        Unsubscribe and removes durably stored information on the broker,
+        if applicable.
+        """
         return self.unsubscribe()
 
     def is_subscribed(self):

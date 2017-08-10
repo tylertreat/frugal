@@ -15,7 +15,7 @@ class FSubscription {
   /// Unsubscribe from the topic.
   Future unsubscribe() => _transport.unsubscribe();
 
-  /// Unsubscribe without removing durable information on the server,
+  /// Unsubscribes and removes durably stored information on the broker,
   /// if applicable.
-  Future suspend() => _transport.suspend();
+  Future remove() => _transport.remove();
 }

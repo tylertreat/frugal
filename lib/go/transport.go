@@ -55,7 +55,7 @@ type FSubscriberTransport interface {
 	// false otherwise.
 	IsSubscribed() bool
 
-	// TODO 3.0 add a suspend method
+	// TODO 3.0 add a remove method
 }
 
 // FTransport is Frugal's equivalent of Thrift's TTransport. FTransport is
