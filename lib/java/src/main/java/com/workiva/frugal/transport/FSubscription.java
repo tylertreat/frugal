@@ -1,5 +1,7 @@
 package com.workiva.frugal.transport;
 
+import org.apache.thrift.TException;
+
 /**
  * FSubscription is a subscription to a pub/sub topic created by a scope. The
  * topic subscription is actually handled by an FSubscriberTransport, which the
@@ -54,5 +56,12 @@ public final class FSubscription {
         if (transport != null) {
             transport.unsubscribe();
         }
+    }
+
+    /**
+     * Unsubscribes and removes durably stored information on the broker, if applicable.
+     */
+    public void remove() throws TException {
+        transport.remove();
     }
 }
