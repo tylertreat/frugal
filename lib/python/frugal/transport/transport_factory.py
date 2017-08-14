@@ -9,11 +9,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 class FTransportFactory(object):
-    """FTransportFactory is responsible for creating new FTransports."""
+    """
+    FTransportFactory is responsible for creating new FTransports.
+    """
 
     def get_transport(self, thrift_transport):
-        """ Retuns a new FTransport wrapping the given TTransport.
+        """
+        Retuns a new FTransport wrapping the given TTransport.
 
         Args:
             thrift_transport: TTransport to wrap.
@@ -23,21 +27,27 @@ class FTransportFactory(object):
         pass
 
 
-class FPublisherTransportFactory:
+class FPublisherTransportFactory(object):
     """
     FPublisherTransportFactory is responsible for creating new
     FPublisherTransports.
     """
+
     def get_transport(self):
-        """Returns a new FPublisherTransport."""
+        """
+        Returns a new FPublisherTransport.
+        """
         pass
 
 
-class FSubscriberTransportFactory:
+class FSubscriberTransportFactory(object):
     """
     FSubscriberTransportFactory is responsible for creating new
     FSubscriberTransports.
     """
+
     def get_transport(self):
-        """Returns a new FSubscriberTransport."""
+        """
+        Returns a new FSubscriberTransport.
+        """
         pass

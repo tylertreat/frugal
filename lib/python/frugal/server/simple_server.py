@@ -18,6 +18,10 @@ from . import FServer
 
 
 class FSimpleServer(FServer):
+    """
+    FSimpleServer is a very basic implementation of an FServer.
+    """
+
     def __init__(self, processor_factory, server_transport, protocol_factory):
         self._processor_factory = processor_factory
         self._server_transport = server_transport

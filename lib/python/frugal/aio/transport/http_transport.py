@@ -130,4 +130,3 @@ class FHttpTransport(FTransportBase):
                     type=TTransportExceptionType.TIMED_OUT,
                     message='request timed out'
                 )
-

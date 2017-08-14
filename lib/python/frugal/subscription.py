@@ -11,11 +11,14 @@
 
 
 class FSubscription(object):
-    """FSubscription to a pub/sub topic.  This is used only by generated code
-    and should not be called directly."""
+    """
+    FSubscription to a pub/sub topic.  This is used only by generated code
+    and should not be called directly.
+    """
 
     def __init__(self, topic, transport):
-        """Initialize FSubscription.
+        """
+        Initialize FSubscription.
 
         Args:
             topic: pub/sub topic string.
@@ -25,7 +28,9 @@ class FSubscription(object):
         self._transport = transport
 
     def get_topic(self):
-        """Return subscription topic."""
+        """
+        Return subscription topic.
+        """
         return self._topic
 
     def unsubscribe(self):

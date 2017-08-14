@@ -22,11 +22,14 @@ from frugal.transport.base_http_transport import TBaseHttpTransport
 
 
 class THttpTransport(TBaseHttpTransport):
-    """Synchronous transport implemented with Requests."""
+    """
+    Synchronous transport implemented with Requests.
+    """
 
     def __init__(self, url, request_capacity=0, response_capacity=0,
                  headers=None, get_headers=None):
-        """Initialize a new THttpTransport.
+        """
+        Initialize a new THttpTransport.
 
         Args:
             url: url of the Frugal server.
@@ -93,4 +96,3 @@ class THttpTransport(TBaseHttpTransport):
             return
 
         self._rbuff = BytesIO(resp_body[4:])
-

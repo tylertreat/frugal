@@ -25,7 +25,8 @@ class TMemoryOutputBuffer(TMemoryBuffer, object):
     """
 
     def __init__(self, limit, value=None):
-        """Create an instance of FBoundedMemoryBuffer where size is the
+        """
+        Create an instance of FBoundedMemoryBuffer where size is the
         maximum writable length of the buffer.
 
            Args:
@@ -36,7 +37,9 @@ class TMemoryOutputBuffer(TMemoryBuffer, object):
         self._limit = limit
 
     def write(self, buf):
-        """Bounded write to buffer"""
+        """
+        Bounded write to buffer
+        """
         if len(self) + len(buf) > self._limit > 0:
             self._buffer = TMemoryBuffer()
             raise TTransportException(

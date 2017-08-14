@@ -17,8 +17,8 @@ from frugal.server.http_handler import _FSynchronousHttpRequestHandler
 
 def new_webapp2_handler(processor, protocol_factory):
     """
-    Produces a class extending webapp2.RequestHandler that can be used to handle
-    frugal HTTP rpc requests.
+    Produces a class extending webapp2.RequestHandler that can be used to
+    handle frugal HTTP rpc requests.
 
     Args:
         processor: The processor to use to handle requests.

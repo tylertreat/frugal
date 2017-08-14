@@ -13,7 +13,6 @@ import copy
 import logging
 
 from thrift.Thrift import TApplicationException
-from thrift.Thrift import TException
 from thrift.Thrift import TMessageType
 from thrift.Thrift import TType
 from tornado import gen
@@ -25,9 +24,11 @@ logger = logging.getLogger(__name__)
 
 
 class FProcessorFunction(object):
-    """FProcessorFunction is a generic object that exposes a single process
+    """
+    FProcessorFunction is a generic object that exposes a single process
     call, which is used to handle a method invocation. FProcessorFunction
-    should be implemented by the generated code."""
+    should be implemented by the generated code.
+    """
 
     def __init__(self, handler, lock):
         """
@@ -40,7 +41,8 @@ class FProcessorFunction(object):
 
     @gen.coroutine
     def process(self, ctx, iprot, oprot):
-        """Process the request from the input protocol and write the
+        """
+        Process the request from the input protocol and write the
         response to the output protocol.
 
         Args:
@@ -50,7 +52,8 @@ class FProcessorFunction(object):
         pass
 
     def add_middleware(self, middleware):
-        """Add the given middleware to the FProcessorFunction
+        """
+        Add the given middleware to the FProcessorFunction
         This should only be called before the server is started.
 
             Args:
@@ -61,12 +64,15 @@ class FProcessorFunction(object):
 
 
 class FProcessor(object):
-    """FProcessor is a generic object which operates upon an input stream and
+    """
+    FProcessor is a generic object which operates upon an input stream and
     writes to some output stream.
     """
+
     @gen.coroutine
     def process(self, iprot, oprot):
-        """Process the request from the input protocol and write the
+        """
+        Process the request from the input protocol and write the
         response to the output protocol.
 
         Args:
@@ -76,7 +82,8 @@ class FProcessor(object):
         pass
 
     def add_middleware(self, middleware):
-        """Add the given middleware to the FProcessor
+        """
+        Add the given middleware to the FProcessor
         This should only be called before the server is started.
 
             Args:
@@ -85,23 +92,30 @@ class FProcessor(object):
         pass
 
     def get_annotations_map(self):
-        """Return a deepcopy of the annotations map"""
+        """
+        Return a deepcopy of the annotations map.
+        """
         pass
 
 
 class FBaseProcessor(FProcessor):
-    """FBaseProcessor is a base implementation of FProcessor. FProcessors
+    """
+    FBaseProcessor is a base implementation of FProcessor. FProcessors
     should extend this and map FProcessorFunctions. This should only be used
-    by generated code."""
+    by generated code.
+    """
 
     def __init__(self):
-        """Create new instance of FBaseProcessor that will process requests."""
+        """
+        Create new instance of FBaseProcessor that will process requests.
+        """
         self._processor_function_map = {}
         self._annotations_map = {}
         self._write_lock = Lock()
 
     def add_to_processor_map(self, key, proc):
-        """Register the given FProcessorFunction.
+        """
+        Register the given FProcessorFunction.
 
         Args:
             key: processor function name
@@ -110,7 +124,8 @@ class FBaseProcessor(FProcessor):
         self._processor_function_map[key] = proc
 
     def add_to_annotations_map(self, method_name, annotation):
-        """Register the given annotation dictionary
+        """
+        Register the given annotation dictionary
 
         Args:
             method_name: method name
@@ -119,16 +134,21 @@ class FBaseProcessor(FProcessor):
         self._annotations_map[method_name] = annotation
 
     def get_annotations_map(self):
-        """Return a deepcopy of the annotations map"""
+        """
+        Return a deepcopy of the annotations map.
+        """
         return copy.deepcopy(self._annotations_map)
 
     def get_write_lock(self):
-        """Return the write lock."""
+        """
+        Return the write lock.
+        """
         return self._write_lock
 
     @gen.coroutine
     def process(self, iprot, oprot):
-        """Process an input protocol and output protocol
+        """
+        Process an input protocol and output protocol
 
         Args:
             iprot: input FProtocol
@@ -150,13 +170,12 @@ class FBaseProcessor(FProcessor):
                 # Don't raise an exception because the server should still send
                 # a response to the client.
                 logging.exception(
-                    'frugal: exception occurred while processing request with '
-                    'correlation id {}'.format(context.correlation_id))
+                    "frugal: exception occurred while processing request with "
+                    "correlation id %s", context.correlation_id)
             return
 
-        logger.warn('frugal: client invoked unknown method {0} on request '
-                    'with correlation id {1}'.format(
-                         name, context.correlation_id))
+        logger.warn("frugal: client invoked unknown method %s on request "
+                    "with correlation id %s", name, context.correlation_id)
         iprot.skip(TType.STRUCT)
         iprot.readMessageEnd()
 
@@ -172,7 +191,8 @@ class FBaseProcessor(FProcessor):
             oprot.trans.flush()
 
     def add_middleware(self, middleware):
-        """Add the given middleware to the FProcessor.
+        """
+        Add the given middleware to the FProcessor.
         This should only be called before the server is started.
 
         Args:
