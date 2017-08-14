@@ -9,6 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 class FSubscription(object):
     """FSubscription to a pub/sub topic.  This is used only by generated code
     and should not be called directly."""
@@ -35,3 +36,10 @@ class FSubscription(object):
         appropriately.
         """
         return self._transport.unsubscribe()
+
+    def remove(self):
+        """
+        Unsubscribe and removes durably stored information on the broker,
+        if applicable.
+        """
+        return self._transport.remove()

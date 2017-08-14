@@ -234,8 +234,14 @@ func (g *Generator) GenerateTypeDef(*parser.TypeDef) error {
 func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents := ""
 	contents += fmt.Sprintf("class %s(int):\n", enum.Name)
-	if enum.Comment != nil {
-		contents += g.generateDocString(enum.Comment, tab)
+	comment := append([]string{}, enum.Comment...)
+	for _, value := range enum.Values {
+		if value.Comment != nil {
+			comment = append(append(comment, value.Name + ": " + value.Comment[0]), value.Comment[1:]...)
+		}
+	}
+	if len(comment) != 0 {
+		contents += g.generateDocString(comment, tab)
 	}
 	for _, value := range enum.Values {
 		contents += fmt.Sprintf(tab+"%s = %d\n", value.Name, value.Value)

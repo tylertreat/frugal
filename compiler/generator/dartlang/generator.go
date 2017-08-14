@@ -533,6 +533,9 @@ func (g *Generator) generateEnumUsingClasses(enum *parser.Enum) string {
 	contents := ""
 	contents += fmt.Sprintf("class %s {\n", enum.Name)
 	for _, field := range enum.Values {
+		if field.Comment != nil {
+			contents += g.GenerateInlineComment(field.Comment, tab+"/")
+		}
 		contents += fmt.Sprintf(tab+"static const int %s = %d;\n", field.Name, field.Value)
 	}
 	contents += "\n"
@@ -556,6 +559,9 @@ func (g *Generator) generateEnumUsingEnums(enum *parser.Enum) string {
 	contents := ""
 	contents += fmt.Sprintf("enum %s {\n", enum.Name)
 	for _, field := range enum.Values {
+		if field.Comment != nil {
+			contents += g.GenerateInlineComment(field.Comment, tab+"/")
+		}
 		contents += fmt.Sprintf(tab+"%s,\n", field.Name)
 	}
 	contents += "}\n\n"

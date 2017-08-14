@@ -92,13 +92,13 @@ public class FNatsSubscriberTransport implements FSubscriberTransport {
          * @return A new FSubscriberTransport instance.
          */
         public FNatsSubscriberTransport getTransport() {
-            return new FNatsSubscriberTransport(this.conn, this.queue);
+            return new FNatsSubscriberTransport(conn, queue);
         }
     }
 
     @Override
     public boolean isSubscribed() {
-        return conn.getState() == Constants.ConnState.CONNECTED && sub != null;
+        return conn.getState() == Constants.ConnState.CONNECTED && sub != null && sub.isValid();
     }
 
     @Override
@@ -129,6 +129,11 @@ public class FNatsSubscriberTransport implements FSubscriberTransport {
 
     @Override
     public synchronized void unsubscribe() {
+        if (sub == null) {
+            LOGGER.warn("attempted to unsubscribe with a null internal " +
+                    "subscription - possibly unsubscribing more than once - subject: " + subject);
+            return;
+        }
         try {
             sub.unsubscribe();
         } catch (IOException e) {
@@ -138,7 +143,7 @@ public class FNatsSubscriberTransport implements FSubscriberTransport {
     }
 
     private String getFormattedSubject() {
-        return FRUGAL_PREFIX + this.subject;
+        return FRUGAL_PREFIX + subject;
     }
 
 }

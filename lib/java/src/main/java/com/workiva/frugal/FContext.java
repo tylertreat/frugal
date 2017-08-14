@@ -88,7 +88,6 @@ public class FContext implements Cloneable {
         requestHeaders.put(CID_HEADER, correlationId);
         requestHeaders.put(OPID_HEADER, getNextOpId());
         requestHeaders.put(TIMEOUT_HEADER, Long.toString(DEFAULT_TIMEOUT));
-
     }
 
     /**
@@ -100,6 +99,8 @@ public class FContext implements Cloneable {
     public static FContext withRequestHeaders(Map<String, String> headers) {
         headers.computeIfAbsent(CID_HEADER, k -> generateCorrelationId());
         headers.computeIfAbsent(TIMEOUT_HEADER, k -> Long.toString(DEFAULT_TIMEOUT));
+        // Always generate a new opid as it has to be unique to the context
+        headers.put(OPID_HEADER, getNextOpId());
         return new FContext(headers, new HashMap<>());
     }
 

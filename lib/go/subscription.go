@@ -20,7 +20,14 @@ package frugal
 type FSubscription struct {
 	topic     string
 	transport FSubscriberTransport
-	errorC    chan error
+}
+
+// remover allows unsubscribing and removing durably stored information
+// on the message broker.
+type remover interface {
+	// Remove unsubscribes and removes durably stored information on the broker,
+	// if applicable.
+	Remove() error
 }
 
 // NewFSubscription creates a new FSubscription to the given topic which should
@@ -30,12 +37,23 @@ func NewFSubscription(topic string, transport FSubscriberTransport) *FSubscripti
 	return &FSubscription{
 		topic:     topic,
 		transport: transport,
-		errorC:    make(chan error, 1),
 	}
 }
 
 // Unsubscribe from the topic.
 func (s *FSubscription) Unsubscribe() error {
+	return s.transport.Unsubscribe()
+}
+
+// Remove unsubscribes and removes durably stored information on the broker,
+// if applicable.
+func (s *FSubscription) Remove() error {
+	// If the subscriber transport has a remove method, use it
+	// otherwise call unsubscribe
+	// TODO 3.0 get rid of this
+	if suspender, ok := s.transport.(remover); ok {
+		return suspender.Remove()
+	}
 	return s.transport.Unsubscribe()
 }
 

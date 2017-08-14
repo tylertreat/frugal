@@ -67,6 +67,8 @@ type FSubscriberTransport interface {
 	// IsSubscribed returns true if the transport is subscribed to a topic,
 	// false otherwise.
 	IsSubscribed() bool
+
+	// TODO 3.0 add a remove method
 }
 
 // FTransport is Frugal's equivalent of Thrift's TTransport. FTransport is

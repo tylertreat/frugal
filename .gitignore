@@ -3,6 +3,7 @@ test/idl/constants.thrift
 target/
 *.iml
 .idea
+.vscode
 *.pyc
 py3env
 

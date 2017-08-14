@@ -64,12 +64,15 @@ public class FProtocol extends TProtocol {
      * @throws TException an error occurred while reading the headers
      */
     public FContext readRequestHeader() throws TException {
-        FContext ctx = FContext.withRequestHeaders(HeaderUtils.read(wrapped.getTransport()));
-        // Put op id in response headers
-        ctx.addResponseHeader(OPID_HEADER, ctx.getRequestHeader(OPID_HEADER));
-        // Put a new op id in the request headers so this context can be
-        // used/propagated by the receiver.
-        ctx.addRequestHeader(OPID_HEADER, FContext.getNextOpId());
+        Map<String, String> headers = HeaderUtils.read(wrapped.getTransport());
+        // Store the opId so it can be added to the response headers
+        // as the opId will be overridden when creating the FContext
+        String opId = headers.get(OPID_HEADER);
+
+        FContext ctx = FContext.withRequestHeaders(headers);
+        // Put the opId in response headers for the response.
+        ctx.addResponseHeader(OPID_HEADER, opId);
+
         String cid = ctx.getCorrelationId();
         if (cid != null && !cid.isEmpty()) {
             ctx.addResponseHeader(CID_HEADER, cid);
