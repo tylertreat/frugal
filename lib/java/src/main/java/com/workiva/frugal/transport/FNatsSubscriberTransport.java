@@ -1,3 +1,16 @@
+/*
+ * Copyright 2017 Workiva
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.TTransportExceptionType;
@@ -79,13 +92,13 @@ public class FNatsSubscriberTransport implements FSubscriberTransport {
          * @return A new FSubscriberTransport instance.
          */
         public FNatsSubscriberTransport getTransport() {
-            return new FNatsSubscriberTransport(this.conn, this.queue);
+            return new FNatsSubscriberTransport(conn, queue);
         }
     }
 
     @Override
     public boolean isSubscribed() {
-        return conn.getState() == Nats.ConnState.CONNECTED && sub != null;
+        return conn.getState() == Nats.ConnState.CONNECTED && sub != null && sub.isValid();
     }
 
     @Override
@@ -116,6 +129,11 @@ public class FNatsSubscriberTransport implements FSubscriberTransport {
 
     @Override
     public synchronized void unsubscribe() {
+        if (sub == null) {
+            LOGGER.warn("attempted to unsubscribe with a null internal " +
+                    "subscription - possibly unsubscribing more than once - subject: " + subject);
+            return;
+        }
         try {
             sub.unsubscribe();
         } catch (IOException e) {
@@ -125,7 +143,7 @@ public class FNatsSubscriberTransport implements FSubscriberTransport {
     }
 
     private String getFormattedSubject() {
-        return FRUGAL_PREFIX + this.subject;
+        return FRUGAL_PREFIX + subject;
     }
 
 }
