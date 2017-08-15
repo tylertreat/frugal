@@ -25,7 +25,11 @@ import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
-import com.workiva.frugal.server.*;
+import com.workiva.frugal.server.FDefaultNettyHttpProcessor;
+import com.workiva.frugal.server.FNatsServer;
+import com.workiva.frugal.server.FNettyHttpHandler;
+import com.workiva.frugal.server.FNettyHttpProcessor;
+import com.workiva.frugal.server.FServer;
 import com.workiva.frugal.transport.FNatsPublisherTransport;
 import com.workiva.frugal.transport.FNatsSubscriberTransport;
 import com.workiva.frugal.transport.FPublisherTransportFactory;
@@ -36,7 +40,7 @@ import frugal.test.EventsSubscriber;
 import frugal.test.FFrugalTest;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
-import io.nats.client.Constants;
+import io.nats.client.Nats;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -53,7 +57,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.workiva.utils.PREAMBLE_HEADER;
 import static com.workiva.utils.RAMBLE_HEADER;
@@ -268,7 +271,7 @@ public class TestServer {
         }
 
         public void run() {
-            ConnectionFactory cf = new ConnectionFactory(Constants.DEFAULT_URL);
+            ConnectionFactory cf = new ConnectionFactory(Nats.DEFAULT_URL);
             try {
                 Connection conn = cf.createConnection();
                 FPublisherTransportFactory publisherFactory = new FNatsPublisherTransport.Factory(conn);
@@ -302,8 +305,7 @@ public class TestServer {
                     System.out.println("Error subscribing" + e.getMessage());
                 }
                 System.out.println("Subscriber started...");
-
-            } catch (TimeoutException | IOException e) {
+            } catch (IOException e) {
                 System.out.println("Error connecting to nats" + e.getMessage());
             }
         }
