@@ -1,0 +1,11 @@
+language: go
+
+go:
+  - 1.8
+
+install:
+  - go get github.com/tools/godep
+
+script:
+  - cd lib/go
+  - godep go test -race
