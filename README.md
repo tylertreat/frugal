@@ -264,27 +264,3 @@ IDL has a vendor path set for the Go namespace. Instead, the generated code for
 Frugal is intended to be a superset of Thrift, meaning valid Thrift should be
 valid Frugal. File an issue if you discover an inconsistency in compatibility
 with the IDL.
-
-## Docker
-
-### Via Shipyard
-
-Grab the frugal Docker image id for the image you would like to use from
-[Shipyard](https://shipyard.workiva.org/repo/Workiva/frugal).
-
-Switch to the directory that has the files you would like to generate.
-
-Then run the docker image. This command will mount your local directory into
-the image. It supports all of the standard Frugal commands.
-
-```
-docker run -v "$(pwd):/data" drydock.workiva.org/workiva/frugal:{SHIPYARD_ID} frugal -gen={LANG} {FILE_TO_GEN}
-```
-
-An example to generate the Go code off the event.frugal definition in the
-example directory.
-
-```
-$ cd example
-$ docker run -v "$(pwd):/data" drydock.workiva.org/workiva/frugal:17352 frugal -gen=go event.frugal
-```
