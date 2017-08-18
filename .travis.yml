@@ -9,3 +9,6 @@ install:
 script:
   - cd lib/go
   - godep go test -race
+
+notifications:
+  email: false
