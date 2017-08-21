@@ -1,5 +1,7 @@
 # Frugal
 
+![Build Status](https://travis-ci.org/Workiva/frugal.svg?branch=develop)
+
 Frugal is an extension of [Apache Thrift](https://thrift.apache.org/) which
 provides additional functionality. Specifically, it includes support for
 request headers, request multiplexing, thread safety, and code-generated
