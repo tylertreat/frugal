@@ -52,6 +52,8 @@ public class FAdapterTransport extends FAsyncTransport {
 
     /**
      * Creates a new FAdapterTransport which wraps the given TTransport.
+     *
+     * @param tr TTransport to adapt to
      */
     public FAdapterTransport(TTransport tr) {
         transport = tr;

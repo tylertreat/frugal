@@ -206,7 +206,7 @@ public class FNatsServer implements FServer {
     /**
      * Starts the server by subscribing to messages on the configured NATS subject.
      *
-     * @throws TException
+     * @throws TException if the server fails to start
      */
     @Override
     public void serve() throws TException {
@@ -235,7 +235,7 @@ public class FNatsServer implements FServer {
     /**
      * Stops the server by shutting down the executor service processing tasks.
      *
-     * @throws TException
+     * @throws TException if the server fails to stop
      */
     @Override
     public void stop() throws TException {
@@ -256,6 +256,8 @@ public class FNatsServer implements FServer {
 
     /**
      * Creates a new NATS MessageHandler which is invoked when a request is received.
+     *
+     * @return MessageHandler used for handling requests
      */
     protected MessageHandler newRequestHandler() {
         return message -> {

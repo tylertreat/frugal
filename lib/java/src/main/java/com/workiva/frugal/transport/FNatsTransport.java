@@ -57,11 +57,12 @@ public class FNatsTransport extends FAsyncTransport {
      * Creates a new FTransport which uses the NATS messaging system as the underlying transport.
      * A request is simply published to a subject and responses are received on a randomly generated
      * subject. This requires requests to fit within a single NATS message.
-     * <p/>
+     *
      * This transport uses a randomly generated inbox for receiving NATS replies.
      *
      * @param conn    NATS connection
      * @param subject subject to publish requests on
+     * @return FNatsTransport for communicating via NATS.
      */
     public static FNatsTransport of(Connection conn, String subject) {
         return new FNatsTransport(conn, subject, conn.newInbox());
@@ -71,6 +72,7 @@ public class FNatsTransport extends FAsyncTransport {
      * Returns a new FTransport configured with the specified inbox.
      *
      * @param inbox NATS subject to receive responses on
+     * @return FNatsTransport for communicating via NATS.
      */
     public FNatsTransport withInbox(String inbox) {
         return new FNatsTransport(conn, subject, inbox);
@@ -90,7 +92,7 @@ public class FNatsTransport extends FAsyncTransport {
     /**
      * Subscribes to the configured inbox subject.
      *
-     * @throws TTransportException
+     * @throws TTransportException if unable to open the transport
      */
     @Override
     public void open() throws TTransportException {

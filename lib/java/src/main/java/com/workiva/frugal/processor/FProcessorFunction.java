@@ -31,7 +31,7 @@ public interface FProcessorFunction {
      * @param ctx FContext
      * @param in  input FProtocol
      * @param out output FProtocol
-     * @throws TException
+     * @throws TException if an issue occurs reading or writing
      */
     void process(FContext ctx, FProtocol in, FProtocol out) throws TException;
 

@@ -32,7 +32,7 @@ public interface FServer {
     /**
      * Starts the server.
      *
-     * @throws TException
+     * @throws TException if unable to start the server.
      */
     void serve() throws TException;
 
@@ -40,7 +40,7 @@ public interface FServer {
      * Stops the server. This is optional on a per-implementation basis.
      * Not all servers are required to be cleanly stoppable.
      *
-     * @throws TException
+     * @throws TException if unable to stop the server.
      */
     void stop() throws TException;
 }
