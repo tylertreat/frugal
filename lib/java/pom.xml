@@ -6,7 +6,7 @@
     <version>2.8.1</version>
     <packaging>jar</packaging>
 
-    <name>frugal</name>
+    <name>${project.groupId}:${project.artifactId}</name>
     <description>Thrift on steroids.</description>
     <url>https://github.com/Workiva/frugal/lib/java</url>
 
@@ -146,9 +146,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>2.2.1</version>
-                <configuration>
-                    <includePom>true</includePom>
-                </configuration>
+                <executions>
+                    <execution>
+                    <id>attach-sources</id>
+                    <goals>
+                        <goal>jar-no-fork</goal>
+                    </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
