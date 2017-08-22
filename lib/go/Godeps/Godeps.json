@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/Workiva/frugal/lib/go",
-	"GoVersion": "go1.5",
+	"GoVersion": "go1.8",
 	"GodepVersion": "v75",
 	"Packages": [
 		"./..."
