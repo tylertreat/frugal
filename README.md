@@ -3,16 +3,28 @@
 ![Build Status](https://travis-ci.org/Workiva/frugal.svg?branch=develop)
 
 Frugal is an extension of [Apache Thrift](https://thrift.apache.org/) which
-provides additional functionality. Specifically, it includes support for
-request headers, request multiplexing, thread safety, and code-generated
-pub/sub APIs. Frugal is intended to act as a superset of Thrift, meaning it
+provides additional functionality. Key features include:
+
+- request headers
+- request multiplexing
+- request interceptors
+- per-request timeouts
+- thread-safe clients
+- code-generated pub/sub APIs
+- support for Go, Java, Dart, and Python (2.7 and 3.5)
+
+Frugal is intended to act as a superset of Thrift, meaning it
 implements the same functionality as Thrift with some additional
 features. For a more detailed explanation, see the
 [documentation](documentation).
 
-Currently supported languages are Go, Java, Dart, and Python (2.7 and 3.5).
-
 ## Installation
+
+### Homebrew
+
+```bash
+brew install frugal
+```
 
 ### Download
 
