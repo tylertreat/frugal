@@ -2,6 +2,7 @@ package com.workiva.frugal.benchmarks;
 
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
+import io.nats.client.Nats;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
@@ -13,7 +14,6 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Benchmarks for JNATS.
@@ -24,11 +24,11 @@ public class NatsBenchmark {
     Connection nc;
 
     @Setup
-    public void setup() throws IOException, TimeoutException {
-        ConnectionFactory cf = new ConnectionFactory(ConnectionFactory.DEFAULT_URL);
+    public void setup() throws IOException {
+        ConnectionFactory cf = new ConnectionFactory(Nats.DEFAULT_URL);
         try {
             nc = cf.createConnection();
-        } catch (IOException | TimeoutException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

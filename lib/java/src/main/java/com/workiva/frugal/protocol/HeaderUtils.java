@@ -118,7 +118,7 @@ public class HeaderUtils {
      * Decodes header information from a byte sequence.
      *
      * @param bytes a sequence of framed bytes
-     * @return
+     * @return Map of headers
      *
      * @throws TException if invalid data
      */

@@ -1,7 +1,6 @@
 project: frugal
 language: golang
 
-# https://dev.webfilings.org/zuul/release/461082
 runner_image: drydock-prod.workiva.net/workiva/messaging-docker-images:208164
 
 script:

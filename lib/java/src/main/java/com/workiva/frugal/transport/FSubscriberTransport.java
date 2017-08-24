@@ -32,6 +32,7 @@ public interface FSubscriberTransport {
      * Opens the Transport to receive messages on the subscription.
      *
      * @param topic the pub/sub topic to subscribe to.
+     * @param callback method to invoke when a message is received.
      * @throws TException if there was a problem subscribing.
      */
     void subscribe(String topic, FAsyncCallback callback) throws TException;
@@ -43,6 +44,8 @@ public interface FSubscriberTransport {
 
     /**
      * Remove unsubscribes and removes durably stored information on the broker, if applicable.
+     *
+     * @throws TException if unable to remove subscription information.
      */
     default void remove() throws TException {
         unsubscribe();

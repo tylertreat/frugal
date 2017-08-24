@@ -8,7 +8,6 @@ run:  # local tests only, never run in Skynet
 
 contact: messaging@workiva.com
 
-# https://dev.webfilings.org/zuul/release/461082
 image: drydock-prod.workiva.net/workiva/messaging-docker-images:208164
 
 env:
@@ -42,7 +41,6 @@ requires:
 
 contact: messaging@workiva.com
 
-# https://dev.webfilings.org/zuul/release/461082
 image: drydock-prod.workiva.net/workiva/messaging-docker-images:208164
 
 env:

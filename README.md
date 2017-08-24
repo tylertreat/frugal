@@ -1,16 +1,30 @@
 # Frugal
 
+![Build Status](https://travis-ci.org/Workiva/frugal.svg?branch=develop)
+
 Frugal is an extension of [Apache Thrift](https://thrift.apache.org/) which
-provides additional functionality. Specifically, it includes support for
-request headers, request multiplexing, thread safety, and code-generated
-pub/sub APIs. Frugal is intended to act as a superset of Thrift, meaning it
+provides additional functionality. Key features include:
+
+- request headers
+- request multiplexing
+- request interceptors
+- per-request timeouts
+- thread-safe clients
+- code-generated pub/sub APIs
+- support for Go, Java, Dart, and Python (2.7 and 3.5)
+
+Frugal is intended to act as a superset of Thrift, meaning it
 implements the same functionality as Thrift with some additional
 features. For a more detailed explanation, see the
 [documentation](documentation).
 
-Currently supported languages are Go, Java, Dart, and Python (2.7 and 3.5).
-
 ## Installation
+
+### Homebrew
+
+```bash
+brew install frugal
+```
 
 ### Download
 
@@ -264,27 +278,3 @@ IDL has a vendor path set for the Go namespace. Instead, the generated code for
 Frugal is intended to be a superset of Thrift, meaning valid Thrift should be
 valid Frugal. File an issue if you discover an inconsistency in compatibility
 with the IDL.
-
-## Docker
-
-### Via Shipyard
-
-Grab the frugal Docker image id for the image you would like to use from
-[Shipyard](https://shipyard.workiva.org/repo/Workiva/frugal).
-
-Switch to the directory that has the files you would like to generate.
-
-Then run the docker image. This command will mount your local directory into
-the image. It supports all of the standard Frugal commands.
-
-```
-docker run -v "$(pwd):/data" drydock.workiva.org/workiva/frugal:{SHIPYARD_ID} frugal -gen={LANG} {FILE_TO_GEN}
-```
-
-An example to generate the Go code off the event.frugal definition in the
-example directory.
-
-```
-$ cd example
-$ docker run -v "$(pwd):/data" drydock.workiva.org/workiva/frugal:17352 frugal -gen=go event.frugal
-```
