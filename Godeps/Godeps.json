@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/Workiva/frugal",
-	"GoVersion": "go1.5",
+	"GoVersion": "go1.8",
 	"GodepVersion": "v75",
 	"Deps": [
 		{
@@ -19,6 +19,22 @@
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
 			"Rev": "a5b47d31c556af34a302ce5d659e6fea44d90de0"
+		},
+		{
+			"ImportPath": "github.com/davecgh/go-spew/spew",
+			"Comment": "v1.1.0",
+			"Rev": "346938d642f2ec3594ed81d874461961cd0faa76"
+		},
+		{
+			"ImportPath": "github.com/pmezard/go-difflib/difflib",
+			"Comment": "v1.0.0",
+			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Comment": "v1.1.4",
+			"Rev": "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
 		}
+        
 	]
 }

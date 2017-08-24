@@ -15,9 +15,9 @@ package com.workiva.frugal.transport;
 
 import com.workiva.frugal.exception.TTransportExceptionType;
 import io.nats.client.Connection;
-import io.nats.client.Constants;
 import io.nats.client.Message;
 import io.nats.client.MessageHandler;
+import io.nats.client.Nats;
 import io.nats.client.Subscription;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
@@ -57,11 +57,12 @@ public class FNatsTransport extends FAsyncTransport {
      * Creates a new FTransport which uses the NATS messaging system as the underlying transport.
      * A request is simply published to a subject and responses are received on a randomly generated
      * subject. This requires requests to fit within a single NATS message.
-     * <p/>
+     *
      * This transport uses a randomly generated inbox for receiving NATS replies.
      *
      * @param conn    NATS connection
      * @param subject subject to publish requests on
+     * @return FNatsTransport for communicating via NATS.
      */
     public static FNatsTransport of(Connection conn, String subject) {
         return new FNatsTransport(conn, subject, conn.newInbox());
@@ -71,6 +72,7 @@ public class FNatsTransport extends FAsyncTransport {
      * Returns a new FTransport configured with the specified inbox.
      *
      * @param inbox NATS subject to receive responses on
+     * @return FNatsTransport for communicating via NATS.
      */
     public FNatsTransport withInbox(String inbox) {
         return new FNatsTransport(conn, subject, inbox);
@@ -84,17 +86,17 @@ public class FNatsTransport extends FAsyncTransport {
      */
     @Override
     public boolean isOpen() {
-        return sub != null && conn.getState() == Constants.ConnState.CONNECTED;
+        return sub != null && conn.getState() == Nats.ConnState.CONNECTED;
     }
 
     /**
      * Subscribes to the configured inbox subject.
      *
-     * @throws TTransportException
+     * @throws TTransportException if unable to open the transport
      */
     @Override
     public void open() throws TTransportException {
-        if (conn.getState() != Constants.ConnState.CONNECTED) {
+        if (conn.getState() != Nats.ConnState.CONNECTED) {
             throw getClosedConditionException(conn.getState(), "open:");
         }
         if (sub != null) {
@@ -154,8 +156,8 @@ public class FNatsTransport extends FAsyncTransport {
      * @param prefix    prefix to add to exception message
      * @return a TTransportException type
      */
-    protected static TTransportException getClosedConditionException(Constants.ConnState connState, String prefix) {
-        if (connState != Constants.ConnState.CONNECTED) {
+    protected static TTransportException getClosedConditionException(Nats.ConnState connState, String prefix) {
+        if (connState != Nats.ConnState.CONNECTED) {
             return new TTransportException(TTransportExceptionType.NOT_OPEN,
                     String.format("%s NATS client not connected (has status %s)", prefix, connState.name()));
         }

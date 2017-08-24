@@ -4,9 +4,9 @@ import com.workiva.frugal.FContext;
 import com.workiva.frugal.exception.TTransportExceptionType;
 import io.nats.client.AsyncSubscription;
 import io.nats.client.Connection;
-import io.nats.client.Constants;
 import io.nats.client.Message;
 import io.nats.client.MessageHandler;
+import io.nats.client.Nats;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
@@ -20,7 +20,7 @@ import static com.workiva.frugal.transport.FAsyncTransportTest.mockFrame;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,14 +44,14 @@ public class FNatsTransportTest {
     @Test(expected = TTransportException.class)
     public void testOpen_natsDisconnected() throws TTransportException {
         assertFalse(transport.isOpen());
-        when(conn.getState()).thenReturn(Constants.ConnState.CLOSED);
+        when(conn.getState()).thenReturn(Nats.ConnState.CLOSED);
         transport.open();
     }
 
     @Test
     public void testOpenCallbackClose() throws TException, IOException, InterruptedException {
         assertFalse(transport.isOpen());
-        when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.CONNECTED);
         ArgumentCaptor<String> inboxCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<MessageHandler> handlerCaptor = ArgumentCaptor.forClass(MessageHandler.class);
         AsyncSubscription sub = mock(AsyncSubscription.class);
@@ -92,7 +92,7 @@ public class FNatsTransportTest {
 
     @Test
     public void testFlush() throws TTransportException, IOException, InterruptedException {
-        when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.CONNECTED);
         AsyncSubscription sub = mock(AsyncSubscription.class);
         when(conn.subscribe(any(String.class), any(MessageHandler.class))).thenReturn(sub);
         transport.open();
@@ -104,7 +104,7 @@ public class FNatsTransportTest {
 
     @Test(expected = TTransportException.class)
     public void testRequest_notOpen() throws TTransportException {
-        when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.CONNECTED);
         transport.request(new FContext(), "helloworld".getBytes());
     }
 }

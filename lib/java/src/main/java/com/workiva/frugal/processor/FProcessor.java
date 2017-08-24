@@ -32,7 +32,7 @@ public interface FProcessor {
      *
      * @param in  input FProtocol
      * @param out output FProtocol
-     * @throws TException
+     * @throws TException if issues processing requests occur
      */
     void process(FProtocol in, FProtocol out) throws TException;
 
@@ -45,6 +45,8 @@ public interface FProcessor {
 
     /**
      * Returns a map of method name to annotations as defined in the service IDL that is serviced by this processor.
+     *
+     * @return Map of method name to annotations as defined by the IDL
      */
     Map<String, Map<String, String>> getAnnotations();
 }

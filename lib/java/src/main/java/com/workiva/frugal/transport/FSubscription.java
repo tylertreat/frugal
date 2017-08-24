@@ -73,6 +73,8 @@ public final class FSubscription {
 
     /**
      * Unsubscribes and removes durably stored information on the broker, if applicable.
+     *
+     * @throws TException if unable to remove the subscription.
      */
     public void remove() throws TException {
         transport.remove();

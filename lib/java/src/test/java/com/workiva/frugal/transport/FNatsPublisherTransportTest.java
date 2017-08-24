@@ -1,7 +1,7 @@
 package com.workiva.frugal.transport;
 
 import io.nats.client.Connection;
-import io.nats.client.Constants;
+import io.nats.client.Nats;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +38,7 @@ public class FNatsPublisherTransportTest {
 
     @Test
     public void testOpen() throws TTransportException {
-        when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.CONNECTED);
         // Verify the connection state is the only open criteria
         assertTrue(transport.isOpen());
         // Verify open doesn't throw TTransportException
@@ -50,7 +50,7 @@ public class FNatsPublisherTransportTest {
 
     @Test(expected = TTransportException.class)
     public void testNotConnected() throws TTransportException {
-        when(conn.getState()).thenReturn(Constants.ConnState.DISCONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.DISCONNECTED);
         assertFalse(transport.isOpen());
 
         // Verify that open throws a TTransportException
@@ -64,7 +64,7 @@ public class FNatsPublisherTransportTest {
 
     @Test
     public void testPublish() throws Exception {
-        when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.CONNECTED);
         byte[] payload = new byte[]{1, 2, 3, 4};
 
         transport.publish(topic, payload);
@@ -74,7 +74,7 @@ public class FNatsPublisherTransportTest {
 
     @Test(expected = TTransportException.class)
     public void testPublishNotConnected() throws TTransportException {
-        when(conn.getState()).thenReturn(Constants.ConnState.DISCONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.DISCONNECTED);
         byte[] payload = new byte[]{1, 2, 3, 4};
 
         transport.publish(topic, payload);
@@ -82,7 +82,7 @@ public class FNatsPublisherTransportTest {
 
     @Test(expected = TTransportException.class)
     public void testPublishEmptyTopic() throws TTransportException {
-        when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.CONNECTED);
         String topic = "";
         byte[] payload = new byte[]{1, 2, 3, 4};
 
@@ -91,7 +91,7 @@ public class FNatsPublisherTransportTest {
 
     @Test(expected = TTransportException.class)
     public void testPublishPayloadTooLarge() throws TTransportException {
-        when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.CONNECTED);
         byte[] payload = new byte[NATS_MAX_MESSAGE_SIZE + 1];
 
         transport.publish(topic, payload);
@@ -99,7 +99,7 @@ public class FNatsPublisherTransportTest {
 
     @Test(expected = TTransportException.class)
     public void testPublishConnectionPublishException() throws Exception {
-        when(conn.getState()).thenReturn(Constants.ConnState.CONNECTED);
+        when(conn.getState()).thenReturn(Nats.ConnState.CONNECTED);
         byte[] payload = new byte[]{1, 2, 3, 4};
         Mockito.doThrow(new IOException()).when(conn).publish(formattedSubject, payload);
 
