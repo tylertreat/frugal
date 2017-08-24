@@ -33,6 +33,8 @@ class FAdapterTransport extends FAsyncTransport {
     transport.socket.onState.listen((state) {
       if (state == TSocketState.OPEN) _monitor?.signalOpen();
     });
+
+    manageDisposable(_framedTransport);
   }
 
   @override
@@ -41,17 +43,20 @@ class FAdapterTransport extends FAsyncTransport {
   @override
   Future open() async {
     await _framedTransport.open();
-    _framedTransport.onFrame.listen((_FrameWrapper frame) {
-      try {
-        handleResponse(frame.frameBytes);
-      } catch (e) {
-        // Fatal error. Close the transport.
-        _adapterTransportLog.severe(
-            "FAsyncCallback had a fatal error ${e.toString()}." +
-                "Closing transport.");
-        close(e);
-      }
-    });
+
+    listenToStream(_framedTransport.onFrame, _handleFrame);
+  }
+
+  void _handleFrame(_FrameWrapper frame) {
+    try {
+      handleResponse(frame.frameBytes);
+    } catch (e) {
+      // Fatal error. Close the transport.
+      _adapterTransportLog.severe(
+          "FAsyncCallback had a fatal error ${e.toString()}." +
+              "Closing transport.");
+      close(e);
+    }
   }
 
   @override

@@ -18,7 +18,7 @@ part of frugal.src.frugal;
 /// framed data. Therefore, instead of exposing read, write, and flush, the
 /// transport has a simple [oneway] and [request] methods that send framed
 /// frugal requests.
-abstract class FTransport {
+abstract class FTransport extends Disposable {
   MonitorRunner _monitor;
   StreamController _closeController = new StreamController.broadcast();
 
@@ -27,7 +27,9 @@ abstract class FTransport {
   final int requestSizeLimit;
 
   /// Create an [FTransport] with the optional [requestSizeLimit].
-  FTransport({this.requestSizeLimit});
+  FTransport({this.requestSizeLimit}) {
+    manageStreamController(_closeController);
+  }
 
   /// Listen to close events on the transport.
   Stream<Object> get onClose => _closeController.stream;
