@@ -19,7 +19,7 @@ abstract class FBaseFoo {
 }
 
 class FBaseFooClient implements FBaseFoo {
-  static final logging.Logger _log = new logging.Logger('BaseFoo');
+  static final logging.Logger _frugalLog = new logging.Logger('BaseFoo');
   Map<String, frugal.FMethod> _methods;
 
   FBaseFooClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware]) {

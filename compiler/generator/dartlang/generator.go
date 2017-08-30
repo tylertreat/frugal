@@ -1502,7 +1502,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += fmt.Sprintf("class F%sClient implements F%s {\n",
 			servTitle, servTitle)
 	}
-	contents += fmt.Sprintf(tab+"static final logging.Logger _log = new logging.Logger('%s');\n", servTitle)
+	contents += fmt.Sprintf(tab+"static final logging.Logger _frugalLog = new logging.Logger('%s');\n", servTitle)
 	contents += tab + "Map<String, frugal.FMethod> _methods;\n\n"
 
 	if service.Extends != "" {
@@ -1557,7 +1557,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
 
 	if deprecated {
-		contents += fmt.Sprintf(tabtab+"_log.warning(\"Call to deprecated function '%s.%s'\");\n", service.Name, nameLower)
+		contents += fmt.Sprintf(tabtab+"_frugalLog.warning(\"Call to deprecated function '%s.%s'\");\n", service.Name, nameLower)
 	}
 
 	contents += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx%s]) as Future%s;\n",
