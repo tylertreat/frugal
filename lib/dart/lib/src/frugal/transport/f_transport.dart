@@ -35,8 +35,10 @@ abstract class FTransport extends Disposable {
   Stream<Object> get onClose => _closeController.stream;
 
   /// Set an [FTransportMonitor] on the transport.
+  @Deprecated('3.0.0')
   set monitor(FTransportMonitor monitor) {
     _monitor = new MonitorRunner(monitor, this);
+    manageDisposable(_monitor);
   }
 
   /// Queries whether the transport is open.

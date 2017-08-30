@@ -20,7 +20,8 @@ part of frugal.src.frugal;
 ///
 /// [BaseFTransportMonitor] is a basic implementation with backoffs and max
 /// attempts. This can be extended or reimplemented to provide custom logic.
-abstract class FTransportMonitor {
+@Deprecated('3.0.0')
+abstract class FTransportMonitor extends Disposable {
   /// Called when the transport is closed cleanly by a call to [FTransport]
   /// close with no error.
   void onClosedCleanly();
