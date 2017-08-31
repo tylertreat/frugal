@@ -15,7 +15,7 @@ part of frugal.src.frugal;
 
 /// A framed implementation of [TTransport]. Has stream for consuming
 /// entire frames. Disallows direct reads.
-class _TFramedTransport extends TTransport {
+class _TFramedTransport extends TTransport with Disposable {
   final Logger log = new Logger('frugal.transport._TFramedTransport');
   static const int _headerByteCount = 4;
 
@@ -51,6 +51,8 @@ class _TFramedTransport extends TTransport {
           log.log(Level.WARNING, 'Unhandled TSocketState $state');
       }
     });
+
+    manageStreamController(_frameStream);
   }
 
   void _reset({bool isOpen: false}) {

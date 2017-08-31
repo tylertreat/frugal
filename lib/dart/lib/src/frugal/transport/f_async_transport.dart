@@ -53,8 +53,9 @@ abstract class FAsyncTransport extends FTransport {
     });
 
     try {
+      await flush(payload);
       Future<Uint8List> resultFuture =
-          _request(payload, resultCompleter).timeout(ctx.timeout);
+          resultCompleter.future.timeout(ctx.timeout);
 
       // Bail early if the transport is closed
       Uint8List response =
@@ -65,16 +66,16 @@ abstract class FAsyncTransport extends FTransport {
           "request timed out after ${ctx.timeout}");
     } finally {
       _handlers.remove(ctx._opId);
-      await closedSub.cancel();
-    }
-  }
 
-  /// Flushes the payload to the server and waits for the response to be
-  /// received.
-  Future<Uint8List> _request(
-      Uint8List payload, Completer<Uint8List> completer) async {
-    await flush(payload);
-    return await completer.future;
+      // don't wait until this is disposed to cancel these
+      await closedSub.cancel();
+      if (!closedCompleter.isCompleted) {
+        closedCompleter.complete();
+      }
+      if (!resultCompleter.isCompleted) {
+        resultCompleter.complete();
+      }
+    }
   }
 
   /// Handles a frugal frame response. NOTE: this frame must NOT include the
@@ -90,10 +91,16 @@ abstract class FAsyncTransport extends FTransport {
       return;
     }
 
-    if (!_handlers.containsKey(opId)) {
+    Completer<Uint8List> handler = _handlers[opId];
+    if (handler == null) {
+      _log.warning("frugal: no handler found for message, dropping message");
       return;
     }
 
-    _handlers[opId].complete(frame);
+    if (handler.isCompleted) {
+      _log.warning(
+          "frugal: handler already called for message, dropping message");
+    }
+    handler.complete(frame);
   }
 }

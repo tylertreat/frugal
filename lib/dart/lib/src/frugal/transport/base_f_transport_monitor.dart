@@ -17,6 +17,7 @@ part of frugal.src.frugal;
 /// with exponential backoff behavior and a capped number of retries. Its
 /// behavior can be customized by extending this class and overriding desired
 /// callbacks.
+@Deprecated('3.0.0')
 class BaseFTransportMonitor extends FTransportMonitor {
   /// Default maximum reopen attempts.
   static const int DEFAULT_MAX_REOPEN_ATTEMPTS = 60;
@@ -44,6 +45,9 @@ class BaseFTransportMonitor extends FTransportMonitor {
     this._maxReopenAttempts = maxReopenAttempts;
     this._initialWait = initialWait;
     this._maxWait = maxWait;
+
+    manageStreamController(_onConnectController);
+    manageStreamController(_onDisconnectController);
   }
 
   /// Listen to connect events.
