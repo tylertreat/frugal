@@ -22,6 +22,7 @@ import 'dart:typed_data';
 import 'package:logging/logging.dart';
 import 'package:thrift/thrift.dart';
 import 'package:uuid/uuid.dart';
+import 'package:w_common/disposable.dart';
 import 'package:w_transport/w_transport.dart' as wt;
 
 part 'frugal/f_context.dart';
