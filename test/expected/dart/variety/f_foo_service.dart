@@ -47,7 +47,7 @@ abstract class FFoo extends t_actual_base_dart.FBaseFoo {
 /// This is a thrift service. Frugal will generate bindings that include
 /// a frugal Context for each service call.
 class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
-  static final logging.Logger _log = new logging.Logger('Foo');
+  static final logging.Logger _frugalLog = new logging.Logger('Foo');
   Map<String, frugal.FMethod> _methods;
 
   FFooClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware])
@@ -74,7 +74,7 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   /// Ping the server.
   @Deprecated("use something else")
   Future ping(frugal.FContext ctx) {
-    _log.warning("Call to deprecated function 'Foo.ping'");
+    _frugalLog.warning("Call to deprecated function 'Foo.ping'");
     return this._methods['ping']([ctx]) as Future;
   }
 

@@ -21,7 +21,7 @@ abstract class FMyService {
 }
 
 class FMyServiceClient implements FMyService {
-  static final logging.Logger _log = new logging.Logger('MyService');
+  static final logging.Logger _frugalLog = new logging.Logger('MyService');
   Map<String, frugal.FMethod> _methods;
 
   FMyServiceClient(frugal.FServiceProvider provider, [List<frugal.Middleware> middleware]) {
