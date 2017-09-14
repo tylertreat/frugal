@@ -1,0 +1,6 @@
+
+include "base.frugal"
+
+service IntermediateFoo {
+    void IntermeidateFoo()
+}

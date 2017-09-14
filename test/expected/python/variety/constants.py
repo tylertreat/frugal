@@ -10,6 +10,9 @@ from .ttypes import *
 import actual_base.python.ttypes
 import actual_base.python.constants
 
+import intermediate_include.ttypes
+import intermediate_include.constants
+
 import validStructs.ttypes
 import validStructs.constants
 
