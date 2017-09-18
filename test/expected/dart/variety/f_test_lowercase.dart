@@ -5,6 +5,7 @@ import 'dart:typed_data' show Uint8List;
 import 'package:thrift/thrift.dart' as thrift;
 import 'package:variety/variety.dart' as t_variety;
 import 'package:actual_base_dart/actual_base_dart.dart' as t_actual_base_dart;
+import 'package:intermediate_include/intermediate_include.dart' as t_intermediate_include;
 import 'package:validStructs/validStructs.dart' as t_validStructs;
 import 'package:ValidTypes/ValidTypes.dart' as t_ValidTypes;
 import 'package:subdir_include_ns/subdir_include_ns.dart' as t_subdir_include_ns;

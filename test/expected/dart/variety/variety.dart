@@ -16,4 +16,6 @@ export 'src/f_its_an_enum.dart' show ItsAnEnum;
 
 export 'src/f_foo_service.dart' show FFoo;
 export 'src/f_foo_service.dart' show FFooClient;
+export 'src/f_foo_transitive_deps_service.dart' show FFooTransitiveDeps;
+export 'src/f_foo_transitive_deps_service.dart' show FFooTransitiveDepsClient;
 export 'src/f_events_scope.dart' show EventsPublisher, EventsSubscriber;
