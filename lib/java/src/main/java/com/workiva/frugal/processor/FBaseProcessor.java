@@ -55,7 +55,7 @@ public abstract class FBaseProcessor implements FProcessor {
                 LOGGER.error("Exception occurred while processing request with correlation id "
                         + ctx.getCorrelationId(), e);
             } catch (RuntimeException e) {
-                LOGGER.error("User handler code threw unhandled exception on request with correlation id"
+                LOGGER.error("User handler code threw unhandled exception on request with correlation id "
                         + ctx.getCorrelationId(), e);
                 synchronized (WRITE_LOCK) {
                     writeApplicationException(ctx, oprot, TApplicationExceptionType.INTERNAL_ERROR, message.name,
