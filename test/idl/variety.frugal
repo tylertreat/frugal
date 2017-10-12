@@ -4,6 +4,7 @@ namespace java variety.java
 namespace py variety.python
 
 include "base.frugal"
+include "intermediate_include.frugal"
 include "validStructs.frugal"
 include "ValidTypes.frugal"
 include "subdir_includes/subdir_include.frugal"
@@ -170,6 +171,10 @@ service Foo extends base.BaseFoo {
     ValidTypes.MyInt getMyInt(),
 
     subdir_include.A use_subdir_struct(1:subdir_include.A a),
+}
+
+service FooTransitiveDeps extends intermediate_include.IntermediateFoo {
+	void ping()
 }
 
 /**@

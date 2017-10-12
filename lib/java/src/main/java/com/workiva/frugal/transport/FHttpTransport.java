@@ -77,6 +77,16 @@ public class FHttpTransport extends FTransport {
          * @return Map of HTTP request headers.
          */
         public Map<String, String> getRequestHeaders();
+
+        /**
+         * Returns a Map of HTTP request headers for the specified context.  By
+         * default, this method calls {@link #getRequestHeaders}.
+         *
+         * @return Map of HTTP request headers.
+         */
+        public default Map<String, String> getRequestHeaders(FContext context) {
+            return getRequestHeaders();
+        }
     }
 
     /**
@@ -222,7 +232,7 @@ public class FHttpTransport extends FTransport {
         // add user supplied headers first, to avoid monkeying
         // with the size limits headers below.
         if (requestHeaders != null) {
-            for (Map.Entry<String, String> entry : requestHeaders.getRequestHeaders().entrySet()) {
+            for (Map.Entry<String, String> entry : requestHeaders.getRequestHeaders(context).entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
                 if (key != null && value != null) {

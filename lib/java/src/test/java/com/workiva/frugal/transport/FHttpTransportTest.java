@@ -196,6 +196,81 @@ public class FHttpTransportTest {
         assertEquals(0, actual.length);
     }
 
+    private class TestContextFHttpTransportHeaders implements FHttpTransportHeaders {
+        public Map<String, String> getRequestHeaders() {
+            throw new UnsupportedOperationException();
+        }
+
+        public Map<String, String> getRequestHeaders(FContext context) {
+            Map<String, String> ret = new HashMap<String, String>();
+            ret.put("foo", "bar");
+            return ret;
+        }
+    }
+
+    private class EmptyContextFHttpTransportHeaders implements FHttpTransportHeaders {
+        public Map<String, String> getRequestHeaders() {
+            throw new UnsupportedOperationException();
+        }
+
+        public Map<String, String> getRequestHeaders(FContext context) {
+            Map<String, String> ret = new HashMap<String, String>();
+            return ret;
+        }
+    }
+
+    @Test
+    public void testContextRequestHeaders() throws TException, IOException {
+        FHttpTransportHeaders requestHeaders = new TestContextFHttpTransportHeaders();
+        transport = new FHttpTransport.Builder(client, url)
+                .withRequestHeaders(requestHeaders)
+                .build();
+
+        StatusLine statusLine = new StatusLineImpl(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, null);
+        byte[] framedResponsePayload = new byte[]{0, 1, 2, 3, 4, 5, 6, 7};
+        String encoded = Base64.encodeBase64String(framedResponsePayload);
+        StringEntity responseEntity = new StringEntity(encoded, ContentType.create("application/x-frugal", "utf-8"));
+
+        CloseableHttpResponse response = new BasicClosableHttpResponse(statusLine);
+        response.setEntity(responseEntity);
+
+        ArgumentCaptor<HttpPost> topicCaptor = ArgumentCaptor.forClass(HttpPost.class);
+        when(client.execute(topicCaptor.capture())).thenReturn(response);
+
+        byte[] buff = "helloserver".getBytes();
+        transport.request(context, buff);
+
+        Header expected = new BasicHeader("foo", "bar");
+        Header actual = topicCaptor.getValue().getHeaders("foo")[0];
+        assertEquals(expected.getName(), actual.getName());
+        assertEquals(expected.getValue(), actual.getValue());
+    }
+
+    @Test
+    public void testEmptyContextRequestHeaders() throws TException, IOException {
+        FHttpTransportHeaders requestHeaders = new EmptyContextFHttpTransportHeaders();
+        transport = new FHttpTransport.Builder(client, url)
+                .withRequestHeaders(requestHeaders)
+                .build();
+
+        StatusLine statusLine = new StatusLineImpl(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, null);
+        byte[] framedResponsePayload = new byte[]{0, 1, 2, 3, 4, 5, 6, 7};
+        String encoded = Base64.encodeBase64String(framedResponsePayload);
+        StringEntity responseEntity = new StringEntity(encoded, ContentType.create("application/x-frugal", "utf-8"));
+
+        CloseableHttpResponse response = new BasicClosableHttpResponse(statusLine);
+        response.setEntity(responseEntity);
+
+        ArgumentCaptor<HttpPost> topicCaptor = ArgumentCaptor.forClass(HttpPost.class);
+        when(client.execute(topicCaptor.capture())).thenReturn(response);
+
+        byte[] buff = "helloserver".getBytes();
+        transport.request(context, buff);
+
+        Header[] actual = topicCaptor.getValue().getHeaders("foo");
+        assertEquals(0, actual.length);
+    }
+
     @Test
     public void testOneway() throws TException, IOException {
         transport = new FHttpTransport.Builder(client, url).build();
