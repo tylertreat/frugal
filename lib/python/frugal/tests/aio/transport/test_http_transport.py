@@ -22,7 +22,7 @@ from frugal.tests.aio import utils
 
 
 class FHttpTransportWithContext(FHttpTransport):
-    def get_headers(self, fcontext):
+    def get_request_headers(self, fcontext):
         """
         override default implementation to add user supplied headers from FContext
         :param fcontext:

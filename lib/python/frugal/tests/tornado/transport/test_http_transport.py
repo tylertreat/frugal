@@ -26,7 +26,7 @@ from frugal.tornado.transport.http_transport import FHttpTransport
 
 
 class FHttpTransportWithContext(FHttpTransport):
-    def get_headers(self, fcontext):
+    def get_request_headers(self, fcontext):
         """
         override default implementation to add user supplied headers from FContext
         :param fcontext:
@@ -148,7 +148,7 @@ class TestFHttpTransport(AsyncTestCase):
         self.assertEqual(request.body, base64.b64encode(request_frame))
 
         expected_headers = self.headers
-        for header, value in self.transport_with_headers.get_headers(ctx).iteritems():
+        for header, value in self.transport_with_headers.get_request_headers(ctx).iteritems():
             if header is not None and value is not None:
                 expected_headers[header] = str(value)
         self.assertEqual(request.headers, expected_headers)
