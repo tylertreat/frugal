@@ -25,6 +25,19 @@ from frugal.exceptions import TTransportExceptionType
 from frugal.tornado.transport.http_transport import FHttpTransport
 
 
+class FHttpTransportWithContext(FHttpTransport):
+    def get_headers(self, fcontext):
+        """
+        override default implementation to add user supplied headers from FContext
+        :param fcontext:
+        :return:
+        """
+        if fcontext is None:
+            return {}
+        return {
+            "test-header": "test"
+        }
+
 class TestFHttpTransport(AsyncTestCase):
     def setUp(self):
         super(TestFHttpTransport, self).setUp()
@@ -36,15 +49,6 @@ class TestFHttpTransport(AsyncTestCase):
             url=self.url,
             request_capacity=self.request_capacity,
             response_capacity=self.response_capacity
-        )
-
-        self.transport_headers = FHttpTransport(
-            url=self.url,
-            request_capacity=self.request_capacity,
-            response_capacity=self.response_capacity,
-            additional_headers={
-                "test-header": "extra header"
-            }
         )
 
         self.http_mock = mock.Mock(spec=AsyncHTTPClient)
@@ -110,11 +114,16 @@ class TestFHttpTransport(AsyncTestCase):
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.body, base64.b64encode(request_frame))
         self.assertEqual(request.headers, self.headers)
-        self.assertEqual(self.headers, self.transport._headers)
 
     @gen_test
-    def test_request_additional_header(self):
-        self.transport_headers._http = self.http_mock
+    def test_request_extra_headers_with_context(self):
+        self.transport_with_headers = FHttpTransportWithContext(
+            url=self.url,
+            request_capacity=self.request_capacity,
+            response_capacity=self.response_capacity
+        )
+
+        self.transport_with_headers._http = self.http_mock
 
         request_data = bytearray([4, 5, 6, 8, 9, 10, 11, 13, 12, 3])
         request_frame = bytearray([0, 0, 0, 10]) + request_data
@@ -129,7 +138,7 @@ class TestFHttpTransport(AsyncTestCase):
         self.http_mock.fetch.return_value = response_future
 
         ctx = FContext()
-        response_transport = yield self.transport_headers.request(ctx, request_frame)
+        response_transport = yield self.transport_with_headers.request(ctx, request_frame)
 
         self.assertEqual(response_data, response_transport.getvalue())
         self.assertTrue(self.http_mock.fetch.called)
@@ -137,7 +146,12 @@ class TestFHttpTransport(AsyncTestCase):
         self.assertEqual(request.url, self.url)
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.body, base64.b64encode(request_frame))
-        self.assertEqual(request.headers, self.transport_headers._headers)
+
+        expected_headers = self.headers
+        for header, value in self.transport_with_headers.get_headers(ctx).iteritems():
+            if header is not None and value is not None:
+                expected_headers[header] = str(value)
+        self.assertEqual(request.headers, expected_headers)
 
     @gen_test
     def test_request_too_much_data(self):
