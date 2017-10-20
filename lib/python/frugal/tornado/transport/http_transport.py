@@ -27,7 +27,8 @@ logger = logging.getLogger(__name__)
 
 
 class FHttpTransport(FTransportBase):
-    def __init__(self, url, request_capacity=0, response_capacity=0):
+    def __init__(self, url, request_capacity=0, response_capacity=0,
+                 request_header_funcs=[]):
         """
         Create an HTTP transport.
 
@@ -37,13 +38,29 @@ class FHttpTransport(FTransportBase):
                               request. Set to 0 for no size restrictions.
             response_capacity: The maximum size allowed to be read in a
                                response. Set to 0 for no size restrictions.
+            request_header_funcs: An optional list of functions that
+                                  return a dictionary of request headers
+                                  to be added to the request. Set to
+                                  an empty list by default.
         """
         super(FHttpTransport, self).__init__(
             request_size_limit=request_capacity)
         self._url = url
         self._http = AsyncHTTPClient()
+        self._headers = {}
 
-        self.response_capacity = response_capacity
+        # Add user-supplied headers first to avoid removing the native headers
+        for func in request_header_funcs:
+            for header, value in func.iteritems():
+                if header is not None and value is not None:
+                    self._headers[header] = value
+
+        self._headers['content-type'] = 'application/x-frugal'
+        self._headers['content-transfer-encoding'] = 'base64'
+        self._headers['accept'] = 'application/x-frugal'
+
+        if response_capacity > 0:
+            self._headers['x-frugal-payload-limit'] = str(response_capacity)
 
         self._execute = None
 
@@ -72,15 +89,6 @@ class FHttpTransport(FTransportBase):
         """
         yield self.request(context, payload)
 
-    def get_request_headers(self, fcontext):
-        """
-        Returns a dictionary of HTTP request headers for the specified context.
-        By default it returns an empty dictionary.
-        :param fcontext: optional FContext instance
-        :return: Dictionary of HTTP request headers
-        """
-        return {}
-
     @gen.coroutine
     def request(self, context, payload):
         """
@@ -88,23 +96,10 @@ class FHttpTransport(FTransportBase):
         """
         self._preflight_request_check(payload)
         encoded = base64.b64encode(payload)
-
-        request_headers = self.get_request_headers(fcontext=context)
-        # Append user-supplied headers first to avoid monkey patching
-        for header, value in request_headers.iteritems():
-            if header is not None and value is not None:
-                request_headers[header] = value
-        request_headers['content-type'] = 'application/x-frugal'
-        request_headers['content-transfer-encoding'] = 'base64'
-        request_headers['accept'] = 'application/x-frugal'
-        if self.response_capacity > 0:
-            request_headers['x-frugal-payload-limit'] = \
-                str(self.response_capacity)
-
         request = HTTPRequest(self._url,
                               method='POST',
                               body=encoded,
-                              headers=request_headers,
+                              headers=self._headers,
                               request_timeout=context.timeout / 1000.0
                               )
 

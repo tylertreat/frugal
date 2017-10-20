@@ -25,19 +25,6 @@ from frugal.exceptions import TTransportExceptionType
 from frugal.tornado.transport.http_transport import FHttpTransport
 
 
-class FHttpTransportWithContext(FHttpTransport):
-    def get_request_headers(self, fcontext):
-        """
-        override default implementation to add user supplied headers from FContext
-        :param fcontext:
-        :return:
-        """
-        if fcontext is None:
-            return {}
-        return {
-            "test-header": "test"
-        }
-
 class TestFHttpTransport(AsyncTestCase):
     def setUp(self):
         super(TestFHttpTransport, self).setUp()
@@ -50,7 +37,6 @@ class TestFHttpTransport(AsyncTestCase):
             request_capacity=self.request_capacity,
             response_capacity=self.response_capacity
         )
-
         self.http_mock = mock.Mock(spec=AsyncHTTPClient)
         self.headers = {
             'content-type': 'application/x-frugal',
@@ -117,13 +103,39 @@ class TestFHttpTransport(AsyncTestCase):
 
     @gen_test
     def test_request_extra_headers_with_context(self):
-        self.transport_with_headers = FHttpTransportWithContext(
+
+        def generate_test_header1(fcontext):
+            return { 'first-header': fcontext.correlation_id}
+
+        def generate_test_header2():
+            return {
+                'second-header': 'test2',
+                'third-header': 'test3'
+            }
+
+        def generate_test_header_empty():
+            return {}
+
+        test_context = FContext()
+        transport_with_headers = FHttpTransport(
             url=self.url,
             request_capacity=self.request_capacity,
-            response_capacity=self.response_capacity
+            response_capacity=self.response_capacity,
+            request_header_funcs=[generate_test_header1(test_context),
+                                  generate_test_header2(),
+                                  generate_test_header_empty()]
         )
+        expected_headers = {
+            'content-type': 'application/x-frugal',
+            'content-transfer-encoding': 'base64',
+            'accept': 'application/x-frugal',
+            'x-frugal-payload-limit': '200',
+            'first-header': test_context.correlation_id,
+            'second-header': 'test2',
+            'third-header': 'test3'
+        }
 
-        self.transport_with_headers._http = self.http_mock
+        transport_with_headers._http = self.http_mock
 
         request_data = bytearray([4, 5, 6, 8, 9, 10, 11, 13, 12, 3])
         request_frame = bytearray([0, 0, 0, 10]) + request_data
@@ -138,7 +150,7 @@ class TestFHttpTransport(AsyncTestCase):
         self.http_mock.fetch.return_value = response_future
 
         ctx = FContext()
-        response_transport = yield self.transport_with_headers.request(ctx, request_frame)
+        response_transport = yield transport_with_headers.request(ctx, request_frame)
 
         self.assertEqual(response_data, response_transport.getvalue())
         self.assertTrue(self.http_mock.fetch.called)
@@ -146,11 +158,6 @@ class TestFHttpTransport(AsyncTestCase):
         self.assertEqual(request.url, self.url)
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.body, base64.b64encode(request_frame))
-
-        expected_headers = self.headers
-        for header, value in self.transport_with_headers.get_request_headers(ctx).iteritems():
-            if header is not None and value is not None:
-                expected_headers[header] = str(value)
         self.assertEqual(request.headers, expected_headers)
 
     @gen_test
