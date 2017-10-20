@@ -92,26 +92,18 @@ class TestFHttpTransport(utils.AsyncIOTestCase):
     @utils.async_runner
     async def test_request_extra_headers_with_context(self):
 
-        def generate_test_header1(fcontext):
-            return { 'first-header': fcontext.correlation_id}
-
-        def generate_test_header2():
+        def generate_test_header(fcontext):
             return {
-                'second-header': 'test2',
-                'third-header': 'test3'
+                'first-header': fcontext.correlation_id,
+                'second-header': 'test'
             }
-
-        def generate_test_header_empty():
-            return {}
 
         test_context = FContext()
         transport_with_headers = FHttpTransport(
             self.url,
             request_capacity=self.request_capacity,
             response_capacity=self.response_capacity,
-            request_header_funcs=[generate_test_header1(test_context),
-                                  generate_test_header2(),
-                                  generate_test_header_empty()]
+            request_header_func=lambda: generate_test_header(test_context)
         )
         expected_headers = {
             'content-type': 'application/x-frugal',
@@ -119,8 +111,7 @@ class TestFHttpTransport(utils.AsyncIOTestCase):
             'accept': 'application/x-frugal',
             'x-frugal-payload-limit': '200',
             'first-header': test_context.correlation_id,
-            'second-header': 'test2',
-            'third-header': 'test3'
+            'second-header': 'test'
         }
         print(transport_with_headers._headers)
         self.assertEqual(transport_with_headers._headers, expected_headers)

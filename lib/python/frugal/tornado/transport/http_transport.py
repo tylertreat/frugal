@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class FHttpTransport(FTransportBase):
     def __init__(self, url, request_capacity=0, response_capacity=0,
-                 request_header_funcs=[]):
+                 request_header_func=None):
         """
         Create an HTTP transport.
 
@@ -38,10 +38,10 @@ class FHttpTransport(FTransportBase):
                               request. Set to 0 for no size restrictions.
             response_capacity: The maximum size allowed to be read in a
                                response. Set to 0 for no size restrictions.
-            request_header_funcs: An optional list of functions that
-                                  return a dictionary of request headers
-                                  to be added to the request. Set to
-                                  an empty list by default.
+            request_header_func: An optional lambda function that will
+                                 return a dictionary of request headers when
+                                 called to be added to the request. Set to
+                                 None by default.
         """
         super(FHttpTransport, self).__init__(
             request_size_limit=request_capacity)
@@ -50,8 +50,8 @@ class FHttpTransport(FTransportBase):
         self._headers = {}
 
         # Add user-supplied headers first to avoid removing the native headers
-        for func in request_header_funcs:
-            for header, value in func.iteritems():
+        if request_header_func is not None:
+            for header, value in request_header_func().iteritems():
                 if header is not None and value is not None:
                     self._headers[header] = value
 
