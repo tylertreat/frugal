@@ -40,13 +40,13 @@ class FHttpTransport(FTransportBase):
                                response. Set to 0 for no size restrictions.
             get_request_headers: An optional function that accepts an FContext.
                                  Should return a dictionary of additional
-                                 request headers to be appended onto the request
+                                 request headers to be appended to the request
         """
         super(FHttpTransport, self).__init__(
             request_size_limit=request_capacity)
         self._url = url
         self._http = AsyncHTTPClient()
-        self.get_request_headers = get_request_headers
+        self._get_request_headers = get_request_headers
 
         # create headers
         self._headers = {
@@ -91,8 +91,8 @@ class FHttpTransport(FTransportBase):
         """
         # construct headers for request
         request_headers = {}
-        if self.get_request_headers is not None:
-            request_headers = self.get_request_headers(context)
+        if self._get_request_headers is not None:
+            request_headers = self._get_request_headers(context)
         # apply the default headers so their values cannot be modified
         for header, value in self._headers.iteritems():
             request_headers[header] = value

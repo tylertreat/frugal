@@ -41,11 +41,11 @@ class FHttpTransport(FTransportBase):
                                response. Set to 0 for no size restrictions
             get_request_headers: An optional function that accepts an FContext.
                                  Should return a dictionary of additional
-                                 request headers to be appended onto the request
+                                 request headers to be appended to the request
         """
         super().__init__(request_capacity)
         self._url = url
-        self.get_request_headers = get_request_headers
+        self._get_request_headers = get_request_headers
 
         self._headers = {
             'content-type': 'application/x-frugal',
@@ -125,8 +125,8 @@ class FHttpTransport(FTransportBase):
         """
         # construct headers for request
         request_headers = {}
-        if self.get_request_headers is not None:
-            request_headers = self.get_request_headers(context)
+        if self._get_request_headers is not None:
+            request_headers = self._get_request_headers(context)
         # apply the default headers so their values cannot be modified
         for header, value in self._headers.items():
             request_headers[header] = value
@@ -136,7 +136,8 @@ class FHttpTransport(FTransportBase):
                 with async_timeout.timeout(context.timeout / 1000):
                     async with session.post(self._url,
                                             data=payload,
-                                            headers=request_headers) as response:
+                                            headers=request_headers) \
+                            as response:
                         return response.status, await response.content.read()
             except asyncio.TimeoutError:
                 raise TTransportException(
