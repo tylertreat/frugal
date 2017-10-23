@@ -151,6 +151,58 @@ class TestFHttpTransport(AsyncTestCase):
         self.assertEqual(request.headers, expected_headers)
 
     @gen_test
+    def test_request_extra_headers_with_context_modify_defaults(self):
+
+        def generate_test_header(fcontext):
+            return {
+                'first-header': fcontext.correlation_id,
+                'second-header': 'test',
+                'content-type': 'these should',
+                'content-transfer-encoding': 'not be',
+                'accept': 'the final values'
+            }
+
+        transport_with_headers = FHttpTransport(
+            url=self.url,
+            request_capacity=self.request_capacity,
+            response_capacity=self.response_capacity,
+            get_request_headers=generate_test_header
+        )
+
+        transport_with_headers._http = self.http_mock
+
+        request_data = bytearray([4, 5, 6, 8, 9, 10, 11, 13, 12, 3])
+        request_frame = bytearray([0, 0, 0, 10]) + request_data
+
+        response_mock = mock.Mock(spec=HTTPResponse)
+        response_data = bytearray([23, 24, 25, 26, 27, 28, 29])
+        response_frame = bytearray([0, 0, 0, 10]) + response_data
+        response_encoded = base64.b64encode(response_frame)
+        response_mock.body = response_encoded
+        response_future = Future()
+        response_future.set_result(response_mock)
+        self.http_mock.fetch.return_value = response_future
+
+        ctx = FContext()
+        response_transport = yield transport_with_headers.request(ctx, request_frame)
+        expected_headers = {
+            'content-type': 'application/x-frugal',
+            'content-transfer-encoding': 'base64',
+            'accept': 'application/x-frugal',
+            'x-frugal-payload-limit': '200',
+            'first-header': ctx.correlation_id,
+            'second-header': 'test',
+        }
+
+        self.assertEqual(response_data, response_transport.getvalue())
+        self.assertTrue(self.http_mock.fetch.called)
+        request = self.http_mock.fetch.call_args[0][0]
+        self.assertEqual(request.url, self.url)
+        self.assertEqual(request.method, 'POST')
+        self.assertEqual(request.body, base64.b64encode(request_frame))
+        self.assertEqual(request.headers, expected_headers)
+
+    @gen_test
     def test_request_too_much_data(self):
         self.transport._http = self.http_mock
         with self.assertRaises(TTransportException) as cm:
