@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class FHttpTransport(FTransportBase):
     def __init__(self, url, request_capacity=0, response_capacity=0,
-                 request_header_func=None):
+                 get_request_headers=None):
         """
         Create an HTTP transport.
 
@@ -38,27 +38,22 @@ class FHttpTransport(FTransportBase):
                               request. Set to 0 for no size restrictions.
             response_capacity: The maximum size allowed to be read in a
                                response. Set to 0 for no size restrictions.
-            request_header_func: An optional lambda function that will
-                                 return a dictionary of request headers when
-                                 called to be added to the request. Set to
-                                 None by default.
+            get_request_headers: An optional function that accepts an FContext.
+                                 Should return a dictionary of additional
+                                 request headers to be appended onto the request
         """
         super(FHttpTransport, self).__init__(
             request_size_limit=request_capacity)
         self._url = url
         self._http = AsyncHTTPClient()
-        self._headers = {}
+        self.get_request_headers = get_request_headers
 
-        # Add user-supplied headers first to avoid removing the native headers
-        if request_header_func is not None:
-            for header, value in request_header_func().iteritems():
-                if header is not None and value is not None:
-                    self._headers[header] = value
-
-        self._headers['content-type'] = 'application/x-frugal'
-        self._headers['content-transfer-encoding'] = 'base64'
-        self._headers['accept'] = 'application/x-frugal'
-
+        # create headers
+        self._headers = {
+            'content-type': 'application/x-frugal',
+            'content-transfer-encoding': 'base64',
+            'accept': 'application/x-frugal',
+        }
         if response_capacity > 0:
             self._headers['x-frugal-payload-limit'] = str(response_capacity)
 
@@ -94,12 +89,20 @@ class FHttpTransport(FTransportBase):
         """
         Write the current buffer and return the response.
         """
+        # construct headers for request
+        request_headers = {}
+        if self.get_request_headers is not None:
+            request_headers = self.get_request_headers(context)
+        # apply the default headers so their values cannot be modified
+        for header, value in self._headers.iteritems():
+            request_headers[header] = value
+
         self._preflight_request_check(payload)
         encoded = base64.b64encode(payload)
         request = HTTPRequest(self._url,
                               method='POST',
                               body=encoded,
-                              headers=self._headers,
+                              headers=request_headers,
                               request_timeout=context.timeout / 1000.0
                               )
 

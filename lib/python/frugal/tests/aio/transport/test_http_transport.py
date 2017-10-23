@@ -98,23 +98,12 @@ class TestFHttpTransport(utils.AsyncIOTestCase):
                 'second-header': 'test'
             }
 
-        test_context = FContext()
         transport_with_headers = FHttpTransport(
             self.url,
             request_capacity=self.request_capacity,
             response_capacity=self.response_capacity,
-            request_header_func=lambda: generate_test_header(test_context)
+            get_request_headers=generate_test_header
         )
-        expected_headers = {
-            'content-type': 'application/x-frugal',
-            'content-transfer-encoding': 'base64',
-            'accept': 'application/x-frugal',
-            'x-frugal-payload-limit': '200',
-            'first-header': test_context.correlation_id,
-            'second-header': 'test'
-        }
-        print(transport_with_headers._headers)
-        self.assertEqual(transport_with_headers._headers, expected_headers)
 
         transport_with_headers._make_request = self.make_request_mock
 
