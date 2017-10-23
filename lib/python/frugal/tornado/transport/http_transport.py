@@ -94,8 +94,7 @@ class FHttpTransport(FTransportBase):
         if self._get_request_headers is not None:
             request_headers = self._get_request_headers(context)
         # apply the default headers so their values cannot be modified
-        for header, value in self._headers.iteritems():
-            request_headers[header] = value
+        request_headers.update(self._headers)
 
         self._preflight_request_check(payload)
         encoded = base64.b64encode(payload)

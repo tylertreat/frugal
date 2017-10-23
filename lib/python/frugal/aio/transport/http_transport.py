@@ -128,8 +128,7 @@ class FHttpTransport(FTransportBase):
         if self._get_request_headers is not None:
             request_headers = self._get_request_headers(context)
         # apply the default headers so their values cannot be modified
-        for header, value in self._headers.items():
-            request_headers[header] = value
+        request_headers.update(self._headers)
 
         with ClientSession() as session:
             try:
