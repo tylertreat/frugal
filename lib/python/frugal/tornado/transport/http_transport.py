@@ -27,7 +27,8 @@ logger = logging.getLogger(__name__)
 
 
 class FHttpTransport(FTransportBase):
-    def __init__(self, url, request_capacity=0, response_capacity=0):
+    def __init__(self, url, request_capacity=0, response_capacity=0,
+                 get_request_headers=None):
         """
         Create an HTTP transport.
 
@@ -37,11 +38,15 @@ class FHttpTransport(FTransportBase):
                               request. Set to 0 for no size restrictions.
             response_capacity: The maximum size allowed to be read in a
                                response. Set to 0 for no size restrictions.
+            get_request_headers: An optional function that accepts an FContext.
+                                 Should return a dictionary of additional
+                                 request headers to be appended to the request
         """
         super(FHttpTransport, self).__init__(
             request_size_limit=request_capacity)
         self._url = url
         self._http = AsyncHTTPClient()
+        self._get_request_headers = get_request_headers
 
         # create headers
         self._headers = {
@@ -84,12 +89,19 @@ class FHttpTransport(FTransportBase):
         """
         Write the current buffer and return the response.
         """
+        # construct headers for request
+        request_headers = {}
+        if self._get_request_headers is not None:
+            request_headers = self._get_request_headers(context)
+        # apply the default headers so their values cannot be modified
+        request_headers.update(self._headers)
+
         self._preflight_request_check(payload)
         encoded = base64.b64encode(payload)
         request = HTTPRequest(self._url,
                               method='POST',
                               body=encoded,
-                              headers=self._headers,
+                              headers=request_headers,
                               request_timeout=context.timeout / 1000.0
                               )
 
