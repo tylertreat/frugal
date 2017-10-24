@@ -28,7 +28,8 @@ class FHttpTransport(FTransportBase):
     FHttpTransport is an FTransport that uses http as the underlying transport.
     This allows messages of arbitrary sizes to be sent and received.
     """
-    def __init__(self, url, request_capacity=0, response_capacity=0):
+    def __init__(self, url, request_capacity=0, response_capacity=0,
+                 get_request_headers=None):
         """
         Create an HTTP transport.
 
@@ -38,9 +39,13 @@ class FHttpTransport(FTransportBase):
                               request. Set to 0 for no size restrictions.
             response_capacity: The maximum size allowed to be read in a
                                response. Set to 0 for no size restrictions
+            get_request_headers: An optional function that accepts an FContext.
+                                 Should return a dictionary of additional
+                                 request headers to be appended to the request
         """
         super().__init__(request_capacity)
         self._url = url
+        self._get_request_headers = get_request_headers
 
         self._headers = {
             'content-type': 'application/x-frugal',
@@ -118,12 +123,20 @@ class FHttpTransport(FTransportBase):
         Throws:
             TTransportException if the request timed out.
         """
+        # construct headers for request
+        request_headers = {}
+        if self._get_request_headers is not None:
+            request_headers = self._get_request_headers(context)
+        # apply the default headers so their values cannot be modified
+        request_headers.update(self._headers)
+
         with ClientSession() as session:
             try:
                 with async_timeout.timeout(context.timeout / 1000):
                     async with session.post(self._url,
                                             data=payload,
-                                            headers=self._headers) as response:
+                                            headers=request_headers) \
+                            as response:
                         return response.status, await response.content.read()
             except asyncio.TimeoutError:
                 raise TTransportException(
