@@ -16,6 +16,7 @@ void main() {
   group('FHttpTransport', () {
     Client client;
     FHttpTransport transport;
+    FHttpTransport transportWithContext;
 
     Map<String, String> expectedRequestHeaders = {
       'x-frugal-payload-limit': '10',
@@ -41,6 +42,11 @@ void main() {
       client = new Client();
       transport = new FHttpTransport(client, Uri.parse('http://localhost'),
           responseSizeLimit: 10, additionalHeaders: {'foo': 'bar'});
+      transportWithContext = new FHttpTransport(
+          client, Uri.parse('http://localhost'),
+          responseSizeLimit: 10,
+          additionalHeaders: {'foo': 'bar'},
+          getRequestHeaders: _generateTestHeader);
     });
 
     test('Test transport sends body and receives response', () async {
@@ -103,6 +109,90 @@ void main() {
 
       var first = transport.request(new FContext(), transportRequest);
       var second = transport.request(new FContext(), transportRequest);
+
+      var firstResponse = (await first) as TMemoryTransport;
+      var secondResponse = (await second) as TMemoryTransport;
+
+      expect(firstResponse.buffer, transportResponse);
+      expect(secondResponse.buffer, transportResponse);
+    });
+
+    test(
+        'Test transport sends body and receives response with FContext function',
+        () async {
+      FContext newContext = new FContext();
+      Map<String, String> tempExpectedHeaders = expectedRequestHeaders;
+      tempExpectedHeaders['first-header'] = newContext.correlationId;
+      tempExpectedHeaders['second-header'] = 'yup';
+
+      MockTransports.http.when(transportWithContext.uri,
+          (FinalizedRequest request) async {
+        if (request.method == 'POST') {
+          HttpBody body = request.body;
+          if (body == null || body.asString() != transportRequestB64)
+            return new MockResponse.badRequest();
+          for (var key in tempExpectedHeaders.keys) {
+            if (request.headers[key] != tempExpectedHeaders[key]) {
+              return new MockResponse.badRequest();
+            }
+          }
+          return new MockResponse.ok(
+              body: transportResponseB64, headers: responseHeaders);
+        } else {
+          return new MockResponse.badRequest();
+        }
+      });
+
+      var response = await transportWithContext.request(
+          newContext, transportRequest) as TMemoryTransport;
+      expect(response.buffer, transportResponse);
+    });
+
+    test(
+        'Transport times out if request is not received within the timeout with context',
+        () async {
+      MockTransports.http.when(transportWithContext.uri,
+          (FinalizedRequest request) async {
+        if (request.method == 'POST') {
+          await new Future.delayed(new Duration(milliseconds: 100));
+        }
+      });
+
+      try {
+        FContext ctx = new FContext()..timeout = new Duration(milliseconds: 20);
+        await transportWithContext.request(ctx, transportRequest);
+        fail('should have thrown an exception');
+      } on TTransportError catch (e) {
+        expect(e.type, FrugalTTransportErrorType.TIMED_OUT);
+      }
+    });
+
+    test('Multiple writes are not coalesced with FContext', () async {
+      FContext newContext = new FContext();
+      Map<String, String> tempExpectedHeaders = expectedRequestHeaders;
+      tempExpectedHeaders['first-header'] = newContext.correlationId;
+      tempExpectedHeaders['second-header'] = 'yup';
+
+      MockTransports.http.when(transportWithContext.uri,
+          (FinalizedRequest request) async {
+        if (request.method == 'POST') {
+          HttpBody body = request.body;
+          if (body == null || body.asString() != transportRequestB64)
+            return new MockResponse.badRequest();
+          for (var key in tempExpectedHeaders.keys) {
+            if (request.headers[key] != tempExpectedHeaders[key]) {
+              return new MockResponse.badRequest();
+            }
+          }
+          return new MockResponse.ok(
+              body: transportResponseB64, headers: responseHeaders);
+        } else {
+          return new MockResponse.badRequest();
+        }
+      });
+
+      var first = transportWithContext.request(newContext, transportRequest);
+      var second = transportWithContext.request(newContext, transportRequest);
 
       var firstResponse = (await first) as TMemoryTransport;
       var secondResponse = (await second) as TMemoryTransport;
@@ -201,4 +291,14 @@ void main() {
           throwsA(new isInstanceOf<TTransportError>()));
     });
   });
+}
+
+Map<String, String> _generateTestHeader(FContext ctx) {
+  return {
+    "first-header": ctx.correlationId,
+    "second-header": "yup",
+    "x-frugal-payload-limit": "these headers",
+    "content-transfer-encoding": "will be",
+    "accept": "overwritten!"
+  };
 }

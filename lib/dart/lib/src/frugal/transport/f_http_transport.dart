@@ -91,7 +91,8 @@ class FHttpTransport extends FTransport {
     _preflightRequestCheck(payload);
 
     // append dynamic headers first
-    Map<String, String> requestHeaders = _getRequestHeaders(ctx) ?? {};
+    Map<String, String> requestHeaders =
+        _getRequestHeaders != null ? _getRequestHeaders(ctx) : {};
     // add and potentially overwrite with default headers
     requestHeaders.addAll(_headers);
 
