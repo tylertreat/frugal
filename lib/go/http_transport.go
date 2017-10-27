@@ -145,6 +145,7 @@ type FHTTPTransportBuilder struct {
 	requestSizeLimit  uint
 	responseSizeLimit uint
 	requestHeaders    map[string]string
+	getRequestHeaders func(map[string]string)
 }
 
 // NewFHTTPTransportBuilder creates a builder which configures and builds HTTP
@@ -177,6 +178,14 @@ func (h *FHTTPTransportBuilder) WithRequestHeaders(requestHeaders map[string]str
 	return h
 }
 
+// withRequestHeadersFromFContext adds custom request headers to each request
+// with a provided function that accepts an FContext and returns map of
+// string key-value pairs
+func (h *FHTTPTransportBuilder) WithRequestHeadersFromFContext(getRequestHeaders func(map[string]string)) *FHTTPTransportBuilder {
+	h.getRequestHeaders = getRequestHeaders
+	return h
+}
+
 // Build a new configured HTTP FTransport.
 func (h *FHTTPTransportBuilder) Build() FTransport {
 	return &fHTTPTransport{
@@ -185,6 +194,7 @@ func (h *FHTTPTransportBuilder) Build() FTransport {
 		url:               h.url,
 		responseSizeLimit: h.responseSizeLimit,
 		requestHeaders:    h.requestHeaders,
+		getRequestHeaders: h.getRequestHeaders,
 	}
 }
 
@@ -199,7 +209,8 @@ type fHTTPTransport struct {
 	url               string
 	responseSizeLimit uint
 	isOpen            bool
-	requestHeaders	  map[string]string
+	requestHeaders    map[string]string
+	getRequestHeaders func(map[string]string)
 }
 
 // Open initializes the transport for use.
@@ -310,6 +321,13 @@ func (h *fHTTPTransport) makeRequest(fCtx FContext, requestPayload []byte) ([]by
 
 	// add user supplied headers first, to avoid monkeying
 	// with the size limits headers below.
+	// add dynamic headers from fcontext first
+	if h.getRequestHeaders != nil {
+		for key, value := range h.getRequestHeaders(fCtx) {
+			request.Header.Add(key, value)
+		}
+	}
+	// now add manually passed in request headers
 	if h.requestHeaders != nil {
 		for key, value := range h.requestHeaders {
 			request.Header.Add(key, value)

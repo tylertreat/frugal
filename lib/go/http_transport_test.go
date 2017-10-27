@@ -79,6 +79,16 @@ func (m *mockWriteCloser) Close() error {
 	return m.closeErr
 }
 
+func getRequestHeaders(fctx FContext) map[string]string {
+	return map[string]string{
+		"first-header":              fctx.CorrelationID(),
+		"second-header":             "yup",
+		"content-type":              "these headers",
+		"accept":                    "should be",
+		"content-transfer-encoding": "overwritten",
+	}
+}
+
 // Ensures that the payload size header has the wrong format an error is
 // returned
 func TestFrugalHandlerFuncHeaderError(t *testing.T) {
@@ -645,6 +655,57 @@ func TestHTTPTransportBadURL(t *testing.T) {
 	_, actualErr := transport.Request(ctx, requestBytes)
 	assert.Equal(actualErr.(thrift.TTransportException).TypeId(), expectedErr.TypeId())
 	assert.Equal(actualErr.(thrift.TTransportException).Error(), expectedErr.Error())
+
+	// Close
+	assert.Nil(transport.Close())
+}
+
+// Ensures custom headers can be written to the request
+func TestHTTPRequestHeadersWithContext(t *testing.T) {
+	assert := assert.New(t)
+	// Setup test data
+	requestBytes := []byte("Hello from the other side")
+	framedRequestBytes := prependFrameSize(requestBytes)
+	responseBytes := []byte("I must've called a thousand times")
+	f := make([]byte, 4)
+	binary.BigEndian.PutUint32(f, uint32(len(responseBytes)))
+	framedResponse := append(f, responseBytes...)
+
+	// Setup test server
+	// Create a context to use
+	ctx := NewFContext("")
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(r.Header.Get(contentTypeHeader), frugalContentType)
+		assert.Equal(r.Header.Get(contentTransferEncodingHeader), base64Encoding)
+		assert.Equal(r.Header.Get(acceptHeader), frugalContentType)
+		assert.Equal(r.Header.Get("foo"), "bar")
+		assert.Equal(r.Header.Get("first-header"), ctx.CorrelationID())
+		assert.Equal(r.Header.Get("second-header"), "yup")
+
+		respStr := base64.StdEncoding.EncodeToString(framedResponse)
+		w.Write([]byte(respStr))
+	}))
+
+	customRequestHeaders := make(map[string]string, 1)
+	customRequestHeaders["foo"] = "bar"
+	// Instantiate http transport
+	transport := NewFHTTPTransportBuilder(&http.Client{}, ts.URL).
+		WithRequestHeaders(customRequestHeaders).
+		WithRequestHeadersFromFContext(getRequestHeaders).
+		Build().(*fHTTPTransport)
+
+	// Open
+	assert.Nil(transport.Open())
+
+	// Flush before actually writing - make sure everything is fine
+	_, err := transport.Request(ctx, []byte{0, 0, 0, 0})
+	assert.Nil(err)
+
+	// Flush
+	result, err := transport.Request(ctx, framedRequestBytes)
+	assert.Nil(err)
+	assert.Equal(responseBytes, result.(*thrift.TMemoryBuffer).Bytes())
 
 	// Close
 	assert.Nil(transport.Close())
