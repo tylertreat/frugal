@@ -4,6 +4,7 @@
 
 
 import 'dart:async';
+import 'dart:typed_data' show Uint8List;
 
 import 'package:thrift/thrift.dart' as thrift;
 import 'package:frugal/frugal.dart' as frugal;
