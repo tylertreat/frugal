@@ -145,7 +145,7 @@ type FHTTPTransportBuilder struct {
 	requestSizeLimit  uint
 	responseSizeLimit uint
 	requestHeaders    map[string]string
-	getRequestHeaders func(map[string]string)
+	getRequestHeaders func(FContext) map[string]string
 }
 
 // NewFHTTPTransportBuilder creates a builder which configures and builds HTTP
@@ -181,7 +181,7 @@ func (h *FHTTPTransportBuilder) WithRequestHeaders(requestHeaders map[string]str
 // withRequestHeadersFromFContext adds custom request headers to each request
 // with a provided function that accepts an FContext and returns map of
 // string key-value pairs
-func (h *FHTTPTransportBuilder) WithRequestHeadersFromFContext(getRequestHeaders func(map[string]string)) *FHTTPTransportBuilder {
+func (h *FHTTPTransportBuilder) WithRequestHeadersFromFContext(getRequestHeaders func(FContext) map[string]string) *FHTTPTransportBuilder {
 	h.getRequestHeaders = getRequestHeaders
 	return h
 }
@@ -210,7 +210,7 @@ type fHTTPTransport struct {
 	responseSizeLimit uint
 	isOpen            bool
 	requestHeaders    map[string]string
-	getRequestHeaders func(map[string]string)
+	getRequestHeaders func(FContext) map[string]string
 }
 
 // Open initializes the transport for use.
