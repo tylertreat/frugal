@@ -138,6 +138,8 @@ func NewFrugalHandlerFunc(processor FProcessor, protocolFactory *FProtocolFactor
 	}
 }
 
+type GetHeadersWithContext func(FContext) map[string]string
+
 // FHTTPTransportBuilder configures and builds HTTP FTransport instances.
 type FHTTPTransportBuilder struct {
 	client            *http.Client
@@ -145,7 +147,7 @@ type FHTTPTransportBuilder struct {
 	requestSizeLimit  uint
 	responseSizeLimit uint
 	requestHeaders    map[string]string
-	getRequestHeaders func(FContext) map[string]string
+	getRequestHeaders GetHeadersWithContext
 }
 
 // NewFHTTPTransportBuilder creates a builder which configures and builds HTTP
@@ -181,7 +183,7 @@ func (h *FHTTPTransportBuilder) WithRequestHeaders(requestHeaders map[string]str
 // withRequestHeadersFromFContext adds custom request headers to each request
 // with a provided function that accepts an FContext and returns map of
 // string key-value pairs
-func (h *FHTTPTransportBuilder) WithRequestHeadersFromFContext(getRequestHeaders func(FContext) map[string]string) *FHTTPTransportBuilder {
+func (h *FHTTPTransportBuilder) WithRequestHeadersFromFContext(getRequestHeaders GetHeadersWithContext) *FHTTPTransportBuilder {
 	h.getRequestHeaders = getRequestHeaders
 	return h
 }
@@ -210,7 +212,7 @@ type fHTTPTransport struct {
 	responseSizeLimit uint
 	isOpen            bool
 	requestHeaders    map[string]string
-	getRequestHeaders func(FContext) map[string]string
+	getRequestHeaders GetHeadersWithContext
 }
 
 // Open initializes the transport for use.
