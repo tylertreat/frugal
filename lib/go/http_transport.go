@@ -324,20 +324,20 @@ func (h *fHTTPTransport) makeRequest(fCtx FContext, requestPayload []byte) ([]by
 	// add dynamic headers from fcontext first
 	if h.getRequestHeaders != nil {
 		for key, value := range h.getRequestHeaders(fCtx) {
-			request.Header.Add(key, value)
+			request.Header.Set(key, value)
 		}
 	}
 	// now add manually passed in request headers
 	if h.requestHeaders != nil {
 		for key, value := range h.requestHeaders {
-			request.Header.Add(key, value)
+			request.Header.Set(key, value)
 		}
 	}
 
 	// Add request headers
-	request.Header.Add(contentTypeHeader, frugalContentType)
-	request.Header.Add(acceptHeader, frugalContentType)
-	request.Header.Add(contentTransferEncodingHeader, base64Encoding)
+	request.Header.Set(contentTypeHeader, frugalContentType)
+	request.Header.Set(acceptHeader, frugalContentType)
+	request.Header.Set(contentTransferEncodingHeader, base64Encoding)
 	if h.responseSizeLimit > 0 {
 		request.Header.Add(payloadLimitHeader, strconv.FormatUint(uint64(h.responseSizeLimit), 10))
 	}
