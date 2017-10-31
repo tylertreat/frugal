@@ -148,59 +148,6 @@ void main() {
       expect(response.buffer, transportResponse);
     });
 
-    test(
-        'Transport times out if request is not received within the timeout with context',
-        () async {
-      MockTransports.http.when(transportWithContext.uri,
-          (FinalizedRequest request) async {
-        if (request.method == 'POST') {
-          await new Future.delayed(new Duration(milliseconds: 100));
-        }
-      });
-
-      try {
-        FContext ctx = new FContext()..timeout = new Duration(milliseconds: 20);
-        await transportWithContext.request(ctx, transportRequest);
-        fail('should have thrown an exception');
-      } on TTransportError catch (e) {
-        expect(e.type, FrugalTTransportErrorType.TIMED_OUT);
-      }
-    });
-
-    test('Multiple writes are not coalesced with FContext', () async {
-      FContext newContext = new FContext();
-      Map<String, String> tempExpectedHeaders = expectedRequestHeaders;
-      tempExpectedHeaders['first-header'] = newContext.correlationId;
-      tempExpectedHeaders['second-header'] = 'yup';
-
-      MockTransports.http.when(transportWithContext.uri,
-          (FinalizedRequest request) async {
-        if (request.method == 'POST') {
-          HttpBody body = request.body;
-          if (body == null || body.asString() != transportRequestB64)
-            return new MockResponse.badRequest();
-          for (var key in tempExpectedHeaders.keys) {
-            if (request.headers[key] != tempExpectedHeaders[key]) {
-              return new MockResponse.badRequest();
-            }
-          }
-          return new MockResponse.ok(
-              body: transportResponseB64, headers: responseHeaders);
-        } else {
-          return new MockResponse.badRequest();
-        }
-      });
-
-      var first = transportWithContext.request(newContext, transportRequest);
-      var second = transportWithContext.request(newContext, transportRequest);
-
-      var firstResponse = (await first) as TMemoryTransport;
-      var secondResponse = (await second) as TMemoryTransport;
-
-      expect(firstResponse.buffer, transportResponse);
-      expect(secondResponse.buffer, transportResponse);
-    });
-
     test('Test transport does not execute frame on oneway requests', () async {
       Uint8List responseBytes = new Uint8List.fromList([0, 0, 0, 0]);
       Response response =

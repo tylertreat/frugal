@@ -13,6 +13,9 @@
 
 part of frugal.src.frugal;
 
+/// typedef for passed in function that generates headers given an [FContext]
+typedef Map<String, String> GetHeadersWithContext(FContext ctx);
+
 /// An [FTransport] that makes frugal requests via HTTP.
 class FHttpTransport extends FTransport {
   /// HTTP status code for an unauthorized reqeuest.
@@ -37,7 +40,7 @@ class FHttpTransport extends FTransport {
 
   /// Function that accepts an FContext that should return a Map<String, String>
   /// of headers to be added to every request
-  var _getRequestHeaders;
+  final GetHeadersWithContext _getRequestHeaders;
 
   /// Create an [FHttpTransport] instance with the given w_transport [Client],
   /// uri, and optional size restrictions, and headers.
@@ -56,8 +59,9 @@ class FHttpTransport extends FTransport {
       {int requestSizeLimit: 0,
       this.responseSizeLimit: 0,
       Map<String, String> additionalHeaders,
-      var getRequestHeaders: null})
-      : super(requestSizeLimit: requestSizeLimit) {
+      GetHeadersWithContext getRequestHeaders: null})
+      : _getRequestHeaders = getRequestHeaders,
+        super(requestSizeLimit: requestSizeLimit) {
     _headers = additionalHeaders ?? {};
     // add and potentially overwrite with default headers
     _headers.addAll({
@@ -68,8 +72,6 @@ class FHttpTransport extends FTransport {
     if (responseSizeLimit > 0) {
       _headers['x-frugal-payload-limit'] = responseSizeLimit.toString();
     }
-
-    _getRequestHeaders = getRequestHeaders;
   }
 
   @override
