@@ -60,7 +60,7 @@ class FHttpTransport extends FTransport {
       this.responseSizeLimit: 0,
       Map<String, String> additionalHeaders,
       GetHeadersWithContext getRequestHeaders: null})
-      : _getRequestHeaders = getRequestHeaders,
+      : _getRequestHeaders = getRequestHeaders ?? ((fcontext) => {}),
         super(requestSizeLimit: requestSizeLimit) {
     _headers = additionalHeaders ?? {};
     // add and potentially overwrite with default headers
@@ -93,8 +93,7 @@ class FHttpTransport extends FTransport {
     _preflightRequestCheck(payload);
 
     // append dynamic headers first
-    Map<String, String> requestHeaders =
-        _getRequestHeaders != null ? _getRequestHeaders(ctx) : {};
+    Map<String, String> requestHeaders = _getRequestHeaders(ctx);
     // add and potentially overwrite with default headers
     requestHeaders.addAll(_headers);
 
