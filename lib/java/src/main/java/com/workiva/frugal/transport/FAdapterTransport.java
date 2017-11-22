@@ -82,7 +82,7 @@ public class FAdapterTransport extends FAsyncTransport {
         }
 
         readExecutor = executorFactory.newExecutor();
-        readExecutor.submit(newTransportReader());
+        readExecutor.execute(newTransportReader());
         super.open();
     }
 
