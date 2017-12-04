@@ -22,6 +22,7 @@ import 'package:variety/variety.dart' as t_variety;
 abstract class FFoo extends t_actual_base_dart.FBaseFoo {
 
   /// Ping the server.
+  /// Deprecated: use something else
   @deprecated
   Future ping(frugal.FContext ctx);
 
@@ -72,7 +73,8 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
   frugal.FProtocolFactory _protocolFactory;
 
   /// Ping the server.
-  @Deprecated("use something else")
+  /// Deprecated: use something else
+  @deprecated
   Future ping(frugal.FContext ctx) {
     _frugalLog.warning("Call to deprecated function 'Foo.ping'");
     return this._methods['ping']([ctx]) as Future;
