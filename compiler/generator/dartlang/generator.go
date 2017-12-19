@@ -1464,7 +1464,10 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 			contents += g.GenerateInlineComment(method.Comment, tab+"/")
 		}
 
-		if _, ok := method.Annotations.Deprecated(); ok {
+		if deprecationValue, deprecated := method.Annotations.Deprecated(); deprecated {
+			if deprecationValue != "" {
+				contents += g.GenerateInlineComment([]string{"Deprecated: "+deprecationValue}, tab+"/")
+			}
 			contents += tab + "@deprecated\n"
 		}
 
@@ -1547,10 +1550,9 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	deprecationValue, deprecated := method.Annotations.Deprecated()
 	if deprecated {
 		if deprecationValue != "" {
-			contents += fmt.Sprintf(tab+"@Deprecated(\"%s\")\n", deprecationValue)
-		} else {
-			contents += tab + "@deprecated\n"
+			contents += g.GenerateInlineComment([]string{"Deprecated: "+deprecationValue}, tab+"/")
 		}
+		contents += tab + "@deprecated\n"
 	}
 
 	// Generate wrapper method
