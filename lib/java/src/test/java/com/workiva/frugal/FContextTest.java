@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
@@ -57,6 +58,9 @@ public class FContextTest {
         assertEquals(ctx, ctx.addRequestHeader(FContext.CID_HEADER, "123"));
         assertEquals("bar", ctx.getRequestHeader("foo"));
         assertNull(ctx.getRequestHeader("blah"));
+        assertEquals(ctx, ctx.removeRequestHeader("foo"));
+        assertNull(ctx.getRequestHeader("foo"));
+        assertFalse(ctx.getRequestHeaders().containsKey("foo"));
     }
 
     @Test
@@ -78,6 +82,9 @@ public class FContextTest {
         assertEquals(ctx, ctx.addResponseHeader(FContext.OPID_HEADER, "1"));
         assertEquals("bar", ctx.getResponseHeader("foo"));
         assertNull(ctx.getResponseHeader("blah"));
+        assertEquals(ctx, ctx.removeResponseHeader("foo"));
+        assertNull(ctx.getResponseHeader("foo"));
+        assertFalse(ctx.getResponseHeaders().containsKey("foo"));
     }
 
     @Test
