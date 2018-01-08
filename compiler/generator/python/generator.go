@@ -997,7 +997,7 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 // GenerateSubscriber generates the subscriber for the given scope.
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	// TODO
-	globals.PrintWarning(fmt.Sprintf("%s: scope subscriber generation is not implemented for Python", scope.Name))
+	globals.PrintWarning(fmt.Sprintf("%s: scope subscriber generation is not implemented for GAE Python, if you want this generate Tornado or Asyncio", scope.Name))
 	return nil
 }
 
