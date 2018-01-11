@@ -180,7 +180,7 @@ public class FBaseFoo {
 					return;
 				} catch (TException e) {
 					synchronized (WRITE_LOCK) {
-						e = writeApplicationException(ctx, oprot, TApplicationExceptionType.INTERNAL_ERROR, "basePing", "Internal error processing basePing: " + e.getMessage());
+						e = (TApplicationException) writeApplicationException(ctx, oprot, TApplicationExceptionType.INTERNAL_ERROR, "basePing", "Internal error processing basePing: " + e.getMessage()).initCause(e);
 					}
 					throw e;
 				}
