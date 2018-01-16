@@ -33,7 +33,7 @@ setup(
             "asyncio-nats-client==0.6.0",
             # DO NOT CHANGE without verifying asyncio nats with tls works
             "multidict==3.1.3",
-            "aiohttp==2.3.2",
+            "aiohttp==2.3.8",
         ],
         'gae': ["webapp2==2.5.2"],
     }
