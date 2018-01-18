@@ -52,7 +52,9 @@ func (f *FStoreClient) BuyAlbum(ctx frugal.FContext, asin string, acct string) (
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
 	}
-	r = ret[0].(*Album)
+	if ret[0] != nil {
+		r = ret[0].(*Album)
+	}
 	if ret[1] != nil {
 		err = ret[1].(error)
 	}
@@ -141,7 +143,9 @@ func (f *FStoreClient) EnterAlbumGiveaway(ctx frugal.FContext, email string, nam
 	if len(ret) != 2 {
 		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
 	}
-	r = ret[0].(bool)
+	if ret[0] != nil {
+		r = ret[0].(bool)
+	}
 	if ret[1] != nil {
 		err = ret[1].(error)
 	}

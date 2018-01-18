@@ -1689,7 +1689,9 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	contents += fmt.Sprintf("\t\tpanic(fmt.Sprintf(\"Middleware returned %%d arguments, expected %s\", len(ret)))\n", numReturn)
 	contents += "\t}\n"
 	if method.ReturnType != nil {
-		contents += fmt.Sprintf("\tr = ret[0].(%s)\n", g.getGoTypeFromThriftType(method.ReturnType))
+		contents += "\tif ret[0] != nil {\n"
+		contents += fmt.Sprintf("\t\tr = ret[0].(%s)\n", g.getGoTypeFromThriftType(method.ReturnType))
+		contents += "\t}\n"
 		contents += "\tif ret[1] != nil {\n"
 		contents += "\t\terr = ret[1].(error)\n"
 		contents += "\t}\n"
