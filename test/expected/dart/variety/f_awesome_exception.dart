@@ -173,6 +173,24 @@ class AwesomeException extends Error implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is AwesomeException)) {
+      return false;
+    }
+    AwesomeException other = o as AwesomeException;
+    return this.iD == other.iD
+      && this.reason == other.reason;
+  }
+
+  AwesomeException clone({
+    int iD: null,
+    String reason: null,
+  }) {
+    return new AwesomeException()
+      ..iD = iD ?? this.iD
+      ..reason = reason ?? this.reason;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values

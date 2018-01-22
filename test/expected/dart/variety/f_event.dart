@@ -176,6 +176,24 @@ class Event implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is Event)) {
+      return false;
+    }
+    Event other = o as Event;
+    return this.iD == other.iD
+      && this.message == other.message;
+  }
+
+  Event clone({
+    int iD: null,
+    String message: null,
+  }) {
+    return new Event()
+      ..iD = iD ?? this.iD
+      ..message = message ?? this.message;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values

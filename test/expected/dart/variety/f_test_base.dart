@@ -124,6 +124,21 @@ class TestBase implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is TestBase)) {
+      return false;
+    }
+    TestBase other = o as TestBase;
+    return this.base_struct == other.base_struct;
+  }
+
+  TestBase clone({
+    t_actual_base_dart.thing base_struct: null,
+  }) {
+    return new TestBase()
+      ..base_struct = base_struct ?? this.base_struct;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values

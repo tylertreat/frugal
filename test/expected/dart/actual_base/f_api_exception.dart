@@ -72,6 +72,17 @@ class api_exception extends Error implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is api_exception)) {
+      return false;
+    }
+    return true;
+  }
+
+  api_exception clone() {
+    return new api_exception();
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values

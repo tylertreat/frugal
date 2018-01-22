@@ -133,6 +133,17 @@ class basePing_args implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is basePing_args)) {
+      return false;
+    }
+    return true;
+  }
+
+  basePing_args clone() {
+    return new basePing_args();
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
@@ -203,6 +214,17 @@ class basePing_result implements thrift.TBase {
     ret.write(")");
 
     return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is basePing_result)) {
+      return false;
+    }
+    return true;
+  }
+
+  basePing_result clone() {
+    return new basePing_result();
   }
 
   validate() {

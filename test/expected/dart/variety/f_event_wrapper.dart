@@ -611,6 +611,48 @@ class EventWrapper implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is EventWrapper)) {
+      return false;
+    }
+    EventWrapper other = o as EventWrapper;
+    return this.iD == other.iD
+      && this.ev == other.ev
+      && this.events == other.events
+      && this.events2 == other.events2
+      && this.eventMap == other.eventMap
+      && this.nums == other.nums
+      && this.enums == other.enums
+      && this.aBoolField == other.aBoolField
+      && this.a_union == other.a_union
+      && this.typedefOfTypedef == other.typedefOfTypedef;
+  }
+
+  EventWrapper clone({
+    int iD: null,
+    t_variety.Event ev: null,
+    List<t_variety.Event> events: null,
+    Set<t_variety.Event> events2: null,
+    Map<int, t_variety.Event> eventMap: null,
+    List<List<int>> nums: null,
+    List<int> enums: null,
+    bool aBoolField: null,
+    t_variety.TestingUnions a_union: null,
+    String typedefOfTypedef: null,
+  }) {
+    return new EventWrapper()
+      ..iD = iD ?? this.iD
+      ..ev = ev ?? this.ev
+      ..events = events ?? this.events
+      ..events2 = events2 ?? this.events2
+      ..eventMap = eventMap ?? this.eventMap
+      ..nums = nums ?? this.nums
+      ..enums = enums ?? this.enums
+      ..aBoolField = aBoolField ?? this.aBoolField
+      ..a_union = a_union ?? this.a_union
+      ..typedefOfTypedef = typedefOfTypedef ?? this.typedefOfTypedef;
+  }
+
   validate() {
     // check for required fields
     if(ev == null) {

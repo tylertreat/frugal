@@ -289,6 +289,24 @@ class buyAlbum_args implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is buyAlbum_args)) {
+      return false;
+    }
+    buyAlbum_args other = o as buyAlbum_args;
+    return this.aSIN == other.aSIN
+      && this.acct == other.acct;
+  }
+
+  buyAlbum_args clone({
+    String aSIN: null,
+    String acct: null,
+  }) {
+    return new buyAlbum_args()
+      ..aSIN = aSIN ?? this.aSIN
+      ..acct = acct ?? this.acct;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
@@ -460,6 +478,24 @@ class buyAlbum_result implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is buyAlbum_result)) {
+      return false;
+    }
+    buyAlbum_result other = o as buyAlbum_result;
+    return this.success == other.success
+      && this.error == other.error;
+  }
+
+  buyAlbum_result clone({
+    t_v1_music.Album success: null,
+    t_v1_music.PurchasingError error: null,
+  }) {
+    return new buyAlbum_result()
+      ..success = success ?? this.success
+      ..error = error ?? this.error;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
@@ -625,6 +661,24 @@ class enterAlbumGiveaway_args implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is enterAlbumGiveaway_args)) {
+      return false;
+    }
+    enterAlbumGiveaway_args other = o as enterAlbumGiveaway_args;
+    return this.email == other.email
+      && this.name == other.name;
+  }
+
+  enterAlbumGiveaway_args clone({
+    String email: null,
+    String name: null,
+  }) {
+    return new enterAlbumGiveaway_args()
+      ..email = email ?? this.email
+      ..name = name ?? this.name;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
@@ -742,6 +796,21 @@ class enterAlbumGiveaway_result implements thrift.TBase {
     ret.write(")");
 
     return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is enterAlbumGiveaway_result)) {
+      return false;
+    }
+    enterAlbumGiveaway_result other = o as enterAlbumGiveaway_result;
+    return this.success == other.success;
+  }
+
+  enterAlbumGiveaway_result clone({
+    bool success: null,
+  }) {
+    return new enterAlbumGiveaway_result()
+      ..success = success ?? this.success;
   }
 
   validate() {

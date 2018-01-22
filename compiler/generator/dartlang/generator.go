@@ -690,6 +690,12 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 	// to string
 	contents += g.generateToString(s)
 
+	// equals
+	contents += g.generateEquals(s)
+
+	// clone
+	contents += g.generateClone(s)
+
 	// validate
 	contents += g.generateValidate(s)
 
@@ -1116,6 +1122,64 @@ func (g *Generator) generateToString(s *parser.Struct) string {
 	return contents
 }
 
+func (g *Generator) generateEquals(s *parser.Struct) string {
+	contents := tab + "bool operator ==(Object o) {\n"
+	// Make sure it's the same type
+	contents += fmt.Sprintf(tabtab+"if(o == null || !(o is %s)) {\n", s.Name)
+	contents += tabtabtab + "return false;\n"
+	contents += tabtab + "}\n"
+
+	// No fields in the struct, nothing to compare
+	if len(s.Fields) == 0 {
+		contents += tabtab + "return true;\n"
+		contents += tab + "}\n\n"
+		return contents
+	}
+	contents += fmt.Sprintf(tabtab+"%s other = o as %s;\n", s.Name, s.Name)
+
+	first := true
+	for _, field := range s.Fields {
+		fieldName := toFieldName(field.Name)
+		if first {
+			first = false
+			contents += fmt.Sprintf(tabtab+"return this.%s == other.%s", fieldName, fieldName)
+		} else {
+			contents += fmt.Sprintf("\n"+tabtabtab+"&& this.%s == other.%s", fieldName, fieldName)
+		}
+	}
+
+	contents += ";\n"
+	contents += tab + "}\n\n"
+	return contents
+}
+
+func (g *Generator) generateClone(s *parser.Struct) string {
+	if len(s.Fields) == 0 {
+		// dart doesn't allow someFunc({}) {}, so need a special case for no fields
+		contents := fmt.Sprintf(tab+"%s clone() {\n", s.Name)
+		contents += fmt.Sprintf(tabtab+"return new %s();\n", s.Name)
+		contents += fmt.Sprintf(tab + "}\n\n")
+		return contents
+	}
+
+	contents := fmt.Sprintf(tab+"%s clone({\n", s.Name)
+	for _, field := range s.Fields {
+		fieldName := toFieldName(field.Name)
+		contents += fmt.Sprintf(tabtab+"%s %s: null,\n", g.getDartTypeFromThriftType(field.Type), fieldName)
+	}
+	contents += tab + "}) {\n"
+
+	contents += fmt.Sprintf(tabtab+"return new %s()", s.Name)
+	for _, field := range s.Fields {
+		fieldName := toFieldName(field.Name)
+		contents += fmt.Sprintf("\n"+tabtabtab+"..%s = %s ?? this.%s", fieldName, fieldName, fieldName)
+	}
+	contents += ";\n"
+
+	contents += tab + "}\n\n"
+	return contents
+}
+
 func (g *Generator) generateValidate(s *parser.Struct) string {
 	contents := tab + "validate() {\n"
 
@@ -1466,7 +1530,7 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 
 		if deprecationValue, deprecated := method.Annotations.Deprecated(); deprecated {
 			if deprecationValue != "" {
-				contents += g.GenerateInlineComment([]string{"Deprecated: "+deprecationValue}, tab+"/")
+				contents += g.GenerateInlineComment([]string{"Deprecated: " + deprecationValue}, tab+"/")
 			}
 			contents += tab + "@deprecated\n"
 		}
@@ -1550,7 +1614,7 @@ func (g *Generator) generateClientMethod(service *parser.Service, method *parser
 	deprecationValue, deprecated := method.Annotations.Deprecated()
 	if deprecated {
 		if deprecationValue != "" {
-			contents += g.GenerateInlineComment([]string{"Deprecated: "+deprecationValue}, tab+"/")
+			contents += g.GenerateInlineComment([]string{"Deprecated: " + deprecationValue}, tab+"/")
 		}
 		contents += tab + "@deprecated\n"
 	}

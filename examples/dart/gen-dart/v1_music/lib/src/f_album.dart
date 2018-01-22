@@ -222,6 +222,27 @@ class Album implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is Album)) {
+      return false;
+    }
+    Album other = o as Album;
+    return this.tracks == other.tracks
+      && this.duration == other.duration
+      && this.aSIN == other.aSIN;
+  }
+
+  Album clone({
+    List<t_v1_music.Track> tracks: null,
+    double duration: null,
+    String aSIN: null,
+  }) {
+    return new Album()
+      ..tracks = tracks ?? this.tracks
+      ..duration = duration ?? this.duration
+      ..aSIN = aSIN ?? this.aSIN;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values

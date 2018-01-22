@@ -129,6 +129,21 @@ class nested_thing implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is nested_thing)) {
+      return false;
+    }
+    nested_thing other = o as nested_thing;
+    return this.things == other.things;
+  }
+
+  nested_thing clone({
+    List<t_actual_base_dart.thing> things: null,
+  }) {
+    return new nested_thing()
+      ..things = things ?? this.things;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
