@@ -356,6 +356,36 @@ class Track implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is Track)) {
+      return false;
+    }
+    Track other = o as Track;
+    return this.title == other.title
+      && this.artist == other.artist
+      && this.publisher == other.publisher
+      && this.composer == other.composer
+      && this.duration == other.duration
+      && this.pro == other.pro;
+  }
+
+  Track clone({
+    String title: null,
+    String artist: null,
+    String publisher: null,
+    String composer: null,
+    double duration: null,
+    int pro: null,
+  }) {
+    return new Track()
+      ..title = title ?? this.title
+      ..artist = artist ?? this.artist
+      ..publisher = publisher ?? this.publisher
+      ..composer = composer ?? this.composer
+      ..duration = duration ?? this.duration
+      ..pro = pro ?? this.pro;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values

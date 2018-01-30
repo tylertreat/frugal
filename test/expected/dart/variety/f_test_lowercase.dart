@@ -120,6 +120,21 @@ class TestLowercase implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is TestLowercase)) {
+      return false;
+    }
+    TestLowercase other = o as TestLowercase;
+    return this.lowercaseInt == other.lowercaseInt;
+  }
+
+  TestLowercase clone({
+    int lowercaseInt: null,
+  }) {
+    return new TestLowercase()
+      ..lowercaseInt = lowercaseInt ?? this.lowercaseInt;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values

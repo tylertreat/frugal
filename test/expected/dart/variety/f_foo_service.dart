@@ -473,6 +473,17 @@ class Ping_args implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is Ping_args)) {
+      return false;
+    }
+    return true;
+  }
+
+  Ping_args clone() {
+    return new Ping_args();
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
@@ -543,6 +554,17 @@ class Ping_result implements thrift.TBase {
     ret.write(")");
 
     return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is Ping_result)) {
+      return false;
+    }
+    return true;
+  }
+
+  Ping_result clone() {
+    return new Ping_result();
   }
 
   validate() {
@@ -753,6 +775,27 @@ class blah_args implements thrift.TBase {
     ret.write(")");
 
     return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is blah_args)) {
+      return false;
+    }
+    blah_args other = o as blah_args;
+    return this.num == other.num
+      && this.str == other.str
+      && this.event == other.event;
+  }
+
+  blah_args clone({
+    int num: null,
+    String str: null,
+    t_variety.Event event: null,
+  }) {
+    return new blah_args()
+      ..num = num ?? this.num
+      ..str = str ?? this.str
+      ..event = event ?? this.event;
   }
 
   validate() {
@@ -974,6 +1017,27 @@ class blah_result implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is blah_result)) {
+      return false;
+    }
+    blah_result other = o as blah_result;
+    return this.success == other.success
+      && this.awe == other.awe
+      && this.api == other.api;
+  }
+
+  blah_result clone({
+    int success: null,
+    t_variety.AwesomeException awe: null,
+    t_actual_base_dart.api_exception api: null,
+  }) {
+    return new blah_result()
+      ..success = success ?? this.success
+      ..awe = awe ?? this.awe
+      ..api = api ?? this.api;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
@@ -1148,6 +1212,24 @@ class oneWay_args implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is oneWay_args)) {
+      return false;
+    }
+    oneWay_args other = o as oneWay_args;
+    return this.id == other.id
+      && this.req == other.req;
+  }
+
+  oneWay_args clone({
+    int id: null,
+    Map<int, String> req: null,
+  }) {
+    return new oneWay_args()
+      ..id = id ?? this.id
+      ..req = req ?? this.req;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
@@ -1311,6 +1393,24 @@ class bin_method_args implements thrift.TBase {
     ret.write(")");
 
     return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is bin_method_args)) {
+      return false;
+    }
+    bin_method_args other = o as bin_method_args;
+    return this.bin == other.bin
+      && this.str == other.str;
+  }
+
+  bin_method_args clone({
+    Uint8List bin: null,
+    String str: null,
+  }) {
+    return new bin_method_args()
+      ..bin = bin ?? this.bin
+      ..str = str ?? this.str;
   }
 
   validate() {
@@ -1481,6 +1581,24 @@ class bin_method_result implements thrift.TBase {
     ret.write(")");
 
     return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is bin_method_result)) {
+      return false;
+    }
+    bin_method_result other = o as bin_method_result;
+    return this.success == other.success
+      && this.api == other.api;
+  }
+
+  bin_method_result clone({
+    Uint8List success: null,
+    t_actual_base_dart.api_exception api: null,
+  }) {
+    return new bin_method_result()
+      ..success = success ?? this.success
+      ..api = api ?? this.api;
   }
 
   validate() {
@@ -1689,6 +1807,27 @@ class param_modifiers_args implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is param_modifiers_args)) {
+      return false;
+    }
+    param_modifiers_args other = o as param_modifiers_args;
+    return this.opt_num == other.opt_num
+      && this.default_num == other.default_num
+      && this.req_num == other.req_num;
+  }
+
+  param_modifiers_args clone({
+    int opt_num: null,
+    int default_num: null,
+    int req_num: null,
+  }) {
+    return new param_modifiers_args()
+      ..opt_num = opt_num ?? this.opt_num
+      ..default_num = default_num ?? this.default_num
+      ..req_num = req_num ?? this.req_num;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
@@ -1806,6 +1945,21 @@ class param_modifiers_result implements thrift.TBase {
     ret.write(")");
 
     return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is param_modifiers_result)) {
+      return false;
+    }
+    param_modifiers_result other = o as param_modifiers_result;
+    return this.success == other.success;
+  }
+
+  param_modifiers_result clone({
+    int success: null,
+  }) {
+    return new param_modifiers_result()
+      ..success = success ?? this.success;
   }
 
   validate() {
@@ -1993,6 +2147,24 @@ class underlying_types_test_args implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is underlying_types_test_args)) {
+      return false;
+    }
+    underlying_types_test_args other = o as underlying_types_test_args;
+    return this.list_type == other.list_type
+      && this.set_type == other.set_type;
+  }
+
+  underlying_types_test_args clone({
+    List<int> list_type: null,
+    Set<int> set_type: null,
+  }) {
+    return new underlying_types_test_args()
+      ..list_type = list_type ?? this.list_type
+      ..set_type = set_type ?? this.set_type;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
@@ -2123,6 +2295,21 @@ class underlying_types_test_result implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is underlying_types_test_result)) {
+      return false;
+    }
+    underlying_types_test_result other = o as underlying_types_test_result;
+    return this.success == other.success;
+  }
+
+  underlying_types_test_result clone({
+    List<int> success: null,
+  }) {
+    return new underlying_types_test_result()
+      ..success = success ?? this.success;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
@@ -2193,6 +2380,17 @@ class getThing_args implements thrift.TBase {
     ret.write(")");
 
     return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is getThing_args)) {
+      return false;
+    }
+    return true;
+  }
+
+  getThing_args clone() {
+    return new getThing_args();
   }
 
   validate() {
@@ -2316,6 +2514,21 @@ class getThing_result implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is getThing_result)) {
+      return false;
+    }
+    getThing_result other = o as getThing_result;
+    return this.success == other.success;
+  }
+
+  getThing_result clone({
+    t_validStructs.Thing success: null,
+  }) {
+    return new getThing_result()
+      ..success = success ?? this.success;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
@@ -2386,6 +2599,17 @@ class getMyInt_args implements thrift.TBase {
     ret.write(")");
 
     return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is getMyInt_args)) {
+      return false;
+    }
+    return true;
+  }
+
+  getMyInt_args clone() {
+    return new getMyInt_args();
   }
 
   validate() {
@@ -2507,6 +2731,21 @@ class getMyInt_result implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is getMyInt_result)) {
+      return false;
+    }
+    getMyInt_result other = o as getMyInt_result;
+    return this.success == other.success;
+  }
+
+  getMyInt_result clone({
+    int success: null,
+  }) {
+    return new getMyInt_result()
+      ..success = success ?? this.success;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
@@ -2624,6 +2863,21 @@ class use_subdir_struct_args implements thrift.TBase {
     ret.write(")");
 
     return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is use_subdir_struct_args)) {
+      return false;
+    }
+    use_subdir_struct_args other = o as use_subdir_struct_args;
+    return this.a == other.a;
+  }
+
+  use_subdir_struct_args clone({
+    t_subdir_include_ns.A a: null,
+  }) {
+    return new use_subdir_struct_args()
+      ..a = a ?? this.a;
   }
 
   validate() {
@@ -2745,6 +2999,21 @@ class use_subdir_struct_result implements thrift.TBase {
     ret.write(")");
 
     return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is use_subdir_struct_result)) {
+      return false;
+    }
+    use_subdir_struct_result other = o as use_subdir_struct_result;
+    return this.success == other.success;
+  }
+
+  use_subdir_struct_result clone({
+    t_subdir_include_ns.A success: null,
+  }) {
+    return new use_subdir_struct_result()
+      ..success = success ?? this.success;
   }
 
   validate() {

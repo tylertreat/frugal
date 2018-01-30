@@ -145,6 +145,17 @@ class getItem_args implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is getItem_args)) {
+      return false;
+    }
+    return true;
+  }
+
+  getItem_args clone() {
+    return new getItem_args();
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
@@ -314,6 +325,24 @@ class getItem_result implements thrift.TBase {
     ret.write(")");
 
     return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is getItem_result)) {
+      return false;
+    }
+    getItem_result other = o as getItem_result;
+    return this.success == other.success
+      && this.d == other.d;
+  }
+
+  getItem_result clone({
+    t_vendor_namespace.Item success: null,
+    t_excepts.InvalidData d: null,
+  }) {
+    return new getItem_result()
+      ..success = success ?? this.success
+      ..d = d ?? this.d;
   }
 
   validate() {

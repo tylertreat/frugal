@@ -164,6 +164,24 @@ class PurchasingError extends Error implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is PurchasingError)) {
+      return false;
+    }
+    PurchasingError other = o as PurchasingError;
+    return this.message == other.message
+      && this.error_code == other.error_code;
+  }
+
+  PurchasingError clone({
+    String message: null,
+    int error_code: null,
+  }) {
+    return new PurchasingError()
+      ..message = message ?? this.message
+      ..error_code = error_code ?? this.error_code;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values

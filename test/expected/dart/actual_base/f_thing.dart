@@ -162,6 +162,24 @@ class thing implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is thing)) {
+      return false;
+    }
+    thing other = o as thing;
+    return this.an_id == other.an_id
+      && this.a_string == other.a_string;
+  }
+
+  thing clone({
+    int an_id: null,
+    String a_string: null,
+  }) {
+    return new thing()
+      ..an_id = an_id ?? this.an_id
+      ..a_string = a_string ?? this.a_string;
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values

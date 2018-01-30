@@ -72,6 +72,17 @@ class Item implements thrift.TBase {
     return ret.toString();
   }
 
+  bool operator ==(Object o) {
+    if(o == null || !(o is Item)) {
+      return false;
+    }
+    return true;
+  }
+
+  Item clone() {
+    return new Item();
+  }
+
   validate() {
     // check for required fields
     // check that fields of type enum have valid values
