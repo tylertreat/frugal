@@ -121,8 +121,8 @@ class _ping(FProcessorFunction):
                 return
         except Exception as e:
             async with self._lock:
-                e = _write_application_exception(ctx, oprot, "ping", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=str(e))
-            raise e from None
+                _write_application_exception(ctx, oprot, "ping", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=str(e))
+            raise
         async with self._lock:
             try:
                 oprot.write_response_headers(ctx)
