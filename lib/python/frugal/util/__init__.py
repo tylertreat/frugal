@@ -13,6 +13,12 @@ import six
 
 
 def make_hashable(thing):
+    """
+    Creates a representation of some input data with immutable collections,
+    so the output is hashable.
+
+    :param thing: The data to create a hashable representation of.
+    """
     if isinstance(thing, list):
         return tuple([make_hashable(elem) for elem in thing])
     elif isinstance(thing, set):
