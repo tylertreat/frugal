@@ -8,3 +8,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import six
+
+
+def make_hashable(thing):
+    if isinstance(thing, list):
+        return tuple([make_hashable(elem) for elem in thing])
+    elif isinstance(thing, set):
+        return frozenset([make_hashable(elem) for elem in thing])
+    elif isinstance(thing, dict):
+        new_dict = {make_hashable(k): make_hashable(v)
+                    for k, v in six.iteritems(thing)}
+        return tuple(six.iteritems(new_dict))
+    else:
+        return thing

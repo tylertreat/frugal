@@ -499,7 +499,7 @@ func (g *Generator) generateMagicMethods(s *parser.Struct) string {
 	contents += tab + "def __hash__(self):\n"
 	contents += tabtab + "value = 17\n"
 	for _, field := range s.Fields {
-		contents += fmt.Sprintf(tabtab+"value = (value * 31) ^ hash(self.%s)\n", field.Name)
+		contents += fmt.Sprintf(tabtab+"value = (value * 31) ^ hash(make_hashable(self.%s))\n", field.Name)
 	}
 	contents += tabtab + "return value\n\n"
 
@@ -746,6 +746,7 @@ func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) err
 	if isArgsOrResult {
 		contents += "from .ttypes import *\n"
 	}
+	contents += "from frugal.util import make_hashable\n"
 	contents += "from thrift.transport import TTransport\n"
 	contents += "from thrift.protocol import TBinaryProtocol, TProtocol\n"
 

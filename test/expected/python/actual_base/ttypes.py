@@ -6,6 +6,7 @@
 
 from thrift.Thrift import TType, TMessageType, TException, TApplicationException
 
+from frugal.util import make_hashable
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol, TProtocol
 
@@ -81,8 +82,8 @@ class thing(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.an_id)
-        value = (value * 31) ^ hash(self.a_string)
+        value = (value * 31) ^ hash(make_hashable(self.an_id))
+        value = (value * 31) ^ hash(make_hashable(self.a_string))
         return value
 
     def __repr__(self):
@@ -145,7 +146,7 @@ class nested_thing(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.things)
+        value = (value * 31) ^ hash(make_hashable(self.things))
         return value
 
     def __repr__(self):

@@ -201,7 +201,7 @@ class get_thing_args(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.the_thing)
+        value = (value * 31) ^ hash(make_hashable(self.the_thing))
         return value
 
     def __repr__(self):
@@ -256,7 +256,7 @@ class get_thing_result(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.success)
+        value = (value * 31) ^ hash(make_hashable(self.success))
         return value
 
     def __repr__(self):

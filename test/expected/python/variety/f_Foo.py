@@ -1024,9 +1024,9 @@ class blah_args(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.num)
-        value = (value * 31) ^ hash(self.Str)
-        value = (value * 31) ^ hash(self.event)
+        value = (value * 31) ^ hash(make_hashable(self.num))
+        value = (value * 31) ^ hash(make_hashable(self.Str))
+        value = (value * 31) ^ hash(make_hashable(self.event))
         return value
 
     def __repr__(self):
@@ -1104,9 +1104,9 @@ class blah_result(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.success)
-        value = (value * 31) ^ hash(self.awe)
-        value = (value * 31) ^ hash(self.api)
+        value = (value * 31) ^ hash(make_hashable(self.success))
+        value = (value * 31) ^ hash(make_hashable(self.awe))
+        value = (value * 31) ^ hash(make_hashable(self.api))
         return value
 
     def __repr__(self):
@@ -1181,8 +1181,8 @@ class oneWay_args(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.id)
-        value = (value * 31) ^ hash(self.req)
+        value = (value * 31) ^ hash(make_hashable(self.id))
+        value = (value * 31) ^ hash(make_hashable(self.req))
         return value
 
     def __repr__(self):
@@ -1247,8 +1247,8 @@ class bin_method_args(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.bin)
-        value = (value * 31) ^ hash(self.Str)
+        value = (value * 31) ^ hash(make_hashable(self.bin))
+        value = (value * 31) ^ hash(make_hashable(self.Str))
         return value
 
     def __repr__(self):
@@ -1314,8 +1314,8 @@ class bin_method_result(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.success)
-        value = (value * 31) ^ hash(self.api)
+        value = (value * 31) ^ hash(make_hashable(self.success))
+        value = (value * 31) ^ hash(make_hashable(self.api))
         return value
 
     def __repr__(self):
@@ -1393,9 +1393,9 @@ class param_modifiers_args(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.opt_num)
-        value = (value * 31) ^ hash(self.default_num)
-        value = (value * 31) ^ hash(self.req_num)
+        value = (value * 31) ^ hash(make_hashable(self.opt_num))
+        value = (value * 31) ^ hash(make_hashable(self.default_num))
+        value = (value * 31) ^ hash(make_hashable(self.req_num))
         return value
 
     def __repr__(self):
@@ -1449,7 +1449,7 @@ class param_modifiers_result(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.success)
+        value = (value * 31) ^ hash(make_hashable(self.success))
         return value
 
     def __repr__(self):
@@ -1530,8 +1530,8 @@ class underlying_types_test_args(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.list_type)
-        value = (value * 31) ^ hash(self.set_type)
+        value = (value * 31) ^ hash(make_hashable(self.list_type))
+        value = (value * 31) ^ hash(make_hashable(self.set_type))
         return value
 
     def __repr__(self):
@@ -1593,7 +1593,7 @@ class underlying_types_test_result(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.success)
+        value = (value * 31) ^ hash(make_hashable(self.success))
         return value
 
     def __repr__(self):
@@ -1685,7 +1685,7 @@ class getThing_result(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.success)
+        value = (value * 31) ^ hash(make_hashable(self.success))
         return value
 
     def __repr__(self):
@@ -1776,7 +1776,7 @@ class getMyInt_result(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.success)
+        value = (value * 31) ^ hash(make_hashable(self.success))
         return value
 
     def __repr__(self):
@@ -1831,7 +1831,7 @@ class use_subdir_struct_args(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.a)
+        value = (value * 31) ^ hash(make_hashable(self.a))
         return value
 
     def __repr__(self):
@@ -1886,7 +1886,7 @@ class use_subdir_struct_result(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.success)
+        value = (value * 31) ^ hash(make_hashable(self.success))
         return value
 
     def __repr__(self):
