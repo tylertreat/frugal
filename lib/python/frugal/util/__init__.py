@@ -20,12 +20,11 @@ def make_hashable(thing):
     :param thing: The data to create a hashable representation of.
     """
     if isinstance(thing, list):
-        return tuple([make_hashable(elem) for elem in thing])
+        return tuple(make_hashable(elem) for elem in thing)
     elif isinstance(thing, set):
-        return frozenset([make_hashable(elem) for elem in thing])
+        return frozenset(make_hashable(elem) for elem in thing)
     elif isinstance(thing, dict):
-        new_dict = {make_hashable(k): make_hashable(v)
-                    for k, v in six.iteritems(thing)}
-        return frozenset(six.iteritems(new_dict))
+        return frozenset((make_hashable(k), make_hashable(v))
+                         for k, v in six.iteritems(thing))
     else:
         return thing
