@@ -24,7 +24,7 @@ class TestMakeHashable(unittest.TestCase):
             1: [[{1, 2}, {3, 4}], [{5, 6}, {7, 8}]],
             2: [[{10, 11}, {12, 13}], [{14, 15}, {16, 17}]],
         }
-        expected = (
+        expected = frozenset([
             (
                 1,
                 (
@@ -39,7 +39,7 @@ class TestMakeHashable(unittest.TestCase):
                     (frozenset([14, 15]), frozenset([16, 17])),
                 )
             ),
-        )
+        ])
         # make sure that doesn't throw an error
         hash(expected)
         self.assertEqual(expected, make_hashable(data))

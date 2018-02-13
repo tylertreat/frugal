@@ -26,6 +26,6 @@ def make_hashable(thing):
     elif isinstance(thing, dict):
         new_dict = {make_hashable(k): make_hashable(v)
                     for k, v in six.iteritems(thing)}
-        return tuple(six.iteritems(new_dict))
+        return frozenset(six.iteritems(new_dict))
     else:
         return thing
