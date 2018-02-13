@@ -764,6 +764,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from frugal.processor import FBaseProcessor\n"
 	imports += "from frugal.processor import FProcessorFunction\n"
 	imports += "from frugal.util.deprecate import deprecated\n"
+	imports += "from frugal.util import make_hashable\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "from thrift.transport.TTransport import TTransportException\n\n"

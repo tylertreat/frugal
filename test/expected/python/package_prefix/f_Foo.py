@@ -14,6 +14,7 @@ from frugal.exceptions import TTransportExceptionType
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
 from frugal.util.deprecate import deprecated
+from frugal.util import make_hashable
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from thrift.transport.TTransport import TTransportException
