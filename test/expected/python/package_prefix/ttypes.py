@@ -8,6 +8,7 @@ from thrift.Thrift import TType, TMessageType, TException, TApplicationException
 import generic_package_prefix.actual_base.python.ttypes
 import generic_package_prefix.actual_base.python.constants
 
+from frugal.util import make_hashable
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol, TProtocol
 
@@ -53,7 +54,7 @@ class new_thing(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.wrapped_thing)
+        value = (value * 31) ^ hash(make_hashable(self.wrapped_thing))
         return value
 
     def __repr__(self):

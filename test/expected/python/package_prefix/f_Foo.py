@@ -14,6 +14,7 @@ from frugal.exceptions import TTransportExceptionType
 from frugal.processor import FBaseProcessor
 from frugal.processor import FProcessorFunction
 from frugal.util.deprecate import deprecated
+from frugal.util import make_hashable
 from thrift.Thrift import TApplicationException
 from thrift.Thrift import TMessageType
 from thrift.transport.TTransport import TTransportException
@@ -201,7 +202,7 @@ class get_thing_args(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.the_thing)
+        value = (value * 31) ^ hash(make_hashable(self.the_thing))
         return value
 
     def __repr__(self):
@@ -256,7 +257,7 @@ class get_thing_result(object):
 
     def __hash__(self):
         value = 17
-        value = (value * 31) ^ hash(self.success)
+        value = (value * 31) ^ hash(make_hashable(self.success))
         return value
 
     def __repr__(self):
