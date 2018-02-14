@@ -499,7 +499,7 @@ func (g *Generator) generateMagicMethods(s *parser.Struct) string {
 	contents += tab + "def __hash__(self):\n"
 	contents += tabtab + "value = 17\n"
 	for _, field := range s.Fields {
-		contents += fmt.Sprintf(tabtab+"value = (value * 31) ^ hash(self.%s)\n", field.Name)
+		contents += fmt.Sprintf(tabtab+"value = (value * 31) ^ hash(make_hashable(self.%s))\n", field.Name)
 	}
 	contents += tabtab + "return value\n\n"
 
@@ -746,6 +746,7 @@ func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) err
 	if isArgsOrResult {
 		contents += "from .ttypes import *\n"
 	}
+	contents += "from frugal.util import make_hashable\n"
 	contents += "from thrift.transport import TTransport\n"
 	contents += "from thrift.protocol import TBinaryProtocol, TProtocol\n"
 
@@ -763,6 +764,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from frugal.processor import FBaseProcessor\n"
 	imports += "from frugal.processor import FProcessorFunction\n"
 	imports += "from frugal.util.deprecate import deprecated\n"
+	imports += "from frugal.util import make_hashable\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "from thrift.transport.TTransport import TTransportException\n\n"
