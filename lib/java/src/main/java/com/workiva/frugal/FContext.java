@@ -159,6 +159,19 @@ public class FContext implements Cloneable {
     }
 
     /**
+     * Removes a request header from the FContext for the given name.
+     * The _opid header is reserved and removing it could interfere with asynchronous transports that rely upon it.
+     * Returns the same FContext to allow for call chaining.
+     *
+     * @param name header name
+     * @return FContext
+     */
+    public FContext removeRequestHeader(String name) {
+        requestHeaders.remove(name);
+        return this;
+    }
+
+    /**
      * Adds a response header to the FContext for the given name. A header is a key-value pair.
      * If a header with the name is already present on the FContext, it will be replaced.
      * The _opid header is reserved and setting it could interfere with asynchronous transports that rely upon it.
@@ -185,6 +198,19 @@ public class FContext implements Cloneable {
         for (Map.Entry<String, String> pair : headers.entrySet()) {
             addResponseHeader(pair.getKey(), pair.getValue());
         }
+        return this;
+    }
+
+    /**
+     * Removes a response header from the FContext for the given name.
+     * The _opid header is reserved and removing it could interfere with asynchronous transports that rely upon it.
+     * Returns the same FContext to allow for call chaining.
+     *
+     * @param name header name
+     * @return FContext
+     */
+    public FContext removeResponseHeader(String name) {
+        responseHeaders.remove(name);
         return this;
     }
 
