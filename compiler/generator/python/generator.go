@@ -14,8 +14,10 @@
 package python
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -66,17 +68,6 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 func (g *Generator) SetupGenerator(outputDir string) error {
 	g.outputDir = outputDir
 
-	dir := g.outputDir
-	for filepath.Dir(dir) != "." {
-		file, err := g.GenerateFile("__init__", dir, generator.ObjectFile)
-		file.Close()
-		if err != nil {
-			return err
-		}
-
-		dir = filepath.Dir(dir)
-	}
-
 	// create types file
 	typesFile, err := g.GenerateFile("ttypes", outputDir, generator.ObjectFile)
 	if err != nil {
@@ -101,7 +92,67 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 
 // TeardownGenerator is run after generation.
 func (g *Generator) TeardownGenerator() error {
+	if err := g.generateInitFile(); err != nil {
+		return err
+	}
+
 	return g.typesFile.Close()
+}
+
+// generateInit generates __init__.py files, with subpackage imports
+// to simplify consumer import paths
+func (g *Generator) generateInitFile() error {
+	initFile, err := os.Create(path.Join(g.outputDir, "__init__.py"))
+	if err != nil {
+		return err
+	}
+	defer initFile.Close()
+
+	initWriter := bufio.NewWriter(initFile)
+
+	dir, err := os.Open(g.outputDir)
+	if err != nil {
+		return err
+	}
+
+	names, err := dir.Readdirnames(0)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range names {
+		if name == "__init__.py" {
+			continue
+		}
+
+		pkgName := strings.Split(name, ".")[0]
+		imports := []string{}
+
+		if strings.HasPrefix(pkgName, "f_") {
+			if strings.HasSuffix(pkgName, "subscriber") || strings.HasSuffix(pkgName, "publisher") {
+				// pub/sub
+				imports = append(imports, fmt.Sprintf("from .%s import *", pkgName))
+			} else {
+				// services
+				classSuffix := strings.Split(pkgName, "_")[1]
+				imports = append(imports,
+					fmt.Sprintf("from .%s import Iface as F%sIface", pkgName, classSuffix))
+				imports = append(imports,
+					fmt.Sprintf("from .%s import Client as F%sClient", pkgName, classSuffix))
+			}
+		} else if pkgName == "constants" {
+			imports = append(imports, "from .constants import *")
+		}
+
+		for _, impt := range imports {
+			if _, err := fmt.Fprintln(initWriter, impt); err != nil {
+				return err
+			}
+		}
+	}
+
+	initWriter.Flush()
+	return nil
 }
 
 // GenerateConstantsContents generates constants.
@@ -237,7 +288,7 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	comment := append([]string{}, enum.Comment...)
 	for _, value := range enum.Values {
 		if value.Comment != nil {
-			comment = append(append(comment, value.Name + ": " + value.Comment[0]), value.Comment[1:]...)
+			comment = append(append(comment, value.Name+": "+value.Comment[0]), value.Comment[1:]...)
 		}
 	}
 	if len(comment) != 0 {
@@ -306,7 +357,7 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 	contents += g.generateClassDocstring(s)
 
 	contents += g.generateDefaultMarkers(s)
-	contents += g.generateInit(s)
+	contents += g.generateInitMethod(s)
 
 	contents += g.generateRead(s)
 	contents += g.generateWrite(s)
@@ -347,8 +398,8 @@ func (g *Generator) generateDefaultMarkers(s *parser.Struct) string {
 	return contents
 }
 
-// generateInit generates the init method for a class.
-func (g *Generator) generateInit(s *parser.Struct) string {
+// generateInitMethod generates the init method for a class.
+func (g *Generator) generateInitMethod(s *parser.Struct) string {
 	if len(s.Fields) == 0 {
 		return ""
 	}
