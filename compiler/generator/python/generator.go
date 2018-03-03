@@ -68,6 +68,18 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 func (g *Generator) SetupGenerator(outputDir string) error {
 	g.outputDir = outputDir
 
+	dir := g.outputDir
+	for filepath.Dir(dir) != "." {
+		fmt.Println(dir)
+		file, err := g.GenerateFile("__init__", dir, generator.ObjectFile)
+		file.Close()
+		if err != nil {
+			return err
+		}
+
+		dir = filepath.Dir(dir)
+	}
+
 	// create types file
 	typesFile, err := g.GenerateFile("ttypes", outputDir, generator.ObjectFile)
 	if err != nil {
