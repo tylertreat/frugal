@@ -19,6 +19,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -132,6 +133,7 @@ func (g *Generator) generateInitFile() error {
 		return err
 	}
 
+	sort.Strings(names)
 	for _, name := range names {
 		if name == "__init__.py" {
 			continue
