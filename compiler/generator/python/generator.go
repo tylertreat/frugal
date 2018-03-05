@@ -154,8 +154,8 @@ func (g *Generator) generateInitFile() error {
 				imports = append(imports,
 					fmt.Sprintf("from .%s import Client as F%sClient", pkgName, classSuffix))
 			}
-		} else if pkgName == "constants" {
-			imports = append(imports, "from .constants import *")
+		} else if pkgName == "ttypes" {
+			imports = append(imports, "from .ttypes import *")
 		}
 
 		for _, impt := range imports {
