@@ -63,20 +63,20 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 	}
 
 	public long ID2; // optional
-	public Event ev1; // required
-	public Event ev2; // required
-	public long ID; // required
-	public String thing; // required
+	public Event ev1;
+	public Event ev2;
+	public long ID;
+	public String thing;
 	public String thing2; // optional
-	public java.util.List<Integer> listfield; // required
-	public long ID3; // required
-	public java.nio.ByteBuffer bin_field; // required
+	public java.util.List<Integer> listfield;
+	public long ID3;
+	public java.nio.ByteBuffer bin_field;
 	public java.nio.ByteBuffer bin_field2; // optional
-	public java.nio.ByteBuffer bin_field3; // required
+	public java.nio.ByteBuffer bin_field3;
 	public java.nio.ByteBuffer bin_field4; // optional
 	public java.util.List<Integer> list2; // optional
 	public java.util.List<Integer> list3; // optional
-	public java.util.List<Integer> list4; // required
+	public java.util.List<Integer> list4;
 	public java.util.Map<String, String> a_map; // optional
 	public HealthCondition status; // required
 	public actual_base.java.base_health_condition base_status; // required

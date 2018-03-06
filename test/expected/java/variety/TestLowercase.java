@@ -45,7 +45,7 @@ public class TestLowercase implements org.apache.thrift.TBase<TestLowercase, Tes
 		schemes.put(TupleScheme.class, new TestLowercaseTupleSchemeFactory());
 	}
 
-	public int lowercaseInt; // required
+	public int lowercaseInt;
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		LOWERCASE_INT((short)1, "lowercaseInt")

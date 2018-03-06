@@ -46,8 +46,8 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 		schemes.put(TupleScheme.class, new thingTupleSchemeFactory());
 	}
 
-	public int an_id; // required
-	public String a_string; // required
+	public int an_id;
+	public String a_string;
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		AN_ID((short)1, "an_id"),

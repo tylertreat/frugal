@@ -49,11 +49,11 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 	/**
 	 * ID is a unique identifier for an awesome exception.
 	 */
-	public long ID; // required
+	public long ID;
 	/**
 	 * Reason contains the error message.
 	 */
-	public String Reason; // required
+	public String Reason;
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		/**
