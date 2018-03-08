@@ -14,7 +14,6 @@
 package python
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path"
@@ -149,12 +148,10 @@ func (g *Generator) generateInitFile() error {
 	}
 
 	sort.Strings(imports)
-	initWriter := bufio.NewWriter(initFile)
-	if _, err := fmt.Fprintln(initWriter, strings.Join(imports, "\n")); err != nil {
+	if _, err := initFile.WriteString(strings.Join(imports, "\n") + "\n"); err != nil {
 		return err
 	}
 
-	initWriter.Flush()
 	return nil
 }
 
@@ -765,7 +762,13 @@ func (g *Generator) GenerateFile(name, outputDir string, fileType generator.File
 		return nil, fmt.Errorf("Bad file type for Python generator: %s", fileType)
 	}
 
-	g.history[outputDir] = append(g.history[outputDir], genInfo{fileName, name, fileType})
+	// No subscriber implementation for vanilla Python, so we need to omit that
+	if !(getAsyncOpt(g.Options) == synchronous && fileType == generator.SubscribeFile) {
+		// Track history of generated file input for reference later
+		// to add imports in __init__.py files
+		g.history[outputDir] = append(g.history[outputDir], genInfo{fileName, name, fileType})
+	}
+
 	return g.CreateFile(fileName, outputDir, lang, false)
 }
 
