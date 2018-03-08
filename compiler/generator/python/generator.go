@@ -78,7 +78,6 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 
 	dir := g.outputDir
 	for filepath.Dir(dir) != "." {
-		fmt.Println(dir)
 		file, err := g.GenerateFile("__init__", dir, generator.ObjectFile)
 		file.Close()
 		if err != nil {
