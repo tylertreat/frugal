@@ -23,6 +23,7 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.thrift.TException;
@@ -172,6 +173,15 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
         return Unpooled.copiedBuffer(outputBytes);
     }
 
+    private FullHttpResponse newErrorResponse(HttpResponseStatus status, String errorMessage) {
+        FullHttpResponse response =  new DefaultFullHttpResponse(
+                HTTP_1_1,
+                status,
+                Unpooled.copiedBuffer(errorMessage.getBytes()));
+        HttpUtil.setContentLength(response, response.content().readableBytes());
+        return response;
+    }
+
     /**
      * Process an HTTP request and return an HTTP response.
      *
@@ -194,21 +204,14 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
             if (e.getMessage() != null) {
                 errorMessage = e.getMessage();
             }
-            return new DefaultFullHttpResponse(
-                    HTTP_1_1,
-                    INTERNAL_SERVER_ERROR,
-                    Unpooled.copiedBuffer(errorMessage.getBytes()));
-
+            return newErrorResponse(INTERNAL_SERVER_ERROR, errorMessage);
         } catch (IOException e) {
             LOGGER.error("Frugal processor invalid frame:", e);
             String errorMessage = "";
             if (e.getMessage() != null) {
                 errorMessage = e.getMessage();
             }
-            return new DefaultFullHttpResponse(
-                    HTTP_1_1,
-                    BAD_REQUEST,
-                    Unpooled.copiedBuffer(errorMessage.getBytes()));
+            return newErrorResponse(BAD_REQUEST, errorMessage);
         } finally {
             body.release();
         }
@@ -217,12 +220,7 @@ public class FDefaultNettyHttpProcessor implements FNettyHttpProcessor {
         if (responseLimit > 0 && outputBuffer.readableBytes() > responseLimit) {
             LOGGER.error("Response size too large for client." +
                     " Received: " + outputBuffer.readableBytes() + ", Limit: " + responseLimit);
-
-            FullHttpResponse errorResponse = new DefaultFullHttpResponse(
-                    HTTP_1_1,
-                    REQUEST_ENTITY_TOO_LARGE);
-            errorResponse.headers().set(CONTENT_LENGTH, "0");
-            return errorResponse;
+            return newErrorResponse(REQUEST_ENTITY_TOO_LARGE, "");
         }
 
         FullHttpResponse response = new DefaultFullHttpResponse(
