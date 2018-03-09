@@ -41,10 +41,7 @@ public class FDefaultNettyHttpProcessorTest {
     public ExpectedException thrown = ExpectedException.none();
 
     private static FullHttpRequest mockRequest;
-    private static FullHttpResponse mockResponse;
-
     private static HttpHeaders mockRequestHeaders;
-    private static HttpHeaders mockResponseHeaders;
 
     private static FDefaultNettyHttpProcessor httpProcessor;
 
@@ -54,8 +51,6 @@ public class FDefaultNettyHttpProcessorTest {
         mockRequestHeaders = mock(HttpHeaders.class);
         doReturn(mockRequestHeaders).when(mockRequest).headers();
         doReturn(HTTP_1_1).when(mockRequest).protocolVersion();
-        mockResponse = mock(FullHttpResponse.class);
-        mockResponseHeaders = mock(HttpHeaders.class);
 
         FProcessor mockProcessor = mock(FProcessor.class);
         FProtocolFactory mockProtocolFactory = mock(FProtocolFactory.class);
