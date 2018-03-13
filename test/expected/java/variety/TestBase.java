@@ -45,7 +45,7 @@ public class TestBase implements org.apache.thrift.TBase<TestBase, TestBase._Fie
 		schemes.put(TupleScheme.class, new TestBaseTupleSchemeFactory());
 	}
 
-	public actual_base.java.thing base_struct; // required
+	public actual_base.java.thing base_struct;
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		BASE_STRUCT((short)1, "base_struct")

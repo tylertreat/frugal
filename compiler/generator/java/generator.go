@@ -916,12 +916,18 @@ func (g *Generator) generateInstanceVars(s *parser.Struct) string {
 		if field.Comment != nil {
 			contents += g.GenerateBlockComment(field.Comment, tab)
 		}
-		modifier := "required"
-		if field.Modifier == parser.Optional {
+		modifier := ""
+		if field.Modifier == parser.Required {
+			modifier = "required"
+		} else if field.Modifier == parser.Optional {
 			modifier = "optional"
 		}
-		contents += fmt.Sprintf(tab+"public %s %s; // %s\n",
-			g.getJavaTypeFromThriftType(field.Type), field.Name, modifier)
+		modifierComment := ""
+		if modifier != "" {
+			modifierComment = " // " + modifier
+		}
+		contents += fmt.Sprintf(tab+"public %s %s;%s\n",
+			g.getJavaTypeFromThriftType(field.Type), field.Name, modifierComment)
 	}
 	return contents
 }

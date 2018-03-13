@@ -45,7 +45,7 @@ public class nested_thing implements org.apache.thrift.TBase<nested_thing, neste
 		schemes.put(TupleScheme.class, new nested_thingTupleSchemeFactory());
 	}
 
-	public java.util.List<thing> things; // required
+	public java.util.List<thing> things;
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		THINGS((short)1, "things")

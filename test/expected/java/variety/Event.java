@@ -53,11 +53,11 @@ public class Event implements org.apache.thrift.TBase<Event, Event._Fields>, jav
 	/**
 	 * ID is a unique identifier for an event.
 	 */
-	public long ID; // required
+	public long ID;
 	/**
 	 * Message contains the event payload.
 	 */
-	public String Message; // required
+	public String Message;
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		/**

@@ -56,14 +56,14 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 
 	public long ID; // optional
 	public Event Ev; // required
-	public java.util.List<Event> Events; // required
-	public java.util.Set<Event> Events2; // required
-	public java.util.Map<Long, Event> EventMap; // required
-	public java.util.List<java.util.List<Integer>> Nums; // required
-	public java.util.List<ItsAnEnum> Enums; // required
-	public boolean aBoolField; // required
-	public TestingUnions a_union; // required
-	public String typedefOfTypedef; // required
+	public java.util.List<Event> Events;
+	public java.util.Set<Event> Events2;
+	public java.util.Map<Long, Event> EventMap;
+	public java.util.List<java.util.List<Integer>> Nums;
+	public java.util.List<ItsAnEnum> Enums;
+	public boolean aBoolField;
+	public TestingUnions a_union;
+	public String typedefOfTypedef;
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		ID((short)1, "ID"),
