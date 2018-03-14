@@ -16,7 +16,9 @@ package python
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -43,16 +45,23 @@ const (
 	asyncio
 )
 
+// genInfo tracks file generation inputs for later __init__.py imports
+type genInfo struct {
+	fileName, frugalName string
+	fileType             generator.FileType
+}
+
 // Generator implements the LanguageGenerator interface for Python.
 type Generator struct {
 	*generator.BaseGenerator
 	outputDir string
 	typesFile *os.File
+	history   map[string][]genInfo
 }
 
 // NewGenerator creates a new Python LanguageGenerator.
 func NewGenerator(options map[string]string) generator.LanguageGenerator {
-	gen := &Generator{&generator.BaseGenerator{Options: options}, "", nil}
+	gen := &Generator{&generator.BaseGenerator{Options: options}, "", nil, map[string][]genInfo{}}
 	switch getAsyncOpt(options) {
 	case tornado:
 		return &TornadoGenerator{gen}
@@ -101,7 +110,49 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 
 // TeardownGenerator is run after generation.
 func (g *Generator) TeardownGenerator() error {
+	if err := g.generateInitFile(); err != nil {
+		return err
+	}
+
 	return g.typesFile.Close()
+}
+
+// generateInit adds subpackage imports to __init__.py files
+// to simplify consumer import paths
+func (g *Generator) generateInitFile() error {
+	initFile, err := os.OpenFile(path.Join(g.outputDir, "__init__.py"), os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer initFile.Close()
+
+	imports := []string{}
+	if fileInfoSlice, ok := g.history[g.outputDir]; ok {
+		for _, fileInfo := range fileInfoSlice {
+			switch fileInfo.fileType {
+			case generator.PublishFile:
+				imports = append(imports, fmt.Sprintf("from .%s import %sPublisher", fileInfo.fileName, fileInfo.frugalName))
+			case generator.SubscribeFile:
+				imports = append(imports, fmt.Sprintf("from .%s import %sSubscriber", fileInfo.fileName, fileInfo.frugalName))
+			case generator.CombinedServiceFile:
+				imports = append(imports,
+					fmt.Sprintf("from .%s import Iface as F%sIface", fileInfo.fileName, fileInfo.frugalName))
+				imports = append(imports,
+					fmt.Sprintf("from .%s import Client as F%sClient", fileInfo.fileName, fileInfo.frugalName))
+			case generator.ObjectFile:
+				if fileInfo.frugalName == "ttypes" {
+					imports = append(imports, "from .ttypes import *")
+				}
+			}
+		}
+	}
+
+	sort.Strings(imports)
+	if _, err := initFile.WriteString(strings.Join(imports, "\n") + "\n"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GenerateConstantsContents generates constants.
@@ -237,7 +288,7 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	comment := append([]string{}, enum.Comment...)
 	for _, value := range enum.Values {
 		if value.Comment != nil {
-			comment = append(append(comment, value.Name + ": " + value.Comment[0]), value.Comment[1:]...)
+			comment = append(append(comment, value.Name+": "+value.Comment[0]), value.Comment[1:]...)
 		}
 	}
 	if len(comment) != 0 {
@@ -306,7 +357,7 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 	contents += g.generateClassDocstring(s)
 
 	contents += g.generateDefaultMarkers(s)
-	contents += g.generateInit(s)
+	contents += g.generateInitMethod(s)
 
 	contents += g.generateRead(s)
 	contents += g.generateWrite(s)
@@ -347,8 +398,8 @@ func (g *Generator) generateDefaultMarkers(s *parser.Struct) string {
 	return contents
 }
 
-// generateInit generates the init method for a class.
-func (g *Generator) generateInit(s *parser.Struct) string {
+// generateInitMethod generates the init method for a class.
+func (g *Generator) generateInitMethod(s *parser.Struct) string {
 	if len(s.Fields) == 0 {
 		return ""
 	}
@@ -696,18 +747,29 @@ func (g *Generator) GenerateDependencies(dir string) error {
 
 // GenerateFile generates the given FileType.
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
+	var fileName string
+
 	switch fileType {
 	case generator.PublishFile:
-		return g.CreateFile(fmt.Sprintf("f_%s_publisher", name), outputDir, lang, false)
+		fileName = fmt.Sprintf("f_%s_publisher", name)
 	case generator.SubscribeFile:
-		return g.CreateFile(fmt.Sprintf("f_%s_subscriber", name), outputDir, lang, false)
+		fileName = fmt.Sprintf("f_%s_subscriber", name)
 	case generator.CombinedServiceFile:
-		return g.CreateFile(fmt.Sprintf("f_%s", name), outputDir, lang, false)
+		fileName = fmt.Sprintf("f_%s", name)
 	case generator.ObjectFile:
-		return g.CreateFile(fmt.Sprintf("%s", name), outputDir, lang, false)
+		fileName = fmt.Sprintf("%s", name)
 	default:
 		return nil, fmt.Errorf("Bad file type for Python generator: %s", fileType)
 	}
+
+	// No subscriber implementation for vanilla Python, so we need to omit that
+	if !(getAsyncOpt(g.Options) == synchronous && fileType == generator.SubscribeFile) {
+		// Track history of generated file input for reference later
+		// to add imports in __init__.py files
+		g.history[outputDir] = append(g.history[outputDir], genInfo{fileName, name, fileType})
+	}
+
+	return g.CreateFile(fileName, outputDir, lang, false)
 }
 
 // GenerateDocStringComment generates the autogenerated notice.
