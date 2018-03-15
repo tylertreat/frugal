@@ -2977,7 +2977,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		if len(method.Annotations) > 0 {
 			contents += tabtabtab + fmt.Sprintf("java.util.Map<String, String> %sMap = new java.util.HashMap<>();\n", method.Name)
 			for _, annotation := range method.Annotations {
-				contents += tabtabtab + fmt.Sprintf("%sMap.put(%s, %s);\n", method.Name, g.quote(annotation.Name), g.quote(annotation.Value))
+				contents += tabtabtab + fmt.Sprintf("%sMap.put(\"%s\", %s);\n", method.Name, annotation.Name, g.quote(annotation.Value))
 			}
 			contents += tabtabtab + fmt.Sprintf("annotationsMap.put(\"%s\", %sMap);\n", parser.LowercaseFirstLetter(method.Name), method.Name)
 		}

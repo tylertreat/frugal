@@ -497,7 +497,7 @@ class Processor(actual_base.python.f_BaseFoo.Processor):
 
         super(Processor, self).__init__(handler, middleware=middleware)
         self.add_to_processor_map('ping', _Ping(Method(handler.Ping, middleware), self.get_write_lock()))
-        self.add_to_annotations_map('ping', {"deprecated": "don't use this; use \"something else\""})
+        self.add_to_annotations_map('ping', {'deprecated': "don't use this; use \"something else\""})
         self.add_to_processor_map('blah', _blah(Method(handler.blah, middleware), self.get_write_lock()))
         self.add_to_processor_map('oneWay', _oneWay(Method(handler.oneWay, middleware), self.get_write_lock()))
         self.add_to_processor_map('bin_method', _bin_method(Method(handler.bin_method, middleware), self.get_write_lock()))

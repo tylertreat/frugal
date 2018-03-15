@@ -1861,7 +1861,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 		if len(method.Annotations) > 0 {
 			contents += fmt.Sprintf("\tp.AddToAnnotationsMap(\"%s\", map[string]string{\n", methodLower)
 			for _, annotation := range method.Annotations {
-				contents += fmt.Sprintf("\t\t%s: %s,\n", g.quote(annotation.Name), g.quote(annotation.Value))
+				contents += fmt.Sprintf("\t\t\"%s\": %s,\n", annotation.Name, g.quote(annotation.Value))
 			}
 			contents += "\t})\n"
 		}
