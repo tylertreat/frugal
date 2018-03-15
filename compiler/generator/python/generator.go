@@ -186,6 +186,12 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	return err
 }
 
+// quote creates a Python string literal for a string.
+func (g *Generator) quote(s string) string {
+	// For now, just use Go quoting rules.
+	return strconv.Quote(s);
+}
+
 func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind string) (parser.IdentifierType, string) {
 	if value == nil {
 		return parser.NonIdentifier, "None"
@@ -222,7 +228,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 		case "i8", "byte", "i16", "i32", "i64", "double":
 			return parser.NonIdentifier, fmt.Sprintf("%v", value)
 		case "string", "binary":
-			return parser.NonIdentifier, fmt.Sprintf("%s", strconv.Quote(value.(string)))
+			return parser.NonIdentifier, g.quote(value.(string))
 		case "list", "set":
 			contents := ""
 			if underlyingType.Name == "set" {
@@ -1282,7 +1288,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 		if len(method.Annotations) > 0 {
 			annotations := make([]string, len(method.Annotations))
 			for i, annotation := range method.Annotations {
-				annotations[i] = fmt.Sprintf("'%s': '%s'", annotation.Name, annotation.Value)
+				annotations[i] = fmt.Sprintf("'%s': %s", annotation.Name, g.quote(annotation.Value))
 			}
 			contents += tabtab +
 				fmt.Sprintf("self.add_to_annotations_map('%s', {%s})\n", methodLower, strings.Join(annotations, ", "))

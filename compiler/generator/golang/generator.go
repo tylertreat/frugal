@@ -203,6 +203,11 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	return nil
 }
 
+// quote creates a Go string literal for a string.
+func (g *Generator) quote(s string) string {
+	return strconv.Quote(s);
+}
+
 // generateConstantValue recursively generates the string representation of
 // a, possibly complex, constant value.
 func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) string {
@@ -239,7 +244,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}) str
 		case "bool", "i8", "byte", "i16", "i32", "i64", "double":
 			return fmt.Sprintf("%v", value)
 		case "string":
-			return fmt.Sprintf("%s", strconv.Quote(value.(string)))
+			return g.quote(value.(string))
 		case "binary":
 			return fmt.Sprintf("[]byte(\"%s\")", value)
 		case "list":
@@ -1856,7 +1861,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 		if len(method.Annotations) > 0 {
 			contents += fmt.Sprintf("\tp.AddToAnnotationsMap(\"%s\", map[string]string{\n", methodLower)
 			for _, annotation := range method.Annotations {
-				contents += fmt.Sprintf("\t\t\"%s\": \"%s\",\n", annotation.Name, annotation.Value)
+				contents += fmt.Sprintf("\t\t\"%s\": %s,\n", annotation.Name, g.quote(annotation.Value))
 			}
 			contents += "\t})\n"
 		}
