@@ -225,7 +225,7 @@ func (g *AsyncIOGenerator) generateProcessor(service *parser.Service) string {
 		if len(method.Annotations) > 0 {
 			annotations := make([]string, len(method.Annotations))
 			for i, annotation := range method.Annotations {
-				annotations[i] = fmt.Sprintf("'%s': '%s'", annotation.Name, annotation.Value)
+				annotations[i] = fmt.Sprintf("%s: %s", g.quote(annotation.Name), g.quote(annotation.Value))
 			}
 			contents += tabtab +
 				fmt.Sprintf("self.add_to_annotations_map('%s', {%s})\n", methodLower, strings.Join(annotations, ", "))

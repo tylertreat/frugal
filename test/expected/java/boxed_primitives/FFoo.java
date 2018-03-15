@@ -70,7 +70,7 @@ public class FFoo {
 
 		/**
 		 * Ping the server.
-		 * @deprecated use something else
+		 * @deprecated don't use this; use "something else"
 		 */
 		@Deprecated
 		public void Ping(FContext ctx) throws TException;
@@ -524,7 +524,7 @@ public class FFoo {
 		protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {
 			java.util.Map<String, java.util.Map<String, String>> annotationsMap = super.getAnnotationsMap();
 			java.util.Map<String, String> PingMap = new java.util.HashMap<>();
-			PingMap.put("deprecated", "use something else");
+			PingMap.put("deprecated", "don't use this; use \"something else\"");
 			annotationsMap.put("ping", PingMap);
 			return annotationsMap;
 		}
