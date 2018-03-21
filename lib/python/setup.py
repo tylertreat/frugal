@@ -30,7 +30,7 @@ setup(
         'tornado': ["nats-client==0.5.0"],
         'asyncio': [
             "async-timeout==1.1.0",
-            "asyncio-nats-client==0.6.0",
+            "asyncio-nats-client==0.6.4",
             # DO NOT CHANGE without verifying asyncio nats with tls works
             "multidict==3.1.3",
             "aiohttp==2.3.8",
