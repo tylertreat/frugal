@@ -24,6 +24,9 @@ import java.util.Base64;
 /**
  * Processes POST requests as Frugal requests for a processor.
  * <p>
+ * By default, the HTTP request is limited to a 64MB Frugal payload size to
+ * prevent client requests from causing the server to allocate too much memory.
+ * <p>
  * The HTTP request may include an X-Frugal-Payload-Limit header setting the size
  * limit of responses from the server.
  * <p>
@@ -37,7 +40,7 @@ import java.util.Base64;
 public class FServlet extends HttpServlet {
     private static final Logger LOGGER = LoggerFactory.getLogger(FServlet.class);
 
-    private static final int DEFAULT_MAX_REQUEST_SIZE = 1024 * 1024;
+    private static final int DEFAULT_MAX_REQUEST_SIZE = 64 * 1024 * 1024;
 
     private final FProcessor processor;
     private final FProtocolFactory inProtocolFactory;
