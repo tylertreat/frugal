@@ -33,12 +33,14 @@ func TestValidPython(t *testing.T) {
 	}
 
 	files := []FileComparisonPair{
+		{"expected/python/variety/__init__.py", filepath.Join(outputDir, "variety", "python", "__init__.py")},
 		{"expected/python/variety/constants.py", filepath.Join(outputDir, "variety", "python", "constants.py")},
 		{"expected/python/variety/ttypes.py", filepath.Join(outputDir, "variety", "python", "ttypes.py")},
 		{"expected/python/variety/f_Events_publisher.py", filepath.Join(outputDir, "variety", "python", "f_Events_publisher.py")},
 		{"expected/python/variety/f_Events_subscriber.py", filepath.Join(outputDir, "variety", "python", "f_Events_subscriber.py")},
 		{"expected/python/variety/f_Foo.py", filepath.Join(outputDir, "variety", "python", "f_Foo.py")},
 
+		{"expected/python/actual_base/__init__.py", filepath.Join(outputDir, "actual_base", "python", "__init__.py")},
 		{"expected/python/actual_base/constants.py", filepath.Join(outputDir, "actual_base", "python", "constants.py")},
 		{"expected/python/actual_base/ttypes.py", filepath.Join(outputDir, "actual_base", "python", "ttypes.py")},
 		{"expected/python/actual_base/f_BaseFoo.py", filepath.Join(outputDir, "actual_base", "python", "f_BaseFoo.py")},
@@ -61,12 +63,14 @@ func TestValidPythonTornado(t *testing.T) {
 	}
 
 	files := []FileComparisonPair{
+		{"expected/python.tornado/variety/__init__.py", filepath.Join(outputDir, "tornado", "variety", "python", "__init__.py")},
 		{"expected/python.tornado/variety/constants.py", filepath.Join(outputDir, "tornado", "variety", "python", "constants.py")},
 		{"expected/python.tornado/variety/ttypes.py", filepath.Join(outputDir, "tornado", "variety", "python", "ttypes.py")},
 		{"expected/python.tornado/variety/f_Events_publisher.py", filepath.Join(outputDir, "tornado", "variety", "python", "f_Events_publisher.py")},
 		{"expected/python.tornado/variety/f_Events_subscriber.py", filepath.Join(outputDir, "tornado", "variety", "python", "f_Events_subscriber.py")},
 		{"expected/python.tornado/variety/f_Foo.py", filepath.Join(outputDir, "tornado", "variety", "python", "f_Foo.py")},
 
+		{"expected/python.tornado/actual_base/__init__.py", filepath.Join(outputDir, "tornado", "actual_base", "python", "__init__.py")},
 		{"expected/python.tornado/actual_base/constants.py", filepath.Join(outputDir, "tornado", "actual_base", "python", "constants.py")},
 		{"expected/python.tornado/actual_base/ttypes.py", filepath.Join(outputDir, "tornado", "actual_base", "python", "ttypes.py")},
 		{"expected/python.tornado/actual_base/f_BaseFoo.py", filepath.Join(outputDir, "tornado", "actual_base", "python", "f_BaseFoo.py")},
@@ -89,12 +93,14 @@ func TestValidPythonAsyncIO(t *testing.T) {
 	}
 
 	files := []FileComparisonPair{
+		{"expected/python.asyncio/variety/__init__.py", filepath.Join(outputDir, "asyncio", "variety", "python", "__init__.py")},
 		{"expected/python.asyncio/variety/constants.py", filepath.Join(outputDir, "asyncio", "variety", "python", "constants.py")},
 		{"expected/python.asyncio/variety/ttypes.py", filepath.Join(outputDir, "asyncio", "variety", "python", "ttypes.py")},
 		{"expected/python.asyncio/variety/f_Events_publisher.py", filepath.Join(outputDir, "asyncio", "variety", "python", "f_Events_publisher.py")},
 		{"expected/python.asyncio/variety/f_Events_subscriber.py", filepath.Join(outputDir, "asyncio", "variety", "python", "f_Events_subscriber.py")},
 		{"expected/python.asyncio/variety/f_Foo.py", filepath.Join(outputDir, "asyncio", "variety", "python", "f_Foo.py")},
 
+		{"expected/python.asyncio/actual_base/__init__.py", filepath.Join(outputDir, "asyncio", "actual_base", "python", "__init__.py")},
 		{"expected/python.asyncio/actual_base/constants.py", filepath.Join(outputDir, "asyncio", "actual_base", "python", "constants.py")},
 		{"expected/python.asyncio/actual_base/ttypes.py", filepath.Join(outputDir, "asyncio", "actual_base", "python", "ttypes.py")},
 		{"expected/python.asyncio/actual_base/f_BaseFoo.py", filepath.Join(outputDir, "asyncio", "actual_base", "python", "f_BaseFoo.py")},

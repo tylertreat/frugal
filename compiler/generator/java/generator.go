@@ -286,6 +286,12 @@ func (g *Generator) generateEnumConstFromValue(t *parser.Type, value int) string
 	panic("value not found")
 }
 
+// quote creates a Java string literal for a string.
+func (g *Generator) quote(s string) string {
+	// For now, just use Go quoting rules.
+	return strconv.Quote(s);
+}
+
 func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) (string, string) {
 	underlyingType := g.Frugal.UnderlyingType(t)
 
@@ -331,7 +337,7 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) 
 		case "double":
 			return "", fmt.Sprintf("%v", value)
 		case "string":
-			return "", fmt.Sprintf("%v", strconv.Quote(value.(string)))
+			return "", g.quote(value.(string))
 		case "binary":
 			return "", fmt.Sprintf("java.nio.ByteBuffer.wrap(\"%v\".getBytes())", value)
 		}
@@ -916,12 +922,18 @@ func (g *Generator) generateInstanceVars(s *parser.Struct) string {
 		if field.Comment != nil {
 			contents += g.GenerateBlockComment(field.Comment, tab)
 		}
-		modifier := "required"
-		if field.Modifier == parser.Optional {
+		modifier := ""
+		if field.Modifier == parser.Required {
+			modifier = "required"
+		} else if field.Modifier == parser.Optional {
 			modifier = "optional"
 		}
-		contents += fmt.Sprintf(tab+"public %s %s; // %s\n",
-			g.getJavaTypeFromThriftType(field.Type), field.Name, modifier)
+		modifierComment := ""
+		if modifier != "" {
+			modifierComment = " // " + modifier
+		}
+		contents += fmt.Sprintf(tab+"public %s %s;%s\n",
+			g.getJavaTypeFromThriftType(field.Type), field.Name, modifierComment)
 	}
 	return contents
 }
@@ -2965,7 +2977,7 @@ func (g *Generator) generateServer(service *parser.Service) string {
 		if len(method.Annotations) > 0 {
 			contents += tabtabtab + fmt.Sprintf("java.util.Map<String, String> %sMap = new java.util.HashMap<>();\n", method.Name)
 			for _, annotation := range method.Annotations {
-				contents += tabtabtab + fmt.Sprintf("%sMap.put(\"%s\", \"%s\");\n", method.Name, annotation.Name, annotation.Value)
+				contents += tabtabtab + fmt.Sprintf("%sMap.put(\"%s\", %s);\n", method.Name, annotation.Name, g.quote(annotation.Value))
 			}
 			contents += tabtabtab + fmt.Sprintf("annotationsMap.put(\"%s\", %sMap);\n", parser.LowercaseFirstLetter(method.Name), method.Name)
 		}
