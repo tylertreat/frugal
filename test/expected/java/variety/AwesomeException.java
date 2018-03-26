@@ -39,6 +39,7 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 
 	private static final org.apache.thrift.protocol.TField ID_FIELD_DESC = new org.apache.thrift.protocol.TField("ID", org.apache.thrift.protocol.TType.I64, (short)1);
 	private static final org.apache.thrift.protocol.TField REASON_FIELD_DESC = new org.apache.thrift.protocol.TField("Reason", org.apache.thrift.protocol.TType.STRING, (short)2);
+	private static final org.apache.thrift.protocol.TField DEPR_FIELD_DESC = new org.apache.thrift.protocol.TField("depr", org.apache.thrift.protocol.TType.BOOL, (short)3);
 
 	private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
 	static {
@@ -54,6 +55,11 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 	 * Reason contains the error message.
 	 */
 	public String Reason;
+	/**
+	 * @deprecated use something else
+	 */
+	@Deprecated
+	public boolean depr;
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		/**
@@ -63,7 +69,8 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 		/**
 		 * Reason contains the error message.
 		 */
-		REASON((short)2, "Reason")
+		REASON((short)2, "Reason"),
+		DEPR((short)3, "depr")
 ;
 
 		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
@@ -83,6 +90,8 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 					return ID;
 				case 2: // REASON
 					return REASON;
+				case 3: // DEPR
+					return DEPR;
 				default:
 					return null;
 			}
@@ -124,17 +133,21 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 
 	// isset id assignments
 	private static final int __ID_ISSET_ID = 0;
+	private static final int __DEPR_ISSET_ID = 1;
 	private byte __isset_bitfield = 0;
 	public AwesomeException() {
 	}
 
 	public AwesomeException(
 		long ID,
-		String Reason) {
+		String Reason,
+		boolean depr) {
 		this();
 		this.ID = ID;
 		setIDIsSet(true);
 		this.Reason = Reason;
+		this.depr = depr;
+		setDeprIsSet(true);
 	}
 
 	/**
@@ -146,6 +159,7 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 		if (other.isSetReason()) {
 			this.Reason = other.Reason;
 		}
+		this.depr = other.depr;
 	}
 
 	public AwesomeException deepCopy() {
@@ -158,6 +172,9 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 		this.ID = 0L;
 
 		this.Reason = null;
+
+		setDeprIsSet(false);
+		this.depr = false;
 
 	}
 
@@ -220,6 +237,33 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 		}
 	}
 
+	@Deprecated
+	public boolean isDepr() {
+		return this.depr;
+	}
+
+	@Deprecated
+	public AwesomeException setDepr(boolean depr) {
+		this.depr = depr;
+		setDeprIsSet(true);
+		return this;
+	}
+
+	public void unsetDepr() {
+		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __DEPR_ISSET_ID);
+	}
+
+	/** Returns true if field depr is set (has been assigned a value) and false otherwise */
+	@Deprecated
+	public boolean isSetDepr() {
+		return EncodingUtils.testBit(__isset_bitfield, __DEPR_ISSET_ID);
+	}
+
+	@Deprecated
+	public void setDeprIsSet(boolean value) {
+		__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __DEPR_ISSET_ID, value);
+	}
+
 	public void setFieldValue(_Fields field, Object value) {
 		switch (field) {
 		case ID:
@@ -238,6 +282,14 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 			}
 			break;
 
+		case DEPR:
+			if (value == null) {
+				unsetDepr();
+			} else {
+				setDepr((Boolean)value);
+			}
+			break;
+
 		}
 	}
 
@@ -248,6 +300,9 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 
 		case REASON:
 			return getReason();
+
+		case DEPR:
+			return isDepr();
 
 		}
 		throw new IllegalStateException();
@@ -264,6 +319,8 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 			return isSetID();
 		case REASON:
 			return isSetReason();
+		case DEPR:
+			return isSetDepr();
 		}
 		throw new IllegalStateException();
 	}
@@ -299,6 +356,15 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 				return false;
 		}
 
+		boolean this_present_depr = true;
+		boolean that_present_depr = true;
+		if (this_present_depr || that_present_depr) {
+			if (!(this_present_depr && that_present_depr))
+				return false;
+			if (this.depr != that.depr)
+				return false;
+		}
+
 		return true;
 	}
 
@@ -315,6 +381,11 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 		list.add(present_Reason);
 		if (present_Reason)
 			list.add(Reason);
+
+		boolean present_depr = true;
+		list.add(present_depr);
+		if (present_depr)
+			list.add(depr);
 
 		return list.hashCode();
 	}
@@ -343,6 +414,16 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 		}
 		if (isSetReason()) {
 			lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.Reason, other.Reason);
+			if (lastComparison != 0) {
+				return lastComparison;
+			}
+		}
+		lastComparison = Boolean.valueOf(isSetDepr()).compareTo(other.isSetDepr());
+		if (lastComparison != 0) {
+			return lastComparison;
+		}
+		if (isSetDepr()) {
+			lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.depr, other.depr);
 			if (lastComparison != 0) {
 				return lastComparison;
 			}
@@ -377,6 +458,10 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 		} else {
 			sb.append(this.Reason);
 		}
+		first = false;
+		if (!first) sb.append(", ");
+		sb.append("depr:");
+		sb.append(this.depr);
 		first = false;
 		sb.append(")");
 		return sb.toString();
@@ -438,6 +523,14 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 						}
 						break;
+					case 3: // DEPR
+						if (schemeField.type == org.apache.thrift.protocol.TType.BOOL) {
+							struct.depr = iprot.readBool();
+							struct.setDeprIsSet(true);
+						} else {
+							org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+						}
+						break;
 					default:
 						org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
 				}
@@ -463,6 +556,10 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 				oprot.writeString(elem211);
 				oprot.writeFieldEnd();
 			}
+			oprot.writeFieldBegin(DEPR_FIELD_DESC);
+			boolean elem212 = struct.depr;
+			oprot.writeBool(elem212);
+			oprot.writeFieldEnd();
 			oprot.writeFieldStop();
 			oprot.writeStructEnd();
 		}
@@ -487,21 +584,28 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 			if (struct.isSetReason()) {
 				optionals.set(1);
 			}
-			oprot.writeBitSet(optionals, 2);
+			if (struct.isSetDepr()) {
+				optionals.set(2);
+			}
+			oprot.writeBitSet(optionals, 3);
 			if (struct.isSetID()) {
-				long elem212 = struct.ID;
-				oprot.writeI64(elem212);
+				long elem213 = struct.ID;
+				oprot.writeI64(elem213);
 			}
 			if (struct.isSetReason()) {
-				String elem213 = struct.Reason;
-				oprot.writeString(elem213);
+				String elem214 = struct.Reason;
+				oprot.writeString(elem214);
+			}
+			if (struct.isSetDepr()) {
+				boolean elem215 = struct.depr;
+				oprot.writeBool(elem215);
 			}
 		}
 
 		@Override
 		public void read(org.apache.thrift.protocol.TProtocol prot, AwesomeException struct) throws org.apache.thrift.TException {
 			TTupleProtocol iprot = (TTupleProtocol) prot;
-			BitSet incoming = iprot.readBitSet(2);
+			BitSet incoming = iprot.readBitSet(3);
 			if (incoming.get(0)) {
 				struct.ID = iprot.readI64();
 				struct.setIDIsSet(true);
@@ -509,6 +613,10 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 			if (incoming.get(1)) {
 				struct.Reason = iprot.readString();
 				struct.setReasonIsSet(true);
+			}
+			if (incoming.get(2)) {
+				struct.depr = iprot.readBool();
+				struct.setDeprIsSet(true);
 			}
 		}
 

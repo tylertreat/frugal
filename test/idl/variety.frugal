@@ -152,6 +152,8 @@ exception AwesomeException {
 
     /**@ Reason contains the error message. */
     2: string Reason
+
+    3: bool depr (deprecated="use something else")
 }
 
 /**@

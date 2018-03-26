@@ -2610,6 +2610,8 @@ type AwesomeException struct {
 	ID ID `thrift:"ID,1" db:"ID" json:"ID"`
 	// Reason contains the error message.
 	Reason string `thrift:"Reason,2" db:"Reason" json:"Reason"`
+	// Deprecated: use something else
+	Depr bool `thrift:"depr,3" db:"depr" json:"depr"`
 }
 
 func NewAwesomeException() *AwesomeException {
@@ -2622,6 +2624,10 @@ func (p *AwesomeException) GetID() ID {
 
 func (p *AwesomeException) GetReason() string {
 	return p.Reason
+}
+
+func (p *AwesomeException) GetDepr() bool {
+	return p.Depr
 }
 
 func (p *AwesomeException) Read(iprot thrift.TProtocol) error {
@@ -2644,6 +2650,10 @@ func (p *AwesomeException) Read(iprot thrift.TProtocol) error {
 			}
 		case 2:
 			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
+		case 3:
+			if err := p.ReadField3(iprot); err != nil {
 				return err
 			}
 		default:
@@ -2680,6 +2690,15 @@ func (p *AwesomeException) ReadField2(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *AwesomeException) ReadField3(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadBool(); err != nil {
+		return thrift.PrependError("error reading field 3: ", err)
+	} else {
+		p.Depr = v
+	}
+	return nil
+}
+
 func (p *AwesomeException) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("AwesomeException"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
@@ -2688,6 +2707,9 @@ func (p *AwesomeException) Write(oprot thrift.TProtocol) error {
 		return err
 	}
 	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField3(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -2721,6 +2743,19 @@ func (p *AwesomeException) writeField2(oprot thrift.TProtocol) error {
 	}
 	if err := oprot.WriteFieldEnd(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:Reason: ", p), err)
+	}
+	return nil
+}
+
+func (p *AwesomeException) writeField3(oprot thrift.TProtocol) error {
+	if err := oprot.WriteFieldBegin("depr", thrift.BOOL, 3); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:depr: ", p), err)
+	}
+	if err := oprot.WriteBool(bool(p.Depr)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.depr (3) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 3:depr: ", p), err)
 	}
 	return nil
 }

@@ -430,13 +430,13 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 
 			oprot.writeStructBegin(STRUCT_DESC);
 			oprot.writeFieldBegin(AN_ID_FIELD_DESC);
-			int elem309 = struct.an_id;
-			oprot.writeI32(elem309);
+			int elem311 = struct.an_id;
+			oprot.writeI32(elem311);
 			oprot.writeFieldEnd();
 			if (struct.a_string != null) {
 				oprot.writeFieldBegin(A_STRING_FIELD_DESC);
-				String elem310 = struct.a_string;
-				oprot.writeString(elem310);
+				String elem312 = struct.a_string;
+				oprot.writeString(elem312);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -465,12 +465,12 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetAn_id()) {
-				int elem311 = struct.an_id;
-				oprot.writeI32(elem311);
+				int elem313 = struct.an_id;
+				oprot.writeI32(elem313);
 			}
 			if (struct.isSetA_string()) {
-				String elem312 = struct.a_string;
-				oprot.writeString(elem312);
+				String elem314 = struct.a_string;
+				oprot.writeString(elem314);
 			}
 		}
 

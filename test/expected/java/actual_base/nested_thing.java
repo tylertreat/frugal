@@ -121,9 +121,9 @@ public class nested_thing implements org.apache.thrift.TBase<nested_thing, neste
 	public nested_thing(nested_thing other) {
 		if (other.isSetThings()) {
 			this.things = new ArrayList<thing>(other.things.size());
-			for (thing elem313 : other.things) {
-				thing elem314 = new thing(elem313);
-				this.things.add(elem314);
+			for (thing elem315 : other.things) {
+				thing elem316 = new thing(elem315);
+				this.things.add(elem316);
 			}
 		}
 	}
@@ -339,12 +339,12 @@ public class nested_thing implements org.apache.thrift.TBase<nested_thing, neste
 				switch (schemeField.id) {
 					case 1: // THINGS
 						if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
-							org.apache.thrift.protocol.TList elem315 = iprot.readListBegin();
-							struct.things = new ArrayList<thing>(elem315.size);
-							for (int elem316 = 0; elem316 < elem315.size; ++elem316) {
-								thing elem317 = new thing();
-								elem317.read(iprot);
-								struct.things.add(elem317);
+							org.apache.thrift.protocol.TList elem317 = iprot.readListBegin();
+							struct.things = new ArrayList<thing>(elem317.size);
+							for (int elem318 = 0; elem318 < elem317.size; ++elem318) {
+								thing elem319 = new thing();
+								elem319.read(iprot);
+								struct.things.add(elem319);
 							}
 							iprot.readListEnd();
 							struct.setThingsIsSet(true);
@@ -370,8 +370,8 @@ public class nested_thing implements org.apache.thrift.TBase<nested_thing, neste
 			if (struct.things != null) {
 				oprot.writeFieldBegin(THINGS_FIELD_DESC);
 				oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.things.size()));
-				for (thing elem318 : struct.things) {
-					elem318.write(oprot);
+				for (thing elem320 : struct.things) {
+					elem320.write(oprot);
 				}
 				oprot.writeListEnd();
 				oprot.writeFieldEnd();
@@ -400,8 +400,8 @@ public class nested_thing implements org.apache.thrift.TBase<nested_thing, neste
 			oprot.writeBitSet(optionals, 1);
 			if (struct.isSetThings()) {
 				oprot.writeI32(struct.things.size());
-				for (thing elem319 : struct.things) {
-					elem319.write(oprot);
+				for (thing elem321 : struct.things) {
+					elem321.write(oprot);
 				}
 			}
 		}
@@ -411,12 +411,12 @@ public class nested_thing implements org.apache.thrift.TBase<nested_thing, neste
 			TTupleProtocol iprot = (TTupleProtocol) prot;
 			BitSet incoming = iprot.readBitSet(1);
 			if (incoming.get(0)) {
-				org.apache.thrift.protocol.TList elem320 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-				struct.things = new ArrayList<thing>(elem320.size);
-				for (int elem321 = 0; elem321 < elem320.size; ++elem321) {
-					thing elem322 = new thing();
-					elem322.read(iprot);
-					struct.things.add(elem322);
+				org.apache.thrift.protocol.TList elem322 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+				struct.things = new ArrayList<thing>(elem322.size);
+				for (int elem323 = 0; elem323 < elem322.size; ++elem323) {
+					thing elem324 = new thing();
+					elem324.read(iprot);
+					struct.things.add(elem324);
 				}
 				struct.setThingsIsSet(true);
 			}

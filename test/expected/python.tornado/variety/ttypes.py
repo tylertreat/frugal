@@ -1038,10 +1038,13 @@ class AwesomeException(TException):
     Attributes:
      - ID: ID is a unique identifier for an awesome exception.
      - Reason: Reason contains the error message.
+     - depr
+       Deprecated: use something else
     """
-    def __init__(self, ID=None, Reason=None):
+    def __init__(self, ID=None, Reason=None, depr=None):
         self.ID = ID
         self.Reason = Reason
+        self.depr = depr
 
     def read(self, iprot):
         iprot.readStructBegin()
@@ -1057,6 +1060,11 @@ class AwesomeException(TException):
             elif fid == 2:
                 if ftype == TType.STRING:
                     self.Reason = iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.BOOL:
+                    self.depr = iprot.readBool()
                 else:
                     iprot.skip(ftype)
             else:
@@ -1076,6 +1084,10 @@ class AwesomeException(TException):
             oprot.writeFieldBegin('Reason', TType.STRING, 2)
             oprot.writeString(self.Reason)
             oprot.writeFieldEnd()
+        if self.depr is not None:
+            oprot.writeFieldBegin('depr', TType.BOOL, 3)
+            oprot.writeBool(self.depr)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -1089,6 +1101,7 @@ class AwesomeException(TException):
         value = 17
         value = (value * 31) ^ hash(make_hashable(self.ID))
         value = (value * 31) ^ hash(make_hashable(self.Reason))
+        value = (value * 31) ^ hash(make_hashable(self.depr))
         return value
 
     def __repr__(self):

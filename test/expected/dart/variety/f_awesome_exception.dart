@@ -14,6 +14,7 @@ class AwesomeException extends Error implements thrift.TBase {
   static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("AwesomeException");
   static final thrift.TField _ID_FIELD_DESC = new thrift.TField("ID", thrift.TType.I64, 1);
   static final thrift.TField _REASON_FIELD_DESC = new thrift.TField("Reason", thrift.TType.STRING, 2);
+  static final thrift.TField _DEPR_FIELD_DESC = new thrift.TField("depr", thrift.TType.BOOL, 3);
 
   /// ID is a unique identifier for an awesome exception.
   int _iD = 0;
@@ -21,8 +22,13 @@ class AwesomeException extends Error implements thrift.TBase {
   /// Reason contains the error message.
   String _reason;
   static const int REASON = 2;
+  /// Deprecated: use something else
+  @deprecated
+  bool _depr = false;
+  static const int DEPR = 3;
 
   bool __isset_iD = false;
+  bool __isset_depr = false;
 
   AwesomeException() {
   }
@@ -56,12 +62,31 @@ class AwesomeException extends Error implements thrift.TBase {
     this.reason = null;
   }
 
+  /// Deprecated: use something else
+  @deprecated
+  bool get depr => this._depr;
+
+  /// Deprecated: use something else
+  @deprecated
+  set depr(bool depr) {
+    this._depr = depr;
+    this.__isset_depr = true;
+  }
+
+  @deprecated  bool isSetDepr() => this.__isset_depr;
+
+  unsetDepr() {
+    this.__isset_depr = false;
+  }
+
   getFieldValue(int fieldID) {
     switch (fieldID) {
       case ID:
         return this.iD;
       case REASON:
         return this.reason;
+      case DEPR:
+        return this.depr;
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -85,6 +110,14 @@ class AwesomeException extends Error implements thrift.TBase {
         }
         break;
 
+      case DEPR:
+        if(value == null) {
+          unsetDepr();
+        } else {
+          this.depr = value as bool;
+        }
+        break;
+
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -97,6 +130,8 @@ class AwesomeException extends Error implements thrift.TBase {
         return isSetID();
       case REASON:
         return isSetReason();
+      case DEPR:
+        return isSetDepr();
       default:
         throw new ArgumentError("Field $fieldID doesn't exist!");
     }
@@ -126,6 +161,14 @@ class AwesomeException extends Error implements thrift.TBase {
             thrift.TProtocolUtil.skip(iprot, field.type);
           }
           break;
+        case DEPR:
+          if(field.type == thrift.TType.BOOL) {
+            depr = iprot.readBool();
+            this.__isset_depr = true;
+          } else {
+            thrift.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
         default:
           thrift.TProtocolUtil.skip(iprot, field.type);
           break;
@@ -150,6 +193,9 @@ class AwesomeException extends Error implements thrift.TBase {
       oprot.writeString(reason);
       oprot.writeFieldEnd();
     }
+    oprot.writeFieldBegin(_DEPR_FIELD_DESC);
+    oprot.writeBool(depr);
+    oprot.writeFieldEnd();
     oprot.writeFieldStop();
     oprot.writeStructEnd();
   }
@@ -168,6 +214,10 @@ class AwesomeException extends Error implements thrift.TBase {
       ret.write(this.reason);
     }
 
+    ret.write(", ");
+    ret.write("depr:");
+    ret.write(this.depr);
+
     ret.write(")");
 
     return ret.toString();
@@ -179,16 +229,19 @@ class AwesomeException extends Error implements thrift.TBase {
     }
     AwesomeException other = o as AwesomeException;
     return this.iD == other.iD
-      && this.reason == other.reason;
+      && this.reason == other.reason
+      && this.depr == other.depr;
   }
 
   AwesomeException clone({
     int iD: null,
     String reason: null,
+    bool depr: null,
   }) {
     return new AwesomeException()
       ..iD = iD ?? this.iD
-      ..reason = reason ?? this.reason;
+      ..reason = reason ?? this.reason
+      ..depr = depr ?? this.depr;
   }
 
   validate() {
