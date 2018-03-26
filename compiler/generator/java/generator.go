@@ -1314,6 +1314,9 @@ func (g *Generator) generateSetField(structName string, field *parser.Field) str
 func (g *Generator) generateUnsetField(s *parser.Struct, field *parser.Field) string {
 	contents := ""
 
+	if field.Annotations.IsDeprecated() {
+		contents += tab + "@Deprecated\n"
+	}
 	contents += fmt.Sprintf(tab+"public void unset%s() {\n", strings.Title(field.Name))
 	if g.isJavaPrimitive(field.Type) {
 		isSetType, _ := g.getIsSetType(s)

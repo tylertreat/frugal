@@ -656,6 +656,7 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		return this;
 	}
 
+	@Deprecated
 	public void unsetDepr() {
 		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __DEPR_ISSET_ID);
 	}
@@ -693,6 +694,7 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		return this;
 	}
 
+	@Deprecated
 	public void unsetDeprBinary() {
 		this.deprBinary = null;
 	}
@@ -739,6 +741,7 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		return this;
 	}
 
+	@Deprecated
 	public void unsetDeprList() {
 		this.deprList = null;
 	}

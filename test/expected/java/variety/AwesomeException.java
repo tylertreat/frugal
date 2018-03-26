@@ -249,6 +249,7 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 		return this;
 	}
 
+	@Deprecated
 	public void unsetDepr() {
 		__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __DEPR_ISSET_ID);
 	}
