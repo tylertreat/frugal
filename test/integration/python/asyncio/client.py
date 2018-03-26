@@ -34,8 +34,8 @@ async def main():
     parser = argparse.ArgumentParser(description="Run a python asyncio client")
     parser.add_argument('--port', dest='port', default='9090')
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
-    parser.add_argument('--transport', dest='transport_type', default="stateless",
-                        choices="stateless, stateless-stateful, http")
+    parser.add_argument('--transport', dest='transport_type', default="nats",
+                        choices="nats, http")
     args = parser.parse_args()
 
     protocol_factory = get_protocol_factory(args.protocol_type)
@@ -45,7 +45,7 @@ async def main():
 
     transport = None
 
-    if args.transport_type in ["stateless", "stateless-stateful"]:
+    if args.transport_type == "nats":
         transport = FNatsTransport(nats_client, "frugal.foo.bar.rpc.{}".format(args.port))
         await transport.open()
     elif args.transport_type == "http":
@@ -62,7 +62,9 @@ async def main():
     ctx = FContext("test")
 
     await test_rpc(client, ctx, args.transport_type)
-    await test_pub_sub(nats_client, protocol_factory, args.port)
+
+    if transport == "nats":
+        await test_pub_sub(nats_client, protocol_factory, args.port)
 
     await nats_client.close()
 

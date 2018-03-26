@@ -22,7 +22,7 @@ import (
 
 var host = flag.String("host", "localhost", "Host to connect")
 var port = flag.Int64("port", 9090, "Port number to connect")
-var transport = flag.String("transport", "stateless", "Transport: stateless, http")
+var transport = flag.String("transport", "nats", "Transport: nats, http")
 var protocol = flag.String("protocol", "binary", "Protocol: binary, compact, json")
 
 func main() {
@@ -43,7 +43,9 @@ func main() {
 		log.Fatal("Client middleware not invoked")
 	}
 
-	close(pubSub)
-	<-sent
+	if *transport == "nats" {
+		close(pubSub)
+		<-sent
+	}
 }
 

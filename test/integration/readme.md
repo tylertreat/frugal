@@ -67,7 +67,7 @@ Each client/server:
   cross runner)
     * defaults to 9090 for manual testing
   * transport
-    * defaults to stateless (where supported, otherwise http)
+    * defaults to nats (where supported, otherwise http)
   * protocol
     * defaults to binary
 * calls/handles every case defined in the frugalTest service

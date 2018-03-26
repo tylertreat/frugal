@@ -100,7 +100,7 @@ func StartServer(
 	processor := frugaltest.NewFFrugalTestProcessor(handler, serverLoggingMiddleware(serverMiddlewareCalled))
 	var server frugal.FServer
 	switch transport {
-	case "stateless":
+	case "nats":
 		builder := frugal.NewFNatsServerBuilder(
 			conn,
 			processor,

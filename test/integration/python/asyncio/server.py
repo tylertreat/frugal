@@ -38,7 +38,7 @@ async def main():
     parser = argparse.ArgumentParser(description="Run an asyncio python server")
     parser.add_argument('--port', dest='port', default='9090')
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
-    parser.add_argument('--transport', dest="transport_type", default="stateless", choices="stateless, stateless-stateful, http")
+    parser.add_argument('--transport', dest="transport_type", default="nats", choices="nats, http")
 
     args = parser.parse_args()
 
@@ -77,7 +77,7 @@ async def main():
     subscriber = EventsSubscriber(provider)
     await subscriber.subscribe_EventCreated("*", "*", "call", "{}".format(args.port), response_handler)
 
-    if args.transport_type in ["stateless", "stateless-stateful"]:
+    if args.transport_type == "nats":
         server = FNatsServer(nats_client,
                              [subject],
                              processor,
