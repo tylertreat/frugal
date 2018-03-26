@@ -242,19 +242,19 @@ public class EventsSubscriber {
 						iprot.readMessageEnd();
 						throw new TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD);
 					}
-					org.apache.thrift.protocol.TList elem277 = iprot.readListBegin();
-					java.util.List<java.util.Map<Long, Event>> received = new ArrayList<java.util.Map<Long, Event>>(elem277.size);
-					for (int elem278 = 0; elem278 < elem277.size; ++elem278) {
-						org.apache.thrift.protocol.TMap elem280 = iprot.readMapBegin();
-						java.util.Map<Long, Event> elem279 = new HashMap<Long,Event>(2*elem280.size);
-						for (int elem281 = 0; elem281 < elem280.size; ++elem281) {
-							long elem283 = iprot.readI64();
-							Event elem282 = new Event();
-							elem282.read(iprot);
-							elem279.put(elem283, elem282);
+					org.apache.thrift.protocol.TList elem295 = iprot.readListBegin();
+					java.util.List<java.util.Map<Long, Event>> received = new ArrayList<java.util.Map<Long, Event>>(elem295.size);
+					for (int elem296 = 0; elem296 < elem295.size; ++elem296) {
+						org.apache.thrift.protocol.TMap elem298 = iprot.readMapBegin();
+						java.util.Map<Long, Event> elem297 = new HashMap<Long,Event>(2*elem298.size);
+						for (int elem299 = 0; elem299 < elem298.size; ++elem299) {
+							long elem301 = iprot.readI64();
+							Event elem300 = new Event();
+							elem300.read(iprot);
+							elem297.put(elem301, elem300);
 						}
 						iprot.readMapEnd();
-						received.add(elem279);
+						received.add(elem297);
 					}
 					iprot.readListEnd();
 					iprot.readMessageEnd();
@@ -376,19 +376,19 @@ public class EventsSubscriber {
 						iprot.readMessageEnd();
 						throw new TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD);
 					}
-					org.apache.thrift.protocol.TList elem284 = iprot.readListBegin();
-					java.util.List<java.util.Map<Long, Event>> received = new ArrayList<java.util.Map<Long, Event>>(elem284.size);
-					for (int elem285 = 0; elem285 < elem284.size; ++elem285) {
-						org.apache.thrift.protocol.TMap elem287 = iprot.readMapBegin();
-						java.util.Map<Long, Event> elem286 = new HashMap<Long,Event>(2*elem287.size);
-						for (int elem288 = 0; elem288 < elem287.size; ++elem288) {
-							long elem290 = iprot.readI64();
-							Event elem289 = new Event();
-							elem289.read(iprot);
-							elem286.put(elem290, elem289);
+					org.apache.thrift.protocol.TList elem302 = iprot.readListBegin();
+					java.util.List<java.util.Map<Long, Event>> received = new ArrayList<java.util.Map<Long, Event>>(elem302.size);
+					for (int elem303 = 0; elem303 < elem302.size; ++elem303) {
+						org.apache.thrift.protocol.TMap elem305 = iprot.readMapBegin();
+						java.util.Map<Long, Event> elem304 = new HashMap<Long,Event>(2*elem305.size);
+						for (int elem306 = 0; elem306 < elem305.size; ++elem306) {
+							long elem308 = iprot.readI64();
+							Event elem307 = new Event();
+							elem307.read(iprot);
+							elem304.put(elem308, elem307);
 						}
 						iprot.readMapEnd();
-						received.add(elem286);
+						received.add(elem304);
 					}
 					iprot.readListEnd();
 					iprot.readMessageEnd();

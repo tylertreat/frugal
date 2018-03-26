@@ -454,13 +454,13 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 
 			oprot.writeStructBegin(STRUCT_DESC);
 			oprot.writeFieldBegin(ID_FIELD_DESC);
-			long elem192 = struct.ID;
-			oprot.writeI64(elem192);
+			long elem210 = struct.ID;
+			oprot.writeI64(elem210);
 			oprot.writeFieldEnd();
 			if (struct.Reason != null) {
 				oprot.writeFieldBegin(REASON_FIELD_DESC);
-				String elem193 = struct.Reason;
-				oprot.writeString(elem193);
+				String elem211 = struct.Reason;
+				oprot.writeString(elem211);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -489,12 +489,12 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetID()) {
-				long elem194 = struct.ID;
-				oprot.writeI64(elem194);
+				long elem212 = struct.ID;
+				oprot.writeI64(elem212);
 			}
 			if (struct.isSetReason()) {
-				String elem195 = struct.Reason;
-				oprot.writeString(elem195);
+				String elem213 = struct.Reason;
+				oprot.writeString(elem213);
 			}
 		}
 

@@ -215,7 +215,7 @@ Some common annotations are listed below
 | Annotation    | Values        | Allowed Places | Description
 | ------------- | ------------- | -------------- | -----------
 | vendor        | Optional location | Namespaces, Includes | See [vendoring includes](#vendoring-includes)
-| deprecated    | Optional description | Service methods | Marks a method as deprecated (if supported by the language) and logs a warning if the method is called.
+| deprecated    | Optional description | Service methods, Struct/union fields | Marks a method or field as deprecated (if supported by the language, or in a comment otherwise), and logs a warning if a deprecated method is called.
 
 ### Vendoring Includes
 

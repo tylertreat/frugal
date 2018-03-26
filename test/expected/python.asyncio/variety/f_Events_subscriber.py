@@ -198,17 +198,17 @@ class EventsSubscriber(object):
                 iprot.readMessageEnd()
                 raise TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD)
             req = []
-            (_, elem59) = iprot.readListBegin()
-            for _ in range(elem59):
-                elem60 = {}
-                (_, _, elem61) = iprot.readMapBegin()
-                for _ in range(elem61):
-                    elem63 = iprot.readI64()
-                    elem62 = Event()
-                    elem62.read(iprot)
-                    elem60[elem63] = elem62
+            (_, elem62) = iprot.readListBegin()
+            for _ in range(elem62):
+                elem63 = {}
+                (_, _, elem64) = iprot.readMapBegin()
+                for _ in range(elem64):
+                    elem66 = iprot.readI64()
+                    elem65 = Event()
+                    elem65.read(iprot)
+                    elem63[elem66] = elem65
                 iprot.readMapEnd()
-                req.append(elem60)
+                req.append(elem63)
             iprot.readListEnd()
             iprot.readMessageEnd()
             try:

@@ -625,8 +625,15 @@ class EventWrapper(object):
      - aBoolField
      - a_union
      - typedefOfTypedef
+     - depr: This is a docstring comment for a deprecated field that has been spread
+       across two lines.
+       Deprecated: use something else
+     - deprBinary
+       Deprecated: use something else
+     - deprList
+       Deprecated: use something else
     """
-    def __init__(self, ID=None, Ev=None, Events=None, Events2=None, EventMap=None, Nums=None, Enums=None, aBoolField=None, a_union=None, typedefOfTypedef=None):
+    def __init__(self, ID=None, Ev=None, Events=None, Events2=None, EventMap=None, Nums=None, Enums=None, aBoolField=None, a_union=None, typedefOfTypedef=None, depr=None, deprBinary=None, deprList=None):
         self.ID = ID
         self.Ev = Ev
         self.Events = Events
@@ -637,6 +644,9 @@ class EventWrapper(object):
         self.aBoolField = aBoolField
         self.a_union = a_union
         self.typedefOfTypedef = typedefOfTypedef
+        self.depr = depr
+        self.deprBinary = deprBinary
+        self.deprList = deprList
 
     def read(self, iprot):
         iprot.readStructBegin()
@@ -730,6 +740,26 @@ class EventWrapper(object):
                     self.typedefOfTypedef = iprot.readString()
                 else:
                     iprot.skip(ftype)
+            elif fid == 11:
+                if ftype == TType.BOOL:
+                    self.depr = iprot.readBool()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 12:
+                if ftype == TType.STRING:
+                    self.deprBinary = iprot.readBinary()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 13:
+                if ftype == TType.LIST:
+                    self.deprList = []
+                    (_, elem30) = iprot.readListBegin()
+                    for _ in range(elem30):
+                        elem31 = iprot.readBool()
+                        self.deprList.append(elem31)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -750,40 +780,40 @@ class EventWrapper(object):
         if self.Events is not None:
             oprot.writeFieldBegin('Events', TType.LIST, 3)
             oprot.writeListBegin(TType.STRUCT, len(self.Events))
-            for elem30 in self.Events:
-                elem30.write(oprot)
+            for elem32 in self.Events:
+                elem32.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.Events2 is not None:
             oprot.writeFieldBegin('Events2', TType.SET, 4)
             oprot.writeSetBegin(TType.STRUCT, len(self.Events2))
-            for elem31 in self.Events2:
-                elem31.write(oprot)
+            for elem33 in self.Events2:
+                elem33.write(oprot)
             oprot.writeSetEnd()
             oprot.writeFieldEnd()
         if self.EventMap is not None:
             oprot.writeFieldBegin('EventMap', TType.MAP, 5)
             oprot.writeMapBegin(TType.I64, TType.STRUCT, len(self.EventMap))
-            for elem33, elem32 in self.EventMap.items():
-                oprot.writeI64(elem33)
-                elem32.write(oprot)
+            for elem35, elem34 in self.EventMap.items():
+                oprot.writeI64(elem35)
+                elem34.write(oprot)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         if self.Nums is not None:
             oprot.writeFieldBegin('Nums', TType.LIST, 6)
             oprot.writeListBegin(TType.LIST, len(self.Nums))
-            for elem34 in self.Nums:
-                oprot.writeListBegin(TType.I32, len(elem34))
-                for elem35 in elem34:
-                    oprot.writeI32(elem35)
+            for elem36 in self.Nums:
+                oprot.writeListBegin(TType.I32, len(elem36))
+                for elem37 in elem36:
+                    oprot.writeI32(elem37)
                 oprot.writeListEnd()
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.Enums is not None:
             oprot.writeFieldBegin('Enums', TType.LIST, 7)
             oprot.writeListBegin(TType.I32, len(self.Enums))
-            for elem36 in self.Enums:
-                oprot.writeI32(elem36)
+            for elem38 in self.Enums:
+                oprot.writeI32(elem38)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.aBoolField is not None:
@@ -797,6 +827,21 @@ class EventWrapper(object):
         if self.typedefOfTypedef is not None:
             oprot.writeFieldBegin('typedefOfTypedef', TType.STRING, 10)
             oprot.writeString(self.typedefOfTypedef)
+            oprot.writeFieldEnd()
+        if self.depr is not None:
+            oprot.writeFieldBegin('depr', TType.BOOL, 11)
+            oprot.writeBool(self.depr)
+            oprot.writeFieldEnd()
+        if self.deprBinary is not None:
+            oprot.writeFieldBegin('deprBinary', TType.STRING, 12)
+            oprot.writeBinary(self.deprBinary)
+            oprot.writeFieldEnd()
+        if self.deprList is not None:
+            oprot.writeFieldBegin('deprList', TType.LIST, 13)
+            oprot.writeListBegin(TType.BOOL, len(self.deprList))
+            for elem39 in self.deprList:
+                oprot.writeBool(elem39)
+            oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -818,6 +863,9 @@ class EventWrapper(object):
         value = (value * 31) ^ hash(make_hashable(self.aBoolField))
         value = (value * 31) ^ hash(make_hashable(self.a_union))
         value = (value * 31) ^ hash(make_hashable(self.typedefOfTypedef))
+        value = (value * 31) ^ hash(make_hashable(self.depr))
+        value = (value * 31) ^ hash(make_hashable(self.deprBinary))
+        value = (value * 31) ^ hash(make_hashable(self.deprList))
         return value
 
     def __repr__(self):
@@ -840,14 +888,17 @@ class TestingUnions(object):
      - AnInt16
      - Requests
      - bin_field_in_union
+     - depr
+       Deprecated: use something else
     """
-    def __init__(self, AnID=None, aString=None, someotherthing=None, AnInt16=None, Requests=None, bin_field_in_union=None):
+    def __init__(self, AnID=None, aString=None, someotherthing=None, AnInt16=None, Requests=None, bin_field_in_union=None, depr=None):
         self.AnID = AnID
         self.aString = aString
         self.someotherthing = someotherthing
         self.AnInt16 = AnInt16
         self.Requests = Requests
         self.bin_field_in_union = bin_field_in_union
+        self.depr = depr
 
     def read(self, iprot):
         iprot.readStructBegin()
@@ -878,17 +929,22 @@ class TestingUnions(object):
             elif fid == 5:
                 if ftype == TType.MAP:
                     self.Requests = {}
-                    (_, _, elem37) = iprot.readMapBegin()
-                    for _ in range(elem37):
-                        elem39 = iprot.readI32()
-                        elem38 = iprot.readString()
-                        self.Requests[elem39] = elem38
+                    (_, _, elem40) = iprot.readMapBegin()
+                    for _ in range(elem40):
+                        elem42 = iprot.readI32()
+                        elem41 = iprot.readString()
+                        self.Requests[elem42] = elem41
                     iprot.readMapEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 6:
                 if ftype == TType.STRING:
                     self.bin_field_in_union = iprot.readBinary()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 7:
+                if ftype == TType.BOOL:
+                    self.depr = iprot.readBool()
                 else:
                     iprot.skip(ftype)
             else:
@@ -919,14 +975,18 @@ class TestingUnions(object):
         if self.Requests is not None:
             oprot.writeFieldBegin('Requests', TType.MAP, 5)
             oprot.writeMapBegin(TType.I32, TType.STRING, len(self.Requests))
-            for elem41, elem40 in self.Requests.items():
-                oprot.writeI32(elem41)
-                oprot.writeString(elem40)
+            for elem44, elem43 in self.Requests.items():
+                oprot.writeI32(elem44)
+                oprot.writeString(elem43)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         if self.bin_field_in_union is not None:
             oprot.writeFieldBegin('bin_field_in_union', TType.STRING, 6)
             oprot.writeBinary(self.bin_field_in_union)
+            oprot.writeFieldEnd()
+        if self.depr is not None:
+            oprot.writeFieldBegin('depr', TType.BOOL, 7)
+            oprot.writeBool(self.depr)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -945,6 +1005,8 @@ class TestingUnions(object):
             set_fields += 1
         if self.bin_field_in_union is not None:
             set_fields += 1
+        if self.depr is not None:
+            set_fields += 1
         if set_fields != 1:
             raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='The union did not have exactly one field set, {} were set'.format(set_fields))
         return
@@ -957,6 +1019,7 @@ class TestingUnions(object):
         value = (value * 31) ^ hash(make_hashable(self.AnInt16))
         value = (value * 31) ^ hash(make_hashable(self.Requests))
         value = (value * 31) ^ hash(make_hashable(self.bin_field_in_union))
+        value = (value * 31) ^ hash(make_hashable(self.depr))
         return value
 
     def __repr__(self):

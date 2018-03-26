@@ -189,7 +189,7 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 // quote creates a Python string literal for a string.
 func (g *Generator) quote(s string) string {
 	// For now, just use Go quoting rules.
-	return strconv.Quote(s);
+	return strconv.Quote(s)
 }
 
 func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind string) (parser.IdentifierType, string) {
@@ -460,9 +460,24 @@ func (g *Generator) generateClassDocstring(s *parser.Struct) string {
 			if len(field.Comment) > 0 {
 				line = fmt.Sprintf("%s: %s", line, field.Comment[0])
 				lines = append(lines, line)
-				lines = append(lines, field.Comment[1:]...)
+
+				remaining := make([]string, len(field.Comment)-1)
+				copy(remaining, field.Comment[1:])
+				for i, value := range remaining {
+					remaining[i] = "   " + value
+				}
+				lines = append(lines, remaining...)
 			} else {
 				lines = append(lines, line)
+			}
+
+			deprecationValue, deprecated := field.Annotations.Deprecated()
+			if deprecated {
+				if deprecationValue != "" {
+					lines = append(lines, fmt.Sprintf("   Deprecated: %s", deprecationValue))
+				} else {
+					lines = append(lines, "   Deprecated")
+				}
 			}
 		}
 	}

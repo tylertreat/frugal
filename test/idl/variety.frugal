@@ -78,6 +78,7 @@ union TestingUnions {
 	4: i16 AnInt16,
 	5: request Requests,
 	6: binary bin_field_in_union,
+	7: bool depr (deprecated="use something else"),
 }
 
 /**@
@@ -136,6 +137,13 @@ struct EventWrapper {
     8: bool aBoolField,
     9: TestingUnions a_union,
     10: t2_string typedefOfTypedef,
+    /**@
+     * This is a docstring comment for a deprecated field that has been spread
+     * across two lines.
+     */
+    11: bool depr (deprecated="use something else"),
+    12: binary deprBinary (deprecated="use something else"),
+    13: list<bool> deprList (deprecated="use something else"),
 }
 
 exception AwesomeException {
