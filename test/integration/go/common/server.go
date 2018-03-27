@@ -100,7 +100,7 @@ func StartServer(
 	processor := frugaltest.NewFFrugalTestProcessor(handler, serverLoggingMiddleware(serverMiddlewareCalled))
 	var server frugal.FServer
 	switch transport {
-	case "nats":
+	case NatsName:
 		builder := frugal.NewFNatsServerBuilder(
 			conn,
 			processor,
@@ -111,7 +111,7 @@ func StartServer(
 		// Healthcheck used in the cross language runner to check for server availability
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {})
 		go http.ListenAndServe(hostPort, nil)
-	case "http":
+	case HttpName:
 		http.HandleFunc("/",
 			frugal.NewFrugalHandlerFunc(processor,
 				frugal.NewFProtocolFactory(protocolFactory)))

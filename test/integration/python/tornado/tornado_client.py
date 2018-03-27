@@ -39,7 +39,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run a python tornado client")
     parser.add_argument('--port', dest='port', default= '9090')
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
-    parser.add_argument('--transport', dest='transport_type', default="nats",
+    parser.add_argument('--transport', dest='transport_type', default=NATS_NAME,
                         choices="nats, http")
 
     args = parser.parse_args()
@@ -53,9 +53,9 @@ def main():
 
     transport = None
 
-    if args.transport_type == "nats":
+    if args.transport_type == NATS_NAME:
         transport = FNatsTransport(nats_client, "frugal.foo.bar.rpc.{}".format(args.port))
-    elif args.transport_type == "http":
+    elif args.transport_type == HTTP_NAME:
         # Set request and response capacity to 1mb
         max_size = 1048576
         transport = FHttpTransport("http://localhost:" + str(args.port),
@@ -76,7 +76,7 @@ def main():
     ctx = FContext("test")
 
     yield test_rpc(client, ctx, args.transport_type)
-    if transport == "nats":
+    if transport == NATS_NAME:
         yield test_pub_sub(nats_client, protocol_factory, args.port)
 
     global middleware_called

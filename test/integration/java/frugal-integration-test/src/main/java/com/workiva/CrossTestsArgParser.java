@@ -5,7 +5,7 @@ public class CrossTestsArgParser {
     private String host = "localhost";
     private int port = 9090;
     private String protocolType = "binary";
-    private String transportType = "nats";
+    private String transportType = Utils.natsName;
 
     public CrossTestsArgParser(String[] cliArgs) {
         // TODO should use an actual arg parser

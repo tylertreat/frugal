@@ -17,7 +17,7 @@ import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.workiva.utils.whichProtocolFactory;
+import static com.workiva.Utils.whichProtocolFactory;
 
 public class TestServletServer {
     public static void main(String[] args) {

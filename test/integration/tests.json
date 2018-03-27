@@ -23,15 +23,8 @@
         "go/bin/testclient"
       ]
     },
-    "transports": [
-      "nats",
-      "http"
-    ],
-    "protocols": [
-      "binary",
-      "compact",
-      "json"
-    ]
+    "transports": ["nats", "http"],
+    "protocols": ["binary", "compact", "json"]
   },
   {
     "name": "java",

@@ -43,7 +43,7 @@ func main() {
 		log.Fatal("Client middleware not invoked")
 	}
 
-	if *transport == "nats" {
+	if *transport == common.NatsName {
 		close(pubSub)
 		<-sent
 	}

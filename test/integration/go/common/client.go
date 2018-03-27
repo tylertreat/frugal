@@ -66,7 +66,7 @@ func StartClient(
 		Verifies that scopes are correctly generated.
 		Only runs if the transport is nats.
 	*/
-	if transport == "nats" {
+	if transport == NatsName {
 		go func() {
 			<-pubSub
 
@@ -116,9 +116,9 @@ func StartClient(
 	// RPC client
 	var trans frugal.FTransport
 	switch transport {
-	case "nats":
+	case NatsName:
 		trans = frugal.NewFNatsTransport(conn, fmt.Sprintf("frugal.foo.bar.rpc.%d", port), "")
-	case "http":
+	case HttpName:
 		// Set request and response capacity to 1mb
 		maxSize := uint(1048576)
 		trans = frugal.NewFHTTPTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).WithRequestSizeLimit(maxSize).WithResponseSizeLimit(maxSize).Build()

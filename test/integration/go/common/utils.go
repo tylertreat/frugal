@@ -24,6 +24,9 @@ import (
 const (
 	preambleHeader = "preamble"
 	rambleHeader   = "ramble"
+
+	NatsName = "nats"
+	HttpName = "http"
 )
 
 func getNatsConn() *nats.Conn {

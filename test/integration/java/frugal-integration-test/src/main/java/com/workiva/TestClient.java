@@ -33,7 +33,7 @@ import com.workiva.frugal.transport.FPublisherTransportFactory;
 import com.workiva.frugal.transport.FNatsPublisherTransport;
 import com.workiva.frugal.transport.FNatsSubscriberTransport;
 import com.workiva.frugal.transport.FSubscriberTransportFactory;
-import com.workiva.utils;
+import com.workiva.Utils;
 import frugal.test.*;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
@@ -50,7 +50,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static com.workiva.utils.whichProtocolFactory;
+import static com.workiva.Utils.whichProtocolFactory;
 
 /**
  * Test Java client for frugal. This makes a variety of requests to enable testing for both performance and
@@ -73,8 +73,8 @@ public class TestClient {
         TProtocolFactory protocolFactory = whichProtocolFactory(protocolType);
 
         List<String> validTransports = new ArrayList<>();
-        validTransports.add("nats");
-        validTransports.add("http");
+        validTransports.add(Utils.natsName);
+        validTransports.add(Utils.httpName);
 
         if (!validTransports.contains(transportType)) {
             throw new Exception("Unknown transport type! " + transportType);
@@ -84,7 +84,7 @@ public class TestClient {
 
         try {
             switch (transportType) {
-                case "http":
+                case Utils.httpName:
                     System.out.println("host: " + host);
                     String url = "http://" + host + ":" + port;
                     CloseableHttpClient httpClient = HttpClients.createDefault();
@@ -94,7 +94,7 @@ public class TestClient {
                     fTransport = httpTransport.build();
                     fTransport.open();
                     break;
-                case "nats":
+                case Utils.natsName:
                     fTransport = FNatsTransport.of(conn, "frugal.foo.bar.rpc." + Integer.toString(port));
                     break;
             }
@@ -607,7 +607,7 @@ public class TestClient {
                 returnCode |= 1;
             }
 
-            if(transportType.equals("nats")) {
+            if(transportType.equals(Utils.natsName)) {
                 /**
                  * PUB/SUB TEST
                  * Publish a message, verify that a subscriber receives the message and publishes a response.
@@ -631,8 +631,8 @@ public class TestClient {
                 publisher.open();
                 Event event = new Event(1, "Sending Call");
                 FContext ctx = new FContext("Call");
-                ctx.addRequestHeader(utils.PREAMBLE_HEADER, preamble);
-                ctx.addRequestHeader(utils.RAMBLE_HEADER, ramble);
+                ctx.addRequestHeader(Utils.PREAMBLE_HEADER, preamble);
+                ctx.addRequestHeader(Utils.RAMBLE_HEADER, ramble);
                 publisher.publishEventCreated(ctx, preamble, ramble, "call", Integer.toString(port), event);
                 System.out.print("Publishing...    ");
 

@@ -58,9 +58,9 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.workiva.utils.PREAMBLE_HEADER;
-import static com.workiva.utils.RAMBLE_HEADER;
-import static com.workiva.utils.whichProtocolFactory;
+import static com.workiva.Utils.PREAMBLE_HEADER;
+import static com.workiva.Utils.RAMBLE_HEADER;
+import static com.workiva.Utils.whichProtocolFactory;
 
 
 public class TestServer {
