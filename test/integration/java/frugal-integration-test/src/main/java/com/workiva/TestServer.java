@@ -58,6 +58,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import com.workiva.Utils;
+
 import static com.workiva.Utils.PREAMBLE_HEADER;
 import static com.workiva.Utils.RAMBLE_HEADER;
 import static com.workiva.Utils.whichProtocolFactory;
@@ -80,7 +82,7 @@ public class TestServer {
             ConnectionFactory cf = new ConnectionFactory("nats://localhost:4222");
             Connection conn = cf.createConnection();
 
-            List<String> validTransports = Arrays.asList("nats", "http");
+            List<String> validTransports = Arrays.asList(Utils.natsName, Utils.httpName);
 
             if (!validTransports.contains(transportType)) {
                 throw new Exception("Unknown transport type! " + transportType);
@@ -95,14 +97,14 @@ public class TestServer {
             FFrugalTest.Processor processor = new FFrugalTest.Processor(handler, new ServerMiddleware(called));
             FServer server = null;
             switch (transportType) {
-                case "nats":
+                case Utils.natsName:
                     server = new FNatsServer.Builder(
                             conn,
                             processor,
                             fProtocolFactory,
                             new String[]{"frugal.*.*.rpc." + Integer.toString(port)}).build();
                     break;
-                case "http":
+                case Utils.httpName:
                     break;
             }
 
