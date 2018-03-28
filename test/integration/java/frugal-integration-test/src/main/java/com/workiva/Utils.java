@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class utils {
+public class Utils {
+    public static final String natsName = "nats";
+    public static final String httpName = "http";
 
     public static String PREAMBLE_HEADER = "preamble";
     public static String RAMBLE_HEADER = "ramble";

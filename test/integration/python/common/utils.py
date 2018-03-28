@@ -12,6 +12,9 @@ from frugal_test.f_FrugalTest import Numberz
 PREAMBLE_HEADER = "preamble"
 RAMBLE_HEADER = "ramble"
 
+NATS_NAME = 'nats'
+HTTP_NAME = 'http'
+
 
 def get_nats_options():
     return {
