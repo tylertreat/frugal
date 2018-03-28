@@ -1511,14 +1511,14 @@ func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 func (g *Generator) generateCommentWithDeprecated(comment []string, indent string, anns parser.Annotations) string {
 	contents := ""
 	if comment != nil {
-		contents += g.GenerateInlineComment(comment, tab+"/")
+		contents += g.GenerateInlineComment(comment, indent+"/")
 	}
 
 	if deprecationValue, deprecated := anns.Deprecated(); deprecated {
 		if deprecationValue != "" {
-			contents += g.GenerateInlineComment([]string{"Deprecated: " + deprecationValue}, tab+"/")
+			contents += g.GenerateInlineComment([]string{"Deprecated: " + deprecationValue}, indent+"/")
 		}
-		contents += tab + "@deprecated\n"
+		contents += indent + "@deprecated\n"
 	}
 
 	return contents

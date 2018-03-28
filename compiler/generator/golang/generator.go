@@ -445,7 +445,7 @@ func (g *Generator) generateStruct(s *parser.Struct, serviceName string) string 
 func (g *Generator) generateCommentWithDeprecated(comment []string, indent string, anns parser.Annotations) string {
 	contents := ""
 	if comment != nil {
-		contents += g.GenerateInlineComment(comment, "\t")
+		contents += g.GenerateInlineComment(comment, indent)
 	}
 
 	deprecationValue, deprecated := anns.Deprecated()
