@@ -1092,11 +1092,11 @@ class oneWay_args(object):
             elif fid == 2:
                 if ftype == TType.MAP:
                     self.req = {}
-                    (_, _, elem42) = iprot.readMapBegin()
-                    for _ in range(elem42):
-                        elem44 = iprot.readI32()
-                        elem43 = iprot.readString()
-                        self.req[elem44] = elem43
+                    (_, _, elem45) = iprot.readMapBegin()
+                    for _ in range(elem45):
+                        elem47 = iprot.readI32()
+                        elem46 = iprot.readString()
+                        self.req[elem47] = elem46
                     iprot.readMapEnd()
                 else:
                     iprot.skip(ftype)
@@ -1116,9 +1116,9 @@ class oneWay_args(object):
         if self.req is not None:
             oprot.writeFieldBegin('req', TType.MAP, 2)
             oprot.writeMapBegin(TType.I32, TType.STRING, len(self.req))
-            for elem46, elem45 in self.req.items():
-                oprot.writeI32(elem46)
-                oprot.writeString(elem45)
+            for elem49, elem48 in self.req.items():
+                oprot.writeI32(elem49)
+                oprot.writeString(elem48)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1430,20 +1430,20 @@ class underlying_types_test_args(object):
             if fid == 1:
                 if ftype == TType.LIST:
                     self.list_type = []
-                    (_, elem47) = iprot.readListBegin()
-                    for _ in range(elem47):
-                        elem48 = iprot.readI64()
-                        self.list_type.append(elem48)
+                    (_, elem50) = iprot.readListBegin()
+                    for _ in range(elem50):
+                        elem51 = iprot.readI64()
+                        self.list_type.append(elem51)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.SET:
                     self.set_type = set()
-                    (_, elem49) = iprot.readSetBegin()
-                    for _ in range(elem49):
-                        elem50 = iprot.readI64()
-                        self.set_type.add(elem50)
+                    (_, elem52) = iprot.readSetBegin()
+                    for _ in range(elem52):
+                        elem53 = iprot.readI64()
+                        self.set_type.add(elem53)
                     iprot.readSetEnd()
                 else:
                     iprot.skip(ftype)
@@ -1459,15 +1459,15 @@ class underlying_types_test_args(object):
         if self.list_type is not None:
             oprot.writeFieldBegin('list_type', TType.LIST, 1)
             oprot.writeListBegin(TType.I64, len(self.list_type))
-            for elem51 in self.list_type:
-                oprot.writeI64(elem51)
+            for elem54 in self.list_type:
+                oprot.writeI64(elem54)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.set_type is not None:
             oprot.writeFieldBegin('set_type', TType.SET, 2)
             oprot.writeSetBegin(TType.I64, len(self.set_type))
-            for elem52 in self.set_type:
-                oprot.writeI64(elem52)
+            for elem55 in self.set_type:
+                oprot.writeI64(elem55)
             oprot.writeSetEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1510,10 +1510,10 @@ class underlying_types_test_result(object):
             if fid == 0:
                 if ftype == TType.LIST:
                     self.success = []
-                    (_, elem53) = iprot.readListBegin()
-                    for _ in range(elem53):
-                        elem54 = iprot.readI64()
-                        self.success.append(elem54)
+                    (_, elem56) = iprot.readListBegin()
+                    for _ in range(elem56):
+                        elem57 = iprot.readI64()
+                        self.success.append(elem57)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -1529,8 +1529,8 @@ class underlying_types_test_result(object):
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.LIST, 0)
             oprot.writeListBegin(TType.I64, len(self.success))
-            for elem55 in self.success:
-                oprot.writeI64(elem55)
+            for elem58 in self.success:
+                oprot.writeI64(elem58)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()

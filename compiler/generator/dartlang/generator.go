@@ -651,9 +651,7 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 
 	// Fields
 	for _, field := range s.Fields {
-		if field.Comment != nil {
-			contents += g.GenerateInlineComment(field.Comment, tab+"/")
-		}
+		contents += g.generateCommentWithDeprecated(field.Comment, tab, field.Annotations)
 		contents += fmt.Sprintf(tab+"%s _%s%s;\n",
 			g.getDartTypeFromThriftType(field.Type), toFieldName(field.Name), g.generateInitValue(field))
 		contents += fmt.Sprintf(tab+"static const int %s = %d;\n", strings.ToUpper(field.Name), field.ID)
@@ -730,13 +728,9 @@ func (g *Generator) generateFieldMethods(s *parser.Struct) string {
 		fName := toFieldName(field.Name)
 		titleName := strings.Title(field.Name)
 
-		if field.Comment != nil {
-			contents += g.GenerateInlineComment(field.Comment, tab+"/")
-		}
+		contents += g.generateCommentWithDeprecated(field.Comment, tab, field.Annotations)
 		contents += fmt.Sprintf(tab+"%s get %s => this._%s;\n\n", dartType, fName, fName)
-		if field.Comment != nil {
-			contents += g.GenerateInlineComment(field.Comment, tab+"/")
-		}
+		contents += g.generateCommentWithDeprecated(field.Comment, tab, field.Annotations)
 		contents += fmt.Sprintf(tab+"set %s(%s %s) {\n", fName, dartType, fName)
 		contents += fmt.Sprintf(tabtab+"this._%s = %s;\n", fName, fName)
 		if dartPrimitive {
@@ -744,6 +738,9 @@ func (g *Generator) generateFieldMethods(s *parser.Struct) string {
 		}
 		contents += tab + "}\n\n"
 
+		if field.Annotations.IsDeprecated() {
+			contents += tab + "@deprecated"
+		}
 		if dartPrimitive {
 			contents += fmt.Sprintf(tab+"bool isSet%s() => this.__isset_%s;\n\n", titleName, fName)
 			contents += fmt.Sprintf(tab+"unset%s() {\n", titleName)
@@ -1511,6 +1508,22 @@ func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 	return err
 }
 
+func (g *Generator) generateCommentWithDeprecated(comment []string, indent string, anns parser.Annotations) string {
+	contents := ""
+	if comment != nil {
+		contents += g.GenerateInlineComment(comment, indent+"/")
+	}
+
+	if deprecationValue, deprecated := anns.Deprecated(); deprecated {
+		if deprecationValue != "" {
+			contents += g.GenerateInlineComment([]string{"Deprecated: " + deprecationValue}, indent+"/")
+		}
+		contents += indent + "@deprecated\n"
+	}
+
+	return contents
+}
+
 func (g *Generator) generateInterface(service *parser.Service) string {
 	contents := ""
 	if service.Comment != nil {
@@ -1524,17 +1537,7 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 	}
 	for _, method := range service.Methods {
 		contents += "\n"
-		if method.Comment != nil {
-			contents += g.GenerateInlineComment(method.Comment, tab+"/")
-		}
-
-		if deprecationValue, deprecated := method.Annotations.Deprecated(); deprecated {
-			if deprecationValue != "" {
-				contents += g.GenerateInlineComment([]string{"Deprecated: " + deprecationValue}, tab+"/")
-			}
-			contents += tab + "@deprecated\n"
-		}
-
+		contents += g.generateCommentWithDeprecated(method.Comment, tab, method.Annotations)
 		contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s);\n",
 			g.generateReturnArg(method), parser.LowercaseFirstLetter(method.Name), g.generateInputArgs(method.Arguments))
 	}
@@ -1605,25 +1608,13 @@ func (g *Generator) generateClient(service *parser.Service) string {
 
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
 	nameLower := parser.LowercaseFirstLetter(method.Name)
-	contents := ""
-
-	if method.Comment != nil {
-		contents += g.GenerateInlineComment(method.Comment, tab+"/")
-	}
-
-	deprecationValue, deprecated := method.Annotations.Deprecated()
-	if deprecated {
-		if deprecationValue != "" {
-			contents += g.GenerateInlineComment([]string{"Deprecated: " + deprecationValue}, tab+"/")
-		}
-		contents += tab + "@deprecated\n"
-	}
+	contents := g.generateCommentWithDeprecated(method.Comment, tab, method.Annotations)
 
 	// Generate wrapper method
 	contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s) {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
 
-	if deprecated {
+	if method.Annotations.IsDeprecated() {
 		contents += fmt.Sprintf(tabtab+"_frugalLog.warning(\"Call to deprecated function '%s.%s'\");\n", service.Name, nameLower)
 	}
 
