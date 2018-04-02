@@ -39,8 +39,8 @@ def main():
     parser = argparse.ArgumentParser(description="Run a python tornado client")
     parser.add_argument('--port', dest='port', default= '9090')
     parser.add_argument('--protocol', dest='protocol_type', default="binary", choices="binary, compact, json")
-    parser.add_argument('--transport', dest='transport_type', default="stateless",
-                        choices="stateless, http")
+    parser.add_argument('--transport', dest='transport_type', default=NATS_NAME,
+                        choices="nats, http")
 
     args = parser.parse_args()
 
@@ -53,9 +53,9 @@ def main():
 
     transport = None
 
-    if args.transport_type == "stateless":
+    if args.transport_type == NATS_NAME:
         transport = FNatsTransport(nats_client, "frugal.foo.bar.rpc.{}".format(args.port))
-    elif args.transport_type == "http":
+    elif args.transport_type == HTTP_NAME:
         # Set request and response capacity to 1mb
         max_size = 1048576
         transport = FHttpTransport("http://localhost:" + str(args.port),
@@ -76,7 +76,8 @@ def main():
     ctx = FContext("test")
 
     yield test_rpc(client, ctx, args.transport_type)
-    yield test_pub_sub(nats_client, protocol_factory, args.port)
+    if transport == NATS_NAME:
+        yield test_pub_sub(nats_client, protocol_factory, args.port)
 
     global middleware_called
     if not middleware_called:
@@ -132,7 +133,6 @@ def test_pub_sub(nats_client, protocol_factory, port):
         exit(1)
 
     yield publisher.close()
-    exit(0)
 
 
 # test_rpc makes RPC calls with each type defined in FrugalTest.frugal
@@ -194,6 +194,4 @@ def log_future(future):
 
 
 if __name__ == '__main__':
-    io_loop = ioloop.IOLoop.instance()
-    io_loop.add_callback(main)
-    io_loop.start()
+    io_loop = ioloop.IOLoop.instance().run_sync(main)

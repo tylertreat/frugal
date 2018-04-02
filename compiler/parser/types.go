@@ -479,6 +479,18 @@ func (a Annotations) Deprecated() (string, bool) {
 	return a.Get(DeprecatedAnnotation)
 }
 
+// IsDeprecated returns true if the "deprecated" annotation is present.
+func (a Annotations) IsDeprecated() bool {
+	_, d := a.Deprecated()
+	return d
+}
+
+// DeprecationValue returns the value of the "deprecated" annotation.
+func (a Annotations) DeprecationValue() string {
+	v, _ := a.Deprecated()
+	return v
+}
+
 func getImports(t *Type) []string {
 	list := []string{}
 	switch t.Name {

@@ -205,7 +205,7 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 
 // quote creates a Go string literal for a string.
 func (g *Generator) quote(s string) string {
-	return strconv.Quote(s);
+	return strconv.Quote(s)
 }
 
 // generateConstantValue recursively generates the string representation of
@@ -442,6 +442,24 @@ func (g *Generator) generateStruct(s *parser.Struct, serviceName string) string 
 	return contents
 }
 
+func (g *Generator) generateCommentWithDeprecated(comment []string, indent string, anns parser.Annotations) string {
+	contents := ""
+	if comment != nil {
+		contents += g.GenerateInlineComment(comment, indent)
+	}
+
+	deprecationValue, deprecated := anns.Deprecated()
+	if deprecated && deprecationValue != "" {
+		if deprecationValue == "" {
+			contents += indent + "// Deprecated\n"
+		} else {
+			contents += fmt.Sprintf("%s// Deprecated: %s\n", indent, deprecationValue)
+		}
+	}
+
+	return contents
+}
+
 func (g *Generator) generateStructDeclaration(s *parser.Struct, sName string) string {
 	contents := ""
 	if s.Comment != nil {
@@ -455,9 +473,7 @@ func (g *Generator) generateStructDeclaration(s *parser.Struct, sName string) st
 		fName := title(field.Name)
 		// All fields in a union are marked optional by default
 
-		if field.Comment != nil {
-			contents += g.GenerateInlineComment(field.Comment, "\t")
-		}
+		contents += g.generateCommentWithDeprecated(field.Comment, "\t", field.Annotations)
 
 		// Use the actual field name for annotations because the serialized
 		// name needs to be the same for all languages
@@ -1518,14 +1534,7 @@ func (g *Generator) generateServiceInterface(service *parser.Service) string {
 		contents += fmt.Sprintf("\t%s\n\n", g.getServiceExtendsName(service))
 	}
 	for _, method := range service.Methods {
-		if method.Comment != nil {
-			contents += g.GenerateInlineComment(method.Comment, "\t")
-		}
-
-		if _, ok := method.Annotations.Deprecated(); ok {
-			contents += "\t// Deprecated\n"
-		}
-
+		contents += g.generateCommentWithDeprecated(method.Comment, "\t", method.Annotations)
 		contents += fmt.Sprintf("\t%s(ctx frugal.FContext%s) %s\n",
 			snakeToCamel(method.Name), g.generateInterfaceArgs(method.Arguments),
 			g.generateReturnArgs(method))

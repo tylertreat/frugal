@@ -64,58 +64,61 @@ func StartClient(
 		Pub/Sub Test
 		Publish a message, verify that a subscriber receives the message and publishes a response.
 		Verifies that scopes are correctly generated.
+		Only runs if the transport is nats.
 	*/
-	go func() {
-		<-pubSub
+	if transport == NatsName {
+		go func() {
+			<-pubSub
 
-		if err != nil {
-			panic(err)
-		}
+			if err != nil {
+				panic(err)
+			}
 
-		pfactory := frugal.NewFNatsPublisherTransportFactory(conn)
-		sfactory := frugal.NewFNatsSubscriberTransportFactory(conn)
-		provider := frugal.NewFScopeProvider(pfactory, sfactory, frugal.NewFProtocolFactory(protocolFactory))
-		publisher := frugaltest.NewEventsPublisher(provider)
-		if err := publisher.Open(); err != nil {
-			panic(err)
-		}
-		defer publisher.Close()
+			pfactory := frugal.NewFNatsPublisherTransportFactory(conn)
+			sfactory := frugal.NewFNatsSubscriberTransportFactory(conn)
+			provider := frugal.NewFScopeProvider(pfactory, sfactory, frugal.NewFProtocolFactory(protocolFactory))
+			publisher := frugaltest.NewEventsPublisher(provider)
+			if err := publisher.Open(); err != nil {
+				panic(err)
+			}
+			defer publisher.Close()
 
-		// Start Subscription, pass timeout
-		resp := make(chan bool)
-		subscriber := frugaltest.NewEventsSubscriber(provider)
-		preamble := "foo"
-		ramble := "bar"
-		// TODO: Document SubscribeEventCreated "user" cannot contain spaces
-		_, err = subscriber.SubscribeEventCreated(preamble, ramble, "response", fmt.Sprintf("%d", port), func(ctx frugal.FContext, e *frugaltest.Event) {
-			fmt.Printf(" Response received %v\n", e)
-			close(resp)
-		})
-		ctx := frugal.NewFContext("Call")
-		ctx.AddRequestHeader(preambleHeader, preamble)
-		ctx.AddRequestHeader(rambleHeader, ramble)
-		event := &frugaltest.Event{Message: "Sending call"}
-		fmt.Print("Publishing... ")
-		if err := publisher.PublishEventCreated(ctx, preamble, ramble, "call", fmt.Sprintf("%d", port), event); err != nil {
-			panic(err)
-		}
+			// Start Subscription, pass timeout
+			resp := make(chan bool)
+			subscriber := frugaltest.NewEventsSubscriber(provider)
+			preamble := "foo"
+			ramble := "bar"
+			// TODO: Document SubscribeEventCreated "user" cannot contain spaces
+			_, err = subscriber.SubscribeEventCreated(preamble, ramble, "response", fmt.Sprintf("%d", port), func(ctx frugal.FContext, e *frugaltest.Event) {
+				fmt.Printf(" Response received %v\n", e)
+				close(resp)
+			})
+			ctx := frugal.NewFContext("Call")
+			ctx.AddRequestHeader(preambleHeader, preamble)
+			ctx.AddRequestHeader(rambleHeader, ramble)
+			event := &frugaltest.Event{Message: "Sending call"}
+			fmt.Print("Publishing... ")
+			if err := publisher.PublishEventCreated(ctx, preamble, ramble, "call", fmt.Sprintf("%d", port), event); err != nil {
+				panic(err)
+			}
 
-		timeout := time.After(time.Second * 3)
+			timeout := time.After(time.Second * 3)
 
-		select {
-		case <-resp: // Response received is logged in the subscribe
-		case <-timeout:
-			log.Fatal("Pub/Sub response timed out!")
-		}
-		close(sent)
-	}()
+			select {
+			case <-resp: // Response received is logged in the subscribe
+			case <-timeout:
+				log.Fatal("Pub/Sub response timed out!")
+			}
+			close(sent)
+		}()
+	}
 
 	// RPC client
 	var trans frugal.FTransport
 	switch transport {
-	case "stateless":
+	case NatsName:
 		trans = frugal.NewFNatsTransport(conn, fmt.Sprintf("frugal.foo.bar.rpc.%d", port), "")
-	case "http":
+	case HttpName:
 		// Set request and response capacity to 1mb
 		maxSize := uint(1048576)
 		trans = frugal.NewFHTTPTransportBuilder(&http.Client{}, fmt.Sprintf("http://localhost:%d", port)).WithRequestSizeLimit(maxSize).WithResponseSizeLimit(maxSize).Build()
