@@ -9,6 +9,10 @@ env:
   - TWINE_REPOSITORY_URL=https://upload.pypi.org/latest/
 
 before_install:
+  - mkdir -p $GOPATH/src/github.com/Workiva/frugal
+  - rsync -av $TRAVIS_BUILD_DIR/ $GOPATH/src/github.com/Workiva/frugal
+  - export TRAVIS_BUILD_DIR=$GOPATH/src/github.com/Workiva/frugal
+  - cd $TRAVIS_BUILD_DIR
   - sudo sh -c 'curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -'
   - sudo sh -c 'curl https://storage.googleapis.com/download.dartlang.org/linux/debian/dart_stable.list > /etc/apt/sources.list.d/dart_stable.list'
   - mkdir $HOME/.virtuanenvs && echo "export WORKON_HOME=$HOME/.virtualenvs" >> $HOME/.bashrc
