@@ -2,8 +2,8 @@
 .PHONY: all
 all: install
 
-# Installs dependencies while sym linking the local frugal into the
-# vendor folder so local changes can be easily tested
+# Installs dependencies and symlink the local frugal into the
+# vendor folder so local changes to frugal can be easily tested
 .PHONY: install
 install:
 	rm -rf vendor && \
