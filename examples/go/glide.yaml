@@ -1,4 +1,3 @@
-package: github.com/Workiva/frugal/examples/go
 import:
 - package: git.apache.org/thrift.git
   subpackages:
@@ -17,6 +16,7 @@ import:
 - package: github.com/rs/cors
   version: v1.3.0
 - package: golang.org/x/sys
-  version: b126b21c05a91c856b027c16779c12e3bf236954
   subpackages:
   - unix
+  version: b126b21c05a91c856b027c16779c12e3bf236954
+package: github.com/Workiva/frugal/examples/go
