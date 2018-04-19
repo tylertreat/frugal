@@ -21,7 +21,17 @@ public enum HealthCondition implements org.apache.thrift.TEnum {
 	 * because it has the @ sign.
 	 */
 	WARN(2),
+	/**
+	 * @deprecated use something else
+	 */
+	@Deprecated
 	FAIL(3),
+	/**
+	 * This is a docstring comment for a deprecated enum value that has been
+	 * spread across two lines.
+	 * @deprecated don't use this; use "something else"
+	 */
+	@Deprecated
 	UNKNOWN(4);
 
 	private final int value;

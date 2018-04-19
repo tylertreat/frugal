@@ -5,7 +5,11 @@ enum testing_enums {
   /// This docstring gets added to the generated code because it
   /// has the @ sign.
   one,
+  /// Deprecated: use something else
   two,
+  /// This is a docstring comment for a deprecated enum value that has been
+  /// spread across two lines.
+  /// Deprecated: don't use this; use "something else"
   Three,
 }
 

@@ -27,6 +27,10 @@ class HealthCondition(int):
     has the @ sign.
     WARN: This docstring also gets added to the generated code
     because it has the @ sign.
+    FAIL: Deprecated: use something else
+    UNKNOWN: This is a docstring comment for a deprecated enum value that has been
+    spread across two lines.
+    Deprecated: don't use this; use "something else"
     """
     PASS = 1
     WARN = 2

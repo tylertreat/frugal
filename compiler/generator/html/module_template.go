@@ -121,6 +121,7 @@ const moduleTemplate = `
 							{{ range .Comment }}
 								{{ . }}<br />
 							{{ end }}
+								{{ if .Annotations.IsDeprecated }}Deprecated{{ if .Annotations.DeprecationValue }}: {{ .Annotations.DeprecationValue }}{{ end }}{{ end }}
 							</td>
 						</tr>
 					{{ end }}
@@ -143,6 +144,7 @@ const moduleTemplate = `
 						{{ range .Comment }}
 						{{ . }}<br />
 						{{ end }}
+						{{ if .Annotations.IsDeprecated }}Deprecated{{ if .Annotations.DeprecationValue }}: {{ .Annotations.DeprecationValue }}{{ end }}{{ end }}
 					</blockquote>
 					{{ end }}
 				</div>

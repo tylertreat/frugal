@@ -537,9 +537,7 @@ func (g *Generator) generateEnumUsingClasses(enum *parser.Enum) string {
 	contents := ""
 	contents += fmt.Sprintf("class %s {\n", enum.Name)
 	for _, field := range enum.Values {
-		if field.Comment != nil {
-			contents += g.generateDocComment(field.Comment, tab)
-		}
+		contents += g.generateCommentWithDeprecated(field.Comment, tab, field.Annotations)
 		contents += fmt.Sprintf(tab+"static const int %s = %d;\n", field.Name, field.Value)
 	}
 	contents += "\n"
@@ -563,9 +561,9 @@ func (g *Generator) generateEnumUsingEnums(enum *parser.Enum) string {
 	contents := ""
 	contents += fmt.Sprintf("enum %s {\n", enum.Name)
 	for _, field := range enum.Values {
-		if field.Comment != nil {
-			contents += g.generateDocComment(field.Comment, tab)
-		}
+		// The @deprecated annotation is not allowed on enum values:
+		// https://github.com/dart-lang/sdk/issues/23441
+		contents += g.generateCommentWithDeprecatedImpl(field.Comment, tab, field.Annotations, false)
 		contents += fmt.Sprintf(tab+"%s,\n", field.Name)
 	}
 	contents += "}\n\n"
@@ -1512,7 +1510,7 @@ func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 	return err
 }
 
-func (g *Generator) generateCommentWithDeprecated(comment []string, indent string, anns parser.Annotations) string {
+func (g *Generator) generateCommentWithDeprecatedImpl(comment []string, indent string, anns parser.Annotations, deprecatedAnn bool) string {
 	contents := ""
 	if comment != nil {
 		contents += g.generateDocComment(comment, indent)
@@ -1522,10 +1520,16 @@ func (g *Generator) generateCommentWithDeprecated(comment []string, indent strin
 		if deprecationValue != "" {
 			contents += g.generateDocComment([]string{"Deprecated: " + deprecationValue}, indent)
 		}
-		contents += indent + "@deprecated\n"
+		if deprecatedAnn {
+			contents += indent + "@deprecated\n"
+		}
 	}
 
 	return contents
+}
+
+func (g *Generator) generateCommentWithDeprecated(comment []string, indent string, anns parser.Annotations) string {
+	return g.generateCommentWithDeprecatedImpl(comment, indent, anns, true)
 }
 
 func (g *Generator) generateInterface(service *parser.Service) string {
