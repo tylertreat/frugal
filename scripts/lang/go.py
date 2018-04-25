@@ -17,7 +17,7 @@ class Go(LanguageBase):
         os.chdir('{0}/examples/go'.format(root))
 
         with open('glide.yaml') as f:
-            glide_yaml = yaml.load(f.read())
+            glide_yaml = yaml.safe_load(f.read())
             for imp in glide_yaml['import']:
                 if imp['package'] == 'github.com/Workiva/frugal':
                     imp['version'] = version
