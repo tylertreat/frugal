@@ -121,8 +121,12 @@ const (
 	HealthCondition_PASS HealthCondition = 1
 	// This docstring also gets added to the generated code
 	// because it has the @ sign.
-	HealthCondition_WARN    HealthCondition = 2
-	HealthCondition_FAIL    HealthCondition = 3
+	HealthCondition_WARN HealthCondition = 2
+	// Deprecated: use something else
+	HealthCondition_FAIL HealthCondition = 3
+	// This is a docstring comment for a deprecated enum value that has been
+	// spread across two lines.
+	// Deprecated: don't use this; use "something else"
 	HealthCondition_UNKNOWN HealthCondition = 4
 )
 

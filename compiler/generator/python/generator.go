@@ -293,8 +293,16 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents += fmt.Sprintf("class %s(int):\n", enum.Name)
 	comment := append([]string{}, enum.Comment...)
 	for _, value := range enum.Values {
+		valueComment := []string{}
 		if value.Comment != nil {
-			comment = append(append(comment, value.Name+": "+value.Comment[0]), value.Comment[1:]...)
+			valueComment = append(valueComment, value.Comment...)
+		}
+		deprecationValue, deprecated := value.Annotations.Deprecated()
+		if deprecated {
+			valueComment = append(valueComment, "Deprecated: "+deprecationValue)
+		}
+		if len(valueComment) != 0 {
+			comment = append(append(comment, value.Name+": "+valueComment[0]), valueComment[1:]...)
 		}
 	}
 	if len(comment) != 0 {

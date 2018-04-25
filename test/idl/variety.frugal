@@ -67,8 +67,12 @@ enum HealthCondition {
      * because it has the @ sign.
      */
     WARN = 2,
-    FAIL = 3,
-    UNKNOWN = 4
+    FAIL = 3 (deprecated="use something else"),
+    /**@
+     * This is a docstring comment for a deprecated enum value that has been
+     * spread across two lines.
+     */
+    UNKNOWN = 4 (deprecated="don't use this; use \"something else\"")
 }
 
 union TestingUnions {

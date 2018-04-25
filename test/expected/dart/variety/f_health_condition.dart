@@ -8,7 +8,13 @@ class HealthCondition {
   /// This docstring also gets added to the generated code
   /// because it has the @ sign.
   static const int WARN = 2;
+  /// Deprecated: use something else
+  @deprecated
   static const int FAIL = 3;
+  /// This is a docstring comment for a deprecated enum value that has been
+  /// spread across two lines.
+  /// Deprecated: don't use this; use "something else"
+  @deprecated
   static const int UNKNOWN = 4;
 
   static final Set<int> VALID_VALUES = new Set.from([
