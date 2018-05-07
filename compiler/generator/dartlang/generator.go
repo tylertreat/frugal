@@ -371,6 +371,10 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 	return err
 }
 
+func (g *Generator) generateDocComment(comment []string, indent string) string {
+	return g.GenerateInlineComment(comment, indent+"/")
+}
+
 // GenerateConstantsContents generates constants.
 func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) error {
 	if len(constants) == 0 {
@@ -398,7 +402,7 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	contents += fmt.Sprintf("class %s {\n", className)
 	for _, constant := range constants {
 		if constant.Comment != nil {
-			contents += g.GenerateInlineComment(constant.Comment, tab+"/")
+			contents += g.generateDocComment(constant.Comment, tab)
 		}
 		value := g.generateConstantValue(constant.Type, constant.Value, "")
 		contents += fmt.Sprintf(tab+"static final %s %s = %s;\n",
@@ -533,9 +537,7 @@ func (g *Generator) generateEnumUsingClasses(enum *parser.Enum) string {
 	contents := ""
 	contents += fmt.Sprintf("class %s {\n", enum.Name)
 	for _, field := range enum.Values {
-		if field.Comment != nil {
-			contents += g.GenerateInlineComment(field.Comment, tab+"/")
-		}
+		contents += g.generateCommentWithDeprecated(field.Comment, tab, field.Annotations)
 		contents += fmt.Sprintf(tab+"static const int %s = %d;\n", field.Name, field.Value)
 	}
 	contents += "\n"
@@ -559,9 +561,9 @@ func (g *Generator) generateEnumUsingEnums(enum *parser.Enum) string {
 	contents := ""
 	contents += fmt.Sprintf("enum %s {\n", enum.Name)
 	for _, field := range enum.Values {
-		if field.Comment != nil {
-			contents += g.GenerateInlineComment(field.Comment, tab+"/")
-		}
+		// The @deprecated annotation is not allowed on enum values:
+		// https://github.com/dart-lang/sdk/issues/23441
+		contents += g.generateCommentWithDeprecatedImpl(field.Comment, tab, field.Annotations, false)
 		contents += fmt.Sprintf(tab+"%s,\n", field.Name)
 	}
 	contents += "}\n\n"
@@ -1376,7 +1378,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += prefix
 		prefix = "\n\n"
 		if op.Comment != nil {
-			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
+			publishers += g.generateDocComment(op.Comment, tab)
 		}
 
 		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) {\n", op.Name, args, g.getDartTypeFromThriftType(op.Type))
@@ -1455,7 +1457,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += prefix
 		prefix = "\n\n"
 		if op.Comment != nil {
-			subscribers += g.GenerateInlineComment(op.Comment, tab+"/")
+			subscribers += g.generateDocComment(op.Comment, tab)
 		}
 		subscribers += fmt.Sprintf(tab+"Future<frugal.FSubscription> subscribe%s(%sdynamic on%s(frugal.FContext ctx, %s req)) async {\n",
 			op.Name, args, op.Type.ParamName(), g.getDartTypeFromThriftType(op.Type))
@@ -1508,20 +1510,26 @@ func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 	return err
 }
 
-func (g *Generator) generateCommentWithDeprecated(comment []string, indent string, anns parser.Annotations) string {
+func (g *Generator) generateCommentWithDeprecatedImpl(comment []string, indent string, anns parser.Annotations, deprecatedAnn bool) string {
 	contents := ""
 	if comment != nil {
-		contents += g.GenerateInlineComment(comment, indent+"/")
+		contents += g.generateDocComment(comment, indent)
 	}
 
 	if deprecationValue, deprecated := anns.Deprecated(); deprecated {
 		if deprecationValue != "" {
-			contents += g.GenerateInlineComment([]string{"Deprecated: " + deprecationValue}, indent+"/")
+			contents += g.generateDocComment([]string{"Deprecated: " + deprecationValue}, indent)
 		}
-		contents += indent + "@deprecated\n"
+		if deprecatedAnn {
+			contents += indent + "@deprecated\n"
+		}
 	}
 
 	return contents
+}
+
+func (g *Generator) generateCommentWithDeprecated(comment []string, indent string, anns parser.Annotations) string {
+	return g.generateCommentWithDeprecatedImpl(comment, indent, anns, true)
 }
 
 func (g *Generator) generateInterface(service *parser.Service) string {

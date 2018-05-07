@@ -330,9 +330,7 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents += fmt.Sprintf("type %s int64\n\n", eName)
 	contents += "const (\n"
 	for _, field := range enum.Values {
-		if field.Comment != nil {
-			contents += g.GenerateInlineComment(field.Comment, "\t")
-		}
+		contents += g.generateCommentWithDeprecated(field.Comment, "\t", field.Annotations)
 		contents += fmt.Sprintf("\t%s_%s %s = %d\n", eName, field.Name, eName, field.Value)
 	}
 	contents += ")\n\n"
