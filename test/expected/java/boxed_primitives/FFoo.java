@@ -1933,16 +1933,16 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 
 			oprot.writeStructBegin(STRUCT_DESC);
 			oprot.writeFieldBegin(NUM_FIELD_DESC);
-			Integer elem216 = struct.num;
-			if (elem216 == null) {
-				elem216 = 0;
+			Integer elem222 = struct.num;
+			if (elem222 == null) {
+				elem222 = 0;
 			}
-			oprot.writeI32(elem216);
+			oprot.writeI32(elem222);
 			oprot.writeFieldEnd();
 			if (struct.Str != null) {
 				oprot.writeFieldBegin(STR_FIELD_DESC);
-				String elem217 = struct.Str;
-				oprot.writeString(elem217);
+				String elem223 = struct.Str;
+				oprot.writeString(elem223);
 				oprot.writeFieldEnd();
 			}
 			if (struct.event != null) {
@@ -1979,15 +1979,15 @@ public static class blah_args implements org.apache.thrift.TBase<blah_args, blah
 			}
 			oprot.writeBitSet(optionals, 3);
 			if (struct.isSetNum()) {
-				Integer elem218 = struct.num;
-				if (elem218 == null) {
-					elem218 = 0;
+				Integer elem224 = struct.num;
+				if (elem224 == null) {
+					elem224 = 0;
 				}
-				oprot.writeI32(elem218);
+				oprot.writeI32(elem224);
 			}
 			if (struct.isSetStr()) {
-				String elem219 = struct.Str;
-				oprot.writeString(elem219);
+				String elem225 = struct.Str;
+				oprot.writeString(elem225);
 			}
 			if (struct.isSetEvent()) {
 				struct.event.write(oprot);
@@ -2511,11 +2511,11 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.isSetSuccess()) {
 				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
-				Long elem220 = struct.success;
-				if (elem220 == null) {
-					elem220 = 0L;
+				Long elem226 = struct.success;
+				if (elem226 == null) {
+					elem226 = 0L;
 				}
-				oprot.writeI64(elem220);
+				oprot.writeI64(elem226);
 				oprot.writeFieldEnd();
 			}
 			if (struct.awe != null) {
@@ -2557,11 +2557,11 @@ public static class blah_result implements org.apache.thrift.TBase<blah_result, 
 			}
 			oprot.writeBitSet(optionals, 3);
 			if (struct.isSetSuccess()) {
-				Long elem221 = struct.success;
-				if (elem221 == null) {
-					elem221 = 0L;
+				Long elem227 = struct.success;
+				if (elem227 == null) {
+					elem227 = 0L;
 				}
-				oprot.writeI64(elem221);
+				oprot.writeI64(elem227);
 			}
 			if (struct.isSetAwe()) {
 				struct.awe.write(oprot);
@@ -2691,10 +2691,10 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 		}
 		if (other.isSetReq()) {
 			this.req = new HashMap<Integer,String>(other.req.size());
-			for (Map.Entry<Integer, String> elem222 : other.req.entrySet()) {
-				Integer elem224 = elem222.getKey();
-				String elem223 = elem222.getValue();
-				this.req.put(elem224, elem223);
+			for (Map.Entry<Integer, String> elem228 : other.req.entrySet()) {
+				Integer elem230 = elem228.getKey();
+				String elem229 = elem228.getValue();
+				this.req.put(elem230, elem229);
 			}
 		}
 	}
@@ -2985,12 +2985,12 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 						break;
 					case 2: // REQ
 						if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
-							org.apache.thrift.protocol.TMap elem225 = iprot.readMapBegin();
-							struct.req = new HashMap<Integer,String>(2*elem225.size);
-							for (int elem226 = 0; elem226 < elem225.size; ++elem226) {
-								Integer elem228 = iprot.readI32();
-								String elem227 = iprot.readString();
-								struct.req.put(elem228, elem227);
+							org.apache.thrift.protocol.TMap elem231 = iprot.readMapBegin();
+							struct.req = new HashMap<Integer,String>(2*elem231.size);
+							for (int elem232 = 0; elem232 < elem231.size; ++elem232) {
+								Integer elem234 = iprot.readI32();
+								String elem233 = iprot.readString();
+								struct.req.put(elem234, elem233);
 							}
 							iprot.readMapEnd();
 							struct.setReqIsSet(true);
@@ -3014,23 +3014,23 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 
 			oprot.writeStructBegin(STRUCT_DESC);
 			oprot.writeFieldBegin(ID_FIELD_DESC);
-			Long elem229 = struct.id;
-			if (elem229 == null) {
-				elem229 = 0L;
+			Long elem235 = struct.id;
+			if (elem235 == null) {
+				elem235 = 0L;
 			}
-			oprot.writeI64(elem229);
+			oprot.writeI64(elem235);
 			oprot.writeFieldEnd();
 			if (struct.req != null) {
 				oprot.writeFieldBegin(REQ_FIELD_DESC);
 				oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I32, org.apache.thrift.protocol.TType.STRING, struct.req.size()));
-				for (Map.Entry<Integer, String> elem230 : struct.req.entrySet()) {
-					Integer elem231 = elem230.getKey();
-					if (elem231 == null) {
-						elem231 = 0;
+				for (Map.Entry<Integer, String> elem236 : struct.req.entrySet()) {
+					Integer elem237 = elem236.getKey();
+					if (elem237 == null) {
+						elem237 = 0;
 					}
-					oprot.writeI32(elem231);
-					String elem232 = elem230.getValue();
-					oprot.writeString(elem232);
+					oprot.writeI32(elem237);
+					String elem238 = elem236.getValue();
+					oprot.writeString(elem238);
 				}
 				oprot.writeMapEnd();
 				oprot.writeFieldEnd();
@@ -3061,22 +3061,22 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetId()) {
-				Long elem233 = struct.id;
-				if (elem233 == null) {
-					elem233 = 0L;
+				Long elem239 = struct.id;
+				if (elem239 == null) {
+					elem239 = 0L;
 				}
-				oprot.writeI64(elem233);
+				oprot.writeI64(elem239);
 			}
 			if (struct.isSetReq()) {
 				oprot.writeI32(struct.req.size());
-				for (Map.Entry<Integer, String> elem234 : struct.req.entrySet()) {
-					Integer elem235 = elem234.getKey();
-					if (elem235 == null) {
-						elem235 = 0;
+				for (Map.Entry<Integer, String> elem240 : struct.req.entrySet()) {
+					Integer elem241 = elem240.getKey();
+					if (elem241 == null) {
+						elem241 = 0;
 					}
-					oprot.writeI32(elem235);
-					String elem236 = elem234.getValue();
-					oprot.writeString(elem236);
+					oprot.writeI32(elem241);
+					String elem242 = elem240.getValue();
+					oprot.writeString(elem242);
 				}
 			}
 		}
@@ -3090,12 +3090,12 @@ public static class oneWay_args implements org.apache.thrift.TBase<oneWay_args, 
 				struct.setIdIsSet(true);
 			}
 			if (incoming.get(1)) {
-				org.apache.thrift.protocol.TMap elem237 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I32, org.apache.thrift.protocol.TType.STRING, iprot.readI32());
-				struct.req = new HashMap<Integer,String>(2*elem237.size);
-				for (int elem238 = 0; elem238 < elem237.size; ++elem238) {
-					Integer elem240 = iprot.readI32();
-					String elem239 = iprot.readString();
-					struct.req.put(elem240, elem239);
+				org.apache.thrift.protocol.TMap elem243 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I32, org.apache.thrift.protocol.TType.STRING, iprot.readI32());
+				struct.req = new HashMap<Integer,String>(2*elem243.size);
+				for (int elem244 = 0; elem244 < elem243.size; ++elem244) {
+					Integer elem246 = iprot.readI32();
+					String elem245 = iprot.readString();
+					struct.req.put(elem246, elem245);
 				}
 				struct.setReqIsSet(true);
 			}
@@ -3512,14 +3512,14 @@ public static class bin_method_args implements org.apache.thrift.TBase<bin_metho
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.bin != null) {
 				oprot.writeFieldBegin(BIN_FIELD_DESC);
-				java.nio.ByteBuffer elem241 = struct.bin;
-				oprot.writeBinary(elem241);
+				java.nio.ByteBuffer elem247 = struct.bin;
+				oprot.writeBinary(elem247);
 				oprot.writeFieldEnd();
 			}
 			if (struct.Str != null) {
 				oprot.writeFieldBegin(STR_FIELD_DESC);
-				String elem242 = struct.Str;
-				oprot.writeString(elem242);
+				String elem248 = struct.Str;
+				oprot.writeString(elem248);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -3548,12 +3548,12 @@ public static class bin_method_args implements org.apache.thrift.TBase<bin_metho
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetBin()) {
-				java.nio.ByteBuffer elem243 = struct.bin;
-				oprot.writeBinary(elem243);
+				java.nio.ByteBuffer elem249 = struct.bin;
+				oprot.writeBinary(elem249);
 			}
 			if (struct.isSetStr()) {
-				String elem244 = struct.Str;
-				oprot.writeString(elem244);
+				String elem250 = struct.Str;
+				oprot.writeString(elem250);
 			}
 		}
 
@@ -3986,8 +3986,8 @@ public static class bin_method_result implements org.apache.thrift.TBase<bin_met
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.success != null) {
 				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
-				java.nio.ByteBuffer elem245 = struct.success;
-				oprot.writeBinary(elem245);
+				java.nio.ByteBuffer elem251 = struct.success;
+				oprot.writeBinary(elem251);
 				oprot.writeFieldEnd();
 			}
 			if (struct.api != null) {
@@ -4021,8 +4021,8 @@ public static class bin_method_result implements org.apache.thrift.TBase<bin_met
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetSuccess()) {
-				java.nio.ByteBuffer elem246 = struct.success;
-				oprot.writeBinary(elem246);
+				java.nio.ByteBuffer elem252 = struct.success;
+				oprot.writeBinary(elem252);
 			}
 			if (struct.isSetApi()) {
 				struct.api.write(oprot);
@@ -4536,25 +4536,25 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 
 			oprot.writeStructBegin(STRUCT_DESC);
 			oprot.writeFieldBegin(OPT_NUM_FIELD_DESC);
-			Integer elem247 = struct.opt_num;
-			if (elem247 == null) {
-				elem247 = 0;
+			Integer elem253 = struct.opt_num;
+			if (elem253 == null) {
+				elem253 = 0;
 			}
-			oprot.writeI32(elem247);
+			oprot.writeI32(elem253);
 			oprot.writeFieldEnd();
 			oprot.writeFieldBegin(DEFAULT_NUM_FIELD_DESC);
-			Integer elem248 = struct.default_num;
-			if (elem248 == null) {
-				elem248 = 0;
+			Integer elem254 = struct.default_num;
+			if (elem254 == null) {
+				elem254 = 0;
 			}
-			oprot.writeI32(elem248);
+			oprot.writeI32(elem254);
 			oprot.writeFieldEnd();
 			oprot.writeFieldBegin(REQ_NUM_FIELD_DESC);
-			Integer elem249 = struct.req_num;
-			if (elem249 == null) {
-				elem249 = 0;
+			Integer elem255 = struct.req_num;
+			if (elem255 == null) {
+				elem255 = 0;
 			}
-			oprot.writeI32(elem249);
+			oprot.writeI32(elem255);
 			oprot.writeFieldEnd();
 			oprot.writeFieldStop();
 			oprot.writeStructEnd();
@@ -4573,11 +4573,11 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 		@Override
 		public void write(org.apache.thrift.protocol.TProtocol prot, param_modifiers_args struct) throws org.apache.thrift.TException {
 			TTupleProtocol oprot = (TTupleProtocol) prot;
-			Integer elem250 = struct.req_num;
-			if (elem250 == null) {
-				elem250 = 0;
+			Integer elem256 = struct.req_num;
+			if (elem256 == null) {
+				elem256 = 0;
 			}
-			oprot.writeI32(elem250);
+			oprot.writeI32(elem256);
 			BitSet optionals = new BitSet();
 			if (struct.isSetOpt_num()) {
 				optionals.set(0);
@@ -4587,18 +4587,18 @@ public static class param_modifiers_args implements org.apache.thrift.TBase<para
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetOpt_num()) {
-				Integer elem251 = struct.opt_num;
-				if (elem251 == null) {
-					elem251 = 0;
+				Integer elem257 = struct.opt_num;
+				if (elem257 == null) {
+					elem257 = 0;
 				}
-				oprot.writeI32(elem251);
+				oprot.writeI32(elem257);
 			}
 			if (struct.isSetDefault_num()) {
-				Integer elem252 = struct.default_num;
-				if (elem252 == null) {
-					elem252 = 0;
+				Integer elem258 = struct.default_num;
+				if (elem258 == null) {
+					elem258 = 0;
 				}
-				oprot.writeI32(elem252);
+				oprot.writeI32(elem258);
 			}
 		}
 
@@ -4930,11 +4930,11 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.isSetSuccess()) {
 				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
-				Long elem253 = struct.success;
-				if (elem253 == null) {
-					elem253 = 0L;
+				Long elem259 = struct.success;
+				if (elem259 == null) {
+					elem259 = 0L;
 				}
-				oprot.writeI64(elem253);
+				oprot.writeI64(elem259);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -4960,11 +4960,11 @@ public static class param_modifiers_result implements org.apache.thrift.TBase<pa
 			}
 			oprot.writeBitSet(optionals, 1);
 			if (struct.isSetSuccess()) {
-				Long elem254 = struct.success;
-				if (elem254 == null) {
-					elem254 = 0L;
+				Long elem260 = struct.success;
+				if (elem260 == null) {
+					elem260 = 0L;
 				}
-				oprot.writeI64(elem254);
+				oprot.writeI64(elem260);
 			}
 		}
 
@@ -5075,16 +5075,16 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 	public underlying_types_test_args(underlying_types_test_args other) {
 		if (other.isSetList_type()) {
 			this.list_type = new ArrayList<Long>(other.list_type.size());
-			for (Long elem255 : other.list_type) {
-				Long elem256 = elem255;
-				this.list_type.add(elem256);
+			for (Long elem261 : other.list_type) {
+				Long elem262 = elem261;
+				this.list_type.add(elem262);
 			}
 		}
 		if (other.isSetSet_type()) {
 			this.set_type = new HashSet<Long>(other.set_type.size());
-			for (Long elem257 : other.set_type) {
-				Long elem258 = elem257;
-				this.set_type.add(elem258);
+			for (Long elem263 : other.set_type) {
+				Long elem264 = elem263;
+				this.set_type.add(elem264);
 			}
 		}
 	}
@@ -5386,11 +5386,11 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 				switch (schemeField.id) {
 					case 1: // LIST_TYPE
 						if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
-							org.apache.thrift.protocol.TList elem259 = iprot.readListBegin();
-							struct.list_type = new ArrayList<Long>(elem259.size);
-							for (int elem260 = 0; elem260 < elem259.size; ++elem260) {
-								Long elem261 = iprot.readI64();
-								struct.list_type.add(elem261);
+							org.apache.thrift.protocol.TList elem265 = iprot.readListBegin();
+							struct.list_type = new ArrayList<Long>(elem265.size);
+							for (int elem266 = 0; elem266 < elem265.size; ++elem266) {
+								Long elem267 = iprot.readI64();
+								struct.list_type.add(elem267);
 							}
 							iprot.readListEnd();
 							struct.setList_typeIsSet(true);
@@ -5400,11 +5400,11 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 						break;
 					case 2: // SET_TYPE
 						if (schemeField.type == org.apache.thrift.protocol.TType.SET) {
-							org.apache.thrift.protocol.TSet elem262 = iprot.readSetBegin();
-							struct.set_type = new HashSet<Long>(2*elem262.size);
-							for (int elem263 = 0; elem263 < elem262.size; ++elem263) {
-								Long elem264 = iprot.readI64();
-								struct.set_type.add(elem264);
+							org.apache.thrift.protocol.TSet elem268 = iprot.readSetBegin();
+							struct.set_type = new HashSet<Long>(2*elem268.size);
+							for (int elem269 = 0; elem269 < elem268.size; ++elem269) {
+								Long elem270 = iprot.readI64();
+								struct.set_type.add(elem270);
 							}
 							iprot.readSetEnd();
 							struct.setSet_typeIsSet(true);
@@ -5430,12 +5430,12 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 			if (struct.list_type != null) {
 				oprot.writeFieldBegin(LIST_TYPE_FIELD_DESC);
 				oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, struct.list_type.size()));
-				for (Long elem265 : struct.list_type) {
-					Long elem266 = elem265;
-					if (elem266 == null) {
-						elem266 = 0L;
+				for (Long elem271 : struct.list_type) {
+					Long elem272 = elem271;
+					if (elem272 == null) {
+						elem272 = 0L;
 					}
-					oprot.writeI64(elem266);
+					oprot.writeI64(elem272);
 				}
 				oprot.writeListEnd();
 				oprot.writeFieldEnd();
@@ -5443,12 +5443,12 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 			if (struct.set_type != null) {
 				oprot.writeFieldBegin(SET_TYPE_FIELD_DESC);
 				oprot.writeSetBegin(new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.I64, struct.set_type.size()));
-				for (Long elem267 : struct.set_type) {
-					Long elem268 = elem267;
-					if (elem268 == null) {
-						elem268 = 0L;
+				for (Long elem273 : struct.set_type) {
+					Long elem274 = elem273;
+					if (elem274 == null) {
+						elem274 = 0L;
 					}
-					oprot.writeI64(elem268);
+					oprot.writeI64(elem274);
 				}
 				oprot.writeSetEnd();
 				oprot.writeFieldEnd();
@@ -5480,22 +5480,22 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetList_type()) {
 				oprot.writeI32(struct.list_type.size());
-				for (Long elem269 : struct.list_type) {
-					Long elem270 = elem269;
-					if (elem270 == null) {
-						elem270 = 0L;
+				for (Long elem275 : struct.list_type) {
+					Long elem276 = elem275;
+					if (elem276 == null) {
+						elem276 = 0L;
 					}
-					oprot.writeI64(elem270);
+					oprot.writeI64(elem276);
 				}
 			}
 			if (struct.isSetSet_type()) {
 				oprot.writeI32(struct.set_type.size());
-				for (Long elem271 : struct.set_type) {
-					Long elem272 = elem271;
-					if (elem272 == null) {
-						elem272 = 0L;
+				for (Long elem277 : struct.set_type) {
+					Long elem278 = elem277;
+					if (elem278 == null) {
+						elem278 = 0L;
 					}
-					oprot.writeI64(elem272);
+					oprot.writeI64(elem278);
 				}
 			}
 		}
@@ -5505,20 +5505,20 @@ public static class underlying_types_test_args implements org.apache.thrift.TBas
 			TTupleProtocol iprot = (TTupleProtocol) prot;
 			BitSet incoming = iprot.readBitSet(2);
 			if (incoming.get(0)) {
-				org.apache.thrift.protocol.TList elem273 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
-				struct.list_type = new ArrayList<Long>(elem273.size);
-				for (int elem274 = 0; elem274 < elem273.size; ++elem274) {
-					Long elem275 = iprot.readI64();
-					struct.list_type.add(elem275);
+				org.apache.thrift.protocol.TList elem279 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
+				struct.list_type = new ArrayList<Long>(elem279.size);
+				for (int elem280 = 0; elem280 < elem279.size; ++elem280) {
+					Long elem281 = iprot.readI64();
+					struct.list_type.add(elem281);
 				}
 				struct.setList_typeIsSet(true);
 			}
 			if (incoming.get(1)) {
-				org.apache.thrift.protocol.TSet elem276 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.I64, iprot.readI32());
-				struct.set_type = new HashSet<Long>(2*elem276.size);
-				for (int elem277 = 0; elem277 < elem276.size; ++elem277) {
-					Long elem278 = iprot.readI64();
-					struct.set_type.add(elem278);
+				org.apache.thrift.protocol.TSet elem282 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.I64, iprot.readI32());
+				struct.set_type = new HashSet<Long>(2*elem282.size);
+				for (int elem283 = 0; elem283 < elem282.size; ++elem283) {
+					Long elem284 = iprot.readI64();
+					struct.set_type.add(elem284);
 				}
 				struct.setSet_typeIsSet(true);
 			}
@@ -5614,9 +5614,9 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 	public underlying_types_test_result(underlying_types_test_result other) {
 		if (other.isSetSuccess()) {
 			this.success = new ArrayList<Long>(other.success.size());
-			for (Long elem279 : other.success) {
-				Long elem280 = elem279;
-				this.success.add(elem280);
+			for (Long elem285 : other.success) {
+				Long elem286 = elem285;
+				this.success.add(elem286);
 			}
 		}
 	}
@@ -5832,11 +5832,11 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 				switch (schemeField.id) {
 					case 0: // SUCCESS
 						if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
-							org.apache.thrift.protocol.TList elem281 = iprot.readListBegin();
-							struct.success = new ArrayList<Long>(elem281.size);
-							for (int elem282 = 0; elem282 < elem281.size; ++elem282) {
-								Long elem283 = iprot.readI64();
-								struct.success.add(elem283);
+							org.apache.thrift.protocol.TList elem287 = iprot.readListBegin();
+							struct.success = new ArrayList<Long>(elem287.size);
+							for (int elem288 = 0; elem288 < elem287.size; ++elem288) {
+								Long elem289 = iprot.readI64();
+								struct.success.add(elem289);
 							}
 							iprot.readListEnd();
 							struct.setSuccessIsSet(true);
@@ -5862,12 +5862,12 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 			if (struct.success != null) {
 				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
 				oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, struct.success.size()));
-				for (Long elem284 : struct.success) {
-					Long elem285 = elem284;
-					if (elem285 == null) {
-						elem285 = 0L;
+				for (Long elem290 : struct.success) {
+					Long elem291 = elem290;
+					if (elem291 == null) {
+						elem291 = 0L;
 					}
-					oprot.writeI64(elem285);
+					oprot.writeI64(elem291);
 				}
 				oprot.writeListEnd();
 				oprot.writeFieldEnd();
@@ -5896,12 +5896,12 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 			oprot.writeBitSet(optionals, 1);
 			if (struct.isSetSuccess()) {
 				oprot.writeI32(struct.success.size());
-				for (Long elem286 : struct.success) {
-					Long elem287 = elem286;
-					if (elem287 == null) {
-						elem287 = 0L;
+				for (Long elem292 : struct.success) {
+					Long elem293 = elem292;
+					if (elem293 == null) {
+						elem293 = 0L;
 					}
-					oprot.writeI64(elem287);
+					oprot.writeI64(elem293);
 				}
 			}
 		}
@@ -5911,11 +5911,11 @@ public static class underlying_types_test_result implements org.apache.thrift.TB
 			TTupleProtocol iprot = (TTupleProtocol) prot;
 			BitSet incoming = iprot.readBitSet(1);
 			if (incoming.get(0)) {
-				org.apache.thrift.protocol.TList elem288 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
-				struct.success = new ArrayList<Long>(elem288.size);
-				for (int elem289 = 0; elem289 < elem288.size; ++elem289) {
-					Long elem290 = iprot.readI64();
-					struct.success.add(elem290);
+				org.apache.thrift.protocol.TList elem294 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
+				struct.success = new ArrayList<Long>(elem294.size);
+				for (int elem295 = 0; elem295 < elem294.size; ++elem295) {
+					Long elem296 = iprot.readI64();
+					struct.success.add(elem296);
 				}
 				struct.setSuccessIsSet(true);
 			}
@@ -7074,11 +7074,11 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 			oprot.writeStructBegin(STRUCT_DESC);
 			if (struct.isSetSuccess()) {
 				oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
-				Integer elem291 = struct.success;
-				if (elem291 == null) {
-					elem291 = 0;
+				Integer elem297 = struct.success;
+				if (elem297 == null) {
+					elem297 = 0;
 				}
-				oprot.writeI32(elem291);
+				oprot.writeI32(elem297);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -7104,11 +7104,11 @@ public static class getMyInt_result implements org.apache.thrift.TBase<getMyInt_
 			}
 			oprot.writeBitSet(optionals, 1);
 			if (struct.isSetSuccess()) {
-				Integer elem292 = struct.success;
-				if (elem292 == null) {
-					elem292 = 0;
+				Integer elem298 = struct.success;
+				if (elem298 == null) {
+					elem298 = 0;
 				}
-				oprot.writeI32(elem292);
+				oprot.writeI32(elem298);
 			}
 		}
 
