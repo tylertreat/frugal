@@ -54,7 +54,7 @@ public class TestingUnions extends org.apache.thrift.TUnion<TestingUnions, Testi
 		REQUESTS((short)5, "Requests"),
 		BIN_FIELD_IN_UNION((short)6, "bin_field_in_union"),
 		DEPR((short)7, "depr")
-;
+		;
 
 		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 

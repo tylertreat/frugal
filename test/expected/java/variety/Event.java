@@ -68,7 +68,7 @@ public class Event implements org.apache.thrift.TBase<Event, Event._Fields>, jav
 		 * Message contains the event payload.
 		 */
 		MESSAGE((short)2, "Message")
-;
+		;
 
 		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 

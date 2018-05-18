@@ -103,7 +103,7 @@ public class EventWrapper implements org.apache.thrift.TBase<EventWrapper, Event
 		DEPR((short)11, "depr"),
 		DEPR_BINARY((short)12, "deprBinary"),
 		DEPR_LIST((short)13, "deprList")
-;
+		;
 
 		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
