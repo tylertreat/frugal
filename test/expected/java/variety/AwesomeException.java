@@ -71,7 +71,7 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 		 */
 		REASON((short)2, "Reason"),
 		DEPR((short)3, "depr")
-;
+		;
 
 		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 

@@ -55,7 +55,7 @@ public class FooArgs implements org.apache.thrift.TBase<FooArgs, FooArgs._Fields
 		NEW_MESSAGE((short)1, "newMessage"),
 		MESSAGE_ARGS((short)2, "messageArgs"),
 		MESSAGE_RESULT((short)3, "messageResult")
-;
+		;
 
 		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 

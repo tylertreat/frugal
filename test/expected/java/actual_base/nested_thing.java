@@ -49,7 +49,7 @@ public class nested_thing implements org.apache.thrift.TBase<nested_thing, neste
 	/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		THINGS((short)1, "things")
-;
+		;
 
 		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 

@@ -52,7 +52,7 @@ public class thing implements org.apache.thrift.TBase<thing, thing._Fields>, jav
 	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
 		AN_ID((short)1, "an_id"),
 		A_STRING((short)2, "a_string")
-;
+		;
 
 		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
