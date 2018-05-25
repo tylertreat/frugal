@@ -100,7 +100,7 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 		A_MAP((short)16, "a_map"),
 		STATUS((short)17, "status"),
 		BASE_STATUS((short)18, "base_status")
-;
+		;
 
 		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
