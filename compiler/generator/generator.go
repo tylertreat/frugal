@@ -158,7 +158,9 @@ func NewProgramGenerator(generator LanguageGenerator, splitPublisherSubscriber b
 // Generate the Frugal in the given directory.
 func (o *programGenerator) Generate(frugal *parser.Frugal, outputDir string) error {
 	o.SetFrugal(frugal)
-	o.SetupGenerator(outputDir)
+	if err := o.SetupGenerator(outputDir); err != nil {
+		return err
+	}
 
 	if err := o.GenerateDependencies(outputDir); err != nil {
 		return err
