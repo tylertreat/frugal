@@ -151,3 +151,38 @@ func TestPythonExtendServiceSameFile(t *testing.T) {
 	copyAllFiles(t, files)
 	compareAllFiles(t, files)
 }
+
+func TestPythonAbsoluteOutputPath(t *testing.T) {
+	absoluteOutputDir, err := filepath.Abs(filepath.Join(outputDir, "absolute_path"))
+	if err != nil {
+		t.Fatal("unexpected error", err)
+	}
+
+	options := compiler.Options{
+		File:    frugalGenFile,
+		Gen:     "py",
+		Out:     absoluteOutputDir,
+		Delim:   delim,
+		Recurse: true,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("unexpected error", err)
+	}
+
+	files := []FileComparisonPair{
+		{"expected/python/variety/__init__.py", filepath.Join(absoluteOutputDir, "variety", "python", "__init__.py")},
+		{"expected/python/variety/constants.py", filepath.Join(absoluteOutputDir, "variety", "python", "constants.py")},
+		{"expected/python/variety/ttypes.py", filepath.Join(absoluteOutputDir, "variety", "python", "ttypes.py")},
+		{"expected/python/variety/f_Events_publisher.py", filepath.Join(absoluteOutputDir, "variety", "python", "f_Events_publisher.py")},
+		{"expected/python/variety/f_Events_subscriber.py", filepath.Join(absoluteOutputDir, "variety", "python", "f_Events_subscriber.py")},
+		{"expected/python/variety/f_Foo.py", filepath.Join(absoluteOutputDir, "variety", "python", "f_Foo.py")},
+
+		{"expected/python/actual_base/__init__.py", filepath.Join(absoluteOutputDir, "actual_base", "python", "__init__.py")},
+		{"expected/python/actual_base/constants.py", filepath.Join(absoluteOutputDir, "actual_base", "python", "constants.py")},
+		{"expected/python/actual_base/ttypes.py", filepath.Join(absoluteOutputDir, "actual_base", "python", "ttypes.py")},
+		{"expected/python/actual_base/f_BaseFoo.py", filepath.Join(absoluteOutputDir, "actual_base", "python", "f_BaseFoo.py")},
+	}
+
+	copyAllFiles(t, files)
+	compareAllFiles(t, files)
+}

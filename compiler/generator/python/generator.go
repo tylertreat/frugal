@@ -75,14 +75,38 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 func (g *Generator) SetupGenerator(outputDir string) error {
 	g.outputDir = outputDir
 
-	dir := g.outputDir
-	for filepath.Dir(dir) != "." {
-		file, err := g.GenerateFile("__init__", dir, generator.ObjectFile)
+	// To prevent littering the filesystem with __init__ in every folder between outputDir and the present working
+	// directory, use the relative path between the root output directory and the target outputDir. This creates
+	// __init__ files only in the folders used for frugal generation.
+	outputRoot := globals.Out
+	if outputRoot == "" {
+		outputRoot = g.DefaultOutputDir()
+	}
+
+	absoluteOutputRoot, err := filepath.Abs(outputRoot)
+	if err != nil {
+		return err
+	}
+
+	absoluteOutputDir, err := filepath.Abs(outputDir)
+	if err != nil {
+		return err
+	}
+
+	dir, err := filepath.Rel(absoluteOutputRoot, absoluteOutputDir)
+	if err != nil {
+		return err
+	}
+
+	var priorDir string
+	for dir != priorDir {
+		file, err := g.GenerateFile("__init__", filepath.Join(absoluteOutputRoot, dir), generator.ObjectFile)
 		file.Close()
 		if err != nil {
 			return err
 		}
 
+		priorDir = dir
 		dir = filepath.Dir(dir)
 	}
 
