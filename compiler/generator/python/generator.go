@@ -98,13 +98,15 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 		return err
 	}
 
-	for dir != "." {
+	var priorDir string
+	for dir != priorDir {
 		file, err := g.GenerateFile("__init__", filepath.Join(absoluteOutputRoot, dir), generator.ObjectFile)
 		file.Close()
 		if err != nil {
 			return err
 		}
 
+		priorDir = dir
 		dir = filepath.Dir(dir)
 	}
 
