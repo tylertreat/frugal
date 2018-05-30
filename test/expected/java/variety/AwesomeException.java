@@ -548,18 +548,18 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 
 			oprot.writeStructBegin(STRUCT_DESC);
 			oprot.writeFieldBegin(ID_FIELD_DESC);
-			long elem210 = struct.ID;
-			oprot.writeI64(elem210);
+			long elem216 = struct.ID;
+			oprot.writeI64(elem216);
 			oprot.writeFieldEnd();
 			if (struct.Reason != null) {
 				oprot.writeFieldBegin(REASON_FIELD_DESC);
-				String elem211 = struct.Reason;
-				oprot.writeString(elem211);
+				String elem217 = struct.Reason;
+				oprot.writeString(elem217);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldBegin(DEPR_FIELD_DESC);
-			boolean elem212 = struct.depr;
-			oprot.writeBool(elem212);
+			boolean elem218 = struct.depr;
+			oprot.writeBool(elem218);
 			oprot.writeFieldEnd();
 			oprot.writeFieldStop();
 			oprot.writeStructEnd();
@@ -590,16 +590,16 @@ public class AwesomeException extends TException implements org.apache.thrift.TB
 			}
 			oprot.writeBitSet(optionals, 3);
 			if (struct.isSetID()) {
-				long elem213 = struct.ID;
-				oprot.writeI64(elem213);
+				long elem219 = struct.ID;
+				oprot.writeI64(elem219);
 			}
 			if (struct.isSetReason()) {
-				String elem214 = struct.Reason;
-				oprot.writeString(elem214);
+				String elem220 = struct.Reason;
+				oprot.writeString(elem220);
 			}
 			if (struct.isSetDepr()) {
-				boolean elem215 = struct.depr;
-				oprot.writeBool(elem215);
+				boolean elem221 = struct.depr;
+				oprot.writeBool(elem221);
 			}
 		}
 

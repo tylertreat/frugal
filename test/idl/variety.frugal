@@ -150,6 +150,12 @@ struct EventWrapper {
     13: list<bool> deprList (deprecated="use something else"),
 }
 
+struct FooArgs {
+    1:string newMessage
+    2:string messageArgs
+    3:string messageResult
+}
+
 exception AwesomeException {
     /**@ ID is a unique identifier for an awesome exception. */
     1: id ID,
