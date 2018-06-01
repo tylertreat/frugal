@@ -77,6 +77,7 @@ func TestValidJavaFrugalCompiler(t *testing.T) {
 		{"expected/java/variety/HealthCondition.java", filepath.Join(outputDir, "variety", "java", "HealthCondition.java")},
 		{"expected/java/variety/varietyConstants.java", filepath.Join(outputDir, "variety", "java", "varietyConstants.java")},
 		{"expected/java/variety/TestLowercase.java", filepath.Join(outputDir, "variety", "java", "TestLowercase.java")},
+		{"expected/java/variety/FooArgs.java", filepath.Join(outputDir, "variety", "java", "FooArgs.java")},
 		{"expected/java/variety/EventsPublisher.java", filepath.Join(outputDir, "variety", "java", "EventsPublisher.java")},
 		{"expected/java/variety/EventsSubscriber.java", filepath.Join(outputDir, "variety", "java", "EventsSubscriber.java")},
 		{"expected/java/variety/FFoo.java", filepath.Join(outputDir, "variety", "java", "FFoo.java")},

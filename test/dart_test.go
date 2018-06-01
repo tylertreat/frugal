@@ -42,6 +42,7 @@ func TestValidDartFrugalCompiler(t *testing.T) {
 		{"expected/dart/variety/f_testing_unions.dart", filepath.Join(outputDir, "variety", "lib", "src", "f_testing_unions.dart")},
 		{"expected/dart/variety/f_health_condition.dart", filepath.Join(outputDir, "variety", "lib", "src", "f_health_condition.dart")},
 		{"expected/dart/variety/f_test_lowercase.dart", filepath.Join(outputDir, "variety", "lib", "src", "f_test_lowercase.dart")},
+		{"expected/dart/variety/f_foo_args.dart", filepath.Join(outputDir, "variety", "lib", "src", "f_foo_args.dart")},
 		{"expected/dart/variety/f_variety_constants.dart", filepath.Join(outputDir, "variety", "lib", "src", "f_variety_constants.dart")},
 		{"expected/dart/variety/f_events_scope.dart", filepath.Join(outputDir, "variety", "lib", "src", "f_events_scope.dart")},
 		{"expected/dart/variety/f_foo_service.dart", filepath.Join(outputDir, "variety", "lib", "src", "f_foo_service.dart")},
