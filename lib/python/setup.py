@@ -22,9 +22,9 @@ setup(
     url='http://github.com/Workiva/frugal',
     packages=find_packages(exclude=('frugal.tests', 'frugal.tests.*')),
     install_requires=[
-        "six==1.10.0",
+        "six>=1.10.0,<2",
         "thrift==0.10.0",
-        "requests==2.12.5",
+        "requests>=2.12.5,<3",
     ],
     extras_require={
         'tornado': ["nats-client==0.5.0"],
