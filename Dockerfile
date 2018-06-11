@@ -1,8 +1,5 @@
 FROM drydock-prod.workiva.net/workiva/messaging-docker-images:210905 as build
 
-ARG PIP_INDEX_URL
-ARG PIP_EXTRA_INDEX_URL=https://pypi.python.org/simple/
-
 ARG GIT_SSH_KEY
 ARG KNOWN_HOSTS_CONTENT
 WORKDIR /go/src/github.com/Workiva/frugal/
