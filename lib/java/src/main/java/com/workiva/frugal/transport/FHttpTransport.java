@@ -260,7 +260,7 @@ public class FHttpTransport extends FTransport {
             throw new TTransportException(TTransportExceptionType.TIMED_OUT,
                     "http request timed out: " + e.getMessage());
         } catch (IOException e) {
-            throw new TTransportException("http request failed: " + e.getMessage());
+            throw new TTransportException("http request failed: " + e.getMessage(), e);
         }
 
         try {
