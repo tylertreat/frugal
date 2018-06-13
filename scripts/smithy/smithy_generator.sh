@@ -5,5 +5,4 @@ set -e
 cd $FRUGAL_HOME
 go build -o frugal
 go test -race ./test
-mv frugal $SMITHY_ROOT
 rm -rf ./test/out

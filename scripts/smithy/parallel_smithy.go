@@ -40,7 +40,7 @@ func runTestScript(script string, scriptDir string, wg *sync.WaitGroup){
 	}
 
 
-	logFile := os.ExpandEnv("${SMITHY_ROOT}/test_results/" + script + "_out.txt")
+	logFile := os.ExpandEnv("${FRUGAL_HOME}/test_results/" + script + "_out.txt")
 	err2 := writeFile(logFile, out)
 
 	if err2 != nil {
