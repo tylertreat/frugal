@@ -2490,7 +2490,7 @@ func (p *FooParamModifiersArgs) Read(iprot thrift.TProtocol) error {
 		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 	}
 	if !issetReqNum {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field ReqNum is not set"))
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field 'ReqNum' is not present in struct param_modifiers_args"))
 	}
 	return nil
 }
