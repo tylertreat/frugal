@@ -33,7 +33,7 @@ ARG BUILD_ARTIFACTS_ARTIFACTORY=/go/src/github.com/Workiva/frugal/frugal-*.jar
 ARG BUILD_ARTIFACTS_PUB=/go/src/github.com/Workiva/frugal/frugal.pub.tgz
 ARG BUILD_ARTIFACTS_TEST_RESULTS=/go/src/github.com/Workiva/frugal/test_results/*
 
-FROM golang:1.10-stretch
+FROM golang:1.10-stretch as build
 WORKDIR /go/src/github.com/Workiva/frugal
 
 # One layer caches the deps
@@ -58,5 +58,5 @@ COPY glide.lock /deps/
 ARG BUILD_ARTIFACTS_DEPENDENCIES=/deps/glide.lock
 
 FROM scratch
-COPY --from=0 /bin/frugal /bin/frugal
+COPY --from=build /bin/frugal /bin/frugal
 ENTRYPOINT ["frugal"]
