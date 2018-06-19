@@ -23,29 +23,32 @@
         "go/bin/testclient"
       ]
     },
-    "transports": [
-      "stateless",
-      "http"
-    ],
-    "protocols": [
-      "binary",
-      "compact",
-      "json"
-    ]
+    "transports": ["nats", "http"],
+    "protocols": ["binary", "compact", "json"]
   },
-   {
+  {
     "name": "java",
     "client": {
       "timeout": 20,
       "command": [ "/usr/bin/java", "-Djava.security.egd=file:///dev/urandom", "-cp", "cross.jar", "com.workiva.TestClient" ],
-      "transports": [ "stateless", "http" ]
+      "transports": [ "nats", "http" ]
     },
     "server": {
       "timeout": 15,
       "command": [ "/usr/bin/java", "-Djava.security.egd=file:///dev/urandom", "-cp", "cross.jar", "com.workiva.TestServer" ],
-      "transports": [ "stateless", "http" ]
+      "transports": [ "nats", "http" ]
     },
     "protocols": [ "binary", "compact", "json" ],
+    "workdir": "java/frugal-integration-test"
+  },
+  {
+    "name": "java-servlet",
+    "server": {
+      "timeout": 15,
+      "command": ["/usr/bin/java", "-Djava.security.egd=file:///dev/urandom", "-cp", "cross.jar", "com.workiva.TestServletServer"],
+      "transports": ["http"]
+    },
+    "protocols": ["binary", "compact", "json"],
     "workdir": "java/frugal-integration-test"
   },
   {
@@ -58,7 +61,7 @@
       "timeout": 7,
       "command": [ "python", "-u", "tornado_server.py" ]
     },
-    "transports": [ "stateless", "http" ],
+    "transports": [ "nats", "http" ],
     "protocols": [ "binary", "compact", "json" ],
     "workdir": "python/tornado"
   },
@@ -72,7 +75,7 @@
       "timeout": 7,
       "command": [ "python3.5", "-u", "server.py" ]
     },
-    "transports": [ "stateless", "http" ],
+    "transports": [ "nats", "http" ],
     "protocols": [ "binary", "compact", "json" ],
     "workdir": "python/asyncio"
   },

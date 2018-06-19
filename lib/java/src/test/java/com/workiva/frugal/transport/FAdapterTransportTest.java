@@ -86,7 +86,7 @@ public class FAdapterTransportTest {
         tr.open();
 
         verify(mockExecutorFactory).newExecutor();
-        verify(mockExecutor).submit(any(Runnable.class));
+        verify(mockExecutor).execute(any(Runnable.class));
 
         assertTrue(tr.isOpen());
 

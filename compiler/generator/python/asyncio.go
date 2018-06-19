@@ -225,7 +225,7 @@ func (g *AsyncIOGenerator) generateProcessor(service *parser.Service) string {
 		if len(method.Annotations) > 0 {
 			annotations := make([]string, len(method.Annotations))
 			for i, annotation := range method.Annotations {
-				annotations[i] = fmt.Sprintf("'%s': '%s'", annotation.Name, annotation.Value)
+				annotations[i] = fmt.Sprintf("%s: %s", g.quote(annotation.Name), g.quote(annotation.Value))
 			}
 			contents += tabtab +
 				fmt.Sprintf("self.add_to_annotations_map('%s', {%s})\n", methodLower, strings.Join(annotations, ", "))
@@ -275,9 +275,9 @@ func (a *AsyncIOGenerator) generateProcessorFunction(method *parser.Method) stri
 	contents += tabtab + "except Exception as e:\n"
 	if !method.Oneway {
 		contents += tabtabtab + "async with self._lock:\n"
-		contents += tabtabtabtab + fmt.Sprintf("e = _write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=e.args[0])\n", methodLower)
+		contents += tabtabtabtab + fmt.Sprintf("_write_application_exception(ctx, oprot, \"%s\", ex_code=TApplicationExceptionType.INTERNAL_ERROR, message=str(e))\n", methodLower)
 	}
-	contents += tabtabtab + "raise e from None\n"
+	contents += tabtabtab + "raise\n"
 	if !method.Oneway {
 		contents += tabtab + "async with self._lock:\n"
 		contents += tabtabtab + "try:\n"

@@ -7,6 +7,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.thrift.TException;
 import org.junit.Before;
@@ -40,10 +41,7 @@ public class FDefaultNettyHttpProcessorTest {
     public ExpectedException thrown = ExpectedException.none();
 
     private static FullHttpRequest mockRequest;
-    private static FullHttpResponse mockResponse;
-
     private static HttpHeaders mockRequestHeaders;
-    private static HttpHeaders mockResponseHeaders;
 
     private static FDefaultNettyHttpProcessor httpProcessor;
 
@@ -53,8 +51,6 @@ public class FDefaultNettyHttpProcessorTest {
         mockRequestHeaders = mock(HttpHeaders.class);
         doReturn(mockRequestHeaders).when(mockRequest).headers();
         doReturn(HTTP_1_1).when(mockRequest).protocolVersion();
-        mockResponse = mock(FullHttpResponse.class);
-        mockResponseHeaders = mock(HttpHeaders.class);
 
         FProcessor mockProcessor = mock(FProcessor.class);
         FProtocolFactory mockProtocolFactory = mock(FProtocolFactory.class);
@@ -125,6 +121,7 @@ public class FDefaultNettyHttpProcessorTest {
 
         FullHttpResponse response = httpProcessor.process(mockRequest);
         assertThat(response.status(), equalTo(BAD_REQUEST));
+        assertThat(HttpUtil.getContentLength(response), equalTo((long) response.content().readableBytes()));
     }
 
     @Test
@@ -145,6 +142,7 @@ public class FDefaultNettyHttpProcessorTest {
         FullHttpResponse response = spyProcessor.process(mockRequest);
 
         assertThat(response.status(), equalTo(REQUEST_ENTITY_TOO_LARGE));
+        assertThat(HttpUtil.getContentLength(response), equalTo((long) response.content().readableBytes()));
     }
 
     @Test
@@ -162,6 +160,7 @@ public class FDefaultNettyHttpProcessorTest {
 
         FullHttpResponse response = spyProcessor.process(mockRequest);
         assertThat(response.status(), equalTo(INTERNAL_SERVER_ERROR));
+        assertThat(HttpUtil.getContentLength(response), equalTo((long) response.content().readableBytes()));
     }
 
     @Test

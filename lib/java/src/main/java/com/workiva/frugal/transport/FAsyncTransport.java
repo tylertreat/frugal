@@ -125,7 +125,7 @@ public abstract class FAsyncTransport extends FTransport {
      * Flush the payload to the server. Implementations must not block and must be thread-safe.
      *
      * @param payload framed frugal bytes
-     * @throws TTransportException
+     * @throws TTransportException if flushing the transport fails.
      */
     protected abstract void flush(byte[] payload) throws TTransportException;
 
@@ -134,7 +134,7 @@ public abstract class FAsyncTransport extends FTransport {
      * Implementations should call this when asynchronous responses are received from the server.
      *
      * @param frame frugal frame
-     * @throws TException
+     * @throws TException if we cannot handle a response.
      */
     protected void handleResponse(byte[] frame) throws TException {
         Map<String, String> headers;

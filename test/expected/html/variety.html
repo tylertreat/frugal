@@ -42,6 +42,13 @@
 						
 						</ul>
 					
+						<a href="#svc_FooTransitiveDeps">FooTransitiveDeps</a><br />
+						<ul>
+						
+							<li><a href="#fn_FooTransitiveDeps_ping">ping</a></li>
+						
+						</ul>
+					
 					</td>
 					<td>
 					
@@ -86,6 +93,8 @@
 						<a href="#struct_TestingDefaults">TestingDefaults</a><br />
 					
 						<a href="#struct_EventWrapper">EventWrapper</a><br />
+					
+						<a href="#struct_FooArgs">FooArgs</a><br />
 					
 						<a href="#struct_AwesomeException">AwesomeException</a><br />
 					
@@ -289,6 +298,7 @@
 							
 								has the @ sign.<br />
 							
+								
 							</td>
 						</tr>
 					
@@ -301,6 +311,7 @@
 							
 								because it has the @ sign.<br />
 							
+								
 							</td>
 						</tr>
 					
@@ -309,6 +320,7 @@
 							<td><code>3</code></td>
 							<td>
 							
+								Deprecated: use something else
 							</td>
 						</tr>
 					
@@ -317,6 +329,11 @@
 							<td><code>4</code></td>
 							<td>
 							
+								This is a docstring comment for a deprecated enum value that has been<br />
+							
+								spread across two lines.<br />
+							
+								Deprecated: don&#39;t use this; use &#34;something else&#34;
 							</td>
 						</tr>
 					
@@ -333,6 +350,7 @@
 							<td><code>2</code></td>
 							<td>
 							
+								
 							</td>
 						</tr>
 					
@@ -341,6 +359,7 @@
 							<td><code>3</code></td>
 							<td>
 							
+								
 							</td>
 						</tr>
 					
@@ -349,6 +368,7 @@
 							<td><code>4</code></td>
 							<td>
 							
+								
 							</td>
 						</tr>
 					
@@ -357,6 +377,7 @@
 							<td><code>5</code></td>
 							<td>
 							
+								
 							</td>
 						</tr>
 					
@@ -365,6 +386,7 @@
 							<td><code>6</code></td>
 							<td>
 							
+								
 							</td>
 						</tr>
 					
@@ -373,6 +395,7 @@
 							<td><code>7</code></td>
 							<td>
 							
+								
 							</td>
 						</tr>
 					
@@ -810,6 +833,77 @@
 						<td></td>
 					</tr>
 					
+					<tr>
+						<td>11</td>
+						<td>depr</td>
+						<td><code>bool</code></td>
+						<td>This is a docstring comment for a deprecated field that has been spread<br />across two lines.<br />Deprecated: use something else</td>
+						<td>default</td>
+						<td></td>
+					</tr>
+					
+					<tr>
+						<td>12</td>
+						<td>deprBinary</td>
+						<td><code>binary</code></td>
+						<td>Deprecated: use something else</td>
+						<td>default</td>
+						<td></td>
+					</tr>
+					
+					<tr>
+						<td>13</td>
+						<td>deprList</td>
+						<td><code>list&lt;bool&gt;</code></td>
+						<td>Deprecated: use something else</td>
+						<td>default</td>
+						<td></td>
+					</tr>
+					
+				</table>
+				<br />
+				
+			</div>
+			
+			<div class="definition">
+				<h3 id="struct_FooArgs">Struct: FooArgs</h3>
+				<table class="table-bordered table-striped table-condensed">
+					<tr>
+						<th>Key</th>
+						<th>Field</th>
+						<th>Type</th>
+						<th>Description</th>
+						<th>Requiredness</th>
+						<th>Default Value</th>
+					</tr>
+					
+					<tr>
+						<td>1</td>
+						<td>newMessage</td>
+						<td><code>string</code></td>
+						<td></td>
+						<td>default</td>
+						<td></td>
+					</tr>
+					
+					<tr>
+						<td>2</td>
+						<td>messageArgs</td>
+						<td><code>string</code></td>
+						<td></td>
+						<td>default</td>
+						<td></td>
+					</tr>
+					
+					<tr>
+						<td>3</td>
+						<td>messageResult</td>
+						<td><code>string</code></td>
+						<td></td>
+						<td>default</td>
+						<td></td>
+					</tr>
+					
 				</table>
 				<br />
 				
@@ -841,6 +935,15 @@
 						<td>Reason</td>
 						<td><code>string</code></td>
 						<td>Reason contains the error message.<br /></td>
+						<td>default</td>
+						<td></td>
+					</tr>
+					
+					<tr>
+						<td>3</td>
+						<td>depr</td>
+						<td><code>bool</code></td>
+						<td>Deprecated: use something else</td>
 						<td>default</td>
 						<td></td>
 					</tr>
@@ -912,6 +1015,15 @@
 						<td>bin_field_in_union</td>
 						<td><code>binary</code></td>
 						<td></td>
+						<td>optional</td>
+						<td></td>
+					</tr>
+					
+					<tr>
+						<td>7</td>
+						<td>depr</td>
+						<td><code>bool</code></td>
+						<td>Deprecated: use something else</td>
 						<td>optional</td>
 						<td></td>
 					</tr>
@@ -1011,6 +1123,21 @@
 			<div class="definition">
 				<h4 id="fn_Foo_use_subdir_struct">Function: Foo.use_subdir_struct</h4>
 				<pre><code><a href="subdir_include.html#struct_A">subdir_include.A</a> use_subdir_struct(<a href="subdir_include.html#struct_A">subdir_include.A</a> a)</code></pre>
+				
+			</div>
+			
+			
+			<h3 id="svc_FooTransitiveDeps">Service: FooTransitiveDeps</h3>
+			
+			<div class="extends">
+				<em>extends</em> <code><a href="intermediate_include.html#svc_IntermediateFoo">intermediate_include.IntermediateFoo</a></code>
+			</div>
+			
+			
+			
+			<div class="definition">
+				<h4 id="fn_FooTransitiveDeps_ping">Function: FooTransitiveDeps.ping</h4>
+				<pre><code>void ping()</code></pre>
 				
 			</div>
 			

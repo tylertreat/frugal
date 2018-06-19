@@ -33,7 +33,7 @@ import com.workiva.frugal.transport.FPublisherTransportFactory;
 import com.workiva.frugal.transport.FNatsPublisherTransport;
 import com.workiva.frugal.transport.FNatsSubscriberTransport;
 import com.workiva.frugal.transport.FSubscriberTransportFactory;
-import com.workiva.utils;
+import com.workiva.Utils;
 import frugal.test.*;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
@@ -50,7 +50,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static com.workiva.utils.whichProtocolFactory;
+import static com.workiva.Utils.whichProtocolFactory;
 
 /**
  * Test Java client for frugal. This makes a variety of requests to enable testing for both performance and
@@ -61,55 +61,31 @@ public class TestClient {
     public static boolean middlewareCalled = false;
 
     public static void main(String[] args) throws Exception {
-        // default testing parameters, overwritten in Python runner
-        String host = "localhost";
-        int port = 9090;
-        String protocol_type = "binary";
-        String transport_type = "stateless";
+        CrossTestsArgParser parser = new CrossTestsArgParser(args);
+        String host = parser.getHost();
+        int port = parser.getPort();
+        String protocolType = parser.getProtocolType();
+        String transportType = parser.getTransportType();
 
         ConnectionFactory cf = new ConnectionFactory("nats://localhost:4222");
         Connection conn = cf.createConnection();
 
-        try {
-            for (String arg : args) {
-                if (arg.startsWith("--host")) {
-                    host = arg.split("=")[1];
-                } else if (arg.startsWith("--port")) {
-                    port = Integer.valueOf(arg.split("=")[1]);
-                } else if (arg.startsWith("--protocol")) {
-                    protocol_type = arg.split("=")[1];
-                } else if (arg.startsWith("--transport")) {
-                    transport_type = arg.split("=")[1];
-                } else if (arg.equals("--help")) {
-                    System.out.println("Allowed options:");
-                    System.out.println("  --help\t\t\tProduce help message");
-                    System.out.println("  --host=arg (=" + host + ")\tHost to connect");
-                    System.out.println("  --port=arg (=" + port + ")\tPort number to connect");
-                    System.out.println("  --transport=arg (=" + transport_type + ")\n\t\t\t\tTransport: stateless, http");
-                    System.out.println("  --protocol=arg (=" + protocol_type + ")\tProtocol: binary, json, compact");
-                    System.exit(0);
-                }
-            }
-        } catch (Exception x) {
-            System.err.println("Can not parse arguments! See --help");
-            System.err.println("Exception parsing arguments: " + x);
-            System.exit(1);
-        }
-        TProtocolFactory protocolFactory = whichProtocolFactory(protocol_type);
+        TProtocolFactory protocolFactory = whichProtocolFactory(protocolType);
 
         List<String> validTransports = new ArrayList<>();
-        validTransports.add("stateless");
-        validTransports.add("http");
+        validTransports.add(Utils.natsName);
+        validTransports.add(Utils.httpName);
 
-        if (!validTransports.contains(transport_type)) {
-            throw new Exception("Unknown transport type! " + transport_type);
+        if (!validTransports.contains(transportType)) {
+            throw new Exception("Unknown transport type! " + transportType);
         }
 
         FTransport fTransport = null;
 
         try {
-            switch (transport_type) {
-                case "http":
+            switch (transportType) {
+                case Utils.httpName:
+                    System.out.println("host: " + host);
                     String url = "http://" + host + ":" + port;
                     CloseableHttpClient httpClient = HttpClients.createDefault();
                     // Set request and response size limit to 1mb
@@ -118,7 +94,7 @@ public class TestClient {
                     fTransport = httpTransport.build();
                     fTransport.open();
                     break;
-                case "stateless":
+                case Utils.natsName:
                     fTransport = FNatsTransport.of(conn, "frugal.foo.bar.rpc." + Integer.toString(port));
                     break;
             }
@@ -631,43 +607,45 @@ public class TestClient {
                 returnCode |= 1;
             }
 
-            /**
-             * PUB/SUB TEST
-             * Publish a message, verify that a subscriber receives the message and publishes a response.
-             * Verifies that scopes are correctly generated.
-             */
-            BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(1);
-            Object o = null;
-            FPublisherTransportFactory publisherFactory = new FNatsPublisherTransport.Factory(conn);
-            FSubscriberTransportFactory subscriberFactory = new FNatsSubscriberTransport.Factory(conn);
-            FScopeProvider provider = new FScopeProvider(publisherFactory, subscriberFactory, new FProtocolFactory(protocolFactory));
+            if(transportType.equals(Utils.natsName)) {
+                /**
+                 * PUB/SUB TEST
+                 * Publish a message, verify that a subscriber receives the message and publishes a response.
+                 * Verifies that scopes are correctly generated.
+                 */
+                BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(1);
+                Object o = null;
+                FPublisherTransportFactory publisherFactory = new FNatsPublisherTransport.Factory(conn);
+                FSubscriberTransportFactory subscriberFactory = new FNatsSubscriberTransport.Factory(conn);
+                FScopeProvider provider = new FScopeProvider(publisherFactory, subscriberFactory, new FProtocolFactory(protocolFactory));
 
-            String preamble = "foo";
-            String ramble = "bar";
-            EventsSubscriber.Iface subscriber = new EventsSubscriber.Client(provider);
-            subscriber.subscribeEventCreated(preamble, ramble, "response", Integer.toString(port), (ctx, event) -> {
-                System.out.println("Response received " + event);
-                queue.add(1);
-            });
+                String preamble = "foo";
+                String ramble = "bar";
+                EventsSubscriber.Iface subscriber = new EventsSubscriber.Client(provider);
+                subscriber.subscribeEventCreated(preamble, ramble, "response", Integer.toString(port), (ctx, event) -> {
+                    System.out.println("Response received " + event);
+                    queue.add(1);
+                });
 
-            EventsPublisher.Iface publisher = new EventsPublisher.Client(provider);
-            publisher.open();
-            Event event = new Event(1, "Sending Call");
-            FContext ctx = new FContext("Call");
-            ctx.addRequestHeader(utils.PREAMBLE_HEADER, preamble);
-            ctx.addRequestHeader(utils.RAMBLE_HEADER, ramble);
-            publisher.publishEventCreated(ctx, preamble, ramble, "call", Integer.toString(port), event);
-            System.out.print("Publishing...    ");
+                EventsPublisher.Iface publisher = new EventsPublisher.Client(provider);
+                publisher.open();
+                Event event = new Event(1, "Sending Call");
+                FContext ctx = new FContext("Call");
+                ctx.addRequestHeader(Utils.PREAMBLE_HEADER, preamble);
+                ctx.addRequestHeader(Utils.RAMBLE_HEADER, ramble);
+                publisher.publishEventCreated(ctx, preamble, ramble, "call", Integer.toString(port), event);
+                System.out.print("Publishing...    ");
 
-            try {
-                o = queue.poll(3, TimeUnit.SECONDS);
-            } catch (InterruptedException e){
-                System.out.println("InterruptedException " + e);
-            }
+                try {
+                    o = queue.poll(3, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    System.out.println("InterruptedException " + e);
+                }
 
-            if(o == null) {
-                System.out.println("Pub/Sub response timed out!");
-                returnCode = 1;
+                if (o == null) {
+                    System.out.println("Pub/Sub response timed out!");
+                    returnCode = 1;
+                }
             }
 
         } catch (Exception x) {

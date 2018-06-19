@@ -107,12 +107,12 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	contents := ""
 
 	if g.includeGeneratedAnnotation() {
-		contents += g.generatedAnnotation()
+		contents += g.generatedAnnotation("")
 	}
 	contents += fmt.Sprintf("public class %sConstants {\n", g.Frugal.Name)
 
 	for _, constant := range constants {
-		val := g.generateConstantValueWrapper(constant.Name, constant.Type, constant.Value, true, true)
+		val := g.generateConstantValueWrapper(constant.Name, constant.Type, constant.Value, true, true, tab)
 		contents += fmt.Sprintf("%s\n", val)
 	}
 
@@ -136,9 +136,9 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 // constants can't be initialized in a single expression, so temp variables
 // are needed. Due to this, the entire constant, not just the value, is
 // generated.
-func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Type, value interface{}, declare, needsStatic bool) string {
+func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Type, value interface{}, declare, needsStatic bool, indent string) string {
 	underlyingType := g.Frugal.UnderlyingType(t)
-	contents := tabtab
+	contents := indent
 
 	if needsStatic {
 		contents += "public static final "
@@ -152,7 +152,7 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 	}
 
 	if underlyingType.IsPrimitive() || g.Frugal.IsEnum(underlyingType) {
-		_, val := g.generateConstantValueRec(t, value)
+		_, val := g.generateConstantValueRec(t, value, indent)
 		return fmt.Sprintf("%s%s = %s;\n", contents, fieldName, val)
 	} else if g.Frugal.IsStruct(underlyingType) {
 		s := g.Frugal.FindStruct(underlyingType)
@@ -162,7 +162,7 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 
 		contents += fmt.Sprintf("%s = new %s();\n", fieldName, g.getJavaTypeFromThriftType(underlyingType))
 
-		ind := tabtab
+		ind := indent
 		if needsStatic {
 			contents += ind + "static {\n"
 			ind += tab
@@ -172,15 +172,15 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 			name := pair.KeyToString()
 			for _, field := range s.Fields {
 				if name == field.Name {
-					preamble, val := g.generateConstantValueRec(field.Type, pair.Value)
+					preamble, val := g.generateConstantValueRec(field.Type, pair.Value, ind)
 					contents += preamble
-					contents += fmt.Sprintf(ind+"%s.set%s(%s);\n", fieldName, strings.Title(name), val)
+					contents += ind + fmt.Sprintf("%s.set%s(%s);\n", fieldName, strings.Title(name), val)
 				}
 			}
 		}
 
 		if needsStatic {
-			contents += tabtab + "}\n"
+			contents += indent + "}\n"
 		}
 
 		return contents
@@ -188,60 +188,60 @@ func (g *Generator) generateConstantValueWrapper(fieldName string, t *parser.Typ
 		switch underlyingType.Name {
 		case "list":
 			contents += fmt.Sprintf("%s = new ArrayList<%s>();\n", fieldName, containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType)))
-			ind := tabtab
+			ind := indent
 			if needsStatic {
 				contents += ind + "static {\n"
 				ind += tab
 			}
 
 			for _, v := range value.([]interface{}) {
-				preamble, val := g.generateConstantValueRec(underlyingType.ValueType, v)
+				preamble, val := g.generateConstantValueRec(underlyingType.ValueType, v, ind)
 				contents += preamble
-				contents += fmt.Sprintf(ind+"%s.add(%s);\n", fieldName, val)
+				contents += ind + fmt.Sprintf("%s.add(%s);\n", fieldName, val)
 			}
 
 			if needsStatic {
-				contents += tabtab + "}\n"
+				contents += indent + "}\n"
 			}
 			return contents
 		case "set":
 			contents += fmt.Sprintf("%s = new HashSet<%s>();\n", fieldName, containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType)))
-			ind := tabtab
+			ind := indent
 			if needsStatic {
 				contents += ind + "static {\n"
 				ind += tab
 			}
 
 			for _, v := range value.([]interface{}) {
-				preamble, val := g.generateConstantValueRec(underlyingType.ValueType, v)
+				preamble, val := g.generateConstantValueRec(underlyingType.ValueType, v, ind)
 				contents += preamble
-				contents += fmt.Sprintf(ind+"%s.add(%s);\n", fieldName, val)
+				contents += ind + fmt.Sprintf("%s.add(%s);\n", fieldName, val)
 			}
 
 			if needsStatic {
-				contents += tabtab + "}\n"
+				contents += indent + "}\n"
 			}
 			return contents
 		case "map":
 			contents += fmt.Sprintf("%s = new HashMap<%s,%s>();\n",
 				fieldName, containerType(g.getJavaTypeFromThriftType(underlyingType.KeyType)),
 				containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType)))
-			ind := tabtab
+			ind := indent
 			if needsStatic {
-				contents += tabtab + "static {\n"
+				contents += ind + "static {\n"
 				ind += tab
 			}
 
 			for _, pair := range value.([]parser.KeyValue) {
-				preamble, key := g.generateConstantValueRec(underlyingType.KeyType, pair.Key)
+				preamble, key := g.generateConstantValueRec(underlyingType.KeyType, pair.Key, ind)
 				contents += preamble
-				preamble, val := g.generateConstantValueRec(underlyingType.ValueType, pair.Value)
+				preamble, val := g.generateConstantValueRec(underlyingType.ValueType, pair.Value, ind)
 				contents += preamble
-				contents += fmt.Sprintf(ind+"%s.put(%s, %s);\n", fieldName, key, val)
+				contents += ind + fmt.Sprintf("%s.put(%s, %s);\n", fieldName, key, val)
 			}
 
 			if needsStatic {
-				contents += tabtab + "}\n"
+				contents += indent + "}\n"
 			}
 			return contents
 		}
@@ -286,7 +286,13 @@ func (g *Generator) generateEnumConstFromValue(t *parser.Type, value int) string
 	panic("value not found")
 }
 
-func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) (string, string) {
+// quote creates a Java string literal for a string.
+func (g *Generator) quote(s string) string {
+	// For now, just use Go quoting rules.
+	return strconv.Quote(s)
+}
+
+func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}, indent string) (string, string) {
 	underlyingType := g.Frugal.UnderlyingType(t)
 
 	// If the value being referenced is of type Identifier, it's referencing
@@ -331,7 +337,7 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) 
 		case "double":
 			return "", fmt.Sprintf("%v", value)
 		case "string":
-			return "", fmt.Sprintf("%v", strconv.Quote(value.(string)))
+			return "", g.quote(value.(string))
 		case "binary":
 			return "", fmt.Sprintf("java.nio.ByteBuffer.wrap(\"%v\".getBytes())", value)
 		}
@@ -339,7 +345,7 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}) 
 		return "", g.generateEnumConstFromValue(underlyingType, int(value.(int64)))
 	}
 	elem := g.GetElem()
-	preamble := g.generateConstantValueWrapper(elem, t, value, true, false)
+	preamble := g.generateConstantValueWrapper(elem, t, value, true, false, indent)
 	return preamble, elem
 
 }
@@ -357,15 +363,13 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 		if idx == len(enum.Values)-1 {
 			terminator = ";"
 		}
-		if value.Comment != nil {
-			contents += g.GenerateBlockComment(value.Comment, tab)
-		}
-		contents += fmt.Sprintf(tab+"%s(%d)%s\n", value.Name, value.Value, terminator)
+		contents += g.generateCommentWithDeprecated(value.Comment, tab, value.Annotations)
+		contents += tab + fmt.Sprintf("%s(%d)%s\n", value.Name, value.Value, terminator)
 	}
 	contents += "\n"
 
 	contents += tab + "private final int value;\n\n"
-	contents += fmt.Sprintf(tab+"private %s(int value) {\n", enum.Name)
+	contents += tab + fmt.Sprintf("private %s(int value) {\n", enum.Name)
 	contents += tabtab + "this.value = value;\n"
 	contents += tab + "}\n\n"
 
@@ -373,11 +377,11 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents += tabtab + "return value;\n"
 	contents += tab + "}\n\n"
 
-	contents += fmt.Sprintf(tab+"public static %s findByValue(int value) {\n", enum.Name)
+	contents += tab + fmt.Sprintf("public static %s findByValue(int value) {\n", enum.Name)
 	contents += tabtab + "switch (value) {\n"
 	for _, value := range enum.Values {
-		contents += fmt.Sprintf(tabtabtab+"case %d:\n", value.Value)
-		contents += fmt.Sprintf(tabtabtabtab+"return %s;\n", value.Name)
+		contents += tabtabtab + fmt.Sprintf("case %d:\n", value.Value)
+		contents += tabtabtabtab + fmt.Sprintf("return %s;\n", value.Name)
 	}
 	contents += tabtabtab + "default:\n"
 	contents += tabtabtabtab + "return null;\n"
@@ -428,11 +432,7 @@ func (g *Generator) initStructFile(file *os.File) error {
 		return err
 	}
 
-	if err := g.GenerateStructImports(file); err != nil {
-		return err
-	}
-
-	return nil
+	return g.GenerateStructImports(file)
 }
 
 func (g *Generator) GenerateStruct(s *parser.Struct) error {
@@ -446,7 +446,7 @@ func (g *Generator) GenerateStruct(s *parser.Struct) error {
 		return err
 	}
 
-	_, err = file.WriteString(g.generateStruct(s, false, false))
+	_, err = file.WriteString(g.generateStruct(s, false, false, ""))
 	return err
 }
 
@@ -476,7 +476,7 @@ func (g *Generator) generateUnion(union *parser.Struct, isArg, isResult bool) st
 	contents := ""
 
 	if g.includeGeneratedAnnotation() && !isArg && !isResult {
-		contents += g.generatedAnnotation()
+		contents += g.generatedAnnotation("")
 	}
 
 	static := ""
@@ -486,216 +486,217 @@ func (g *Generator) generateUnion(union *parser.Struct, isArg, isResult bool) st
 	contents += fmt.Sprintf("public %sclass %s extends org.apache.thrift.TUnion<%s, %s._Fields> {\n",
 		static, union.Name, union.Name, union.Name)
 
-	contents += g.generateDescriptors(union)
-	contents += g.generateFieldsEnum(union)
-	contents += g.generateUnionConstructors(union)
-	contents += g.generateUnionFieldConstructors(union)
-	contents += g.generateUnionCheckType(union)
+	contents += g.generateDescriptors(union, tab)
+	contents += g.generateFieldsEnum(union, tab)
+	contents += g.generateUnionConstructors(union, tab)
+	contents += g.generateUnionFieldConstructors(union, tab)
+	contents += g.generateUnionCheckType(union, tab)
 
-	contents += g.generateUnionStandardRead(union)
-	contents += g.generateUnionStandardWrite(union)
-	contents += g.generateUnionTupleRead(union)
-	contents += g.generateUnionTupleWrite(union)
+	contents += g.generateUnionStandardRead(union, tab)
+	contents += g.generateUnionStandardWrite(union, tab)
+	contents += g.generateUnionTupleRead(union, tab)
+	contents += g.generateUnionTupleWrite(union, tab)
 
-	contents += g.generateUnionGetDescriptors(union)
-	contents += g.generateUnionFieldForId()
-	contents += g.generateUnionGetSetFields(union)
-	contents += g.generateUnionIsSetFields(union)
+	contents += g.generateUnionGetDescriptors(union, tab)
+	contents += g.generateUnionFieldForId(tab)
+	contents += g.generateUnionGetSetFields(union, tab)
+	contents += g.generateUnionIsSetFields(union, tab)
 
-	contents += g.generateUnionEquals(union)
-	contents += g.generateUnionCompareTo(union)
-	contents += g.generateUnionHashCode(union)
-	contents += g.generateWriteObject(union)
-	contents += g.generateReadObject(union)
+	contents += g.generateUnionEquals(union, tab)
+	contents += g.generateUnionCompareTo(union, tab)
+	contents += g.generateUnionHashCode(union, tab)
+	contents += g.generateWriteObject(union, tab)
+	contents += g.generateReadObject(union, tab)
 
 	contents += "}\n"
 	return contents
 }
 
-func (g *Generator) generateUnionConstructors(union *parser.Struct) string {
+func (g *Generator) generateUnionConstructors(union *parser.Struct, indent string) string {
 	contents := ""
-	contents += fmt.Sprintf(tab+"public %s() {\n", union.Name)
-	contents += tabtab + "super();\n"
-	contents += tab + "}\n\n"
+	contents += indent + fmt.Sprintf("public %s() {\n", union.Name)
+	contents += indent + tab + "super();\n"
+	contents += indent + "}\n\n"
 
-	contents += fmt.Sprintf(tab+"public %s(_Fields setField, Object value) {\n", union.Name)
-	contents += tabtab + "super(setField, value);\n"
-	contents += tab + "}\n\n"
+	contents += indent + fmt.Sprintf("public %s(_Fields setField, Object value) {\n", union.Name)
+	contents += indent + tab + "super(setField, value);\n"
+	contents += indent + "}\n\n"
 
-	contents += fmt.Sprintf(tab+"public %s(%s other) {\n", union.Name, union.Name)
-	contents += tabtab + "super(other);\n"
-	contents += tab + "}\n"
+	contents += indent + fmt.Sprintf("public %s(%s other) {\n", union.Name, union.Name)
+	contents += indent + tab + "super(other);\n"
+	contents += indent + "}\n"
 
-	contents += fmt.Sprintf(tab+"public %s deepCopy() {\n", union.Name)
-	contents += fmt.Sprintf(tabtab+"return new %s(this);\n", union.Name)
-	contents += tab + "}\n\n"
+	contents += indent + fmt.Sprintf("public %s deepCopy() {\n", union.Name)
+	contents += indent + tab + fmt.Sprintf("return new %s(this);\n", union.Name)
+	contents += indent + "}\n\n"
 
 	return contents
 }
 
-func (g *Generator) generateUnionFieldConstructors(union *parser.Struct) string {
+func (g *Generator) generateUnionFieldConstructors(union *parser.Struct, indent string) string {
 	contents := ""
 
 	for _, field := range union.Fields {
-		contents += fmt.Sprintf(tab+"public static %s %s(%s value) {\n",
+		contents += g.generateCommentWithDeprecated(field.Comment, indent, field.Annotations)
+		contents += indent + fmt.Sprintf("public static %s %s(%s value) {\n",
 			union.Name, field.Name, g.getJavaTypeFromThriftType(field.Type))
-		contents += fmt.Sprintf(tabtab+"%s x = new %s();\n", union.Name, union.Name)
-		contents += fmt.Sprintf(tabtab+"x.set%s(value);\n", strings.Title(field.Name))
-		contents += tabtab + "return x;\n"
-		contents += tab + "}\n\n"
+		contents += indent + tab + fmt.Sprintf("%s x = new %s();\n", union.Name, union.Name)
+		contents += indent + tab + fmt.Sprintf("x.set%s(value);\n", strings.Title(field.Name))
+		contents += indent + tab + "return x;\n"
+		contents += indent + "}\n\n"
 	}
 
 	return contents
 }
 
-func (g *Generator) generateUnionCheckType(union *parser.Struct) string {
+func (g *Generator) generateUnionCheckType(union *parser.Struct, indent string) string {
 	contents := ""
 
-	contents += tab + "@Override\n"
-	contents += tab + "protected void checkType(_Fields setField, Object value) throws ClassCastException {\n"
-	contents += tabtab + "switch (setField) {\n"
+	contents += indent + "@Override\n"
+	contents += indent + "protected void checkType(_Fields setField, Object value) throws ClassCastException {\n"
+	contents += indent + tab + "switch (setField) {\n"
 	for _, field := range union.Fields {
 		fieldType := containerType(g.getJavaTypeFromThriftType(field.Type))
 		unparametrizedType := containerType(g.getUnparametrizedJavaType(field.Type))
-		contents += fmt.Sprintf(tabtabtab+"case %s:\n", toConstantName(field.Name))
-		contents += fmt.Sprintf(tabtabtabtab+"if (value instanceof %s) {\n", unparametrizedType)
-		contents += tabtabtabtabtab + "break;\n"
-		contents += tabtabtabtab + "}\n"
-		contents += fmt.Sprintf(tabtabtabtab+"throw new ClassCastException(\"Was expecting value of type %s for field '%s', but got \" + value.getClass().getSimpleName());\n",
+		contents += indent + tabtab + fmt.Sprintf("case %s:\n", toConstantName(field.Name))
+		contents += indent + tabtabtab + fmt.Sprintf("if (value instanceof %s) {\n", unparametrizedType)
+		contents += indent + tabtabtabtab + "break;\n"
+		contents += indent + tabtabtab + "}\n"
+		contents += indent + tabtabtab + fmt.Sprintf("throw new ClassCastException(\"Was expecting value of type %s for field '%s', but got \" + value.getClass().getSimpleName());\n",
 			fieldType, field.Name)
 	}
-	contents += tabtabtab + "default:\n"
-	contents += fmt.Sprintf(tabtabtabtab + "throw new IllegalArgumentException(\"Unknown field id \" + setField);\n")
-	contents += tabtab + "}\n"
-	contents += tab + "}\n\n"
+	contents += indent + tabtab + "default:\n"
+	contents += indent + tabtabtab + fmt.Sprintf("throw new IllegalArgumentException(\"Unknown field id \" + setField);\n")
+	contents += indent + tab + "}\n"
+	contents += indent + "}\n\n"
 
 	return contents
 }
 
-func (g *Generator) generateUnionStandardRead(union *parser.Struct) string {
+func (g *Generator) generateUnionStandardRead(union *parser.Struct, indent string) string {
 	contents := ""
 
-	contents += tab + "@Override\n"
-	contents += tab + "protected Object standardSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, org.apache.thrift.protocol.TField field) throws org.apache.thrift.TException {\n"
-	contents += tabtab + "_Fields setField = _Fields.findByThriftId(field.id);\n"
-	contents += tabtab + "if (setField != null) {\n"
-	contents += tabtabtab + "switch (setField) {\n"
+	contents += indent + "@Override\n"
+	contents += indent + "protected Object standardSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, org.apache.thrift.protocol.TField field) throws org.apache.thrift.TException {\n"
+	contents += indent + tab + "_Fields setField = _Fields.findByThriftId(field.id);\n"
+	contents += indent + tab + "if (setField != null) {\n"
+	contents += indent + tabtab + "switch (setField) {\n"
 	for _, field := range union.Fields {
 		constantName := toConstantName(field.Name)
-		contents += fmt.Sprintf(tabtabtabtab+"case %s:\n", constantName)
-		contents += fmt.Sprintf(tabtabtabtabtab+"if (field.type == %s_FIELD_DESC.type) {\n", constantName)
-		contents += g.generateReadFieldRec(field, false, false, true, tabtabtabtabtabtab)
-		contents += fmt.Sprintf(tabtabtabtabtabtab+"return %s;\n", field.Name)
-		contents += tabtabtabtabtab + "} else {\n"
-		contents += tabtabtabtabtabtab + "org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);\n"
-		contents += tabtabtabtabtabtab + "return null;\n"
-		contents += tabtabtabtabtab + "}\n"
+		contents += indent + tabtabtab + fmt.Sprintf("case %s:\n", constantName)
+		contents += indent + tabtabtabtab + fmt.Sprintf("if (field.type == %s_FIELD_DESC.type) {\n", constantName)
+		contents += g.generateReadFieldRec(field, false, false, true, indent+tabtabtabtabtab)
+		contents += indent + tabtabtabtabtab + fmt.Sprintf("return %s;\n", field.Name)
+		contents += indent + tabtabtabtab + "} else {\n"
+		contents += indent + tabtabtabtabtab + "org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);\n"
+		contents += indent + tabtabtabtabtab + "return null;\n"
+		contents += indent + tabtabtabtab + "}\n"
 	}
-	contents += tabtabtabtab + "default:\n"
-	contents += tabtabtabtabtab + "throw new IllegalStateException(\"setField wasn't null, but didn't match any of the case statements!\");\n"
-	contents += tabtabtab + "}\n"
-	contents += tabtab + "} else {\n"
-	contents += tabtabtab + "org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);\n"
-	contents += tabtabtab + "return null;\n"
-	contents += tabtab + "}\n"
-	contents += tab + "}\n\n"
+	contents += indent + tabtabtab + "default:\n"
+	contents += indent + tabtabtabtab + "throw new IllegalStateException(\"setField wasn't null, but didn't match any of the case statements!\");\n"
+	contents += indent + tabtab + "}\n"
+	contents += indent + tab + "} else {\n"
+	contents += indent + tabtab + "org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);\n"
+	contents += indent + tabtab + "return null;\n"
+	contents += indent + tab + "}\n"
+	contents += indent + "}\n\n"
 
 	return contents
 }
 
-func (g *Generator) generateUnionStandardWrite(union *parser.Struct) string {
-	return g.generateUnionWrite(union, "standard")
+func (g *Generator) generateUnionStandardWrite(union *parser.Struct, indent string) string {
+	return g.generateUnionWrite(union, "standard", indent)
 }
 
-func (g *Generator) generateUnionTupleRead(union *parser.Struct) string {
+func (g *Generator) generateUnionTupleRead(union *parser.Struct, indent string) string {
 	contents := ""
 
-	contents += tab + "@Override\n"
-	contents += tab + "protected Object tupleSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, short fieldID) throws org.apache.thrift.TException {\n"
-	contents += tabtab + "_Fields setField = _Fields.findByThriftId(fieldID);\n"
-	contents += tabtab + "if (setField != null) {\n"
-	contents += tabtabtab + "switch (setField) {\n"
+	contents += indent + "@Override\n"
+	contents += indent + "protected Object tupleSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, short fieldID) throws org.apache.thrift.TException {\n"
+	contents += indent + tab + "_Fields setField = _Fields.findByThriftId(fieldID);\n"
+	contents += indent + tab + "if (setField != null) {\n"
+	contents += indent + tabtab + "switch (setField) {\n"
 	for _, field := range union.Fields {
 		constantName := toConstantName(field.Name)
-		contents += fmt.Sprintf(tabtabtabtab+"case %s:\n", constantName)
-		contents += g.generateReadFieldRec(field, false, false, true, tabtabtabtabtab)
-		contents += fmt.Sprintf(tabtabtabtabtab+"return %s;\n", field.Name)
+		contents += indent + tabtabtab + fmt.Sprintf("case %s:\n", constantName)
+		contents += g.generateReadFieldRec(field, false, false, true, indent+tabtabtabtab)
+		contents += indent + tabtabtabtab + fmt.Sprintf("return %s;\n", field.Name)
 	}
-	contents += tabtabtabtab + "default:\n"
-	contents += tabtabtabtabtab + "throw new IllegalStateException(\"setField wasn't null, but didn't match any of the case statements!\");\n"
-	contents += tabtabtab + "}\n"
-	contents += tabtab + "} else {\n"
-	contents += tabtabtab + "throw new TProtocolException(\"Couldn't find a field with field id \" + fieldID);\n"
-	contents += tabtab + "}\n"
-	contents += tab + "}\n\n"
+	contents += indent + tabtabtab + "default:\n"
+	contents += indent + tabtabtabtab + "throw new IllegalStateException(\"setField wasn't null, but didn't match any of the case statements!\");\n"
+	contents += indent + tabtab + "}\n"
+	contents += indent + tab + "} else {\n"
+	contents += indent + tabtab + "throw new TProtocolException(\"Couldn't find a field with field id \" + fieldID);\n"
+	contents += indent + tab + "}\n"
+	contents += indent + "}\n\n"
 
 	return contents
 }
 
-func (g *Generator) generateUnionTupleWrite(union *parser.Struct) string {
-	return g.generateUnionWrite(union, "tuple")
+func (g *Generator) generateUnionTupleWrite(union *parser.Struct, indent string) string {
+	return g.generateUnionWrite(union, "tuple", indent)
 }
 
-func (g *Generator) generateUnionWrite(union *parser.Struct, scheme string) string {
+func (g *Generator) generateUnionWrite(union *parser.Struct, scheme string, indent string) string {
 	contents := ""
 
-	contents += tab + "@Override\n"
-	contents += fmt.Sprintf(tab+"protected void %sSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {\n", scheme)
-	contents += tabtab + "switch (setField_) {\n"
+	contents += indent + "@Override\n"
+	contents += indent + fmt.Sprintf("protected void %sSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {\n", scheme)
+	contents += indent + tab + "switch (setField_) {\n"
 	for _, field := range union.Fields {
 		constantName := toConstantName(field.Name)
 		javaContainerType := containerType(g.getJavaTypeFromThriftType(field.Type))
-		contents += fmt.Sprintf(tabtabtab+"case %s:\n", constantName)
-		contents += fmt.Sprintf(tabtabtabtab+"%s %s = (%s)value_;\n", javaContainerType, field.Name, javaContainerType)
-		contents += g.generateWriteFieldRec(field, false, false, tabtabtabtab)
-		contents += tabtabtabtab + "return;\n"
+		contents += indent + tabtab + fmt.Sprintf("case %s:\n", constantName)
+		contents += indent + tabtabtab + fmt.Sprintf("%s %s = (%s)value_;\n", javaContainerType, field.Name, javaContainerType)
+		contents += g.generateWriteFieldRec(field, false, false, indent+tabtabtab)
+		contents += indent + tabtabtab + "return;\n"
 	}
-	contents += tabtabtab + "default:\n"
-	contents += tabtabtabtab + "throw new IllegalStateException(\"Cannot write union with unknown field \" + setField_);\n"
-	contents += tabtab + "}\n"
-	contents += tab + "}\n\n"
+	contents += indent + tabtab + "default:\n"
+	contents += indent + tabtabtab + "throw new IllegalStateException(\"Cannot write union with unknown field \" + setField_);\n"
+	contents += indent + tab + "}\n"
+	contents += indent + "}\n\n"
 
 	return contents
 }
 
-func (g *Generator) generateUnionGetDescriptors(union *parser.Struct) string {
+func (g *Generator) generateUnionGetDescriptors(union *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "@Override\n"
-	contents += tab + "protected org.apache.thrift.protocol.TField getFieldDesc(_Fields setField) {\n"
-	contents += tabtab + "switch (setField) {\n"
+	contents += indent + "@Override\n"
+	contents += indent + "protected org.apache.thrift.protocol.TField getFieldDesc(_Fields setField) {\n"
+	contents += indent + tab + "switch (setField) {\n"
 
 	for _, field := range union.Fields {
 		constantName := toConstantName(field.Name)
-		contents += fmt.Sprintf(tabtabtab+"case %s:\n", constantName)
-		contents += fmt.Sprintf(tabtabtabtab+"return %s_FIELD_DESC;\n", constantName)
+		contents += indent + tabtab + fmt.Sprintf("case %s:\n", constantName)
+		contents += indent + tabtabtab + fmt.Sprintf("return %s_FIELD_DESC;\n", constantName)
 	}
 
-	contents += tabtabtab + "default:\n"
-	contents += tabtabtabtab + "throw new IllegalArgumentException(\"Unknown field id \" + setField);\n"
-	contents += tabtab + "}\n"
-	contents += tab + "}\n\n"
+	contents += indent + tabtab + "default:\n"
+	contents += indent + tabtabtab + "throw new IllegalArgumentException(\"Unknown field id \" + setField);\n"
+	contents += indent + tab + "}\n"
+	contents += indent + "}\n\n"
 
-	contents += tab + "@Override\n"
-	contents += tab + "protected org.apache.thrift.protocol.TStruct getStructDesc() {\n"
-	contents += tabtab + "return STRUCT_DESC;\n"
-	contents += tab + "}\n\n"
+	contents += indent + "@Override\n"
+	contents += indent + "protected org.apache.thrift.protocol.TStruct getStructDesc() {\n"
+	contents += indent + tab + "return STRUCT_DESC;\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateUnionFieldForId() string {
+func (g *Generator) generateUnionFieldForId(indent string) string {
 	contents := ""
-	contents += tab + "@Override\n"
-	contents += tab + "protected _Fields enumForId(short id) {\n"
-	contents += tabtab + "return _Fields.findByThriftIdOrThrow(id);\n"
-	contents += tab + "}\n\n"
+	contents += indent + "@Override\n"
+	contents += indent + "protected _Fields enumForId(short id) {\n"
+	contents += indent + tab + "return _Fields.findByThriftIdOrThrow(id);\n"
+	contents += indent + "}\n\n"
 
-	contents += tab + "public _Fields fieldForId(int fieldId) {\n"
-	contents += tabtab + "return _Fields.findByThriftId(fieldId);\n"
-	contents += tab + "}\n\n\n"
+	contents += indent + "public _Fields fieldForId(int fieldId) {\n"
+	contents += indent + tab + "return _Fields.findByThriftId(fieldId);\n"
+	contents += indent + "}\n\n\n"
 	return contents
 }
 
-func (g *Generator) generateUnionGetSetFields(union *parser.Struct) string {
+func (g *Generator) generateUnionGetSetFields(union *parser.Struct, indent string) string {
 	contents := ""
 
 	for _, field := range union.Fields {
@@ -704,91 +705,100 @@ func (g *Generator) generateUnionGetSetFields(union *parser.Struct) string {
 		javaType := g.getJavaTypeFromThriftType(field.Type)
 
 		// get
-		contents += fmt.Sprintf(tab+"public %s get%s() {\n", javaType, titleName)
-		contents += fmt.Sprintf(tabtab+"if (getSetField() == _Fields.%s) {\n", constantName)
-		contents += fmt.Sprintf(tabtabtab+"return (%s)getFieldValue();\n", containerType(javaType))
-		contents += tabtab + "} else {\n"
-		contents += fmt.Sprintf(tabtabtab+"throw new RuntimeException(\"Cannot get field '%s' because union is currently set to \" + getFieldDesc(getSetField()).name);\n", field.Name)
-		contents += tabtab + "}\n"
-		contents += tab + "}\n\n"
+		if field.Annotations.IsDeprecated() {
+			contents += indent + "@Deprecated\n"
+		}
+		contents += indent + fmt.Sprintf("public %s get%s() {\n", javaType, titleName)
+		contents += indent + tab + fmt.Sprintf("if (getSetField() == _Fields.%s) {\n", constantName)
+		contents += indent + tabtab + fmt.Sprintf("return (%s)getFieldValue();\n", containerType(javaType))
+		contents += indent + tab + "} else {\n"
+		contents += indent + tabtab + fmt.Sprintf("throw new RuntimeException(\"Cannot get field '%s' because union is currently set to \" + getFieldDesc(getSetField()).name);\n", field.Name)
+		contents += indent + tab + "}\n"
+		contents += indent + "}\n\n"
 
 		// set
-		contents += fmt.Sprintf(tab+"public void set%s(%s value) {\n", titleName, javaType)
-		if !g.isJavaPrimitive(field.Type) {
-			contents += tabtab + "if (value == null) throw new NullPointerException();\n"
+		if field.Annotations.IsDeprecated() {
+			contents += indent + "@Deprecated\n"
 		}
-		contents += fmt.Sprintf(tabtab+"setField_ = _Fields.%s;\n", constantName)
-		contents += tabtab + "value_ = value;\n"
-		contents += tab + "}\n\n"
+		contents += indent + fmt.Sprintf("public void set%s(%s value) {\n", titleName, javaType)
+		if !g.isJavaPrimitive(field.Type) {
+			contents += indent + tab + "if (value == null) throw new NullPointerException();\n"
+		}
+		contents += indent + tab + fmt.Sprintf("setField_ = _Fields.%s;\n", constantName)
+		contents += indent + tab + "value_ = value;\n"
+		contents += indent + "}\n\n"
 	}
 
 	return contents
 }
 
-func (g *Generator) generateUnionIsSetFields(union *parser.Struct) string {
+func (g *Generator) generateUnionIsSetFields(union *parser.Struct, indent string) string {
 	contents := ""
 
 	for _, field := range union.Fields {
-		contents += fmt.Sprintf(tab+"public boolean isSet%s() {\n", strings.Title(field.Name))
-		contents += fmt.Sprintf(tabtab+"return setField_ == _Fields.%s;\n", toConstantName(field.Name))
-		contents += tab + "}\n\n"
+		if field.Annotations.IsDeprecated() {
+			contents += indent + "@Deprecated\n"
+		}
+		contents += indent + fmt.Sprintf("public boolean isSet%s() {\n", strings.Title(field.Name))
+		contents += indent + tab + fmt.Sprintf("return setField_ == _Fields.%s;\n", toConstantName(field.Name))
+		contents += indent + "}\n\n"
 	}
 
 	return contents
 }
 
-func (g *Generator) generateUnionEquals(union *parser.Struct) string {
+func (g *Generator) generateUnionEquals(union *parser.Struct, indent string) string {
 	contents := "\n"
 
-	contents += tab + "public boolean equals(Object other) {\n"
-	contents += fmt.Sprintf(tabtab+"if (other instanceof %s) {\n", union.Name)
-	contents += fmt.Sprintf(tabtabtab+"return equals((%s)other);\n", union.Name)
-	contents += tabtab + "} else {\n"
-	contents += tabtabtab + "return false;\n"
-	contents += tabtab + "}\n"
-	contents += tab + "}\n\n"
+	contents += indent + "public boolean equals(Object other) {\n"
+	contents += indent + tab + fmt.Sprintf("if (other instanceof %s) {\n", union.Name)
+	contents += indent + tabtab + fmt.Sprintf("return equals((%s)other);\n", union.Name)
+	contents += indent + tab + "} else {\n"
+	contents += indent + tabtab + "return false;\n"
+	contents += indent + tab + "}\n"
+	contents += indent + "}\n\n"
 
-	contents += fmt.Sprintf(tab+"public boolean equals(%s other) {\n", union.Name)
-	contents += tabtab + "return other != null && getSetField() == other.getSetField() && getFieldValue().equals(other.getFieldValue());\n"
-	contents += tab + "}\n\n"
-
-	return contents
-}
-
-func (g *Generator) generateUnionCompareTo(union *parser.Struct) string {
-	contents := ""
-
-	contents += tab + "@Override\n"
-	contents += fmt.Sprintf(tab+"public int compareTo(%s other) {\n", union.Name)
-	contents += tabtab + "int lastComparison = org.apache.thrift.TBaseHelper.compareTo(getSetField(), other.getSetField());\n"
-	contents += tabtab + "if (lastComparison == 0) {\n"
-	contents += tabtabtab + "return org.apache.thrift.TBaseHelper.compareTo(getFieldValue(), other.getFieldValue());\n"
-	contents += tabtab + "}\n"
-	contents += tabtab + "return lastComparison;\n"
-	contents += tab + "}\n\n\n"
+	contents += indent + fmt.Sprintf("public boolean equals(%s other) {\n", union.Name)
+	contents += indent + tab + "return other != null && getSetField() == other.getSetField() && getFieldValue().equals(other.getFieldValue());\n"
+	contents += indent + "}\n\n"
 
 	return contents
 }
 
-func (g *Generator) generateUnionHashCode(union *parser.Struct) string {
+func (g *Generator) generateUnionCompareTo(union *parser.Struct, indent string) string {
 	contents := ""
 
-	contents += tab + "@Override\n"
-	contents += tab + "public int hashCode() {\n"
-	contents += tabtab + "List<Object> list = new ArrayList<Object>();\n"
-	contents += tabtab + "list.add(this.getClass().getName());\n"
-	contents += tabtab + "org.apache.thrift.TFieldIdEnum setField = getSetField();\n"
-	contents += tabtab + "if (setField != null) {\n"
-	contents += tabtabtab + "list.add(setField.getThriftFieldId());\n"
-	contents += tabtabtab + "Object value = getFieldValue();\n"
-	contents += tabtabtab + "if (value instanceof org.apache.thrift.TEnum) {\n"
-	contents += tabtabtabtab + "list.add(((org.apache.thrift.TEnum)getFieldValue()).getValue());\n"
-	contents += tabtabtab + "} else {\n"
-	contents += tabtabtabtab + "list.add(value);\n"
-	contents += tabtabtab + "}\n"
-	contents += tabtab + "}\n"
-	contents += tabtab + "return list.hashCode();\n"
-	contents += tab + "}\n"
+	contents += indent + "@Override\n"
+	contents += indent + fmt.Sprintf("public int compareTo(%s other) {\n", union.Name)
+	contents += indent + tab + "int lastComparison = org.apache.thrift.TBaseHelper.compareTo(getSetField(), other.getSetField());\n"
+	contents += indent + tab + "if (lastComparison == 0) {\n"
+	contents += indent + tabtab + "return org.apache.thrift.TBaseHelper.compareTo(getFieldValue(), other.getFieldValue());\n"
+	contents += indent + tab + "}\n"
+	contents += indent + tab + "return lastComparison;\n"
+	contents += indent + "}\n\n\n"
+
+	return contents
+}
+
+func (g *Generator) generateUnionHashCode(union *parser.Struct, indent string) string {
+	contents := ""
+
+	contents += indent + "@Override\n"
+	contents += indent + "public int hashCode() {\n"
+	contents += indent + tab + "List<Object> list = new ArrayList<Object>();\n"
+	contents += indent + tab + "list.add(this.getClass().getName());\n"
+	contents += indent + tab + "org.apache.thrift.TFieldIdEnum setField = getSetField();\n"
+	contents += indent + tab + "if (setField != null) {\n"
+	contents += indent + tabtab + "list.add(setField.getThriftFieldId());\n"
+	contents += indent + tabtab + "Object value = getFieldValue();\n"
+	contents += indent + tabtab + "if (value instanceof org.apache.thrift.TEnum) {\n"
+	contents += indent + tabtabtab + "list.add(((org.apache.thrift.TEnum)getFieldValue()).getValue());\n"
+	contents += indent + tabtab + "} else {\n"
+	contents += indent + tabtabtab + "list.add(value);\n"
+	contents += indent + tabtab + "}\n"
+	contents += indent + tab + "}\n"
+	contents += indent + tab + "return list.hashCode();\n"
+	contents += indent + "}\n"
 
 	return contents
 }
@@ -799,7 +809,7 @@ func (g *Generator) GenerateException(exception *parser.Struct) error {
 
 // generateServiceArgsResults generates the args and results objects for the
 // given service.
-func (g *Generator) generateServiceArgsResults(service *parser.Service) string {
+func (g *Generator) generateServiceArgsResults(service *parser.Service, indent string) string {
 	contents := ""
 	for _, s := range g.GetServiceMethodTypes(service) {
 		for _, field := range s.Fields {
@@ -807,19 +817,20 @@ func (g *Generator) generateServiceArgsResults(service *parser.Service) string {
 				field.Modifier = parser.Default
 			}
 		}
-		contents += g.generateStruct(s, strings.HasSuffix(s.Name, "_args"), strings.HasSuffix(s.Name, "_result"))
+		contents += g.generateStruct(s, strings.HasSuffix(s.Name, "_args"), strings.HasSuffix(s.Name, "_result"), indent)
+		contents += "\n"
 	}
 	return contents
 }
 
-func (g *Generator) generateStruct(s *parser.Struct, isArg, isResult bool) string {
+func (g *Generator) generateStruct(s *parser.Struct, isArg, isResult bool, indent string) string {
 	contents := ""
 
 	if s.Comment != nil {
-		contents += g.GenerateBlockComment(s.Comment, "")
+		contents += g.GenerateBlockComment(s.Comment, indent)
 	}
 	if g.includeGeneratedAnnotation() && !isArg && !isResult {
-		contents += g.generatedAnnotation()
+		contents += g.generatedAnnotation(indent)
 	}
 	static := ""
 	if isArg || isResult {
@@ -829,107 +840,112 @@ func (g *Generator) generateStruct(s *parser.Struct, isArg, isResult bool) strin
 	if s.Type == parser.StructTypeException {
 		exception = "extends TException "
 	}
-	contents += fmt.Sprintf("public %sclass %s %simplements org.apache.thrift.TBase<%s, %s._Fields>, java.io.Serializable, Cloneable, Comparable<%s> {\n",
-		static, s.Name, exception, s.Name, s.Name, s.Name)
+	contents += fmt.Sprintf("%spublic %sclass %s %simplements org.apache.thrift.TBase<%s, %s._Fields>, java.io.Serializable, Cloneable, Comparable<%s> {\n",
+		indent, static, s.Name, exception, s.Name, s.Name, s.Name)
 
-	contents += g.generateDescriptors(s)
+	nestedIndent := indent + tab
 
-	contents += g.generateSchemeMap(s)
+	contents += g.generateDescriptors(s, nestedIndent)
 
-	contents += g.generateInstanceVars(s)
+	contents += g.generateSchemeMap(s, nestedIndent)
 
-	contents += g.generateFieldsEnum(s)
+	contents += g.generateInstanceVars(s, nestedIndent)
 
-	contents += g.generateIsSetVars(s)
+	contents += g.generateFieldsEnum(s, nestedIndent)
 
-	contents += g.generateDefaultConstructor(s)
-	contents += g.generateFullConstructor(s)
-	contents += g.generateCopyConstructor(s)
-	contents += g.generateDeepCopyMethod(s)
-	contents += g.generateClear(s)
+	contents += g.generateIsSetVars(s, nestedIndent)
+
+	contents += g.generateDefaultConstructor(s, nestedIndent)
+	contents += g.generateFullConstructor(s, nestedIndent)
+	contents += g.generateCopyConstructor(s, nestedIndent)
+	contents += g.generateDeepCopyMethod(s, nestedIndent)
+	contents += g.generateClear(s, nestedIndent)
 
 	for _, field := range s.Fields {
 		underlyingType := g.Frugal.UnderlyingType(field.Type)
 		if underlyingType.IsContainer() {
-			contents += g.generateContainerGetSize(field)
-			contents += g.generateContainerIterator(field)
-			contents += g.generateContainerAddTo(field)
-
+			contents += g.generateContainerGetSize(field, nestedIndent)
+			contents += g.generateContainerIterator(field, nestedIndent)
+			contents += g.generateContainerAddTo(field, nestedIndent)
 		}
 
-		contents += g.generateGetField(field)
-		contents += g.generateSetField(s.Name, field)
-		contents += g.generateUnsetField(s, field)
-		contents += g.generateIsSetField(s, field)
-		contents += g.generateSetIsSetField(s, field)
+		contents += g.generateGetField(field, nestedIndent)
+		contents += g.generateSetField(s.Name, field, nestedIndent)
+		contents += g.generateUnsetField(s, field, nestedIndent)
+		contents += g.generateIsSetField(s, field, nestedIndent)
+		contents += g.generateSetIsSetField(s, field, nestedIndent)
 	}
 
-	contents += g.generateSetValue(s)
-	contents += g.generateGetValue(s)
-	contents += g.generateIsSetValue(s)
+	contents += g.generateSetValue(s, nestedIndent)
+	contents += g.generateGetValue(s, nestedIndent)
+	contents += g.generateIsSetValue(s, nestedIndent)
 
-	contents += g.generateEquals(s)
-	contents += g.generateHashCode(s)
-	contents += g.generateCompareTo(s)
+	contents += g.generateEquals(s, nestedIndent)
+	contents += g.generateHashCode(s, nestedIndent)
+	contents += g.generateCompareTo(s, nestedIndent)
 
-	contents += g.generateFieldForId(s)
-	contents += g.generateReadWrite(s)
+	contents += g.generateFieldForId(s, nestedIndent)
+	contents += g.generateReadWrite(s, nestedIndent)
 
-	contents += g.generateToString(s)
-	contents += g.generateValidate(s)
+	contents += g.generateToString(s, nestedIndent)
+	contents += g.generateValidate(s, nestedIndent)
 
-	contents += g.generateWriteObject(s)
-	contents += g.generateReadObject(s)
+	contents += g.generateWriteObject(s, nestedIndent)
+	contents += g.generateReadObject(s, nestedIndent)
 
-	contents += g.generateStandardScheme(s, isResult)
-	contents += g.generateTupleScheme(s)
+	contents += g.generateStandardScheme(s, isResult, nestedIndent)
+	contents += g.generateTupleScheme(s, nestedIndent)
 
-	contents += "}\n"
+	contents += indent + "}\n"
 	return contents
 }
 
-func (g *Generator) generateDescriptors(s *parser.Struct) string {
+func (g *Generator) generateDescriptors(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += fmt.Sprintf(tab+"private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct(\"%s\");\n\n",
+	contents += indent + fmt.Sprintf("private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct(\"%s\");\n\n",
 		s.Name)
 	for _, field := range s.Fields {
-		contents += fmt.Sprintf(tab+"private static final org.apache.thrift.protocol.TField %s_FIELD_DESC = new org.apache.thrift.protocol.TField(\"%s\", %s, (short)%d);\n",
+		contents += indent + fmt.Sprintf("private static final org.apache.thrift.protocol.TField %s_FIELD_DESC = new org.apache.thrift.protocol.TField(\"%s\", %s, (short)%d);\n",
 			toConstantName(field.Name), field.Name, g.getTType(field.Type), field.ID)
 	}
 	contents += "\n"
 	return contents
 }
 
-func (g *Generator) generateSchemeMap(s *parser.Struct) string {
+func (g *Generator) generateSchemeMap(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();\n"
-	contents += tab + "static {\n"
-	contents += fmt.Sprintf(tabtab+"schemes.put(StandardScheme.class, new %sStandardSchemeFactory());\n", s.Name)
-	contents += fmt.Sprintf(tabtab+"schemes.put(TupleScheme.class, new %sTupleSchemeFactory());\n", s.Name)
-	contents += tab + "}\n\n"
+	contents += indent + "private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();\n"
+	contents += indent + "static {\n"
+	contents += indent + tab + fmt.Sprintf("schemes.put(StandardScheme.class, new %sStandardSchemeFactory());\n", s.Name)
+	contents += indent + tab + fmt.Sprintf("schemes.put(TupleScheme.class, new %sTupleSchemeFactory());\n", s.Name)
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateInstanceVars(s *parser.Struct) string {
+func (g *Generator) generateInstanceVars(s *parser.Struct, indent string) string {
 	contents := ""
 	for _, field := range s.Fields {
-		if field.Comment != nil {
-			contents += g.GenerateBlockComment(field.Comment, tab)
-		}
-		modifier := "required"
-		if field.Modifier == parser.Optional {
+		contents += g.generateCommentWithDeprecated(field.Comment, indent, field.Annotations)
+		modifier := ""
+		if field.Modifier == parser.Required {
+			modifier = "required"
+		} else if field.Modifier == parser.Optional {
 			modifier = "optional"
 		}
-		contents += fmt.Sprintf(tab+"public %s %s; // %s\n",
-			g.getJavaTypeFromThriftType(field.Type), field.Name, modifier)
+		modifierComment := ""
+		if modifier != "" {
+			modifierComment = " // " + modifier
+		}
+		contents += indent + fmt.Sprintf("public %s %s;%s\n",
+			g.getJavaTypeFromThriftType(field.Type), field.Name, modifierComment)
 	}
 	return contents
 }
 
-func (g *Generator) generateFieldsEnum(s *parser.Struct) string {
+func (g *Generator) generateFieldsEnum(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */\n"
-	contents += tab + "public enum _Fields implements org.apache.thrift.TFieldIdEnum {\n"
+	contents += indent + "/** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */\n"
+	contents += indent + "public enum _Fields implements org.apache.thrift.TFieldIdEnum {\n"
 
 	for idx, field := range s.Fields {
 		terminator := ""
@@ -938,77 +954,77 @@ func (g *Generator) generateFieldsEnum(s *parser.Struct) string {
 		}
 
 		if field.Comment != nil {
-			contents += g.GenerateBlockComment(field.Comment, tabtab)
+			contents += g.GenerateBlockComment(field.Comment, indent+tab)
 		}
-		contents += fmt.Sprintf(tabtab+"%s((short)%d, \"%s\")%s\n", toConstantName(field.Name), field.ID, field.Name, terminator)
+		contents += indent + tab + fmt.Sprintf("%s((short)%d, \"%s\")%s\n", toConstantName(field.Name), field.ID, field.Name, terminator)
 	}
 	// Do it this was as the semi colon is needed no matter what
-	contents += ";\n"
+	contents += indent + tab + ";\n"
 	contents += "\n"
 
-	contents += tabtab + "private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();\n\n"
-	contents += tabtab + "static {\n"
-	contents += tabtabtab + "for (_Fields field : EnumSet.allOf(_Fields.class)) {\n"
-	contents += tabtabtabtab + "byName.put(field.getFieldName(), field);\n"
-	contents += tabtabtab + "}\n"
-	contents += tabtab + "}\n\n"
+	contents += indent + tab + "private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();\n\n"
+	contents += indent + tab + "static {\n"
+	contents += indent + tabtab + "for (_Fields field : EnumSet.allOf(_Fields.class)) {\n"
+	contents += indent + tabtabtab + "byName.put(field.getFieldName(), field);\n"
+	contents += indent + tabtab + "}\n"
+	contents += indent + tab + "}\n\n"
 
-	contents += g.GenerateBlockComment([]string{"Find the _Fields constant that matches fieldId, or null if its not found."}, tabtab)
-	contents += tabtab + "public static _Fields findByThriftId(int fieldId) {\n"
-	contents += tabtabtab + "switch(fieldId) {\n"
+	contents += g.GenerateBlockComment([]string{"Find the _Fields constant that matches fieldId, or null if its not found."}, indent+tab)
+	contents += indent + tab + "public static _Fields findByThriftId(int fieldId) {\n"
+	contents += indent + tabtab + "switch(fieldId) {\n"
 	for _, field := range s.Fields {
-		contents += fmt.Sprintf(tabtabtabtab+"case %d: // %s\n", field.ID, toConstantName(field.Name))
-		contents += fmt.Sprintf(tabtabtabtabtab+"return %s;\n", toConstantName(field.Name))
+		contents += indent + tabtabtab + fmt.Sprintf("case %d: // %s\n", field.ID, toConstantName(field.Name))
+		contents += indent + tabtabtabtab + fmt.Sprintf("return %s;\n", toConstantName(field.Name))
 	}
-	contents += tabtabtabtab + "default:\n"
-	contents += tabtabtabtabtab + "return null;\n"
-	contents += tabtabtab + "}\n"
-	contents += tabtab + "}\n\n"
+	contents += indent + tabtabtab + "default:\n"
+	contents += indent + tabtabtabtab + "return null;\n"
+	contents += indent + tabtab + "}\n"
+	contents += indent + tab + "}\n\n"
 
 	contents += g.GenerateBlockComment([]string{
 		"Find the _Fields constant that matches fieldId, throwing an exception",
 		"if it is not found.",
-	}, tabtab)
-	contents += tabtab + "public static _Fields findByThriftIdOrThrow(int fieldId) {\n"
-	contents += tabtabtab + "_Fields fields = findByThriftId(fieldId);\n"
-	contents += tabtabtab + "if (fields == null) throw new IllegalArgumentException(\"Field \" + fieldId + \" doesn't exist!\");\n"
-	contents += tabtabtab + "return fields;\n"
-	contents += tabtab + "}\n\n"
+	}, indent+tab)
+	contents += indent + tab + "public static _Fields findByThriftIdOrThrow(int fieldId) {\n"
+	contents += indent + tabtab + "_Fields fields = findByThriftId(fieldId);\n"
+	contents += indent + tabtab + "if (fields == null) throw new IllegalArgumentException(\"Field \" + fieldId + \" doesn't exist!\");\n"
+	contents += indent + tabtab + "return fields;\n"
+	contents += indent + tab + "}\n\n"
 
-	contents += g.GenerateBlockComment([]string{"Find the _Fields constant that matches name, or null if its not found."}, tabtab)
-	contents += tabtab + "public static _Fields findByName(String name) {\n"
-	contents += tabtabtab + "return byName.get(name);\n"
-	contents += tabtab + "}\n\n"
+	contents += g.GenerateBlockComment([]string{"Find the _Fields constant that matches name, or null if its not found."}, indent+tab)
+	contents += indent + tab + "public static _Fields findByName(String name) {\n"
+	contents += indent + tabtab + "return byName.get(name);\n"
+	contents += indent + tab + "}\n\n"
 
-	contents += tabtab + "private final short _thriftId;\n"
-	contents += tabtab + "private final String _fieldName;\n\n"
+	contents += indent + tab + "private final short _thriftId;\n"
+	contents += indent + tab + "private final String _fieldName;\n\n"
 
-	contents += tabtab + "_Fields(short thriftId, String fieldName) {\n"
-	contents += tabtabtab + "_thriftId = thriftId;\n"
-	contents += tabtabtab + "_fieldName = fieldName;\n"
-	contents += tabtab + "}\n\n"
+	contents += indent + tab + "_Fields(short thriftId, String fieldName) {\n"
+	contents += indent + tabtab + "_thriftId = thriftId;\n"
+	contents += indent + tabtab + "_fieldName = fieldName;\n"
+	contents += indent + tab + "}\n\n"
 
-	contents += tabtab + "public short getThriftFieldId() {\n"
-	contents += tabtabtab + "return _thriftId;\n"
-	contents += tabtab + "}\n\n"
+	contents += indent + tab + "public short getThriftFieldId() {\n"
+	contents += indent + tabtab + "return _thriftId;\n"
+	contents += indent + tab + "}\n\n"
 
-	contents += tabtab + "public String getFieldName() {\n"
-	contents += tabtabtab + "return _fieldName;\n"
-	contents += tabtab + "}\n"
+	contents += indent + tab + "public String getFieldName() {\n"
+	contents += indent + tabtab + "return _fieldName;\n"
+	contents += indent + tab + "}\n"
 
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateIsSetVars(s *parser.Struct) string {
+func (g *Generator) generateIsSetVars(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "// isset id assignments\n"
+	contents += indent + "// isset id assignments\n"
 	primitiveCount := 0
 	for _, field := range s.Fields {
 		if g.isJavaPrimitive(field.Type) {
-			contents += fmt.Sprintf(tab+"private static final int %s = %d;\n",
+			contents += indent + fmt.Sprintf("private static final int %s = %d;\n",
 				g.getIsSetID(field.Name), primitiveCount)
-			primitiveCount += 1
+			primitiveCount++
 		}
 	}
 	isSetType, bitFieldType := g.getIsSetType(s)
@@ -1016,135 +1032,138 @@ func (g *Generator) generateIsSetVars(s *parser.Struct) string {
 	case IsSetNone:
 	// Do nothing
 	case IsSetBitfield:
-		contents += fmt.Sprintf(tab+"private %s __isset_bitfield = 0;\n", bitFieldType)
+		contents += indent + fmt.Sprintf("private %s __isset_bitfield = 0;\n", bitFieldType)
 	case IsSetBitSet:
-		contents += fmt.Sprintf(tab+"private BitSet __isset_bit_vector = new BitSet(%d);\n", primitiveCount)
+		contents += indent + fmt.Sprintf("private BitSet __isset_bit_vector = new BitSet(%d);\n", primitiveCount)
 	}
 	return contents
 }
 
-func (g *Generator) generateDefaultConstructor(s *parser.Struct) string {
+func (g *Generator) generateDefaultConstructor(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += fmt.Sprintf(tab+"public %s() {\n", s.Name)
+	contents += indent + fmt.Sprintf("public %s() {\n", s.Name)
 	for _, field := range s.Fields {
 		if field.Default != nil {
-			val := g.generateConstantValueWrapper("this."+field.Name, field.Type, field.Default, false, false)
+			val := g.generateConstantValueWrapper("this."+field.Name, field.Type, field.Default, false, false, indent+tab)
 			contents += fmt.Sprintf("%s\n", val)
 		}
 	}
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateFullConstructor(s *parser.Struct) string {
+func (g *Generator) generateFullConstructor(s *parser.Struct, indent string) string {
 	contents := ""
 	argsList := ""
-	sep := "\n" + tabtab
+	sep := "\n" + indent + tab
 	numNonOptional := 0
 	for _, field := range s.Fields {
 		if field.Modifier == parser.Optional {
 			continue
 		}
 		argsList += fmt.Sprintf("%s%s %s", sep, g.getJavaTypeFromThriftType(field.Type), field.Name)
-		sep = ",\n" + tabtab
-		numNonOptional += 1
+		sep = ",\n" + indent + tab
+		numNonOptional++
 	}
 
 	if numNonOptional > 0 {
-		contents += fmt.Sprintf(tab+"public %s(%s) {\n", s.Name, argsList)
-		contents += fmt.Sprintf(tabtab + "this();\n")
+		contents += indent + fmt.Sprintf("public %s(%s) {\n", s.Name, argsList)
+		contents += indent + tab + "this();\n"
 		for _, field := range s.Fields {
 			if field.Modifier == parser.Optional {
 				continue
 			}
 
 			if g.Frugal.UnderlyingType(field.Type).Name == "binary" {
-				contents += fmt.Sprintf(tabtab+"this.%s = org.apache.thrift.TBaseHelper.copyBinary(%s);\n", field.Name, field.Name)
+				contents += indent + tab + fmt.Sprintf("this.%s = org.apache.thrift.TBaseHelper.copyBinary(%s);\n", field.Name, field.Name)
 			} else {
-				contents += fmt.Sprintf(tabtab+"this.%s = %s;\n", field.Name, field.Name)
+				contents += indent + tab + fmt.Sprintf("this.%s = %s;\n", field.Name, field.Name)
 			}
 
 			if g.isJavaPrimitive(field.Type) {
-				contents += fmt.Sprintf(tabtab+"set%sIsSet(true);\n", strings.Title(field.Name))
+				contents += indent + tab + fmt.Sprintf("set%sIsSet(true);\n", strings.Title(field.Name))
 			}
 		}
-		contents += tab + "}\n\n"
+		contents += indent + "}\n\n"
 	}
 	return contents
 }
 
-func (g *Generator) generateCopyConstructor(s *parser.Struct) string {
+func (g *Generator) generateCopyConstructor(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += g.GenerateBlockComment([]string{"Performs a deep copy on <i>other</i>."}, tab)
-	contents += fmt.Sprintf(tab+"public %s(%s other) {\n", s.Name, s.Name)
+	contents += g.GenerateBlockComment([]string{"Performs a deep copy on <i>other</i>."}, indent)
+	contents += indent + fmt.Sprintf("public %s(%s other) {\n", s.Name, s.Name)
 
 	isSetType, _ := g.getIsSetType(s)
 	switch isSetType {
 	case IsSetNone:
 		// do nothing
 	case IsSetBitfield:
-		contents += tabtab + "__isset_bitfield = other.__isset_bitfield;\n"
+		contents += indent + tab + "__isset_bitfield = other.__isset_bitfield;\n"
 	case IsSetBitSet:
-		contents += tabtab + "__isset_bit_vector.clear();\n"
-		contents += tabtab + "__isset_bit_vector.or(other.__isset_bit_vector);\n"
+		contents += indent + tab + "__isset_bit_vector.clear();\n"
+		contents += indent + tab + "__isset_bit_vector.or(other.__isset_bit_vector);\n"
 	}
 
 	for _, field := range s.Fields {
 		isPrimitive := g.isJavaPrimitive(g.Frugal.UnderlyingType(field.Type))
-		ind := tabtab
+		ind := indent + tab
 		if !isPrimitive {
-			contents += fmt.Sprintf(tabtab+"if (other.isSet%s()) {\n", strings.Title(field.Name))
+			contents += indent + tab + fmt.Sprintf("if (other.isSet%s()) {\n", strings.Title(field.Name))
 			ind += tab
 		}
 		contents += g.generateCopyConstructorField(field, "other."+field.Name, true, ind)
 		if !isPrimitive {
-			contents += tabtab + "}\n"
+			contents += indent + tab + "}\n"
 		}
 	}
 
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateDeepCopyMethod(s *parser.Struct) string {
+func (g *Generator) generateDeepCopyMethod(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += fmt.Sprintf(tab+"public %s deepCopy() {\n", s.Name)
-	contents += fmt.Sprintf(tabtab+"return new %s(this);\n", s.Name)
-	contents += tab + "}\n\n"
+	contents += indent + fmt.Sprintf("public %s deepCopy() {\n", s.Name)
+	contents += indent + tab + fmt.Sprintf("return new %s(this);\n", s.Name)
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateClear(s *parser.Struct) string {
+func (g *Generator) generateClear(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "@Override\n"
-	contents += fmt.Sprintf(tab + "public void clear() {\n")
+	contents += indent + "@Override\n"
+	contents += indent + fmt.Sprintf("public void clear() {\n")
 	for _, field := range s.Fields {
 		underlyingType := g.Frugal.UnderlyingType(field.Type)
 
 		if field.Default != nil {
-			val := g.generateConstantValueWrapper("this."+field.Name, field.Type, field.Default, false, false)
-			contents += fmt.Sprintf("%s\n", val)
+			val := g.generateConstantValueWrapper("this."+field.Name, field.Type, field.Default, false, false, indent+tab)
+			contents += val + "\n"
 		} else if g.isJavaPrimitive(field.Type) {
-			contents += fmt.Sprintf(tabtab+"set%sIsSet(false);\n", strings.Title(field.Name))
+			contents += indent + tab + fmt.Sprintf("set%sIsSet(false);\n", strings.Title(field.Name))
 			val := g.getPrimitiveDefaultValue(underlyingType)
-			contents += fmt.Sprintf(tabtab+"this.%s = %s;\n\n", field.Name, val)
+			contents += indent + tab + fmt.Sprintf("this.%s = %s;\n\n", field.Name, val)
 		} else {
-			contents += fmt.Sprintf(tabtab+"this.%s = null;\n\n", field.Name)
+			contents += indent + tab + fmt.Sprintf("this.%s = null;\n\n", field.Name)
 		}
 	}
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateContainerGetSize(field *parser.Field) string {
+func (g *Generator) generateContainerGetSize(field *parser.Field, indent string) string {
 	contents := ""
-	contents += fmt.Sprintf(tab+"public int get%sSize() {\n", strings.Title(field.Name))
-	contents += fmt.Sprintf(tabtab+"return (this.%s == null) ? 0 : this.%s.size();\n", field.Name, field.Name)
-	contents += fmt.Sprintf(tab + "}\n\n")
+	if field.Annotations.IsDeprecated() {
+		contents += indent + "@Deprecated\n"
+	}
+	contents += indent + fmt.Sprintf("public int get%sSize() {\n", strings.Title(field.Name))
+	contents += indent + tab + fmt.Sprintf("return (this.%s == null) ? 0 : this.%s.size();\n", field.Name, field.Name)
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateContainerIterator(field *parser.Field) string {
+func (g *Generator) generateContainerIterator(field *parser.Field, indent string) string {
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 
 	// maps don't get iterators
@@ -1153,42 +1172,48 @@ func (g *Generator) generateContainerIterator(field *parser.Field) string {
 	}
 
 	contents := ""
-	contents += fmt.Sprintf(tab+"public java.util.Iterator<%s> get%sIterator() {\n",
+	if field.Annotations.IsDeprecated() {
+		contents += indent + "@Deprecated\n"
+	}
+	contents += indent + fmt.Sprintf("public java.util.Iterator<%s> get%sIterator() {\n",
 		containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType)), strings.Title(field.Name))
-	contents += fmt.Sprintf(tabtab+"return (this.%s == null) ? null : this.%s.iterator();\n", field.Name, field.Name)
-	contents += tab + "}\n\n"
+	contents += indent + tab + fmt.Sprintf("return (this.%s == null) ? null : this.%s.iterator();\n", field.Name, field.Name)
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateContainerAddTo(field *parser.Field) string {
+func (g *Generator) generateContainerAddTo(field *parser.Field, indent string) string {
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	valType := g.getJavaTypeFromThriftType(underlyingType.ValueType)
 	fieldTitle := strings.Title(field.Name)
 
 	contents := ""
+	if field.Annotations.IsDeprecated() {
+		contents += indent + "@Deprecated\n"
+	}
 
 	if underlyingType.Name == "list" || underlyingType.Name == "set" {
-		contents += fmt.Sprintf(tab+"public void addTo%s(%s elem) {\n", fieldTitle, valType)
+		contents += indent + fmt.Sprintf("public void addTo%s(%s elem) {\n", fieldTitle, valType)
 		newContainer := ""
 		if underlyingType.Name == "list" {
 			newContainer = fmt.Sprintf("new ArrayList<%s>()", containerType(valType))
 		} else {
 			newContainer = fmt.Sprintf("new HashSet<%s>()", containerType(valType))
 		}
-		contents += fmt.Sprintf(tabtab+"if (this.%s == null) {\n", field.Name)
-		contents += fmt.Sprintf(tabtabtab+"this.%s = %s;\n", field.Name, newContainer)
-		contents += tabtab + "}\n"
-		contents += fmt.Sprintf(tabtab+"this.%s.add(elem);\n", field.Name)
-		contents += tab + "}\n\n"
+		contents += indent + tab + fmt.Sprintf("if (this.%s == null) {\n", field.Name)
+		contents += indent + tabtab + fmt.Sprintf("this.%s = %s;\n", field.Name, newContainer)
+		contents += indent + tab + "}\n"
+		contents += indent + tab + fmt.Sprintf("this.%s.add(elem);\n", field.Name)
+		contents += indent + "}\n\n"
 	} else {
-		contents += fmt.Sprintf(tab+"public void putTo%s(%s key, %s val) {\n",
+		contents += indent + fmt.Sprintf("public void putTo%s(%s key, %s val) {\n",
 			fieldTitle, g.getJavaTypeFromThriftType(underlyingType.KeyType), valType)
-		contents += fmt.Sprintf(tabtab+"if (this.%s == null) {\n", field.Name)
-		contents += fmt.Sprintf(tabtabtab+"this.%s = new HashMap<%s,%s>();\n",
+		contents += indent + tab + fmt.Sprintf("if (this.%s == null) {\n", field.Name)
+		contents += indent + tabtab + fmt.Sprintf("this.%s = new HashMap<%s,%s>();\n",
 			field.Name, containerType(g.getJavaTypeFromThriftType(underlyingType.KeyType)), containerType(valType))
-		contents += tabtab + "}\n"
-		contents += fmt.Sprintf(tabtab+"this.%s.put(key, val);\n", field.Name)
-		contents += tab + "}\n\n"
+		contents += indent + tab + "}\n"
+		contents += indent + tab + fmt.Sprintf("this.%s.put(key, val);\n", field.Name)
+		contents += indent + "}\n\n"
 	}
 
 	return contents
@@ -1201,11 +1226,11 @@ func (g *Generator) getAccessorPrefix(t *parser.Type) string {
 	return "get"
 }
 
-func (g *Generator) generateGetField(field *parser.Field) string {
+func (g *Generator) generateGetField(field *parser.Field, indent string) string {
 	contents := ""
 	fieldTitle := strings.Title(field.Name)
 	if field.Comment != nil {
-		contents += g.GenerateBlockComment(field.Comment, tab)
+		contents += g.GenerateBlockComment(field.Comment, indent)
 	}
 
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
@@ -1216,26 +1241,29 @@ func (g *Generator) generateGetField(field *parser.Field) string {
 	}
 
 	accessPrefix := g.getAccessorPrefix(field.Type)
-	contents += fmt.Sprintf(tab+"public %s %s%s() {\n", returnType, accessPrefix, fieldTitle)
-	if underlyingType.Name == "binary" {
-		contents += fmt.Sprintf(tabtab+"set%s(org.apache.thrift.TBaseHelper.rightSize(%s));\n",
-			strings.Title(field.Name), field.Name)
-		contents += fmt.Sprintf(tabtab+"return %s == null ? null : %s.array();\n", field.Name, field.Name)
-	} else {
-		contents += fmt.Sprintf(tabtab+"return this.%s;\n", field.Name)
+	if field.Annotations.IsDeprecated() {
+		contents += indent + "@Deprecated\n"
 	}
-	contents += tab + "}\n\n"
+	contents += indent + fmt.Sprintf("public %s %s%s() {\n", returnType, accessPrefix, fieldTitle)
+	if underlyingType.Name == "binary" {
+		contents += indent + tab + fmt.Sprintf("set%s(org.apache.thrift.TBaseHelper.rightSize(%s));\n",
+			strings.Title(field.Name), field.Name)
+		contents += indent + tab + fmt.Sprintf("return %s == null ? null : %s.array();\n", field.Name, field.Name)
+	} else {
+		contents += indent + tab + fmt.Sprintf("return this.%s;\n", field.Name)
+	}
+	contents += indent + "}\n\n"
 
 	if underlyingType.Name == "binary" {
-		contents += fmt.Sprintf(tab+"public java.nio.ByteBuffer bufferFor%s() {\n", fieldTitle)
-		contents += fmt.Sprintf(tabtab+"return org.apache.thrift.TBaseHelper.copyBinary(%s);\n", field.Name)
-		contents += fmt.Sprintf(tab + "}\n\n")
+		contents += indent + fmt.Sprintf("public java.nio.ByteBuffer bufferFor%s() {\n", fieldTitle)
+		contents += indent + tab + fmt.Sprintf("return org.apache.thrift.TBaseHelper.copyBinary(%s);\n", field.Name)
+		contents += indent + "}\n\n"
 	}
 
 	return contents
 }
 
-func (g *Generator) generateSetField(structName string, field *parser.Field) string {
+func (g *Generator) generateSetField(structName string, field *parser.Field, indent string) string {
 	fieldTitle := strings.Title(field.Name)
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 
@@ -1243,40 +1271,48 @@ func (g *Generator) generateSetField(structName string, field *parser.Field) str
 
 	if underlyingType.Name == "binary" {
 		// Special additional binary set
-		contents += fmt.Sprintf(tab+"public %s set%s(byte[] %s) {\n", structName, fieldTitle, field.Name)
-		contents += fmt.Sprintf(tabtab+"this.%s = %s == null ? (java.nio.ByteBuffer)null : java.nio.ByteBuffer.wrap(Arrays.copyOf(%s, %s.length));\n",
+		if field.Annotations.IsDeprecated() {
+			contents += indent + "@Deprecated\n"
+		}
+		contents += indent + fmt.Sprintf("public %s set%s(byte[] %s) {\n", structName, fieldTitle, field.Name)
+		contents += indent + tab + fmt.Sprintf("this.%s = %s == null ? (java.nio.ByteBuffer)null : java.nio.ByteBuffer.wrap(Arrays.copyOf(%s, %s.length));\n",
 			field.Name, field.Name, field.Name, field.Name)
-		contents += tabtab + "return this;\n"
-		contents += tab + "}\n\n"
+		contents += indent + tab + "return this;\n"
+		contents += indent + "}\n\n"
 	}
 
 	if field.Comment != nil {
-		contents += g.GenerateBlockComment(field.Comment, tab)
+		contents += g.GenerateBlockComment(field.Comment, indent)
 	}
-	contents += fmt.Sprintf(tab+"public %s set%s(%s %s) {\n",
+	if field.Annotations.IsDeprecated() {
+		contents += indent + "@Deprecated\n"
+	}
+	contents += indent + fmt.Sprintf("public %s set%s(%s %s) {\n",
 		structName, fieldTitle, g.getJavaTypeFromThriftType(field.Type), field.Name)
 
 	if underlyingType.Name == "binary" {
-		contents += fmt.Sprintf(tabtab+"this.%s = org.apache.thrift.TBaseHelper.copyBinary(%s);\n", field.Name, field.Name)
-
+		contents += indent + tab + fmt.Sprintf("this.%s = org.apache.thrift.TBaseHelper.copyBinary(%s);\n", field.Name, field.Name)
 	} else {
-		contents += fmt.Sprintf(tabtab+"this.%s = %s;\n", field.Name, field.Name)
+		contents += indent + tab + fmt.Sprintf("this.%s = %s;\n", field.Name, field.Name)
 	}
 
 	if g.isJavaPrimitive(field.Type) {
-		contents += fmt.Sprintf(tabtab+"set%sIsSet(true);\n", fieldTitle)
+		contents += indent + tab + fmt.Sprintf("set%sIsSet(true);\n", fieldTitle)
 	}
 
-	contents += tabtab + "return this;\n"
-	contents += tab + "}\n\n"
+	contents += indent + tab + "return this;\n"
+	contents += indent + "}\n\n"
 
 	return contents
 }
 
-func (g *Generator) generateUnsetField(s *parser.Struct, field *parser.Field) string {
+func (g *Generator) generateUnsetField(s *parser.Struct, field *parser.Field, indent string) string {
 	contents := ""
 
-	contents += fmt.Sprintf(tab+"public void unset%s() {\n", strings.Title(field.Name))
+	if field.Annotations.IsDeprecated() {
+		contents += indent + "@Deprecated\n"
+	}
+	contents += indent + fmt.Sprintf("public void unset%s() {\n", strings.Title(field.Name))
 	if g.isJavaPrimitive(field.Type) {
 		isSetType, _ := g.getIsSetType(s)
 		isSetID := g.getIsSetID(field.Name)
@@ -1284,14 +1320,14 @@ func (g *Generator) generateUnsetField(s *parser.Struct, field *parser.Field) st
 		case IsSetNone:
 			panic("IsSetNone occurred with a primitive")
 		case IsSetBitfield:
-			contents += fmt.Sprintf(tabtab+"__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, %s);\n", isSetID)
+			contents += indent + tab + fmt.Sprintf("__isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, %s);\n", isSetID)
 		case IsSetBitSet:
-			contents += fmt.Sprintf(tabtab+"__isset_bit_vector.clear(%s);\n", isSetID)
+			contents += indent + tab + fmt.Sprintf("__isset_bit_vector.clear(%s);\n", isSetID)
 		}
 	} else {
-		contents += fmt.Sprintf(tabtab+"this.%s = null;\n", field.Name)
+		contents += indent + tab + fmt.Sprintf("this.%s = null;\n", field.Name)
 	}
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
@@ -1299,10 +1335,13 @@ func (g *Generator) getIsSetID(fieldName string) string {
 	return fmt.Sprintf("__%s_ISSET_ID", strings.ToUpper(fieldName))
 }
 
-func (g *Generator) generateIsSetField(s *parser.Struct, field *parser.Field) string {
+func (g *Generator) generateIsSetField(s *parser.Struct, field *parser.Field, indent string) string {
 	contents := ""
-	contents += fmt.Sprintf(tab+"/** Returns true if field %s is set (has been assigned a value) and false otherwise */\n", field.Name)
-	contents += fmt.Sprintf(tab+"public boolean isSet%s() {\n", strings.Title(field.Name))
+	contents += indent + fmt.Sprintf("/** Returns true if field %s is set (has been assigned a value) and false otherwise */\n", field.Name)
+	if field.Annotations.IsDeprecated() {
+		contents += indent + "@Deprecated\n"
+	}
+	contents += indent + fmt.Sprintf("public boolean isSet%s() {\n", strings.Title(field.Name))
 	if g.isJavaPrimitive(field.Type) {
 		isSetType, _ := g.getIsSetType(s)
 		isSetID := g.getIsSetID(field.Name)
@@ -1310,20 +1349,23 @@ func (g *Generator) generateIsSetField(s *parser.Struct, field *parser.Field) st
 		case IsSetNone:
 			panic("IsSetNone occurred with a primitive")
 		case IsSetBitfield:
-			contents += fmt.Sprintf(tabtab+"return EncodingUtils.testBit(__isset_bitfield, %s);\n", isSetID)
+			contents += indent + tab + fmt.Sprintf("return EncodingUtils.testBit(__isset_bitfield, %s);\n", isSetID)
 		case IsSetBitSet:
-			contents += fmt.Sprintf(tabtab+"return __isset_bit_vector.get(%s);\n", isSetID)
+			contents += indent + tab + fmt.Sprintf("return __isset_bit_vector.get(%s);\n", isSetID)
 		}
 	} else {
-		contents += fmt.Sprintf(tabtab+"return this.%s != null;\n", field.Name)
+		contents += indent + tab + fmt.Sprintf("return this.%s != null;\n", field.Name)
 	}
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateSetIsSetField(s *parser.Struct, field *parser.Field) string {
+func (g *Generator) generateSetIsSetField(s *parser.Struct, field *parser.Field, indent string) string {
 	contents := ""
-	contents += fmt.Sprintf(tab+"public void set%sIsSet(boolean value) {\n", strings.Title(field.Name))
+	if field.Annotations.IsDeprecated() {
+		contents += indent + "@Deprecated\n"
+	}
+	contents += indent + fmt.Sprintf("public void set%sIsSet(boolean value) {\n", strings.Title(field.Name))
 	if g.isJavaPrimitive(field.Type) {
 		isSetType, _ := g.getIsSetType(s)
 		isSetID := g.getIsSetID(field.Name)
@@ -1331,86 +1373,86 @@ func (g *Generator) generateSetIsSetField(s *parser.Struct, field *parser.Field)
 		case IsSetNone:
 			panic("IsSetNone occurred with a primitive")
 		case IsSetBitfield:
-			contents += fmt.Sprintf(tabtab+"__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, %s, value);\n", isSetID)
+			contents += indent + tab + fmt.Sprintf("__isset_bitfield = EncodingUtils.setBit(__isset_bitfield, %s, value);\n", isSetID)
 		case IsSetBitSet:
-			contents += fmt.Sprintf(tabtab+"__isset_bit_vector.set(%s, value);\n", isSetID)
+			contents += indent + tab + fmt.Sprintf("__isset_bit_vector.set(%s, value);\n", isSetID)
 		}
 	} else {
-		contents += tabtab + "if (!value) {\n"
-		contents += fmt.Sprintf(tabtabtab+"this.%s = null;\n", field.Name)
-		contents += tabtab + "}\n"
+		contents += indent + tab + "if (!value) {\n"
+		contents += indent + tabtab + fmt.Sprintf("this.%s = null;\n", field.Name)
+		contents += indent + tab + "}\n"
 	}
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateSetValue(s *parser.Struct) string {
+func (g *Generator) generateSetValue(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "public void setFieldValue(_Fields field, Object value) {\n"
-	contents += tabtab + "switch (field) {\n"
+	contents += indent + "public void setFieldValue(_Fields field, Object value) {\n"
+	contents += indent + tab + "switch (field) {\n"
 	for _, field := range s.Fields {
 		fieldTitle := strings.Title(field.Name)
-		contents += fmt.Sprintf(tabtab+"case %s:\n", toConstantName(field.Name))
-		contents += tabtabtab + "if (value == null) {\n"
-		contents += fmt.Sprintf(tabtabtabtab+"unset%s();\n", fieldTitle)
-		contents += tabtabtab + "} else {\n"
-		contents += fmt.Sprintf(tabtabtabtab+"set%s((%s)value);\n", fieldTitle, containerType(g.getJavaTypeFromThriftType(field.Type)))
-		contents += tabtabtab + "}\n"
-		contents += tabtabtab + "break;\n\n"
+		contents += indent + tab + fmt.Sprintf("case %s:\n", toConstantName(field.Name))
+		contents += indent + tabtab + "if (value == null) {\n"
+		contents += indent + tabtabtab + fmt.Sprintf("unset%s();\n", fieldTitle)
+		contents += indent + tabtab + "} else {\n"
+		contents += indent + tabtabtab + fmt.Sprintf("set%s((%s)value);\n", fieldTitle, containerType(g.getJavaTypeFromThriftType(field.Type)))
+		contents += indent + tabtab + "}\n"
+		contents += indent + tabtab + "break;\n\n"
 	}
-	contents += tabtab + "}\n"
-	contents += tab + "}\n\n"
+	contents += indent + tab + "}\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateGetValue(s *parser.Struct) string {
+func (g *Generator) generateGetValue(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "public Object getFieldValue(_Fields field) {\n"
-	contents += tabtab + "switch (field) {\n"
+	contents += indent + "public Object getFieldValue(_Fields field) {\n"
+	contents += indent + tab + "switch (field) {\n"
 	for _, field := range s.Fields {
-		contents += fmt.Sprintf(tabtab+"case %s:\n", toConstantName(field.Name))
-		contents += fmt.Sprintf(tabtabtab+"return %s%s();\n\n",
+		contents += indent + tab + fmt.Sprintf("case %s:\n", toConstantName(field.Name))
+		contents += indent + tabtab + fmt.Sprintf("return %s%s();\n\n",
 			g.getAccessorPrefix(field.Type), strings.Title(field.Name))
 	}
-	contents += tabtab + "}\n"
-	contents += tabtab + "throw new IllegalStateException();\n"
-	contents += tab + "}\n\n"
+	contents += indent + tab + "}\n"
+	contents += indent + tab + "throw new IllegalStateException();\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateIsSetValue(s *parser.Struct) string {
+func (g *Generator) generateIsSetValue(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "/** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */\n"
-	contents += tab + "public boolean isSet(_Fields field) {\n"
-	contents += tabtab + "if (field == null) {\n"
-	contents += tabtabtab + "throw new IllegalArgumentException();\n"
-	contents += tabtab + "}\n\n"
+	contents += indent + "/** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */\n"
+	contents += indent + "public boolean isSet(_Fields field) {\n"
+	contents += indent + tab + "if (field == null) {\n"
+	contents += indent + tabtab + "throw new IllegalArgumentException();\n"
+	contents += indent + tab + "}\n\n"
 
-	contents += tabtab + "switch (field) {\n"
+	contents += indent + tab + "switch (field) {\n"
 	for _, field := range s.Fields {
-		contents += fmt.Sprintf(tabtab+"case %s:\n", toConstantName(field.Name))
-		contents += fmt.Sprintf(tabtabtab+"return isSet%s();\n", strings.Title(field.Name))
+		contents += indent + tab + fmt.Sprintf("case %s:\n", toConstantName(field.Name))
+		contents += indent + tabtab + fmt.Sprintf("return isSet%s();\n", strings.Title(field.Name))
 	}
-	contents += tabtab + "}\n"
-	contents += tabtab + "throw new IllegalStateException();\n"
-	contents += tab + "}\n\n"
+	contents += indent + tab + "}\n"
+	contents += indent + tab + "throw new IllegalStateException();\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateEquals(s *parser.Struct) string {
+func (g *Generator) generateEquals(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "@Override\n"
-	contents += tab + "public boolean equals(Object that) {\n"
-	contents += tabtab + "if (that == null)\n"
-	contents += tabtabtab + "return false;\n"
-	contents += fmt.Sprintf(tabtab+"if (that instanceof %s)\n", s.Name)
-	contents += fmt.Sprintf(tabtabtab+"return this.equals((%s)that);\n", s.Name)
-	contents += tabtab + "return false;\n"
-	contents += tab + "}\n\n"
+	contents += indent + "@Override\n"
+	contents += indent + "public boolean equals(Object that) {\n"
+	contents += indent + tab + "if (that == null)\n"
+	contents += indent + tabtab + "return false;\n"
+	contents += indent + tab + fmt.Sprintf("if (that instanceof %s)\n", s.Name)
+	contents += indent + tabtab + fmt.Sprintf("return this.equals((%s)that);\n", s.Name)
+	contents += indent + tab + "return false;\n"
+	contents += indent + "}\n\n"
 
-	contents += fmt.Sprintf(tab+"public boolean equals(%s that) {\n", s.Name)
-	contents += tabtab + "if (that == null)\n"
-	contents += tabtabtab + "return false;\n\n"
+	contents += indent + fmt.Sprintf("public boolean equals(%s that) {\n", s.Name)
+	contents += indent + tab + "if (that == null)\n"
+	contents += indent + tabtab + "return false;\n\n"
 
 	for _, field := range s.Fields {
 		optional := field.Modifier == parser.Optional
@@ -1424,11 +1466,11 @@ func (g *Generator) generateEquals(s *parser.Struct) string {
 			thatPresentArg += fmt.Sprintf(" && that.isSet%s()", strings.Title(field.Name))
 		}
 
-		contents += fmt.Sprintf(tabtab+"boolean this_present_%s = %s;\n", field.Name, thisPresentArg)
-		contents += fmt.Sprintf(tabtab+"boolean that_present_%s = %s;\n", field.Name, thatPresentArg)
-		contents += fmt.Sprintf(tabtab+"if (this_present_%s || that_present_%s) {\n", field.Name, field.Name)
-		contents += fmt.Sprintf(tabtabtab+"if (!(this_present_%s && that_present_%s))\n", field.Name, field.Name)
-		contents += tabtabtabtab + "return false;\n"
+		contents += indent + tab + fmt.Sprintf("boolean this_present_%s = %s;\n", field.Name, thisPresentArg)
+		contents += indent + tab + fmt.Sprintf("boolean that_present_%s = %s;\n", field.Name, thatPresentArg)
+		contents += indent + tab + fmt.Sprintf("if (this_present_%s || that_present_%s) {\n", field.Name, field.Name)
+		contents += indent + tabtab + fmt.Sprintf("if (!(this_present_%s && that_present_%s))\n", field.Name, field.Name)
+		contents += indent + tabtabtab + "return false;\n"
 
 		unequalTest := ""
 		if primitive {
@@ -1436,21 +1478,21 @@ func (g *Generator) generateEquals(s *parser.Struct) string {
 		} else {
 			unequalTest = fmt.Sprintf("!this.%s.equals(that.%s)", field.Name, field.Name)
 		}
-		contents += fmt.Sprintf(tabtabtab+"if (%s)\n", unequalTest)
-		contents += tabtabtabtab + "return false;\n"
-		contents += tabtab + "}\n\n"
+		contents += indent + tabtab + fmt.Sprintf("if (%s)\n", unequalTest)
+		contents += indent + tabtabtab + "return false;\n"
+		contents += indent + tab + "}\n\n"
 	}
 
-	contents += tabtab + "return true;\n"
-	contents += tab + "}\n\n"
+	contents += indent + tab + "return true;\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateHashCode(s *parser.Struct) string {
+func (g *Generator) generateHashCode(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "@Override\n"
-	contents += tab + "public int hashCode() {\n"
-	contents += tabtab + "List<Object> list = new ArrayList<Object>();\n\n"
+	contents += indent + "@Override\n"
+	contents += indent + "public int hashCode() {\n"
+	contents += indent + tab + "List<Object> list = new ArrayList<Object>();\n\n"
 	for _, field := range s.Fields {
 		optional := field.Modifier == parser.Optional
 		primitive := g.isJavaPrimitive(field.Type)
@@ -1460,351 +1502,351 @@ func (g *Generator) generateHashCode(s *parser.Struct) string {
 			presentArg += fmt.Sprintf(" && (isSet%s())", strings.Title(field.Name))
 		}
 
-		contents += fmt.Sprintf(tabtab+"boolean present_%s = %s;\n", field.Name, presentArg)
-		contents += fmt.Sprintf(tabtab+"list.add(present_%s);\n", field.Name)
-		contents += fmt.Sprintf(tabtab+"if (present_%s)\n", field.Name)
+		contents += indent + tab + fmt.Sprintf("boolean present_%s = %s;\n", field.Name, presentArg)
+		contents += indent + tab + fmt.Sprintf("list.add(present_%s);\n", field.Name)
+		contents += indent + tab + fmt.Sprintf("if (present_%s)\n", field.Name)
 		if g.Frugal.IsEnum(field.Type) {
-			contents += fmt.Sprintf(tabtabtab+"list.add(%s.getValue());\n\n", field.Name)
+			contents += indent + tabtab + fmt.Sprintf("list.add(%s.getValue());\n\n", field.Name)
 		} else {
-			contents += fmt.Sprintf(tabtabtab+"list.add(%s);\n\n", field.Name)
+			contents += indent + tabtab + fmt.Sprintf("list.add(%s);\n\n", field.Name)
 		}
 	}
-	contents += tabtab + "return list.hashCode();\n"
-	contents += tab + "}\n\n"
+	contents += indent + tab + "return list.hashCode();\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateCompareTo(s *parser.Struct) string {
+func (g *Generator) generateCompareTo(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "@Override\n"
-	contents += fmt.Sprintf(tab+"public int compareTo(%s other) {\n", s.Name)
-	contents += tabtab + "if (!getClass().equals(other.getClass())) {\n"
-	contents += tabtabtab + "return getClass().getName().compareTo(other.getClass().getName());\n"
-	contents += tabtab + "}\n\n"
-	contents += tabtab + "int lastComparison = 0;\n\n"
+	contents += indent + "@Override\n"
+	contents += indent + fmt.Sprintf("public int compareTo(%s other) {\n", s.Name)
+	contents += indent + tab + "if (!getClass().equals(other.getClass())) {\n"
+	contents += indent + tabtab + "return getClass().getName().compareTo(other.getClass().getName());\n"
+	contents += indent + tab + "}\n\n"
+	contents += indent + tab + "int lastComparison = 0;\n\n"
 	for _, field := range s.Fields {
 		fieldTitle := strings.Title(field.Name)
-		contents += fmt.Sprintf(tabtab+"lastComparison = Boolean.valueOf(isSet%s()).compareTo(other.isSet%s());\n", fieldTitle, fieldTitle)
-		contents += tabtab + "if (lastComparison != 0) {\n"
-		contents += tabtabtab + "return lastComparison;\n"
-		contents += tabtab + "}\n"
-		contents += fmt.Sprintf(tabtab+"if (isSet%s()) {\n", fieldTitle)
-		contents += fmt.Sprintf(tabtabtab+"lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.%s, other.%s);\n", field.Name, field.Name)
-		contents += tabtabtab + "if (lastComparison != 0) {\n"
-		contents += tabtabtabtab + "return lastComparison;\n"
-		contents += tabtabtab + "}\n"
-		contents += tabtab + "}\n"
+		contents += indent + tab + fmt.Sprintf("lastComparison = Boolean.valueOf(isSet%s()).compareTo(other.isSet%s());\n", fieldTitle, fieldTitle)
+		contents += indent + tab + "if (lastComparison != 0) {\n"
+		contents += indent + tabtab + "return lastComparison;\n"
+		contents += indent + tab + "}\n"
+		contents += indent + tab + fmt.Sprintf("if (isSet%s()) {\n", fieldTitle)
+		contents += indent + tabtab + fmt.Sprintf("lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.%s, other.%s);\n", field.Name, field.Name)
+		contents += indent + tabtab + "if (lastComparison != 0) {\n"
+		contents += indent + tabtabtab + "return lastComparison;\n"
+		contents += indent + tabtab + "}\n"
+		contents += indent + tab + "}\n"
 	}
-	contents += tabtab + "return 0;\n"
-	contents += tab + "}\n\n"
+	contents += indent + tab + "return 0;\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateFieldForId(s *parser.Struct) string {
+func (g *Generator) generateFieldForId(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "public _Fields fieldForId(int fieldId) {\n"
-	contents += tabtab + "return _Fields.findByThriftId(fieldId);\n"
-	contents += tab + "}\n\n"
+	contents += indent + "public _Fields fieldForId(int fieldId) {\n"
+	contents += indent + tab + "return _Fields.findByThriftId(fieldId);\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateReadWrite(s *parser.Struct) string {
+func (g *Generator) generateReadWrite(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {\n"
-	contents += tabtab + "schemes.get(iprot.getScheme()).getScheme().read(iprot, this);\n"
-	contents += tab + "}\n\n"
+	contents += indent + "public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {\n"
+	contents += indent + tab + "schemes.get(iprot.getScheme()).getScheme().read(iprot, this);\n"
+	contents += indent + "}\n\n"
 
-	contents += tab + "public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {\n"
-	contents += tabtab + "schemes.get(oprot.getScheme()).getScheme().write(oprot, this);\n"
-	contents += tab + "}\n\n"
+	contents += indent + "public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {\n"
+	contents += indent + tab + "schemes.get(oprot.getScheme()).getScheme().write(oprot, this);\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateToString(s *parser.Struct) string {
+func (g *Generator) generateToString(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "@Override\n"
-	contents += tab + "public String toString() {\n"
-	contents += fmt.Sprintf(tabtab+"StringBuilder sb = new StringBuilder(\"%s(\");\n", s.Name)
-	contents += tabtab + "boolean first = true;\n\n"
+	contents += indent + "@Override\n"
+	contents += indent + "public String toString() {\n"
+	contents += indent + tab + fmt.Sprintf("StringBuilder sb = new StringBuilder(\"%s(\");\n", s.Name)
+	contents += indent + tab + "boolean first = true;\n\n"
 	first := true
 	for _, field := range s.Fields {
 		optional := field.Modifier == parser.Optional
 		ind := ""
 		if optional {
-			contents += fmt.Sprintf(tabtab+"if (isSet%s()) {\n", strings.Title(field.Name))
+			contents += indent + tab + fmt.Sprintf("if (isSet%s()) {\n", strings.Title(field.Name))
 			ind = tab
 		}
 
 		if !first {
-			contents += tabtab + ind + "if (!first) sb.append(\", \");\n"
+			contents += indent + tab + ind + "if (!first) sb.append(\", \");\n"
 		}
-		contents += fmt.Sprintf(tabtab+ind+"sb.append(\"%s:\");\n", field.Name)
+		contents += indent + tab + ind + fmt.Sprintf("sb.append(\"%s:\");\n", field.Name)
 		if !g.isJavaPrimitive(field.Type) {
-			contents += fmt.Sprintf(tabtab+ind+"if (this.%s == null) {\n", field.Name)
-			contents += tabtabtab + ind + "sb.append(\"null\");\n"
-			contents += tabtab + ind + "} else {\n"
+			contents += indent + tab + ind + fmt.Sprintf("if (this.%s == null) {\n", field.Name)
+			contents += indent + tabtab + ind + "sb.append(\"null\");\n"
+			contents += indent + tab + ind + "} else {\n"
 			if g.Frugal.UnderlyingType(field.Type).Name == "binary" {
-				contents += fmt.Sprintf(tabtabtab+ind+"org.apache.thrift.TBaseHelper.toString(this.%s, sb);\n", field.Name)
+				contents += indent + tabtab + ind + fmt.Sprintf("org.apache.thrift.TBaseHelper.toString(this.%s, sb);\n", field.Name)
 			} else {
-				contents += fmt.Sprintf(tabtabtab+ind+"sb.append(this.%s);\n", field.Name)
+				contents += indent + tabtab + ind + fmt.Sprintf("sb.append(this.%s);\n", field.Name)
 			}
-			contents += tabtab + ind + "}\n"
+			contents += indent + tab + ind + "}\n"
 		} else {
-			contents += fmt.Sprintf(tabtab+ind+"sb.append(this.%s);\n", field.Name)
+			contents += indent + tab + ind + fmt.Sprintf("sb.append(this.%s);\n", field.Name)
 		}
-		contents += tabtab + ind + "first = false;\n"
+		contents += indent + tab + ind + "first = false;\n"
 
 		if optional {
-			contents += tabtab + "}\n"
+			contents += indent + tab + "}\n"
 		}
 		first = false
 	}
 
-	contents += tabtab + "sb.append(\")\");\n"
-	contents += tabtab + "return sb.toString();\n"
-	contents += tab + "}\n\n"
+	contents += indent + tab + "sb.append(\")\");\n"
+	contents += indent + tab + "return sb.toString();\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateValidate(s *parser.Struct) string {
+func (g *Generator) generateValidate(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "public void validate() throws org.apache.thrift.TException {\n"
-	contents += tabtab + "// check for required fields\n"
+	contents += indent + "public void validate() throws org.apache.thrift.TException {\n"
+	contents += indent + tab + "// check for required fields\n"
 	for _, field := range s.Fields {
 		if field.Modifier == parser.Required && !g.isJavaPrimitive(field.Type) {
-			contents += fmt.Sprintf(tabtab+"if (%s == null) {\n", field.Name)
-			contents += fmt.Sprintf(tabtabtab+"throw new org.apache.thrift.protocol.TProtocolException(\"Required field '%s' was not present for struct type '%s'\");\n",
+			contents += indent + tab + fmt.Sprintf("if (%s == null) {\n", field.Name)
+			contents += indent + tabtab + fmt.Sprintf("throw new org.apache.thrift.protocol.TProtocolException(\"Required field '%s' was not present for struct type '%s'\");\n",
 				field.Name, s.Name)
-			contents += tabtab + "}\n"
+			contents += indent + tab + "}\n"
 		}
 	}
 
-	contents += tabtab + "// check for sub-struct validity\n"
+	contents += indent + tab + "// check for sub-struct validity\n"
 	for _, field := range s.Fields {
 		if g.Frugal.IsStruct(field.Type) && !g.Frugal.IsUnion(field.Type) {
-			contents += fmt.Sprintf(tabtab+"if (%s != null) {\n", field.Name)
-			contents += fmt.Sprintf(tabtabtab+"%s.validate();\n", field.Name)
-			contents += tabtab + "}\n"
+			contents += indent + tab + fmt.Sprintf("if (%s != null) {\n", field.Name)
+			contents += indent + tabtab + fmt.Sprintf("%s.validate();\n", field.Name)
+			contents += indent + tab + "}\n"
 		}
 	}
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateWriteObject(s *parser.Struct) string {
+func (g *Generator) generateWriteObject(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {\n"
-	contents += tabtab + "try {\n"
-	contents += tabtabtab + "write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));\n"
-	contents += tabtab + "} catch (org.apache.thrift.TException te) {\n"
-	contents += tabtabtab + "throw new java.io.IOException(te);\n"
-	contents += tabtab + "}\n"
-	contents += tab + "}\n\n"
+	contents += indent + "private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {\n"
+	contents += indent + tab + "try {\n"
+	contents += indent + tabtab + "write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));\n"
+	contents += indent + tab + "} catch (org.apache.thrift.TException te) {\n"
+	contents += indent + tabtab + "throw new java.io.IOException(te);\n"
+	contents += indent + tab + "}\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateReadObject(s *parser.Struct) string {
+func (g *Generator) generateReadObject(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += tab + "private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {\n"
+	contents += indent + "private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {\n"
 	// isset stuff, don't do for unions
-	contents += tabtab + "try {\n"
+	contents += indent + tab + "try {\n"
 	if s.Type != parser.StructTypeUnion {
-		contents += tabtabtab + "// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.\n"
+		contents += indent + tabtab + "// it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.\n"
 		isSetType, _ := g.getIsSetType(s)
 		switch isSetType {
 		case IsSetNone:
 		// Do nothing
 		case IsSetBitfield:
-			contents += tabtabtab + "__isset_bitfield = 0;\n"
+			contents += indent + tabtab + "__isset_bitfield = 0;\n"
 		case IsSetBitSet:
-			contents += tabtabtab + "__isset_bit_vector = new BitSet(1);\n"
+			contents += indent + tabtab + "__isset_bit_vector = new BitSet(1);\n"
 		}
 	}
 
-	contents += tabtabtab + "read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));\n"
-	contents += tabtab + "} catch (org.apache.thrift.TException te) {\n"
-	contents += tabtabtab + "throw new java.io.IOException(te);\n"
-	contents += tabtab + "}\n"
-	contents += tab + "}\n\n"
+	contents += indent + tabtab + "read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));\n"
+	contents += indent + tab + "} catch (org.apache.thrift.TException te) {\n"
+	contents += indent + tabtab + "throw new java.io.IOException(te);\n"
+	contents += indent + tab + "}\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateStandardScheme(s *parser.Struct, isResult bool) string {
+func (g *Generator) generateStandardScheme(s *parser.Struct, isResult bool, indent string) string {
 	contents := ""
-	contents += fmt.Sprintf(tab+"private static class %sStandardSchemeFactory implements SchemeFactory {\n", s.Name)
-	contents += fmt.Sprintf(tabtab+"public %sStandardScheme getScheme() {\n", s.Name)
-	contents += fmt.Sprintf(tabtabtab+"return new %sStandardScheme();\n", s.Name)
-	contents += tabtab + "}\n"
-	contents += tab + "}\n\n"
+	contents += indent + fmt.Sprintf("private static class %sStandardSchemeFactory implements SchemeFactory {\n", s.Name)
+	contents += indent + tab + fmt.Sprintf("public %sStandardScheme getScheme() {\n", s.Name)
+	contents += indent + tabtab + fmt.Sprintf("return new %sStandardScheme();\n", s.Name)
+	contents += indent + tab + "}\n"
+	contents += indent + "}\n\n"
 
-	contents += fmt.Sprintf(tab+"private static class %sStandardScheme extends StandardScheme<%s> {\n\n", s.Name, s.Name)
+	contents += indent + fmt.Sprintf("private static class %sStandardScheme extends StandardScheme<%s> {\n\n", s.Name, s.Name)
 
 	// read
-	contents += fmt.Sprintf(tabtab+"public void read(org.apache.thrift.protocol.TProtocol iprot, %s struct) throws org.apache.thrift.TException {\n", s.Name)
-	contents += tabtabtab + "org.apache.thrift.protocol.TField schemeField;\n"
-	contents += tabtabtab + "iprot.readStructBegin();\n"
-	contents += tabtabtab + "while (true) {\n"
-	contents += tabtabtabtab + "schemeField = iprot.readFieldBegin();\n"
-	contents += tabtabtabtab + "if (schemeField.type == org.apache.thrift.protocol.TType.STOP) {\n"
-	contents += tabtabtabtabtab + "break;\n"
-	contents += tabtabtabtab + "}\n"
-	contents += tabtabtabtab + "switch (schemeField.id) {\n"
+	contents += indent + tab + fmt.Sprintf("public void read(org.apache.thrift.protocol.TProtocol iprot, %s struct) throws org.apache.thrift.TException {\n", s.Name)
+	contents += indent + tabtab + "org.apache.thrift.protocol.TField schemeField;\n"
+	contents += indent + tabtab + "iprot.readStructBegin();\n"
+	contents += indent + tabtab + "while (true) {\n"
+	contents += indent + tabtabtab + "schemeField = iprot.readFieldBegin();\n"
+	contents += indent + tabtabtab + "if (schemeField.type == org.apache.thrift.protocol.TType.STOP) {\n"
+	contents += indent + tabtabtabtab + "break;\n"
+	contents += indent + tabtabtab + "}\n"
+	contents += indent + tabtabtab + "switch (schemeField.id) {\n"
 	for _, field := range s.Fields {
-		contents += fmt.Sprintf(tabtabtabtabtab+"case %d: // %s\n", field.ID, toConstantName(field.Name))
-		contents += fmt.Sprintf(tabtabtabtabtabtab+"if (schemeField.type == %s) {\n", g.getTType(field.Type))
-		contents += g.generateReadFieldRec(field, true, false, false, tabtabtabtabtabtabtab)
-		contents += fmt.Sprintf(tabtabtabtabtabtabtab+"struct.set%sIsSet(true);\n", strings.Title(field.Name))
-		contents += tabtabtabtabtabtab + "} else {\n"
-		contents += tabtabtabtabtabtabtab + "org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);\n"
-		contents += tabtabtabtabtabtab + "}\n"
-		contents += tabtabtabtabtabtab + "break;\n"
+		contents += indent + tabtabtabtab + fmt.Sprintf("case %d: // %s\n", field.ID, toConstantName(field.Name))
+		contents += indent + tabtabtabtabtab + fmt.Sprintf("if (schemeField.type == %s) {\n", g.getTType(field.Type))
+		contents += g.generateReadFieldRec(field, true, false, false, indent+tabtabtabtabtabtab)
+		contents += indent + tabtabtabtabtabtab + fmt.Sprintf("struct.set%sIsSet(true);\n", strings.Title(field.Name))
+		contents += indent + tabtabtabtabtab + "} else {\n"
+		contents += indent + tabtabtabtabtabtab + "org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);\n"
+		contents += indent + tabtabtabtabtab + "}\n"
+		contents += indent + tabtabtabtabtab + "break;\n"
 	}
-	contents += tabtabtabtabtab + "default:\n"
-	contents += tabtabtabtabtabtab + "org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);\n"
-	contents += tabtabtabtab + "}\n"
-	contents += tabtabtabtab + "iprot.readFieldEnd();\n"
-	contents += tabtabtab + "}\n"
-	contents += tabtabtab + "iprot.readStructEnd();\n\n"
+	contents += indent + tabtabtabtab + "default:\n"
+	contents += indent + tabtabtabtabtab + "org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);\n"
+	contents += indent + tabtabtab + "}\n"
+	contents += indent + tabtabtab + "iprot.readFieldEnd();\n"
+	contents += indent + tabtab + "}\n"
+	contents += indent + tabtab + "iprot.readStructEnd();\n\n"
 
-	contents += tabtabtab + "// check for required fields of primitive type, which can't be checked in the validate method\n"
+	contents += indent + tabtab + "// check for required fields of primitive type, which can't be checked in the validate method\n"
 	for _, field := range s.Fields {
 		if field.Modifier == parser.Required && g.isJavaPrimitive(field.Type) {
-			contents += fmt.Sprintf(tabtabtab+"if (!struct.isSet%s()) {\n", strings.Title(field.Name))
-			contents += fmt.Sprintf(tabtabtabtab+"throw new org.apache.thrift.protocol.TProtocolException(\"Required field '%s' was not found in serialized data for struct type '%s'\");\n", field.Name, s.Name)
-			contents += tabtabtab + "}\n"
+			contents += indent + tabtab + fmt.Sprintf("if (!struct.isSet%s()) {\n", strings.Title(field.Name))
+			contents += indent + tabtabtab + fmt.Sprintf("throw new org.apache.thrift.protocol.TProtocolException(\"Required field '%s' was not found in serialized data for struct type '%s'\");\n", field.Name, s.Name)
+			contents += indent + tabtab + "}\n"
 		}
 	}
 
-	contents += tabtabtab + "struct.validate();\n"
-	contents += tabtab + "}\n\n"
+	contents += indent + tabtab + "struct.validate();\n"
+	contents += indent + tab + "}\n\n"
 
 	// write
-	contents += fmt.Sprintf(tabtab+"public void write(org.apache.thrift.protocol.TProtocol oprot, %s struct) throws org.apache.thrift.TException {\n", s.Name)
-	contents += tabtabtab + "struct.validate();\n\n"
-	contents += tabtabtab + "oprot.writeStructBegin(STRUCT_DESC);\n"
+	contents += indent + tab + fmt.Sprintf("public void write(org.apache.thrift.protocol.TProtocol oprot, %s struct) throws org.apache.thrift.TException {\n", s.Name)
+	contents += indent + tabtab + "struct.validate();\n\n"
+	contents += indent + tabtab + "oprot.writeStructBegin(STRUCT_DESC);\n"
 	for _, field := range s.Fields {
 		isKindOfPrimitive := g.canBeJavaPrimitive(field.Type)
-		ind := tabtabtab
-		optInd := tabtabtab
+		ind := tabtab
+		optInd := tabtab
 		if !isKindOfPrimitive {
-			contents += fmt.Sprintf(ind+"if (struct.%s != null) {\n", field.Name)
+			contents += indent + ind + fmt.Sprintf("if (struct.%s != null) {\n", field.Name)
 			ind += tab
 			optInd += tab
 		}
 		opt := field.Modifier == parser.Optional || (isResult && isKindOfPrimitive)
 		if opt {
-			contents += fmt.Sprintf(ind+"if (struct.isSet%s()) {\n", strings.Title(field.Name))
+			contents += indent + ind + fmt.Sprintf("if (struct.isSet%s()) {\n", strings.Title(field.Name))
 			ind += tab
 		}
 
-		contents += fmt.Sprintf(ind+"oprot.writeFieldBegin(%s_FIELD_DESC);\n", toConstantName(field.Name))
-		contents += g.generateWriteFieldRec(field, true, false, ind)
-		contents += ind + "oprot.writeFieldEnd();\n"
+		contents += indent + ind + fmt.Sprintf("oprot.writeFieldBegin(%s_FIELD_DESC);\n", toConstantName(field.Name))
+		contents += g.generateWriteFieldRec(field, true, false, indent+ind)
+		contents += indent + ind + "oprot.writeFieldEnd();\n"
 
 		if opt {
-			contents += optInd + "}\n"
+			contents += indent + optInd + "}\n"
 		}
 		if !isKindOfPrimitive {
-			contents += tabtabtab + "}\n"
+			contents += indent + tabtab + "}\n"
 		}
 	}
-	contents += tabtabtab + "oprot.writeFieldStop();\n"
-	contents += tabtabtab + "oprot.writeStructEnd();\n"
+	contents += indent + tabtab + "oprot.writeFieldStop();\n"
+	contents += indent + tabtab + "oprot.writeStructEnd();\n"
 
-	contents += tabtab + "}\n\n"
+	contents += indent + tab + "}\n\n"
 
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateTupleScheme(s *parser.Struct) string {
+func (g *Generator) generateTupleScheme(s *parser.Struct, indent string) string {
 	contents := ""
-	contents += fmt.Sprintf(tab+"private static class %sTupleSchemeFactory implements SchemeFactory {\n", s.Name)
-	contents += fmt.Sprintf(tabtab+"public %sTupleScheme getScheme() {\n", s.Name)
-	contents += fmt.Sprintf(tabtabtab+"return new %sTupleScheme();\n", s.Name)
-	contents += tabtab + "}\n"
-	contents += tab + "}\n\n"
+	contents += indent + fmt.Sprintf("private static class %sTupleSchemeFactory implements SchemeFactory {\n", s.Name)
+	contents += indent + tab + fmt.Sprintf("public %sTupleScheme getScheme() {\n", s.Name)
+	contents += indent + tabtab + fmt.Sprintf("return new %sTupleScheme();\n", s.Name)
+	contents += indent + tab + "}\n"
+	contents += indent + "}\n\n"
 
-	contents += fmt.Sprintf(tab+"private static class %sTupleScheme extends TupleScheme<%s> {\n\n", s.Name, s.Name)
-	contents += tabtab + "@Override\n"
-	contents += fmt.Sprintf(tabtab+"public void write(org.apache.thrift.protocol.TProtocol prot, %s struct) throws org.apache.thrift.TException {\n", s.Name)
-	contents += tabtabtab + "TTupleProtocol oprot = (TTupleProtocol) prot;\n"
+	contents += indent + fmt.Sprintf("private static class %sTupleScheme extends TupleScheme<%s> {\n\n", s.Name, s.Name)
+	contents += indent + tab + "@Override\n"
+	contents += indent + tab + fmt.Sprintf("public void write(org.apache.thrift.protocol.TProtocol prot, %s struct) throws org.apache.thrift.TException {\n", s.Name)
+	contents += indent + tabtab + "TTupleProtocol oprot = (TTupleProtocol) prot;\n"
 	// write required fields
 	numNonReqs := 0
 	for _, field := range s.Fields {
 		if field.Modifier != parser.Required {
-			numNonReqs += 1
+			numNonReqs++
 			continue
 		}
 
-		contents += g.generateWriteFieldRec(field, true, true, tabtabtab)
+		contents += g.generateWriteFieldRec(field, true, true, indent+tabtab)
 	}
 
 	if numNonReqs > 0 {
 		// write optional/default fields
 		nonReqFieldCount := 0
-		contents += tabtabtab + "BitSet optionals = new BitSet();\n"
+		contents += indent + tabtab + "BitSet optionals = new BitSet();\n"
 		for _, field := range s.Fields {
 			if field.Modifier == parser.Required {
 				continue
 			}
 
-			contents += fmt.Sprintf(tabtabtab+"if (struct.isSet%s()) {\n", strings.Title(field.Name))
-			contents += fmt.Sprintf(tabtabtabtab+"optionals.set(%d);\n", nonReqFieldCount)
-			contents += tabtabtab + "}\n"
-			nonReqFieldCount += 1
+			contents += indent + tabtab + fmt.Sprintf("if (struct.isSet%s()) {\n", strings.Title(field.Name))
+			contents += indent + tabtabtab + fmt.Sprintf("optionals.set(%d);\n", nonReqFieldCount)
+			contents += indent + tabtab + "}\n"
+			nonReqFieldCount++
 		}
 
-		contents += fmt.Sprintf(tabtabtab+"oprot.writeBitSet(optionals, %d);\n", numNonReqs)
+		contents += indent + tabtab + fmt.Sprintf("oprot.writeBitSet(optionals, %d);\n", numNonReqs)
 		for _, field := range s.Fields {
 			if field.Modifier == parser.Required {
 				continue
 			}
 
-			contents += fmt.Sprintf(tabtabtab+"if (struct.isSet%s()) {\n", strings.Title(field.Name))
-			contents += g.generateWriteFieldRec(field, true, true, tabtabtabtab)
-			contents += tabtabtab + "}\n"
+			contents += indent + tabtab + fmt.Sprintf("if (struct.isSet%s()) {\n", strings.Title(field.Name))
+			contents += g.generateWriteFieldRec(field, true, true, indent+tabtabtab)
+			contents += indent + tabtab + "}\n"
 		}
 	}
 
-	contents += tabtab + "}\n\n"
+	contents += indent + tab + "}\n\n"
 
-	contents += tabtab + "@Override\n"
-	contents += fmt.Sprintf(tabtab+"public void read(org.apache.thrift.protocol.TProtocol prot, %s struct) throws org.apache.thrift.TException {\n", s.Name)
-	contents += tabtabtab + "TTupleProtocol iprot = (TTupleProtocol) prot;\n"
+	contents += indent + tab + "@Override\n"
+	contents += indent + tab + fmt.Sprintf("public void read(org.apache.thrift.protocol.TProtocol prot, %s struct) throws org.apache.thrift.TException {\n", s.Name)
+	contents += indent + tabtab + "TTupleProtocol iprot = (TTupleProtocol) prot;\n"
 	// read required fields
 	for _, field := range s.Fields {
 		if field.Modifier != parser.Required {
 			continue
 		}
 
-		contents += g.generateReadFieldRec(field, true, true, false, tabtabtab)
-		contents += fmt.Sprintf(tabtabtab+"struct.set%sIsSet(true);\n", strings.Title(field.Name))
+		contents += g.generateReadFieldRec(field, true, true, false, indent+tabtab)
+		contents += indent + tabtab + fmt.Sprintf("struct.set%sIsSet(true);\n", strings.Title(field.Name))
 	}
 
 	if numNonReqs > 0 {
 		// read default/optional fields
 		nonReqFieldCount := 0
-		contents += fmt.Sprintf(tabtabtab+"BitSet incoming = iprot.readBitSet(%d);\n", numNonReqs)
+		contents += indent + tabtab + fmt.Sprintf("BitSet incoming = iprot.readBitSet(%d);\n", numNonReqs)
 		for _, field := range s.Fields {
 			if field.Modifier == parser.Required {
 				continue
 			}
 
-			contents += fmt.Sprintf(tabtabtab+"if (incoming.get(%d)) {\n", nonReqFieldCount)
-			contents += g.generateReadFieldRec(field, true, true, false, tabtabtabtab)
-			contents += fmt.Sprintf(tabtabtabtab+"struct.set%sIsSet(true);\n", strings.Title(field.Name))
-			contents += tabtabtab + "}\n"
-			nonReqFieldCount += 1
+			contents += indent + tabtab + fmt.Sprintf("if (incoming.get(%d)) {\n", nonReqFieldCount)
+			contents += g.generateReadFieldRec(field, true, true, false, indent+tabtabtab)
+			contents += indent + tabtabtab + fmt.Sprintf("struct.set%sIsSet(true);\n", strings.Title(field.Name))
+			contents += indent + tabtab + "}\n"
+			nonReqFieldCount++
 		}
 	}
-	contents += tabtab + "}\n\n"
+	contents += indent + tab + "}\n\n"
 
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateCopyConstructorField(field *parser.Field, otherFieldName string, first bool, ind string) string {
+func (g *Generator) generateCopyConstructorField(field *parser.Field, otherFieldName string, first bool, indent string) string {
 	underlyingType := g.Frugal.UnderlyingType(field.Type)
 	isPrimitive := g.canBeJavaPrimitive(underlyingType)
 	accessPrefix := "this."
@@ -1815,13 +1857,13 @@ func (g *Generator) generateCopyConstructorField(field *parser.Field, otherField
 	}
 
 	if isPrimitive || underlyingType.Name == "string" {
-		return fmt.Sprintf(ind+"%s%s = %s;\n", declPrefix, field.Name, otherFieldName)
+		return indent + fmt.Sprintf("%s%s = %s;\n", declPrefix, field.Name, otherFieldName)
 	} else if underlyingType.Name == "binary" {
-		return fmt.Sprintf(ind+"%s%s = org.apache.thrift.TBaseHelper.copyBinary(%s);\n", declPrefix, field.Name, otherFieldName)
+		return indent + fmt.Sprintf("%s%s = org.apache.thrift.TBaseHelper.copyBinary(%s);\n", declPrefix, field.Name, otherFieldName)
 	} else if g.Frugal.IsStruct(underlyingType) {
-		return fmt.Sprintf(ind+"%s%s = new %s(%s);\n", declPrefix, field.Name, g.getJavaTypeFromThriftType(underlyingType), otherFieldName)
+		return indent + fmt.Sprintf("%s%s = new %s(%s);\n", declPrefix, field.Name, g.getJavaTypeFromThriftType(underlyingType), otherFieldName)
 	} else if g.Frugal.IsEnum(underlyingType) {
-		return fmt.Sprintf(ind+"%s%s = %s;\n", declPrefix, field.Name, otherFieldName)
+		return indent + fmt.Sprintf("%s%s = %s;\n", declPrefix, field.Name, otherFieldName)
 	} else if underlyingType.IsContainer() {
 		contents := ""
 		valueType := g.getJavaTypeFromThriftType(underlyingType.ValueType)
@@ -1832,17 +1874,17 @@ func (g *Generator) generateCopyConstructorField(field *parser.Field, otherField
 
 		switch underlyingType.Name {
 		case "list":
-			contents += fmt.Sprintf(ind+"%s%s = new ArrayList<%s>(%s.size());\n", declPrefix, field.Name, containerValType, otherFieldName)
-			contents += fmt.Sprintf(ind+"for (%s %s : %s) {\n", valueType, otherValElem, otherFieldName)
-			contents += g.generateCopyConstructorField(thisValField, otherValElem, false, ind+tab)
-			contents += fmt.Sprintf(ind+tab+"%s%s.add(%s);\n", accessPrefix, field.Name, thisValElem)
-			contents += ind + "}\n"
+			contents += indent + fmt.Sprintf("%s%s = new ArrayList<%s>(%s.size());\n", declPrefix, field.Name, containerValType, otherFieldName)
+			contents += indent + fmt.Sprintf("for (%s %s : %s) {\n", valueType, otherValElem, otherFieldName)
+			contents += g.generateCopyConstructorField(thisValField, otherValElem, false, indent+tab)
+			contents += indent + tab + fmt.Sprintf("%s%s.add(%s);\n", accessPrefix, field.Name, thisValElem)
+			contents += indent + "}\n"
 		case "set":
-			contents += fmt.Sprintf(ind+"%s%s = new HashSet<%s>(%s.size());\n", declPrefix, field.Name, containerValType, otherFieldName)
-			contents += fmt.Sprintf(ind+"for (%s %s : %s) {\n", valueType, otherValElem, otherFieldName)
-			contents += g.generateCopyConstructorField(thisValField, otherValElem, false, ind+tab)
-			contents += fmt.Sprintf(ind+tab+"%s%s.add(%s);\n", accessPrefix, field.Name, thisValElem)
-			contents += ind + "}\n"
+			contents += indent + fmt.Sprintf("%s%s = new HashSet<%s>(%s.size());\n", declPrefix, field.Name, containerValType, otherFieldName)
+			contents += indent + fmt.Sprintf("for (%s %s : %s) {\n", valueType, otherValElem, otherFieldName)
+			contents += g.generateCopyConstructorField(thisValField, otherValElem, false, indent+tab)
+			contents += indent + tab + fmt.Sprintf("%s%s.add(%s);\n", accessPrefix, field.Name, thisValElem)
+			contents += indent + "}\n"
 		case "map":
 			keyType := g.getJavaTypeFromThriftType(underlyingType.KeyType)
 			keyUnderlying := g.Frugal.UnderlyingType(underlyingType.KeyType)
@@ -1852,20 +1894,20 @@ func (g *Generator) generateCopyConstructorField(field *parser.Field, otherField
 			// If it's all primitives, optimization. Otherwise need to iterate
 			if (g.isJavaPrimitive(keyUnderlying) || keyUnderlying.Name == "string") &&
 				(g.isJavaPrimitive(valUnderlying) || valUnderlying.Name == "string") {
-				contents += fmt.Sprintf(ind+"%s%s = new HashMap<%s,%s>(%s);\n",
+				contents += indent + fmt.Sprintf("%s%s = new HashMap<%s,%s>(%s);\n",
 					declPrefix, field.Name, containerKeyType, containerValType, otherFieldName)
 			} else {
 				thisKeyElem := g.GetElem()
 				thisKeyField := parser.FieldFromType(underlyingType.KeyType, thisKeyElem)
 
-				contents += fmt.Sprintf(ind+"%s%s = new HashMap<%s,%s>(%s.size());\n",
+				contents += indent + fmt.Sprintf("%s%s = new HashMap<%s,%s>(%s.size());\n",
 					declPrefix, field.Name, containerKeyType, containerValType, otherFieldName)
-				contents += fmt.Sprintf(ind+"for (Map.Entry<%s, %s> %s : %s.entrySet()) {\n",
+				contents += indent + fmt.Sprintf("for (Map.Entry<%s, %s> %s : %s.entrySet()) {\n",
 					containerKeyType, containerValType, otherValElem, otherFieldName)
-				contents += g.generateCopyConstructorField(thisKeyField, otherValElem+".getKey()", false, ind+tab)
-				contents += g.generateCopyConstructorField(thisValField, otherValElem+".getValue()", false, ind+tab)
-				contents += fmt.Sprintf(ind+tab+"%s%s.put(%s, %s);\n", accessPrefix, field.Name, thisKeyElem, thisValElem)
-				contents += ind + "}\n"
+				contents += g.generateCopyConstructorField(thisKeyField, otherValElem+".getKey()", false, indent+tab)
+				contents += g.generateCopyConstructorField(thisValField, otherValElem+".getValue()", false, indent+tab)
+				contents += indent + tab + fmt.Sprintf("%s%s.put(%s, %s);\n", accessPrefix, field.Name, thisKeyElem, thisValElem)
+				contents += indent + "}\n"
 			}
 		}
 
@@ -1878,7 +1920,7 @@ func (g *Generator) generateCopyConstructorField(field *parser.Field, otherField
 // and don't read collection end.
 // containerTypes causes variables to be declared as objects instead of
 // potentially primitives
-func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, succinct bool, containerTypes bool, ind string) string {
+func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, succinct bool, containerTypes bool, indent string) string {
 	contents := ""
 	declPrefix := "struct."
 	accessPrefix := "struct."
@@ -1916,12 +1958,12 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, succin
 			panic("unkown thrift type: " + underlyingType.Name)
 		}
 
-		contents += fmt.Sprintf(ind+"%s%s = iprot.read%s();\n", declPrefix, field.Name, thriftType)
+		contents += indent + fmt.Sprintf("%s%s = iprot.read%s();\n", declPrefix, field.Name, thriftType)
 	} else if g.Frugal.IsEnum(underlyingType) {
-		contents += fmt.Sprintf(ind+"%s%s = %s.findByValue(iprot.readI32());\n", declPrefix, field.Name, javaType)
+		contents += indent + fmt.Sprintf("%s%s = %s.findByValue(iprot.readI32());\n", declPrefix, field.Name, javaType)
 	} else if g.Frugal.IsStruct(underlyingType) {
-		contents += fmt.Sprintf(ind+"%s%s = new %s();\n", declPrefix, field.Name, javaType)
-		contents += fmt.Sprintf(ind+"%s%s.read(iprot);\n", accessPrefix, field.Name)
+		contents += indent + fmt.Sprintf("%s%s = new %s();\n", declPrefix, field.Name, javaType)
+		contents += indent + fmt.Sprintf("%s%s.read(iprot);\n", accessPrefix, field.Name)
 	} else if underlyingType.IsContainer() {
 		containerElem := g.GetElem()
 		counterElem := g.GetElem()
@@ -1929,60 +1971,60 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, succin
 		valType := containerType(g.getJavaTypeFromThriftType(underlyingType.ValueType))
 		valElem := g.GetElem()
 		valField := parser.FieldFromType(underlyingType.ValueType, valElem)
-		valContents := g.generateReadFieldRec(valField, false, succinct, containerTypes, ind+tab)
+		valContents := g.generateReadFieldRec(valField, false, succinct, containerTypes, indent+tab)
 		valTType := g.getTType(underlyingType.ValueType)
 
 		switch underlyingType.Name {
 		case "list":
 			if succinct {
-				contents += fmt.Sprintf(ind+"org.apache.thrift.protocol.TList %s = new org.apache.thrift.protocol.TList(%s, iprot.readI32());\n",
+				contents += indent + fmt.Sprintf("org.apache.thrift.protocol.TList %s = new org.apache.thrift.protocol.TList(%s, iprot.readI32());\n",
 					containerElem, valTType)
 			} else {
-				contents += fmt.Sprintf(ind+"org.apache.thrift.protocol.TList %s = iprot.readListBegin();\n", containerElem)
+				contents += indent + fmt.Sprintf("org.apache.thrift.protocol.TList %s = iprot.readListBegin();\n", containerElem)
 			}
-			contents += fmt.Sprintf(ind+"%s%s = new ArrayList<%s>(%s.size);\n", declPrefix, field.Name, valType, containerElem)
-			contents += fmt.Sprintf(ind+"for (int %s = 0; %s < %s.size; ++%s) {\n", counterElem, counterElem, containerElem, counterElem)
+			contents += indent + fmt.Sprintf("%s%s = new ArrayList<%s>(%s.size);\n", declPrefix, field.Name, valType, containerElem)
+			contents += indent + fmt.Sprintf("for (int %s = 0; %s < %s.size; ++%s) {\n", counterElem, counterElem, containerElem, counterElem)
 			contents += valContents
-			contents += fmt.Sprintf(ind+tab+"%s%s.add(%s);\n", accessPrefix, field.Name, valElem)
-			contents += ind + "}\n"
+			contents += indent + tab + fmt.Sprintf("%s%s.add(%s);\n", accessPrefix, field.Name, valElem)
+			contents += indent + "}\n"
 			if !succinct {
-				contents += ind + "iprot.readListEnd();\n"
+				contents += indent + "iprot.readListEnd();\n"
 			}
 		case "set":
 			if succinct {
-				contents += fmt.Sprintf(ind+"org.apache.thrift.protocol.TSet %s = new org.apache.thrift.protocol.TSet(%s, iprot.readI32());\n",
+				contents += indent + fmt.Sprintf("org.apache.thrift.protocol.TSet %s = new org.apache.thrift.protocol.TSet(%s, iprot.readI32());\n",
 					containerElem, valTType)
 			} else {
-				contents += fmt.Sprintf(ind+"org.apache.thrift.protocol.TSet %s = iprot.readSetBegin();\n", containerElem)
+				contents += indent + fmt.Sprintf("org.apache.thrift.protocol.TSet %s = iprot.readSetBegin();\n", containerElem)
 			}
-			contents += fmt.Sprintf(ind+"%s%s = new HashSet<%s>(2*%s.size);\n", declPrefix, field.Name, valType, containerElem)
-			contents += fmt.Sprintf(ind+"for (int %s = 0; %s < %s.size; ++%s) {\n", counterElem, counterElem, containerElem, counterElem)
+			contents += indent + fmt.Sprintf("%s%s = new HashSet<%s>(2*%s.size);\n", declPrefix, field.Name, valType, containerElem)
+			contents += indent + fmt.Sprintf("for (int %s = 0; %s < %s.size; ++%s) {\n", counterElem, counterElem, containerElem, counterElem)
 			contents += valContents
-			contents += fmt.Sprintf(ind+tab+"%s%s.add(%s);\n", accessPrefix, field.Name, valElem)
-			contents += ind + "}\n"
+			contents += indent + tab + fmt.Sprintf("%s%s.add(%s);\n", accessPrefix, field.Name, valElem)
+			contents += indent + "}\n"
 			if !succinct {
-				contents += ind + "iprot.readSetEnd();\n"
+				contents += indent + "iprot.readSetEnd();\n"
 			}
 		case "map":
 			keyTType := g.getTType(underlyingType.KeyType)
 			if succinct {
-				contents += fmt.Sprintf(ind+"org.apache.thrift.protocol.TMap %s = new org.apache.thrift.protocol.TMap(%s, %s, iprot.readI32());\n",
+				contents += indent + fmt.Sprintf("org.apache.thrift.protocol.TMap %s = new org.apache.thrift.protocol.TMap(%s, %s, iprot.readI32());\n",
 					containerElem, keyTType, valTType)
 			} else {
-				contents += fmt.Sprintf(ind+"org.apache.thrift.protocol.TMap %s = iprot.readMapBegin();\n", containerElem)
+				contents += indent + fmt.Sprintf("org.apache.thrift.protocol.TMap %s = iprot.readMapBegin();\n", containerElem)
 			}
 
 			keyType := containerType(g.getJavaTypeFromThriftType(underlyingType.KeyType))
-			contents += fmt.Sprintf(ind+"%s%s = new HashMap<%s,%s>(2*%s.size);\n", declPrefix, field.Name, keyType, valType, containerElem)
-			contents += fmt.Sprintf(ind+"for (int %s = 0; %s < %s.size; ++%s) {\n", counterElem, counterElem, containerElem, counterElem)
+			contents += indent + fmt.Sprintf("%s%s = new HashMap<%s,%s>(2*%s.size);\n", declPrefix, field.Name, keyType, valType, containerElem)
+			contents += indent + fmt.Sprintf("for (int %s = 0; %s < %s.size; ++%s) {\n", counterElem, counterElem, containerElem, counterElem)
 			keyElem := g.GetElem()
 			keyField := parser.FieldFromType(underlyingType.KeyType, keyElem)
-			contents += g.generateReadFieldRec(keyField, false, succinct, containerTypes, ind+tab)
+			contents += g.generateReadFieldRec(keyField, false, succinct, containerTypes, indent+tab)
 			contents += valContents
-			contents += fmt.Sprintf(ind+tab+"%s%s.put(%s, %s);\n", accessPrefix, field.Name, keyElem, valElem)
-			contents += ind + "}\n"
+			contents += indent + tab + fmt.Sprintf("%s%s.put(%s, %s);\n", accessPrefix, field.Name, keyElem, valElem)
+			contents += indent + "}\n"
 			if !succinct {
-				contents += ind + "iprot.readMapEnd();\n"
+				contents += indent + "iprot.readMapEnd();\n"
 			}
 		}
 	}
@@ -1992,7 +2034,7 @@ func (g *Generator) generateReadFieldRec(field *parser.Field, first bool, succin
 
 // succinct means only write collection length instead of the whole header,
 // and don't write collection end.
-func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, succinct bool, ind string) string {
+func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, succinct bool, indent string) string {
 	contents := ""
 	accessPrefix := "struct."
 	if !first {
@@ -2007,16 +2049,16 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, succi
 		// Store the value in an intermittent value
 		// This allows writing a default value if using boxed primitives
 		// and the value is "null"
-		contents += fmt.Sprintf(ind+"%s %s = %s%s;\n",
+		contents += indent + fmt.Sprintf("%s %s = %s%s;\n",
 			g.getJavaTypeFromThriftType(underlyingType), elem, accessPrefix, field.Name)
 		if g.canBeJavaPrimitive(underlyingType) && g.generateBoxedPrimitives() {
-			contents += fmt.Sprintf(ind+"if (%s == null) {\n", elem)
+			contents += indent + fmt.Sprintf("if (%s == null) {\n", elem)
 			val := g.getPrimitiveDefaultValue(underlyingType)
-			contents += fmt.Sprintf(ind+tab+"%s = %s;\n", elem, val)
-			contents += fmt.Sprintf(ind + "}\n")
+			contents += indent + tab + fmt.Sprintf("%s = %s;\n", elem, val)
+			contents += indent + "}\n"
 		}
 
-		write := ind + "oprot.write"
+		write := indent + "oprot.write"
 		switch underlyingType.Name {
 		case "bool":
 			write += "Bool(%s);\n"
@@ -2044,7 +2086,7 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, succi
 
 		contents += fmt.Sprintf(write, elem)
 	} else if g.Frugal.IsStruct(underlyingType) {
-		contents += fmt.Sprintf(ind+"%s%s.write(oprot);\n", accessPrefix, field.Name)
+		contents += indent + fmt.Sprintf("%s%s.write(oprot);\n", accessPrefix, field.Name)
 	} else if underlyingType.IsContainer() {
 		iterElem := g.GetElem()
 		valJavaType := g.getJavaTypeFromThriftType(underlyingType.ValueType)
@@ -2053,50 +2095,50 @@ func (g *Generator) generateWriteFieldRec(field *parser.Field, first bool, succi
 		switch underlyingType.Name {
 		case "list":
 			if succinct {
-				contents += fmt.Sprintf(ind+"oprot.writeI32(%s%s.size());\n", accessPrefix, field.Name)
+				contents += indent + fmt.Sprintf("oprot.writeI32(%s%s.size());\n", accessPrefix, field.Name)
 			} else {
-				contents += fmt.Sprintf(ind+"oprot.writeListBegin(new org.apache.thrift.protocol.TList(%s, %s%s.size()));\n",
+				contents += indent + fmt.Sprintf("oprot.writeListBegin(new org.apache.thrift.protocol.TList(%s, %s%s.size()));\n",
 					valTType, accessPrefix, field.Name)
 			}
-			contents += fmt.Sprintf(ind+"for (%s %s : %s%s) {\n", valJavaType, iterElem, accessPrefix, field.Name)
+			contents += indent + fmt.Sprintf("for (%s %s : %s%s) {\n", valJavaType, iterElem, accessPrefix, field.Name)
 			iterField := parser.FieldFromType(underlyingType.ValueType, iterElem)
-			contents += g.generateWriteFieldRec(iterField, false, succinct, ind+tab)
-			contents += ind + "}\n"
+			contents += g.generateWriteFieldRec(iterField, false, succinct, indent+tab)
+			contents += indent + "}\n"
 			if !succinct {
-				contents += ind + "oprot.writeListEnd();\n"
+				contents += indent + "oprot.writeListEnd();\n"
 			}
 		case "set":
 			if succinct {
-				contents += fmt.Sprintf(ind+"oprot.writeI32(%s%s.size());\n", accessPrefix, field.Name)
+				contents += indent + fmt.Sprintf("oprot.writeI32(%s%s.size());\n", accessPrefix, field.Name)
 			} else {
-				contents += fmt.Sprintf(ind+"oprot.writeSetBegin(new org.apache.thrift.protocol.TSet(%s, %s%s.size()));\n",
+				contents += indent + fmt.Sprintf("oprot.writeSetBegin(new org.apache.thrift.protocol.TSet(%s, %s%s.size()));\n",
 					valTType, accessPrefix, field.Name)
 			}
-			contents += fmt.Sprintf(ind+"for (%s %s : %s%s) {\n", valJavaType, iterElem, accessPrefix, field.Name)
+			contents += indent + fmt.Sprintf("for (%s %s : %s%s) {\n", valJavaType, iterElem, accessPrefix, field.Name)
 			iterField := parser.FieldFromType(underlyingType.ValueType, iterElem)
-			contents += g.generateWriteFieldRec(iterField, false, succinct, ind+tab)
-			contents += ind + "}\n"
+			contents += g.generateWriteFieldRec(iterField, false, succinct, indent+tab)
+			contents += indent + "}\n"
 			if !succinct {
-				contents += ind + "oprot.writeSetEnd();\n"
+				contents += indent + "oprot.writeSetEnd();\n"
 			}
 		case "map":
 			keyJavaType := g.getJavaTypeFromThriftType(underlyingType.KeyType)
 			keyTType := g.getTType(underlyingType.KeyType)
 			if succinct {
-				contents += fmt.Sprintf(ind+"oprot.writeI32(%s%s.size());\n", accessPrefix, field.Name)
+				contents += indent + fmt.Sprintf("oprot.writeI32(%s%s.size());\n", accessPrefix, field.Name)
 			} else {
-				contents += fmt.Sprintf(ind+"oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(%s, %s, %s%s.size()));\n",
+				contents += indent + fmt.Sprintf("oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(%s, %s, %s%s.size()));\n",
 					keyTType, valTType, accessPrefix, field.Name)
 			}
-			contents += fmt.Sprintf(ind+"for (Map.Entry<%s, %s> %s : %s%s.entrySet()) {\n",
+			contents += indent + fmt.Sprintf("for (Map.Entry<%s, %s> %s : %s%s.entrySet()) {\n",
 				containerType(keyJavaType), containerType(valJavaType), iterElem, accessPrefix, field.Name)
 			keyField := parser.FieldFromType(underlyingType.KeyType, iterElem+".getKey()")
 			valField := parser.FieldFromType(underlyingType.ValueType, iterElem+".getValue()")
-			contents += g.generateWriteFieldRec(keyField, false, succinct, ind+tab)
-			contents += g.generateWriteFieldRec(valField, false, succinct, ind+tab)
-			contents += ind + "}\n"
+			contents += g.generateWriteFieldRec(keyField, false, succinct, indent+tab)
+			contents += g.generateWriteFieldRec(valField, false, succinct, indent+tab)
+			contents += indent + "}\n"
 			if !succinct {
-				contents += ind + "oprot.writeMapEnd();\n"
+				contents += indent + "oprot.writeMapEnd();\n"
 			}
 		default:
 			panic("unknown type: " + underlyingType.Name)
@@ -2294,144 +2336,144 @@ func (g *Generator) GenerateConstants(file *os.File, name string) error {
 
 func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error {
 	scopeTitle := strings.Title(scope.Name)
-	publisher := ""
+	contents := ""
 
 	if g.includeGeneratedAnnotation() {
-		publisher += g.generatedAnnotation()
+		contents += g.generatedAnnotation("")
 	}
 
-	publisher += fmt.Sprintf("public class %sPublisher {\n\n", scopeTitle)
+	contents += fmt.Sprintf("public class %sPublisher {\n\n", scopeTitle)
 
-	publisher += g.generatePublisherIface(scope)
-	publisher += g.generatePublisherClient(scope)
+	contents += g.generatePublisherIface(scope, tab)
+	contents += g.generatePublisherClient(scope, tab)
 
-	publisher += "}"
+	contents += "}"
 
-	_, err := file.WriteString(publisher)
+	_, err := file.WriteString(contents)
 	return err
 }
 
-func (g *Generator) generatePublisherIface(scope *parser.Scope) string {
+func (g *Generator) generatePublisherIface(scope *parser.Scope, indent string) string {
 	contents := ""
 
 	if scope.Comment != nil {
-		contents += g.GenerateBlockComment(scope.Comment, tab)
+		contents += g.GenerateBlockComment(scope.Comment, indent)
 	}
-	contents += tab + "public interface Iface {\n"
+	contents += indent + "public interface Iface {\n"
 
-	contents += tabtab + "public void open() throws TException;\n\n"
-	contents += tabtab + "public void close() throws TException;\n\n"
+	contents += indent + tab + "public void open() throws TException;\n\n"
+	contents += indent + tab + "public void close() throws TException;\n\n"
 
 	args := g.generateScopePrefixArgs(scope)
 
 	for _, op := range scope.Operations {
 		if op.Comment != nil {
-			contents += g.GenerateBlockComment(op.Comment, tabtab)
+			contents += g.GenerateBlockComment(op.Comment, indent+tab)
 		}
-		contents += fmt.Sprintf(tabtab+"public void publish%s(FContext ctx, %s%s req) throws TException;\n\n", op.Name, args, g.getJavaTypeFromThriftType(op.Type))
+		contents += indent + tab + fmt.Sprintf("public void publish%s(FContext ctx, %s%s req) throws TException;\n\n", op.Name, args, g.getJavaTypeFromThriftType(op.Type))
 	}
 
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generatePublisherClient(scope *parser.Scope) string {
-	publisher := ""
+func (g *Generator) generatePublisherClient(scope *parser.Scope, indent string) string {
+	contents := ""
 
 	scopeTitle := strings.Title(scope.Name)
 
 	if scope.Comment != nil {
-		publisher += g.GenerateBlockComment(scope.Comment, tab)
+		contents += g.GenerateBlockComment(scope.Comment, indent)
 	}
-	publisher += tab + "public static class Client implements Iface {\n"
-	publisher += fmt.Sprintf(tabtab+"private static final String DELIMITER = \"%s\";\n\n", globals.TopicDelimiter)
-	publisher += tabtab + "private final Iface target;\n"
-	publisher += tabtab + "private final Iface proxy;\n\n"
+	contents += indent + "public static class Client implements Iface {\n"
+	contents += indent + tab + fmt.Sprintf("private static final String DELIMITER = \"%s\";\n\n", globals.TopicDelimiter)
+	contents += indent + tab + "private final Iface target;\n"
+	contents += indent + tab + "private final Iface proxy;\n\n"
 
-	publisher += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
-	publisher += fmt.Sprintf(tabtabtab+"target = new Internal%sPublisher(provider);\n", scopeTitle)
-	publisher += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
-	publisher += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
-	publisher += tabtabtab + "middleware = combined.toArray(new ServiceMiddleware[0]);\n"
-	publisher += tabtabtab + "proxy = InvocationHandler.composeMiddleware(target, Iface.class, middleware);\n"
-	publisher += tabtab + "}\n\n"
+	contents += indent + tab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
+	contents += indent + tabtab + fmt.Sprintf("target = new Internal%sPublisher(provider);\n", scopeTitle)
+	contents += indent + tabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
+	contents += indent + tabtab + "combined.addAll(provider.getMiddleware());\n"
+	contents += indent + tabtab + "middleware = combined.toArray(new ServiceMiddleware[0]);\n"
+	contents += indent + tabtab + "proxy = InvocationHandler.composeMiddleware(target, Iface.class, middleware);\n"
+	contents += indent + tab + "}\n\n"
 
-	publisher += tabtab + "public void open() throws TException {\n"
-	publisher += tabtabtab + "target.open();\n"
-	publisher += tabtab + "}\n\n"
+	contents += indent + tab + "public void open() throws TException {\n"
+	contents += indent + tabtab + "target.open();\n"
+	contents += indent + tab + "}\n\n"
 
-	publisher += tabtab + "public void close() throws TException {\n"
-	publisher += tabtabtab + "target.close();\n"
-	publisher += tabtab + "}\n\n"
+	contents += indent + tab + "public void close() throws TException {\n"
+	contents += indent + tabtab + "target.close();\n"
+	contents += indent + tab + "}\n\n"
 
 	args := g.generateScopePrefixArgs(scope)
 
 	for _, op := range scope.Operations {
 		if op.Comment != nil {
-			publisher += g.GenerateBlockComment(op.Comment, tabtab)
+			contents += g.GenerateBlockComment(op.Comment, indent+tab)
 		}
-		publisher += fmt.Sprintf(tabtab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.getJavaTypeFromThriftType(op.Type))
-		publisher += fmt.Sprintf(tabtabtab+"proxy.publish%s(%s);\n", op.Name, g.generateScopeArgs(scope))
-		publisher += tabtab + "}\n\n"
+		contents += indent + tab + fmt.Sprintf("public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.getJavaTypeFromThriftType(op.Type))
+		contents += indent + tabtab + fmt.Sprintf("proxy.publish%s(%s);\n", op.Name, g.generateScopeArgs(scope))
+		contents += indent + tab + "}\n\n"
 	}
 
-	publisher += fmt.Sprintf(tabtab+"protected static class Internal%sPublisher implements Iface {\n\n", scopeTitle)
+	contents += indent + tab + fmt.Sprintf("protected static class Internal%sPublisher implements Iface {\n\n", scopeTitle)
 
-	publisher += tabtabtab + "private FScopeProvider provider;\n"
-	publisher += tabtabtab + "private FPublisherTransport transport;\n"
+	contents += indent + tabtab + "private FScopeProvider provider;\n"
+	contents += indent + tabtab + "private FPublisherTransport transport;\n"
 
-	publisher += tabtabtab + "private FProtocolFactory protocolFactory;\n\n"
+	contents += indent + tabtab + "private FProtocolFactory protocolFactory;\n\n"
 
-	publisher += fmt.Sprintf(tabtabtab+"protected Internal%sPublisher() {\n", scopeTitle)
-	publisher += tabtabtab + "}\n\n"
+	contents += indent + tabtab + fmt.Sprintf("protected Internal%sPublisher() {\n", scopeTitle)
+	contents += indent + tabtab + "}\n\n"
 
-	publisher += fmt.Sprintf(tabtabtab+"public Internal%sPublisher(FScopeProvider provider) {\n", scopeTitle)
-	publisher += tabtabtabtab + "this.provider = provider;\n"
-	publisher += tabtabtab + "}\n\n"
+	contents += indent + tabtab + fmt.Sprintf("public Internal%sPublisher(FScopeProvider provider) {\n", scopeTitle)
+	contents += indent + tabtabtab + "this.provider = provider;\n"
+	contents += indent + tabtab + "}\n\n"
 
-	publisher += tabtabtab + "public void open() throws TException {\n"
-	publisher += tabtabtabtab + "FScopeProvider.Publisher publisher = provider.buildPublisher();\n"
-	publisher += tabtabtabtab + "transport = publisher.getTransport();\n"
-	publisher += tabtabtabtab + "protocolFactory = publisher.getProtocolFactory();\n"
-	publisher += tabtabtabtab + "transport.open();\n"
-	publisher += tabtabtab + "}\n\n"
+	contents += indent + tabtab + "public void open() throws TException {\n"
+	contents += indent + tabtabtab + "FScopeProvider.Publisher publisher = provider.buildPublisher();\n"
+	contents += indent + tabtabtab + "transport = publisher.getTransport();\n"
+	contents += indent + tabtabtab + "protocolFactory = publisher.getProtocolFactory();\n"
+	contents += indent + tabtabtab + "transport.open();\n"
+	contents += indent + tabtab + "}\n\n"
 
-	publisher += tabtabtab + "public void close() throws TException {\n"
-	publisher += tabtabtabtab + "transport.close();\n"
-	publisher += tabtabtab + "}\n\n"
+	contents += indent + tabtab + "public void close() throws TException {\n"
+	contents += indent + tabtabtab + "transport.close();\n"
+	contents += indent + tabtab + "}\n\n"
 
 	prefix := ""
 	for _, op := range scope.Operations {
-		publisher += prefix
+		contents += prefix
 		prefix = "\n\n"
 		if op.Comment != nil {
-			publisher += g.GenerateBlockComment(op.Comment, tabtabtab)
+			contents += g.GenerateBlockComment(op.Comment, indent+tabtab)
 		}
 
-		publisher += fmt.Sprintf(tabtabtab+"public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.getJavaTypeFromThriftType(op.Type))
+		contents += indent + tabtab + fmt.Sprintf("public void publish%s(FContext ctx, %s%s req) throws TException {\n", op.Name, args, g.getJavaTypeFromThriftType(op.Type))
 
 		// Inject the prefix variables into the FContext to send
 		for _, prefixVar := range scope.Prefix.Variables {
-			publisher += fmt.Sprintf(tabtabtabtab+"ctx.addRequestHeader(\"_topic_%s\", %s);\n", prefixVar, prefixVar)
+			contents += indent + tabtabtab + fmt.Sprintf("ctx.addRequestHeader(\"_topic_%s\", %s);\n", prefixVar, prefixVar)
 		}
 
-		publisher += tabtabtabtab + fmt.Sprintf("String op = \"%s\";\n", op.Name)
-		publisher += tabtabtabtab + fmt.Sprintf("String prefix = %s;\n", generatePrefixStringTemplate(scope))
-		publisher += tabtabtabtab + "String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, DELIMITER, op);\n"
-		publisher += tabtabtabtab + "TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getPublishSizeLimit());\n"
-		publisher += tabtabtabtab + "FProtocol oprot = protocolFactory.getProtocol(memoryBuffer);\n"
-		publisher += tabtabtabtab + "oprot.writeRequestHeader(ctx);\n"
-		publisher += tabtabtabtab + "oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));\n"
-		publisher += g.generateWriteFieldRec(parser.FieldFromType(op.Type, "req"), false, false, tabtabtabtab)
-		publisher += tabtabtabtab + "oprot.writeMessageEnd();\n"
-		publisher += tabtabtabtab + "transport.publish(topic, memoryBuffer.getWriteBytes());\n"
-		publisher += tabtabtab + "}\n"
+		contents += indent + tabtabtab + fmt.Sprintf("String op = \"%s\";\n", op.Name)
+		contents += indent + tabtabtab + fmt.Sprintf("String prefix = %s;\n", generatePrefixStringTemplate(scope))
+		contents += indent + tabtabtab + "String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, DELIMITER, op);\n"
+		contents += indent + tabtabtab + "TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(transport.getPublishSizeLimit());\n"
+		contents += indent + tabtabtab + "FProtocol oprot = protocolFactory.getProtocol(memoryBuffer);\n"
+		contents += indent + tabtabtab + "oprot.writeRequestHeader(ctx);\n"
+		contents += indent + tabtabtab + "oprot.writeMessageBegin(new TMessage(op, TMessageType.CALL, 0));\n"
+		contents += g.generateWriteFieldRec(parser.FieldFromType(op.Type, "req"), false, false, indent+tabtabtab)
+		contents += indent + tabtabtab + "oprot.writeMessageEnd();\n"
+		contents += indent + tabtabtab + "transport.publish(topic, memoryBuffer.getWriteBytes());\n"
+		contents += indent + tabtab + "}\n"
 	}
 
-	publisher += tabtab + "}\n"
-	publisher += tab + "}\n"
+	contents += indent + tab + "}\n"
+	contents += indent + "}\n"
 
-	return publisher
+	return contents
 }
 
 func generatePrefixStringTemplate(scope *parser.Scope) string {
@@ -2454,168 +2496,168 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 }
 
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
-	subscriber := ""
+	contents := ""
 	scopeName := strings.Title(scope.Name)
 	if g.includeGeneratedAnnotation() {
-		subscriber += g.generatedAnnotation()
+		contents += g.generatedAnnotation("")
 	}
 
-	subscriber += fmt.Sprintf("public class %sSubscriber {\n\n", scopeName)
+	contents += fmt.Sprintf("public class %sSubscriber {\n\n", scopeName)
 
-	subscriber += g.generateSubscriberIface(scope)
-	subscriber += g.generateHandlerIfaces(scope)
-	subscriber += g.generateSubscriberClient(scope)
+	contents += g.generateSubscriberIface(scope, tab)
+	contents += g.generateHandlerIfaces(scope, tab)
+	contents += g.generateSubscriberClient(scope, tab)
 
-	subscriber += "\n}"
+	contents += "\n}"
 
-	_, err := file.WriteString(subscriber)
+	_, err := file.WriteString(contents)
 	return err
 }
 
-func (g *Generator) generateSubscriberIface(scope *parser.Scope) string {
+func (g *Generator) generateSubscriberIface(scope *parser.Scope, indent string) string {
 	contents := ""
 
 	if scope.Comment != nil {
-		contents += g.GenerateBlockComment(scope.Comment, tab)
+		contents += g.GenerateBlockComment(scope.Comment, indent)
 	}
 
 	// generate a non-throwable interface
-	contents += tab + "public interface Iface {\n"
+	contents += indent + "public interface Iface {\n"
 	args := g.generateScopePrefixArgs(scope)
 	for _, op := range scope.Operations {
 		if op.Comment != nil {
-			contents += g.GenerateBlockComment(op.Comment, tabtab)
+			contents += g.GenerateBlockComment(op.Comment, indent+tab)
 		}
-		contents += fmt.Sprintf(tabtab+"public FSubscription subscribe%s(%sfinal %sHandler handler) throws TException;\n\n",
+		contents += indent + tab + fmt.Sprintf("public FSubscription subscribe%s(%sfinal %sHandler handler) throws TException;\n\n",
 			op.Name, args, op.Name)
 	}
 
 	// generate a throwable interface
-	contents += tab + "}\n\n"
-	contents += tab + "public interface IfaceThrowable {\n"
+	contents += indent + "}\n\n"
+	contents += indent + "public interface IfaceThrowable {\n"
 	throwableArgs := g.generateScopePrefixArgs(scope)
 	for _, op := range scope.Operations {
 		if op.Comment != nil {
-			contents += g.GenerateBlockComment(op.Comment, tabtab)
+			contents += g.GenerateBlockComment(op.Comment, indent+tab)
 		}
-		contents += fmt.Sprintf(tabtab+"public FSubscription subscribe%sThrowable(%sfinal %sThrowableHandler handler) throws TException;\n\n",
+		contents += indent + tab + fmt.Sprintf("public FSubscription subscribe%sThrowable(%sfinal %sThrowableHandler handler) throws TException;\n\n",
 			op.Name, throwableArgs, op.Name)
 	}
 
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateHandlerIfaces(scope *parser.Scope) string {
+func (g *Generator) generateHandlerIfaces(scope *parser.Scope, indent string) string {
 	contents := ""
 
 	// generate non-throwable handler interfaces
 	for _, op := range scope.Operations {
-		contents += fmt.Sprintf(tab+"public interface %sHandler {\n", op.Name)
-		contents += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s req) throws TException;\n", op.Name, g.getJavaTypeFromThriftType(op.Type))
-		contents += tab + "}\n\n"
+		contents += indent + fmt.Sprintf("public interface %sHandler {\n", op.Name)
+		contents += indent + tab + fmt.Sprintf("void on%s(FContext ctx, %s req) throws TException;\n", op.Name, g.getJavaTypeFromThriftType(op.Type))
+		contents += indent + "}\n\n"
 	}
 
 	// generate throwable handler interfaces
 	for _, op := range scope.Operations {
-		contents += fmt.Sprintf(tab+"public interface %sThrowableHandler {\n", op.Name)
-		contents += fmt.Sprintf(tabtab+"void on%s(FContext ctx, %s req) throws TException;\n", op.Name, g.getJavaTypeFromThriftType(op.Type))
-		contents += tab + "}\n\n"
+		contents += indent + fmt.Sprintf("public interface %sThrowableHandler {\n", op.Name)
+		contents += indent + tab + fmt.Sprintf("void on%s(FContext ctx, %s req) throws TException;\n", op.Name, g.getJavaTypeFromThriftType(op.Type))
+		contents += indent + "}\n\n"
 	}
 
 	return contents
 }
 
-func (g *Generator) generateSubscriberClient(scope *parser.Scope) string {
-	subscriber := ""
+func (g *Generator) generateSubscriberClient(scope *parser.Scope, indent string) string {
+	contents := ""
 
 	prefix := ""
 	args := g.generateScopePrefixArgs(scope)
 
 	if scope.Comment != nil {
-		subscriber += g.GenerateBlockComment(scope.Comment, tab)
+		contents += g.GenerateBlockComment(scope.Comment, indent)
 	}
-	subscriber += tab + "public static class Client implements Iface, IfaceThrowable {\n"
+	contents += indent + "public static class Client implements Iface, IfaceThrowable {\n"
 
-	subscriber += fmt.Sprintf(tabtab+"private static final String DELIMITER = \"%s\";\n", globals.TopicDelimiter)
-	subscriber += tabtab + "private static final Logger LOGGER = LoggerFactory.getLogger(Client.class);\n\n"
+	contents += indent + tab + fmt.Sprintf("private static final String DELIMITER = \"%s\";\n", globals.TopicDelimiter)
+	contents += indent + tab + "private static final Logger LOGGER = LoggerFactory.getLogger(Client.class);\n\n"
 
-	subscriber += tabtab + "private final FScopeProvider provider;\n"
-	subscriber += tabtab + "private final ServiceMiddleware[] middleware;\n\n"
+	contents += indent + tab + "private final FScopeProvider provider;\n"
+	contents += indent + tab + "private final ServiceMiddleware[] middleware;\n\n"
 
-	subscriber += tabtab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
-	subscriber += tabtabtab + "this.provider = provider;\n"
-	subscriber += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
-	subscriber += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
-	subscriber += tabtabtab + "this.middleware = combined.toArray(new ServiceMiddleware[0]);\n"
-	subscriber += tabtab + "}\n\n"
+	contents += indent + tab + "public Client(FScopeProvider provider, ServiceMiddleware... middleware) {\n"
+	contents += indent + tabtab + "this.provider = provider;\n"
+	contents += indent + tabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
+	contents += indent + tabtab + "combined.addAll(provider.getMiddleware());\n"
+	contents += indent + tabtab + "this.middleware = combined.toArray(new ServiceMiddleware[0]);\n"
+	contents += indent + tab + "}\n\n"
 
 	throwable := false
 	for i := 0; i < 2; i++ {
 		for _, op := range scope.Operations {
-			subscriber += prefix
+			contents += prefix
 			prefix = "\n\n"
 			if op.Comment != nil {
-				subscriber += g.GenerateBlockComment(op.Comment, tabtab)
+				contents += g.GenerateBlockComment(op.Comment, indent+tab)
 			}
 
 			if throwable {
-				subscriber += tabtab + fmt.Sprintf("public FSubscription subscribe%sThrowable(%sfinal %sThrowableHandler handler) throws TException {\n", op.Name, args, op.Name)
+				contents += indent + tab + fmt.Sprintf("public FSubscription subscribe%sThrowable(%sfinal %sThrowableHandler handler) throws TException {\n", op.Name, args, op.Name)
 			} else {
-				subscriber += tabtab + fmt.Sprintf("public FSubscription subscribe%s(%sfinal %sHandler handler) throws TException {\n", op.Name, args, op.Name)
+				contents += indent + tab + fmt.Sprintf("public FSubscription subscribe%s(%sfinal %sHandler handler) throws TException {\n", op.Name, args, op.Name)
 			}
-			subscriber += tabtabtab + fmt.Sprintf("final String op = \"%s\";\n", op.Name)
-			subscriber += tabtabtab + fmt.Sprintf("String prefix = %s;\n", generatePrefixStringTemplate(scope))
-			subscriber += tabtabtab + "final String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, DELIMITER, op);\n"
-			subscriber += tabtabtab + "final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();\n"
+			contents += indent + tabtab + fmt.Sprintf("final String op = \"%s\";\n", op.Name)
+			contents += indent + tabtab + fmt.Sprintf("String prefix = %s;\n", generatePrefixStringTemplate(scope))
+			contents += indent + tabtab + "final String topic = String.format(\"%s" + strings.Title(scope.Name) + "%s%s\", prefix, DELIMITER, op);\n"
+			contents += indent + tabtab + "final FScopeProvider.Subscriber subscriber = provider.buildSubscriber();\n"
 
-			subscriber += tabtabtab + "final FSubscriberTransport transport = subscriber.getTransport();\n"
+			contents += indent + tabtab + "final FSubscriberTransport transport = subscriber.getTransport();\n"
 
 			if throwable {
-				subscriber += tabtabtab + fmt.Sprintf(
+				contents += indent + tabtab + fmt.Sprintf(
 					"final %sThrowableHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, %sThrowableHandler.class, middleware);\n",
 					op.Name, op.Name)
 			} else {
-				subscriber += tabtabtab + fmt.Sprintf(
+				contents += indent + tabtab + fmt.Sprintf(
 					"final %sHandler proxiedHandler = InvocationHandler.composeMiddleware(handler, %sHandler.class, middleware);\n",
 					op.Name, op.Name)
 			}
 
-			subscriber += tabtabtab + fmt.Sprintf("transport.subscribe(topic, recv%s(op, subscriber.getProtocolFactory(), proxiedHandler));\n", op.Name)
-			subscriber += tabtabtab + "return FSubscription.of(topic, transport);\n"
-			subscriber += tabtab + "}\n\n"
+			contents += indent + tabtab + fmt.Sprintf("transport.subscribe(topic, recv%s(op, subscriber.getProtocolFactory(), proxiedHandler));\n", op.Name)
+			contents += indent + tabtab + "return FSubscription.of(topic, transport);\n"
+			contents += indent + tab + "}\n\n"
 
 			callback := "FAsyncCallback"
 			if throwable {
-				subscriber += tabtab + fmt.Sprintf("private %s recv%s(String op, FProtocolFactory pf, %sThrowableHandler handler) {\n", callback, op.Name, op.Name)
+				contents += indent + tab + fmt.Sprintf("private %s recv%s(String op, FProtocolFactory pf, %sThrowableHandler handler) {\n", callback, op.Name, op.Name)
 			} else {
-				subscriber += tabtab + fmt.Sprintf("private %s recv%s(String op, FProtocolFactory pf, %sHandler handler) {\n", callback, op.Name, op.Name)
+				contents += indent + tab + fmt.Sprintf("private %s recv%s(String op, FProtocolFactory pf, %sHandler handler) {\n", callback, op.Name, op.Name)
 			}
 
-			subscriber += tabtabtab + fmt.Sprintf("return new %s() {\n", callback)
+			contents += indent + tabtab + fmt.Sprintf("return new %s() {\n", callback)
 
-			subscriber += tabtabtabtab + "public void onMessage(TTransport tr) throws TException {\n"
-			subscriber += tabtabtabtabtab + "FProtocol iprot = pf.getProtocol(tr);\n"
-			subscriber += tabtabtabtabtab + "FContext ctx = iprot.readRequestHeader();\n"
-			subscriber += tabtabtabtabtab + "TMessage msg = iprot.readMessageBegin();\n"
-			subscriber += tabtabtabtabtab + "if (!msg.name.equals(op)) {\n"
-			subscriber += tabtabtabtabtabtab + "TProtocolUtil.skip(iprot, TType.STRUCT);\n"
-			subscriber += tabtabtabtabtabtab + "iprot.readMessageEnd();\n"
-			subscriber += tabtabtabtabtabtab + "throw new TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD);\n"
-			subscriber += tabtabtabtabtab + "}\n"
-			subscriber += g.generateReadFieldRec(parser.FieldFromType(op.Type, "received"), false, false, false, tabtabtabtabtab)
-			subscriber += tabtabtabtabtab + "iprot.readMessageEnd();\n"
+			contents += indent + tabtabtab + "public void onMessage(TTransport tr) throws TException {\n"
+			contents += indent + tabtabtabtab + "FProtocol iprot = pf.getProtocol(tr);\n"
+			contents += indent + tabtabtabtab + "FContext ctx = iprot.readRequestHeader();\n"
+			contents += indent + tabtabtabtab + "TMessage msg = iprot.readMessageBegin();\n"
+			contents += indent + tabtabtabtab + "if (!msg.name.equals(op)) {\n"
+			contents += indent + tabtabtabtabtab + "TProtocolUtil.skip(iprot, TType.STRUCT);\n"
+			contents += indent + tabtabtabtabtab + "iprot.readMessageEnd();\n"
+			contents += indent + tabtabtabtabtab + "throw new TApplicationException(TApplicationExceptionType.UNKNOWN_METHOD);\n"
+			contents += indent + tabtabtabtab + "}\n"
+			contents += g.generateReadFieldRec(parser.FieldFromType(op.Type, "received"), false, false, false, indent+tabtabtabtab)
+			contents += indent + tabtabtabtab + "iprot.readMessageEnd();\n"
 
-			subscriber += tabtabtabtabtab + fmt.Sprintf("handler.on%s(ctx, received);\n", op.Name)
-			subscriber += tabtabtabtab + "}\n"
-			subscriber += tabtabtab + "};\n"
-			subscriber += tabtab + "}"
+			contents += indent + tabtabtabtab + fmt.Sprintf("handler.on%s(ctx, received);\n", op.Name)
+			contents += indent + tabtabtab + "}\n"
+			contents += indent + tabtab + "};\n"
+			contents += indent + tab + "}"
 		}
 		throwable = true
 	}
-	subscriber += "\n" + tab + "}\n"
+	contents += "\n" + indent + "}\n"
 
-	return subscriber
+	return contents
 }
 
 func (g *Generator) generateScopePrefixArgs(scope *parser.Scope) string {
@@ -2631,54 +2673,58 @@ func (g *Generator) generateScopePrefixArgs(scope *parser.Scope) string {
 func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 	contents := ""
 	if g.includeGeneratedAnnotation() {
-		contents += g.generatedAnnotation()
+		contents += g.generatedAnnotation("")
 	}
 	contents += fmt.Sprintf("public class F%s {\n\n", s.Name)
-	contents += fmt.Sprintf(tab+"private static final Logger logger = LoggerFactory.getLogger(F%s.class);\n\n", s.Name)
-	contents += g.generateServiceInterface(s)
-	contents += g.generateClient(s)
-	contents += g.generateServer(s)
-	contents += g.generateServiceArgsResults(s)
+	contents += tab + fmt.Sprintf("private static final Logger logger = LoggerFactory.getLogger(F%s.class);\n\n", s.Name)
+	contents += g.generateServiceInterface(s, tab)
+	contents += g.generateClient(s, tab)
+	contents += g.generateServer(s, tab)
+	contents += g.generateServiceArgsResults(s, tab)
 	contents += "}"
 
 	_, err := file.WriteString(contents)
 	return err
 }
 
-func (g *Generator) generateServiceInterface(service *parser.Service) string {
+func (g *Generator) generateCommentWithDeprecated(comment []string, indent string, anns parser.Annotations) string {
+	fullComment := []string{}
+	if comment != nil {
+		fullComment = append(fullComment, comment...)
+	}
+
+	deprecationValue, deprecated := anns.Deprecated()
+	if deprecated && deprecationValue != "" {
+		fullComment = append(fullComment, fmt.Sprintf("@deprecated %s", deprecationValue))
+	}
+
+	contents := ""
+	if len(fullComment) != 0 {
+		contents += g.GenerateBlockComment(fullComment, indent)
+	}
+	if deprecated {
+		contents += indent + "@Deprecated\n"
+	}
+	return contents
+}
+
+func (g *Generator) generateServiceInterface(service *parser.Service, indent string) string {
 	contents := ""
 	if service.Comment != nil {
-		contents += g.GenerateBlockComment(service.Comment, tab)
+		contents += g.GenerateBlockComment(service.Comment, indent)
 	}
 	if service.Extends != "" {
-		contents += tab + fmt.Sprintf("public interface Iface extends %s.Iface {\n\n",
+		contents += indent + fmt.Sprintf("public interface Iface extends %s.Iface {\n\n",
 			g.getServiceExtendsName(service))
 	} else {
-		contents += tab + "public interface Iface {\n\n"
+		contents += indent + "public interface Iface {\n\n"
 	}
 	for _, method := range service.Methods {
-		comment := []string{}
-		if method.Comment != nil {
-			comment = append(comment, method.Comment...)
-		}
-
-		deprecationValue, deprecated := method.Annotations.Deprecated()
-		if deprecated && deprecationValue != "" {
-			comment = append(comment, fmt.Sprintf("@deprecated %s", deprecationValue))
-		}
-
-		if len(comment) != 0 {
-			contents += g.GenerateBlockComment(comment, tabtab)
-		}
-
-		if deprecated {
-			contents += tabtab + "@Deprecated\n"
-		}
-
-		contents += fmt.Sprintf(tabtab+"public %s %s(FContext ctx%s) %s;\n\n",
+		contents += g.generateCommentWithDeprecated(method.Comment, indent+tab, method.Annotations)
+		contents += indent + tab + fmt.Sprintf("public %s %s(FContext ctx%s) %s;\n\n",
 			g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments, false), g.generateExceptions(method.Exceptions))
 	}
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 	return contents
 }
 
@@ -2731,189 +2777,189 @@ func (g *Generator) generateArgs(args []*parser.Field, final bool) string {
 	return argStr
 }
 
-func (g *Generator) generateClient(service *parser.Service) string {
+func (g *Generator) generateClient(service *parser.Service, indent string) string {
 	contents := ""
 	if service.Extends != "" {
-		contents += tab + fmt.Sprintf("public static class Client extends %s.Client implements Iface {\n\n",
+		contents += indent + fmt.Sprintf("public static class Client extends %s.Client implements Iface {\n\n",
 			g.getServiceExtendsName(service))
 	} else {
-		contents += tab + "public static class Client implements Iface {\n\n"
+		contents += indent + "public static class Client implements Iface {\n\n"
 	}
 	if service.Extends == "" {
 		if g.generateAsync() {
-			contents += tabtab + "protected ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);\n"
+			contents += indent + tab + "protected ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);\n"
 		}
 	}
-	contents += tabtab + "private Iface proxy;\n\n"
+	contents += indent + tab + "private Iface proxy;\n\n"
 
-	contents += tabtab + "public Client(FServiceProvider provider, ServiceMiddleware... middleware) {\n"
+	contents += indent + tab + "public Client(FServiceProvider provider, ServiceMiddleware... middleware) {\n"
 	if service.Extends != "" {
-		contents += tabtabtab + "super(provider, middleware);\n"
+		contents += indent + tabtab + "super(provider, middleware);\n"
 	}
-	contents += tabtabtab + "Iface client = new InternalClient(provider);\n"
-	contents += tabtabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
-	contents += tabtabtab + "combined.addAll(provider.getMiddleware());\n"
-	contents += tabtabtab + "middleware = combined.toArray(new ServiceMiddleware[0]);\n"
-	contents += tabtabtab + "proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);\n"
-	contents += tabtab + "}\n\n"
+	contents += indent + tabtab + "Iface client = new InternalClient(provider);\n"
+	contents += indent + tabtab + "List<ServiceMiddleware> combined = Arrays.asList(middleware);\n"
+	contents += indent + tabtab + "combined.addAll(provider.getMiddleware());\n"
+	contents += indent + tabtab + "middleware = combined.toArray(new ServiceMiddleware[0]);\n"
+	contents += indent + tabtab + "proxy = InvocationHandler.composeMiddleware(client, Iface.class, middleware);\n"
+	contents += indent + tab + "}\n\n"
 
 	for _, method := range service.Methods {
 		if method.Comment != nil {
-			contents += g.GenerateBlockComment(method.Comment, tabtab)
+			contents += g.GenerateBlockComment(method.Comment, indent+tab)
 		}
 
 		_, deprecated := method.Annotations.Deprecated()
 		if deprecated {
-			contents += tabtab + "@Deprecated\n"
+			contents += indent + tab + "@Deprecated\n"
 		}
 
-		contents += tabtab + fmt.Sprintf("public %s %s(FContext ctx%s) %s {\n",
+		contents += indent + tab + fmt.Sprintf("public %s %s(FContext ctx%s) %s {\n",
 			g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments, false), g.generateExceptions(method.Exceptions))
 
 		if deprecated {
-			contents += tabtabtab + fmt.Sprintf("logger.warn(\"Call to deprecated function '%s.%s'\");\n", service.Name, method.Name)
+			contents += indent + tabtab + fmt.Sprintf("logger.warn(\"Call to deprecated function '%s.%s'\");\n", service.Name, method.Name)
 		}
 
 		if method.ReturnType != nil {
-			contents += tabtabtab + fmt.Sprintf("return proxy.%s(%s);\n", method.Name, g.generateClientCallArgs(method.Arguments))
+			contents += indent + tabtab + fmt.Sprintf("return proxy.%s(%s);\n", method.Name, g.generateClientCallArgs(method.Arguments))
 		} else {
-			contents += tabtabtab + fmt.Sprintf("proxy.%s(%s);\n", method.Name, g.generateClientCallArgs(method.Arguments))
+			contents += indent + tabtab + fmt.Sprintf("proxy.%s(%s);\n", method.Name, g.generateClientCallArgs(method.Arguments))
 		}
-		contents += tabtab + "}\n\n"
+		contents += indent + tab + "}\n\n"
 
 		if g.generateAsync() {
-			contents += g.generateAsyncClientMethod(service, method)
+			contents += g.generateAsyncClientMethod(service, method, indent)
 		}
 	}
-	contents += tab + "}\n\n"
-	contents += g.generateInternalClient(service)
+	contents += indent + "}\n\n"
+	contents += g.generateInternalClient(service, indent)
 	return contents
 }
 
-func (g *Generator) generateAsyncClientMethod(service *parser.Service, method *parser.Method) string {
+func (g *Generator) generateAsyncClientMethod(service *parser.Service, method *parser.Method, indent string) string {
 	contents := ""
 	if method.Comment != nil {
-		contents += g.GenerateBlockComment(method.Comment, tabtab)
+		contents += g.GenerateBlockComment(method.Comment, indent+tab)
 	}
-	contents += tabtab + fmt.Sprintf("public Future<%s> %sAsync(final FContext ctx%s) {\n",
+	contents += indent + tab + fmt.Sprintf("public Future<%s> %sAsync(final FContext ctx%s) {\n",
 		g.generateBoxedReturnValue(method), method.Name, g.generateArgs(method.Arguments, true))
-	contents += tabtabtab + fmt.Sprintf("return asyncExecutor.submit(new Callable<%s>() {\n", g.generateBoxedReturnValue(method))
-	contents += tabtabtabtab + fmt.Sprintf("public %s call() throws Exception {\n", g.generateBoxedReturnValue(method))
+	contents += indent + tabtab + fmt.Sprintf("return asyncExecutor.submit(new Callable<%s>() {\n", g.generateBoxedReturnValue(method))
+	contents += indent + tabtabtab + fmt.Sprintf("public %s call() throws Exception {\n", g.generateBoxedReturnValue(method))
 	if method.ReturnType != nil {
-		contents += tabtabtabtabtab + fmt.Sprintf("return %s(%s);\n", method.Name, g.generateClientCallArgs(method.Arguments))
+		contents += indent + tabtabtabtab + fmt.Sprintf("return %s(%s);\n", method.Name, g.generateClientCallArgs(method.Arguments))
 	} else {
-		contents += tabtabtabtabtab + fmt.Sprintf("%s(%s);\n", method.Name, g.generateClientCallArgs(method.Arguments))
-		contents += tabtabtabtabtab + "return null;\n"
+		contents += indent + tabtabtabtab + fmt.Sprintf("%s(%s);\n", method.Name, g.generateClientCallArgs(method.Arguments))
+		contents += indent + tabtabtabtab + "return null;\n"
 	}
-	contents += tabtabtabtab + "}\n"
-	contents += tabtabtab + "});\n"
-	contents += tabtab + "}\n\n"
+	contents += indent + tabtabtab + "}\n"
+	contents += indent + tabtab + "});\n"
+	contents += indent + tab + "}\n\n"
 	return contents
 }
 
-func (g *Generator) generateInternalClient(service *parser.Service) string {
+func (g *Generator) generateInternalClient(service *parser.Service, indent string) string {
 	contents := ""
 	if service.Extends != "" {
-		contents += tab + fmt.Sprintf("private static class InternalClient extends %s.Client implements Iface {\n\n",
+		contents += indent + fmt.Sprintf("private static class InternalClient extends %s.Client implements Iface {\n\n",
 			g.getServiceExtendsName(service))
 	} else {
-		contents += tab + "private static class InternalClient implements Iface {\n\n"
+		contents += indent + "private static class InternalClient implements Iface {\n\n"
 	}
 
-	contents += tabtab + "private FTransport transport;\n"
-	contents += tabtab + "private FProtocolFactory protocolFactory;\n"
+	contents += indent + tab + "private FTransport transport;\n"
+	contents += indent + tab + "private FProtocolFactory protocolFactory;\n"
 
-	contents += tabtab + "public InternalClient(FServiceProvider provider) {\n"
+	contents += indent + tab + "public InternalClient(FServiceProvider provider) {\n"
 	if service.Extends != "" {
-		contents += tabtabtab + "super(provider);\n"
+		contents += indent + tabtab + "super(provider);\n"
 	}
-	contents += tabtabtab + "this.transport = provider.getTransport();\n"
-	contents += tabtabtab + "this.protocolFactory = provider.getProtocolFactory();\n"
-	contents += tabtab + "}\n\n"
+	contents += indent + tabtab + "this.transport = provider.getTransport();\n"
+	contents += indent + tabtab + "this.protocolFactory = provider.getProtocolFactory();\n"
+	contents += indent + tab + "}\n\n"
 
 	for _, method := range service.Methods {
-		contents += g.generateClientMethod(service, method)
+		contents += g.generateClientMethod(service, method, indent)
 	}
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 
 	return contents
 }
 
-func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
+func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method, indent string) string {
 	methodLower := parser.LowercaseFirstLetter(method.Name)
 
 	contents := ""
 	if method.Comment != nil {
-		contents += g.GenerateBlockComment(method.Comment, tabtab)
+		contents += g.GenerateBlockComment(method.Comment, indent+tab)
 	}
-	contents += tabtab + fmt.Sprintf("public %s %s(FContext ctx%s) %s {\n",
+	contents += indent + tab + fmt.Sprintf("public %s %s(FContext ctx%s) %s {\n",
 		g.generateReturnValue(method), method.Name, g.generateArgs(method.Arguments, false), g.generateExceptions(method.Exceptions))
-	contents += tabtabtab + "TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());\n"
-	contents += tabtabtab + "FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);\n"
-	contents += tabtabtab + "oprot.writeRequestHeader(ctx);\n"
+	contents += indent + tabtab + "TMemoryOutputBuffer memoryBuffer = new TMemoryOutputBuffer(this.transport.getRequestSizeLimit());\n"
+	contents += indent + tabtab + "FProtocol oprot = this.protocolFactory.getProtocol(memoryBuffer);\n"
+	contents += indent + tabtab + "oprot.writeRequestHeader(ctx);\n"
 	msgType := "CALL"
 	if method.Oneway {
 		msgType = "ONEWAY"
 	}
-	contents += tabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", methodLower, msgType)
-	contents += tabtabtab + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
+	contents += indent + tabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.%s, 0));\n", methodLower, msgType)
+	contents += indent + tabtab + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
 	for _, arg := range method.Arguments {
-		contents += tabtabtab + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
+		contents += indent + tabtab + fmt.Sprintf("args.set%s(%s);\n", strings.Title(arg.Name), arg.Name)
 	}
-	contents += tabtabtab + "args.write(oprot);\n"
-	contents += tabtabtab + "oprot.writeMessageEnd();\n"
+	contents += indent + tabtab + "args.write(oprot);\n"
+	contents += indent + tabtab + "oprot.writeMessageEnd();\n"
 	if method.Oneway {
-		contents += tabtabtab + "this.transport.oneway(ctx, memoryBuffer.getWriteBytes());\n"
+		contents += indent + tabtab + "this.transport.oneway(ctx, memoryBuffer.getWriteBytes());\n"
 	} else {
-		contents += tabtabtab + "TTransport response = this.transport.request(ctx, memoryBuffer.getWriteBytes());\n"
+		contents += indent + tabtab + "TTransport response = this.transport.request(ctx, memoryBuffer.getWriteBytes());\n"
 	}
 	if method.Oneway {
-		contents += tabtab + "}\n"
+		contents += indent + tab + "}\n"
 		return contents
 	}
 
 	contents += "\n"
-	contents += tabtabtab + "FProtocol iprot = this.protocolFactory.getProtocol(response);\n"
-	contents += tabtabtab + "iprot.readResponseHeader(ctx);\n"
-	contents += tabtabtab + "TMessage message = iprot.readMessageBegin();\n"
-	contents += tabtabtab + fmt.Sprintf("if (!message.name.equals(\"%s\")) {\n", methodLower)
-	contents += tabtabtabtab + fmt.Sprintf(
+	contents += indent + tabtab + "FProtocol iprot = this.protocolFactory.getProtocol(response);\n"
+	contents += indent + tabtab + "iprot.readResponseHeader(ctx);\n"
+	contents += indent + tabtab + "TMessage message = iprot.readMessageBegin();\n"
+	contents += indent + tabtab + fmt.Sprintf("if (!message.name.equals(\"%s\")) {\n", methodLower)
+	contents += indent + tabtabtab + fmt.Sprintf(
 		"throw new TApplicationException(TApplicationExceptionType.WRONG_METHOD_NAME, \"%s failed: wrong method name\");\n",
 		method.Name)
-	contents += tabtabtab + "}\n"
-	contents += tabtabtab + "if (message.type == TMessageType.EXCEPTION) {\n"
-	contents += tabtabtabtab + "TApplicationException e = TApplicationException.read(iprot);\n"
-	contents += tabtabtabtab + "iprot.readMessageEnd();\n"
-	contents += tabtabtabtab + "TException returnedException = e;\n"
-	contents += tabtabtabtab + "if (e.getType() == TApplicationExceptionType.RESPONSE_TOO_LARGE) {\n"
-	contents += tabtabtabtabtab + "returnedException = new TTransportException(TTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());\n"
-	contents += tabtabtabtab + "}\n"
-	contents += tabtabtabtab + "throw returnedException;\n"
-	contents += tabtabtab + "}\n"
-	contents += tabtabtab + "if (message.type != TMessageType.REPLY) {\n"
-	contents += tabtabtabtab + fmt.Sprintf(
+	contents += indent + tabtab + "}\n"
+	contents += indent + tabtab + "if (message.type == TMessageType.EXCEPTION) {\n"
+	contents += indent + tabtabtab + "TApplicationException e = TApplicationException.read(iprot);\n"
+	contents += indent + tabtabtab + "iprot.readMessageEnd();\n"
+	contents += indent + tabtabtab + "TException returnedException = e;\n"
+	contents += indent + tabtabtab + "if (e.getType() == TApplicationExceptionType.RESPONSE_TOO_LARGE) {\n"
+	contents += indent + tabtabtabtab + "returnedException = new TTransportException(TTransportExceptionType.RESPONSE_TOO_LARGE, e.getMessage());\n"
+	contents += indent + tabtabtab + "}\n"
+	contents += indent + tabtabtab + "throw returnedException;\n"
+	contents += indent + tabtab + "}\n"
+	contents += indent + tabtab + "if (message.type != TMessageType.REPLY) {\n"
+	contents += indent + tabtabtab + fmt.Sprintf(
 		"throw new TApplicationException(TApplicationExceptionType.INVALID_MESSAGE_TYPE, \"%s failed: invalid message type\");\n",
 		method.Name)
-	contents += tabtabtab + "}\n"
-	contents += tabtabtab + fmt.Sprintf("%s_result res = new %s_result();\n", method.Name, method.Name)
-	contents += tabtabtab + "res.read(iprot);\n"
-	contents += tabtabtab + "iprot.readMessageEnd();\n"
+	contents += indent + tabtab + "}\n"
+	contents += indent + tabtab + fmt.Sprintf("%s_result res = new %s_result();\n", method.Name, method.Name)
+	contents += indent + tabtab + "res.read(iprot);\n"
+	contents += indent + tabtab + "iprot.readMessageEnd();\n"
 	if method.ReturnType != nil {
-		contents += tabtabtab + "if (res.isSetSuccess()) {\n"
-		contents += tabtabtabtab + "return res.success;\n"
-		contents += tabtabtab + "}\n"
+		contents += indent + tabtab + "if (res.isSetSuccess()) {\n"
+		contents += indent + tabtabtab + "return res.success;\n"
+		contents += indent + tabtab + "}\n"
 	}
 	for _, exception := range method.Exceptions {
-		contents += tabtabtab + fmt.Sprintf("if (res.%s != null) {\n", exception.Name)
-		contents += tabtabtabtab + fmt.Sprintf("throw res.%s;\n", exception.Name)
-		contents += tabtabtab + "}\n"
+		contents += indent + tabtab + fmt.Sprintf("if (res.%s != null) {\n", exception.Name)
+		contents += indent + tabtabtab + fmt.Sprintf("throw res.%s;\n", exception.Name)
+		contents += indent + tabtab + "}\n"
 	}
 	if method.ReturnType != nil {
-		contents += tabtabtab + fmt.Sprintf(
+		contents += indent + tabtab + fmt.Sprintf(
 			"throw new TApplicationException(TApplicationExceptionType.MISSING_RESULT, \"%s failed: unknown result\");\n",
 			method.Name)
 	}
-	contents += tabtab + "}\n"
+	contents += indent + tab + "}\n"
 
 	return contents
 }
@@ -2926,142 +2972,142 @@ func (g *Generator) generateExceptions(exceptions []*parser.Field) string {
 	return contents
 }
 
-func (g *Generator) generateServer(service *parser.Service) string {
+func (g *Generator) generateServer(service *parser.Service, indent string) string {
 	contents := ""
 	extends := "FBaseProcessor"
 	if service.Extends != "" {
 		extends = g.getServiceExtendsName(service) + ".Processor"
 	}
-	contents += tab + fmt.Sprintf("public static class Processor extends %s implements FProcessor {\n\n", extends)
+	contents += indent + fmt.Sprintf("public static class Processor extends %s implements FProcessor {\n\n", extends)
 
-	contents += tabtab + "private Iface handler;\n\n"
+	contents += indent + tab + "private Iface handler;\n\n"
 
-	contents += tabtab + "public Processor(Iface iface, ServiceMiddleware... middleware) {\n"
+	contents += indent + tab + "public Processor(Iface iface, ServiceMiddleware... middleware) {\n"
 	if service.Extends != "" {
-		contents += tabtabtab + "super(iface, middleware);\n"
+		contents += indent + tabtab + "super(iface, middleware);\n"
 	}
-	contents += tabtabtab + "handler = InvocationHandler.composeMiddleware(iface, Iface.class, middleware);\n"
-	contents += tabtab + "}\n\n"
+	contents += indent + tabtab + "handler = InvocationHandler.composeMiddleware(iface, Iface.class, middleware);\n"
+	contents += indent + tab + "}\n\n"
 
-	contents += tabtab + "protected java.util.Map<String, FProcessorFunction> getProcessMap() {\n"
+	contents += indent + tab + "protected java.util.Map<String, FProcessorFunction> getProcessMap() {\n"
 	if service.Extends != "" {
-		contents += tabtabtab + "java.util.Map<String, FProcessorFunction> processMap = super.getProcessMap();\n"
+		contents += indent + tabtab + "java.util.Map<String, FProcessorFunction> processMap = super.getProcessMap();\n"
 	} else {
-		contents += tabtabtab + "java.util.Map<String, FProcessorFunction> processMap = new java.util.HashMap<>();\n"
+		contents += indent + tabtab + "java.util.Map<String, FProcessorFunction> processMap = new java.util.HashMap<>();\n"
 	}
 	for _, method := range service.Methods {
-		contents += tabtabtab + fmt.Sprintf("processMap.put(\"%s\", new %s());\n", parser.LowercaseFirstLetter(method.Name), strings.Title(method.Name))
+		contents += indent + tabtab + fmt.Sprintf("processMap.put(\"%s\", new %s());\n", parser.LowercaseFirstLetter(method.Name), strings.Title(method.Name))
 	}
-	contents += tabtabtab + "return processMap;\n"
-	contents += tabtab + "}\n\n"
+	contents += indent + tabtab + "return processMap;\n"
+	contents += indent + tab + "}\n\n"
 
-	contents += tabtab + "protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {\n"
+	contents += indent + tab + "protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {\n"
 	if service.Extends != "" {
-		contents += tabtabtab + "java.util.Map<String, java.util.Map<String, String>> annotationsMap = super.getAnnotationsMap();\n"
+		contents += indent + tabtab + "java.util.Map<String, java.util.Map<String, String>> annotationsMap = super.getAnnotationsMap();\n"
 	} else {
-		contents += tabtabtab + "java.util.Map<String, java.util.Map<String, String>> annotationsMap = new java.util.HashMap<>();\n"
+		contents += indent + tabtab + "java.util.Map<String, java.util.Map<String, String>> annotationsMap = new java.util.HashMap<>();\n"
 	}
 	for _, method := range service.Methods {
 		if len(method.Annotations) > 0 {
-			contents += tabtabtab + fmt.Sprintf("java.util.Map<String, String> %sMap = new java.util.HashMap<>();\n", method.Name)
+			contents += indent + tabtab + fmt.Sprintf("java.util.Map<String, String> %sMap = new java.util.HashMap<>();\n", method.Name)
 			for _, annotation := range method.Annotations {
-				contents += tabtabtab + fmt.Sprintf("%sMap.put(\"%s\", \"%s\");\n", method.Name, annotation.Name, annotation.Value)
+				contents += indent + tabtab + fmt.Sprintf("%sMap.put(\"%s\", %s);\n", method.Name, annotation.Name, g.quote(annotation.Value))
 			}
-			contents += tabtabtab + fmt.Sprintf("annotationsMap.put(\"%s\", %sMap);\n", parser.LowercaseFirstLetter(method.Name), method.Name)
+			contents += indent + tabtab + fmt.Sprintf("annotationsMap.put(\"%s\", %sMap);\n", parser.LowercaseFirstLetter(method.Name), method.Name)
 		}
 	}
-	contents += tabtabtab + "return annotationsMap;\n"
-	contents += tabtab + "}\n\n"
+	contents += indent + tabtab + "return annotationsMap;\n"
+	contents += indent + tab + "}\n\n"
 
-	contents += tabtab + "@Override\n"
-	contents += tabtab + "public void addMiddleware(ServiceMiddleware middleware) {\n"
+	contents += indent + tab + "@Override\n"
+	contents += indent + tab + "public void addMiddleware(ServiceMiddleware middleware) {\n"
 	if service.Extends != "" {
-		contents += tabtabtab + "super.addMiddleware(middleware);\n"
+		contents += indent + tabtab + "super.addMiddleware(middleware);\n"
 	}
-	contents += tabtabtab + "handler = InvocationHandler.composeMiddleware(handler, Iface.class, new ServiceMiddleware[]{middleware});\n"
-	contents += tabtab + "}\n\n"
+	contents += indent + tabtab + "handler = InvocationHandler.composeMiddleware(handler, Iface.class, new ServiceMiddleware[]{middleware});\n"
+	contents += indent + tab + "}\n\n"
 
 	for _, method := range service.Methods {
 		methodLower := parser.LowercaseFirstLetter(method.Name)
-		contents += tabtab + fmt.Sprintf("private class %s implements FProcessorFunction {\n\n", strings.Title(method.Name))
+		contents += indent + tab + fmt.Sprintf("private class %s implements FProcessorFunction {\n\n", strings.Title(method.Name))
 
-		contents += tabtabtab + "public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {\n"
+		contents += indent + tabtab + "public void process(FContext ctx, FProtocol iprot, FProtocol oprot) throws TException {\n"
 
 		if _, ok := method.Annotations.Deprecated(); ok {
-			contents += tabtabtabtab + fmt.Sprintf("logger.warn(\"Deprecated function '%s.%s' was called by a client\");\n", service.Name, method.Name)
+			contents += indent + tabtabtab + fmt.Sprintf("logger.warn(\"Deprecated function '%s.%s' was called by a client\");\n", service.Name, method.Name)
 		}
 
-		contents += tabtabtabtab + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
-		contents += tabtabtabtab + "try {\n"
-		contents += tabtabtabtabtab + "args.read(iprot);\n"
-		contents += tabtabtabtab + "} catch (TException e) {\n"
-		contents += tabtabtabtabtab + "iprot.readMessageEnd();\n"
+		contents += indent + tabtabtab + fmt.Sprintf("%s_args args = new %s_args();\n", method.Name, method.Name)
+		contents += indent + tabtabtab + "try {\n"
+		contents += indent + tabtabtabtab + "args.read(iprot);\n"
+		contents += indent + tabtabtab + "} catch (TException e) {\n"
+		contents += indent + tabtabtabtab + "iprot.readMessageEnd();\n"
 		if !method.Oneway {
-			contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"
-			contents += tabtabtabtabtabtab + fmt.Sprintf("e = writeApplicationException(ctx, oprot, TApplicationExceptionType.PROTOCOL_ERROR, \"%s\", e.getMessage());\n", method.Name)
-			contents += tabtabtabtabtab + "}\n"
+			contents += indent + tabtabtabtab + "synchronized (WRITE_LOCK) {\n"
+			contents += indent + tabtabtabtabtab + fmt.Sprintf("e = writeApplicationException(ctx, oprot, TApplicationExceptionType.PROTOCOL_ERROR, \"%s\", e.getMessage());\n", method.Name)
+			contents += indent + tabtabtabtab + "}\n"
 		}
-		contents += tabtabtabtabtab + "throw e;\n"
-		contents += tabtabtabtab + "}\n\n"
+		contents += indent + tabtabtabtab + "throw e;\n"
+		contents += indent + tabtabtab + "}\n\n"
 
-		contents += tabtabtabtab + "iprot.readMessageEnd();\n"
+		contents += indent + tabtabtab + "iprot.readMessageEnd();\n"
 
 		if method.Oneway {
-			contents += tabtabtabtab + fmt.Sprintf("handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
-			contents += tabtabtab + "}\n"
-			contents += tabtab + "}\n\n"
+			contents += indent + tabtabtab + fmt.Sprintf("handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
+			contents += indent + tabtab + "}\n"
+			contents += indent + tab + "}\n\n"
 			continue
 		}
 
-		contents += tabtabtabtab + fmt.Sprintf("%s_result result = new %s_result();\n", method.Name, method.Name)
-		contents += tabtabtabtab + "try {\n"
+		contents += indent + tabtabtab + fmt.Sprintf("%s_result result = new %s_result();\n", method.Name, method.Name)
+		contents += indent + tabtabtab + "try {\n"
 		if method.ReturnType == nil {
-			contents += tabtabtabtabtab + fmt.Sprintf("handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
+			contents += indent + tabtabtabtab + fmt.Sprintf("handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
 		} else {
-			contents += tabtabtabtabtab + fmt.Sprintf("result.success = handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
-			contents += tabtabtabtabtab + "result.setSuccessIsSet(true);\n"
+			contents += indent + tabtabtabtab + fmt.Sprintf("result.success = handler.%s(%s);\n", method.Name, g.generateServerCallArgs(method.Arguments))
+			contents += indent + tabtabtabtab + "result.setSuccessIsSet(true);\n"
 		}
 		for _, exception := range method.Exceptions {
-			contents += tabtabtabtab + fmt.Sprintf("} catch (%s %s) {\n", g.getJavaTypeFromThriftType(exception.Type), exception.Name)
-			contents += tabtabtabtabtab + fmt.Sprintf("result.%s = %s;\n", exception.Name, exception.Name)
+			contents += indent + tabtabtab + fmt.Sprintf("} catch (%s %s) {\n", g.getJavaTypeFromThriftType(exception.Type), exception.Name)
+			contents += indent + tabtabtabtab + fmt.Sprintf("result.%s = %s;\n", exception.Name, exception.Name)
 		}
-		contents += tabtabtabtab + "} catch (TApplicationException e) {\n"
-		contents += tabtabtabtabtab + "oprot.writeResponseHeader(ctx);\n"
-		contents += tabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.EXCEPTION, 0));\n", methodLower)
-		contents += tabtabtabtabtab + "e.write(oprot);\n"
-		contents += tabtabtabtabtab + "oprot.writeMessageEnd();\n"
-		contents += tabtabtabtabtab + "oprot.getTransport().flush();\n"
-		contents += tabtabtabtabtab + "return;\n"
-		contents += tabtabtabtab + "} catch (TException e) {\n"
-		contents += tabtabtabtabtab + "synchronized (WRITE_LOCK) {\n"
-		contents += tabtabtabtabtabtab + fmt.Sprintf(
-			"e = writeApplicationException(ctx, oprot, TApplicationExceptionType.INTERNAL_ERROR, \"%s\", \"Internal error processing %s: \" + e.getMessage());\n",
+		contents += indent + tabtabtab + "} catch (TApplicationException e) {\n"
+		contents += indent + tabtabtabtab + "oprot.writeResponseHeader(ctx);\n"
+		contents += indent + tabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.EXCEPTION, 0));\n", methodLower)
+		contents += indent + tabtabtabtab + "e.write(oprot);\n"
+		contents += indent + tabtabtabtab + "oprot.writeMessageEnd();\n"
+		contents += indent + tabtabtabtab + "oprot.getTransport().flush();\n"
+		contents += indent + tabtabtabtab + "return;\n"
+		contents += indent + tabtabtab + "} catch (TException e) {\n"
+		contents += indent + tabtabtabtab + "synchronized (WRITE_LOCK) {\n"
+		contents += indent + tabtabtabtabtab + fmt.Sprintf(
+			"e = (TApplicationException) writeApplicationException(ctx, oprot, TApplicationExceptionType.INTERNAL_ERROR, \"%s\", \"Internal error processing %s: \" + e.getMessage()).initCause(e);\n",
 			methodLower, method.Name)
-		contents += tabtabtabtabtab + "}\n"
-		contents += tabtabtabtabtab + "throw e;\n"
-		contents += tabtabtabtab + "}\n"
-		contents += tabtabtabtab + "synchronized (WRITE_LOCK) {\n"
-		contents += tabtabtabtabtab + "try {\n"
-		contents += tabtabtabtabtabtab + "oprot.writeResponseHeader(ctx);\n"
-		contents += tabtabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.REPLY, 0));\n", methodLower)
-		contents += tabtabtabtabtabtab + "result.write(oprot);\n"
-		contents += tabtabtabtabtabtab + "oprot.writeMessageEnd();\n"
-		contents += tabtabtabtabtabtab + "oprot.getTransport().flush();\n"
-		contents += tabtabtabtabtab + "} catch (TTransportException e) {\n"
-		contents += tabtabtabtabtabtab + "if (e.getType() == TTransportExceptionType.REQUEST_TOO_LARGE) {\n"
-		contents += tabtabtabtabtabtabtab + fmt.Sprintf(
+		contents += indent + tabtabtabtab + "}\n"
+		contents += indent + tabtabtabtab + "throw e;\n"
+		contents += indent + tabtabtab + "}\n"
+		contents += indent + tabtabtab + "synchronized (WRITE_LOCK) {\n"
+		contents += indent + tabtabtabtab + "try {\n"
+		contents += indent + tabtabtabtabtab + "oprot.writeResponseHeader(ctx);\n"
+		contents += indent + tabtabtabtabtab + fmt.Sprintf("oprot.writeMessageBegin(new TMessage(\"%s\", TMessageType.REPLY, 0));\n", methodLower)
+		contents += indent + tabtabtabtabtab + "result.write(oprot);\n"
+		contents += indent + tabtabtabtabtab + "oprot.writeMessageEnd();\n"
+		contents += indent + tabtabtabtabtab + "oprot.getTransport().flush();\n"
+		contents += indent + tabtabtabtab + "} catch (TTransportException e) {\n"
+		contents += indent + tabtabtabtabtab + "if (e.getType() == TTransportExceptionType.REQUEST_TOO_LARGE) {\n"
+		contents += indent + tabtabtabtabtabtab + fmt.Sprintf(
 			"writeApplicationException(ctx, oprot, TApplicationExceptionType.RESPONSE_TOO_LARGE, \"%s\", \"response too large: \" + e.getMessage());\n",
 			methodLower)
-		contents += tabtabtabtabtabtab + "} else {\n"
-		contents += tabtabtabtabtabtabtab + "throw e;\n"
-		contents += tabtabtabtabtabtab + "}\n"
-		contents += tabtabtabtabtab + "}\n"
-		contents += tabtabtabtab + "}\n"
-		contents += tabtabtab + "}\n"
-		contents += tabtab + "}\n\n"
+		contents += indent + tabtabtabtabtab + "} else {\n"
+		contents += indent + tabtabtabtabtabtab + "throw e;\n"
+		contents += indent + tabtabtabtabtab + "}\n"
+		contents += indent + tabtabtabtab + "}\n"
+		contents += indent + tabtabtab + "}\n"
+		contents += indent + tabtab + "}\n"
+		contents += indent + tab + "}\n\n"
 	}
 
-	contents += tab + "}\n\n"
+	contents += indent + "}\n\n"
 
 	return contents
 }
@@ -3269,8 +3315,8 @@ func (g *Generator) includeGeneratedAnnotation() bool {
 	return g.Options[generatedAnnotations] != "suppress"
 }
 
-func (g *Generator) generatedAnnotation() string {
-	anno := fmt.Sprintf("@Generated(value = \"Autogenerated by Frugal Compiler (%s)\"", globals.Version)
+func (g *Generator) generatedAnnotation(indent string) string {
+	anno := indent + fmt.Sprintf("@Generated(value = \"Autogenerated by Frugal Compiler (%s)\"", globals.Version)
 	if g.Options[generatedAnnotations] != "undated" {
 		anno += fmt.Sprintf(", "+"date = \"%s\"", g.time.Format("2006-1-2"))
 	}

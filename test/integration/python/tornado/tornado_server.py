@@ -46,7 +46,7 @@ def main():
     parser.add_argument('--protocol', dest='protocol_type',
                         default="binary", choices="binary, compact, json")
     parser.add_argument('--transport', dest="transport_type",
-                        default="stateless", choices="stateless, http")
+                        default=NATS_NAME, choices="nats, http")
 
     args = parser.parse_args()
 
@@ -74,7 +74,7 @@ def main():
     subject = "frugal.*.*.rpc.{}".format(args.port)
     processor = Processor(handler)
 
-    if args.transport_type == "stateless":
+    if args.transport_type == NATS_NAME:
         server = FNatsServer(nats_client, [subject],
                                     processor, protocol_factory)
 
@@ -83,7 +83,7 @@ def main():
         print("Starting {} server...".format(args.transport_type))
         yield server.serve()
 
-    elif args.transport_type == "http":
+    elif args.transport_type == HTTP_NAME:
         factories = {'processor': processor,
                      'protocol_factory': protocol_factory}
 

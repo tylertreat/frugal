@@ -76,4 +76,4 @@ class _FTransportImpl extends FTransport {
 }
 
 /// Mock transport monitor.
-class MockTransportMonitor extends Mock implements FTransportMonitor {}
+class MockTransportMonitor extends FTransportMonitor with Mock {}

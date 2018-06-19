@@ -64,7 +64,7 @@ public class FSimpleServer implements FServer {
      * Starts the server by listening on the server transport and starting
      * an accept loop.
      *
-     * @throws TException
+     * @throws TException if unable to start the server.
      */
     @Override
     public void serve() throws TException {
@@ -75,7 +75,7 @@ public class FSimpleServer implements FServer {
     /**
      * Stops the server by interrupting the server transport.
      *
-     * @throws TException
+     * @throws TException if unable to stop the server.
      */
     @Override
     public void stop() throws TException {
@@ -85,6 +85,8 @@ public class FSimpleServer implements FServer {
 
     /**
      * Loop while accepting incoming data on the configured transport.
+     *
+     * @throws TException if an issue is encountered in the accept loop.
      */
     void acceptLoop() throws TException {
         while (!isStopped.get()) {
@@ -110,6 +112,8 @@ public class FSimpleServer implements FServer {
 
     /**
      * Processes messages from the given client. Will block until the client disconnects.
+     *
+     * @throws TException if the server fails to accept a message.
      */
     void accept(TTransport client) throws TException {
         TTransport transport = new TFramedTransport(client);

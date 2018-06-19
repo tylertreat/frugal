@@ -1,16 +1,30 @@
 # Frugal
 
+![Build Status](https://travis-ci.org/Workiva/frugal.svg?branch=develop)
+
 Frugal is an extension of [Apache Thrift](https://thrift.apache.org/) which
-provides additional functionality. Specifically, it includes support for
-request headers, request multiplexing, thread safety, and code-generated
-pub/sub APIs. Frugal is intended to act as a superset of Thrift, meaning it
+provides additional functionality. Key features include:
+
+- request headers
+- request multiplexing
+- request interceptors
+- per-request timeouts
+- thread-safe clients
+- code-generated pub/sub APIs
+- support for Go, Java, Dart, and Python (2.7 and 3.5)
+
+Frugal is intended to act as a superset of Thrift, meaning it
 implements the same functionality as Thrift with some additional
 features. For a more detailed explanation, see the
 [documentation](documentation).
 
-Currently supported languages are Go, Java, Dart, and Python (2.7 and 3.5).
-
 ## Installation
+
+### Homebrew
+
+```bash
+brew install frugal
+```
 
 ### Download
 
@@ -19,28 +33,28 @@ releases tab. Currently, adding these binaries is a manual process. If
 a downloadable release is missing, notify the messaging team to have it
 added.
 
+If go is already installed and setup you can also simply:
+
+```bash
+$ go get github.com/Workiva/frugal
+```
+
 ### From Source
-
+**Our usage of godep has been deprecated as we move to glide. Once the deprecation period is over, we will remove both the Godeps/ and vendor/ folder, relying solely on glide for dependency management**
 1.  Install [go](https://golang.org/doc/install) and setup [`GOPATH`](https://github.com/golang/go/wiki/GOPATH).
-1.  Install [godep](https://github.com/tools/godep).
-1.  Get the frugal source code
+1.  Clone the frugal repo
 
     ```bash
-    $ go get github.com/Workiva/frugal
-    ```
-
-    Or you can manually clone the frugal repo
-
-    ```bash
-    $ mkdir -p $GOPATH/src/github.com/Workiva/
-    $ cd $GOPATH/src/github.com/Workiva
+    $ mkdir -p $GOPATH/src/github.com/Workiva && cd $_
     $ git clone git@github.com:Workiva/frugal.git
     ```
 
-1.  Install frugal with godep
+1.  Install the CLI binary
     ```bash
     $ cd $GOPATH/src/github.com/Workiva/frugal
-    $ godep go install
+    $ curl https://glide.sh/get | sh  # get glide if necessary
+    $ glide install  # get dependencies
+    $ go install
     ```
 
 When generating go, be aware the frugal go library and the frugal compiler
@@ -201,7 +215,7 @@ Some common annotations are listed below
 | Annotation    | Values        | Allowed Places | Description
 | ------------- | ------------- | -------------- | -----------
 | vendor        | Optional location | Namespaces, Includes | See [vendoring includes](#vendoring-includes)
-| deprecated    | Optional description | Service methods | Marks a method as deprecated (if supported by the language) and logs a warning if the method is called.
+| deprecated    | Optional description | Service methods, Struct/union/exception fields | Marks a method or field as deprecated (if supported by the language, or in a comment otherwise), and logs a warning if a deprecated method is called.
 
 ### Vendoring Includes
 
@@ -264,27 +278,3 @@ IDL has a vendor path set for the Go namespace. Instead, the generated code for
 Frugal is intended to be a superset of Thrift, meaning valid Thrift should be
 valid Frugal. File an issue if you discover an inconsistency in compatibility
 with the IDL.
-
-## Docker
-
-### Via Shipyard
-
-Grab the frugal Docker image id for the image you would like to use from
-[Shipyard](https://shipyard.workiva.org/repo/Workiva/frugal).
-
-Switch to the directory that has the files you would like to generate.
-
-Then run the docker image. This command will mount your local directory into
-the image. It supports all of the standard Frugal commands.
-
-```
-docker run -v "$(pwd):/data" drydock.workiva.org/workiva/frugal:{SHIPYARD_ID} frugal -gen={LANG} {FILE_TO_GEN}
-```
-
-An example to generate the Go code off the event.frugal definition in the
-example directory.
-
-```
-$ cd example
-$ docker run -v "$(pwd):/data" drydock.workiva.org/workiva/frugal:17352 frugal -gen=go event.frugal
-```

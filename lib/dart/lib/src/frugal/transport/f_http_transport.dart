@@ -13,6 +13,9 @@
 
 part of frugal.src.frugal;
 
+/// typedef for passed in function that generates headers given an [FContext]
+typedef Map<String, String> GetHeadersWithContext(FContext ctx);
+
 /// An [FTransport] that makes frugal requests via HTTP.
 class FHttpTransport extends FTransport {
   /// HTTP status code for an unauthorized reqeuest.
@@ -35,6 +38,10 @@ class FHttpTransport extends FTransport {
 
   Map<String, String> _headers;
 
+  /// Function that accepts an FContext that should return a Map<String, String>
+  /// of headers to be added to every request
+  final GetHeadersWithContext _getRequestHeaders;
+
   /// Create an [FHttpTransport] instance with the given w_transport [Client],
   /// uri, and optional size restrictions, and headers.
   ///
@@ -44,15 +51,24 @@ class FHttpTransport extends FTransport {
   ///   * accept
   ///   * x-frugal-payload-limit
   /// headers will be overwritten.
+  ///
+  /// Additionally, a function that accepts an FContext can be passed in
+  /// that should return additional headers to be appended to each request
+  /// using the getRequestHeaders param.
   FHttpTransport(this.client, this.uri,
       {int requestSizeLimit: 0,
       this.responseSizeLimit: 0,
-      Map<String, String> additionalHeaders})
-      : super(requestSizeLimit: requestSizeLimit) {
+      Map<String, String> additionalHeaders,
+      GetHeadersWithContext getRequestHeaders: null})
+      : _getRequestHeaders = getRequestHeaders ?? ((_) => {}),
+        super(requestSizeLimit: requestSizeLimit) {
     _headers = additionalHeaders ?? {};
-    _headers['content-type'] = 'application/x-frugal';
-    _headers['content-transfer-encoding'] = 'base64';
-    _headers['accept'] = 'application/x-frugal';
+    // add and potentially overwrite with default headers
+    _headers.addAll({
+      'content-type': 'application/x-frugal',
+      'content-transfer-encoding': 'base64',
+      'accept': 'application/x-frugal'
+    });
     if (responseSizeLimit > 0) {
       _headers['x-frugal-payload-limit'] = responseSizeLimit.toString();
     }
@@ -76,12 +92,17 @@ class FHttpTransport extends FTransport {
   Future<TTransport> request(FContext ctx, Uint8List payload) async {
     _preflightRequestCheck(payload);
 
+    // append dynamic headers first
+    Map<String, String> requestHeaders = _getRequestHeaders(ctx);
+    // add and potentially overwrite with default headers
+    requestHeaders.addAll(_headers);
+
     // Encode request payload
     var requestBody = BASE64.encode(payload);
 
     // Configure the request
     wt.Request request = client.newRequest()
-      ..headers = _headers
+      ..headers = requestHeaders
       ..uri = uri
       ..body = requestBody;
 

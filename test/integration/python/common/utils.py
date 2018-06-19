@@ -12,6 +12,9 @@ from frugal_test.f_FrugalTest import Numberz
 PREAMBLE_HEADER = "preamble"
 RAMBLE_HEADER = "ramble"
 
+NATS_NAME = 'nats'
+HTTP_NAME = 'http'
+
 
 def get_nats_options():
     return {
@@ -58,7 +61,9 @@ def check_for_failure(actual, expected):
         except Exception:
             failed = True
     elif isinstance(expected, TTransportException):
-        if actual.type != expected.type:
+        if not isinstance(actual, TTransportException):
+            failed = True
+        elif actual.type != expected.type:
             failed = True
     elif isinstance(expected, Numberz):
         if type(actual) != type(expected):

@@ -1,0 +1,54 @@
+sudo: required
+dist: trusty
+group: deprecated-2017Q3
+language: go
+git:
+  depth: 1
+
+env:
+  - TWINE_USERNAME=messaging
+  - TWINE_REPOSITORY=pypi
+  - TWINE_REPOSITORY_URL=https://upload.pypi.org/latest/
+
+before_install:
+  - mkdir -p $GOPATH/src/github.com/Workiva/frugal
+  - rsync -av $TRAVIS_BUILD_DIR/ $GOPATH/src/github.com/Workiva/frugal
+  - export TRAVIS_BUILD_DIR=$GOPATH/src/github.com/Workiva/frugal
+  - cd $TRAVIS_BUILD_DIR
+  # No need to install dart yet as we can't run the tests until thrift publishes dart to pub
+  # - sudo sh -c 'curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -'
+  # - sudo sh -c 'curl https://storage.googleapis.com/download.dartlang.org/linux/debian/dart_stable.list > /etc/apt/sources.list.d/dart_stable.list'
+  - sudo add-apt-repository -y ppa:openjdk-r/ppa
+  - sudo add-apt-repository -y ppa:masterminds/glide
+  - sudo apt-get update -qq
+  - sudo apt-get -y install python3-pip python-dev build-essential openjdk-8-jdk maven glide
+  # sudo apt-get -y install dart
+  - pip install -U virtualenv
+
+script:
+  - make
+
+cache:
+  directories:
+  - "~/.m2/repository"
+
+after_success:
+  - cd $TRAVIS_BUILD_DIR && ./scripts/travis/before-deploy-java.sh
+  - cd $TRAVIS_BUILD_DIR && ./scripts/travis/deploy-java.sh
+  - cd $TRAVIS_BUILD_DIR && ./scripts/travis/deploy-python.sh
+
+notifications:
+  email: false
+
+env:
+  global:
+  # GPG_KEY_NAME
+  - secure: QLfcf8lFmF67UAAr/Du7H2KWGV7yeSpueoZC2B9X9Fq8XH5Iv+CPR14miw2YWQjCrlGEo2WeMrUIo0Auz8xQsKCrQe69o7+mwpz79Z60RbzMqRSSUZgnnctwcNQLOsOmfZfElC7DFnL0r/dESsKZ9oMbsTFehQMtSL0dkQGEAiOP0IiAhwdx6a82D8pJemCX66a+e/I/lLZVrypR3HFmOyDNAs6Avpau0eUb28rHaV3iJTK4QvQm/U3ybwdXa0Bt5OacBbjVd9qZKy1dLeMABnhKu/e5Ue1q754pulBnovLItSZ1lTJBNCx64wxpMj/aB+msxDSUUr0sDHiET14Mu3pZS8WzitU2eXRQ84NEt77Ui5OjmLZuHnNjaLy5u0kpNGnL1zmirjFI6MqxOdehdeeAKYS//AZJ/lUe8vxVxxWMqNUtgKIZdl/dHjq4Y163aKpDBsbsrxohq3TiuJiZxIZQ6J8rgULymRfh9Gx83FJAHk4SSwSljrgTqYFmqi+eoPZ/BdxFka2WkxJULb5D9Zv91gw/fNxt1Fy3UtsSaWmpJBFpOO/C6nzqYvu+9aOs3S7pUgm6LeYwLIpsFu6Lw9NAfoYGvx+CvQNDEKlowlBnN6uyfjpU4QEWqZWDgoTUp3bw3NLk8KCSGhwTI8PzGJcs2WS4L4yJsysP98+5D8k=
+  # GPG_PASSPHRASE
+  - secure: auEV9hxeWBUQBoFwteVBx+mNWq7k5Tabg8LIHMAyRIx4licuICXFZt6ry81KOdmFIMaUgyyA4Puy4XEXS4y4THa4BB8rGVilQJjF+jmZExm2lLlk45jmj31205m+f/LtAXZFtsd+ErLJ4mAQM5RKBU2eTUalHgEydwidognu97CQnJrPHsV8F6oeYwiT3+cqQAFmZe2cZsGSYptVB4RAQIl8E8QRSUIO7/BdvUJdU3Byvs4d9AsRfqUV0++Mt8ZNeIkskjpglyLNU+KpbMXjBdD7OOZ0ygvEcABH9T3e+5IYJPZkF2Vwyw7RRpXMbXa3T7Bgxx/Z2D8/2PXx8M1jfQx2m7AkW8HpMghMRrD95Dh0c83bdeApSpHLWfHkli1g4CLvC8V78NmltIQqFApuI8/zKTbtcRo6VTUHgQy55Z0c2gkHY6hjlr09sfDiTry/j1sYduOBREaty2a4wVfzRfZNBLY9y1f59NQjVxaZ/68LIS1ppEpw/P/oWxwaXwf2/1zAwJLq5KBLY2i33AMEqsDpw4aaSflTv+nzmmM+mjHbpf3lpzw7lOeP5Wkn/i6G7uGqnQ6XZIpo7i+isLaCB8oDUOWXX0dH5mWOM9jspKqXfMTTo/6BsSpB14dO9ex2QkJZH+1BQ+Y+MZ9r72S0qEGAO9etp8L/VSK8IVg9kRI=
+  # OSSRH_JIRA_USERNAME
+  - secure: m+lNKmDWJyorSrWrvMh2hvRJULSjzitozeiunEHfMvueXI+mH0ii7qN81lwsok6dpRwoxlXD9lpNlKa8h+k5JaYgVbAj7BYy+IagGUnk4yp206IbXbOwEY4/ZHGWNl3NktvpADwKpu8lrqrAVZw9wrZ9wBxzxznsUhC6maohTxam+ejYo3sQrU0TrTvtQ73pU45rjjaFJAxTMSy8/cYvzsaFUl2V1D8O1c01aRwFU5ha1xIxqGpraMGc5aAqVQhNI07oEZvHWVqfBpnOg0RR/nPnL0xzWJ04o14aungFTNe202HiKIE8pMd9ElhWSkbZkgka8cAyfqKORgeTfY0u6ri8AwHys/MNUgX+CdtE+hTR2jqmIpAslDq/RGubvP0xCCbHUZeHIFQB6sNwGv5nc4i/7DRAQhKxPU6DTcSm4ZmESqGe/0mPb6OT9KJ0nel+aTmBRTthrFXhAz0JfTt3vsWdNUgegnb+2/IYFM8+2ufI7kCYQmpAd7QbaGTEotkX/eIsY1NXLdY7B4vV7nJfe7kUMCj83ZqTgj03rYyk7cyt62KPH4ocVmIld6vtwE1C/W9FdsBWh7Hhm/e7brfumoTH1dihW8wPepKxCdgwdZj2+WX0I8UY1N713wEYPo+T356PEMsD63uyosPRFvQIJYK9k/Fh+bR0ZKzZOrHSRwk=
+  # OSSRH_JIRA_PASSWORD
+  - secure: LUV6U/a7yh8MzgM7vOpdE5/61nXfRb/cysQ6O8J1N3OPUvgNg6vdD44gC0TZ65yRPlgcOx+xjlkxcmYjYN3pFDoMixHhO245vE1wqMKlKVZ3RI5qBPabZfDNTjva6q1H2LaY4k9e0xEQ57JTWTNRy6IA2slK9MyTFAiW+YwgJOhptdIw63pBczhrk42nVkID9/5N9AZ1MdM8oBLVBiQVOq+DTewt1HwmyejRbZEirp4A93FJkckvup5mGquLRm1pozS9yOrdLdJ9vThrCxGrsyM5MpHe7O33T1kLjGA9Kuseq7rEml1JzzzW/iBbcqJ/tkfagQnKYUBqNP0QAgOKDh6O0dkkANj7aKAd5AEMUTl2PzVhAUihh3cFVQPqGep/9URaPct6Lo6MGAMVYORMCJ3kEmXQWsrUu+qGOg4GMYcikYtXUhQSnih6j4RsMqOF0Kgx+tu+U5ygdq/VSiJeISM3jTtKaJoa6tBGS0ZZnp7oW9I1ZvrAQ2stgc6iPPjbIcKfcVV97U36NEaNcLY0WJz+c8/pkqwgPWZ5BDVwrzN2iWeo5+K7Pao+XAAfvP34nc+MfSs1I1zSAfqoO0UcJl5IjCG5X8+L8dpBFYKSyVyR0qWUaMrd3UK2iI5vhzfpMHsHxIsco7rZFgFagjrHvARTXFMNUg7V/wAKQhwG1Wk=
+  # TWINE_PASSWORD
+  - secure: wA5n9AW0eDDkVDdrDWaUX9B5N6bEIKAFi1uNJJCqRrv+iTfA8PnQGAwvo9fcNdSiATDOvjsGVLyYvitZGaGgm3LEiEnQjlVVi17jsMyVFWu/e/Nb69TyF+8HyAolv+LQ5JnkuG1qLQxN2pKQvR1ELOB8IKyEyS8Wdou9maYJT4LmLWQ0knZ0d2V+3rKgVqybYuFmS0/degoYgtMBX/BscxHuDVLje6n8m4CzTLhQsKA+ew8N8cLnzSTVIqqEhX7hPA74Jj9YDFRMepnWxo1d2ZTNggLgrYaQEcgD0FOPvcHUnlADeFfPq0LF7oY4cB3leAqHC1w/bR29VnvBqEtEViMDBGud/2rZMKK5rGxtCNXQSvhYfuMbiMlMn4l2Tg1fryFBf170jdDheybXEHsaZqTfX6ZaKD87o8TOjvqokEiDg28WyGzjN8y/MqBYHBeBxv4wx+cyLEyFEPATi7+CQ0tfoi7FmQ6cVElfQSgS3jKUMQnRLb4hzJrbmclnFZCmTqZW/PX7b8u6Y1lZ3SVOQeAb8Y2oCr3yVwnBidUjbvKrdDc8g4QQmG9OCawY90fgtpYSeQsu9+16Krk0LoEyn6+0HQzUPI676OjnpYlAIemT1yNVIY3iumXVOUkGqh3G0iEqb8BHMhWwXLYKRFuSVl4+XrlYMYsd55xEJ/loN6w=

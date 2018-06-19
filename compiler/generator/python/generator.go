@@ -16,7 +16,9 @@ package python
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -43,16 +45,23 @@ const (
 	asyncio
 )
 
+// genInfo tracks file generation inputs for later __init__.py imports
+type genInfo struct {
+	fileName, frugalName string
+	fileType             generator.FileType
+}
+
 // Generator implements the LanguageGenerator interface for Python.
 type Generator struct {
 	*generator.BaseGenerator
 	outputDir string
 	typesFile *os.File
+	history   map[string][]genInfo
 }
 
 // NewGenerator creates a new Python LanguageGenerator.
 func NewGenerator(options map[string]string) generator.LanguageGenerator {
-	gen := &Generator{&generator.BaseGenerator{Options: options}, "", nil}
+	gen := &Generator{&generator.BaseGenerator{Options: options}, "", nil, map[string][]genInfo{}}
 	switch getAsyncOpt(options) {
 	case tornado:
 		return &TornadoGenerator{gen}
@@ -66,14 +75,38 @@ func NewGenerator(options map[string]string) generator.LanguageGenerator {
 func (g *Generator) SetupGenerator(outputDir string) error {
 	g.outputDir = outputDir
 
-	dir := g.outputDir
-	for filepath.Dir(dir) != "." {
-		file, err := g.GenerateFile("__init__", dir, generator.ObjectFile)
+	// To prevent littering the filesystem with __init__ in every folder between outputDir and the present working
+	// directory, use the relative path between the root output directory and the target outputDir. This creates
+	// __init__ files only in the folders used for frugal generation.
+	outputRoot := globals.Out
+	if outputRoot == "" {
+		outputRoot = g.DefaultOutputDir()
+	}
+
+	absoluteOutputRoot, err := filepath.Abs(outputRoot)
+	if err != nil {
+		return err
+	}
+
+	absoluteOutputDir, err := filepath.Abs(outputDir)
+	if err != nil {
+		return err
+	}
+
+	dir, err := filepath.Rel(absoluteOutputRoot, absoluteOutputDir)
+	if err != nil {
+		return err
+	}
+
+	var priorDir string
+	for dir != priorDir {
+		file, err := g.GenerateFile("__init__", filepath.Join(absoluteOutputRoot, dir), generator.ObjectFile)
 		file.Close()
 		if err != nil {
 			return err
 		}
 
+		priorDir = dir
 		dir = filepath.Dir(dir)
 	}
 
@@ -101,7 +134,49 @@ func (g *Generator) SetupGenerator(outputDir string) error {
 
 // TeardownGenerator is run after generation.
 func (g *Generator) TeardownGenerator() error {
+	if err := g.generateInitFile(); err != nil {
+		return err
+	}
+
 	return g.typesFile.Close()
+}
+
+// generateInit adds subpackage imports to __init__.py files
+// to simplify consumer import paths
+func (g *Generator) generateInitFile() error {
+	initFile, err := os.OpenFile(path.Join(g.outputDir, "__init__.py"), os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer initFile.Close()
+
+	imports := []string{}
+	if fileInfoSlice, ok := g.history[g.outputDir]; ok {
+		for _, fileInfo := range fileInfoSlice {
+			switch fileInfo.fileType {
+			case generator.PublishFile:
+				imports = append(imports, fmt.Sprintf("from .%s import %sPublisher", fileInfo.fileName, fileInfo.frugalName))
+			case generator.SubscribeFile:
+				imports = append(imports, fmt.Sprintf("from .%s import %sSubscriber", fileInfo.fileName, fileInfo.frugalName))
+			case generator.CombinedServiceFile:
+				imports = append(imports,
+					fmt.Sprintf("from .%s import Iface as F%sIface", fileInfo.fileName, fileInfo.frugalName))
+				imports = append(imports,
+					fmt.Sprintf("from .%s import Client as F%sClient", fileInfo.fileName, fileInfo.frugalName))
+			case generator.ObjectFile:
+				if fileInfo.frugalName == "ttypes" {
+					imports = append(imports, "from .ttypes import *")
+				}
+			}
+		}
+	}
+
+	sort.Strings(imports)
+	if _, err := initFile.WriteString(strings.Join(imports, "\n") + "\n"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GenerateConstantsContents generates constants.
@@ -133,6 +208,12 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	}
 	_, err = file.WriteString(contents)
 	return err
+}
+
+// quote creates a Python string literal for a string.
+func (g *Generator) quote(s string) string {
+	// For now, just use Go quoting rules.
+	return strconv.Quote(s)
 }
 
 func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind string) (parser.IdentifierType, string) {
@@ -171,7 +252,7 @@ func (g *Generator) generateConstantValue(t *parser.Type, value interface{}, ind
 		case "i8", "byte", "i16", "i32", "i64", "double":
 			return parser.NonIdentifier, fmt.Sprintf("%v", value)
 		case "string", "binary":
-			return parser.NonIdentifier, fmt.Sprintf("%s", strconv.Quote(value.(string)))
+			return parser.NonIdentifier, g.quote(value.(string))
 		case "list", "set":
 			contents := ""
 			if underlyingType.Name == "set" {
@@ -236,8 +317,16 @@ func (g *Generator) GenerateEnum(enum *parser.Enum) error {
 	contents += fmt.Sprintf("class %s(int):\n", enum.Name)
 	comment := append([]string{}, enum.Comment...)
 	for _, value := range enum.Values {
+		valueComment := []string{}
 		if value.Comment != nil {
-			comment = append(append(comment, value.Name + ": " + value.Comment[0]), value.Comment[1:]...)
+			valueComment = append(valueComment, value.Comment...)
+		}
+		deprecationValue, deprecated := value.Annotations.Deprecated()
+		if deprecated {
+			valueComment = append(valueComment, "Deprecated: "+deprecationValue)
+		}
+		if len(valueComment) != 0 {
+			comment = append(append(comment, value.Name+": "+valueComment[0]), valueComment[1:]...)
 		}
 	}
 	if len(comment) != 0 {
@@ -306,7 +395,7 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 	contents += g.generateClassDocstring(s)
 
 	contents += g.generateDefaultMarkers(s)
-	contents += g.generateInit(s)
+	contents += g.generateInitMethod(s)
 
 	contents += g.generateRead(s)
 	contents += g.generateWrite(s)
@@ -347,8 +436,8 @@ func (g *Generator) generateDefaultMarkers(s *parser.Struct) string {
 	return contents
 }
 
-// generateInit generates the init method for a class.
-func (g *Generator) generateInit(s *parser.Struct) string {
+// generateInitMethod generates the init method for a class.
+func (g *Generator) generateInitMethod(s *parser.Struct) string {
 	if len(s.Fields) == 0 {
 		return ""
 	}
@@ -403,9 +492,24 @@ func (g *Generator) generateClassDocstring(s *parser.Struct) string {
 			if len(field.Comment) > 0 {
 				line = fmt.Sprintf("%s: %s", line, field.Comment[0])
 				lines = append(lines, line)
-				lines = append(lines, field.Comment[1:]...)
+
+				remaining := make([]string, len(field.Comment)-1)
+				copy(remaining, field.Comment[1:])
+				for i, value := range remaining {
+					remaining[i] = "   " + value
+				}
+				lines = append(lines, remaining...)
 			} else {
 				lines = append(lines, line)
+			}
+
+			deprecationValue, deprecated := field.Annotations.Deprecated()
+			if deprecated {
+				if deprecationValue != "" {
+					lines = append(lines, fmt.Sprintf("   Deprecated: %s", deprecationValue))
+				} else {
+					lines = append(lines, "   Deprecated")
+				}
 			}
 		}
 	}
@@ -499,7 +603,7 @@ func (g *Generator) generateMagicMethods(s *parser.Struct) string {
 	contents += tab + "def __hash__(self):\n"
 	contents += tabtab + "value = 17\n"
 	for _, field := range s.Fields {
-		contents += fmt.Sprintf(tabtab+"value = (value * 31) ^ hash(self.%s)\n", field.Name)
+		contents += fmt.Sprintf(tabtab+"value = (value * 31) ^ hash(make_hashable(self.%s))\n", field.Name)
 	}
 	contents += tabtab + "return value\n\n"
 
@@ -696,18 +800,29 @@ func (g *Generator) GenerateDependencies(dir string) error {
 
 // GenerateFile generates the given FileType.
 func (g *Generator) GenerateFile(name, outputDir string, fileType generator.FileType) (*os.File, error) {
+	var fileName string
+
 	switch fileType {
 	case generator.PublishFile:
-		return g.CreateFile(fmt.Sprintf("f_%s_publisher", name), outputDir, lang, false)
+		fileName = fmt.Sprintf("f_%s_publisher", name)
 	case generator.SubscribeFile:
-		return g.CreateFile(fmt.Sprintf("f_%s_subscriber", name), outputDir, lang, false)
+		fileName = fmt.Sprintf("f_%s_subscriber", name)
 	case generator.CombinedServiceFile:
-		return g.CreateFile(fmt.Sprintf("f_%s", name), outputDir, lang, false)
+		fileName = fmt.Sprintf("f_%s", name)
 	case generator.ObjectFile:
-		return g.CreateFile(fmt.Sprintf("%s", name), outputDir, lang, false)
+		fileName = fmt.Sprintf("%s", name)
 	default:
 		return nil, fmt.Errorf("Bad file type for Python generator: %s", fileType)
 	}
+
+	// No subscriber implementation for vanilla Python, so we need to omit that
+	if !(getAsyncOpt(g.Options) == synchronous && fileType == generator.SubscribeFile) {
+		// Track history of generated file input for reference later
+		// to add imports in __init__.py files
+		g.history[outputDir] = append(g.history[outputDir], genInfo{fileName, name, fileType})
+	}
+
+	return g.CreateFile(fileName, outputDir, lang, false)
 }
 
 // GenerateDocStringComment generates the autogenerated notice.
@@ -746,6 +861,7 @@ func (g *Generator) GenerateTypesImports(file *os.File, isArgsOrResult bool) err
 	if isArgsOrResult {
 		contents += "from .ttypes import *\n"
 	}
+	contents += "from frugal.util import make_hashable\n"
 	contents += "from thrift.transport import TTransport\n"
 	contents += "from thrift.protocol import TBinaryProtocol, TProtocol\n"
 
@@ -763,6 +879,7 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 	imports += "from frugal.processor import FBaseProcessor\n"
 	imports += "from frugal.processor import FProcessorFunction\n"
 	imports += "from frugal.util.deprecate import deprecated\n"
+	imports += "from frugal.util import make_hashable\n"
 	imports += "from thrift.Thrift import TApplicationException\n"
 	imports += "from thrift.Thrift import TMessageType\n"
 	imports += "from thrift.transport.TTransport import TTransportException\n\n"
@@ -997,7 +1114,7 @@ func generatePrefixStringTemplate(scope *parser.Scope) string {
 // GenerateSubscriber generates the subscriber for the given scope.
 func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error {
 	// TODO
-	globals.PrintWarning(fmt.Sprintf("%s: scope subscriber generation is not implemented for Python", scope.Name))
+	globals.PrintWarning(fmt.Sprintf("%s: scope subscriber generation is not implemented for vanilla Python 2.7. For 2.7, use the Tornado framework (where available) or provide a pull request", scope.Name))
 	return nil
 }
 
@@ -1218,7 +1335,7 @@ func (g *Generator) generateProcessor(service *parser.Service) string {
 		if len(method.Annotations) > 0 {
 			annotations := make([]string, len(method.Annotations))
 			for i, annotation := range method.Annotations {
-				annotations[i] = fmt.Sprintf("'%s': '%s'", annotation.Name, annotation.Value)
+				annotations[i] = fmt.Sprintf("'%s': %s", annotation.Name, g.quote(annotation.Value))
 			}
 			contents += tabtab +
 				fmt.Sprintf("self.add_to_annotations_map('%s', {%s})\n", methodLower, strings.Join(annotations, ", "))

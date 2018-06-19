@@ -25,7 +25,11 @@ import com.workiva.frugal.middleware.ServiceMiddleware;
 import com.workiva.frugal.processor.FProcessor;
 import com.workiva.frugal.protocol.FProtocolFactory;
 import com.workiva.frugal.provider.FScopeProvider;
-import com.workiva.frugal.server.*;
+import com.workiva.frugal.server.FDefaultNettyHttpProcessor;
+import com.workiva.frugal.server.FNatsServer;
+import com.workiva.frugal.server.FNettyHttpHandler;
+import com.workiva.frugal.server.FNettyHttpProcessor;
+import com.workiva.frugal.server.FServer;
 import com.workiva.frugal.transport.FNatsPublisherTransport;
 import com.workiva.frugal.transport.FNatsSubscriberTransport;
 import com.workiva.frugal.transport.FPublisherTransportFactory;
@@ -36,7 +40,7 @@ import frugal.test.EventsSubscriber;
 import frugal.test.FFrugalTest;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionFactory;
-import io.nats.client.Constants;
+import io.nats.client.Nats;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -53,11 +57,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import static com.workiva.utils.PREAMBLE_HEADER;
-import static com.workiva.utils.RAMBLE_HEADER;
-import static com.workiva.utils.whichProtocolFactory;
+import com.workiva.Utils;
+
+import static com.workiva.Utils.PREAMBLE_HEADER;
+import static com.workiva.Utils.RAMBLE_HEADER;
+import static com.workiva.Utils.whichProtocolFactory;
 
 
 public class TestServer {
@@ -66,45 +71,21 @@ public class TestServer {
 
     public static void main(String[] args) {
         try {
-            // default testing parameters, overwritten in Python runner
-            int port = 9090;
-            String protocol_type = "binary";
-            String transport_type = "stateless";
+            CrossTestsArgParser parser = new CrossTestsArgParser(args);
+            int port = parser.getPort();
+            String protocolType = parser.getProtocolType();
+            String transportType = parser.getTransportType();
 
-            try {
-                for (String arg : args) {
-                    if (arg.startsWith("--port")) {
-                        port = Integer.valueOf(arg.split("=")[1]);
-                    } else if (arg.startsWith("--port")) {
-                        port = Integer.parseInt(arg.split("=")[1]);
-                    } else if (arg.startsWith("--protocol")) {
-                        protocol_type = arg.split("=")[1];
-                    } else if (arg.startsWith("--transport")) {
-                        transport_type = arg.split("=")[1];
-                    } else if (arg.equals("--help")) {
-                        System.out.println("Allowed options:");
-                        System.out.println("  --help\t\t\tProduce help message");
-                        System.out.println("  --port=arg (=" + port + ")\tPort number to connect");
-                        System.out.println("  --protocol=arg (=" + protocol_type + ")\tProtocol: binary, json, compact");
-                        System.out.println("  --transport=arg (=" + transport_type + ")\tTransport: stateless");
-                        System.exit(0);
-                    }
-                }
-            } catch (Exception e) {
-                System.err.println("Can not parse arguments! See --help");
-                System.exit(1);
-            }
-
-            TProtocolFactory protocolFactory = whichProtocolFactory(protocol_type);
+            TProtocolFactory protocolFactory = whichProtocolFactory(protocolType);
             FProtocolFactory fProtocolFactory = new FProtocolFactory(protocolFactory);
 
             ConnectionFactory cf = new ConnectionFactory("nats://localhost:4222");
             Connection conn = cf.createConnection();
 
-            List<String> validTransports = Arrays.asList("stateless", "http");
+            List<String> validTransports = Arrays.asList(Utils.natsName, Utils.httpName);
 
-            if (!validTransports.contains(transport_type)) {
-                throw new Exception("Unknown transport type! " + transport_type);
+            if (!validTransports.contains(transportType)) {
+                throw new Exception("Unknown transport type! " + transportType);
             }
 
             // Start subscriber for pub/sub test
@@ -115,20 +96,20 @@ public class TestServer {
             CountDownLatch called = new CountDownLatch(1);
             FFrugalTest.Processor processor = new FFrugalTest.Processor(handler, new ServerMiddleware(called));
             FServer server = null;
-            switch (transport_type) {
-                case "stateless":
+            switch (transportType) {
+                case Utils.natsName:
                     server = new FNatsServer.Builder(
                             conn,
                             processor,
                             fProtocolFactory,
                             new String[]{"frugal.*.*.rpc." + Integer.toString(port)}).build();
                     break;
-                case "http":
+                case Utils.httpName:
                     break;
             }
 
             // Start a healthcheck server for the cross language tests
-            if (transport_type.equals("stateless")) {
+            if (transportType.equals("nats")) {
                 try {
                     new com.workiva.HealthCheck(port);
                 } catch (IOException e) {
@@ -136,7 +117,7 @@ public class TestServer {
                 }
 
                 // Start server in separate thread
-                NatsServerThread serverThread = new NatsServerThread(server, transport_type);
+                NatsServerThread serverThread = new NatsServerThread(server, transportType);
                 serverThread.start();
             } else {
                 // Start server in separate thread
@@ -268,7 +249,7 @@ public class TestServer {
         }
 
         public void run() {
-            ConnectionFactory cf = new ConnectionFactory(Constants.DEFAULT_URL);
+            ConnectionFactory cf = new ConnectionFactory(Nats.DEFAULT_URL);
             try {
                 Connection conn = cf.createConnection();
                 FPublisherTransportFactory publisherFactory = new FNatsPublisherTransport.Factory(conn);
@@ -302,8 +283,7 @@ public class TestServer {
                     System.out.println("Error subscribing" + e.getMessage());
                 }
                 System.out.println("Subscriber started...");
-
-            } catch (TimeoutException | IOException e) {
+            } catch (IOException e) {
                 System.out.println("Error connecting to nats" + e.getMessage());
             }
         }

@@ -33,6 +33,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -107,8 +108,6 @@ public class FNatsServerTest {
     @Test
     public void testRequestHandler() {
         ExecutorService executor = mock(ExecutorService.class);
-        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-        when(executor.submit(captor.capture())).thenReturn(null);
         FNatsServer server =
                 new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, new String[]{subject})
                         .withExecutorService(executor).build();
@@ -119,7 +118,8 @@ public class FNatsServerTest {
 
         handler.onMessage(msg);
 
-        verify(executor).submit(captor.getValue());
+        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+        verify(executor).execute(captor.capture());
         assertEquals(FNatsServer.Request.class, captor.getValue().getClass());
         FNatsServer.Request request = (FNatsServer.Request) captor.getValue();
         assertArrayEquals(data, request.frameBytes);
@@ -134,7 +134,6 @@ public class FNatsServerTest {
     @Test
     public void testRequestHandler_noReply() {
         ExecutorService executor = mock(ExecutorService.class);
-        when(executor.submit(any(Runnable.class))).thenReturn(null);
         FNatsServer server =
                 new FNatsServer.Builder(mockConn, mockProcessor, mockProtocolFactory, new String[]{subject})
                 .withExecutorService(executor).build();
@@ -144,7 +143,7 @@ public class FNatsServerTest {
 
         handler.onMessage(msg);
 
-        verify(executor, times(0)).submit(any(Runnable.class));
+        verifyNoMoreInteractions(executor);
     }
 
     @Test
@@ -164,7 +163,7 @@ public class FNatsServerTest {
         verify(mockConn).publish(reply, expected);
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testRequestProcessRuntimeException() throws TException, IOException {
         byte[] data = "xxxxhello".getBytes();
         long timestamp = System.currentTimeMillis();
@@ -174,7 +173,11 @@ public class FNatsServerTest {
         mockProtocolFactory = new FProtocolFactory(new TJSONProtocol.Factory());
         FNatsServer.Request request = new FNatsServer.Request(data, timestamp, reply, highWatermark,
                 mockProtocolFactory, mockProtocolFactory, processor, mockConn);
+
         request.run();
+
+        byte[] expected = new byte[]{0, 0, 0, 0};
+        verify(mockConn).publish(reply, expected);
     }
 
     @Test

@@ -4,6 +4,7 @@ namespace java variety.java
 namespace py variety.python
 
 include "base.frugal"
+include "intermediate_include.frugal"
 include "validStructs.frugal"
 include "ValidTypes.frugal"
 include "subdir_includes/subdir_include.frugal"
@@ -66,8 +67,12 @@ enum HealthCondition {
      * because it has the @ sign.
      */
     WARN = 2,
-    FAIL = 3,
-    UNKNOWN = 4
+    FAIL = 3 (deprecated="use something else"),
+    /**@
+     * This is a docstring comment for a deprecated enum value that has been
+     * spread across two lines.
+     */
+    UNKNOWN = 4 (deprecated="don't use this; use \"something else\"")
 }
 
 union TestingUnions {
@@ -77,6 +82,7 @@ union TestingUnions {
 	4: i16 AnInt16,
 	5: request Requests,
 	6: binary bin_field_in_union,
+	7: bool depr (deprecated="use something else"),
 }
 
 /**@
@@ -135,6 +141,19 @@ struct EventWrapper {
     8: bool aBoolField,
     9: TestingUnions a_union,
     10: t2_string typedefOfTypedef,
+    /**@
+     * This is a docstring comment for a deprecated field that has been spread
+     * across two lines.
+     */
+    11: bool depr (deprecated="use something else"),
+    12: binary deprBinary (deprecated="use something else"),
+    13: list<bool> deprList (deprecated="use something else"),
+}
+
+struct FooArgs {
+    1:string newMessage
+    2:string messageArgs
+    3:string messageResult
 }
 
 exception AwesomeException {
@@ -143,6 +162,8 @@ exception AwesomeException {
 
     /**@ Reason contains the error message. */
     2: string Reason
+
+    3: bool depr (deprecated="use something else")
 }
 
 /**@
@@ -151,7 +172,7 @@ exception AwesomeException {
  */
 service Foo extends base.BaseFoo {
     /**@ Ping the server. */
-    void Ping() (deprecated="use something else"),
+    void Ping() (deprecated="don't use this; use \"something else\""),
 
     /**@ Blah the server. */
     i64 blah(1:i32 num, 2:string Str, 3:Event event) throws (1:AwesomeException awe, 2:base.api_exception api),
@@ -170,6 +191,10 @@ service Foo extends base.BaseFoo {
     ValidTypes.MyInt getMyInt(),
 
     subdir_include.A use_subdir_struct(1:subdir_include.A a),
+}
+
+service FooTransitiveDeps extends intermediate_include.IntermediateFoo {
+	void ping()
 }
 
 /**@

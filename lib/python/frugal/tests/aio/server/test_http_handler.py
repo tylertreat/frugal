@@ -12,8 +12,9 @@
 import base64
 import mock
 
-from aiohttp import test_utils, CIMultiDict
+from aiohttp import test_utils
 from aiohttp.streams import StreamReader
+from multidict import CIMultiDict
 from thrift.protocol import TBinaryProtocol
 
 from frugal.protocol import FProtocolFactory
@@ -37,7 +38,7 @@ class TestFHttpHandler(utils.AsyncIOTestCase):
         request_payload = base64.b64encode(request_frame)
         response_data = bytearray([6, 7, 8, 9])
         response_frame = bytearray([0, 0, 0, 4]) + response_data
-        request_payload_reader = StreamReader()
+        request_payload_reader = StreamReader(mock.Mock())
         request_payload_reader.feed_data(request_payload)
         request_payload_reader.feed_eof()
 
@@ -67,7 +68,7 @@ class TestFHttpHandler(utils.AsyncIOTestCase):
         request_frame = bytearray([0, 0, 0, 3]) + request_data
         request_payload = base64.b64encode(request_frame)
         response_data = bytearray([6, 7, 8, 9, 10, 11])
-        request_payload_reader = StreamReader()
+        request_payload_reader = StreamReader(mock.Mock())
         request_payload_reader.feed_data(request_payload)
         request_payload_reader.feed_eof()
 

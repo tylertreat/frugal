@@ -371,6 +371,10 @@ func (g *Generator) GenerateDocStringComment(file *os.File) error {
 	return err
 }
 
+func (g *Generator) generateDocComment(comment []string, indent string) string {
+	return g.GenerateInlineComment(comment, indent+"/")
+}
+
 // GenerateConstantsContents generates constants.
 func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) error {
 	if len(constants) == 0 {
@@ -398,7 +402,7 @@ func (g *Generator) GenerateConstantsContents(constants []*parser.Constant) erro
 	contents += fmt.Sprintf("class %s {\n", className)
 	for _, constant := range constants {
 		if constant.Comment != nil {
-			contents += g.GenerateInlineComment(constant.Comment, tab+"/")
+			contents += g.generateDocComment(constant.Comment, tab)
 		}
 		value := g.generateConstantValue(constant.Type, constant.Value, "")
 		contents += fmt.Sprintf(tab+"static final %s %s = %s;\n",
@@ -533,9 +537,7 @@ func (g *Generator) generateEnumUsingClasses(enum *parser.Enum) string {
 	contents := ""
 	contents += fmt.Sprintf("class %s {\n", enum.Name)
 	for _, field := range enum.Values {
-		if field.Comment != nil {
-			contents += g.GenerateInlineComment(field.Comment, tab+"/")
-		}
+		contents += g.generateCommentWithDeprecated(field.Comment, tab, field.Annotations)
 		contents += fmt.Sprintf(tab+"static const int %s = %d;\n", field.Name, field.Value)
 	}
 	contents += "\n"
@@ -559,9 +561,9 @@ func (g *Generator) generateEnumUsingEnums(enum *parser.Enum) string {
 	contents := ""
 	contents += fmt.Sprintf("enum %s {\n", enum.Name)
 	for _, field := range enum.Values {
-		if field.Comment != nil {
-			contents += g.GenerateInlineComment(field.Comment, tab+"/")
-		}
+		// The @deprecated annotation is not allowed on enum values:
+		// https://github.com/dart-lang/sdk/issues/23441
+		contents += g.generateCommentWithDeprecatedImpl(field.Comment, tab, field.Annotations, false)
 		contents += fmt.Sprintf(tab+"%s,\n", field.Name)
 	}
 	contents += "}\n\n"
@@ -651,9 +653,7 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 
 	// Fields
 	for _, field := range s.Fields {
-		if field.Comment != nil {
-			contents += g.GenerateInlineComment(field.Comment, tab+"/")
-		}
+		contents += g.generateCommentWithDeprecated(field.Comment, tab, field.Annotations)
 		contents += fmt.Sprintf(tab+"%s _%s%s;\n",
 			g.getDartTypeFromThriftType(field.Type), toFieldName(field.Name), g.generateInitValue(field))
 		contents += fmt.Sprintf(tab+"static const int %s = %d;\n", strings.ToUpper(field.Name), field.ID)
@@ -690,6 +690,12 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 	// to string
 	contents += g.generateToString(s)
 
+	// equals
+	contents += g.generateEquals(s)
+
+	// clone
+	contents += g.generateClone(s)
+
 	// validate
 	contents += g.generateValidate(s)
 
@@ -724,13 +730,9 @@ func (g *Generator) generateFieldMethods(s *parser.Struct) string {
 		fName := toFieldName(field.Name)
 		titleName := strings.Title(field.Name)
 
-		if field.Comment != nil {
-			contents += g.GenerateInlineComment(field.Comment, tab+"/")
-		}
+		contents += g.generateCommentWithDeprecated(field.Comment, tab, field.Annotations)
 		contents += fmt.Sprintf(tab+"%s get %s => this._%s;\n\n", dartType, fName, fName)
-		if field.Comment != nil {
-			contents += g.GenerateInlineComment(field.Comment, tab+"/")
-		}
+		contents += g.generateCommentWithDeprecated(field.Comment, tab, field.Annotations)
 		contents += fmt.Sprintf(tab+"set %s(%s %s) {\n", fName, dartType, fName)
 		contents += fmt.Sprintf(tabtab+"this._%s = %s;\n", fName, fName)
 		if dartPrimitive {
@@ -738,6 +740,9 @@ func (g *Generator) generateFieldMethods(s *parser.Struct) string {
 		}
 		contents += tab + "}\n\n"
 
+		if field.Annotations.IsDeprecated() {
+			contents += tab + "@deprecated"
+		}
 		if dartPrimitive {
 			contents += fmt.Sprintf(tab+"bool isSet%s() => this.__isset_%s;\n\n", titleName, fName)
 			contents += fmt.Sprintf(tab+"unset%s() {\n", titleName)
@@ -1116,6 +1121,64 @@ func (g *Generator) generateToString(s *parser.Struct) string {
 	return contents
 }
 
+func (g *Generator) generateEquals(s *parser.Struct) string {
+	contents := tab + "bool operator ==(Object o) {\n"
+	// Make sure it's the same type
+	contents += fmt.Sprintf(tabtab+"if(o == null || !(o is %s)) {\n", s.Name)
+	contents += tabtabtab + "return false;\n"
+	contents += tabtab + "}\n"
+
+	// No fields in the struct, nothing to compare
+	if len(s.Fields) == 0 {
+		contents += tabtab + "return true;\n"
+		contents += tab + "}\n\n"
+		return contents
+	}
+	contents += fmt.Sprintf(tabtab+"%s other = o as %s;\n", s.Name, s.Name)
+
+	first := true
+	for _, field := range s.Fields {
+		fieldName := toFieldName(field.Name)
+		if first {
+			first = false
+			contents += fmt.Sprintf(tabtab+"return this.%s == other.%s", fieldName, fieldName)
+		} else {
+			contents += fmt.Sprintf("\n"+tabtabtab+"&& this.%s == other.%s", fieldName, fieldName)
+		}
+	}
+
+	contents += ";\n"
+	contents += tab + "}\n\n"
+	return contents
+}
+
+func (g *Generator) generateClone(s *parser.Struct) string {
+	if len(s.Fields) == 0 {
+		// dart doesn't allow someFunc({}) {}, so need a special case for no fields
+		contents := fmt.Sprintf(tab+"%s clone() {\n", s.Name)
+		contents += fmt.Sprintf(tabtab+"return new %s();\n", s.Name)
+		contents += fmt.Sprintf(tab + "}\n\n")
+		return contents
+	}
+
+	contents := fmt.Sprintf(tab+"%s clone({\n", s.Name)
+	for _, field := range s.Fields {
+		fieldName := toFieldName(field.Name)
+		contents += fmt.Sprintf(tabtab+"%s %s: null,\n", g.getDartTypeFromThriftType(field.Type), fieldName)
+	}
+	contents += tab + "}) {\n"
+
+	contents += fmt.Sprintf(tabtab+"return new %s()", s.Name)
+	for _, field := range s.Fields {
+		fieldName := toFieldName(field.Name)
+		contents += fmt.Sprintf("\n"+tabtabtab+"..%s = %s ?? this.%s", fieldName, fieldName, fieldName)
+	}
+	contents += ";\n"
+
+	contents += tab + "}\n\n"
+	return contents
+}
+
 func (g *Generator) generateValidate(s *parser.Struct) string {
 	contents := tab + "validate() {\n"
 
@@ -1240,7 +1303,8 @@ func (g *Generator) GenerateServiceImports(file *os.File, s *parser.Service) err
 
 // GenerateScopeImports generates necessary imports for the given scope.
 func (g *Generator) GenerateScopeImports(file *os.File, s *parser.Scope) error {
-	imports := "import 'dart:async';\n\n"
+	imports := "import 'dart:async';\n"
+	imports += "import 'dart:typed_data' show Uint8List;\n\n"
 	imports += "import 'package:thrift/thrift.dart' as thrift;\n"
 	imports += "import 'package:frugal/frugal.dart' as frugal;\n\n"
 	// import included packages
@@ -1314,7 +1378,7 @@ func (g *Generator) GeneratePublisher(file *os.File, scope *parser.Scope) error 
 		publishers += prefix
 		prefix = "\n\n"
 		if op.Comment != nil {
-			publishers += g.GenerateInlineComment(op.Comment, tab+"/")
+			publishers += g.generateDocComment(op.Comment, tab)
 		}
 
 		publishers += fmt.Sprintf(tab+"Future publish%s(frugal.FContext ctx, %s%s req) {\n", op.Name, args, g.getDartTypeFromThriftType(op.Type))
@@ -1393,7 +1457,7 @@ func (g *Generator) GenerateSubscriber(file *os.File, scope *parser.Scope) error
 		subscribers += prefix
 		prefix = "\n\n"
 		if op.Comment != nil {
-			subscribers += g.GenerateInlineComment(op.Comment, tab+"/")
+			subscribers += g.generateDocComment(op.Comment, tab)
 		}
 		subscribers += fmt.Sprintf(tab+"Future<frugal.FSubscription> subscribe%s(%sdynamic on%s(frugal.FContext ctx, %s req)) async {\n",
 			op.Name, args, op.Type.ParamName(), g.getDartTypeFromThriftType(op.Type))
@@ -1446,6 +1510,28 @@ func (g *Generator) GenerateService(file *os.File, s *parser.Service) error {
 	return err
 }
 
+func (g *Generator) generateCommentWithDeprecatedImpl(comment []string, indent string, anns parser.Annotations, deprecatedAnn bool) string {
+	contents := ""
+	if comment != nil {
+		contents += g.generateDocComment(comment, indent)
+	}
+
+	if deprecationValue, deprecated := anns.Deprecated(); deprecated {
+		if deprecationValue != "" {
+			contents += g.generateDocComment([]string{"Deprecated: " + deprecationValue}, indent)
+		}
+		if deprecatedAnn {
+			contents += indent + "@deprecated\n"
+		}
+	}
+
+	return contents
+}
+
+func (g *Generator) generateCommentWithDeprecated(comment []string, indent string, anns parser.Annotations) string {
+	return g.generateCommentWithDeprecatedImpl(comment, indent, anns, true)
+}
+
 func (g *Generator) generateInterface(service *parser.Service) string {
 	contents := ""
 	if service.Comment != nil {
@@ -1459,14 +1545,7 @@ func (g *Generator) generateInterface(service *parser.Service) string {
 	}
 	for _, method := range service.Methods {
 		contents += "\n"
-		if method.Comment != nil {
-			contents += g.GenerateInlineComment(method.Comment, tab+"/")
-		}
-
-		if _, ok := method.Annotations.Deprecated(); ok {
-			contents += tab + "@deprecated\n"
-		}
-
+		contents += g.generateCommentWithDeprecated(method.Comment, tab, method.Annotations)
 		contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s);\n",
 			g.generateReturnArg(method), parser.LowercaseFirstLetter(method.Name), g.generateInputArgs(method.Arguments))
 	}
@@ -1502,7 +1581,7 @@ func (g *Generator) generateClient(service *parser.Service) string {
 		contents += fmt.Sprintf("class F%sClient implements F%s {\n",
 			servTitle, servTitle)
 	}
-	contents += fmt.Sprintf(tab+"static final logging.Logger _log = new logging.Logger('%s');\n", servTitle)
+	contents += fmt.Sprintf(tab+"static final logging.Logger _frugalLog = new logging.Logger('%s');\n", servTitle)
 	contents += tab + "Map<String, frugal.FMethod> _methods;\n\n"
 
 	if service.Extends != "" {
@@ -1537,27 +1616,14 @@ func (g *Generator) generateClient(service *parser.Service) string {
 
 func (g *Generator) generateClientMethod(service *parser.Service, method *parser.Method) string {
 	nameLower := parser.LowercaseFirstLetter(method.Name)
-	contents := ""
-
-	if method.Comment != nil {
-		contents += g.GenerateInlineComment(method.Comment, tab+"/")
-	}
-
-	deprecationValue, deprecated := method.Annotations.Deprecated()
-	if deprecated {
-		if deprecationValue != "" {
-			contents += fmt.Sprintf(tab+"@Deprecated(\"%s\")\n", deprecationValue)
-		} else {
-			contents += tab + "@deprecated\n"
-		}
-	}
+	contents := g.generateCommentWithDeprecated(method.Comment, tab, method.Annotations)
 
 	// Generate wrapper method
 	contents += fmt.Sprintf(tab+"Future%s %s(frugal.FContext ctx%s) {\n",
 		g.generateReturnArg(method), nameLower, g.generateInputArgs(method.Arguments))
 
-	if deprecated {
-		contents += fmt.Sprintf(tabtab+"_log.warning(\"Call to deprecated function '%s.%s'\");\n", service.Name, nameLower)
+	if method.Annotations.IsDeprecated() {
+		contents += fmt.Sprintf(tabtab+"_frugalLog.warning(\"Call to deprecated function '%s.%s'\");\n", service.Name, nameLower)
 	}
 
 	contents += fmt.Sprintf(tabtab+"return this._methods['%s']([ctx%s]) as Future%s;\n",

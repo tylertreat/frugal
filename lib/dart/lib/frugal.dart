@@ -36,6 +36,7 @@ export 'src/frugal.dart'
         FTransportMonitor,
         FrugalTApplicationErrorType,
         FrugalTTransportErrorType,
+        GetHeadersWithContext,
         InvocationHandler,
         Middleware,
         TMemoryOutputBuffer,

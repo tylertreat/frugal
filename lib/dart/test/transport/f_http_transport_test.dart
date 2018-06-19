@@ -16,6 +16,7 @@ void main() {
   group('FHttpTransport', () {
     Client client;
     FHttpTransport transport;
+    FHttpTransport transportWithContext;
 
     Map<String, String> expectedRequestHeaders = {
       'x-frugal-payload-limit': '10',
@@ -41,6 +42,11 @@ void main() {
       client = new Client();
       transport = new FHttpTransport(client, Uri.parse('http://localhost'),
           responseSizeLimit: 10, additionalHeaders: {'foo': 'bar'});
+      transportWithContext = new FHttpTransport(
+          client, Uri.parse('http://localhost'),
+          responseSizeLimit: 10,
+          additionalHeaders: {'foo': 'bar'},
+          getRequestHeaders: _generateTestHeader);
     });
 
     test('Test transport sends body and receives response', () async {
@@ -109,6 +115,37 @@ void main() {
 
       expect(firstResponse.buffer, transportResponse);
       expect(secondResponse.buffer, transportResponse);
+    });
+
+    test(
+        'Test transport sends body and receives response with FContext function',
+        () async {
+      FContext newContext = new FContext();
+      Map<String, String> tempExpectedHeaders = expectedRequestHeaders;
+      tempExpectedHeaders['first-header'] = newContext.correlationId;
+      tempExpectedHeaders['second-header'] = 'yup';
+
+      MockTransports.http.when(transportWithContext.uri,
+          (FinalizedRequest request) async {
+        if (request.method == 'POST') {
+          HttpBody body = request.body;
+          if (body == null || body.asString() != transportRequestB64)
+            return new MockResponse.badRequest();
+          for (var key in tempExpectedHeaders.keys) {
+            if (request.headers[key] != tempExpectedHeaders[key]) {
+              return new MockResponse.badRequest();
+            }
+          }
+          return new MockResponse.ok(
+              body: transportResponseB64, headers: responseHeaders);
+        } else {
+          return new MockResponse.badRequest();
+        }
+      });
+
+      var response = await transportWithContext.request(
+          newContext, transportRequest) as TMemoryTransport;
+      expect(response.buffer, transportResponse);
     });
 
     test('Test transport does not execute frame on oneway requests', () async {
@@ -201,4 +238,14 @@ void main() {
           throwsA(new isInstanceOf<TTransportError>()));
     });
   });
+}
+
+Map<String, String> _generateTestHeader(FContext ctx) {
+  return {
+    "first-header": ctx.correlationId,
+    "second-header": "yup",
+    "x-frugal-payload-limit": "these headers",
+    "content-transfer-encoding": "will be",
+    "accept": "overwritten!"
+  };
 }
