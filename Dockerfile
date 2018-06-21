@@ -33,8 +33,6 @@ ARG BUILD_ARTIFACTS_ARTIFACTORY=/go/src/github.com/Workiva/frugal/frugal-*.jar
 ARG BUILD_ARTIFACTS_PUB=/go/src/github.com/Workiva/frugal/frugal.pub.tgz
 ARG BUILD_ARTIFACTS_TEST_RESULTS=/go/src/github.com/Workiva/frugal/test_results/*
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o /bin/frugal .
-
 FROM scratch
-COPY --from=build /bin/frugal /bin/frugal
+COPY --from=build /go/src/github.com/workiva/frugal /bin/frugal
 ENTRYPOINT ["frugal"]
