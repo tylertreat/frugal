@@ -1389,7 +1389,7 @@ class param_modifiers_args(object):
 
     def validate(self):
         if self.req_num is None:
-            raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field req_num is unset!')
+            raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field \'req_num\' is not present in struct \'param_modifiers_args\'')
         return
 
     def __hash__(self):

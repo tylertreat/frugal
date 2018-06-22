@@ -578,9 +578,9 @@ class TestingDefaults(object):
 
     def validate(self):
         if self.status is None:
-            raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field status is unset!')
+            raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field \'status\' is not present in struct \'TestingDefaults\'')
         if self.base_status is None:
-            raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field base_status is unset!')
+            raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field \'base_status\' is not present in struct \'TestingDefaults\'')
         return
 
     def __hash__(self):
@@ -852,7 +852,7 @@ class EventWrapper(object):
 
     def validate(self):
         if self.Ev is None:
-            raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field Ev is unset!')
+            raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field \'Ev\' is not present in struct \'EventWrapper\'')
         return
 
     def __hash__(self):

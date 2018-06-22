@@ -1840,10 +1840,10 @@ public class TestingDefaults implements org.apache.thrift.TBase<TestingDefaults,
 	public void validate() throws org.apache.thrift.TException {
 		// check for required fields
 		if (status == null) {
-			throw new org.apache.thrift.protocol.TProtocolException("Required field 'status' was not present for struct type 'TestingDefaults'");
+			throw new org.apache.thrift.protocol.TProtocolException("Required field 'status' is not present in struct 'TestingDefaults'");
 		}
 		if (base_status == null) {
-			throw new org.apache.thrift.protocol.TProtocolException("Required field 'base_status' was not present for struct type 'TestingDefaults'");
+			throw new org.apache.thrift.protocol.TProtocolException("Required field 'base_status' is not present in struct 'TestingDefaults'");
 		}
 		// check for sub-struct validity
 		if (ev1 != null) {

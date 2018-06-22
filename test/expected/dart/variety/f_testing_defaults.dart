@@ -757,10 +757,10 @@ class TestingDefaults implements thrift.TBase {
 
     // check for required fields of primitive type, which can't be checked in the validate method
     if(!__isset_status) {
-      throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "Required field 'status' was not present in struct TestingDefaults");
+      throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "Required field 'status' is not present in struct 'TestingDefaults'");
     }
     if(!__isset_base_status) {
-      throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "Required field 'base_status' was not present in struct TestingDefaults");
+      throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "Required field 'base_status' is not present in struct 'TestingDefaults'");
     }
     validate();
   }

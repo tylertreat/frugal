@@ -886,10 +886,10 @@ func (p *TestingDefaults) Read(iprot thrift.TProtocol) error {
 		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 	}
 	if !issetStatus {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Status is not set"))
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field 'Status' is not present in struct 'TestingDefaults'"))
 	}
 	if !issetBaseStatus {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field BaseStatus is not set"))
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field 'BaseStatus' is not present in struct 'TestingDefaults'"))
 	}
 	return nil
 }
@@ -1682,7 +1682,7 @@ func (p *EventWrapper) Read(iprot thrift.TProtocol) error {
 		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 	}
 	if !issetEv {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Ev is not set"))
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field 'Ev' is not present in struct 'EventWrapper'"))
 	}
 	return nil
 }

@@ -1766,7 +1766,7 @@ class param_modifiers_args implements thrift.TBase {
 
     // check for required fields of primitive type, which can't be checked in the validate method
     if(!__isset_req_num) {
-      throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "Required field 'req_num' was not present in struct param_modifiers_args");
+      throw new thrift.TProtocolError(thrift.TProtocolErrorType.UNKNOWN, "Required field 'req_num' is not present in struct 'param_modifiers_args'");
     }
     validate();
   }
