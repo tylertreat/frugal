@@ -256,9 +256,12 @@ public class FHttpTransport extends FTransport {
         CloseableHttpResponse response;
         try {
             response = httpClient.execute(request);
-        } catch (ConnectTimeoutException | SocketTimeoutException e) {
+        } catch (ConnectTimeoutException e) {
             throw new TTransportException(TTransportExceptionType.TIMED_OUT,
-                    "http request timed out: " + e.getMessage());
+                    "http request connection timed out: " + e.getMessage(), e);
+        } catch (SocketTimeoutException e) {
+            throw new TTransportException(TTransportExceptionType.TIMED_OUT,
+                    "http request socket timed out: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new TTransportException("http request failed: " + e.getMessage(), e);
         }
