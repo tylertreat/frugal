@@ -638,7 +638,7 @@ func (g *Generator) generateRead(s *parser.Struct, sName string) string {
 		if field.Modifier == parser.Required {
 			fName := snakeToCamel(field.Name)
 			contents += fmt.Sprintf("\tif !isset%s {\n", fName)
-			errorMessage := fmt.Sprintf("Required field %s is not set", fName)
+			errorMessage := fmt.Sprintf("Required field '%s' is not present in struct '%s'", fName, s.Name)
 			contents += fmt.Sprintf("\t\treturn thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf(\"%s\"))\n", errorMessage)
 			contents += "\t}\n"
 		}

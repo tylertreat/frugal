@@ -3,7 +3,6 @@ set -e
 
 # Run the generator tests
 cd $FRUGAL_HOME
-go build -o frugal
+CGO_ENABLED=0 GOOS=linux go build -o frugal
 go test -race ./test
-mv frugal $SMITHY_ROOT
 rm -rf ./test/out

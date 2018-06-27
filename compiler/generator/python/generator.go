@@ -574,7 +574,7 @@ func (g *Generator) generateValidate(s *parser.Struct) string {
 		for _, field := range s.Fields {
 			if field.Modifier == parser.Required {
 				contents += fmt.Sprintf(tabtab+"if self.%s is None:\n", field.Name)
-				contents += fmt.Sprintf(tabtabtab+"raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field %s is unset!')\n", field.Name)
+				contents += fmt.Sprintf(tabtabtab+"raise TProtocol.TProtocolException(type=TProtocol.TProtocolException.INVALID_DATA, message='Required field \\'%s\\' is not present in struct \\'%s\\'')\n", field.Name, s.Name)
 			}
 		}
 	} else {
