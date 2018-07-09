@@ -1,3 +1,5 @@
+namespace java include_vendor.java
+
 include "vendor_namespace.frugal" (vendor)
 include "excepts.frugal"
 

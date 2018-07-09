@@ -1,4 +1,5 @@
 namespace go vendor_namespace
 namespace dart vendor_namespace
+namespace java vendor_namespace.java
 
 struct Item {}

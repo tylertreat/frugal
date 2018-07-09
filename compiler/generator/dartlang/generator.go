@@ -239,7 +239,7 @@ func (g *Generator) addToPubspec(dir string) error {
 			name = namespace.Value
 		}
 
-		if g.useVendor() && includesSet[include] {
+		if g.UseVendor() && includesSet[include] {
 			vendorPath, _ := namespace.Annotations.Vendor()
 			deps[toLibraryName(vendorPath)] = dep{
 				Hosted:  hostedDep{Name: toLibraryName(vendorPath), URL: "https://pub.workiva.org"},
@@ -1867,7 +1867,7 @@ func (g *Generator) generateIncludeImport(include *parser.Include) (string, erro
 	name := include.Name
 
 	_, vendored := include.Annotations.Vendor()
-	vendored = vendored && g.useVendor()
+	vendored = vendored && g.UseVendor()
 	vendorPath := ""
 
 	if namespace := g.Frugal.NamespaceForInclude(name, lang); namespace != nil {
@@ -1911,7 +1911,7 @@ func (g *Generator) useEnums() bool {
 	return useEnums
 }
 
-func (g *Generator) useVendor() bool {
+func (g *Generator) UseVendor() bool {
 	_, ok := g.Options[useVendorOption]
 	return ok
 }

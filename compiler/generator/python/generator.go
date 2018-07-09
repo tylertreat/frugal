@@ -1564,3 +1564,7 @@ func getAsyncOpt(options map[string]string) concurrencyModel {
 	}
 	return synchronous
 }
+
+func (g *Generator) UseVendor() bool {
+	return false
+}

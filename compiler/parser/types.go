@@ -101,6 +101,20 @@ type Include struct {
 	Annotations Annotations
 }
 
+type byIncludeName []Include
+
+func (s byIncludeName) Len() int {
+	return len(s)
+}
+
+func (s byIncludeName) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s byIncludeName) Less(i, j int) bool {
+	return s[i].Name < s[j].Name
+}
+
 // Namespace represents an IDL namespace.
 type Namespace struct {
 	Scope       string
@@ -689,19 +703,14 @@ func (f *Frugal) ContainsFrugalDefinitions() bool {
 	return len(f.Scopes)+len(f.Services) > 0
 }
 
-// OrderedIncludes returns the ParsedIncludes in order, sorted by the include
+// OrderedIncludes returns the Includes in order, sorted by the include
 // name.
-func (f *Frugal) OrderedIncludes() []*Frugal {
-	keys := make([]string, 0, len(f.ParsedIncludes))
-	for key := range f.ParsedIncludes {
-		keys = append(keys, key)
+func (f *Frugal) OrderedIncludes() []Include {
+	includes := make([]Include, 0, len(f.Includes))
+	for _, include := range f.Includes {
+		includes = append(includes, *include)
 	}
-	sort.Strings(keys)
-
-	includes := make([]*Frugal, 0, len(f.ParsedIncludes))
-	for _, key := range keys {
-		includes = append(includes, f.ParsedIncludes[key])
-	}
+	sort.Sort(byIncludeName(includes))
 	return includes
 }
 

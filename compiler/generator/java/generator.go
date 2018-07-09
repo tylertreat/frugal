@@ -32,6 +32,7 @@ const (
 	defaultOutputDir            = "gen-java"
 	tab                         = "\t"
 	generatedAnnotations        = "generated_annotations"
+	useVendorOption             = "use_vendor"
 	tabtab                      = tab + tab
 	tabtabtab                   = tab + tab + tab
 	tabtabtabtab                = tab + tab + tab + tab
@@ -3272,11 +3273,26 @@ func containerType(typeName string) string {
 	}
 }
 
+func (g *Generator) isVendoredInclude(includeName string) bool {
+	include := g.Frugal.Include(includeName)
+	if include == nil {
+		return false
+	}
+	_, vendored := include.Annotations.Vendor()
+	return vendored
+}
+
 func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 	param := t.ParamName()
 	include := t.IncludeName()
 	if include != "" {
 		if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
+			if g.UseVendor() && g.isVendoredInclude(include) {
+				if vendorPath, _ := namespace.Annotations.Vendor(); vendorPath != "" {
+					return fmt.Sprintf("%s.%s", vendorPath, param)
+				}
+			}
+
 			return fmt.Sprintf("%s.%s", namespace.Value, param)
 		}
 	}
@@ -3326,5 +3342,10 @@ func (g *Generator) generatedAnnotation(indent string) string {
 
 func (g *Generator) generateAsync() bool {
 	_, ok := g.Options["async"]
+	return ok
+}
+
+func (g *Generator) UseVendor() bool {
+	_, ok := g.Options[useVendorOption]
 	return ok
 }

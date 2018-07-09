@@ -14,6 +14,7 @@
 package test
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -120,4 +121,88 @@ func TestValidJavaBoxedPrimitives(t *testing.T) {
 
 	copyAllFiles(t, files)
 	compareAllFiles(t, files)
+}
+
+// Ensures correct import references are used when -use-vendor is set and the
+// IDL has a vendored include.
+func TestValidJavaVendor(t *testing.T) {
+	options := compiler.Options{
+		File:    includeVendor,
+		Gen:     "java:use_vendor",
+		Out:     outputDir + "/valid_vendor",
+		Delim:   delim,
+		Recurse: true,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("Unexpected error", err)
+	}
+
+	files := []FileComparisonPair{
+		{"expected/java/valid_vendor/FMyService.java", filepath.Join(outputDir, "valid_vendor", "include_vendor", "java", "FMyService.java")},
+		{"expected/java/valid_vendor/MyScopePublisher.java", filepath.Join(outputDir, "valid_vendor", "include_vendor", "java", "MyScopePublisher.java")},
+		{"expected/java/valid_vendor/MyScopeSubscriber.java", filepath.Join(outputDir, "valid_vendor", "include_vendor", "java", "MyScopeSubscriber.java")},
+		{"expected/java/valid_vendor/InvalidData.java", filepath.Join(outputDir, "valid_vendor", "InvalidData.java")},
+	}
+	copyAllFiles(t, files)
+	compareAllFiles(t, files)
+
+	if _, err := os.Stat(filepath.Join(outputDir, "valid_vendor", "vendor_namespace", "java", "Item.java")); !os.IsNotExist(err) {
+		if err != nil {
+			panic(err)
+		}
+		t.Fatal("Expected vendored files to not be generated, but they were")
+	}
+
+}
+
+func TestValidJavaVendorButNotUseVendor(t *testing.T) {
+	options := compiler.Options{
+		File:    includeVendor,
+		Gen:     "java",
+		Out:     outputDir + "/vendored_but_no_use_vendor",
+		Delim:   delim,
+		Recurse: true,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("Unexpected error", err)
+	}
+
+	files := []FileComparisonPair{
+		{"expected/java/vendored_but_no_use_vendor/FMyService.java", filepath.Join(outputDir, "vendored_but_no_use_vendor", "include_vendor", "java", "FMyService.java")},
+		{"expected/java/vendored_but_no_use_vendor/MyScopePublisher.java", filepath.Join(outputDir, "vendored_but_no_use_vendor", "include_vendor", "java", "MyScopePublisher.java")},
+		{"expected/java/vendored_but_no_use_vendor/MyScopeSubscriber.java", filepath.Join(outputDir, "vendored_but_no_use_vendor", "include_vendor", "java", "MyScopeSubscriber.java")},
+		{"expected/java/vendored_but_no_use_vendor/InvalidData.java", filepath.Join(outputDir, "vendored_but_no_use_vendor", "InvalidData.java")},
+		{"expected/java/vendored_but_no_use_vendor/Item.java", filepath.Join(outputDir, "vendored_but_no_use_vendor", "vendor_namespace", "java", "Item.java")},
+	}
+	copyAllFiles(t, files)
+	compareAllFiles(t, files)
+}
+
+func TestValidJavaVendorNoPathUsesDefinedNamespace(t *testing.T) {
+	options := compiler.Options{
+		File:    includeVendorNoPath,
+		Gen:     "java:use_vendor",
+		Out:     outputDir + "/valid_vendor_no_path",
+		Delim:   delim,
+		Recurse: true,
+	}
+	if err := compiler.Compile(options); err != nil {
+		t.Fatal("Unexpected error", err)
+	}
+
+	files := []FileComparisonPair{
+		{"expected/java/valid_vendor_no_path/FMyService.java", filepath.Join(outputDir, "valid_vendor_no_path", "include_vendor_no_path", "java", "FMyService.java")},
+		{"expected/java/valid_vendor_no_path/MyScopePublisher.java", filepath.Join(outputDir, "valid_vendor_no_path", "include_vendor_no_path", "java", "MyScopePublisher.java")},
+		{"expected/java/valid_vendor_no_path/MyScopeSubscriber.java", filepath.Join(outputDir, "valid_vendor_no_path", "include_vendor_no_path", "java", "MyScopeSubscriber.java")},
+		{"expected/java/valid_vendor_no_path/InvalidData.java", filepath.Join(outputDir, "valid_vendor_no_path", "InvalidData.java")},
+	}
+	copyAllFiles(t, files)
+	compareAllFiles(t, files)
+
+	if _, err := os.Stat(filepath.Join(outputDir, "valid_vendor_no_path", "vendor_namespace", "java", "Item.java")); !os.IsNotExist(err) {
+		if err != nil {
+			panic(err)
+		}
+		t.Fatal("Expected vendored files to not be generated, but they were")
+	}
 }
