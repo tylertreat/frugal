@@ -113,6 +113,7 @@ func TestValidGoVendorNamespaceTargetGenerate(t *testing.T) {
 
 	files := []FileComparisonPair{
 		{"expected/go/vendor_namespace/f_types.txt", filepath.Join(outputDir, "vendor_namespace", "f_types.go")},
+		{"expected/go/vendor_namespace/f_vendoredbase_service.txt", filepath.Join(outputDir, "vendor_namespace", "f_vendoredbase_service.go")},
 	}
 	copyAllFiles(t, files)
 	compareAllFiles(t, files)

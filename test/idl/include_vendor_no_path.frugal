@@ -8,7 +8,7 @@ struct VendoredReferences {
     2: optional vendor_namespace_no_path.MyEnum reference_vendored_enum = vendor_namespace_no_path.MyEnum.TWO
 }
 
-service MyService {
+service MyService extends vendor_namespace_no_path.VendoredBase {
     vendor_namespace_no_path.Item getItem() throws (1:excepts.InvalidData d)
 }
 

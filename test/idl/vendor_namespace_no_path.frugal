@@ -10,3 +10,5 @@ enum MyEnum {
     ZERO,
     TWO = 2
 }
+
+service VendoredBase {}

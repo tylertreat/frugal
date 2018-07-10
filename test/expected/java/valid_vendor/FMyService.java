@@ -62,17 +62,18 @@ public class FMyService {
 
 	private static final Logger logger = LoggerFactory.getLogger(FMyService.class);
 
-	public interface Iface {
+	public interface Iface extends some.vendored.pkg.FVendoredBase.Iface {
 
 		public some.vendored.pkg.Item getItem(FContext ctx) throws TException, InvalidData;
 
 	}
 
-	public static class Client implements Iface {
+	public static class Client extends some.vendored.pkg.FVendoredBase.Client implements Iface {
 
 		private Iface proxy;
 
 		public Client(FServiceProvider provider, ServiceMiddleware... middleware) {
+			super(provider, middleware);
 			Iface client = new InternalClient(provider);
 			List<ServiceMiddleware> combined = Arrays.asList(middleware);
 			combined.addAll(provider.getMiddleware());
@@ -86,11 +87,12 @@ public class FMyService {
 
 	}
 
-	private static class InternalClient implements Iface {
+	private static class InternalClient extends some.vendored.pkg.FVendoredBase.Client implements Iface {
 
 		private FTransport transport;
 		private FProtocolFactory protocolFactory;
 		public InternalClient(FServiceProvider provider) {
+			super(provider);
 			this.transport = provider.getTransport();
 			this.protocolFactory = provider.getProtocolFactory();
 		}
@@ -136,27 +138,29 @@ public class FMyService {
 		}
 	}
 
-	public static class Processor extends FBaseProcessor implements FProcessor {
+	public static class Processor extends some.vendored.pkg.FVendoredBase.Processor implements FProcessor {
 
 		private Iface handler;
 
 		public Processor(Iface iface, ServiceMiddleware... middleware) {
+			super(iface, middleware);
 			handler = InvocationHandler.composeMiddleware(iface, Iface.class, middleware);
 		}
 
 		protected java.util.Map<String, FProcessorFunction> getProcessMap() {
-			java.util.Map<String, FProcessorFunction> processMap = new java.util.HashMap<>();
+			java.util.Map<String, FProcessorFunction> processMap = super.getProcessMap();
 			processMap.put("getItem", new GetItem());
 			return processMap;
 		}
 
 		protected java.util.Map<String, java.util.Map<String, String>> getAnnotationsMap() {
-			java.util.Map<String, java.util.Map<String, String>> annotationsMap = new java.util.HashMap<>();
+			java.util.Map<String, java.util.Map<String, String>> annotationsMap = super.getAnnotationsMap();
 			return annotationsMap;
 		}
 
 		@Override
 		public void addMiddleware(ServiceMiddleware middleware) {
+			super.addMiddleware(middleware);
 			handler = InvocationHandler.composeMiddleware(handler, Iface.class, new ServiceMiddleware[]{middleware});
 		}
 

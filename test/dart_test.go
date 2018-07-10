@@ -151,6 +151,7 @@ func TestValidDartVendorNamespaceTargetGenerate(t *testing.T) {
 	files := []FileComparisonPair{
 		{"expected/dart/vendor_namespace/vendor_namespace.dart", filepath.Join(outputDir, "vendor_namespace", "lib", "vendor_namespace.dart")},
 		{"expected/dart/vendor_namespace/f_item.dart", filepath.Join(outputDir, "vendor_namespace", "lib", "src", "f_item.dart")},
+		{"expected/dart/vendor_namespace/f_vendored_base_service.dart", filepath.Join(outputDir, "vendor_namespace", "lib", "src", "f_vendored_base_service.dart")},
 		{"expected/dart/vendor_namespace/f_vendor_namespace_constants.dart", filepath.Join(outputDir, "vendor_namespace", "lib", "src", "f_vendor_namespace_constants.dart")},
 		{"expected/dart/vendor_namespace/f_my_enum.dart", filepath.Join(outputDir, "vendor_namespace", "lib", "src", "f_my_enum.dart")},
 	}

@@ -294,6 +294,10 @@ func (g *Generator) quote(s string) string {
 }
 
 func (g *Generator) namespaceForInclude(includeName string) string {
+	if includeName == "" {
+		return ""
+	}
+
 	namespace := g.Frugal.NamespaceForInclude(includeName, lang)
 	if namespace == nil {
 		return ""
@@ -320,15 +324,15 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}, 
 		case parser.LocalEnum:
 			return "", fmt.Sprintf("%s.%s", idCtx.Enum.Name, idCtx.EnumValue.Name)
 		case parser.IncludeConstant:
-			include := g.namespaceForInclude(idCtx.Include.Name)
-			if include == "" {
-				include = idCtx.Include.Name
+			include := idCtx.Include.Name
+			if namespace := g.namespaceForInclude(include); namespace != "" {
+				include = namespace
 			}
 			return "", fmt.Sprintf("%s.%sConstants.%s", include, idCtx.Include.Name, idCtx.Constant.Name)
 		case parser.IncludeEnum:
-			include := g.namespaceForInclude(idCtx.Include.Name)
-			if include == "" {
-				include = idCtx.Include.Name
+			include := idCtx.Include.Name
+			if namespace := g.namespaceForInclude(include); namespace != "" {
+				include = namespace
 			}
 			return "", fmt.Sprintf("%s.%s.%s", include, idCtx.Enum.Name, idCtx.EnumValue.Name)
 		default:
@@ -2745,13 +2749,8 @@ func (g *Generator) generateServiceInterface(service *parser.Service, indent str
 func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 	serviceName := "F" + service.ExtendsService()
 	include := service.ExtendsInclude()
-	if include != "" {
-		if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
-			include = namespace.Value
-		} else {
-			return serviceName
-		}
-		serviceName = include + "." + serviceName
+	if namespace := g.namespaceForInclude(include); namespace != "" {
+		serviceName = namespace + "." + serviceName
 	}
 	return serviceName
 }
@@ -3298,10 +3297,8 @@ func (g *Generator) isVendoredInclude(includeName string) bool {
 func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 	param := t.ParamName()
 	include := t.IncludeName()
-	if include != "" {
-		if namespace := g.namespaceForInclude(include); namespace != "" {
-			return fmt.Sprintf("%s.%s", namespace, param)
-		}
+	if namespace := g.namespaceForInclude(include); namespace != "" {
+		return fmt.Sprintf("%s.%s", namespace, param)
 	}
 	return param
 }
