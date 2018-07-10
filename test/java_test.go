@@ -126,6 +126,12 @@ func TestValidJavaBoxedPrimitives(t *testing.T) {
 // Ensures correct import references are used when -use-vendor is set and the
 // IDL has a vendored include.
 func TestValidJavaVendor(t *testing.T) {
+	nowBefore := globals.Now
+	defer func() {
+		globals.Now = nowBefore
+	}()
+	globals.Now = time.Date(2015, 11, 24, 0, 0, 0, 0, time.UTC)
+
 	options := compiler.Options{
 		File:    includeVendor,
 		Gen:     "java:use_vendor",
@@ -156,6 +162,12 @@ func TestValidJavaVendor(t *testing.T) {
 }
 
 func TestValidJavaVendorButNotUseVendor(t *testing.T) {
+	nowBefore := globals.Now
+	defer func() {
+		globals.Now = nowBefore
+	}()
+	globals.Now = time.Date(2015, 11, 24, 0, 0, 0, 0, time.UTC)
+
 	options := compiler.Options{
 		File:    includeVendor,
 		Gen:     "java",
@@ -179,6 +191,12 @@ func TestValidJavaVendorButNotUseVendor(t *testing.T) {
 }
 
 func TestValidJavaVendorNoPathUsesDefinedNamespace(t *testing.T) {
+	nowBefore := globals.Now
+	defer func() {
+		globals.Now = nowBefore
+	}()
+	globals.Now = time.Date(2015, 11, 24, 0, 0, 0, 0, time.UTC)
+
 	options := compiler.Options{
 		File:    includeVendorNoPath,
 		Gen:     "java:use_vendor",
