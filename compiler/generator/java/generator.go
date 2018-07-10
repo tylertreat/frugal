@@ -293,6 +293,19 @@ func (g *Generator) quote(s string) string {
 	return strconv.Quote(s)
 }
 
+func (g *Generator) namespaceForInclude(includeName string) string {
+	namespace := g.Frugal.NamespaceForInclude(includeName, lang)
+	if namespace == nil {
+		return ""
+	}
+
+	if vendorPath, _ := namespace.Annotations.Vendor(); vendorPath != "" && g.UseVendor() && g.isVendoredInclude(includeName) {
+		return vendorPath
+	}
+
+	return namespace.Value
+}
+
 func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}, indent string) (string, string) {
 	underlyingType := g.Frugal.UnderlyingType(t)
 
@@ -307,9 +320,9 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}, 
 		case parser.LocalEnum:
 			return "", fmt.Sprintf("%s.%s", idCtx.Enum.Name, idCtx.EnumValue.Name)
 		case parser.IncludeConstant:
-			include := idCtx.Include.Name
-			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
-				include = namespace.Value
+			include := g.namespaceForInclude(idCtx.Include.Name)
+			if include == "" {
+				include = idCtx.Include.Name
 			}
 			return "", fmt.Sprintf("%s.%sConstants.%s", include, idCtx.Include.Name, idCtx.Constant.Name)
 		case parser.IncludeEnum:
@@ -3286,14 +3299,8 @@ func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 	param := t.ParamName()
 	include := t.IncludeName()
 	if include != "" {
-		if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
-			if g.UseVendor() && g.isVendoredInclude(include) {
-				if vendorPath, _ := namespace.Annotations.Vendor(); vendorPath != "" {
-					return fmt.Sprintf("%s.%s", vendorPath, param)
-				}
-			}
-
-			return fmt.Sprintf("%s.%s", namespace.Value, param)
+		if namespace := g.namespaceForInclude(include); namespace != "" {
+			return fmt.Sprintf("%s.%s", namespace, param)
 		}
 	}
 	return param

@@ -2,4 +2,6 @@ namespace go vendor_namespace (vendor="github.com/Workiva/some/vendored/place/ve
 namespace dart vendor_namespace (vendor="some_vendored_place")
 namespace java vendor_namespace.java (vendor="some.vendored.pkg")
 
+const i32 a_const = 1
+
 struct Item {}

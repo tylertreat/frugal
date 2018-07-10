@@ -3,6 +3,7 @@ namespace java include_vendor_no_path.java
 include "vendor_namespace_no_path.frugal" (vendor)
 include "excepts.frugal"
 
+const i32 reference_vendored_const = vendor_namespace_no_path.a_const
 
 service MyService {
     vendor_namespace_no_path.Item getItem() throws (1:excepts.InvalidData d)

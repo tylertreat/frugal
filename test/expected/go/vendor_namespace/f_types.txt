@@ -17,6 +17,8 @@ var _ = bytes.Equal
 
 var GoUnusedProtection__ int
 
+const AConst = 1
+
 func init() {
 }
 

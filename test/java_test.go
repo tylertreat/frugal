@@ -14,7 +14,6 @@
 package test
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -147,17 +146,18 @@ func TestValidJavaVendor(t *testing.T) {
 		{"expected/java/valid_vendor/FMyService.java", filepath.Join(outputDir, "valid_vendor", "include_vendor", "java", "FMyService.java")},
 		{"expected/java/valid_vendor/MyScopePublisher.java", filepath.Join(outputDir, "valid_vendor", "include_vendor", "java", "MyScopePublisher.java")},
 		{"expected/java/valid_vendor/MyScopeSubscriber.java", filepath.Join(outputDir, "valid_vendor", "include_vendor", "java", "MyScopeSubscriber.java")},
+		{"expected/java/valid_vendor/include_vendorConstants.java", filepath.Join(outputDir, "valid_vendor", "include_vendor", "java", "include_vendorConstants.java")},
 		{"expected/java/valid_vendor/InvalidData.java", filepath.Join(outputDir, "valid_vendor", "InvalidData.java")},
 	}
 	copyAllFiles(t, files)
 	compareAllFiles(t, files)
 
-	if _, err := os.Stat(filepath.Join(outputDir, "valid_vendor", "vendor_namespace", "java", "Item.java")); !os.IsNotExist(err) {
-		if err != nil {
-			panic(err)
-		}
-		t.Fatal("Expected vendored files to not be generated, but they were")
+	filesNotToGenerate := []string{
+		filepath.Join(filepath.Join(outputDir, "valid_vendor", "vendor_namespace", "java", "Item.java")),
+		filepath.Join(filepath.Join(outputDir, "valid_vendor", "vendor_namespace", "java", "vendor_namespaceConstants.java")),
 	}
+
+	assertFilesNotExist(t, filesNotToGenerate)
 
 }
 
@@ -183,8 +183,10 @@ func TestValidJavaVendorButNotUseVendor(t *testing.T) {
 		{"expected/java/vendored_but_no_use_vendor/FMyService.java", filepath.Join(outputDir, "vendored_but_no_use_vendor", "include_vendor", "java", "FMyService.java")},
 		{"expected/java/vendored_but_no_use_vendor/MyScopePublisher.java", filepath.Join(outputDir, "vendored_but_no_use_vendor", "include_vendor", "java", "MyScopePublisher.java")},
 		{"expected/java/vendored_but_no_use_vendor/MyScopeSubscriber.java", filepath.Join(outputDir, "vendored_but_no_use_vendor", "include_vendor", "java", "MyScopeSubscriber.java")},
+		{"expected/java/vendored_but_no_use_vendor/include_vendorConstants.java", filepath.Join(outputDir, "vendored_but_no_use_vendor", "include_vendor", "java", "include_vendorConstants.java")},
 		{"expected/java/vendored_but_no_use_vendor/InvalidData.java", filepath.Join(outputDir, "vendored_but_no_use_vendor", "InvalidData.java")},
 		{"expected/java/vendored_but_no_use_vendor/Item.java", filepath.Join(outputDir, "vendored_but_no_use_vendor", "vendor_namespace", "java", "Item.java")},
+		{"expected/java/vendored_but_no_use_vendor/vendor_namespaceConstants.java", filepath.Join(outputDir, "vendored_but_no_use_vendor", "vendor_namespace", "java", "vendor_namespaceConstants.java")},
 	}
 	copyAllFiles(t, files)
 	compareAllFiles(t, files)
@@ -212,15 +214,16 @@ func TestValidJavaVendorNoPathUsesDefinedNamespace(t *testing.T) {
 		{"expected/java/valid_vendor_no_path/FMyService.java", filepath.Join(outputDir, "valid_vendor_no_path", "include_vendor_no_path", "java", "FMyService.java")},
 		{"expected/java/valid_vendor_no_path/MyScopePublisher.java", filepath.Join(outputDir, "valid_vendor_no_path", "include_vendor_no_path", "java", "MyScopePublisher.java")},
 		{"expected/java/valid_vendor_no_path/MyScopeSubscriber.java", filepath.Join(outputDir, "valid_vendor_no_path", "include_vendor_no_path", "java", "MyScopeSubscriber.java")},
+		{"expected/java/valid_vendor_no_path/include_vendor_no_pathConstants.java", filepath.Join(outputDir, "valid_vendor_no_path", "include_vendor_no_path", "java", "include_vendor_no_pathConstants.java")},
 		{"expected/java/valid_vendor_no_path/InvalidData.java", filepath.Join(outputDir, "valid_vendor_no_path", "InvalidData.java")},
 	}
 	copyAllFiles(t, files)
 	compareAllFiles(t, files)
 
-	if _, err := os.Stat(filepath.Join(outputDir, "valid_vendor_no_path", "vendor_namespace", "java", "Item.java")); !os.IsNotExist(err) {
-		if err != nil {
-			panic(err)
-		}
-		t.Fatal("Expected vendored files to not be generated, but they were")
+	filesNotToGenerate := []string{
+		filepath.Join(outputDir, "valid_vendor_no_path", "vendor_namespace", "java", "Item.java"),
+		filepath.Join(outputDir, "valid_vendor_no_path", "vendor_namespace", "java", "vendor_namespaceConstants.java"),
 	}
+
+	assertFilesNotExist(t, filesNotToGenerate)
 }

@@ -21,5 +21,7 @@ var _ = vendor_namespace.GoUnusedProtection__
 var _ = excepts.GoUnusedProtection__
 var GoUnusedProtection__ int
 
+const ReferenceVendoredConst = vendor_namespace.AConst
+
 func init() {
 }
