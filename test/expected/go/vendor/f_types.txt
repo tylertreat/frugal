@@ -21,7 +21,149 @@ var _ = vendor_namespace.GoUnusedProtection__
 var _ = excepts.GoUnusedProtection__
 var GoUnusedProtection__ int
 
-const ReferenceVendoredConst = vendor_namespace.AConst
-
 func init() {
+}
+
+type VendoredReferences struct {
+	ReferenceVendoredConst int32                   `thrift:"reference_vendored_const,1" db:"reference_vendored_const" json:"reference_vendored_const,omitempty"`
+	ReferenceVendoredEnum  vendor_namespace.MyEnum `thrift:"reference_vendored_enum,2" db:"reference_vendored_enum" json:"reference_vendored_enum,omitempty"`
+}
+
+func NewVendoredReferences() *VendoredReferences {
+	return &VendoredReferences{
+		ReferenceVendoredConst: vendor_namespace.AConst,
+		ReferenceVendoredEnum:  vendor_namespace.MyEnum_TWO,
+	}
+}
+
+var VendoredReferences_ReferenceVendoredConst_DEFAULT int32 = vendor_namespace.AConst
+
+func (p *VendoredReferences) IsSetReferenceVendoredConst() bool {
+	return p.ReferenceVendoredConst != VendoredReferences_ReferenceVendoredConst_DEFAULT
+}
+
+func (p *VendoredReferences) GetReferenceVendoredConst() int32 {
+	return p.ReferenceVendoredConst
+}
+
+var VendoredReferences_ReferenceVendoredEnum_DEFAULT vendor_namespace.MyEnum = vendor_namespace.MyEnum_TWO
+
+func (p *VendoredReferences) IsSetReferenceVendoredEnum() bool {
+	return p.ReferenceVendoredEnum != VendoredReferences_ReferenceVendoredEnum_DEFAULT
+}
+
+func (p *VendoredReferences) GetReferenceVendoredEnum() vendor_namespace.MyEnum {
+	return p.ReferenceVendoredEnum
+}
+
+func (p *VendoredReferences) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 1:
+			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+		case 2:
+			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *VendoredReferences) ReadField1(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI32(); err != nil {
+		return thrift.PrependError("error reading field 1: ", err)
+	} else {
+		p.ReferenceVendoredConst = v
+	}
+	return nil
+}
+
+func (p *VendoredReferences) ReadField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI32(); err != nil {
+		return thrift.PrependError("error reading field 2: ", err)
+	} else {
+		temp := vendor_namespace.MyEnum(v)
+		p.ReferenceVendoredEnum = temp
+	}
+	return nil
+}
+
+func (p *VendoredReferences) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("VendoredReferences"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *VendoredReferences) writeField1(oprot thrift.TProtocol) error {
+	if p.IsSetReferenceVendoredConst() {
+		if err := oprot.WriteFieldBegin("reference_vendored_const", thrift.I32, 1); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:reference_vendored_const: ", p), err)
+		}
+		if err := oprot.WriteI32(int32(p.ReferenceVendoredConst)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T.reference_vendored_const (1) field write error: ", p), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 1:reference_vendored_const: ", p), err)
+		}
+	}
+	return nil
+}
+
+func (p *VendoredReferences) writeField2(oprot thrift.TProtocol) error {
+	if p.IsSetReferenceVendoredEnum() {
+		if err := oprot.WriteFieldBegin("reference_vendored_enum", thrift.I32, 2); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:reference_vendored_enum: ", p), err)
+		}
+		if err := oprot.WriteI32(int32(p.ReferenceVendoredEnum)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T.reference_vendored_enum (2) field write error: ", p), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 2:reference_vendored_enum: ", p), err)
+		}
+	}
+	return nil
+}
+
+func (p *VendoredReferences) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("VendoredReferences(%+v)", *p)
 }

@@ -430,13 +430,13 @@ public class InvalidData extends TException implements org.apache.thrift.TBase<I
 
 			oprot.writeStructBegin(STRUCT_DESC);
 			oprot.writeFieldBegin(CODE_FIELD_DESC);
-			int elem0 = struct.code;
-			oprot.writeI32(elem0);
+			int elem4 = struct.code;
+			oprot.writeI32(elem4);
 			oprot.writeFieldEnd();
 			if (struct.why != null) {
 				oprot.writeFieldBegin(WHY_FIELD_DESC);
-				String elem1 = struct.why;
-				oprot.writeString(elem1);
+				String elem5 = struct.why;
+				oprot.writeString(elem5);
 				oprot.writeFieldEnd();
 			}
 			oprot.writeFieldStop();
@@ -465,12 +465,12 @@ public class InvalidData extends TException implements org.apache.thrift.TBase<I
 			}
 			oprot.writeBitSet(optionals, 2);
 			if (struct.isSetCode()) {
-				int elem2 = struct.code;
-				oprot.writeI32(elem2);
+				int elem6 = struct.code;
+				oprot.writeI32(elem6);
 			}
 			if (struct.isSetWhy()) {
-				String elem3 = struct.why;
-				oprot.writeString(elem3);
+				String elem7 = struct.why;
+				oprot.writeString(elem7);
 			}
 		}
 

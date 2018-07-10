@@ -5,6 +5,8 @@ package vendor_namespace
 
 import (
 	"bytes"
+	"database/sql/driver"
+	"errors"
 	"fmt"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -20,6 +22,62 @@ var GoUnusedProtection__ int
 const AConst = 1
 
 func init() {
+}
+
+type MyEnum int64
+
+const (
+	MyEnum_ZERO MyEnum = 0
+	MyEnum_TWO  MyEnum = 2
+)
+
+func (p MyEnum) String() string {
+	switch p {
+	case MyEnum_ZERO:
+		return "ZERO"
+	case MyEnum_TWO:
+		return "TWO"
+	}
+	return "<UNSET>"
+}
+
+func MyEnumFromString(s string) (MyEnum, error) {
+	switch s {
+	case "ZERO":
+		return MyEnum_ZERO, nil
+	case "TWO":
+		return MyEnum_TWO, nil
+	}
+	return MyEnum(0), fmt.Errorf("not a valid MyEnum string")
+}
+
+func (p MyEnum) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
+}
+
+func (p *MyEnum) UnmarshalText(text []byte) error {
+	q, err := MyEnumFromString(string(text))
+	if err != nil {
+		return err
+	}
+	*p = q
+	return nil
+}
+
+func (p *MyEnum) Scan(value interface{}) error {
+	v, ok := value.(int64)
+	if !ok {
+		return errors.New("Scan value is not int64")
+	}
+	*p = MyEnum(v)
+	return nil
+}
+
+func (p *MyEnum) Value() (driver.Value, error) {
+	if p == nil {
+		return nil, nil
+	}
+	return int64(*p), nil
 }
 
 type Item struct {

@@ -5,3 +5,8 @@ namespace java vendor_namespace.java (vendor="some.vendored.pkg")
 const i32 a_const = 1
 
 struct Item {}
+
+enum MyEnum {
+    ZERO,
+    TWO = 2
+}

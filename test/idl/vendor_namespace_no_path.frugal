@@ -5,3 +5,8 @@ namespace java vendor_namespace.java
 const i32 a_const = 1
 
 struct Item {}
+
+enum MyEnum {
+    ZERO,
+    TWO = 2
+}

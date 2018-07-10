@@ -326,9 +326,9 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}, 
 			}
 			return "", fmt.Sprintf("%s.%sConstants.%s", include, idCtx.Include.Name, idCtx.Constant.Name)
 		case parser.IncludeEnum:
-			include := idCtx.Include.Name
-			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
-				include = namespace.Value
+			include := g.namespaceForInclude(idCtx.Include.Name)
+			if include == "" {
+				include = idCtx.Include.Name
 			}
 			return "", fmt.Sprintf("%s.%s.%s", include, idCtx.Enum.Name, idCtx.EnumValue.Name)
 		default:
