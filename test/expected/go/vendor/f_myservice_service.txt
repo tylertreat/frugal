@@ -21,10 +21,13 @@ var _ = bytes.Equal
 var _ = logrus.DebugLevel
 
 type FMyService interface {
+	vendor_namespace.FVendoredBase
+
 	GetItem(ctx frugal.FContext) (r *vendor_namespace.Item, err error)
 }
 
 type FMyServiceClient struct {
+	*vendor_namespace.FVendoredBaseClient
 	transport       frugal.FTransport
 	protocolFactory *frugal.FProtocolFactory
 	methods         map[string]*frugal.Method
@@ -33,9 +36,10 @@ type FMyServiceClient struct {
 func NewFMyServiceClient(provider *frugal.FServiceProvider, middleware ...frugal.ServiceMiddleware) *FMyServiceClient {
 	methods := make(map[string]*frugal.Method)
 	client := &FMyServiceClient{
-		transport:       provider.GetTransport(),
-		protocolFactory: provider.GetProtocolFactory(),
-		methods:         methods,
+		FVendoredBaseClient: vendor_namespace.NewFVendoredBaseClient(provider, middleware...),
+		transport:           provider.GetTransport(),
+		protocolFactory:     provider.GetProtocolFactory(),
+		methods:             methods,
 	}
 	middleware = append(middleware, provider.GetMiddleware()...)
 	methods["getItem"] = frugal.NewMethod(client, client.getItem, "getItem", middleware)
@@ -129,11 +133,11 @@ func (f *FMyServiceClient) getItem(ctx frugal.FContext) (r *vendor_namespace.Ite
 }
 
 type FMyServiceProcessor struct {
-	*frugal.FBaseProcessor
+	*vendor_namespace.FVendoredBaseProcessor
 }
 
 func NewFMyServiceProcessor(handler FMyService, middleware ...frugal.ServiceMiddleware) *FMyServiceProcessor {
-	p := &FMyServiceProcessor{frugal.NewFBaseProcessor()}
+	p := &FMyServiceProcessor{vendor_namespace.NewFVendoredBaseProcessor(handler, middleware...)}
 	p.AddToProcessorMap("getItem", &myserviceFGetItem{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.GetItem, "GetItem", middleware))})
 	return p
 }

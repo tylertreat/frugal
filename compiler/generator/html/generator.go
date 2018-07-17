@@ -78,6 +78,10 @@ func (g *Generator) DefaultOutputDir() string {
 	return defaultOutputDir
 }
 
+func (g *Generator) UseVendor() bool {
+	return false
+}
+
 func (g *Generator) generateStylesheet(file *os.File) error {
 	_, err := file.WriteString(css)
 	return err

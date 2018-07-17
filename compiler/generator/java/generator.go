@@ -32,6 +32,7 @@ const (
 	defaultOutputDir            = "gen-java"
 	tab                         = "\t"
 	generatedAnnotations        = "generated_annotations"
+	useVendorOption             = "use_vendor"
 	tabtab                      = tab + tab
 	tabtabtab                   = tab + tab + tab
 	tabtabtabtab                = tab + tab + tab + tab
@@ -292,6 +293,23 @@ func (g *Generator) quote(s string) string {
 	return strconv.Quote(s)
 }
 
+func (g *Generator) namespaceForInclude(includeName string) string {
+	if includeName == "" {
+		return ""
+	}
+
+	namespace := g.Frugal.NamespaceForInclude(includeName, lang)
+	if namespace == nil {
+		return ""
+	}
+
+	if vendorPath, _ := namespace.Annotations.Vendor(); vendorPath != "" && g.UseVendor() && g.isVendoredInclude(includeName) {
+		return vendorPath
+	}
+
+	return namespace.Value
+}
+
 func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}, indent string) (string, string) {
 	underlyingType := g.Frugal.UnderlyingType(t)
 
@@ -307,14 +325,14 @@ func (g *Generator) generateConstantValueRec(t *parser.Type, value interface{}, 
 			return "", fmt.Sprintf("%s.%s", idCtx.Enum.Name, idCtx.EnumValue.Name)
 		case parser.IncludeConstant:
 			include := idCtx.Include.Name
-			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
-				include = namespace.Value
+			if namespace := g.namespaceForInclude(include); namespace != "" {
+				include = namespace
 			}
 			return "", fmt.Sprintf("%s.%sConstants.%s", include, idCtx.Include.Name, idCtx.Constant.Name)
 		case parser.IncludeEnum:
 			include := idCtx.Include.Name
-			if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
-				include = namespace.Value
+			if namespace := g.namespaceForInclude(include); namespace != "" {
+				include = namespace
 			}
 			return "", fmt.Sprintf("%s.%s.%s", include, idCtx.Enum.Name, idCtx.EnumValue.Name)
 		default:
@@ -2731,13 +2749,8 @@ func (g *Generator) generateServiceInterface(service *parser.Service, indent str
 func (g *Generator) getServiceExtendsName(service *parser.Service) string {
 	serviceName := "F" + service.ExtendsService()
 	include := service.ExtendsInclude()
-	if include != "" {
-		if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
-			include = namespace.Value
-		} else {
-			return serviceName
-		}
-		serviceName = include + "." + serviceName
+	if namespace := g.namespaceForInclude(include); namespace != "" {
+		serviceName = namespace + "." + serviceName
 	}
 	return serviceName
 }
@@ -3272,13 +3285,20 @@ func containerType(typeName string) string {
 	}
 }
 
+func (g *Generator) isVendoredInclude(includeName string) bool {
+	include := g.Frugal.Include(includeName)
+	if include == nil {
+		return false
+	}
+	_, vendored := include.Annotations.Vendor()
+	return vendored
+}
+
 func (g *Generator) qualifiedTypeName(t *parser.Type) string {
 	param := t.ParamName()
 	include := t.IncludeName()
-	if include != "" {
-		if namespace := g.Frugal.NamespaceForInclude(include, lang); namespace != nil {
-			return fmt.Sprintf("%s.%s", namespace.Value, param)
-		}
+	if namespace := g.namespaceForInclude(include); namespace != "" {
+		return fmt.Sprintf("%s.%s", namespace, param)
 	}
 	return param
 }
@@ -3326,5 +3346,10 @@ func (g *Generator) generatedAnnotation(indent string) string {
 
 func (g *Generator) generateAsync() bool {
 	_, ok := g.Options["async"]
+	return ok
+}
+
+func (g *Generator) UseVendor() bool {
+	_, ok := g.Options[useVendorOption]
 	return ok
 }

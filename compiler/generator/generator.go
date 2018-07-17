@@ -61,6 +61,7 @@ var Languages = LanguageOptions{
 			"suppress: suppress @Generated annotations entirely",
 		"async":            "Generate async client code using futures",
 		"boxed_primitives": "Generate primitives as the boxed equivalents",
+		"use_vendor":       "Use specified import references for vendored includes and do not generate code for them",
 	},
 	"dart": Options{
 		"library_prefix": "Generate code that can be used within an existing library. " +
@@ -100,6 +101,9 @@ type ProgramGenerator interface {
 
 	// DefaultOutputDir returns the default directory for generated code.
 	DefaultOutputDir() string
+
+	// UseVendor returns whether this generator supports using vendored includes
+	UseVendor() bool
 }
 
 // LanguageGenerator generates source code as implemented for specific
@@ -136,6 +140,9 @@ type LanguageGenerator interface {
 	GenerateScopeImports(*os.File, *parser.Scope) error
 	GeneratePublisher(*os.File, *parser.Scope) error
 	GenerateSubscriber(*os.File, *parser.Scope) error
+
+	// UseVendor returns whether this generator instance supports using vendored includes
+	UseVendor() bool
 }
 
 // GetPackageComponents returns the package string split on dots.
@@ -336,4 +343,8 @@ func (o *programGenerator) GetOutputDir(dir string, f *parser.Frugal) string {
 // DefaultOutputDir returns the default directory for generated code.
 func (o *programGenerator) DefaultOutputDir() string {
 	return o.LanguageGenerator.DefaultOutputDir()
+}
+
+func (o *programGenerator) UseVendor() bool {
+	return o.LanguageGenerator.UseVendor()
 }

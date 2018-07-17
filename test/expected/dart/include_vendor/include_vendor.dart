@@ -3,6 +3,7 @@
 
 library include_vendor;
 
+export 'src/f_vendored_references.dart' show VendoredReferences;
 
 export 'src/f_my_service_service.dart' show FMyService;
 export 'src/f_my_service_service.dart' show FMyServiceClient;
