@@ -127,7 +127,12 @@ func generateFrugalRec(f *parser.Frugal, g generator.ProgramGenerator, generate 
 
 	// Iterate through includes in order to ensure determinism in
 	// generated code.
-	for _, inclFrugal := range f.OrderedIncludes() {
+	for _, include := range f.OrderedIncludes() {
+		// Skip recursive generation if include is marked vendor and use_vendor option is enabled
+		if _, vendored := include.Annotations.Vendor(); vendored && g.UseVendor() {
+			continue
+		}
+		inclFrugal := f.ParsedIncludes[include.Name]
 		if err := generateFrugalRec(inclFrugal, g, globals.Recurse, lang); err != nil {
 			return err
 		}

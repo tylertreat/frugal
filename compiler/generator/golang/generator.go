@@ -1176,7 +1176,7 @@ func (g *Generator) generateIncludeImport(include *parser.Include, pkgPrefix str
 	namespace := g.Frugal.NamespaceForInclude(includeName, lang)
 
 	_, vendored := include.Annotations.Vendor()
-	vendored = vendored && g.useVendor()
+	vendored = vendored && g.UseVendor()
 	vendorPath := ""
 
 	if namespace != nil {
@@ -2258,7 +2258,7 @@ func (g *Generator) generateAsync() bool {
 	return ok
 }
 
-func (g *Generator) useVendor() bool {
+func (g *Generator) UseVendor() bool {
 	_, ok := g.Options[useVendorOption]
 	return ok
 }
