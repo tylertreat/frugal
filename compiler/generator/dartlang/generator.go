@@ -693,6 +693,9 @@ func (g *Generator) generateStruct(s *parser.Struct) string {
 	// equals
 	contents += g.generateEquals(s)
 
+	// hashCode
+	contents += g.generateHashCode(s)
+
 	// clone
 	contents += g.generateClone(s)
 
@@ -1148,6 +1151,17 @@ func (g *Generator) generateEquals(s *parser.Struct) string {
 	}
 
 	contents += ";\n"
+	contents += tab + "}\n\n"
+	return contents
+}
+
+func (g *Generator) generateHashCode(s *parser.Struct) string {
+	contents := tab + "int get hashCode {\n"
+	contents += tabtab + "var value = 17;\n"
+	for _, field := range s.Fields {
+		contents += fmt.Sprintf(tabtab + "value = (value * 31) ^ %s.hashCode;\n", field.Name)
+	}
+	contents += tabtab + "return value;\n";
 	contents += tab + "}\n\n"
 	return contents
 }

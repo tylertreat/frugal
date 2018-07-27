@@ -79,6 +79,11 @@ class Item implements thrift.TBase {
     return true;
   }
 
+  int get hashCode {
+    var value = 17;
+    return value;
+  }
+
   Item clone() {
     return new Item();
   }

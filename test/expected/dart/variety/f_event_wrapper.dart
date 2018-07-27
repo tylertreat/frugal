@@ -803,6 +803,24 @@ class EventWrapper implements thrift.TBase {
       && this.deprList == other.deprList;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ ID.hashCode;
+    value = (value * 31) ^ Ev.hashCode;
+    value = (value * 31) ^ Events.hashCode;
+    value = (value * 31) ^ Events2.hashCode;
+    value = (value * 31) ^ EventMap.hashCode;
+    value = (value * 31) ^ Nums.hashCode;
+    value = (value * 31) ^ Enums.hashCode;
+    value = (value * 31) ^ aBoolField.hashCode;
+    value = (value * 31) ^ a_union.hashCode;
+    value = (value * 31) ^ typedefOfTypedef.hashCode;
+    value = (value * 31) ^ depr.hashCode;
+    value = (value * 31) ^ deprBinary.hashCode;
+    value = (value * 31) ^ deprList.hashCode;
+    return value;
+  }
+
   EventWrapper clone({
     int iD: null,
     t_variety.Event ev: null,

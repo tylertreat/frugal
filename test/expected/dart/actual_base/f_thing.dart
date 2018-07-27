@@ -171,6 +171,13 @@ class thing implements thrift.TBase {
       && this.a_string == other.a_string;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ an_id.hashCode;
+    value = (value * 31) ^ a_string.hashCode;
+    return value;
+  }
+
   thing clone({
     int an_id: null,
     String a_string: null,

@@ -185,6 +185,13 @@ class Event implements thrift.TBase {
       && this.message == other.message;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ ID.hashCode;
+    value = (value * 31) ^ Message.hashCode;
+    return value;
+  }
+
   Event clone({
     int iD: null,
     String message: null,

@@ -79,6 +79,11 @@ class api_exception extends Error implements thrift.TBase {
     return true;
   }
 
+  int get hashCode {
+    var value = 17;
+    return value;
+  }
+
   api_exception clone() {
     return new api_exception();
   }

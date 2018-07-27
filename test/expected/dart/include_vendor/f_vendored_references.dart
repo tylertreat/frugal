@@ -188,6 +188,13 @@ class VendoredReferences implements thrift.TBase {
       && this.reference_vendored_enum == other.reference_vendored_enum;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ reference_vendored_const.hashCode;
+    value = (value * 31) ^ reference_vendored_enum.hashCode;
+    return value;
+  }
+
   VendoredReferences clone({
     int reference_vendored_const: null,
     int reference_vendored_enum: null,
