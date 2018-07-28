@@ -187,8 +187,8 @@ class Event implements thrift.TBase {
 
   int get hashCode {
     var value = 17;
-    value = (value * 31) ^ ID.hashCode;
-    value = (value * 31) ^ Message.hashCode;
+    value = (value * 31) ^ iD.hashCode;
+    value = (value * 31) ^ message.hashCode;
     return value;
   }
 

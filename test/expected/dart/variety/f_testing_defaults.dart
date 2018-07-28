@@ -1064,14 +1064,14 @@ class TestingDefaults implements thrift.TBase {
 
   int get hashCode {
     var value = 17;
-    value = (value * 31) ^ ID2.hashCode;
+    value = (value * 31) ^ iD2.hashCode;
     value = (value * 31) ^ ev1.hashCode;
     value = (value * 31) ^ ev2.hashCode;
-    value = (value * 31) ^ ID.hashCode;
+    value = (value * 31) ^ iD.hashCode;
     value = (value * 31) ^ thing.hashCode;
     value = (value * 31) ^ thing2.hashCode;
     value = (value * 31) ^ listfield.hashCode;
-    value = (value * 31) ^ ID3.hashCode;
+    value = (value * 31) ^ iD3.hashCode;
     value = (value * 31) ^ bin_field.hashCode;
     value = (value * 31) ^ bin_field2.hashCode;
     value = (value * 31) ^ bin_field3.hashCode;

@@ -235,8 +235,8 @@ class AwesomeException extends Error implements thrift.TBase {
 
   int get hashCode {
     var value = 17;
-    value = (value * 31) ^ ID.hashCode;
-    value = (value * 31) ^ Reason.hashCode;
+    value = (value * 31) ^ iD.hashCode;
+    value = (value * 31) ^ reason.hashCode;
     value = (value * 31) ^ depr.hashCode;
     return value;
   }

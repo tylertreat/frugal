@@ -1159,7 +1159,8 @@ func (g *Generator) generateHashCode(s *parser.Struct) string {
 	contents := tab + "int get hashCode {\n"
 	contents += tabtab + "var value = 17;\n"
 	for _, field := range s.Fields {
-		contents += fmt.Sprintf(tabtab + "value = (value * 31) ^ %s.hashCode;\n", field.Name)
+		fieldName := toFieldName(field.Name)
+		contents += fmt.Sprintf(tabtab + "value = (value * 31) ^ %s.hashCode;\n", fieldName)
 	}
 	contents += tabtab + "return value;\n";
 	contents += tab + "}\n\n"

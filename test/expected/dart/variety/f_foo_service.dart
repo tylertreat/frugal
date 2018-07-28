@@ -800,7 +800,7 @@ class blah_args implements thrift.TBase {
   int get hashCode {
     var value = 17;
     value = (value * 31) ^ num.hashCode;
-    value = (value * 31) ^ Str.hashCode;
+    value = (value * 31) ^ str.hashCode;
     value = (value * 31) ^ event.hashCode;
     return value;
   }
@@ -1440,7 +1440,7 @@ class bin_method_args implements thrift.TBase {
   int get hashCode {
     var value = 17;
     value = (value * 31) ^ bin.hashCode;
-    value = (value * 31) ^ Str.hashCode;
+    value = (value * 31) ^ str.hashCode;
     return value;
   }
 
