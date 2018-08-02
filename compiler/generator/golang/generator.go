@@ -2021,7 +2021,7 @@ func (g *Generator) generateScopeArgs(scope *parser.Scope) string {
 func (g *Generator) generateHandlerArgs(method *parser.Method) string {
 	args := "[]interface{}{ctx"
 	for _, arg := range method.Arguments {
-		args += ", args." + snakeToCamel(arg.Name)
+		args += ", args." + title(arg.Name)
 	}
 	args += "}"
 	return args
@@ -2104,7 +2104,7 @@ func (g *Generator) generateInputArgs(args []*parser.Field) string {
 func (g *Generator) generateStructArgs(args []*parser.Field) string {
 	argStr := ""
 	for _, arg := range args {
-		argStr += "\t\t" + snakeToCamel(arg.Name) + ": " + strings.ToLower(arg.Name) + ",\n"
+		argStr += "\t\t" + title(arg.Name) + ": " + strings.ToLower(arg.Name) + ",\n"
 	}
 	return argStr
 }

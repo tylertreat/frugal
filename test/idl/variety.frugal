@@ -191,6 +191,11 @@ service Foo extends base.BaseFoo {
     ValidTypes.MyInt getMyInt(),
 
     subdir_include.A use_subdir_struct(1:subdir_include.A a),
+
+
+    string sayHelloWith(1: string newMessage)
+    string whatDoYouSay(1: string messageArgs)
+    string sayAgain(1: string messageResult)
 }
 
 service FooTransitiveDeps extends intermediate_include.IntermediateFoo {
