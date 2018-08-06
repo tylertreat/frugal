@@ -3373,6 +3373,12 @@ class sayHelloWith_args implements thrift.TBase {
     return this.newMessage == other.newMessage;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ newMessage.hashCode;
+    return value;
+  }
+
   sayHelloWith_args clone({
     String newMessage: null,
   }) {
@@ -3508,6 +3514,12 @@ class sayHelloWith_result implements thrift.TBase {
     return this.success == other.success;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    return value;
+  }
+
   sayHelloWith_result clone({
     String success: null,
   }) {
@@ -3639,6 +3651,12 @@ class whatDoYouSay_args implements thrift.TBase {
     }
     whatDoYouSay_args other = o as whatDoYouSay_args;
     return this.messageArgs == other.messageArgs;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ messageArgs.hashCode;
+    return value;
   }
 
   whatDoYouSay_args clone({
@@ -3776,6 +3794,12 @@ class whatDoYouSay_result implements thrift.TBase {
     return this.success == other.success;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    return value;
+  }
+
   whatDoYouSay_result clone({
     String success: null,
   }) {
@@ -3907,6 +3931,12 @@ class sayAgain_args implements thrift.TBase {
     }
     sayAgain_args other = o as sayAgain_args;
     return this.messageResult == other.messageResult;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ messageResult.hashCode;
+    return value;
   }
 
   sayAgain_args clone({
@@ -4042,6 +4072,12 @@ class sayAgain_result implements thrift.TBase {
     }
     sayAgain_result other = o as sayAgain_result;
     return this.success == other.success;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    return value;
   }
 
   sayAgain_result clone({
