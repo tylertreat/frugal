@@ -603,6 +603,11 @@ class Ping_args implements thrift.TBase {
     return true;
   }
 
+  int get hashCode {
+    var value = 17;
+    return value;
+  }
+
   Ping_args clone() {
     return new Ping_args();
   }
@@ -684,6 +689,11 @@ class Ping_result implements thrift.TBase {
       return false;
     }
     return true;
+  }
+
+  int get hashCode {
+    var value = 17;
+    return value;
   }
 
   Ping_result clone() {
@@ -908,6 +918,14 @@ class blah_args implements thrift.TBase {
     return this.num == other.num
       && this.str == other.str
       && this.event == other.event;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ num.hashCode;
+    value = (value * 31) ^ str.hashCode;
+    value = (value * 31) ^ event.hashCode;
+    return value;
   }
 
   blah_args clone({
@@ -1150,6 +1168,14 @@ class blah_result implements thrift.TBase {
       && this.api == other.api;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    value = (value * 31) ^ awe.hashCode;
+    value = (value * 31) ^ api.hashCode;
+    return value;
+  }
+
   blah_result clone({
     int success: null,
     t_variety.AwesomeException awe: null,
@@ -1344,6 +1370,13 @@ class oneWay_args implements thrift.TBase {
       && this.req == other.req;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ id.hashCode;
+    value = (value * 31) ^ req.hashCode;
+    return value;
+  }
+
   oneWay_args clone({
     int id: null,
     Map<int, String> req: null,
@@ -1525,6 +1558,13 @@ class bin_method_args implements thrift.TBase {
     bin_method_args other = o as bin_method_args;
     return this.bin == other.bin
       && this.str == other.str;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ bin.hashCode;
+    value = (value * 31) ^ str.hashCode;
+    return value;
   }
 
   bin_method_args clone({
@@ -1713,6 +1753,13 @@ class bin_method_result implements thrift.TBase {
     bin_method_result other = o as bin_method_result;
     return this.success == other.success
       && this.api == other.api;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    value = (value * 31) ^ api.hashCode;
+    return value;
   }
 
   bin_method_result clone({
@@ -1940,6 +1987,14 @@ class param_modifiers_args implements thrift.TBase {
       && this.req_num == other.req_num;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ opt_num.hashCode;
+    value = (value * 31) ^ default_num.hashCode;
+    value = (value * 31) ^ req_num.hashCode;
+    return value;
+  }
+
   param_modifiers_args clone({
     int opt_num: null,
     int default_num: null,
@@ -2076,6 +2131,12 @@ class param_modifiers_result implements thrift.TBase {
     }
     param_modifiers_result other = o as param_modifiers_result;
     return this.success == other.success;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    return value;
   }
 
   param_modifiers_result clone({
@@ -2279,6 +2340,13 @@ class underlying_types_test_args implements thrift.TBase {
       && this.set_type == other.set_type;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ list_type.hashCode;
+    value = (value * 31) ^ set_type.hashCode;
+    return value;
+  }
+
   underlying_types_test_args clone({
     List<int> list_type: null,
     Set<int> set_type: null,
@@ -2426,6 +2494,12 @@ class underlying_types_test_result implements thrift.TBase {
     return this.success == other.success;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    return value;
+  }
+
   underlying_types_test_result clone({
     List<int> success: null,
   }) {
@@ -2510,6 +2584,11 @@ class getThing_args implements thrift.TBase {
       return false;
     }
     return true;
+  }
+
+  int get hashCode {
+    var value = 17;
+    return value;
   }
 
   getThing_args clone() {
@@ -2645,6 +2724,12 @@ class getThing_result implements thrift.TBase {
     return this.success == other.success;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    return value;
+  }
+
   getThing_result clone({
     t_validStructs.Thing success: null,
   }) {
@@ -2729,6 +2814,11 @@ class getMyInt_args implements thrift.TBase {
       return false;
     }
     return true;
+  }
+
+  int get hashCode {
+    var value = 17;
+    return value;
   }
 
   getMyInt_args clone() {
@@ -2860,6 +2950,12 @@ class getMyInt_result implements thrift.TBase {
     }
     getMyInt_result other = o as getMyInt_result;
     return this.success == other.success;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    return value;
   }
 
   getMyInt_result clone({
@@ -2994,6 +3090,12 @@ class use_subdir_struct_args implements thrift.TBase {
     }
     use_subdir_struct_args other = o as use_subdir_struct_args;
     return this.a == other.a;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ a.hashCode;
+    return value;
   }
 
   use_subdir_struct_args clone({
@@ -3132,6 +3234,12 @@ class use_subdir_struct_result implements thrift.TBase {
     return this.success == other.success;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    return value;
+  }
+
   use_subdir_struct_result clone({
     t_subdir_include_ns.A success: null,
   }) {
@@ -3263,6 +3371,12 @@ class sayHelloWith_args implements thrift.TBase {
     }
     sayHelloWith_args other = o as sayHelloWith_args;
     return this.newMessage == other.newMessage;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ newMessage.hashCode;
+    return value;
   }
 
   sayHelloWith_args clone({
@@ -3400,6 +3514,12 @@ class sayHelloWith_result implements thrift.TBase {
     return this.success == other.success;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    return value;
+  }
+
   sayHelloWith_result clone({
     String success: null,
   }) {
@@ -3531,6 +3651,12 @@ class whatDoYouSay_args implements thrift.TBase {
     }
     whatDoYouSay_args other = o as whatDoYouSay_args;
     return this.messageArgs == other.messageArgs;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ messageArgs.hashCode;
+    return value;
   }
 
   whatDoYouSay_args clone({
@@ -3668,6 +3794,12 @@ class whatDoYouSay_result implements thrift.TBase {
     return this.success == other.success;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    return value;
+  }
+
   whatDoYouSay_result clone({
     String success: null,
   }) {
@@ -3799,6 +3931,12 @@ class sayAgain_args implements thrift.TBase {
     }
     sayAgain_args other = o as sayAgain_args;
     return this.messageResult == other.messageResult;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ messageResult.hashCode;
+    return value;
   }
 
   sayAgain_args clone({
@@ -3934,6 +4072,12 @@ class sayAgain_result implements thrift.TBase {
     }
     sayAgain_result other = o as sayAgain_result;
     return this.success == other.success;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    return value;
   }
 
   sayAgain_result clone({

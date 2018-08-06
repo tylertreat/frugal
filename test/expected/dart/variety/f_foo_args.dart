@@ -227,6 +227,14 @@ class FooArgs implements thrift.TBase {
       && this.messageResult == other.messageResult;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ newMessage.hashCode;
+    value = (value * 31) ^ messageArgs.hashCode;
+    value = (value * 31) ^ messageResult.hashCode;
+    return value;
+  }
+
   FooArgs clone({
     String newMessage: null,
     String messageArgs: null,

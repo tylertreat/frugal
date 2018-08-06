@@ -132,6 +132,12 @@ class TestBase implements thrift.TBase {
     return this.base_struct == other.base_struct;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ base_struct.hashCode;
+    return value;
+  }
+
   TestBase clone({
     t_actual_base_dart.thing base_struct: null,
   }) {

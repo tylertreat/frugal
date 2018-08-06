@@ -128,6 +128,12 @@ class TestLowercase implements thrift.TBase {
     return this.lowercaseInt == other.lowercaseInt;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ lowercaseInt.hashCode;
+    return value;
+  }
+
   TestLowercase clone({
     int lowercaseInt: null,
   }) {

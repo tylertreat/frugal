@@ -1062,6 +1062,29 @@ class TestingDefaults implements thrift.TBase {
       && this.base_status == other.base_status;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ iD2.hashCode;
+    value = (value * 31) ^ ev1.hashCode;
+    value = (value * 31) ^ ev2.hashCode;
+    value = (value * 31) ^ iD.hashCode;
+    value = (value * 31) ^ thing.hashCode;
+    value = (value * 31) ^ thing2.hashCode;
+    value = (value * 31) ^ listfield.hashCode;
+    value = (value * 31) ^ iD3.hashCode;
+    value = (value * 31) ^ bin_field.hashCode;
+    value = (value * 31) ^ bin_field2.hashCode;
+    value = (value * 31) ^ bin_field3.hashCode;
+    value = (value * 31) ^ bin_field4.hashCode;
+    value = (value * 31) ^ list2.hashCode;
+    value = (value * 31) ^ list3.hashCode;
+    value = (value * 31) ^ list4.hashCode;
+    value = (value * 31) ^ a_map.hashCode;
+    value = (value * 31) ^ status.hashCode;
+    value = (value * 31) ^ base_status.hashCode;
+    return value;
+  }
+
   TestingDefaults clone({
     int iD2: null,
     t_variety.Event ev1: null,

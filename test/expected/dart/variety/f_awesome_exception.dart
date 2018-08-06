@@ -233,6 +233,14 @@ class AwesomeException extends Error implements thrift.TBase {
       && this.depr == other.depr;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ iD.hashCode;
+    value = (value * 31) ^ reason.hashCode;
+    value = (value * 31) ^ depr.hashCode;
+    return value;
+  }
+
   AwesomeException clone({
     int iD: null,
     String reason: null,

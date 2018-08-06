@@ -137,6 +137,12 @@ class nested_thing implements thrift.TBase {
     return this.things == other.things;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ things.hashCode;
+    return value;
+  }
+
   nested_thing clone({
     List<t_actual_base_dart.thing> things: null,
   }) {

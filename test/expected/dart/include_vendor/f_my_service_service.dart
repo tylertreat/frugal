@@ -153,6 +153,11 @@ class getItem_args implements thrift.TBase {
     return true;
   }
 
+  int get hashCode {
+    var value = 17;
+    return value;
+  }
+
   getItem_args clone() {
     return new getItem_args();
   }
@@ -335,6 +340,13 @@ class getItem_result implements thrift.TBase {
     getItem_result other = o as getItem_result;
     return this.success == other.success
       && this.d == other.d;
+  }
+
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ success.hashCode;
+    value = (value * 31) ^ d.hashCode;
+    return value;
   }
 
   getItem_result clone({

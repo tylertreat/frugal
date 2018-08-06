@@ -140,6 +140,11 @@ class basePing_args implements thrift.TBase {
     return true;
   }
 
+  int get hashCode {
+    var value = 17;
+    return value;
+  }
+
   basePing_args clone() {
     return new basePing_args();
   }
@@ -221,6 +226,11 @@ class basePing_result implements thrift.TBase {
       return false;
     }
     return true;
+  }
+
+  int get hashCode {
+    var value = 17;
+    return value;
   }
 
   basePing_result clone() {

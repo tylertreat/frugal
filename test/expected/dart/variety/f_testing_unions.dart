@@ -447,6 +447,18 @@ class TestingUnions implements thrift.TBase {
       && this.depr == other.depr;
   }
 
+  int get hashCode {
+    var value = 17;
+    value = (value * 31) ^ anID.hashCode;
+    value = (value * 31) ^ aString.hashCode;
+    value = (value * 31) ^ someotherthing.hashCode;
+    value = (value * 31) ^ anInt16.hashCode;
+    value = (value * 31) ^ requests.hashCode;
+    value = (value * 31) ^ bin_field_in_union.hashCode;
+    value = (value * 31) ^ depr.hashCode;
+    return value;
+  }
+
   TestingUnions clone({
     int anID: null,
     String aString: null,
