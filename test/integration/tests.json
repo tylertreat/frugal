@@ -77,7 +77,7 @@
     },
     "transports": [ "nats", "http" ],
     "protocols": [ "binary", "compact", "json" ],
-    "workdir": "python/asyncio"
+    "workdir": "python/aio"
   },
   {
     "name": "py:vanilla",
