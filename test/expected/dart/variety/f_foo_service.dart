@@ -43,6 +43,12 @@ abstract class FFoo extends t_actual_base_dart.FBaseFoo {
   Future<int> getMyInt(frugal.FContext ctx);
 
   Future<t_subdir_include_ns.A> use_subdir_struct(frugal.FContext ctx, t_subdir_include_ns.A a);
+
+  Future<String> sayHelloWith(frugal.FContext ctx, String newMessage);
+
+  Future<String> whatDoYouSay(frugal.FContext ctx, String messageArgs);
+
+  Future<String> sayAgain(frugal.FContext ctx, String messageResult);
 }
 
 /// This is a thrift service. Frugal will generate bindings that include
@@ -67,6 +73,9 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
     this._methods['getThing'] = new frugal.FMethod(this._getThing, 'Foo', 'getThing', combined);
     this._methods['getMyInt'] = new frugal.FMethod(this._getMyInt, 'Foo', 'getMyInt', combined);
     this._methods['use_subdir_struct'] = new frugal.FMethod(this._use_subdir_struct, 'Foo', 'use_subdir_struct', combined);
+    this._methods['sayHelloWith'] = new frugal.FMethod(this._sayHelloWith, 'Foo', 'sayHelloWith', combined);
+    this._methods['whatDoYouSay'] = new frugal.FMethod(this._whatDoYouSay, 'Foo', 'whatDoYouSay', combined);
+    this._methods['sayAgain'] = new frugal.FMethod(this._sayAgain, 'Foo', 'sayAgain', combined);
   }
 
   frugal.FTransport _transport;
@@ -402,6 +411,120 @@ class FFooClient extends t_actual_base_dart.FBaseFooClient implements FFoo {
 
     throw new thrift.TApplicationError(
       frugal.FrugalTApplicationErrorType.MISSING_RESULT, "use_subdir_struct failed: unknown result"
+    );
+  }
+  Future<String> sayHelloWith(frugal.FContext ctx, String newMessage) {
+    return this._methods['sayHelloWith']([ctx, newMessage]) as Future<String>;
+  }
+
+  Future<String> _sayHelloWith(frugal.FContext ctx, String newMessage) async {
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+    var oprot = _protocolFactory.getProtocol(memoryBuffer);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(new thrift.TMessage("sayHelloWith", thrift.TMessageType.CALL, 0));
+    sayHelloWith_args args = new sayHelloWith_args();
+    args.newMessage = newMessage;
+    args.write(oprot);
+    oprot.writeMessageEnd();
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
+
+    var iprot = _protocolFactory.getProtocol(response);
+    iprot.readResponseHeader(ctx);
+    thrift.TMessage msg = iprot.readMessageBegin();
+    if (msg.type == thrift.TMessageType.EXCEPTION) {
+      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+      iprot.readMessageEnd();
+      if (error.type == frugal.FrugalTTransportErrorType.REQUEST_TOO_LARGE) {
+        throw new thrift.TTransportError(frugal.FrugalTTransportErrorType.RESPONSE_TOO_LARGE, error.message);
+      }
+      throw error;
+    }
+
+    sayHelloWith_result result = new sayHelloWith_result();
+    result.read(iprot);
+    iprot.readMessageEnd();
+    if (result.isSetSuccess()) {
+      return result.success;
+    }
+
+    throw new thrift.TApplicationError(
+      frugal.FrugalTApplicationErrorType.MISSING_RESULT, "sayHelloWith failed: unknown result"
+    );
+  }
+  Future<String> whatDoYouSay(frugal.FContext ctx, String messageArgs) {
+    return this._methods['whatDoYouSay']([ctx, messageArgs]) as Future<String>;
+  }
+
+  Future<String> _whatDoYouSay(frugal.FContext ctx, String messageArgs) async {
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+    var oprot = _protocolFactory.getProtocol(memoryBuffer);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(new thrift.TMessage("whatDoYouSay", thrift.TMessageType.CALL, 0));
+    whatDoYouSay_args args = new whatDoYouSay_args();
+    args.messageArgs = messageArgs;
+    args.write(oprot);
+    oprot.writeMessageEnd();
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
+
+    var iprot = _protocolFactory.getProtocol(response);
+    iprot.readResponseHeader(ctx);
+    thrift.TMessage msg = iprot.readMessageBegin();
+    if (msg.type == thrift.TMessageType.EXCEPTION) {
+      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+      iprot.readMessageEnd();
+      if (error.type == frugal.FrugalTTransportErrorType.REQUEST_TOO_LARGE) {
+        throw new thrift.TTransportError(frugal.FrugalTTransportErrorType.RESPONSE_TOO_LARGE, error.message);
+      }
+      throw error;
+    }
+
+    whatDoYouSay_result result = new whatDoYouSay_result();
+    result.read(iprot);
+    iprot.readMessageEnd();
+    if (result.isSetSuccess()) {
+      return result.success;
+    }
+
+    throw new thrift.TApplicationError(
+      frugal.FrugalTApplicationErrorType.MISSING_RESULT, "whatDoYouSay failed: unknown result"
+    );
+  }
+  Future<String> sayAgain(frugal.FContext ctx, String messageResult) {
+    return this._methods['sayAgain']([ctx, messageResult]) as Future<String>;
+  }
+
+  Future<String> _sayAgain(frugal.FContext ctx, String messageResult) async {
+    var memoryBuffer = new frugal.TMemoryOutputBuffer(_transport.requestSizeLimit);
+    var oprot = _protocolFactory.getProtocol(memoryBuffer);
+    oprot.writeRequestHeader(ctx);
+    oprot.writeMessageBegin(new thrift.TMessage("sayAgain", thrift.TMessageType.CALL, 0));
+    sayAgain_args args = new sayAgain_args();
+    args.messageResult = messageResult;
+    args.write(oprot);
+    oprot.writeMessageEnd();
+    var response = await _transport.request(ctx, memoryBuffer.writeBytes);
+
+    var iprot = _protocolFactory.getProtocol(response);
+    iprot.readResponseHeader(ctx);
+    thrift.TMessage msg = iprot.readMessageBegin();
+    if (msg.type == thrift.TMessageType.EXCEPTION) {
+      thrift.TApplicationError error = thrift.TApplicationError.read(iprot);
+      iprot.readMessageEnd();
+      if (error.type == frugal.FrugalTTransportErrorType.REQUEST_TOO_LARGE) {
+        throw new thrift.TTransportError(frugal.FrugalTTransportErrorType.RESPONSE_TOO_LARGE, error.message);
+      }
+      throw error;
+    }
+
+    sayAgain_result result = new sayAgain_result();
+    result.read(iprot);
+    iprot.readMessageEnd();
+    if (result.isSetSuccess()) {
+      return result.success;
+    }
+
+    throw new thrift.TApplicationError(
+      frugal.FrugalTApplicationErrorType.MISSING_RESULT, "sayAgain failed: unknown result"
     );
   }
 }
@@ -3121,6 +3244,810 @@ class use_subdir_struct_result implements thrift.TBase {
     t_subdir_include_ns.A success: null,
   }) {
     return new use_subdir_struct_result()
+      ..success = success ?? this.success;
+  }
+
+  validate() {
+    // check for required fields
+    // check that fields of type enum have valid values
+  }
+}
+class sayHelloWith_args implements thrift.TBase {
+  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("sayHelloWith_args");
+  static final thrift.TField _NEW_MESSAGE_FIELD_DESC = new thrift.TField("newMessage", thrift.TType.STRING, 1);
+
+  String _newMessage;
+  static const int NEWMESSAGE = 1;
+
+
+  sayHelloWith_args() {
+  }
+
+  String get newMessage => this._newMessage;
+
+  set newMessage(String newMessage) {
+    this._newMessage = newMessage;
+  }
+
+  bool isSetNewMessage() => this.newMessage != null;
+
+  unsetNewMessage() {
+    this.newMessage = null;
+  }
+
+  getFieldValue(int fieldID) {
+    switch (fieldID) {
+      case NEWMESSAGE:
+        return this.newMessage;
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  setFieldValue(int fieldID, Object value) {
+    switch(fieldID) {
+      case NEWMESSAGE:
+        if(value == null) {
+          unsetNewMessage();
+        } else {
+          this.newMessage = value as String;
+        }
+        break;
+
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  // Returns true if the field corresponding to fieldID is set (has been assigned a value) and false otherwise
+  bool isSet(int fieldID) {
+    switch(fieldID) {
+      case NEWMESSAGE:
+        return isSetNewMessage();
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  read(thrift.TProtocol iprot) {
+    thrift.TField field;
+    iprot.readStructBegin();
+    while(true) {
+      field = iprot.readFieldBegin();
+      if(field.type == thrift.TType.STOP) {
+        break;
+      }
+      switch(field.id) {
+        case NEWMESSAGE:
+          if(field.type == thrift.TType.STRING) {
+            newMessage = iprot.readString();
+          } else {
+            thrift.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        default:
+          thrift.TProtocolUtil.skip(iprot, field.type);
+          break;
+      }
+      iprot.readFieldEnd();
+    }
+    iprot.readStructEnd();
+
+    // check for required fields of primitive type, which can't be checked in the validate method
+    validate();
+  }
+
+  write(thrift.TProtocol oprot) {
+    validate();
+
+    oprot.writeStructBegin(_STRUCT_DESC);
+    if(this.newMessage != null) {
+      oprot.writeFieldBegin(_NEW_MESSAGE_FIELD_DESC);
+      oprot.writeString(newMessage);
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldStop();
+    oprot.writeStructEnd();
+  }
+
+  String toString() {
+    StringBuffer ret = new StringBuffer("sayHelloWith_args(");
+
+    ret.write("newMessage:");
+    if(this.newMessage == null) {
+      ret.write("null");
+    } else {
+      ret.write(this.newMessage);
+    }
+
+    ret.write(")");
+
+    return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is sayHelloWith_args)) {
+      return false;
+    }
+    sayHelloWith_args other = o as sayHelloWith_args;
+    return this.newMessage == other.newMessage;
+  }
+
+  sayHelloWith_args clone({
+    String newMessage: null,
+  }) {
+    return new sayHelloWith_args()
+      ..newMessage = newMessage ?? this.newMessage;
+  }
+
+  validate() {
+    // check for required fields
+    // check that fields of type enum have valid values
+  }
+}
+class sayHelloWith_result implements thrift.TBase {
+  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("sayHelloWith_result");
+  static final thrift.TField _SUCCESS_FIELD_DESC = new thrift.TField("success", thrift.TType.STRING, 0);
+
+  String _success;
+  static const int SUCCESS = 0;
+
+
+  sayHelloWith_result() {
+  }
+
+  String get success => this._success;
+
+  set success(String success) {
+    this._success = success;
+  }
+
+  bool isSetSuccess() => this.success != null;
+
+  unsetSuccess() {
+    this.success = null;
+  }
+
+  getFieldValue(int fieldID) {
+    switch (fieldID) {
+      case SUCCESS:
+        return this.success;
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  setFieldValue(int fieldID, Object value) {
+    switch(fieldID) {
+      case SUCCESS:
+        if(value == null) {
+          unsetSuccess();
+        } else {
+          this.success = value as String;
+        }
+        break;
+
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  // Returns true if the field corresponding to fieldID is set (has been assigned a value) and false otherwise
+  bool isSet(int fieldID) {
+    switch(fieldID) {
+      case SUCCESS:
+        return isSetSuccess();
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  read(thrift.TProtocol iprot) {
+    thrift.TField field;
+    iprot.readStructBegin();
+    while(true) {
+      field = iprot.readFieldBegin();
+      if(field.type == thrift.TType.STOP) {
+        break;
+      }
+      switch(field.id) {
+        case SUCCESS:
+          if(field.type == thrift.TType.STRING) {
+            success = iprot.readString();
+          } else {
+            thrift.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        default:
+          thrift.TProtocolUtil.skip(iprot, field.type);
+          break;
+      }
+      iprot.readFieldEnd();
+    }
+    iprot.readStructEnd();
+
+    // check for required fields of primitive type, which can't be checked in the validate method
+    validate();
+  }
+
+  write(thrift.TProtocol oprot) {
+    validate();
+
+    oprot.writeStructBegin(_STRUCT_DESC);
+    if(isSetSuccess() && this.success != null) {
+      oprot.writeFieldBegin(_SUCCESS_FIELD_DESC);
+      oprot.writeString(success);
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldStop();
+    oprot.writeStructEnd();
+  }
+
+  String toString() {
+    StringBuffer ret = new StringBuffer("sayHelloWith_result(");
+
+    if(isSetSuccess()) {
+      ret.write("success:");
+      if(this.success == null) {
+        ret.write("null");
+      } else {
+        ret.write(this.success);
+      }
+    }
+
+    ret.write(")");
+
+    return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is sayHelloWith_result)) {
+      return false;
+    }
+    sayHelloWith_result other = o as sayHelloWith_result;
+    return this.success == other.success;
+  }
+
+  sayHelloWith_result clone({
+    String success: null,
+  }) {
+    return new sayHelloWith_result()
+      ..success = success ?? this.success;
+  }
+
+  validate() {
+    // check for required fields
+    // check that fields of type enum have valid values
+  }
+}
+class whatDoYouSay_args implements thrift.TBase {
+  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("whatDoYouSay_args");
+  static final thrift.TField _MESSAGE_ARGS_FIELD_DESC = new thrift.TField("messageArgs", thrift.TType.STRING, 1);
+
+  String _messageArgs;
+  static const int MESSAGEARGS = 1;
+
+
+  whatDoYouSay_args() {
+  }
+
+  String get messageArgs => this._messageArgs;
+
+  set messageArgs(String messageArgs) {
+    this._messageArgs = messageArgs;
+  }
+
+  bool isSetMessageArgs() => this.messageArgs != null;
+
+  unsetMessageArgs() {
+    this.messageArgs = null;
+  }
+
+  getFieldValue(int fieldID) {
+    switch (fieldID) {
+      case MESSAGEARGS:
+        return this.messageArgs;
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  setFieldValue(int fieldID, Object value) {
+    switch(fieldID) {
+      case MESSAGEARGS:
+        if(value == null) {
+          unsetMessageArgs();
+        } else {
+          this.messageArgs = value as String;
+        }
+        break;
+
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  // Returns true if the field corresponding to fieldID is set (has been assigned a value) and false otherwise
+  bool isSet(int fieldID) {
+    switch(fieldID) {
+      case MESSAGEARGS:
+        return isSetMessageArgs();
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  read(thrift.TProtocol iprot) {
+    thrift.TField field;
+    iprot.readStructBegin();
+    while(true) {
+      field = iprot.readFieldBegin();
+      if(field.type == thrift.TType.STOP) {
+        break;
+      }
+      switch(field.id) {
+        case MESSAGEARGS:
+          if(field.type == thrift.TType.STRING) {
+            messageArgs = iprot.readString();
+          } else {
+            thrift.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        default:
+          thrift.TProtocolUtil.skip(iprot, field.type);
+          break;
+      }
+      iprot.readFieldEnd();
+    }
+    iprot.readStructEnd();
+
+    // check for required fields of primitive type, which can't be checked in the validate method
+    validate();
+  }
+
+  write(thrift.TProtocol oprot) {
+    validate();
+
+    oprot.writeStructBegin(_STRUCT_DESC);
+    if(this.messageArgs != null) {
+      oprot.writeFieldBegin(_MESSAGE_ARGS_FIELD_DESC);
+      oprot.writeString(messageArgs);
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldStop();
+    oprot.writeStructEnd();
+  }
+
+  String toString() {
+    StringBuffer ret = new StringBuffer("whatDoYouSay_args(");
+
+    ret.write("messageArgs:");
+    if(this.messageArgs == null) {
+      ret.write("null");
+    } else {
+      ret.write(this.messageArgs);
+    }
+
+    ret.write(")");
+
+    return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is whatDoYouSay_args)) {
+      return false;
+    }
+    whatDoYouSay_args other = o as whatDoYouSay_args;
+    return this.messageArgs == other.messageArgs;
+  }
+
+  whatDoYouSay_args clone({
+    String messageArgs: null,
+  }) {
+    return new whatDoYouSay_args()
+      ..messageArgs = messageArgs ?? this.messageArgs;
+  }
+
+  validate() {
+    // check for required fields
+    // check that fields of type enum have valid values
+  }
+}
+class whatDoYouSay_result implements thrift.TBase {
+  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("whatDoYouSay_result");
+  static final thrift.TField _SUCCESS_FIELD_DESC = new thrift.TField("success", thrift.TType.STRING, 0);
+
+  String _success;
+  static const int SUCCESS = 0;
+
+
+  whatDoYouSay_result() {
+  }
+
+  String get success => this._success;
+
+  set success(String success) {
+    this._success = success;
+  }
+
+  bool isSetSuccess() => this.success != null;
+
+  unsetSuccess() {
+    this.success = null;
+  }
+
+  getFieldValue(int fieldID) {
+    switch (fieldID) {
+      case SUCCESS:
+        return this.success;
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  setFieldValue(int fieldID, Object value) {
+    switch(fieldID) {
+      case SUCCESS:
+        if(value == null) {
+          unsetSuccess();
+        } else {
+          this.success = value as String;
+        }
+        break;
+
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  // Returns true if the field corresponding to fieldID is set (has been assigned a value) and false otherwise
+  bool isSet(int fieldID) {
+    switch(fieldID) {
+      case SUCCESS:
+        return isSetSuccess();
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  read(thrift.TProtocol iprot) {
+    thrift.TField field;
+    iprot.readStructBegin();
+    while(true) {
+      field = iprot.readFieldBegin();
+      if(field.type == thrift.TType.STOP) {
+        break;
+      }
+      switch(field.id) {
+        case SUCCESS:
+          if(field.type == thrift.TType.STRING) {
+            success = iprot.readString();
+          } else {
+            thrift.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        default:
+          thrift.TProtocolUtil.skip(iprot, field.type);
+          break;
+      }
+      iprot.readFieldEnd();
+    }
+    iprot.readStructEnd();
+
+    // check for required fields of primitive type, which can't be checked in the validate method
+    validate();
+  }
+
+  write(thrift.TProtocol oprot) {
+    validate();
+
+    oprot.writeStructBegin(_STRUCT_DESC);
+    if(isSetSuccess() && this.success != null) {
+      oprot.writeFieldBegin(_SUCCESS_FIELD_DESC);
+      oprot.writeString(success);
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldStop();
+    oprot.writeStructEnd();
+  }
+
+  String toString() {
+    StringBuffer ret = new StringBuffer("whatDoYouSay_result(");
+
+    if(isSetSuccess()) {
+      ret.write("success:");
+      if(this.success == null) {
+        ret.write("null");
+      } else {
+        ret.write(this.success);
+      }
+    }
+
+    ret.write(")");
+
+    return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is whatDoYouSay_result)) {
+      return false;
+    }
+    whatDoYouSay_result other = o as whatDoYouSay_result;
+    return this.success == other.success;
+  }
+
+  whatDoYouSay_result clone({
+    String success: null,
+  }) {
+    return new whatDoYouSay_result()
+      ..success = success ?? this.success;
+  }
+
+  validate() {
+    // check for required fields
+    // check that fields of type enum have valid values
+  }
+}
+class sayAgain_args implements thrift.TBase {
+  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("sayAgain_args");
+  static final thrift.TField _MESSAGE_RESULT_FIELD_DESC = new thrift.TField("messageResult", thrift.TType.STRING, 1);
+
+  String _messageResult;
+  static const int MESSAGERESULT = 1;
+
+
+  sayAgain_args() {
+  }
+
+  String get messageResult => this._messageResult;
+
+  set messageResult(String messageResult) {
+    this._messageResult = messageResult;
+  }
+
+  bool isSetMessageResult() => this.messageResult != null;
+
+  unsetMessageResult() {
+    this.messageResult = null;
+  }
+
+  getFieldValue(int fieldID) {
+    switch (fieldID) {
+      case MESSAGERESULT:
+        return this.messageResult;
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  setFieldValue(int fieldID, Object value) {
+    switch(fieldID) {
+      case MESSAGERESULT:
+        if(value == null) {
+          unsetMessageResult();
+        } else {
+          this.messageResult = value as String;
+        }
+        break;
+
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  // Returns true if the field corresponding to fieldID is set (has been assigned a value) and false otherwise
+  bool isSet(int fieldID) {
+    switch(fieldID) {
+      case MESSAGERESULT:
+        return isSetMessageResult();
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  read(thrift.TProtocol iprot) {
+    thrift.TField field;
+    iprot.readStructBegin();
+    while(true) {
+      field = iprot.readFieldBegin();
+      if(field.type == thrift.TType.STOP) {
+        break;
+      }
+      switch(field.id) {
+        case MESSAGERESULT:
+          if(field.type == thrift.TType.STRING) {
+            messageResult = iprot.readString();
+          } else {
+            thrift.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        default:
+          thrift.TProtocolUtil.skip(iprot, field.type);
+          break;
+      }
+      iprot.readFieldEnd();
+    }
+    iprot.readStructEnd();
+
+    // check for required fields of primitive type, which can't be checked in the validate method
+    validate();
+  }
+
+  write(thrift.TProtocol oprot) {
+    validate();
+
+    oprot.writeStructBegin(_STRUCT_DESC);
+    if(this.messageResult != null) {
+      oprot.writeFieldBegin(_MESSAGE_RESULT_FIELD_DESC);
+      oprot.writeString(messageResult);
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldStop();
+    oprot.writeStructEnd();
+  }
+
+  String toString() {
+    StringBuffer ret = new StringBuffer("sayAgain_args(");
+
+    ret.write("messageResult:");
+    if(this.messageResult == null) {
+      ret.write("null");
+    } else {
+      ret.write(this.messageResult);
+    }
+
+    ret.write(")");
+
+    return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is sayAgain_args)) {
+      return false;
+    }
+    sayAgain_args other = o as sayAgain_args;
+    return this.messageResult == other.messageResult;
+  }
+
+  sayAgain_args clone({
+    String messageResult: null,
+  }) {
+    return new sayAgain_args()
+      ..messageResult = messageResult ?? this.messageResult;
+  }
+
+  validate() {
+    // check for required fields
+    // check that fields of type enum have valid values
+  }
+}
+class sayAgain_result implements thrift.TBase {
+  static final thrift.TStruct _STRUCT_DESC = new thrift.TStruct("sayAgain_result");
+  static final thrift.TField _SUCCESS_FIELD_DESC = new thrift.TField("success", thrift.TType.STRING, 0);
+
+  String _success;
+  static const int SUCCESS = 0;
+
+
+  sayAgain_result() {
+  }
+
+  String get success => this._success;
+
+  set success(String success) {
+    this._success = success;
+  }
+
+  bool isSetSuccess() => this.success != null;
+
+  unsetSuccess() {
+    this.success = null;
+  }
+
+  getFieldValue(int fieldID) {
+    switch (fieldID) {
+      case SUCCESS:
+        return this.success;
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  setFieldValue(int fieldID, Object value) {
+    switch(fieldID) {
+      case SUCCESS:
+        if(value == null) {
+          unsetSuccess();
+        } else {
+          this.success = value as String;
+        }
+        break;
+
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  // Returns true if the field corresponding to fieldID is set (has been assigned a value) and false otherwise
+  bool isSet(int fieldID) {
+    switch(fieldID) {
+      case SUCCESS:
+        return isSetSuccess();
+      default:
+        throw new ArgumentError("Field $fieldID doesn't exist!");
+    }
+  }
+
+  read(thrift.TProtocol iprot) {
+    thrift.TField field;
+    iprot.readStructBegin();
+    while(true) {
+      field = iprot.readFieldBegin();
+      if(field.type == thrift.TType.STOP) {
+        break;
+      }
+      switch(field.id) {
+        case SUCCESS:
+          if(field.type == thrift.TType.STRING) {
+            success = iprot.readString();
+          } else {
+            thrift.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        default:
+          thrift.TProtocolUtil.skip(iprot, field.type);
+          break;
+      }
+      iprot.readFieldEnd();
+    }
+    iprot.readStructEnd();
+
+    // check for required fields of primitive type, which can't be checked in the validate method
+    validate();
+  }
+
+  write(thrift.TProtocol oprot) {
+    validate();
+
+    oprot.writeStructBegin(_STRUCT_DESC);
+    if(isSetSuccess() && this.success != null) {
+      oprot.writeFieldBegin(_SUCCESS_FIELD_DESC);
+      oprot.writeString(success);
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldStop();
+    oprot.writeStructEnd();
+  }
+
+  String toString() {
+    StringBuffer ret = new StringBuffer("sayAgain_result(");
+
+    if(isSetSuccess()) {
+      ret.write("success:");
+      if(this.success == null) {
+        ret.write("null");
+      } else {
+        ret.write(this.success);
+      }
+    }
+
+    ret.write(")");
+
+    return ret.toString();
+  }
+
+  bool operator ==(Object o) {
+    if(o == null || !(o is sayAgain_result)) {
+      return false;
+    }
+    sayAgain_result other = o as sayAgain_result;
+    return this.success == other.success;
+  }
+
+  sayAgain_result clone({
+    String success: null,
+  }) {
+    return new sayAgain_result()
       ..success = success ?? this.success;
   }
 

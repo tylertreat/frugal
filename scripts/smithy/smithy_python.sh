@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-
 # Python
 virtualenv -p /usr/bin/python /tmp/frugal
 source /tmp/frugal/bin/activate

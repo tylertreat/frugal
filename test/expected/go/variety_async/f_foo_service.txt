@@ -40,6 +40,9 @@ type FFoo interface {
 	GetThing(ctx frugal.FContext) (r *validStructs.Thing, err error)
 	GetMyInt(ctx frugal.FContext) (r ValidTypes.MyInt, err error)
 	UseSubdirStruct(ctx frugal.FContext, a *subdir_include.A) (r *subdir_include.A, err error)
+	SayHelloWith(ctx frugal.FContext, newMessage string) (r string, err error)
+	WhatDoYouSay(ctx frugal.FContext, messageArgs string) (r string, err error)
+	SayAgain(ctx frugal.FContext, messageResult string) (r string, err error)
 }
 
 // This is a thrift service. Frugal will generate bindings that include
@@ -69,6 +72,9 @@ func NewFFooClient(provider *frugal.FServiceProvider, middleware ...frugal.Servi
 	methods["getThing"] = frugal.NewMethod(client, client.getThing, "getThing", middleware)
 	methods["getMyInt"] = frugal.NewMethod(client, client.getMyInt, "getMyInt", middleware)
 	methods["use_subdir_struct"] = frugal.NewMethod(client, client.use_subdir_struct, "use_subdir_struct", middleware)
+	methods["sayHelloWith"] = frugal.NewMethod(client, client.sayHelloWith, "sayHelloWith", middleware)
+	methods["whatDoYouSay"] = frugal.NewMethod(client, client.whatDoYouSay, "whatDoYouSay", middleware)
+	methods["sayAgain"] = frugal.NewMethod(client, client.sayAgain, "sayAgain", middleware)
 	return client
 }
 
@@ -911,6 +917,300 @@ func (f *FFooClient) UseSubdirStructAsync(ctx frugal.FContext, a *subdir_include
 	return resultC, errC
 }
 
+func (f *FFooClient) SayHelloWith(ctx frugal.FContext, newmessage string) (r string, err error) {
+	ret := f.methods["sayHelloWith"].Invoke([]interface{}{ctx, newmessage})
+	if len(ret) != 2 {
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
+	}
+	if ret[0] != nil {
+		r = ret[0].(string)
+	}
+	if ret[1] != nil {
+		err = ret[1].(error)
+	}
+	return r, err
+}
+
+func (f *FFooClient) sayHelloWith(ctx frugal.FContext, newmessage string) (r string, err error) {
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageBegin("sayHelloWith", thrift.CALL, 0); err != nil {
+		return
+	}
+	args := FooSayHelloWithArgs{
+		NewMessage_: newmessage,
+	}
+	if err = args.Write(oprot); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	if err = oprot.Flush(); err != nil {
+		return
+	}
+	var resultTransport thrift.TTransport
+	resultTransport, err = f.transport.Request(ctx, buffer.Bytes())
+	if err != nil {
+		return
+	}
+	iprot := f.protocolFactory.GetProtocol(resultTransport)
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
+		return
+	}
+	method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
+	}
+	if method != "sayHelloWith" {
+		err = thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_WRONG_METHOD_NAME, "sayHelloWith failed: wrong method name")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN, "Unknown Exception")
+		var error1 thrift.TApplicationException
+		error1, err = error0.Read(iprot)
+		if err != nil {
+			return
+		}
+		if err = iprot.ReadMessageEnd(); err != nil {
+			return
+		}
+		if error1.TypeId() == frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE {
+			err = thrift.NewTTransportException(frugal.TRANSPORT_EXCEPTION_RESPONSE_TOO_LARGE, error1.Error())
+			return
+		}
+		err = error1
+		return
+	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_INVALID_MESSAGE_TYPE, "sayHelloWith failed: invalid message type")
+		return
+	}
+	result := FooSayHelloWithResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	r = result.GetSuccess()
+	return
+}
+
+func (f *FFooClient) SayHelloWithAsync(ctx frugal.FContext, newmessage string) (r <-chan string, err <-chan error) {
+	errC := make(chan error, 1)
+	resultC := make(chan string, 1)
+	go func() {
+		result, err := f.SayHelloWith(ctx, newmessage)
+		if err != nil {
+			errC <- err
+		} else {
+			resultC <- result
+		}
+	}()
+	return resultC, errC
+}
+
+func (f *FFooClient) WhatDoYouSay(ctx frugal.FContext, messageargs string) (r string, err error) {
+	ret := f.methods["whatDoYouSay"].Invoke([]interface{}{ctx, messageargs})
+	if len(ret) != 2 {
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
+	}
+	if ret[0] != nil {
+		r = ret[0].(string)
+	}
+	if ret[1] != nil {
+		err = ret[1].(error)
+	}
+	return r, err
+}
+
+func (f *FFooClient) whatDoYouSay(ctx frugal.FContext, messageargs string) (r string, err error) {
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageBegin("whatDoYouSay", thrift.CALL, 0); err != nil {
+		return
+	}
+	args := FooWhatDoYouSayArgs{
+		MessageArgs_: messageargs,
+	}
+	if err = args.Write(oprot); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	if err = oprot.Flush(); err != nil {
+		return
+	}
+	var resultTransport thrift.TTransport
+	resultTransport, err = f.transport.Request(ctx, buffer.Bytes())
+	if err != nil {
+		return
+	}
+	iprot := f.protocolFactory.GetProtocol(resultTransport)
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
+		return
+	}
+	method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
+	}
+	if method != "whatDoYouSay" {
+		err = thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_WRONG_METHOD_NAME, "whatDoYouSay failed: wrong method name")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN, "Unknown Exception")
+		var error1 thrift.TApplicationException
+		error1, err = error0.Read(iprot)
+		if err != nil {
+			return
+		}
+		if err = iprot.ReadMessageEnd(); err != nil {
+			return
+		}
+		if error1.TypeId() == frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE {
+			err = thrift.NewTTransportException(frugal.TRANSPORT_EXCEPTION_RESPONSE_TOO_LARGE, error1.Error())
+			return
+		}
+		err = error1
+		return
+	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_INVALID_MESSAGE_TYPE, "whatDoYouSay failed: invalid message type")
+		return
+	}
+	result := FooWhatDoYouSayResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	r = result.GetSuccess()
+	return
+}
+
+func (f *FFooClient) WhatDoYouSayAsync(ctx frugal.FContext, messageargs string) (r <-chan string, err <-chan error) {
+	errC := make(chan error, 1)
+	resultC := make(chan string, 1)
+	go func() {
+		result, err := f.WhatDoYouSay(ctx, messageargs)
+		if err != nil {
+			errC <- err
+		} else {
+			resultC <- result
+		}
+	}()
+	return resultC, errC
+}
+
+func (f *FFooClient) SayAgain(ctx frugal.FContext, messageresult string) (r string, err error) {
+	ret := f.methods["sayAgain"].Invoke([]interface{}{ctx, messageresult})
+	if len(ret) != 2 {
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
+	}
+	if ret[0] != nil {
+		r = ret[0].(string)
+	}
+	if ret[1] != nil {
+		err = ret[1].(error)
+	}
+	return r, err
+}
+
+func (f *FFooClient) sayAgain(ctx frugal.FContext, messageresult string) (r string, err error) {
+	buffer := frugal.NewTMemoryOutputBuffer(f.transport.GetRequestSizeLimit())
+	oprot := f.protocolFactory.GetProtocol(buffer)
+	if err = oprot.WriteRequestHeader(ctx); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageBegin("sayAgain", thrift.CALL, 0); err != nil {
+		return
+	}
+	args := FooSayAgainArgs{
+		MessageResult_: messageresult,
+	}
+	if err = args.Write(oprot); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	if err = oprot.Flush(); err != nil {
+		return
+	}
+	var resultTransport thrift.TTransport
+	resultTransport, err = f.transport.Request(ctx, buffer.Bytes())
+	if err != nil {
+		return
+	}
+	iprot := f.protocolFactory.GetProtocol(resultTransport)
+	if err = iprot.ReadResponseHeader(ctx); err != nil {
+		return
+	}
+	method, mTypeId, _, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
+	}
+	if method != "sayAgain" {
+		err = thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_WRONG_METHOD_NAME, "sayAgain failed: wrong method name")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error0 := thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_UNKNOWN, "Unknown Exception")
+		var error1 thrift.TApplicationException
+		error1, err = error0.Read(iprot)
+		if err != nil {
+			return
+		}
+		if err = iprot.ReadMessageEnd(); err != nil {
+			return
+		}
+		if error1.TypeId() == frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE {
+			err = thrift.NewTTransportException(frugal.TRANSPORT_EXCEPTION_RESPONSE_TOO_LARGE, error1.Error())
+			return
+		}
+		err = error1
+		return
+	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(frugal.APPLICATION_EXCEPTION_INVALID_MESSAGE_TYPE, "sayAgain failed: invalid message type")
+		return
+	}
+	result := FooSayAgainResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	r = result.GetSuccess()
+	return
+}
+
+func (f *FFooClient) SayAgainAsync(ctx frugal.FContext, messageresult string) (r <-chan string, err <-chan error) {
+	errC := make(chan error, 1)
+	resultC := make(chan string, 1)
+	go func() {
+		result, err := f.SayAgain(ctx, messageresult)
+		if err != nil {
+			errC <- err
+		} else {
+			resultC <- result
+		}
+	}()
+	return resultC, errC
+}
+
 type FFooProcessor struct {
 	*golang.FBaseFooProcessor
 }
@@ -929,6 +1229,9 @@ func NewFFooProcessor(handler FFoo, middleware ...frugal.ServiceMiddleware) *FFo
 	p.AddToProcessorMap("getThing", &fooFGetThing{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.GetThing, "GetThing", middleware))})
 	p.AddToProcessorMap("getMyInt", &fooFGetMyInt{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.GetMyInt, "GetMyInt", middleware))})
 	p.AddToProcessorMap("use_subdir_struct", &fooFUseSubdirStruct{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.UseSubdirStruct, "UseSubdirStruct", middleware))})
+	p.AddToProcessorMap("sayHelloWith", &fooFSayHelloWith{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.SayHelloWith, "SayHelloWith", middleware))})
+	p.AddToProcessorMap("whatDoYouSay", &fooFWhatDoYouSay{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.WhatDoYouSay, "WhatDoYouSay", middleware))})
+	p.AddToProcessorMap("sayAgain", &fooFSayAgain{frugal.NewFBaseProcessorFunction(p.GetWriteMutex(), frugal.NewMethod(handler, handler.SayAgain, "SayAgain", middleware))})
 	return p
 }
 
@@ -1644,6 +1947,258 @@ func (p *fooFUseSubdirStruct) Process(ctx frugal.FContext, iprot, oprot *frugal.
 	if err2 = oprot.Flush(); err == nil && err2 != nil {
 		if frugal.IsErrTooLarge(err2) {
 			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "use_subdir_struct", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	return err
+}
+
+type fooFSayHelloWith struct {
+	*frugal.FBaseProcessorFunction
+}
+
+func (p *fooFSayHelloWith) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+	args := FooSayHelloWithArgs{}
+	var err error
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		p.GetWriteMutex().Lock()
+		err = fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_PROTOCOL_ERROR, "sayHelloWith", err.Error())
+		p.GetWriteMutex().Unlock()
+		return err
+	}
+
+	iprot.ReadMessageEnd()
+	result := FooSayHelloWithResult{}
+	var err2 error
+	ret := p.InvokeMethod([]interface{}{ctx, args.NewMessage_})
+	if len(ret) != 2 {
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
+	}
+	if ret[1] != nil {
+		err2 = ret[1].(error)
+	}
+	if err2 != nil {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
+			p.GetWriteMutex().Lock()
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("sayHelloWith", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
+			p.GetWriteMutex().Unlock()
+			return nil
+		}
+		p.GetWriteMutex().Lock()
+		err2 := fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_INTERNAL_ERROR, "sayHelloWith", "Internal error processing sayHelloWith: "+err2.Error())
+		p.GetWriteMutex().Unlock()
+		return err2
+	} else {
+		var retval string = ret[0].(string)
+		result.Success = &retval
+	}
+	p.GetWriteMutex().Lock()
+	defer p.GetWriteMutex().Unlock()
+	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "sayHelloWith", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = oprot.WriteMessageBegin("sayHelloWith", thrift.REPLY, 0); err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "sayHelloWith", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "sayHelloWith", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "sayHelloWith", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = oprot.Flush(); err == nil && err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "sayHelloWith", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	return err
+}
+
+type fooFWhatDoYouSay struct {
+	*frugal.FBaseProcessorFunction
+}
+
+func (p *fooFWhatDoYouSay) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+	args := FooWhatDoYouSayArgs{}
+	var err error
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		p.GetWriteMutex().Lock()
+		err = fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_PROTOCOL_ERROR, "whatDoYouSay", err.Error())
+		p.GetWriteMutex().Unlock()
+		return err
+	}
+
+	iprot.ReadMessageEnd()
+	result := FooWhatDoYouSayResult{}
+	var err2 error
+	ret := p.InvokeMethod([]interface{}{ctx, args.MessageArgs_})
+	if len(ret) != 2 {
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
+	}
+	if ret[1] != nil {
+		err2 = ret[1].(error)
+	}
+	if err2 != nil {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
+			p.GetWriteMutex().Lock()
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("whatDoYouSay", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
+			p.GetWriteMutex().Unlock()
+			return nil
+		}
+		p.GetWriteMutex().Lock()
+		err2 := fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_INTERNAL_ERROR, "whatDoYouSay", "Internal error processing whatDoYouSay: "+err2.Error())
+		p.GetWriteMutex().Unlock()
+		return err2
+	} else {
+		var retval string = ret[0].(string)
+		result.Success = &retval
+	}
+	p.GetWriteMutex().Lock()
+	defer p.GetWriteMutex().Unlock()
+	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "whatDoYouSay", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = oprot.WriteMessageBegin("whatDoYouSay", thrift.REPLY, 0); err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "whatDoYouSay", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "whatDoYouSay", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "whatDoYouSay", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = oprot.Flush(); err == nil && err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "whatDoYouSay", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	return err
+}
+
+type fooFSayAgain struct {
+	*frugal.FBaseProcessorFunction
+}
+
+func (p *fooFSayAgain) Process(ctx frugal.FContext, iprot, oprot *frugal.FProtocol) error {
+	args := FooSayAgainArgs{}
+	var err error
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		p.GetWriteMutex().Lock()
+		err = fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_PROTOCOL_ERROR, "sayAgain", err.Error())
+		p.GetWriteMutex().Unlock()
+		return err
+	}
+
+	iprot.ReadMessageEnd()
+	result := FooSayAgainResult{}
+	var err2 error
+	ret := p.InvokeMethod([]interface{}{ctx, args.MessageResult_})
+	if len(ret) != 2 {
+		panic(fmt.Sprintf("Middleware returned %d arguments, expected 2", len(ret)))
+	}
+	if ret[1] != nil {
+		err2 = ret[1].(error)
+	}
+	if err2 != nil {
+		if err3, ok := err2.(thrift.TApplicationException); ok {
+			p.GetWriteMutex().Lock()
+			oprot.WriteResponseHeader(ctx)
+			oprot.WriteMessageBegin("sayAgain", thrift.EXCEPTION, 0)
+			err3.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
+			p.GetWriteMutex().Unlock()
+			return nil
+		}
+		p.GetWriteMutex().Lock()
+		err2 := fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_INTERNAL_ERROR, "sayAgain", "Internal error processing sayAgain: "+err2.Error())
+		p.GetWriteMutex().Unlock()
+		return err2
+	} else {
+		var retval string = ret[0].(string)
+		result.Success = &retval
+	}
+	p.GetWriteMutex().Lock()
+	defer p.GetWriteMutex().Unlock()
+	if err2 = oprot.WriteResponseHeader(ctx); err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "sayAgain", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = oprot.WriteMessageBegin("sayAgain", thrift.REPLY, 0); err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "sayAgain", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "sayAgain", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "sayAgain", err2.Error())
+			return nil
+		}
+		err = err2
+	}
+	if err2 = oprot.Flush(); err == nil && err2 != nil {
+		if frugal.IsErrTooLarge(err2) {
+			fooWriteApplicationError(ctx, oprot, frugal.APPLICATION_EXCEPTION_RESPONSE_TOO_LARGE, "sayAgain", err2.Error())
 			return nil
 		}
 		err = err2
@@ -3597,4 +4152,577 @@ func (p *FooUseSubdirStructResult) String() string {
 		return "<nil>"
 	}
 	return fmt.Sprintf("FooUseSubdirStructResult(%+v)", *p)
+}
+
+type FooSayHelloWithArgs struct {
+	NewMessage_ string `thrift:"newMessage,1" db:"newMessage" json:"newMessage"`
+}
+
+func NewFooSayHelloWithArgs() *FooSayHelloWithArgs {
+	return &FooSayHelloWithArgs{}
+}
+
+func (p *FooSayHelloWithArgs) GetNewMessage_() string {
+	return p.NewMessage_
+}
+
+func (p *FooSayHelloWithArgs) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 1:
+			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooSayHelloWithArgs) ReadField1(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return thrift.PrependError("error reading field 1: ", err)
+	} else {
+		p.NewMessage_ = v
+	}
+	return nil
+}
+
+func (p *FooSayHelloWithArgs) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("sayHelloWith_args"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *FooSayHelloWithArgs) writeField1(oprot thrift.TProtocol) error {
+	if err := oprot.WriteFieldBegin("newMessage", thrift.STRING, 1); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:newMessage: ", p), err)
+	}
+	if err := oprot.WriteString(string(p.NewMessage_)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.newMessage (1) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:newMessage: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooSayHelloWithArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("FooSayHelloWithArgs(%+v)", *p)
+}
+
+type FooSayHelloWithResult struct {
+	Success *string `thrift:"success,0" db:"success" json:"success,omitempty"`
+}
+
+func NewFooSayHelloWithResult() *FooSayHelloWithResult {
+	return &FooSayHelloWithResult{}
+}
+
+var FooSayHelloWithResult_Success_DEFAULT string
+
+func (p *FooSayHelloWithResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *FooSayHelloWithResult) GetSuccess() string {
+	if !p.IsSetSuccess() {
+		return FooSayHelloWithResult_Success_DEFAULT
+	}
+	return *p.Success
+}
+
+func (p *FooSayHelloWithResult) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 0:
+			if err := p.ReadField0(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooSayHelloWithResult) ReadField0(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return thrift.PrependError("error reading field 0: ", err)
+	} else {
+		p.Success = &v
+	}
+	return nil
+}
+
+func (p *FooSayHelloWithResult) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("sayHelloWith_result"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField0(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *FooSayHelloWithResult) writeField0(oprot thrift.TProtocol) error {
+	if p.IsSetSuccess() {
+		if err := oprot.WriteFieldBegin("success", thrift.STRING, 0); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err)
+		}
+		if err := oprot.WriteString(string(*p.Success)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T.success (0) field write error: ", p), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err)
+		}
+	}
+	return nil
+}
+
+func (p *FooSayHelloWithResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("FooSayHelloWithResult(%+v)", *p)
+}
+
+type FooWhatDoYouSayArgs struct {
+	MessageArgs_ string `thrift:"messageArgs,1" db:"messageArgs" json:"messageArgs"`
+}
+
+func NewFooWhatDoYouSayArgs() *FooWhatDoYouSayArgs {
+	return &FooWhatDoYouSayArgs{}
+}
+
+func (p *FooWhatDoYouSayArgs) GetMessageArgs_() string {
+	return p.MessageArgs_
+}
+
+func (p *FooWhatDoYouSayArgs) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 1:
+			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooWhatDoYouSayArgs) ReadField1(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return thrift.PrependError("error reading field 1: ", err)
+	} else {
+		p.MessageArgs_ = v
+	}
+	return nil
+}
+
+func (p *FooWhatDoYouSayArgs) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("whatDoYouSay_args"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *FooWhatDoYouSayArgs) writeField1(oprot thrift.TProtocol) error {
+	if err := oprot.WriteFieldBegin("messageArgs", thrift.STRING, 1); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:messageArgs: ", p), err)
+	}
+	if err := oprot.WriteString(string(p.MessageArgs_)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.messageArgs (1) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:messageArgs: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooWhatDoYouSayArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("FooWhatDoYouSayArgs(%+v)", *p)
+}
+
+type FooWhatDoYouSayResult struct {
+	Success *string `thrift:"success,0" db:"success" json:"success,omitempty"`
+}
+
+func NewFooWhatDoYouSayResult() *FooWhatDoYouSayResult {
+	return &FooWhatDoYouSayResult{}
+}
+
+var FooWhatDoYouSayResult_Success_DEFAULT string
+
+func (p *FooWhatDoYouSayResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *FooWhatDoYouSayResult) GetSuccess() string {
+	if !p.IsSetSuccess() {
+		return FooWhatDoYouSayResult_Success_DEFAULT
+	}
+	return *p.Success
+}
+
+func (p *FooWhatDoYouSayResult) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 0:
+			if err := p.ReadField0(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooWhatDoYouSayResult) ReadField0(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return thrift.PrependError("error reading field 0: ", err)
+	} else {
+		p.Success = &v
+	}
+	return nil
+}
+
+func (p *FooWhatDoYouSayResult) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("whatDoYouSay_result"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField0(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *FooWhatDoYouSayResult) writeField0(oprot thrift.TProtocol) error {
+	if p.IsSetSuccess() {
+		if err := oprot.WriteFieldBegin("success", thrift.STRING, 0); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err)
+		}
+		if err := oprot.WriteString(string(*p.Success)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T.success (0) field write error: ", p), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err)
+		}
+	}
+	return nil
+}
+
+func (p *FooWhatDoYouSayResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("FooWhatDoYouSayResult(%+v)", *p)
+}
+
+type FooSayAgainArgs struct {
+	MessageResult_ string `thrift:"messageResult,1" db:"messageResult" json:"messageResult"`
+}
+
+func NewFooSayAgainArgs() *FooSayAgainArgs {
+	return &FooSayAgainArgs{}
+}
+
+func (p *FooSayAgainArgs) GetMessageResult_() string {
+	return p.MessageResult_
+}
+
+func (p *FooSayAgainArgs) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 1:
+			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooSayAgainArgs) ReadField1(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return thrift.PrependError("error reading field 1: ", err)
+	} else {
+		p.MessageResult_ = v
+	}
+	return nil
+}
+
+func (p *FooSayAgainArgs) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("sayAgain_args"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *FooSayAgainArgs) writeField1(oprot thrift.TProtocol) error {
+	if err := oprot.WriteFieldBegin("messageResult", thrift.STRING, 1); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:messageResult: ", p), err)
+	}
+	if err := oprot.WriteString(string(p.MessageResult_)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.messageResult (1) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:messageResult: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooSayAgainArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("FooSayAgainArgs(%+v)", *p)
+}
+
+type FooSayAgainResult struct {
+	Success *string `thrift:"success,0" db:"success" json:"success,omitempty"`
+}
+
+func NewFooSayAgainResult() *FooSayAgainResult {
+	return &FooSayAgainResult{}
+}
+
+var FooSayAgainResult_Success_DEFAULT string
+
+func (p *FooSayAgainResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *FooSayAgainResult) GetSuccess() string {
+	if !p.IsSetSuccess() {
+		return FooSayAgainResult_Success_DEFAULT
+	}
+	return *p.Success
+}
+
+func (p *FooSayAgainResult) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 0:
+			if err := p.ReadField0(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *FooSayAgainResult) ReadField0(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return thrift.PrependError("error reading field 0: ", err)
+	} else {
+		p.Success = &v
+	}
+	return nil
+}
+
+func (p *FooSayAgainResult) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("sayAgain_result"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField0(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *FooSayAgainResult) writeField0(oprot thrift.TProtocol) error {
+	if p.IsSetSuccess() {
+		if err := oprot.WriteFieldBegin("success", thrift.STRING, 0); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err)
+		}
+		if err := oprot.WriteString(string(*p.Success)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T.success (0) field write error: ", p), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err)
+		}
+	}
+	return nil
+}
+
+func (p *FooSayAgainResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("FooSayAgainResult(%+v)", *p)
 }
