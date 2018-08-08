@@ -22,7 +22,7 @@ rm -rf test/integration/dart/gen-dart/*
 frugal --gen go:package_prefix=github.com/Workiva/frugal/ -r --out='test/integration/go/gen' test/integration/frugalTest.frugal
 frugal --gen java -r --out='test/integration/java/frugal-integration-test/gen-java' test/integration/frugalTest.frugal
 frugal --gen py:tornado -r --out='test/integration/python/tornado/gen_py_tornado' test/integration/frugalTest.frugal
-frugal --gen py:asyncio -r --out='test/integration/python/asyncio/gen_py_asyncio' test/integration/frugalTest.frugal
+frugal --gen py:asyncio -r --out='test/integration/python/aio/gen_py_asyncio' test/integration/frugalTest.frugal
 frugal --gen py -r -out='test/integration/python/tornado/gen-py' test/integration/frugalTest.frugal
 frugal --gen dart:use_enums=true -r --out='test/integration/dart/gen-dart' test/integration/frugalTest.frugal
 
