@@ -10,9 +10,8 @@
 # limitations under the License.
 
 import asyncio
+import unittest
 from functools import wraps
-
-from asyncio.test_utils import TestCase
 
 
 def async_runner(f):
@@ -29,12 +28,10 @@ def default_gen():
         time_requested = yield time_requested
 
 
-class AsyncIOTestCase(TestCase):
+class AsyncIOTestCase(unittest.TestCase):
     def setUp(self, gen=None):
         super().setUp()
-        if gen is None:
-            gen = default_gen
-        self.loop = self.new_test_loop(gen=gen)
+        self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
     def tearDown(self):
