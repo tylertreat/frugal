@@ -217,7 +217,9 @@ public class FServletTest {
 
         servlet.service(mockRequest, mockResponse);
 
-        verify(mockResponse).setStatus(eq(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        verify(mockResponse).setContentType("application/x-frugal");
+        verify(mockResponse).setHeader("Content-Transfer-Encoding", "base64");
+        verify(mockResponse).getOutputStream();
     }
 
     @Test

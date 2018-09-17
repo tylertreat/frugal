@@ -123,9 +123,9 @@ public class FServlet extends HttpServlet {
         try {
             processor.process(inProtocolFactory.getProtocol(inTransport), outProtocolFactory.getProtocol(outTransport));
         } catch (RuntimeException e) {
-            // Already logged by FBaseProcessor.
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            return;
+            // Already logged by FBaseProcessor and written to the output buffer
+            // as an application exception, so write that response back to the
+            // client just like FNatsServer.
         } catch (TException e) {
             LOGGER.error("Frugal processor returned unhandled error", e);
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
